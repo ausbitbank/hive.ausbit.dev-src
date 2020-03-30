@@ -1,0 +1,23 @@
+{
+  "@quasar/icon-genie": {
+    "minify_dev": "pngquant",
+    "minify_build": "zopfli",
+    "cordova": {
+      "background_color": "#212529",
+      "splashscreen_type": "pure"
+    },
+    "build_always": false,
+    "__internal": {
+      "dev": {
+        "pwa": {
+          "iconHash": "035902ab9f2f1762e931964f16f8e138"
+        }
+      },
+      "build": {
+        "pwa": {
+          "iconHash": "035902ab9f2f1762e931964f16f8e138"
+        }
+      }
+    }
+  }
+}
