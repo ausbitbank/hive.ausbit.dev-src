@@ -70,7 +70,7 @@ export default {
         },
         {
           title: 'Hive Discord',
-          caption: 'discord.gg/ZcG7jgX',
+          caption: 'discord.gg/6UMndtu',
           icon: 'chat',
           link: 'https://discord.gg/6UMndtu'
         },
