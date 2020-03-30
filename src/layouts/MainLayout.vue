@@ -72,7 +72,7 @@ export default {
           title: 'Hive Discord',
           caption: 'discord.gg/ZcG7jgX',
           icon: 'chat',
-          link: 'https://discord.gg/ZcG7jgX'
+          link: 'https://discord.gg/6UMndtu'
         },
         {
           title: 'Hive Telegram',
