@@ -13,7 +13,15 @@
       Vote Amount
     </span>
     <span>
-      $x
+      $ {{ upvoteValue }}
+    </span>
+  </div>
+  <div>
+    <span class="text-bold q-pa-md">
+      Vote Power
+    </span>
+    <span>
+      {{ votePower }} %
     </span>
   </div>
   <div>
@@ -21,7 +29,8 @@
     VP -> 100%
   </span>
   <span>
-    in 1d 15h 56m | Tomorrow, 19:36 (example)
+    {{ votePowerRechargeTime }}
+    <!-- in 1d 15h 56m | Tomorrow, 19:36 (example) -->
   </span>
   </div>
   <div>
@@ -69,9 +78,10 @@
 
 <script>
 import hive from 'steem'
+import moment from 'moment'
 export default {
   name: 'Card1Stats',
-  props: ['A', 'followCounts', 'globalPropsHive'],
+  props: ['A', 'followCounts', 'globalPropsHive', 'upvoteValue'],
   data () {
     return {
     }
@@ -81,16 +91,26 @@ export default {
       return hive.formatter.reputation(this.A.reputation)
     },
     baseHP: function () {
-      return this.mvestsToHP(this.A.vesting_shares.split(' ')[0])
+      return this.mvestsToHP(parseInt(this.A.vesting_shares.split(' ')[0]))
     },
     receivedHP: function () {
-      return this.mvestsToHP(this.A.received_vesting_shares.split(' ')[0])
+      return this.mvestsToHP(parseInt(this.A.received_vesting_shares.split(' ')[0]))
     },
     sentHP: function () {
-      return this.mvestsToHP(this.A.delegated_vesting_shares.split(' ')[0])
+      return this.mvestsToHP(parseInt(this.A.delegated_vesting_shares.split(' ')[0]))
     },
     effectiveHP: function () {
-      return ((this.baseHP + this.receivedHP) - this.sentHP)
+      return ((parseInt(this.baseHP) + parseInt(this.receivedHP)) - parseInt(this.sentHP))
+    },
+    votePower: function () {
+      var secondsago = (new Date() - new Date(this.A.last_vote_time + 'Z')) / 1000
+      var vpow = this.A.voting_power + (10000 * secondsago / 432000)
+      return Math.min(vpow / 100, 100).toFixed(2)
+    },
+    votePowerRechargeTime: function () {
+      // VP Recharges 20 % in 24 hours, or 0.0138888888888889 % in 1 minute
+      var minutesTillCharge = (100 - this.votePower) / 0.0138888888888889
+      return moment().add(minutesTillCharge, 'minutes').calendar()
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {

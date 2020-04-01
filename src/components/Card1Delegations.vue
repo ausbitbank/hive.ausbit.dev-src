@@ -1,7 +1,7 @@
 <template>
   <div>
   <q-card>
-    <q-tabs v-model="card1DelegationsTab" dense align="justify" narrow-indicator>
+    <q-tabs v-model="card1DelegationsTab" dense align="justify" narrow-indicator indicator-color="secondary">
       <q-tab name="incoming" label="Incoming" />
       <q-tab name="outgoing" label="Outgoing" />
       <q-tab name="expiring" label="Expiring" />

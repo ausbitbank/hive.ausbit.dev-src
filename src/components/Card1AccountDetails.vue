@@ -1,7 +1,7 @@
 <template>
   <div>
   <q-card>
-    <q-tabs v-model="card1AccountDetailsTab" dense align="justify" narrow-indicator>
+    <q-tabs v-model="card1AccountDetailsTab" dense align="justify" narrow-indicator indicator-color="secondary">
       <q-tab name="account" label="Account" />
       <q-tab name="profile" label="Profile" />
       <q-tab name="resourceCredits" label="Resource Credits" />
@@ -251,7 +251,7 @@
           {{ AccountMeta.profile.name }}
         </span>
       </div>
-      <div>
+      <div v-if="AccountMeta.profile.about">
         <span class="text-bold q-pa-md">
           About
         </span>
@@ -275,7 +275,7 @@
           {{ AccountMeta.profile.location }}
         </span>
       </div>
-      <div>
+      <div v-if="AccountMeta.profile.cover_image">
         <span class="text-bold q-pa-md">
           Cover Image
         </span>
@@ -287,11 +287,16 @@
         <span class="text-bold q-pa-md">
           Profile Image
         </span>
+        <span>
+          <q-avatar>
+            <q-img :src="GetHiveAvatarUrl(A.name)" />
+          </q-avatar>
+        </span>
         <span class="q-pa-md">
           {{ AccountMeta.profile.profile_image }}
         </span>
       </div>
-      <div>
+      <div v-if="AccountMeta.profile.witness_description">
         <span class="text-bold q-pa-md">
           Witness Description
         </span>
@@ -306,7 +311,7 @@
           Current RC Status
         </span>
         <span class="q-pa-md">
-          x
+          {{ RC.percent }} %
         </span>
       </div>
       <div>
@@ -314,7 +319,7 @@
           Current RC
         </span>
         <span class="q-pa-md">
-          x
+          {{ RC.current }}
         </span>
       </div>
       <div>
@@ -322,7 +327,7 @@
           Max RC
         </span>
         <span class="q-pa-md">
-          x
+          {{ RC.max }}
         </span>
       </div>
     </q-tab-panel>
@@ -340,8 +345,8 @@
 
 <script>
 export default {
-  name: 'CardComponent',
-  props: ['A'],
+  name: 'Card1AccountDetails',
+  props: ['A', 'RC'],
   data () {
     return {
       card1AccountDetailsTab: 'account'
@@ -357,6 +362,7 @@ export default {
     }
   },
   methods: {
+    GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' }
   }
 }
 </script>

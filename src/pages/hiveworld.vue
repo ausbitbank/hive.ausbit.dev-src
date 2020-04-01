@@ -7,7 +7,7 @@
           <q-card>
             <q-splitter v-model="card1Split">
               <template v-slot:before>
-                <q-tabs v-model="card1Tab" vertical>
+                <q-tabs v-model="card1Tab" vertical indicator-color="secondary">
                   <q-tab name="stats" label="Stats" />
                   <q-tab name="balances" label="Balances" />
                   <q-tab name="accountDetails" label="Account Details" />
@@ -24,13 +24,13 @@
               <template v-slot:after>
                 <q-tab-panels v-model="card1Tab" animated swipeable vertical transition-prev="jump-up" transition-next="jump-down">
                   <q-tab-panel name="stats">
-                    <card1Stats v-if="A !== null && followCounts !== null && globalPropsHive !== null" :A="A" :followCounts="followCounts" :globalPropsHive="globalPropsHive" />
+                    <card1Stats v-if="A !== null && followCounts !== null && globalPropsHive !== null" :A="A" :followCounts="followCounts" :globalPropsHive="globalPropsHive" :upvoteValue="upvoteValue" />
                   </q-tab-panel>
                   <q-tab-panel name="balances">
                     <card1Balances v-if="A" :A="A" :globalPropsHive="globalPropsHive" />
                   </q-tab-panel>
                   <q-tab-panel name="accountDetails">
-                    <card1AccountDetails v-if="A" :A="A" :globalPropsHive="globalPropsHive" />
+                    <card1AccountDetails v-if="A" :A="A" :globalPropsHive="globalPropsHive" :RC="RC" />
                   </q-tab-panel>
                   <q-tab-panel name="witnessDetails">
                     <card1WitnessDetails :username="username" />
@@ -106,6 +106,7 @@ export default {
       rpcListHive: ['https://anyx.io', 'https://api.openhive.network', 'https://api.hive.blog'],
       globalPropsHive: null,
       accountState: null,
+      RC: { max: null, current: null, percent: null },
       card1Tab: 'stats',
       card1Split: 20,
       followCounts: null,
@@ -198,12 +199,14 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     async getFollowCount (username) {
+      hive.api.setOptions({ url: this.rpcListHive[0] })
       hive.api.getFollowCount(username, function (err, result) {
         if (err) { console.log(err) }
         this.followCounts = result
       }.bind(this))
     },
     async getFeedPrice () {
+      hive.api.setOptions({ url: this.rpcListHive[0] })
       hive.api.getCurrentMedianHistoryPrice(function (err, result) {
         if (err) { console.log(err) }
         var b = result.base.split(' ')[0]
@@ -212,10 +215,24 @@ export default {
       }.bind(this))
     },
     async getRewardFundPost () {
+      hive.api.setOptions({ url: this.rpcListHive[0] })
       hive.api.getRewardFund('post', function (err, result) {
         if (err) { console.log(err) }
         this.rewardFundPost = result
       }.bind(this))
+    },
+    async getRC (username) {
+      var url = 'https://anyx.io/v1/rc_api/find_rc_accounts?accounts=' + username
+      this.$axios.get(url)
+        .then((res) => {
+          res = res.data
+          this.RC.max = res.rc_accounts[0].max_rc
+          this.RC.current = res.rc_accounts[0].rc_manabar.current_mana
+          this.RC.percent = parseInt((this.RC.current / this.RC.max) * 100).toFixed(2)
+        })
+        .catch(() => {
+          console.log('error loading RC from anyx.io')
+        })
     }
   },
   mounted () {
@@ -228,6 +245,7 @@ export default {
     this.getFollowCount(this.username)
     this.getFeedPrice()
     this.getRewardFundPost()
+    this.getRC(this.username)
   }
 }
 </script>
