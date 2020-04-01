@@ -15,7 +15,7 @@
     "@quasar/extras": "^1.0.0",
     "axios": "^0.18.1",
     "moment": "^2.24.0",
-    "quasar": "^1.0.0",
+    "quasar": "^1.9.12",
     "steem": "^0.7.11"
   },
   "devDependencies": {

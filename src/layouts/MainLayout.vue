@@ -69,10 +69,16 @@ export default {
           link: 'https://developers.hive.io'
         },
         {
+          title: 'Hive Source',
+          caption: 'github.com/openhive-network',
+          icon: 'code',
+          link: 'https://github.com/openhive-network'
+        },
+        {
           title: 'Hive Discord',
-          caption: 'discord.gg/6UMndtu',
+          caption: 'discord.gg/xHKUjeC',
           icon: 'chat',
-          link: 'https://discord.gg/6UMndtu'
+          link: 'https://discord.gg/xHKUjeC'
         },
         {
           title: 'Hive Telegram',

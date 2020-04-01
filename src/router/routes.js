@@ -5,7 +5,8 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/Index.vue') },
-      { path: 'exodus', component: () => import('pages/exodus.vue') }
+      { path: 'exodus', component: () => import('pages/exodus.vue') },
+      { path: '@:username', component: () => import('pages/hiveworld.vue') }
     ]
   }
 ]
