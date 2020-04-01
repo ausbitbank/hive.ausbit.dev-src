@@ -122,7 +122,7 @@ export default {
       if (this.delegationData !== null) {
         var outgoingDelegations = []
         this.delegationData.forEach(el => {
-          outgoingDelegations.push({ id: el.id, delegatee: el.delegatee, amount: this.vestsToHP(el.vesting_shares.split(' ')[0]), vests: el.vesting_shares, time: el.min_delegation_time })
+          outgoingDelegations.push({ id: el.id, delegatee: el.delegatee, amount: this.mvestsToHP(el.vesting_shares.split(' ')[0]), vests: el.vesting_shares, time: el.min_delegation_time })
         })
         return outgoingDelegations
       } else {
@@ -140,8 +140,12 @@ export default {
     vestsToHP (v) {
       return ((v * this.hivePerMvests) / 1000000000000).toFixed(3)
     },
+    mvestsToHP (v) {
+      return ((v * this.hivePerMvests) / 1000000).toFixed(3)
+    },
     getExpiringDelegations (username) {
-      var q = { id: 1, jsonrpc: '2.0', method: 'call', params: ['condenser_api', 'get_expiring_vesting_delegations', [username, '2020-04-01T11:19:36', 1000]] }
+      var d = Date().toISOString
+      var q = { id: 1, jsonrpc: '2.0', method: 'call', params: ['condenser_api', 'get_expiring_vesting_delegations', [username, d, 1000]] }
       this.$axios.post(this.rpcListHive[0], q)
         .then((response) => {
           this.expiringDelegations = response.data
@@ -150,7 +154,7 @@ export default {
   },
   mounted () {
     this.getOutgoingDelegations(this.username)
-    // this.getExpiringDelegations(this.username)
+    this.getExpiringDelegations(this.username)
   }
 }
 </script>

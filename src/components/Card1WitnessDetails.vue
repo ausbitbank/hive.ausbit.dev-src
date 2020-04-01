@@ -168,7 +168,8 @@
       </span>
     </div>
     </div>
-    <q-spinner-pie v-if="witnessState === null" size="5em" color="secondary" />
+    <q-spinner-pie v-if="witnessState === null && witnessDisabled === false" size="5em" color="secondary" />
+    <div v-if="witnessDisabled">User is not a HIVE witness</div>
   </div>
 </template>
 
@@ -179,13 +180,15 @@ export default {
   props: ['username'],
   data () {
     return {
-      witnessState: null
+      witnessState: null,
+      witnessDisabled: false
     }
   },
   methods: {
     async getWitness (username) {
       hive.api.getWitnessByAccount(username, function (err, result) {
         if (err) { console.log(err) }
+        if (result === null) { this.witnessDisabled = true }
         this.witnessState = result
       }.bind(this))
     }

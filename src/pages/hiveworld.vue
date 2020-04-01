@@ -24,7 +24,7 @@
               <template v-slot:after>
                 <q-tab-panels v-model="card1Tab" animated swipeable vertical transition-prev="jump-up" transition-next="jump-down">
                   <q-tab-panel name="stats">
-                    <card1Stats v-if="A" :A="A" :followCounts="followCounts" />
+                    <card1Stats v-if="A !== null && followCounts !== null && globalPropsHive !== null" :A="A" :followCounts="followCounts" :globalPropsHive="globalPropsHive" />
                   </q-tab-panel>
                   <q-tab-panel name="balances">
                     <card1Balances v-if="A" :A="A" :globalPropsHive="globalPropsHive" />
@@ -63,6 +63,7 @@
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Account Operations'>
           <q-card>
+            {{ upvoteValue }}
             {{ accountState }}
           </q-card>
         </q-expansion-item>
@@ -107,7 +108,9 @@ export default {
       accountState: null,
       card1Tab: 'stats',
       card1Split: 20,
-      followCounts: null
+      followCounts: null,
+      feedPrice: null,
+      rewardFundPost: null
     }
   },
   components: {
@@ -150,6 +153,20 @@ export default {
     },
     rep: function () {
       return hive.formatter.reputation(this.A.reputation)
+    },
+    upvoteValue: function () {
+      if (this.A !== null && this.rewardFundPost !== null && this.feedPrice !== null) {
+        var weight = 100
+        var totalVests = parseInt(this.A.vesting_shares.split(' ')[0]) + parseInt(this.A.received_vesting_shares.split(' ')[0]) - parseInt(this.A.delegated_vesting_shares.split(' ')[0])
+        var finalVest = totalVests * 1e6
+        var power = (this.A.voting_power * weight / 10000) / 50
+        var rshares = power * finalVest / 1000
+        var estimate = rshares / parseInt(this.rewardFundPost.recent_claims) * parseInt(this.rewardFundPost.reward_balance.split(' ')[0]) * this.feedPrice
+        console.log(estimate)
+        return estimate
+      } else {
+        return null
+      }
     }
   },
   methods: {
@@ -171,6 +188,9 @@ export default {
     vestsToHP (v) {
       return ((v * this.hivePerMvests) / 1000000000000).toFixed(3)
     },
+    mvestsToHP (v) {
+      return ((v * this.hivePerMvests) / 1000000).toFixed(3)
+    },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
@@ -180,8 +200,21 @@ export default {
     async getFollowCount (username) {
       hive.api.getFollowCount(username, function (err, result) {
         if (err) { console.log(err) }
-        console.log(result)
         this.followCounts = result
+      }.bind(this))
+    },
+    async getFeedPrice () {
+      hive.api.getCurrentMedianHistoryPrice(function (err, result) {
+        if (err) { console.log(err) }
+        var b = result.base.split(' ')[0]
+        var q = result.quote.split(' ')[0]
+        this.feedPrice = b / q
+      }.bind(this))
+    },
+    async getRewardFundPost () {
+      hive.api.getRewardFund('post', function (err, result) {
+        if (err) { console.log(err) }
+        this.rewardFundPost = result
       }.bind(this))
     }
   },
@@ -193,6 +226,8 @@ export default {
     }
     this.checkUsername(this.username)
     this.getFollowCount(this.username)
+    this.getFeedPrice()
+    this.getRewardFundPost()
   }
 }
 </script>

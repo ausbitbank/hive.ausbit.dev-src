@@ -64,7 +64,7 @@
         Vesting Shares
       </span>
       <span class="q-pa-md">
-        {{ vestsToHP(A.vesting_shares.split(' ')[0]) }}
+        {{ mvestsToHP(A.vesting_shares.split(' ')[0]) }} HIVE
       </span>
       <span class="q-pa-md">
         {{ A.vesting_shares }}
@@ -76,7 +76,7 @@
         Received Vesting Shares
       </span>
       <span class="q-pa-md">
-        {{ vestsToHP(A.received_vesting_shares.split(' ')[0]) }}
+        {{ mvestsToHP(A.received_vesting_shares.split(' ')[0]) }} HIVE
       </span>
       <span class="q-pa-md">
         {{ A.received_vesting_shares.split(' ')[0] / 1e6 }} MVests
@@ -88,7 +88,7 @@
         Delegated Vesting Shares
       </span>
       <span class="q-pa-md">
-        {{ vestsToHP(A.delegated_vesting_shares.split(' ')[0])}}
+        {{ mvestsToHP(A.delegated_vesting_shares.split(' ')[0])}} HIVE
       </span>
       <span class="q-pa-md">
         {{ A.delegated_vesting_shares }}
@@ -124,7 +124,7 @@
         Vesting Withdraw Rate
       </span>
       <span class="q-pa-md">
-        {{ vestsToHP(A.vesting_withdraw_rate.split(' ')[0]) }}
+        {{ mvestsToHP(A.vesting_withdraw_rate.split(' ')[0]) }} HIVE per week
       </span>
       <span class="q-pa-md">
         {{ A.vesting_withdraw_rate }}
@@ -166,6 +166,9 @@ export default {
   methods: {
     vestsToHP (v) {
       return ((v * this.hivePerMvests) / 1000000000000).toFixed(3)
+    },
+    mvestsToHP (v) {
+      return ((v * this.hivePerMvests) / 1000000).toFixed(3)
     },
     timeDelta (timestamp) {
       var now = moment.utc()
