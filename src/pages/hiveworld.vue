@@ -1,8 +1,8 @@
 <template>
   <q-page class="flex flex-center">
-    <div>
+    <div style="min-width:50%">
       <q-spinner-pie v-if="accountState === null" color="secondary" size="5em"/>
-      <q-card style="width:1000px" v-if="accountState !== null">
+      <q-card v-if="accountState !== null">
         <q-expansion-item expand-separator icon="unfold_more" :label="Card1Title" default-opened>
           <q-card>
             <q-splitter v-model="card1Split">
@@ -51,7 +51,7 @@
                     <card1MarketInfo :username="username" />
                   </q-tab-panel>
                   <q-tab-panel name="systemInfo">
-                    <card1SystemInfo :username="username" />
+                    <card1SystemInfo :A="A" :globalPropsHive="globalPropsHive" :hivePerMvests="hivePerMvests" :rewardFundPost="rewardFundPost" />
                   </q-tab-panel>
                   <q-tab-panel name="settings">
                     <card1Settings :username="username" />
@@ -62,10 +62,7 @@
           </q-card>
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Account Operations'>
-          <q-card>
-            {{ upvoteValue }}
-            {{ accountState }}
-          </q-card>
+          <card2AccountOperations :username="username" />
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Posts'>
           <q-card>
@@ -77,6 +74,13 @@
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Tools'>
           <q-card>
+            reward fund post {{ rewardFundPost }}
+            <q-separator />
+            upvote value {{ upvoteValue }}
+            <q-separator />
+            Account state {{ accountState }}
+            <q-separator />
+            globalPropsHive {{ globalPropsHive }}
           </q-card>
         </q-expansion-item>
       </q-card>
@@ -98,6 +102,7 @@ import card1Orders from 'components/Card1Orders.vue'
 import card1MarketInfo from 'components/Card1MarketInfo.vue'
 import card1SystemInfo from 'components/Card1SystemInfo.vue'
 import card1Settings from 'components/Card1Settings.vue'
+import card2AccountOperations from 'components/Card2AccountOperations.vue'
 export default {
   name: 'Home',
   data () {
@@ -125,7 +130,8 @@ export default {
     card1Orders: card1Orders,
     card1MarketInfo: card1MarketInfo,
     card1SystemInfo: card1SystemInfo,
-    card1Settings: card1Settings
+    card1Settings: card1Settings,
+    card2AccountOperations: card2AccountOperations
   },
   computed: {
     A: function () {
