@@ -2,17 +2,6 @@
   <div>
     <div>
       <span class="text-bold q-pa-md">
-        Account Value
-      </span>
-      <span class="q-pa-md">
-        x USD
-      </span>
-      <span class="q-pa-md">
-        x EUR
-      </span>
-    </div>
-    <div>
-      <span class="text-bold q-pa-md">
         Reward Balance
       </span>
       <span class="q-pa-md">
@@ -24,7 +13,7 @@
       <span class="q-pa-md">
         {{ A.reward_vesting_steem }}
       </span>
-      <q-btn label="Claim Rewards" dense disable />
+      <claim-rewards :A="A" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -36,7 +25,7 @@
       <span class="q-pa-md">
         {{ A.sbd_balance }}
       </span>
-      <q-btn label="Transfer" dense />
+      <transfer :A="A" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -48,7 +37,7 @@
       <span class="q-pa-md">
         {{ A.savings_sbd_balance }}
       </span>
-      <q-btn label="Move To Savings" />
+      <move-to-savings :A="A" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -57,7 +46,7 @@
       <span class="q-pa-md">
         {{ A.vesting_balance }}
       </span>
-      <q-btn label="Withdraw Savings" />
+      <q-btn label="Withdraw Savings" dense rounded disable color="secondary" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -69,7 +58,7 @@
       <span class="q-pa-md">
         {{ A.vesting_shares }}
       </span>
-      <q-btn label="Power Up" />
+      <power-up :A="A" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -81,7 +70,7 @@
       <span class="q-pa-md">
         {{ A.received_vesting_shares.split(' ')[0] / 1e6 }} MVests
       </span>
-      <q-btn label="Power Down" />
+      <power-down :A="A" :globalPropsHive="globalPropsHive" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -147,12 +136,24 @@
 
 <script>
 import moment from 'moment'
+import claimRewards from 'components/claimRewards.vue'
+import transfer from 'components/Transfer.vue'
+import moveToSavings from 'components/MoveToSavings.vue'
+import powerUp from 'components/PowerUp.vue'
+import powerDown from 'components/PowerDown.vue'
 export default {
   name: 'Card1Balances',
   props: ['A', 'globalPropsHive'],
   data () {
     return {
     }
+  },
+  components: {
+    claimRewards: claimRewards,
+    transfer: transfer,
+    moveToSavings: moveToSavings,
+    powerUp: powerUp,
+    powerDown: powerDown
   },
   computed: {
     hivePerMvests: function () {

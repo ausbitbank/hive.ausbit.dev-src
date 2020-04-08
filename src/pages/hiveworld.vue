@@ -72,7 +72,7 @@
           </q-card>
         </q-expansion-item>
         <q-expansion-item popup expand-separator icon="unfold_more" label='Tools'>
-          <card5Tools :username="username" />
+          <card5Tools :username="username" v-if="globalPropsHive !== null" :globalPropsHive="globalPropsHive" />
         </q-expansion-item>
       </q-card>
     </div>

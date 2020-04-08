@@ -116,7 +116,7 @@ export default {
       hive.api.getAccountHistory(account, from, limit, function (err, result) {
         if (err) { console.log(err) }
         this.loading = false
-        this.accountHistory = result
+        this.accountHistory = result.reverse()
       }.bind(this))
     },
     getMoreHistory () {

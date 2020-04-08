@@ -57,22 +57,6 @@
     {{ A.post_count }}
   </span>
   </div>
-  <div>
-  <span class="text-bold q-pa-md">
-    Vote Count
-  </span>
-  <span>
-    x votes | x votes received
-  </span>
-  </div>
-  <div>
-  <span class="text-bold q-pa-md">
-    Voting CSI
-  </span>
-  <span>
-    x (x% self, x upvotes, x accounts, last 7d)
-  </span>
-  </div>
   </div>
 </template>
 

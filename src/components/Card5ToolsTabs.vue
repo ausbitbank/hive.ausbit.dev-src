@@ -53,8 +53,7 @@
             <div></div>
           </q-tab-panel>
           <q-tab-panel name="witnessOverview">
-            <div class="text-h5">Witness Overview</div>
-            <div></div>
+            <card5-tools-witness-overview :globalPropsHive="globalPropsHive" />
           </q-tab-panel>
         </q-tab-panels>
       </template>
@@ -64,11 +63,13 @@
 
 <script>
 import Card5ToolsManualVote from 'components/Card5ToolsManualVote.vue'
+import Card5ToolsWitnessOverview from 'components/Card5ToolsWitnessOverview'
 export default {
   name: 'Card5ToolsTab',
-  props: ['username'],
+  props: ['username', 'globalPropsHive'],
   components: {
-    Card5ToolsManualVote: Card5ToolsManualVote
+    Card5ToolsManualVote: Card5ToolsManualVote,
+    Card5ToolsWitnessOverview: Card5ToolsWitnessOverview
   },
   data () {
     return {
