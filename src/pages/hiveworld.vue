@@ -3,7 +3,7 @@
     <div style="min-width:50%">
       <q-spinner-pie v-if="accountState === null" color="secondary" size="5em"/>
       <q-card v-if="accountState !== null">
-        <q-expansion-item expand-separator icon="unfold_more" :label="Card1Title" default-opened>
+        <q-expansion-item popup expand-separator icon="unfold_more" :label="Card1Title" default-opened>
           <q-card>
             <q-splitter v-model="card1Split" separator-class="bg-deep-purple">
               <template v-slot:before>
@@ -61,26 +61,18 @@
             </q-splitter>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="unfold_more" label='Account Operations'>
+        <q-expansion-item popup expand-separator icon="unfold_more" label='Account Operations'>
           <card2AccountOperations :username="username" />
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="unfold_more" label='Posts'>
+        <q-expansion-item popup expand-separator icon="unfold_more" label='Posts'>
           <card3-posts :username="username" />
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="unfold_more" label='Coming Rewards'>
+        <q-expansion-item popup expand-separator icon="unfold_more" label='Coming Rewards'>
           <q-card>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="unfold_more" label='Tools'>
-          <q-card>
-            reward fund post {{ rewardFundPost }}
-            <q-separator />
-            upvote value {{ upvoteValue }}
-            <q-separator />
-            Account state {{ accountState }}
-            <q-separator />
-            globalPropsHive {{ globalPropsHive }}
-          </q-card>
+        <q-expansion-item popup expand-separator icon="unfold_more" label='Tools'>
+          <card5Tools :username="username" />
         </q-expansion-item>
       </q-card>
     </div>
@@ -103,6 +95,7 @@ import card1SystemInfo from 'components/Card1SystemInfo.vue'
 import card1Settings from 'components/Card1Settings.vue'
 import card2AccountOperations from 'components/Card2AccountOperations.vue'
 import card3Posts from 'components/Card3Posts.vue'
+import card5Tools from 'components/Card5ToolsTabs.vue'
 export default {
   name: 'Home',
   data () {
@@ -113,7 +106,7 @@ export default {
       accountState: null,
       RC: { max: null, current: null, percent: null },
       card1Tab: 'stats',
-      card1Split: 20,
+      card1Split: 25,
       followCounts: null,
       feedPrice: null,
       rewardFundPost: null
@@ -132,7 +125,8 @@ export default {
     card1SystemInfo: card1SystemInfo,
     card1Settings: card1Settings,
     card2AccountOperations: card2AccountOperations,
-    card3Posts: card3Posts
+    card3Posts: card3Posts,
+    card5Tools: card5Tools
   },
   computed: {
     A: function () {

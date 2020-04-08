@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-list bordered>
-      <q-expansion-item v-for="post in posts" :key="post.index" :label="post.title" group="posts">
+      <q-expansion-item popup v-for="post in posts" :key="post.index" :label="post.title" group="posts">
         <card3-posts-tabs :post="post" />
       </q-expansion-item>
     </q-list>
