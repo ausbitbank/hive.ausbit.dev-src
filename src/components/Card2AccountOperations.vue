@@ -1,6 +1,6 @@
 <template>
   <q-card v-if="this.accountHistory.length !== 0" style="max-height: 90vh; width: 90vw">
-    <q-splitter v-model="card2Split">
+    <q-splitter v-model="card2Split" separator-class="bg-deep-purple">
       <template v-slot:before>
         <q-tabs v-model="card2Tab" vertical indicator-color="secondary">
           <q-tab name="0" label="Today" />
@@ -117,9 +117,6 @@ export default {
         if (err) { console.log(err) }
         this.loading = false
         this.accountHistory = result
-        console.log('response recieved, now accountHistory contains ' + this.accountHistory.length + ' items')
-        console.log('last item in arrays timestamp:')
-        console.log(this.accountHistory[this.accountHistory.length - 1][1].timestamp)
       }.bind(this))
     },
     getMoreHistory () {
@@ -127,11 +124,6 @@ export default {
       this.loading = true
       // var from = this.accountHistory.length - 1
       var from = -1
-      var daysago = this.getDaysAgo(this.accountHistory[this.accountHistory.length - 1][1].timestamp)
-      console.log('last item in arrays timestamp:')
-      console.log(this.accountHistory[this.accountHistory.length - 1][1].timestamp)
-      console.log('from: ' + from)
-      console.log(daysago)
       this.getAccountHistory(this.username, from, 10000)
     },
     getDaysAgo (timestamp) {

@@ -16,7 +16,8 @@
     "axios": "^0.18.1",
     "moment": "^2.24.0",
     "quasar": "^1.9.12",
-    "steem": "^0.7.11"
+    "steem": "^0.7.11",
+    "steem-content-renderer": "^2.1.1"
   },
   "devDependencies": {
     "@quasar/app": "^1.0.0",

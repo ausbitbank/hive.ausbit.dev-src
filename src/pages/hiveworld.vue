@@ -5,7 +5,7 @@
       <q-card v-if="accountState !== null">
         <q-expansion-item expand-separator icon="unfold_more" :label="Card1Title" default-opened>
           <q-card>
-            <q-splitter v-model="card1Split">
+            <q-splitter v-model="card1Split" separator-class="bg-deep-purple">
               <template v-slot:before>
                 <q-tabs v-model="card1Tab" vertical indicator-color="secondary">
                   <q-tab name="stats" label="Stats" />
@@ -65,8 +65,7 @@
           <card2AccountOperations :username="username" />
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Posts'>
-          <q-card>
-          </q-card>
+          <card3-posts :username="username" />
         </q-expansion-item>
         <q-expansion-item expand-separator icon="unfold_more" label='Coming Rewards'>
           <q-card>
@@ -103,6 +102,7 @@ import card1MarketInfo from 'components/Card1MarketInfo.vue'
 import card1SystemInfo from 'components/Card1SystemInfo.vue'
 import card1Settings from 'components/Card1Settings.vue'
 import card2AccountOperations from 'components/Card2AccountOperations.vue'
+import card3Posts from 'components/Card3Posts.vue'
 export default {
   name: 'Home',
   data () {
@@ -131,7 +131,8 @@ export default {
     card1MarketInfo: card1MarketInfo,
     card1SystemInfo: card1SystemInfo,
     card1Settings: card1Settings,
-    card2AccountOperations: card2AccountOperations
+    card2AccountOperations: card2AccountOperations,
+    card3Posts: card3Posts
   },
   computed: {
     A: function () {
@@ -163,11 +164,17 @@ export default {
     },
     upvoteValue: function () {
       if (this.A !== null && this.rewardFundPost !== null && this.feedPrice !== null) {
-        var weight = 100
+        console.log('upvote value calc')
+        var weight = 10000
         var totalVests = parseInt(this.A.vesting_shares.split(' ')[0]) + parseInt(this.A.received_vesting_shares.split(' ')[0]) - parseInt(this.A.delegated_vesting_shares.split(' ')[0])
+        console.log(totalVests)
         var finalVest = totalVests * 1e6
+        console.log(finalVest)
         var power = (this.A.voting_power * weight / 10000) / 50
+        console.log(power)
         var rshares = power * finalVest / 1000
+        console.log(rshares)
+        console.log(this.feedPrice)
         var estimate = rshares / parseInt(this.rewardFundPost.recent_claims) * parseInt(this.rewardFundPost.reward_balance.split(' ')[0]) * this.feedPrice
         console.log(estimate)
         return estimate
