@@ -4,6 +4,8 @@
 </template>
 <style>
 .postview { overflow: scroll; max-height: 500px  }
+a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
+a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95% }
 </style>
 <script>

@@ -13,7 +13,7 @@
       Vote Amount
     </span>
     <span>
-      $ {{ upvoteValue }}
+      $ {{ upvoteValue }} (wrong!)
     </span>
   </div>
   <div>
@@ -30,7 +30,6 @@
   </span>
   <span>
     {{ votePowerRechargeTime }}
-    <!-- in 1d 15h 56m | Tomorrow, 19:36 (example) -->
   </span>
   </div>
   <div>

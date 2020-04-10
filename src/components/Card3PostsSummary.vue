@@ -6,7 +6,9 @@
           Created
         </span>
         <span>
-          {{ post.created }}
+          {{ timeDiff(post.created) }} | {{ post.created }}
+        </span>
+        <span>
         </span>
       </div>
       <div>
@@ -14,7 +16,7 @@
           Payout Time
         </span>
         <span>
-          {{ post.cashout_time }}
+          {{ timeDiff(post.cashout_time) }} | {{ post.cashout_time }}
         </span>
       </div>
       <div>
@@ -75,7 +77,7 @@
           Users
         </span>
         <span>
-          <q-chip v-for="tag in postMeta.tags" :label="tag" :key="tag.index" />
+          <q-chip v-for="user in postMeta.users" :label="user" :key="user.index" />
         </span>
       </div>
       <div v-if="postMeta.app">
@@ -91,6 +93,7 @@
 </template>
 
 <script>
+import moment from 'moment'
 export default {
   name: 'Card3PostsSummary',
   props: ['post'],
@@ -108,6 +111,9 @@ export default {
     }
   },
   methods: {
+    timeDiff (when) {
+      return moment(when).fromNow()
+    }
   }
 }
 </script>

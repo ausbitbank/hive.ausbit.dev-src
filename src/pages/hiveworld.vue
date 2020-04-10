@@ -80,7 +80,7 @@
     </div>
   </q-page>
 </template>
-<style scoped>
+<style>
 a { color: secondary }
 </style>
 <script>

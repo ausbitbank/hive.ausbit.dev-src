@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-list bordered>
-      <q-expansion-item popup v-for="post in posts" :key="post.index" :label="post.title" group="posts">
+      <q-expansion-item popup v-for="post in posts" :key="post.index" :label="postHeading(post)" icon="mode_comment" group="posts" dense dense-toggle>
         <card3-posts-tabs :post="post" />
       </q-expansion-item>
     </q-list>
@@ -31,6 +31,17 @@ export default {
         console.log(result)
         this.posts = result
       }.bind(this))
+    },
+    postHeading (post) {
+      var rewards = ''
+      if (parseFloat(post.total_payout_value.split(' ')[0]) > 0) {
+        rewards = post.total_payout_value
+      } else if (parseFloat(post.pending_payout_value.split(' ')[0]) > 0) {
+        rewards = post.pending_payout_value
+      } else {
+        rewards = '0.000 HBD'
+      }
+      return post.title + ' | ' + rewards
     }
   },
   mounted () {
