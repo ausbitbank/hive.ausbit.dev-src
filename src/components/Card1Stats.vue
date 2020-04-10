@@ -5,7 +5,7 @@
       Effective Power
     </span>
     <span>
-      {{ effectiveHP }} ({{ baseHP }} + {{ receivedHP }} - {{ sentHP }} )
+      {{ effectiveHP }} HP ({{ baseHP }} + {{ receivedHP }} - {{ sentHP }} )
     </span>
   </div>
   <div>

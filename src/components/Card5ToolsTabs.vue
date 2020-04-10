@@ -1,6 +1,6 @@
 <template>
   <q-card>
-    <q-splitter v-model="card5Split" separator-class="bg-deep-purple">
+    <q-splitter v-model="card5Split" separator-class="bg-indigo-9">
       <template v-slot:before>
         <q-tabs v-model="card5Tab" vertical indicator-color="secondary">
           <q-tab name="accountCreator" label="Account Creator" />

@@ -6,7 +6,7 @@
       </q-card>
       <q-card class="row">
         <form @submit.prevent.stop="$router.replace({ path: '@' + username })" @reset.prevent.stop="onReset" class="q-gutter-md">
-          <q-input clearable filled v-model="username" label="Username" />
+          <q-input filled v-model="username" label="Username" />
           <q-btn color="secondary" label="View User" type="submit" />
         </form>
       </q-card>

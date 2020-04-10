@@ -1,6 +1,6 @@
 <template>
   <q-card v-if="this.accountHistory.length !== 0" style="max-height: 90vh; width: 90vw">
-    <q-splitter v-model="card2Split" separator-class="bg-deep-purple">
+    <q-splitter v-model="card2Split" separator-class="bg-teal-7">
       <template v-slot:before>
         <q-tabs v-model="card2Tab" vertical indicator-color="secondary">
           <q-tab name="0" label="Today" />

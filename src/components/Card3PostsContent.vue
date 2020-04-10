@@ -3,7 +3,8 @@
   </div>
 </template>
 <style>
-.postView img { max-width: 95% !important; }
+.postview { overflow: scroll; max-height: 500px  }
+img { max-width: 95%; max-height: 95% }
 </style>
 <script>
 import { DefaultRenderer } from 'steem-content-renderer'

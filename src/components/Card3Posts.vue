@@ -1,5 +1,5 @@
 <template>
-  <div style="max-height:90vh; max-width: 90vw">
+  <div style="max-height:90vh; max-width: 90vw overflow:scroll">
     <q-card>
       <q-tabs v-model="card3PostsTab" dense align="justify" narrow-indicator indicator-color="secondary">
         <q-tab name="active" label="Active" />

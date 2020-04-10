@@ -1,9 +1,6 @@
 <template>
   <div>
     <q-table title="Votes" :data="voteData" :columns="voteColumns" row-key="voter" />
-    <div v-for="vote in post.active_votes" :key="vote.index">
-      {{ vote }}
-    </div>
   </div>
 </template>
 

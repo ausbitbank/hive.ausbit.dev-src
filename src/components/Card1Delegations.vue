@@ -10,20 +10,25 @@
     <q-separator />
     <q-tab-panels v-model="card1DelegationsTab" animated>
     <q-tab-panel name="incoming">
-      <q-table title="Incoming Delegations Currently Unavailable" :data="incomingDeleData" :columns="incomingDeleColumns" row-key="id" />
+      <q-table title="Incoming Delegations Coming Soon" :data="incomingDeleData" :columns="incomingDeleColumns" row-key="id" />
     </q-tab-panel>
     <q-tab-panel name="outgoing">
       <q-table title="Outgoing Delegations" :data="outgoingDeleData" :columns="outgoingDeleColumns" row-key="id" />
     </q-tab-panel>
-    <q-tab-panel name="expiring">
-      {{ expiringDelegations }}
+    <q-tab-panel name="expiring" v-if="expiringDelegations">
+      <div v-if="expiringDelegations.length > 0">
+        {{ expiringDelegations }}
+      </div>
+      <div v-else>
+        No expiring delegations found
+      </div>
     </q-tab-panel>
     <q-tab-panel name="delegate">
-      You have x HP available for delegation.
+      You have {{ availableHP }} HP available for delegation.
       Who would you like to delegate to ?
-      <q-input label="Delegatee" />
+      <q-input label="Delegatee" v-model="delegatee" />
       How much would you like to delegate ?
-      <q-input label="Delegation Amount (HP)" />
+      <q-input label="Delegation Amount (HP)" v-model="amount" />
       <q-btn label="Delegate" />
     </q-tab-panel>
   </q-tab-panels>
@@ -35,9 +40,11 @@
 import hive from 'steem'
 export default {
   name: 'Card1Delegations',
-  props: ['username', 'hivePerMvests', 'rpcListHive'],
+  props: ['A', 'username', 'hivePerMvests', 'rpcListHive'],
   data () {
     return {
+      delegatee: '',
+      amount: 0,
       card1DelegationsTab: 'incoming',
       delegationData: null,
       expiringDelegations: null,
@@ -128,6 +135,21 @@ export default {
       } else {
         return []
       }
+    },
+    baseHP: function () {
+      return this.mvestsToHP(parseInt(this.A.vesting_shares.split(' ')[0]))
+    },
+    receivedHP: function () {
+      return this.mvestsToHP(parseInt(this.A.received_vesting_shares.split(' ')[0]))
+    },
+    sentHP: function () {
+      return this.mvestsToHP(parseInt(this.A.delegated_vesting_shares.split(' ')[0]))
+    },
+    effectiveHP: function () {
+      return ((parseInt(this.baseHP) + parseInt(this.receivedHP)) - parseInt(this.sentHP))
+    },
+    availableHP: function () { // Available for delegations
+      return parseInt(this.baseHP) - parseInt(this.sentHP)
     }
   },
   methods: {
@@ -144,17 +166,22 @@ export default {
       return ((v * this.hivePerMvests) / 1000000).toFixed(3)
     },
     getExpiringDelegations (username) {
-      var d = Date().toISOString
+      var d = new Date().toISOString().split('.')[0]
       var q = { id: 1, jsonrpc: '2.0', method: 'call', params: ['condenser_api', 'get_expiring_vesting_delegations', [username, d, 1000]] }
       this.$axios.post(this.rpcListHive[0], q)
         .then((response) => {
-          this.expiringDelegations = response.data
+          this.expiringDelegations = response.data.result
         })
+    },
+    delegateKeychain (who, hp) {
+      window.hive_keychain.requestDelegation(this.A.name, who, hp.toFixed(3), 'HP', function (response) {
+        console.log(response)
+      })
     }
   },
   mounted () {
-    this.getOutgoingDelegations(this.username)
-    this.getExpiringDelegations(this.username)
+    this.getOutgoingDelegations(this.A.name)
+    this.getExpiringDelegations(this.A.name)
   }
 }
 </script>

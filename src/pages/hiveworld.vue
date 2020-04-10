@@ -1,13 +1,14 @@
 <template>
   <q-page class="flex flex-center">
-    <div style="min-width:50%">
-      <q-spinner-pie v-if="accountState === null" color="secondary" size="5em"/>
-      <q-card v-if="accountState !== null">
-        <q-expansion-item popup expand-separator icon="unfold_more" :label="Card1Title" default-opened>
+    <q-spinner-pie v-if="A === null" color="secondary" size="5em"/>
+    <div style="min-width:50%" v-if="A !== null && rewardFundPost !== null">
+      <!-- <q-card v-if="accountState !== null"> -->
+        <div>
+        <q-expansion-item expand-separator icon="account_balance_wallet" expand-icon="unfold_more" expanded-icon="unfold_less" :label="Card1Title" default-opened header-class="bg-secondary text-white" expand-icon-class="text-white" class="rounded-borders">
           <q-card>
-            <q-splitter v-model="card1Split" separator-class="bg-deep-purple">
+            <q-splitter v-model="card1Split" separator-class="bg-secondary">
               <template v-slot:before>
-                <q-tabs v-model="card1Tab" vertical indicator-color="secondary">
+                <q-tabs v-model="card1Tab" vertical indicator-color="white">
                   <q-tab name="stats" label="Stats" />
                   <q-tab name="balances" label="Balances" />
                   <q-tab name="accountDetails" label="Account Details" />
@@ -22,21 +23,21 @@
                 </q-tabs>
               </template>
               <template v-slot:after>
-                <q-tab-panels v-model="card1Tab" animated swipeable vertical transition-prev="jump-up" transition-next="jump-down">
+                <q-tab-panels v-model="card1Tab" animated swipeable vertical transition-prev="jump-up" transition-next="jump-down" v-if="A !== null">
                   <q-tab-panel name="stats">
-                    <card1Stats v-if="A !== null && followCounts !== null && globalPropsHive !== null" :A="A" :followCounts="followCounts" :globalPropsHive="globalPropsHive" :upvoteValue="upvoteValue" />
+                    <card1Stats v-if="followCounts !== null && globalPropsHive !== null" :A="A" :followCounts="followCounts" :globalPropsHive="globalPropsHive" :upvoteValue="upvoteValue" />
                   </q-tab-panel>
                   <q-tab-panel name="balances">
-                    <card1Balances v-if="A" :A="A" :globalPropsHive="globalPropsHive" />
+                    <card1Balances :A="A" :globalPropsHive="globalPropsHive" />
                   </q-tab-panel>
                   <q-tab-panel name="accountDetails">
-                    <card1AccountDetails v-if="A" :A="A" :globalPropsHive="globalPropsHive" :RC="RC" />
+                    <card1AccountDetails :A="A" :globalPropsHive="globalPropsHive" :RC="RC" />
                   </q-tab-panel>
                   <q-tab-panel name="witnessDetails">
                     <card1WitnessDetails :username="username" />
                   </q-tab-panel>
                   <q-tab-panel name="delegations">
-                    <card1Delegations :username="username" :hivePerMvests="hivePerMvests" :rpcListHive="rpcListHive" />
+                    <card1Delegations :username="username" :hivePerMvests="hivePerMvests" :rpcListHive="rpcListHive" :A="A" />
                   </q-tab-panel>
                   <q-tab-panel name="followers">
                     <card1Followers :username="username" :followCounts="followCounts" />
@@ -61,24 +62,27 @@
             </q-splitter>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item popup expand-separator icon="unfold_more" label='Account Operations'>
+        </div>
+        <q-expansion-item expand-separator icon="list_alt" expand-icon="unfold_more" expanded-icon="unfold_less" label='Account Operations' header-class="bg-teal-7 text-white">
           <card2AccountOperations :username="username" />
         </q-expansion-item>
-        <q-expansion-item popup expand-separator icon="unfold_more" label='Posts'>
+        <q-expansion-item expand-separator icon="message" expand-icon="unfold_more" expanded-icon="unfold_less" label='Posts' header-class="bg-purple-8 text-white scroll">
           <card3-posts :username="username" />
         </q-expansion-item>
-        <q-expansion-item popup expand-separator icon="unfold_more" label='Coming Rewards'>
+        <q-expansion-item expand-separator icon="monetization_on" expand-icon="unfold_more" expanded-icon="unfold_less" label='Coming Rewards' header-class="bg-deep-orange-8 text-white">
           <q-card>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item popup expand-separator icon="unfold_more" label='Tools'>
+        <q-expansion-item expand-separator icon="settings" expand-icon="unfold_more" expanded-icon="unfold_less" label='Tools' header-class="bg-indigo-9 text-white">
           <card5Tools :username="username" v-if="globalPropsHive !== null" :globalPropsHive="globalPropsHive" />
         </q-expansion-item>
-      </q-card>
+      <!-- </q-card> -->
     </div>
   </q-page>
 </template>
-
+<style scoped>
+a { color: secondary }
+</style>
 <script>
 import hive from 'steem'
 import moment from 'moment'
@@ -144,7 +148,7 @@ export default {
       }
     },
     Card1Title: function () {
-      return this.username + ' (' + this.rep + ') | Feed | Wallet'
+      return this.username + ' (' + this.rep + ') | Wallet'
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {
@@ -157,21 +161,25 @@ export default {
       return hive.formatter.reputation(this.A.reputation)
     },
     upvoteValue: function () {
-      if (this.A !== null && this.rewardFundPost !== null && this.feedPrice !== null) {
-        console.log('upvote value calc')
-        var weight = 10000
-        var totalVests = parseInt(this.A.vesting_shares.split(' ')[0]) + parseInt(this.A.received_vesting_shares.split(' ')[0]) - parseInt(this.A.delegated_vesting_shares.split(' ')[0])
-        console.log(totalVests)
-        var finalVest = totalVests * 1e6
-        console.log(finalVest)
-        var power = (this.A.voting_power * weight / 10000) / 50
-        console.log(power)
-        var rshares = power * finalVest / 1000
-        console.log(rshares)
-        console.log(this.feedPrice)
-        var estimate = rshares / parseInt(this.rewardFundPost.recent_claims) * parseInt(this.rewardFundPost.reward_balance.split(' ')[0]) * this.feedPrice
-        console.log(estimate)
-        return estimate
+      if (this.A !== null && this.rewardFundPost && this.feedPrice !== null) {
+        var myVests = parseFloat(this.A.vesting_shares.split(' ')[0]) + parseFloat(this.A.received_vesting_shares.split(' ')[0]) - parseFloat(this.A.delegated_vesting_shares.split(' ')[0])
+        myVests = myVests * 1000000
+        console.log('my vests: ' + myVests)
+        var myVotePower = myVests * 0.02 // Assuming 100% VP, 100% weight
+        var recentClaims = parseFloat(this.rewardFundPost.recent_claims)
+        console.log('recent claims: ' + recentClaims)
+        var myInfluencePercent = myVotePower / recentClaims
+        console.log('my influence percent: ' + myInfluencePercent)
+        var rewardBalance = parseFloat(this.rewardFundPost.reward_balance.split(' ')[0])
+        console.log('reward balance: ' + rewardBalance)
+        var rewardsPerShare = rewardBalance / parseFloat(this.rewardFundPost.recent_claims)
+        console.log('rewardsPerShare: ' + rewardsPerShare)
+        var voteValueHive = myInfluencePercent * rewardBalance
+        console.log('value in hive: ' + voteValueHive)
+        console.log('feed price: ' + this.feedPrice)
+        var voteValueDollars = voteValueHive * this.feedPrice
+        console.log('value in dollars: ' + voteValueDollars)
+        return voteValueDollars
       } else {
         return null
       }
@@ -235,7 +243,7 @@ export default {
           res = res.data
           this.RC.max = res.rc_accounts[0].max_rc
           this.RC.current = res.rc_accounts[0].rc_manabar.current_mana
-          this.RC.percent = parseInt((this.RC.current / this.RC.max) * 100).toFixed(2)
+          this.RC.percent = parseFloat((this.RC.current / this.RC.max) * 100).toFixed(2)
         })
         .catch(() => {
           console.log('error loading RC from anyx.io')
