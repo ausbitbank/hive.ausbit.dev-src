@@ -13,11 +13,13 @@
       <q-table title="Incoming Delegations Coming Soon" :data="incomingDeleData" :columns="incomingDeleColumns" row-key="id" />
     </q-tab-panel>
     <q-tab-panel name="outgoing">
-      <q-table title="Outgoing Delegations" :data="outgoingDeleData" :columns="outgoingDeleColumns" row-key="id" />
+      <q-table title="Outgoing Delegations" :data="outgoingDeleData" :columns="outgoingDeleColumns" row-key="id" dense />
     </q-tab-panel>
     <q-tab-panel name="expiring" v-if="expiringDelegations">
       <div v-if="expiringDelegations.length > 0">
-        {{ expiringDelegations }}
+        <div v-for="dele in expiringDelegations" :key="dele.index">
+          Delegation of {{ dele.vesting_shares }} with ID {{ dele.id }} expires at {{ dele.expiration }}
+        </div>
       </div>
       <div v-else>
         No expiring delegations found
@@ -29,7 +31,7 @@
       <q-input label="Delegatee" v-model="delegatee" />
       How much would you like to delegate ?
       <q-input label="Delegation Amount (HP)" v-model="amount" />
-      <q-btn label="Delegate" />
+      <q-btn label="Delegate" @click="delegateKeychain(delegatee, parseFloat(amount.toFixed(3)))" color="secondary" />
     </q-tab-panel>
   </q-tab-panels>
   </q-card>

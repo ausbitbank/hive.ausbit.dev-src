@@ -1,6 +1,6 @@
 <template>
-  <q-item v-if="tx">
-    <q-item-section class="row full-width">
+  <q-item v-if="tx" dense>
+    <q-item-section class="row">
       <q-expansion-item dense dense-toggle>
         <template v-slot:header>
           <q-item-section avatar>
@@ -53,6 +53,15 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption lines="1">{{ op.permlink }}</q-item-label>
+          </div>
+          <div v-else-if="opType === 'delegate_vesting_shares'">
+            <q-item-section>
+              <q-item-label>
+                Delegation to {{ op.delegatee }}
+              </q-item-label>
+            </q-item-section>
+            <q-item-label caption lines="1" v-if="op.vesting_shares === '0.000000 VESTS'">Removed by {{ op.delegator }}</q-item-label>
+            <q-item-label caption lines="1" v-else>{{ op.vesting_shares }} from {{ op.delegator }}</q-item-label>
           </div>
           <div v-else-if="opType === 'feed_publish'">
             <q-item-section>
@@ -118,7 +127,8 @@
                 Custom JSON
               </q-item-label>
             </q-item-section>
-            <q-item-label caption lines="1">ID: {{ op.id }}</q-item-label>
+            <q-item-label caption lines="1" v-if="op.id === 'notify' && JSON.parse(op.json)[0] === 'setLastRead'">Marked notifications as read</q-item-label>
+            <q-item-label caption lines="1" v-else>ID: {{ op.id }}</q-item-label>
           </div>
           <div v-else-if="opType === 'transfer'">
             <q-item-section>
@@ -248,6 +258,8 @@ export default {
           return 'red-10'
         case 'transfer_to_vesting':
           return 'red-8'
+        case 'delegate_vesting_shares':
+          return 'red-9'
         case 'claim_reward_balance':
           return 'deep-purple-6'
         case 'account_witness_vote':

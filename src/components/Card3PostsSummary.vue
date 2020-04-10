@@ -67,12 +67,12 @@
           <a :href="postLink" target="_blank">{{ post.url }}</a>
         </span>
       </div>
-      <div v-if="postMeta.tags.length > 0">
+      <div v-if="postMeta.tags">
         <span class="text-bold q-pa-md">
           Tags
         </span>
         <span>
-          <q-chip v-for="tag in postMeta.tags" :label="tag" :key="tag.index" />
+          <q-chip v-for="tag in postMeta.tags" :label="tag" :key="tag.index" clickable @click="$router.replace('https://peakd.com/trending/' + tag); $router.go(0)"/>
         </span>
       </div>
       <div v-if="postMeta.users">
@@ -80,7 +80,7 @@
           Users
         </span>
         <span>
-          <q-chip v-for="user in postMeta.users" :label="user" :key="user.index" />
+          <q-chip v-for="user in postMeta.users" :label="user" :key="user.index" clickable @click="$router.replace({ path: '@' + user}); $router.go(0)" />
         </span>
       </div>
       <div v-if="postMeta.app">

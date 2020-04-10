@@ -6,7 +6,7 @@
 .postview { overflow: auto; max-height: 100vh  }
 a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
-img { max-width: 95%; max-height: 95% }
+img { max-width: 95%; max-height: 95%; text-align: center}
 </style>
 <script>
 import { DefaultRenderer } from 'steem-content-renderer'

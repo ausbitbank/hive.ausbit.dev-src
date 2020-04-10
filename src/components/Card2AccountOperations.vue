@@ -1,5 +1,5 @@
 <template>
-  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 100%; width: 90vw">
+  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 100%; max-width: 80vw" bordered>
     <q-splitter v-model="card2Split" unit="px" separator-class="bg-teal-7">
       <template v-slot:before>
         <q-tabs v-model="card2Tab" vertical indicator-color="secondary">

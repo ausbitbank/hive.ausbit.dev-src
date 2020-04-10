@@ -1,5 +1,5 @@
 <template>
-  <q-card>
+  <q-card bordered>
     <q-splitter v-model="card5Split" unit="px" separator-class="bg-indigo-9">
       <template v-slot:before>
         <q-tabs v-model="card5Tab" vertical indicator-color="secondary">

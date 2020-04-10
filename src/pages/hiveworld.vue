@@ -3,10 +3,9 @@
     <q-spinner-pie v-if="A === null" color="secondary" size="5em"/>
     <div style="min-width:50%" v-if="A !== null && rewardFundPost !== null">
       <!-- <q-card v-if="accountState !== null"> -->
-        <div>
-        <q-expansion-item expand-separator icon="account_balance_wallet" expand-icon="unfold_more" expanded-icon="unfold_less" :label="Card1Title" default-opened header-class="bg-secondary text-white" expand-icon-class="text-white" class="rounded-borders">
-          <q-card>
-            <q-splitter v-model="card1Split" separator-class="bg-secondary">
+        <q-expansion-item expand-separator icon="account_balance_wallet" expand-icon="unfold_more" expanded-icon="unfold_less" :label="Card1Title" default-opened header-class="bg-secondary text-white sectionHeader shadow-5" expand-icon-class="text-white">
+          <q-card bordered>
+            <q-splitter v-model="card1Split" unit="px" separator-class="bg-secondary">
               <template v-slot:before>
                 <q-tabs v-model="card1Tab" vertical indicator-color="white">
                   <q-tab name="stats" label="Stats" />
@@ -62,18 +61,17 @@
             </q-splitter>
           </q-card>
         </q-expansion-item>
-        </div>
-        <q-expansion-item expand-separator icon="list_alt" expand-icon="unfold_more" expanded-icon="unfold_less" label='Account Operations' header-class="bg-teal-7 text-white">
+        <q-expansion-item expand-separator icon="list_alt" expand-icon="unfold_more" expanded-icon="unfold_less" label='Account Operations' header-class="bg-teal-7 text-white sectionHeader">
           <card2AccountOperations :username="username" />
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="message" expand-icon="unfold_more" expanded-icon="unfold_less" label='Posts' header-class="bg-purple-8 text-white scroll">
+        <q-expansion-item expand-separator icon="message" expand-icon="unfold_more" expanded-icon="unfold_less" label='Posts' header-class="bg-purple-8 text-white scroll sectionHeader">
           <card3-posts :username="username" />
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="monetization_on" expand-icon="unfold_more" expanded-icon="unfold_less" label='Coming Rewards' header-class="bg-deep-orange-8 text-white">
+        <q-expansion-item expand-separator icon="monetization_on" expand-icon="unfold_more" expanded-icon="unfold_less" label='Coming Rewards' header-class="bg-deep-orange-8 text-white sectionHeader">
           <q-card>
           </q-card>
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="settings" expand-icon="unfold_more" expanded-icon="unfold_less" label='Tools' header-class="bg-indigo-9 text-white">
+        <q-expansion-item expand-separator icon="settings" expand-icon="unfold_more" expanded-icon="unfold_less" label='Tools' header-class="bg-indigo-9 text-white sectionHeader">
           <card5Tools :username="username" v-if="globalPropsHive !== null" :globalPropsHive="globalPropsHive" />
         </q-expansion-item>
       <!-- </q-card> -->
@@ -82,6 +80,14 @@
 </template>
 <style>
 a { color: secondary }
+.sectionHeader {
+-webkit-border-top-left-radius: 90px;
+-webkit-border-top-right-radius: 90px;
+-moz-border-radius-topleft: 90px;
+-moz-border-radius-topright: 90px;
+border-top-left-radius: 90px;
+border-top-right-radius: 90px;
+}
 </style>
 <script>
 import hive from 'steem'
@@ -110,7 +116,7 @@ export default {
       accountState: null,
       RC: { max: null, current: null, percent: null },
       card1Tab: 'stats',
-      card1Split: '150px',
+      card1Split: 150,
       followCounts: null,
       feedPrice: null,
       rewardFundPost: null
@@ -131,6 +137,9 @@ export default {
     card2AccountOperations: card2AccountOperations,
     card3Posts: card3Posts,
     card5Tools: card5Tools
+  },
+  watch: {
+    '$route.path': 'init'
   },
   computed: {
     A: function () {
@@ -248,19 +257,21 @@ export default {
         .catch(() => {
           console.log('error loading RC from anyx.io')
         })
+    },
+    init () {
+      this.getGlobalPropsHive()
+      if (this.$router.currentRoute.params.username) {
+        this.username = this.$router.currentRoute.params.username
+      }
+      this.checkUsername(this.username)
+      this.getFollowCount(this.username)
+      this.getFeedPrice()
+      this.getRewardFundPost()
+      this.getRC(this.username)
     }
   },
   mounted () {
-    this.getGlobalPropsHive()
-    // TODO Get username from url , otherwise pop dialog to ask user
-    if (this.$router.currentRoute.params.username) {
-      this.username = this.$router.currentRoute.params.username
-    }
-    this.checkUsername(this.username)
-    this.getFollowCount(this.username)
-    this.getFeedPrice()
-    this.getRewardFundPost()
-    this.getRC(this.username)
+    this.init()
   }
 }
 </script>

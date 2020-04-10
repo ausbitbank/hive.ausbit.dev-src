@@ -1,6 +1,6 @@
 <template>
   <div v-if="accountHistory !== null" class="row overflow-auto" style="max-height: 95vh">
-    <q-intersection v-for="tx in accountHistory.filter(filterDaysAgo)" :key="tx.index" transition="fade" class="txC">
+    <q-intersection v-for="tx in accountHistory.filter(filterDaysAgo)" :key="tx.index" class="txC">
       <txView :tx="tx" :username="username" />
     </q-intersection>
   </div>

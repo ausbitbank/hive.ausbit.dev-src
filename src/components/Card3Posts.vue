@@ -1,6 +1,6 @@
 <template>
   <div style="max-height:100%; max-width: 90vw; overflow:auto">
-    <q-card>
+    <q-card bordered>
       <q-tabs v-model="card3PostsTab" dense align="justify" narrow-indicator indicator-color="secondary">
         <q-tab name="active" label="Active" />
         <q-tab name="finished" label="Finished" />
