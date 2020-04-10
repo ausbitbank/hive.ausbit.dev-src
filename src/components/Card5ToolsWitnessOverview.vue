@@ -2,7 +2,6 @@
   <div>
     <div class="text-h5">Witness Overview</div>
     <q-table dense :data="witnessData" :columns="witnessColumns" row-key="id" :pagination.sync="pagination" />
-    <div>{{ witnessData }}</div>
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-table title="Votes" :data="voteData" :columns="voteColumns" row-key="voter" />
+    <q-table title="Votes" :data="voteData" :columns="voteColumns" row-key="voter" style="max-height: 100vh"/>
   </div>
 </template>
 

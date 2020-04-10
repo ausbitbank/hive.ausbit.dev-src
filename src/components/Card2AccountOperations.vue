@@ -1,6 +1,6 @@
 <template>
-  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 90vh; width: 90vw">
-    <q-splitter v-model="card2Split" separator-class="bg-teal-7">
+  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 100%; width: 90vw">
+    <q-splitter v-model="card2Split" unit="px" separator-class="bg-teal-7">
       <template v-slot:before>
         <q-tabs v-model="card2Tab" vertical indicator-color="secondary">
           <q-tab name="0" label="Today" />
@@ -89,7 +89,7 @@ export default {
   data () {
     return {
       card2Tab: '0',
-      card2Split: 20,
+      card2Split: 200,
       accountHistory: [],
       limit: 1000,
       allowLoadMore: true,

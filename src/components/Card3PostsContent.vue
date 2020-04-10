@@ -3,7 +3,7 @@
   </div>
 </template>
 <style>
-.postview { overflow: scroll; max-height: 500px  }
+.postview { overflow: auto; max-height: 100vh  }
 a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95% }

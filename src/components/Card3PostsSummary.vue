@@ -23,7 +23,10 @@
         <span class="text-bold q-pa-md">
           Payout Total
         </span>
-        <span>
+        <span v-if="post.cashout_time.startsWith('1969')">
+          {{ post.total_payout_value }}
+        </span>
+        <span v-else>
           {{ post.pending_payout_value }}
         </span>
       </div>
@@ -61,7 +64,7 @@
           Link
         </span>
         <span>
-          {{ post.url }}
+          <a :href="postLink" target="_blank">{{ post.url }}</a>
         </span>
       </div>
       <div v-if="postMeta.tags.length > 0">
@@ -108,6 +111,9 @@ export default {
       } else {
         return JSON.parse(this.post.json_metadata)
       }
+    },
+    postLink: function () {
+      return 'https://peakd.com/@' + this.post.author + '/' + this.post.permlink
     }
   },
   methods: {

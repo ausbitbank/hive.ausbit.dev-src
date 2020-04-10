@@ -1,5 +1,5 @@
 <template>
-  <div style="max-height:90vh; max-width: 90vw overflow:scroll">
+  <div style="max-height:100%; max-width: 90vw; overflow:auto">
     <q-card>
       <q-tabs v-model="card3PostsTab" dense align="justify" narrow-indicator indicator-color="secondary">
         <q-tab name="active" label="Active" />
@@ -8,10 +8,10 @@
       <q-separator />
       <q-tab-panels v-model="card3PostsTab" animated>
         <q-tab-panel name="active">
-          <card3ActivePosts :username="username" />
+          <card3PostsList :username="username" :posts="posts.filter(filterActiveOnly)" type="active" />
         </q-tab-panel>
         <q-tab-panel name="finished">
-          Paid out posts
+          <card3PostsList :username="username" :posts="posts.filter(filterPaidOut)" type="finished" />
         </q-tab-panel>
       </q-tab-panels>
     </q-card>
@@ -19,19 +19,46 @@
 </template>
 
 <script>
-import card3ActivePosts from 'components/Card3ActivePosts.vue'
+import card3PostsList from 'components/Card3PostsList.vue'
+import hive from 'steem'
+hive.api.setOptions({ url: 'https://anyx.io' })
 export default {
   name: 'Card3Posts',
   props: ['username'],
   components: {
-    card3ActivePosts: card3ActivePosts
+    card3PostsList: card3PostsList
   },
   data () {
     return {
-      card3PostsTab: 'active'
+      card3PostsTab: 'active',
+      limit: 10,
+      posts: []
     }
   },
   methods: {
+    getPosts () {
+      hive.api.getDiscussionsByAuthorBeforeDate(this.username, null, new Date().toISOString().split('.')[0], this.limit, function (err, result) {
+        if (err) { console.log(err) }
+        this.posts = result
+      }.bind(this))
+    },
+    filterActiveOnly (post) {
+      if (post.cashout_time.startsWith('1969')) {
+        return false
+      } else {
+        return true
+      }
+    },
+    filterPaidOut (post) {
+      if (post.cashout_time.startsWith('1969')) {
+        return true
+      } else {
+        return false
+      }
+    }
+  },
+  mounted () {
+    this.getPosts()
   }
 }
 </script>

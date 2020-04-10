@@ -110,7 +110,7 @@ export default {
       accountState: null,
       RC: { max: null, current: null, percent: null },
       card1Tab: 'stats',
-      card1Split: 25,
+      card1Split: '150px',
       followCounts: null,
       feedPrice: null,
       rewardFundPost: null

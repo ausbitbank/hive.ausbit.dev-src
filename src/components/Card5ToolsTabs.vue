@@ -1,6 +1,6 @@
 <template>
   <q-card>
-    <q-splitter v-model="card5Split" separator-class="bg-indigo-9">
+    <q-splitter v-model="card5Split" unit="px" separator-class="bg-indigo-9">
       <template v-slot:before>
         <q-tabs v-model="card5Tab" vertical indicator-color="secondary">
           <q-tab name="accountCreator" label="Account Creator" />
@@ -73,7 +73,7 @@ export default {
   },
   data () {
     return {
-      card5Split: 25,
+      card5Split: 200,
       card5Tab: 'accountCreator'
     }
   },
