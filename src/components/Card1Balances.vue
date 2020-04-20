@@ -94,7 +94,7 @@
       <span class="q-pa-md">
         {{ A.to_withdraw }} VESTS
       </span>
-      <q-btn label="Outgoing Routes" />
+      <outgoing-routes :A="A" :globalPropsHive="globalPropsHive" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -106,7 +106,7 @@
       <span class="q-pa-md">
         {{ A.withdrawn }} VESTS
       </span>
-      <q-btn label="Incoming Routes" />
+      <q-btn label="Incoming Routes" disable />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -118,7 +118,7 @@
       <span class="q-pa-md">
         {{ A.vesting_withdraw_rate }}
       </span>
-      <q-btn label="Convert SBD" />
+      <q-btn label="Convert SBD" disable />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -142,6 +142,7 @@ import moveToSavings from 'components/MoveToSavings.vue'
 import powerUp from 'components/PowerUp.vue'
 import powerDown from 'components/PowerDown.vue'
 import stopPowerDown from 'components/StopPowerDown.vue'
+import outgoingRoutes from 'components/outgoingRoutes.vue'
 export default {
   name: 'Card1Balances',
   props: ['A', 'globalPropsHive'],
@@ -155,7 +156,8 @@ export default {
     moveToSavings: moveToSavings,
     powerUp: powerUp,
     powerDown: powerDown,
-    stopPowerDown: stopPowerDown
+    stopPowerDown: stopPowerDown,
+    outgoingRoutes: outgoingRoutes
   },
   computed: {
     hivePerMvests: function () {

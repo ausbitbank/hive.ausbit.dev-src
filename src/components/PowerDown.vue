@@ -18,7 +18,7 @@
 
 <script>
 export default {
-  name: 'PowerUp',
+  name: 'PowerDown',
   props: ['A', 'globalPropsHive'],
   data () {
     return {
@@ -30,7 +30,7 @@ export default {
   },
   computed: {
     availableHP: function () {
-      return this.mvestsToHP(this.A.vesting_shares.split(' ')[0])
+      return this.mvestsToHP(parseFloat(this.A.vesting_shares.split(' ')[0]) - parseFloat(this.A.delegated_vesting_shares.split(' ')[0]))
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {

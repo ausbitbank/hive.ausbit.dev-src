@@ -76,6 +76,14 @@
         </q-expansion-item>
       <!-- </q-card> -->
     </div>
+    <q-dialog v-model="userSwitch">
+      <q-card>
+        <form @submit.prevent.stop="$router.replace({ path: '@' + username })" @reset.prevent.stop="onReset" class="q-gutter-md">
+          <q-input filled v-model="username" label="Username" />
+          <q-btn color="secondary" label="Switch User" type="submit" />
+        </form>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 <style>
@@ -119,7 +127,8 @@ export default {
       card1Split: 150,
       followCounts: null,
       feedPrice: null,
-      rewardFundPost: null
+      rewardFundPost: null,
+      userSwitch: false
     }
   },
   components: {
@@ -206,7 +215,10 @@ export default {
       hive.api.setOptions({ url: this.rpcListHive[0] })
       hive.api.getAccounts([username], (err, result) => {
         if (err) { this.$q.notify({ color: 'negative', position: 'top', message: 'Error checking hive api', icon: 'report_problem' }) }
-        if (result.length === 0) { this.$q.notify({ color: 'negative', position: 'top', message: 'Invalid hive username :' + username, icon: 'report_problem' }) }
+        if (result.length === 0) {
+          console.log('Invalid hive username: ' + username)
+          this.userSwitch = true
+        }
         if (result.length > 0) { this.accountState = result[0] }
       })
     },

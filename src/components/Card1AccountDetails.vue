@@ -33,7 +33,7 @@
         <span class="q-pa-md">
           {{ A.recovery_account }}
         </span>
-        <q-btn label="Change recovery account" />
+        <q-btn label="Change recovery account" disable />
       </div>
       <div>
         <span class="text-bold q-pa-md">
@@ -50,7 +50,7 @@
         <span class="q-pa-md">
           {{ A.proxy}}
         </span>
-        <q-btn label="Change Witness Proxy" />
+        <q-btn label="Change Witness Proxy" disable />
       </div>
       <q-separator />
       <div>
@@ -332,11 +332,23 @@
       </div>
     </q-tab-panel>
     <q-tab-panel name="witnessVotes">
-      <q-btn label="Vote for Witnesses" />
-      <div v-for="witness in A.witness_votes" :key="witness.index">
-        <span class="q-pa-md text-bold">{{ witness }}</span>
-        <q-btn label="Remove" icon="delete" bordered push dense />
+      <div class="text-subtitle">
+        Currently voting for {{ A.witness_votes.length }} / 30 Witnesses
       </div>
+      <span v-for="witness in A.witness_votes" :key="witness.index">
+        <q-chip removable color="blue" text-color="white" @remove="unvoteWitness(witness)">
+          <q-avatar>
+            <img :src="GetHiveAvatarUrl(witness)">
+          </q-avatar>
+          <div class="ellipsis">
+            {{ witness }}
+          </div>
+        </q-chip>
+      </span>
+      <form v-if="A.witness_votes.length !== 30" @submit.prevent.stop="voteWitness(newVote); newVote = ''" class="q-gutter-md">
+        <q-input v-model="newVote" label="Witness Username" />
+        <q-btn v-if="newVote.length > 0" dense color="secondary" @click="voteWitness(newVote); newVote = ''">Vote for {{newVote}}</q-btn>
+      </form>
     </q-tab-panel>
   </q-tab-panels>
   </q-card>
@@ -349,7 +361,8 @@ export default {
   props: ['A', 'RC'],
   data () {
     return {
-      card1AccountDetailsTab: 'account'
+      card1AccountDetailsTab: 'account',
+      newVote: ''
     }
   },
   computed: {
@@ -362,7 +375,18 @@ export default {
     }
   },
   methods: {
-    GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' }
+    GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    unvoteWitness (user) {
+      this.voteWitnessKeychain(user, false)
+    },
+    voteWitness (user) {
+      this.voteWitnessKeychain(user, true)
+    },
+    voteWitnessKeychain (witness, vote) {
+      window.hive_keychain.requestWitnessVote(this.A.name, witness, vote, function (response) {
+        console.log(response)
+      })
+    }
   }
 }
 </script>
