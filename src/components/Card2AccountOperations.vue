@@ -13,62 +13,64 @@
           <q-tab name="7" label="7 Days Ago" />
         </q-tabs>
         <div>
-          <q-btn-toggle v-model="filter.direction" no-caps rounded unelevated toggle-color="secondary" color="dark" text-color="white" :options="[{ label: 'In & Out', value: 'both' }, { label: 'In', value: 'in' }, { label: 'Out', value: 'out' }]" />
+          <q-btn-toggle disable v-model="filter.direction" no-caps rounded unelevated toggle-color="secondary" color="dark" text-color="white" :options="[{ label: 'In & Out', value: 'both' }, { label: 'In', value: 'in' }, { label: 'Out', value: 'out' }]" />
         </div>
         <div>
-          <q-select outlined v-model="filter.exclusive" :options="filter.exclusiveOptions" />
+          <q-select disable outlined v-model="filter.exclusive" :options="filter.exclusiveOptions" />
         </div>
         <div class="justify-center row">
-          <div class="text-bold text-h5">Filter</div>
+          <div class="text-bold text-h5">Hide</div>
         </div>
         <q-card bordered class="q-gutter-sm row">
-          <div class="row"><q-checkbox v-model="filter.customJson" label="Custom JSON" /></div>
-          <div class="row"><q-checkbox v-model="filter.benefactorRewards" label="Benefactor Rewards" /></div>
-          <div class="row"><q-checkbox v-model="filter.curationRewards" label="Curation Rewards" /></div>
-          <div class="row"><q-checkbox v-model="filter.producerRewards" label="Producer Rewards" /></div>
-          <div class="row"><q-checkbox v-model="filter.hpsRewards" label="HPS Rewards" /></div>
-          <div class="row"><q-checkbox v-model="filter.marketOrders" label="Market Orders" /></div>
-          <div class="row"><q-checkbox v-model="filter.witnessRelated" label="Witness Related" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.customJson" label="Custom JSON" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.benefactorRewards" label="Benefactor Rewards" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.curationRewards" label="Curation Rewards" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.producerRewards" label="Producer Rewards" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.hpsRewards" label="HPS Rewards" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.marketOrders" label="Market Orders" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.witnessRelated" label="Witness Related" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.comments" label="Comments" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.votes" label="Votes" /></div>
         </q-card>
       </template>
       <template v-slot:after>
         <q-tab-panels v-model="card2Tab" animated vertical transition-prev="jump-up" transition-next="jump-down">
           <q-tab-panel name="0" label="a">
-            <card2AccountOperationsTab :day=0 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=0 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="1">
-            <card2AccountOperationsTab :day=1 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=1 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="2">
-            <card2AccountOperationsTab :day=2 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=2 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="3">
-            <card2AccountOperationsTab :day=3 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=3 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="4">
-            <card2AccountOperationsTab :day=4 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=4 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="5">
-            <card2AccountOperationsTab :day=5 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=5 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="6">
-            <card2AccountOperationsTab :day=6 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=6 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
           <q-tab-panel name="7">
-            <card2AccountOperationsTab :day=7 :accountHistory="accountHistory" :username="username" :filter="filter" />
+            <card2AccountOperationsTab :day=7 :accountHistory="accountHistory" :username="username" :filter="filter" :globalPropsHive="globalPropsHive" />
             <q-btn label="Load More" @click="getMoreHistory()" color="secondary" v-if="allowLoadMore" />
             <q-spinner-pie color="secondary" size="5em" v-if="loading" />
           </q-tab-panel>
@@ -85,7 +87,7 @@ import hive from 'steem'
 import moment from 'moment'
 export default {
   name: 'Card2AccountOperations',
-  props: ['username'],
+  props: ['username', 'globalPropsHive'],
   data () {
     return {
       card2Tab: '0',
@@ -103,6 +105,8 @@ export default {
         hpsRewards: false,
         marketOrders: false,
         witnessRelated: false,
+        votes: false,
+        comments: false,
         exclusive: 'All',
         exclusiveOptions: ['All', 'Comments', 'Comments & Votes', 'Custom JSON', 'Delegations', 'Downvotes', 'Market Orders', 'Rewards', 'HPS Related', 'Transfers', 'Upvotes', 'Votes', 'Witness Related']
       }
@@ -113,10 +117,14 @@ export default {
   },
   methods: {
     getAccountHistory (account, from, limit) {
+      console.log('Fetching last ' + limit + ' transactions')
       hive.api.getAccountHistory(account, from, limit, function (err, result) {
         if (err) { console.log(err) }
         this.loading = false
         this.accountHistory = result.reverse()
+        if (this.accountHistory.length < 10000 && this.getDaysAgo(this.accountHistory[this.accountHistory.length - 1][1].timestamp) < 7 && this.allowLoadMore) {
+          this.getMoreHistory()
+        }
       }.bind(this))
     },
     getMoreHistory () {

@@ -4,8 +4,8 @@
       <q-expansion-item dense dense-toggle>
         <template v-slot:header>
           <q-item-section avatar>
-            <q-avatar :color="opColor" text-color="white">
-              {{ opType[0] }}
+            <q-avatar :color="opColor" text-color="white" class="text-subtitle">
+              {{ opType.substr(0,1) }}{{ opType.substr(opType.length - 1, opType.length)}}
             </q-avatar>
           </q-item-section>
           <div v-if="opType === 'producer_reward'">
@@ -14,7 +14,7 @@
                 Producer Reward
               </q-item-label>
             </q-item-section>
-            <q-item-label caption lines="1">{{ op.vesting_shares }}</q-item-label>
+            <q-item-label caption lines="1">{{  mvestsToHP(parseFloat(op.vesting_shares.split(' ')[0])) }} HP</q-item-label>
           </div>
           <div v-else-if="opType === 'curation_reward'">
             <q-item-section>
@@ -22,7 +22,7 @@
                 Curation Reward
               </q-item-label>
             </q-item-section>
-            <q-item-label caption lines="1">{{ op.reward }}</q-item-label>
+            <q-item-label caption lines="1">{{ mvestsToHP(parseFloat(op.reward.split(' ')[0]))}} Hp</q-item-label>
             <q-item-label caption lines="1">{{ op.comment_author }}\{{ op.comment_permlink.substring(0,70) }}...</q-item-label>
           </div>
           <div v-else-if="opType === 'author_reward'">
@@ -32,10 +32,23 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption>
-              {{ op.sbd_payout }} {{ op.steem_payout }} {{ op.vesting_payout }}
+              {{ op.sbd_payout }} {{ op.steem_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
             </q-item-label>
             <q-item-label caption>
               {{ op.permlink.substring(0,70) }}...
+            </q-item-label>
+          </div>
+          <div v-else-if="opType === 'comment_benefactor_reward'">
+            <q-item-section>
+              <q-item-label>
+                Benefactor Reward
+              </q-item-label>
+            </q-item-section>
+            <q-item-label caption>
+              {{ op.sbd_payout }} {{ op.steem_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
+            </q-item-label>
+            <q-item-label caption>
+              @{{ op.author }} / {{ op.permlink.substring(0,70) }}...
             </q-item-label>
           </div>
           <div v-else-if="opType === 'vote' && op.author === username">
@@ -52,7 +65,15 @@
                 Outgoing Vote to {{ op.author }} ({{ op.weight / 100}}%)
               </q-item-label>
             </q-item-section>
-            <q-item-label caption lines="1">{{ op.permlink }}</q-item-label>
+            <q-item-label caption lines="1">{{ op.permlink.substr(0,70) }}</q-item-label>
+          </div>
+          <div v-else-if="opType === 'create_claimed_account'">
+            <q-item-section>
+              <q-item-label>
+                Create Claimed Account
+              </q-item-label>
+            </q-item-section>
+            <q-item-label caption lines="1">@{{ op.new_account_name }}</q-item-label>
           </div>
           <div v-else-if="opType === 'delegate_vesting_shares'">
             <q-item-section>
@@ -128,6 +149,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption lines="1" v-if="op.id === 'notify' && JSON.parse(op.json)[0] === 'setLastRead'">Marked notifications as read</q-item-label>
+            <q-item-label caption lines="1" v-if="op.id === 'follow' && JSON.parse(op.json)[0] === 'reblog'">Reblogged {{ JSON.parse(op.json)[1].author }} / {{ JSON.parse(op.json)[1].permlink.substr(0,70) }}</q-item-label>
             <q-item-label caption lines="1" v-else>ID: {{ op.id }}</q-item-label>
           </div>
           <div v-else-if="opType === 'transfer'">
@@ -155,7 +177,7 @@
             <q-item-label caption lines="1">
               <span v-if="op.reward_sbd.split(' ')[0] !== '0.000'">{{ op.reward_sbd }}</span>
               <span v-if="op.reward_steem.split(' ')[0] !== '0.000'">{{ op.reward_steem }}</span>
-              <span v-if="op.reward_vests.split(' ')[0] !== '0.000'">{{ op.reward_vests }}</span>
+              <span v-if="op.reward_vests.split(' ')[0] !== '0.000'">{{  mvestsToHP(parseFloat(op.reward_vests.split(' ')[0])) }} HP</span>
             </q-item-label>
           </div>
           <div v-else-if="opType === 'account_witness_vote'">
@@ -229,7 +251,7 @@
 import moment from 'moment'
 export default {
   name: 'txView',
-  props: ['tx', 'username'],
+  props: ['tx', 'username', 'globalPropsHive', 'filter'],
   data () {
     return {
     }
@@ -284,8 +306,19 @@ export default {
           return 'purple-6'
         case 'fill_transfer_from_savings':
           return 'green-5'
+        case 'comment_benefactor_reward':
+          return 'pink-8'
+        case 'create_claimed_account':
+          return 'deep-purple-5'
         default:
           return 'primary'
+      }
+    },
+    hivePerMvests: function () {
+      if (this.globalPropsHive !== null) {
+        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_steem.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
+      } else {
+        return 509.6451627091090586
       }
     },
     hiveBlocks: function () {
@@ -296,6 +329,9 @@ export default {
     }
   },
   methods: {
+    mvestsToHP (v) {
+      return ((v * this.hivePerMvests) / 1000000).toFixed(3)
+    }
   }
 }
 </script>

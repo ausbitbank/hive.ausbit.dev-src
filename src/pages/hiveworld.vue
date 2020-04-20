@@ -62,7 +62,7 @@
           </q-card>
         </q-expansion-item>
         <q-expansion-item expand-separator icon="list_alt" expand-icon="unfold_more" expanded-icon="unfold_less" label='Account Operations' header-class="bg-teal-7 text-white sectionHeader">
-          <card2AccountOperations :username="username" />
+          <card2AccountOperations :username="username" :globalPropsHive="globalPropsHive" />
         </q-expansion-item>
         <q-expansion-item expand-separator icon="message" expand-icon="unfold_more" expanded-icon="unfold_less" label='Posts' header-class="bg-purple-8 text-white scroll sectionHeader">
           <card3-posts :username="username" />
