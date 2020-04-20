@@ -8,7 +8,7 @@
       </q-card>
       <q-card>
         <form @submit.prevent.stop="checkUsername(username); username = ''" @reset.prevent.stop="onReset" class="q-gutter-md">
-          <q-input clearable filled v-model="username" label="Username" />
+          <q-input filled v-model="username" label="Username" />
           <q-btn color="secondary" label="Add User" type="submit" />
         </form>
       </q-card>
@@ -66,7 +66,7 @@
                 <q-item-label>Transfer Steem</q-item-label>
               </q-item-section>
             </q-item>
-            <q-item  v-if="account.network == 'hive' && account.to_withdraw_vests > 0" clickable v-close-popup @click="dialogUser = account.name; dialogStopPowerdownHive = true">
+            <q-item v-if="account.network == 'hive' && account.to_withdraw_vests > 0" clickable v-close-popup @click="dialogUser = account.name; dialogStopPowerdownHive = true">
               <q-item-section>
                 <q-item-label>Stop Hive Powerdown</q-item-label>
               </q-item-section>

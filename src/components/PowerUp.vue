@@ -27,7 +27,7 @@ export default {
       loading: false,
       username: this.A.name,
       transferTo: this.A.name,
-      transferAmount: 0
+      transferAmount: 0.000
     }
   },
   computed: {
@@ -38,7 +38,7 @@ export default {
   methods: {
     powerUpKeychain () {
       this.loading = true
-      window.hive_keychain.requestPowerUp(this.username, this.transferTo, this.transferAmount.toFixed(3), function (err, response) {
+      window.hive_keychain.requestPowerUp(this.username, this.transferTo, parseFloat(this.transferAmount).toFixed(3), function (err, response) {
         this.loading = false; this.dialog = false
         if (err) { console.log(err) }
       }.bind(this))

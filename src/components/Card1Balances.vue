@@ -82,7 +82,7 @@
       <span class="q-pa-md">
         {{ A.delegated_vesting_shares }}
       </span>
-      <q-btn label="Stop Power Down" />
+      <stop-power-down :A="A" :globalPropsHive="globalPropsHive" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -118,7 +118,7 @@
       <span class="q-pa-md">
         {{ A.vesting_withdraw_rate }}
       </span>
-      <q-btn label="Outgoing Routes" />
+      <q-btn label="Convert SBD" />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -141,6 +141,7 @@ import transfer from 'components/Transfer.vue'
 import moveToSavings from 'components/MoveToSavings.vue'
 import powerUp from 'components/PowerUp.vue'
 import powerDown from 'components/PowerDown.vue'
+import stopPowerDown from 'components/StopPowerDown.vue'
 export default {
   name: 'Card1Balances',
   props: ['A', 'globalPropsHive'],
@@ -153,7 +154,8 @@ export default {
     transfer: transfer,
     moveToSavings: moveToSavings,
     powerUp: powerUp,
-    powerDown: powerDown
+    powerDown: powerDown,
+    stopPowerDown: stopPowerDown
   },
   computed: {
     hivePerMvests: function () {

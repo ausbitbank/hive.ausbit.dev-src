@@ -67,7 +67,7 @@
         <q-expansion-item expand-separator icon="message" expand-icon="unfold_more" expanded-icon="unfold_less" label='Posts' header-class="bg-purple-8 text-white scroll sectionHeader">
           <card3-posts :username="username" />
         </q-expansion-item>
-        <q-expansion-item expand-separator icon="monetization_on" expand-icon="unfold_more" expanded-icon="unfold_less" label='Coming Rewards' header-class="bg-deep-orange-8 text-white sectionHeader">
+        <q-expansion-item expand-separator icon="monetization_on" expand-icon="unfold_more" expanded-icon="unfold_less" label='Coming Rewards' header-class="bg-deep-orange-8 text-white sectionHeader" v-if="false">
           <q-card>
           </q-card>
         </q-expansion-item>

@@ -43,7 +43,7 @@ export default {
   methods: {
     powerDownKeychain () {
       this.loading = true
-      window.hive_keychain.requestPowerDown(this.username, this.transferAmount.toFixed(3), function (err, response) {
+      window.hive_keychain.requestPowerDown(this.username, parseFloat(this.transferAmount).toFixed(3), function (err, response) {
         this.loading = false; this.dialog = false
         if (err) { console.log(err) }
       }.bind(this))

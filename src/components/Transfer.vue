@@ -6,8 +6,8 @@
         <div class="row">
           <div>
             <q-btn-toggle v-model="transferType" :options="[{label: 'Hive', value: 'HIVE'}, {label: 'HBD', value: 'HBD'}]" rounded unelevated glossy toggle-color="secondary" />
-            <q-input v-model="transferTo" label="Receiving Account" />
-            <q-input v-model.number="transferAmount" type="number" filled label="Amount" />
+            <q-input v-model="transferTo" label="Receiving Account" :rules="[val => !!val || 'Account is required']" />
+            <q-input v-model.number="transferAmount" type="number" filled label="Amount" :rules="[val => !!val || 'Amount is required']" />
             <div><span class="text-bold" @click="transferAmount = available">{{ available }}</span> {{ transferType }} available</div>
             <q-input v-model="transferMemo" label="Memo" />
           </div>
