@@ -82,7 +82,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption lines="1" v-if="op.vesting_shares === '0.000000 VESTS'">Removed by {{ op.delegator }}</q-item-label>
-            <q-item-label caption lines="1" v-else>{{ op.vesting_shares }} from {{ op.delegator }}</q-item-label>
+            <q-item-label caption lines="1" v-else>{{ mvestsToHP(parseFloat(op.vesting_shares.split(' ')[0])) }} HP from {{ op.delegator }}</q-item-label>
           </div>
           <div v-else-if="opType === 'feed_publish'">
             <q-item-section>
@@ -149,8 +149,14 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption lines="1" v-if="op.id === 'notify' && JSON.parse(op.json)[0] === 'setLastRead'">Marked notifications as read</q-item-label>
-            <q-item-label caption lines="1" v-if="op.id === 'follow' && JSON.parse(op.json)[0] === 'reblog'">Reblogged {{ JSON.parse(op.json)[1].author }} / {{ JSON.parse(op.json)[1].permlink.substr(0,70) }}</q-item-label>
-            <q-item-label caption lines="1" v-else>ID: {{ op.id }}</q-item-label>
+            <q-item-label caption lines="1" v-else-if="op.id === 'follow' && customJson[0] === 'reblog'">Reblogged {{ JSON.parse(op.json)[1].author }} / {{ JSON.parse(op.json)[1].permlink.substr(0,70) }}</q-item-label>
+            <q-item-label caption lines="1" v-else-if="op.id === 'follow' && customJson[0] === 'follow'">
+              {{ customJson[1].follower }}
+              <span v-if="customJson[1].what[0] === 'blog'"> followed </span>
+              <span v-else> unfollowed </span>
+              {{ customJson[1].following }}
+            </q-item-label>
+            <q-item-label caption lines="1" v-else>ID: {{ op.id }} | {{ customJson.substr(0,70) }}</q-item-label>
           </div>
           <div v-else-if="opType === 'transfer'">
             <q-item-section>
@@ -158,7 +164,7 @@
                 Transfer {{ op.amount }} from {{ op.from }} to {{ op.to }}
               </q-item-label>
             </q-item-section>
-            <q-item-label caption v-if="op.memo">Memo : {{ op.memo }}</q-item-label>
+            <q-item-label caption v-if="op.memo">Memo : {{ op.memo.substr(0,70) }}</q-item-label>
           </div>
           <div v-else-if="opType === 'transfer_to_vesting'">
             <q-item-section>
@@ -312,6 +318,13 @@ export default {
           return 'deep-purple-5'
         default:
           return 'primary'
+      }
+    },
+    customJson: function () {
+      if (this.opType === 'custom_json') {
+        return JSON.parse(this.op.json)
+      } else {
+        return []
       }
     },
     hivePerMvests: function () {

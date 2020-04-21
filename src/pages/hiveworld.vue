@@ -178,25 +178,25 @@ export default {
     rep: function () {
       return hive.formatter.reputation(this.A.reputation)
     },
-    upvoteValue: function () {
+    upvoteValue: function () { // Aims to return the value in dollars of a 100% vote at full strength
       if (this.A !== null && this.rewardFundPost && this.feedPrice !== null) {
         var myVests = parseFloat(this.A.vesting_shares.split(' ')[0]) + parseFloat(this.A.received_vesting_shares.split(' ')[0]) - parseFloat(this.A.delegated_vesting_shares.split(' ')[0])
         myVests = myVests * 1000000
-        console.log('my vests: ' + myVests)
+        // console.log('my vests: ' + myVests)
         var myVotePower = myVests * 0.02 // Assuming 100% VP, 100% weight
         var recentClaims = parseFloat(this.rewardFundPost.recent_claims)
-        console.log('recent claims: ' + recentClaims)
+        // console.log('recent claims: ' + recentClaims)
         var myInfluencePercent = myVotePower / recentClaims
-        console.log('my influence percent: ' + myInfluencePercent)
+        // console.log('my influence percent: ' + myInfluencePercent)
         var rewardBalance = parseFloat(this.rewardFundPost.reward_balance.split(' ')[0])
-        console.log('reward balance: ' + rewardBalance)
-        var rewardsPerShare = rewardBalance / parseFloat(this.rewardFundPost.recent_claims)
-        console.log('rewardsPerShare: ' + rewardsPerShare)
+        // console.log('reward balance: ' + rewardBalance)
+        // var rewardsPerShare = rewardBalance / parseFloat(this.rewardFundPost.recent_claims)
+        // console.log('rewardsPerShare: ' + rewardsPerShare)
         var voteValueHive = myInfluencePercent * rewardBalance
-        console.log('value in hive: ' + voteValueHive)
-        console.log('feed price: ' + this.feedPrice)
+        // console.log('value in hive: ' + voteValueHive)
+        // console.log('feed price: ' + this.feedPrice)
         var voteValueDollars = voteValueHive * this.feedPrice
-        console.log('value in dollars: ' + voteValueDollars)
+        // console.log('value in dollars: ' + voteValueDollars)
         return voteValueDollars
       } else {
         return null
@@ -264,7 +264,9 @@ export default {
           res = res.data
           this.RC.max = res.rc_accounts[0].max_rc
           this.RC.current = res.rc_accounts[0].rc_manabar.current_mana
-          this.RC.percent = parseFloat((this.RC.current / this.RC.max) * 100).toFixed(2)
+          var percent = parseFloat((this.RC.current / this.RC.max) * 100).toFixed(2)
+          if (percent > 100.00) { percent = 100 }
+          this.RC.percent = percent
         })
         .catch(() => {
           console.log('error loading RC from anyx.io')

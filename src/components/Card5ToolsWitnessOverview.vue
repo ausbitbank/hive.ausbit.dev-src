@@ -1,7 +1,11 @@
 <template>
   <div>
     <div class="text-h5">Witness Overview</div>
-    <q-table dense :data="witnessData" :columns="witnessColumns" row-key="id" :pagination.sync="pagination" />
+    <q-table dense :data="witnessData" :columns="witnessColumns" row-key="id" :pagination.sync="pagination" :visible-columns="visibleColumns" :loading="loading">
+      <template v-slot:top>
+        <q-select v-model="visibleColumns" multiple dense options-dense display-value="Select Columns" emit-value map-options :options="witnessColumns" option-value="name" options-cover style="min-width: 150px" />
+      </template>
+    </q-table>
   </div>
 </template>
 
@@ -13,17 +17,31 @@ export default {
   data () {
     return {
       witnesses: null,
+      loading: true,
       pagination: { rowsPerPage: 50 },
+      visibleColumns: ['owner', 'votesHP', 'running_version', 'price', 'last_confirmed_block_num', 'total_missed'],
       witnessColumns: [
         {
           name: 'owner',
-          required: true,
           label: 'Witness',
           field: row => row.owner,
-          sortable: true
+          sortable: true,
+          align: 'left'
         },
         {
           name: 'votes',
+          label: 'Approval (Vests)',
+          field: row => row.votes,
+          sortable: true
+        },
+        {
+          name: 'votesMv',
+          label: 'Approval (MV)',
+          field: row => row.votesMv,
+          sortable: true
+        },
+        {
+          name: 'votesHP',
           label: 'Approval (HP)',
           field: row => row.votesHP,
           sortable: true
@@ -47,6 +65,12 @@ export default {
           sortable: true
         },
         {
+          name: 'maximum_block_size',
+          label: 'Maximum Block Size',
+          field: row => row.maximum_block_size,
+          sortable: true
+        },
+        {
           name: 'hbd_interest_rate',
           label: 'HBD Interest Rate',
           field: row => row.hbd_interest_rate,
@@ -60,23 +84,56 @@ export default {
         },
         {
           name: 'running_version',
-          required: true,
           label: 'Version',
           field: row => row.running_version,
           sortable: true
         },
         {
           name: 'last_confirmed_block_num',
-          required: true,
           label: 'Last Block',
           field: row => row.last_confirmed_block_num,
           sortable: true
         },
         {
           name: 'total_missed',
-          required: true,
           label: 'Misses',
           field: row => row.total_missed,
+          sortable: true
+        },
+        {
+          name: 'url',
+          label: 'URL',
+          field: row => row.url,
+          sortable: true
+        },
+        {
+          name: 'id',
+          label: 'Witness ID',
+          field: row => row.id,
+          sortable: true
+        },
+        {
+          name: 'created',
+          label: 'Created',
+          field: row => row.created,
+          sortable: true
+        },
+        {
+          name: 'last_aslot',
+          label: 'Last Aslot',
+          field: row => row.last_aslot,
+          sortable: true
+        },
+        {
+          name: 'last_hbd_exchange_update',
+          label: 'Last Price Update',
+          field: row => row.last_hbd_exchange_update,
+          sortable: true
+        },
+        {
+          name: 'signing_key',
+          label: 'Signing Key',
+          field: row => row.signing_key,
           sortable: true
         }
       ]
@@ -93,7 +150,8 @@ export default {
             id: el.id,
             owner: el.owner,
             votes: el.votes,
-            votesHP: this.votes_to_hp(el.votes),
+            votesMv: parseInt(el.votes / 1e12),
+            votesHP: parseInt(this.votes_to_hp(el.votes)),
             account_creation_fee: el.props.account_creation_fee.split(' ')[0],
             account_subsidy_budget: el.props.account_subsidy_budget,
             account_subsidy_decay: el.props.account_subsidy_decay,
@@ -102,7 +160,12 @@ export default {
             price: (el.sbd_exchange_rate.base.split(' ')[0]),
             running_version: el.running_version,
             last_confirmed_block_num: el.last_confirmed_block_num,
-            total_missed: el.total_missed
+            total_missed: el.total_missed,
+            url: el.url,
+            created: el.created,
+            last_aslot: el.last_aslot,
+            last_hbd_exchange_update: el.last_sbd_exchange_update,
+            signing_key: el.signing_key
           })
         })
         return wd
@@ -119,6 +182,7 @@ export default {
   methods: {
     async get_data () {
       this.witnesses = await hive.api.getWitnessesByVoteAsync('', 200)
+      this.loading = false
     },
     votes_to_hp (votes) {
       return ((votes * this.hivePerMvests) / 1000000000000).toFixed(0)

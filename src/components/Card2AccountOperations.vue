@@ -1,5 +1,5 @@
 <template>
-  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 100%; max-width: 80vw" bordered>
+  <q-card v-if="this.accountHistory.length !== 0" style="max-height: 90%; width: 80vw" bordered>
     <q-splitter v-model="card2Split" unit="px" separator-class="bg-teal-7">
       <template v-slot:before>
         <q-tabs v-model="card2Tab" vertical indicator-color="secondary">
@@ -12,25 +12,27 @@
           <q-tab name="6" label="6 Days Ago" />
           <q-tab name="7" label="7 Days Ago" />
         </q-tabs>
-        <div>
+        <div v-if="false">
           <q-btn-toggle disable v-model="filter.direction" no-caps rounded unelevated toggle-color="secondary" color="dark" text-color="white" :options="[{ label: 'In & Out', value: 'both' }, { label: 'In', value: 'in' }, { label: 'Out', value: 'out' }]" />
         </div>
-        <div>
+        <div v-if="false">
           <q-select disable outlined v-model="filter.exclusive" :options="filter.exclusiveOptions" />
         </div>
         <div class="justify-center row">
           <div class="text-bold text-h5">Hide</div>
         </div>
-        <q-card bordered class="q-gutter-sm row">
+        <q-card class="q-gutter-sm row">
           <div class="row"><q-checkbox dense v-model="filter.customJson" label="Custom JSON" /></div>
           <div class="row"><q-checkbox dense v-model="filter.benefactorRewards" label="Benefactor Rewards" /></div>
           <div class="row"><q-checkbox dense v-model="filter.curationRewards" label="Curation Rewards" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.claimRewards" label="Claim Rewards" /></div>
           <div class="row"><q-checkbox dense v-model="filter.producerRewards" label="Producer Rewards" /></div>
           <div class="row"><q-checkbox dense v-model="filter.hpsRewards" label="HPS Rewards" /></div>
           <div class="row"><q-checkbox dense v-model="filter.marketOrders" label="Market Orders" /></div>
           <div class="row"><q-checkbox dense v-model="filter.witnessRelated" label="Witness Related" /></div>
           <div class="row"><q-checkbox dense v-model="filter.comments" label="Comments" /></div>
           <div class="row"><q-checkbox dense v-model="filter.votes" label="Votes" /></div>
+          <div class="row"><q-checkbox dense v-model="filter.transfers" label="Transfers" /></div>
         </q-card>
       </template>
       <template v-slot:after>
@@ -102,9 +104,11 @@ export default {
         customJson: false,
         benefactorRewards: false,
         curationRewards: false,
+        claimRewards: false,
         hpsRewards: false,
         marketOrders: false,
         witnessRelated: false,
+        transfers: false,
         votes: false,
         comments: false,
         exclusive: 'All',
@@ -122,7 +126,9 @@ export default {
         if (err) { console.log(err) }
         this.loading = false
         this.accountHistory = result.reverse()
-        if (this.accountHistory.length < 10000 && this.getDaysAgo(this.accountHistory[this.accountHistory.length - 1][1].timestamp) < 7 && this.allowLoadMore) {
+        var oldestDaysAgo = this.getDaysAgo(this.accountHistory[this.accountHistory.length - 1][1].timestamp)
+        if (this.accountHistory.length < this.limit || this.oldestDaysAgo > 7) { this.allowLoadMore = false }
+        if (this.accountHistory.length < 10000 && oldestDaysAgo < 8 && this.allowLoadMore) {
           this.getMoreHistory()
         }
       }.bind(this))

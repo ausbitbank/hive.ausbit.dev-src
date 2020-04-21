@@ -45,7 +45,8 @@ export default {
           required: true,
           label: 'Username',
           field: row => row.name,
-          sortable: true
+          sortable: true,
+          align: 'left'
         }
       ]
     }
