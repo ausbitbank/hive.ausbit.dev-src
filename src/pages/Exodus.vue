@@ -108,7 +108,7 @@ export default {
       dialogStopHivePowerdown: false,
       dialogUser: '',
       // rpcHive: 'https://api.openhive.network',
-      rpcHive: 'https://anyx.io',
+      rpcHive: 'https://rpc.ausbit.dev',
       rpcSteem: 'https://api.steemit.com',
       globalPropsSteem: null,
       globalPropsHive: null

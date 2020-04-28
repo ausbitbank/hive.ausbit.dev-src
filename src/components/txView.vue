@@ -156,7 +156,7 @@
               <span v-else> unfollowed </span>
               {{ customJson[1].following }}
             </q-item-label>
-            <q-item-label caption lines="1" v-else>ID: {{ op.id }} | {{ toString(customJson).substr(0,70) }}</q-item-label>
+            <q-item-label caption lines="1" v-else>ID: {{ op.id }} | {{ JSON.stringify(customJson).substr(0,70) }}</q-item-label>
           </div>
           <div v-else-if="opType === 'transfer'">
             <q-item-section>

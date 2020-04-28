@@ -21,7 +21,7 @@
 <script>
 import card3PostsList from 'components/Card3PostsList.vue'
 import hive from 'steem'
-hive.api.setOptions({ url: 'https://anyx.io' })
+hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export default {
   name: 'Card3Posts',
   props: ['username'],

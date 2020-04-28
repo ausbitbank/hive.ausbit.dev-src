@@ -119,7 +119,7 @@ export default {
   data () {
     return {
       username: '',
-      rpcListHive: ['https://anyx.io', 'https://api.openhive.network', 'https://api.hive.blog'],
+      rpcListHive: ['https://rpc.ausbit.dev', 'https://anyx.io', 'https://api.openhive.network', 'https://api.hive.blog'],
       globalPropsHive: null,
       accountState: null,
       RC: { max: null, current: null, percent: null },

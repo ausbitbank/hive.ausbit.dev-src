@@ -1,5 +1,5 @@
 import hive from 'steem'
-hive.api.setOptions({ url: 'https://api.openhive.network' })
+hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export async function checkAccount (username) {
 
 }
