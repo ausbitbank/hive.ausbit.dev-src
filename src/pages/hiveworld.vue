@@ -166,7 +166,8 @@ export default {
       }
     },
     Card1Title: function () {
-      return this.username + ' (' + this.rep + ') | Wallet'
+      // return this.username + ' (' + this.rep + ') | Wallet'
+      return this.username[0].toUpperCase() + this.username.slice(1) + '\'s Wallet'
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {
@@ -176,7 +177,11 @@ export default {
       }
     },
     rep: function () {
-      return hive.formatter.reputation(this.A.reputation)
+      if (this.accountState === null) {
+        return ''
+      } else {
+        return hive.formatter.reputation(this.A.reputation)
+      }
     },
     upvoteValue: function () { // Aims to return the value in dollars of a 100% vote at full strength
       if (this.A !== null && this.rewardFundPost && this.feedPrice !== null) {
