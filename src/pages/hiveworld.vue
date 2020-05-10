@@ -98,7 +98,7 @@ border-top-right-radius: 90px;
 }
 </style>
 <script>
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 import moment from 'moment'
 import card1Stats from 'components/Card1Stats.vue'
 import card1Balances from 'components/Card1Balances.vue'
@@ -119,7 +119,7 @@ export default {
   data () {
     return {
       username: '',
-      rpcListHive: ['https://rpc.ausbit.dev', 'https://anyx.io', 'https://api.openhive.network', 'https://api.hive.blog'],
+      rpcListHive: ['https://anyx.io', 'https://rpc.ausbit.dev', 'https://api.openhive.network', 'https://api.hive.blog'],
       globalPropsHive: null,
       accountState: null,
       RC: { max: null, current: null, percent: null },
@@ -177,11 +177,7 @@ export default {
       }
     },
     rep: function () {
-      if (this.accountState === null) {
-        return ''
-      } else {
-        return hive.formatter.reputation(this.A.reputation)
-      }
+      return hive.formatter.reputation(this.A.reputation)
     },
     upvoteValue: function () { // Aims to return the value in dollars of a 100% vote at full strength
       if (this.A !== null && this.rewardFundPost && this.feedPrice !== null) {

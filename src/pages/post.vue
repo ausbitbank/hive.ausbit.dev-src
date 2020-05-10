@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 import Card3PostsContent from 'components/Card3PostsContent.vue'
 export default {
   name: 'postView',

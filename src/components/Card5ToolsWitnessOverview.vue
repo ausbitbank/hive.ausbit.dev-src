@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 export default {
   name: 'Card5ToolsWitnessOverview',
   props: ['username', 'globalPropsHive'],

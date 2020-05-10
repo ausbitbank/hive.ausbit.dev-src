@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 import moment from 'moment'
 export default {
   name: 'Card1Stats',

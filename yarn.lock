@@ -895,6 +895,30 @@
   dependencies:
     "@hapi/hoek" "^8.3.0"
 
+"@hiveio/hive-js@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@hiveio/hive-js/-/hive-js-0.1.0.tgz#962c3381bb83882957095629d2f284bcd06715eb"
+  integrity sha512-fYeGKcDEvDurQlkUNRq/mbUiz2Dgzce0y3b7bRaUtQUm4F/ZdJU3993+4DMRRQlZeGlhmFMLKbopaTUOLYOyhg==
+  dependencies:
+    "@steemit/rpc-auth" "^1.1.1"
+    bigi "^1.4.2"
+    bluebird "^3.4.6"
+    browserify-aes "^1.0.6"
+    bs58 "^4.0.0"
+    buffer "^5.0.6"
+    bytebuffer "^5.0.1"
+    create-hash "^1.1.2"
+    create-hmac "^1.1.4"
+    cross-env "^5.0.0"
+    cross-fetch "^1.1.1"
+    debug "^2.6.8"
+    detect-node "^2.0.3"
+    ecurve "^1.0.5"
+    lodash "^4.16.4"
+    retry "^0.12.0"
+    secure-random "^1.1.2"
+    ws "^3.3.2"
+
 "@jimp/bmp@^0.6.8":
   version "0.6.8"
   resolved "https://registry.yarnpkg.com/@jimp/bmp/-/bmp-0.6.8.tgz#8abbfd9e26ba17a47fab311059ea9f7dd82005b6"

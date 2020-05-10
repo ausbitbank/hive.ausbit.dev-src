@@ -370,18 +370,18 @@ export default {
       if (this.A === null) {
         return null
       } else {
-        return JSON.parse(this.A.json_metadata)
+        if (this.A.json_metadata !== '') {
+          return JSON.parse(this.A.json_metadata)
+        } else {
+          return null
+        }
       }
     }
   },
   methods: {
     GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    unvoteWitness (user) {
-      this.voteWitnessKeychain(user, false)
-    },
-    voteWitness (user) {
-      this.voteWitnessKeychain(user, true)
-    },
+    unvoteWitness (user) { this.voteWitnessKeychain(user, false) },
+    voteWitness (user) { this.voteWitnessKeychain(user, true) },
     voteWitnessKeychain (witness, vote) {
       window.hive_keychain.requestWitnessVote(this.A.name, witness, vote, function (response) {
         console.log(response)

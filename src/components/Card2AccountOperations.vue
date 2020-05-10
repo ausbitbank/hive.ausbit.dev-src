@@ -83,9 +83,9 @@
 </template>
 
 <script>
-// import hive from 'steem'
+// import hive from '@hiveio/hive-js'
 import card2AccountOperationsTab from 'components/Card2AccountOperationsTab.vue'
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 import moment from 'moment'
 export default {
   name: 'Card2AccountOperations',

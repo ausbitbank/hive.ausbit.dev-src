@@ -20,7 +20,7 @@
 
 <script>
 import card3PostsList from 'components/Card3PostsList.vue'
-import hive from 'steem'
+import hive from '@hiveio/hive-js'
 hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export default {
   name: 'Card3Posts',
