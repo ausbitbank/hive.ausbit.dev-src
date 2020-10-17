@@ -132,7 +132,7 @@
         HBD Exchange Rate
       </span>
       <span class="q-pa-md">
-        {{ witnessState.sbd_exchange_rate.base }} : {{ witnessState.sbd_exchange_rate.quote }}
+        {{ witnessState.hbd_exchange_rate.base }} : {{ witnessState.hbd_exchange_rate.quote }}
       </span>
     </div>
     <div>

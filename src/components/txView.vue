@@ -32,7 +32,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption>
-              {{ op.sbd_payout }} {{ op.steem_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
+              {{ op.sbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
             </q-item-label>
             <q-item-label caption>
               {{ op.permlink.substring(0,70) }}...
@@ -45,7 +45,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption>
-              {{ op.sbd_payout }} {{ op.steem_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
+              {{ op.sbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
             </q-item-label>
             <q-item-label caption>
               @{{ op.author }} / {{ op.permlink.substring(0,70) }}...
@@ -181,8 +181,8 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption lines="1">
-              <span v-if="op.reward_sbd.split(' ')[0] !== '0.000'">{{ op.reward_sbd }}</span>
-              <span v-if="op.reward_steem.split(' ')[0] !== '0.000'">{{ op.reward_steem }}</span>
+              <span v-if="op.reward_hbd.split(' ')[0] !== '0.000'">{{ op.reward_hbd }}</span>
+              <span v-if="op.reward_hive.split(' ')[0] !== '0.000'">{{ op.reward_hive }}</span>
               <span v-if="op.reward_vests.split(' ')[0] !== '0.000'">{{  mvestsToHP(parseFloat(op.reward_vests.split(' ')[0])) }} HP</span>
             </q-item-label>
           </div>
@@ -329,7 +329,7 @@ export default {
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {
-        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_steem.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
+        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_hive.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
       } else {
         return 509.6451627091090586
       }

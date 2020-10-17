@@ -23,7 +23,7 @@ export default {
   methods: {
     claimRewardsKeychain () {
       this.loading = true
-      var claimjson = { account: this.username, reward_steem: this.A.reward_steem_balance, reward_sbd: this.A.reward_sbd_balance, reward_vests: this.A.reward_vesting_balance }
+      var claimjson = { account: this.username, reward_hive: this.A.reward_hive_balance, reward_hbd: this.A.reward_hbd_balance, reward_vests: this.A.reward_vesting_balance }
       console.log(claimjson)
       var operations = [['claim_reward_balance', claimjson]]
       window.hive_keychain.requestBroadcast(this.username, operations, 'posting', function (response) {

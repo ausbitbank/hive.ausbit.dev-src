@@ -46,10 +46,10 @@
       </div>
       <div>
         <span class="text-bold q-pa-md">
-          Payout Percent SBD
+          Payout Percent HBD
         </span>
         <span>
-          {{ post.percent_steem_dollars / 100 }} %
+          {{ post.percent_hive_dollars / 100 }} %
         </span>
       </div>
       <div>

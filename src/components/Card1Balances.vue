@@ -5,13 +5,13 @@
         Reward Balance
       </span>
       <span class="q-pa-md">
-        {{ A.reward_steem_balance }}
+        {{ A.reward_hive_balance }}
       </span>
       <span class="q-pa-md">
-        {{ A.reward_sbd_balance }}
+        {{ A.reward_hbd_balance }}
       </span>
       <span class="q-pa-md">
-        {{ A.reward_vesting_steem }}
+        {{ A.reward_vesting_hive }}
       </span>
       <claim-rewards :A="A" />
     </div>
@@ -162,7 +162,7 @@ export default {
   computed: {
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {
-        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_steem.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
+        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_hive.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
       } else {
         return 509.6451627091090586
       }

@@ -5,7 +5,7 @@
         Total Vesting Fund
       </span>
       <span class="q-pa-md">
-        {{ globalPropsHive.total_vesting_fund_steem }}
+        {{ globalPropsHive.total_vesting_fund_hive }}
       </span>
     </div>
     <div>
@@ -13,7 +13,7 @@
         Total Reward Fund
       </span>
       <span class="q-pa-md">
-        {{ globalPropsHive.total_reward_fund_steem }}
+        {{ globalPropsHive.total_reward_fund_hive }}
       </span>
     </div>
     <div>
@@ -21,7 +21,7 @@
         Pending Rewards
       </span>
       <span class="q-pa-md">
-        {{ globalPropsHive.pending_rewarded_vesting_steem }}
+        {{ globalPropsHive.pending_rewarded_vesting_hive }}
       </span>
       <span class="q-pa-md">
         {{ (globalPropsHive.pending_rewarded_vesting_shares.split(' ')[0] / 1e6).toFixed(2) }} MVests

@@ -6,7 +6,7 @@
       <q-tab name="votes" label="Votes" />
       <q-tab name="images" label="Images" />
       <q-tab name="replies" label="Replies" />
-      <q-tab name="resteems" label="Resteems" />
+      <q-tab name="resteems" label="Reblogs" />
       <q-tab name="transfers" label="Transfers" />
     </q-tabs>
     <q-separator />

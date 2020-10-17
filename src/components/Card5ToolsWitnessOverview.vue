@@ -157,7 +157,7 @@ export default {
             account_subsidy_decay: el.props.account_subsidy_decay,
             maximum_block_size: el.props.maximum_block_size,
             hbd_interest_rate: el.props.sbd_interest_rate,
-            price: (el.sbd_exchange_rate.base.split(' ')[0]),
+            price: (el.hbd_exchange_rate.base.split(' ')[0]),
             running_version: el.running_version,
             last_confirmed_block_num: el.last_confirmed_block_num,
             total_missed: el.total_missed,
@@ -173,7 +173,7 @@ export default {
     },
     hivePerMvests: function () {
       if (this.globalPropsHive !== null) {
-        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_steem.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
+        if (this.globalPropsHive.total_vesting_shares) { return (this.globalPropsHive.total_vesting_fund_hive.split(' ')[0] / (this.globalPropsHive.total_vesting_shares.split(' ')[0] / 1e6)) } else { return 509.6451627091090586 }
       } else {
         return 509.6451627091090586
       }

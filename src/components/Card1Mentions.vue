@@ -49,7 +49,7 @@ export default {
       }
     },
     getRelativeTime (time) {
-      return moment(time).fromNow()
+      return moment.utc(time).fromNow()
     },
     getUrl (permlink) {
       return 'https://peakd.com/' + permlink
