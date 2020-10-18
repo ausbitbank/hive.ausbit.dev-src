@@ -1,7 +1,7 @@
 <template>
   <q-page class="flex flex-center q-pa-md">
     <div v-if="post">
-      <div class="row text-title"><center>{{ post.title }}</center></div>
+      <div class="row text-h5"><center>{{ post.title }}</center></div>
       <Card3PostsContent :post="post" />
     </div>
   </q-page>

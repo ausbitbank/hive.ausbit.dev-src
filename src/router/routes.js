@@ -8,7 +8,10 @@ const routes = [
       { path: 'exodus', component: () => import('pages/exodus.vue') },
       { path: '@:username', component: () => import('pages/hiveworld.vue') },
       { path: '@:author/:permlink', component: () => import('pages/post.vue') },
-      { path: ':tag/@:author/:permlink', component: () => import('pages/post.vue') }
+      { path: ':tag/@:author/:permlink', component: () => import('pages/post.vue') },
+      { path: 'block/:blockNum', component: () => import('pages/block.vue') },
+      { path: 'b/:blockNum', component: () => import('pages/block.vue') },
+      { path: 'tx/:txId', component: () => import('pages/tx.vue') }
     ]
   }
 ]

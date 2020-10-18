@@ -15,7 +15,14 @@
           <a href="https://hive.ausbit.dev"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></a>
           hive.ausbit.dev
         </q-toolbar-title>
-
+        <q-form @submit="onSearchSubmit" @reset="onSearchReset">
+          <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Account, Txid or Block">
+          <template v-slot:append>
+            <q-icon v-if="search === ''" name="search" />
+            <q-icon v-else name="clear" class="cursor-pointer" @click="search = ''" />
+          </template>
+        </q-input>
+        </q-form>
       </q-toolbar>
     </q-header>
 
@@ -46,13 +53,35 @@ import EssentialLink from 'components/EssentialLink'
 
 export default {
   name: 'MainLayout',
-
   components: {
     EssentialLink
   },
-
+  methods: {
+    onSearchSubmit () {
+      console.log('Searching ' + this.search)
+      if (!isNaN(this.search)) {
+        console.log('searching for block ' + this.search)
+        this.$router.push('/block/' + this.search)
+        this.$router.go()
+      } else {
+        if (this.search.length === 40) {
+          console.log('searching for txid ' + this.search)
+          this.$router.push('/tx/' + this.search)
+          this.$router.go()
+        } else {
+          console.log('searching for account ' + this.search)
+          this.$router.push('/@' + this.search)
+          this.$router.go()
+        }
+      }
+    },
+    onSearchReset () {
+      this.search = ''
+    }
+  },
   data () {
     return {
+      search: '',
       leftDrawerOpen: false,
       essentialLinks: [
         {
