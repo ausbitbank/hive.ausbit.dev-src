@@ -10,7 +10,7 @@
       <div style="text-caption text-center" v-if="this.blockHeader">
         {{this.blockHeader.timestamp}} UTC - {{ timeDelta(this.blockHeader.timestamp) }}
       </div>
-      <div v-if="this.blockOpsReal.length > 0">
+      <div v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
         <div class="text-h6">{{ this.blockOpsReal.length }} Transactions in this block</div>
         <q-list bordered separator dense>
           <q-item v-for="tx in this.blockOpsReal" :key="tx.index">
@@ -24,7 +24,7 @@
               <q-item-label v-if="tx.op[1].parent_author === ''">
                 <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
                 {{ tx.op[1].author }} wrote a post
-                <span v-if="tx.op[1].title"> titled "{{ tx.op[1].title }}"</span>
+                <span v-if="tx.op[1].title"> titled "<a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].title }}</a>"</span>
                 <div>
                   <vue-json-pretty :data="tx.op[1]" />
                 </div>
@@ -221,7 +221,6 @@ export default {
     }
   },
   mounted () {
-    // this.getBlock(this.$route.params.blockNum)
     this.getBlockHeader(this.$route.params.blockNum)
     this.getBlockOps(this.$route.params.blockNum)
   }

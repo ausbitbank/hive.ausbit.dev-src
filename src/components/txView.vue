@@ -240,12 +240,10 @@
           </q-item-section>
         </template>
         <q-card bordered dense class="shadow-1">
-          <pre>
-            {{ syntaxHighlight }}
-          </pre>
+            <vue-json-pretty :data="JSON.parse(syntaxHighlight)" />
           <q-card-actions vertical>
-            <a :href='hiveBlocks' target="_blank">
-              <q-btn label="View on Hiveblocks" color="secondary" />
+            <a :href='linkBlock' target="_blank">
+              <q-btn label="View Block" color="secondary" />
             </a>
           </q-card-actions>
         </q-card>
@@ -255,9 +253,12 @@
 </template>
 <script>
 import moment from 'moment'
+import VueJsonPretty from 'vue-json-pretty'
+import 'vue-json-pretty/lib/styles.css'
 export default {
   name: 'txView',
   props: ['tx', 'username', 'globalPropsHive', 'filter'],
+  components: { VueJsonPretty },
   data () {
     return {
     }
@@ -336,6 +337,13 @@ export default {
     },
     hiveBlocks: function () {
       return 'https://hiveblocks.com/b/' + this.tx[1].block + '#' + this.tx[1].trx_id
+    },
+    linkBlock: function () {
+      if (this.tx[1].op_in_trx === 0) {
+        return '/block/' + this.tx[1].block + '#' + this.tx[1].virtual_op
+      } else {
+        return '/block/' + this.tx[1].block + '#' + this.tx[1].trx_id
+      }
     },
     syntaxHighlight: function () {
       return JSON.stringify(this.tx[1], null, 2)

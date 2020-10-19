@@ -67,7 +67,6 @@ export default {
     returnBlockLink (blockNum) { return '/b/' + blockNum + '#' + this.txId }
   },
   mounted () {
-    // this.getBlock(this.$route.params.blockNum)
     this.getTx(this.$route.params.txId)
   }
 }

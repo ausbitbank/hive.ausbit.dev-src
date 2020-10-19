@@ -12,6 +12,7 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
+    "@hiveio/dhive": "^0.14.8",
     "@hiveio/hive-js": "^0.1.0",
     "@quasar/extras": "^1.9.9",
     "axios": "^0.18.1",
@@ -19,7 +20,8 @@
     "quasar": "^1.14.1",
     "steem": "^0.7.11",
     "steem-content-renderer": "^2.1.1",
-    "vue-json-pretty": "^1.7.0"
+    "vue-json-pretty": "^1.7.0",
+    "vue-sparklines": "^0.2.1"
   },
   "devDependencies": {
     "@quasar/app": "^1.9.6",

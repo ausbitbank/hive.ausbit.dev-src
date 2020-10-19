@@ -62,16 +62,13 @@ export default {
       if (!isNaN(this.search)) {
         console.log('searching for block ' + this.search)
         this.$router.push('/block/' + this.search)
-        this.$router.go()
       } else {
         if (this.search.length === 40) {
           console.log('searching for txid ' + this.search)
           this.$router.push('/tx/' + this.search)
-          this.$router.go()
         } else {
           console.log('searching for account ' + this.search)
           this.$router.push('/@' + this.search)
-          this.$router.go()
         }
       }
     },
