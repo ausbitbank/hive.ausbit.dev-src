@@ -11,7 +11,9 @@ const routes = [
       { path: ':tag/@:author/:permlink', component: () => import('pages/post.vue') },
       { path: 'block/:blockNum', component: () => import('pages/block.vue') },
       { path: 'b/:blockNum', component: () => import('pages/block.vue') },
-      { path: 'tx/:txId', component: () => import('pages/tx.vue') }
+      { path: 'tx/:txId', component: () => import('pages/tx.vue') },
+      { path: 'nodes', component: () => import('pages/nodes.vue') },
+      { path: 'witnesses', component: () => import('pages/witnesses.vue') }
     ]
   }
 ]
