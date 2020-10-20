@@ -29,8 +29,9 @@
             </div>
           </div>
         </q-card-section>
-        <q-card-section style="text-center">
+        <q-card-section class="text-center">
           <a href="https://peakd.com/@fullnodeupdate"><q-btn icon="info" color="primary" label="Tests by @fullnodeupdate" /></a>
+          <div v-if="fullNodeUpdateTime">{{ timeDelta(fullNodeUpdateTime) }}</div>
         </q-card-section>
       </q-card>
       <q-card v-if="witnesses !== null">
@@ -92,6 +93,7 @@ import hive from '@hiveio/hive-js'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import sparkline from 'vue-sparklines'
+import moment from 'moment'
 // import { Client } from "@hiveio/dhive"
 // const client = new Client(["https://rpc.ausbit.dev", "https://api.hive.blog", "https://api.hivekings.com", "https://anyx.io", "https://api.openhive.network"])
 
@@ -104,7 +106,8 @@ export default {
       witnesses: null,
       sparklineIndicatorStyle: false,
       sparklineStyle: { stroke: '#54a5ff' },
-      fullNodeUpdate: null
+      fullNodeUpdate: null,
+      fullNodeUpdateTime: null
     }
   },
   components: {
@@ -133,6 +136,12 @@ export default {
     }
   },
   methods: {
+    timeDelta (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
+    },
     tidyNumber (x) {
       var parts = x.toString().split('.')
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -163,7 +172,12 @@ export default {
     },
     getFullNodeUpdate () {
       hive.api.getAccountsAsync(['fullnodeupdate'])
-        .then((response) => { this.fullNodeUpdate = response[0].json_metadata })
+        .then((response) => {
+          this.fullNodeUpdate = response[0].json_metadata
+          this.fullNodeUpdateTime = response[0].last_account_update
+          console.log(response)
+          console.log(this.fullNodeUpdateTime)
+        })
         .catch(() => console.log('Failed to load @fullnodeupdate profile'))
     },
     getNodeStatusColor (node) {
