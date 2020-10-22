@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          <a href="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></a>
+          <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></router-link>
           hive.ausbit.dev
         </q-toolbar-title>
         <q-form @submit="onSearchSubmit" @reset="onSearchReset">

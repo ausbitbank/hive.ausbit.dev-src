@@ -1,5 +1,5 @@
 <template>
-  <div v-html="postContent" class="postview q-ma-md q-pa-md">
+  <div v-html="postContent" class="q-ma-md q-pa-md">
   </div>
 </template>
 <style>

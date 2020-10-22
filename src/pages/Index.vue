@@ -1,7 +1,10 @@
 <template>
   <q-page class="flex flex-center">
+    <div class="">
+        <recent-posts-carousel />
+    </div>
     <div class="q-pa-md row items-start q-gutter-md">
-      <q-card flat bordered>
+      <q-card flat bordered v-if="!false">
         <q-card-section class="text-center">
           <div class="text-h5 text-center">
             Dynamic Global Properties
@@ -13,8 +16,6 @@
       <nodes />
       <witnesses />
       <coingecko />
-      <div class="col">
-      </div>
     </div>
   </q-page>
 </template>
@@ -32,6 +33,7 @@ import moment from 'moment'
 import nodes from 'components/nodes.vue'
 import witnesses from 'components/witnesses.vue'
 import coingecko from 'components/coingecko.vue'
+import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 // import { Client } from "@hiveio/dhive"
 // const client = new Client(["https://rpc.ausbit.dev", "https://api.hive.blog", "https://api.hivekings.com", "https://anyx.io", "https://api.openhive.network"])
 
@@ -46,7 +48,8 @@ export default {
     VueJsonPretty,
     nodes,
     witnesses,
-    coingecko
+    coingecko,
+    recentPostsCarousel
   },
   computed: {
     hivePerMvests: function () {

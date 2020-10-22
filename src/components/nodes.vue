@@ -1,5 +1,7 @@
 <template>
-    <q-card flat bordered>
+    <span>
+    <q-spinner-grid size="2em" color="primary" v-if="fullNodeUpdate === null" />
+    <q-card flat bordered v-if="fullNodeUpdate !== null">
         <q-card-section class="text-center">
             <div class="text-h5 text-center">
                 Api Nodes
@@ -29,8 +31,10 @@
                 <div class="text-caption">
                     Alternative : <a href="https://hivekings.com/nodes" target="_blank">hivekings.com/nodes</a>
                 </div>
+                <div class="text-center"><router-link to="witnesses"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
+    </span>
 </template>
 <style scoped>
 a {text-decoration: none; color: #3344dd }

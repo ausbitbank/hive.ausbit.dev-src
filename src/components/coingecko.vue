@@ -1,10 +1,12 @@
 <template>
+    <span>
+    <q-spinner-grid size="2em" color="primary" v-if="!coinGecko" />
     <span v-if="coinGecko">
     <q-card flat bordered v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
             <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }}</div>
                 <sparkline width="250" height="60" v-if="coin.sparkline_in_7d">
-                    <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" />
+                    <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
                 </sparkline>
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
             <div><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
@@ -30,8 +32,10 @@
                 </q-card>
             </q-dialog>
             <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
+            <div><router-link to="markets"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
+    </span>
     </span>
 </template>
 <style scoped>
@@ -48,6 +52,8 @@ export default {
       coinGecko: null,
       sparklineIndicatorStyle: false,
       sparklineStyle: { stroke: '#54a5ff' },
+      spotStyle: { fill: '#54a5ff' },
+      spotProps: { size: 2 },
       sparklineEnabled: 'true',
       coins: ['hive', 'hive_dollar', 'bitcoin'],
       coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'link', 'litecoin', 'eos', 'monero', 'dash', 'uniswap', 'yearn.finance', 'dogecoin', 'steem', 'steem_dollar', 'tron'],

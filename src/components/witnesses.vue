@@ -1,4 +1,6 @@
 <template>
+    <span>
+    <q-spinner-grid size="2em" color="primary" v-if="witnesses === null" />
     <q-card flat bordered v-if="witnesses !== null">
         <q-card-section class="text-center">
             <div class="text-h5">
@@ -8,7 +10,7 @@
                 <div>
                     <div>
                         <span class="text-bold">{{ witness.owner }} </span>
-                        <q-badge outline color="green">
+                        <q-badge outline :color="getVersionColor(witness.running_version)">
                             v{{ witness.running_version }}
                         </q-badge>
                         <q-tooltip content-class="bg-dark">
@@ -20,8 +22,10 @@
         </q-card-section>
         <q-card-section style="text-center">
             <a href="https://peakd.com/me/witnesses"><q-btn icon="info" color="primary" label="Vote Witnesses" /></a>
+            <div class="text-center"><router-link to="witnesses"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
+    </span>
 </template>
 <style scoped>
 a {text-decoration: none; color: #3344dd }
@@ -58,11 +62,13 @@ export default {
       }
     },
     votesToHp (votes) {
-      // total_vesting_fund_steem / ( total_vesting_shares / 1000000000000 )
       return this.numberWithCommas(((votes * this.hivePerMvests) / 1000000000000).toFixed(0))
     },
     votesToHpRaw (votes) {
       return ((votes * this.hivePerMvests) / 1000000000000).toFixed(0)
+    },
+    getVersionColor (version) {
+      return 'green'
     }
   },
   mounted () {

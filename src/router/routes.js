@@ -13,7 +13,8 @@ const routes = [
       { path: 'b/:blockNum', component: () => import('pages/block.vue') },
       { path: 'tx/:txId', component: () => import('pages/tx.vue') },
       { path: 'nodes', component: () => import('pages/nodes.vue') },
-      { path: 'witnesses', component: () => import('pages/witnesses.vue') }
+      { path: 'witnesses', component: () => import('pages/witnesses.vue') },
+      { path: 'markets', component: () => import('pages/markets.vue') }
     ]
   }
 ]
