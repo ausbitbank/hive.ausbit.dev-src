@@ -56,6 +56,11 @@
                 <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> started conversion of {{ tx.op[1].amount }} , request id {{ tx.op[1].requestid }}
               </q-item-label>
             </q-item-section>
+            <q-item-section v-else-if="tx.op[0] === 'feed_publish'">
+              <q-item-label>
+                <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].publisher)" /></q-avatar><span class="text-bold">{{ tx.op[1].publisher }}</span> published pricefeed of ${{ tx.op[1].exchange_rate.base }} per {{ tx.op[1].exchange_rate.quote }}
+              </q-item-label>
+            </q-item-section>
             <q-item-section v-else-if="tx.op[0] === 'comment_options'">
               <q-item-label>
                 <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold">{{ tx.op[1].author }}</span> changed comment options for <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a>

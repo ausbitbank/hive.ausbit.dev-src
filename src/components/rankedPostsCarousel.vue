@@ -3,7 +3,7 @@
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered style="width: 500px;">
-      <div class="text-h6 text-center">Recently shared by {{ this.account }}</div>
+      <div class="text-h6 text-center">{{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }}</div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -45,22 +45,19 @@ import moment from 'moment'
 // import VueJsonPretty from 'vue-json-pretty'
 // import 'vue-json-pretty/lib/styles.css'
 export default {
-  name: 'recentPostsCarousel',
+  name: 'trendingPostsCarousel',
   // components: { VueJsonPretty },
   data () {
     return {
       posts: [],
-      // account: 'ausbitbank',
-      // limit: 10,
-      showResteems: true,
       api: 'https://rpc.ausbit.dev',
       slide: null,
-      autoplay: true,
-      limit: 10
+      autoplay: true
     }
   },
   props: {
-    account: String
+    // tag: String,
+    sortMethod: String // eg 'trending'
   },
   computed: {
     firstPermlink: function () {
@@ -91,16 +88,15 @@ export default {
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
-    getRecentPosts () {
+    getRankedPosts () {
       this.$axios.post(this.api, {
         id: 1,
         jsonrpc: '2.0',
-        method: 'bridge.get_account_posts',
+        method: 'bridge.get_ranked_posts',
         params: {
-          sort: 'blog',
-          account: this.account,
-          limit: this.limit,
-          observer: this.account,
+          observer: null,
+          limit: 10,
+          sort: this.sortMethod,
           start_author: null,
           start_permlink: null
         }
@@ -112,7 +108,7 @@ export default {
     }
   },
   mounted () {
-    this.getRecentPosts()
+    this.getRankedPosts()
   }
 }
 </script>
