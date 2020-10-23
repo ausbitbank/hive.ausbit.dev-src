@@ -3,7 +3,7 @@
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered style="width: 500px;">
-      <div class="text-h6 text-center">Recently shared by {{ this.account }}</div>
+      <div class="text-h6 text-center">Recently shared by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -29,6 +29,12 @@
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
+      <q-dialog v-model="settings">
+        <q-card class="q-pa-md q-ma-md">
+          <q-input label="account" v-model="account" />
+          <q-btn push label="update" color="primary" @click="settings = false; getRecentPosts()"/>
+        </q-card>
+      </q-dialog>
       </q-card>
     </div>
   </div>
@@ -56,7 +62,8 @@ export default {
       api: 'https://rpc.ausbit.dev',
       slide: null,
       autoplay: true,
-      limit: 10
+      limit: 10,
+      settings: false
     }
   },
   props: {
@@ -92,6 +99,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     getRecentPosts () {
+      this.posts = []
       this.$axios.post(this.api, {
         id: 1,
         jsonrpc: '2.0',

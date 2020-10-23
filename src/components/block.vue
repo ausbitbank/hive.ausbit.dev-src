@@ -226,8 +226,8 @@ export default {
     }
   },
   mounted () {
-    this.getBlockHeader(this.$route.params.blockNum)
-    this.getBlockOps(this.$route.params.blockNum)
+    this.getBlockHeader(this.blockNum)
+    this.getBlockOps(this.blockNum)
   }
 }
 </script>

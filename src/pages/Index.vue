@@ -18,7 +18,7 @@ a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
+// import hive from '@hiveio/hive-js'
 import nodes from 'components/nodes.vue'
 import witnesses from 'components/witnesses.vue'
 import coingecko from 'components/coingecko.vue'
@@ -45,9 +45,6 @@ export default {
   methods: {
   },
   mounted () {
-    hive.api.getHardforkVersion(function (err, result) {
-      console.log(err, result)
-    })
   }
 }
 </script>

@@ -3,7 +3,7 @@
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered style="width: 500px;">
-      <div class="text-h6 text-center">{{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }}</div>
+      <div class="text-h6 text-center">{{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -31,6 +31,12 @@
       </q-carousel>
       </q-card>
     </div>
+    <q-dialog v-model="settings">
+      <q-card class="q-pa-md q-ma-md">
+        <q-input v-model="newSort" label="Sort method" />
+        <q-btn label="update" color="primary" @click="settings = false; sortMethod = newSort; getRankedPosts()" />
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 <style scoped>
@@ -52,7 +58,9 @@ export default {
       posts: [],
       api: 'https://rpc.ausbit.dev',
       slide: null,
-      autoplay: true
+      autoplay: true,
+      settings: false,
+      newSort: null
     }
   },
   props: {
@@ -89,6 +97,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     getRankedPosts () {
+      this.posts = []
       this.$axios.post(this.api, {
         id: 1,
         jsonrpc: '2.0',
@@ -108,6 +117,7 @@ export default {
     }
   },
   mounted () {
+    this.newSort = this.sortMethod
     this.getRankedPosts()
   }
 }
