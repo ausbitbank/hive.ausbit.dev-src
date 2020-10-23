@@ -32,7 +32,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption>
-              {{ op.sbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
+              {{ op.hbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
             </q-item-label>
             <q-item-label caption>
               {{ op.permlink.substring(0,70) }}...
@@ -45,7 +45,7 @@
               </q-item-label>
             </q-item-section>
             <q-item-label caption>
-              {{ op.sbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
+              {{ op.hbd_payout }} {{ op.hive_payout }} {{ mvestsToHP(parseFloat(op.vesting_payout.split(' ')[0])) }} HP
             </q-item-label>
             <q-item-label caption>
               @{{ op.author }} / {{ op.permlink.substring(0,70) }}...
@@ -221,7 +221,7 @@
             <q-item-label caption>Account Subsidy Budget {{ op.props.account_subsidy_budget }}</q-item-label>
             <q-item-label caption>Account Subsidy Decay {{ op.props.account_subsidy_decay }}</q-item-label>
             <q-item-label caption>Maximum Block Size {{ op.props.maximum_block_size }}</q-item-label>
-            <q-item-label caption>HBD Interest Rate {{ op.props.sbd_interest_rate }}</q-item-label>
+            <q-item-label caption>HBD Interest Rate {{ op.props.hbd_interest_rate }}</q-item-label>
             <q-item-label caption>Url {{ op.url }}</q-item-label>
           </div>
           <div v-else>

@@ -156,7 +156,7 @@ export default {
             account_subsidy_budget: el.props.account_subsidy_budget,
             account_subsidy_decay: el.props.account_subsidy_decay,
             maximum_block_size: el.props.maximum_block_size,
-            hbd_interest_rate: el.props.sbd_interest_rate,
+            hbd_interest_rate: el.props.hbd_interest_rate,
             price: (el.hbd_exchange_rate.base.split(' ')[0]),
             running_version: el.running_version,
             last_confirmed_block_num: el.last_confirmed_block_num,
@@ -164,7 +164,7 @@ export default {
             url: el.url,
             created: el.created,
             last_aslot: el.last_aslot,
-            last_hbd_exchange_update: el.last_sbd_exchange_update,
+            last_hbd_exchange_update: el.last_hbd_exchange_update,
             signing_key: el.signing_key
           })
         })

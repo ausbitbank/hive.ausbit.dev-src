@@ -107,7 +107,7 @@
         HBD Interest Rate
       </span>
       <span class="q-pa-md">
-        {{ witnessState.props.sbd_interest_rate }}
+        {{ witnessState.props.hbd_interest_rate }}
       </span>
     </div>
     <div>
@@ -140,7 +140,7 @@
         Last HBD Exchange Update
       </span>
       <span class="q-pa-md">
-        {{ witnessState.last_sbd_exchange_update }}
+        {{ witnessState.last_hbd_exchange_update }}
       </span>
     </div>
     <div>

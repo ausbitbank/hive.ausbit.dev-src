@@ -23,7 +23,7 @@
         {{ A.balance }}
       </span>
       <span class="q-pa-md">
-        {{ A.sbd_balance }}
+        {{ A.hbd_balance }}
       </span>
       <transfer :A="A" />
     </div>
@@ -35,7 +35,7 @@
         {{ A.savings_balance }}
       </span>
       <span class="q-pa-md">
-        {{ A.savings_sbd_balance }}
+        {{ A.savings_hbd_balance }}
       </span>
       <move-to-savings :A="A" />
     </div>
@@ -118,7 +118,7 @@
       <span class="q-pa-md">
         {{ A.vesting_withdraw_rate }}
       </span>
-      <q-btn label="Convert SBD" disable />
+      <q-btn label="Convert HBD" disable />
     </div>
     <div>
       <span class="text-bold q-pa-md">
@@ -136,7 +136,7 @@
 
 <script>
 import moment from 'moment'
-import claimRewards from 'components/claimRewards.vue'
+import claimRewards from 'components/ClaimRewards.vue'
 import transfer from 'components/Transfer.vue'
 import moveToSavings from 'components/MoveToSavings.vue'
 import powerUp from 'components/PowerUp.vue'

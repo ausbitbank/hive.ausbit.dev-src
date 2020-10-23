@@ -40,7 +40,7 @@ export default {
       return this.A.balance.split(' ')[0]
     },
     availableHbd: function () {
-      return this.A.sbd_balance.split(' ')[0]
+      return this.A.hbd_balance.split(' ')[0]
     },
     available: function () {
       if (this.transferType === 'HIVE') {

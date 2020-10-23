@@ -117,7 +117,7 @@ export default {
   computed: {
     steemPerMvests: function () {
       if (this.globalPropsSteem.total_vesting_shares) {
-        return (this.globalPropsSteem.total_vesting_fund_hive.split(' ')[0] / (this.globalPropsSteem.total_vesting_shares.split(' ')[0] / 1e6))
+        return (this.globalPropsSteem.total_vesting_fund_steem.split(' ')[0] / (this.globalPropsSteem.total_vesting_shares.split(' ')[0] / 1e6))
       } else { return 509.6451627091090586 }
     },
     hivePerMvests: function () {
@@ -181,7 +181,7 @@ export default {
         name: account.name,
         balance: account.balance.split(' ')[0],
         savings_balance: account.savings_balance,
-        pegged: account.sbd_balance.split(' ')[0],
+        pegged: account.hbd_balance.split(' ')[0],
         to_withdraw_vests: account.to_withdraw,
         vesting_balance: account.vesting_shares.split(' ')[0],
         vesting_withdraw_rate_vests: account.vesting_withdraw_rate.split(' ')[0],

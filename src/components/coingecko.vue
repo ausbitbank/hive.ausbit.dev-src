@@ -32,7 +32,7 @@
                 </q-card>
             </q-dialog>
             <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
-            <div><router-link to="markets"><q-btn dense push icon="link" /></router-link></div>
+            <div v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
     </span>

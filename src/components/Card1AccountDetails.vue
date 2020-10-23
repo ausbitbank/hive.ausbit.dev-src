@@ -189,7 +189,7 @@
           HBD Seconds
         </span>
         <span class="q-pa-md">
-          {{ A.sbd_seconds}}
+          {{ A.hbd_seconds}}
         </span>
       </div>
       <div>
@@ -197,7 +197,7 @@
           HBD Seconds Last Update
         </span>
         <span class="q-pa-md">
-          {{ A.sbd_seconds_last_update}}
+          {{ A.hbd_seconds_last_update}}
         </span>
       </div>
       <div>
@@ -205,7 +205,7 @@
           HBD Last Interest Payment
         </span>
         <span class="q-pa-md">
-          {{ A.sbd_last_interest_payment }}
+          {{ A.hbd_last_interest_payment }}
         </span>
       </div>
       <q-separator />
@@ -214,7 +214,7 @@
           Savings HBD Seconds
         </span>
         <span class="q-pa-md">
-          {{ A.savings_sbd_seconds }}
+          {{ A.savings_hbd_seconds }}
         </span>
       </div>
       <div>
@@ -222,7 +222,7 @@
           Savings HBD Seconds Last Update
         </span>
         <span class="q-pa-md">
-          {{ A.savings_sbd_seconds_last_update }}
+          {{ A.savings_hbd_seconds_last_update }}
         </span>
       </div>
       <div>
@@ -230,7 +230,7 @@
           Savings HBD Last Interest Payment
         </span>
         <span class="q-pa-md">
-          {{ A.savings_sbd_last_interest_payment }}
+          {{ A.savings_hbd_last_interest_payment }}
         </span>
       </div>
       <div>

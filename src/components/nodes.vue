@@ -31,7 +31,7 @@
                 <div class="text-caption">
                     Alternative : <a href="https://hivekings.com/nodes" target="_blank">hivekings.com/nodes</a>
                 </div>
-                <div class="text-center"><router-link to="witnesses"><q-btn dense push icon="link" /></router-link></div>
+                <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
     </span>
