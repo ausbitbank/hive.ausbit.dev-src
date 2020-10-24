@@ -1,20 +1,20 @@
 <template>
-  <q-page class="flex q-pa-md">
-    <div v-if="tx">
-      <div>
-        <span class="text-h5">TX</span>
-        <span class="text-italic">{{ txId }}</span>
-      </div>
-      <div>
-        <span class="text-subtitle">Included in block
-          <span><a :href="returnBlockLink(tx.block_num)">{{ tidyNumber(tx.block_num) }}</a> {{ timeDelta(tx.expiration) }}</span>
-        </span>
-        <q-separator />
-        <div class="q-pa-md q-mt-md">
+  <q-page class="flex-center q-pa-md" style="overflow-wrap:break-word">
+    <span class="column items-center">
+    <q-card bordered flat v-if="tx" style="max-width: 100%;" class="col">
+      <q-card-section>
+        <div class="text-h6">Transaction {{ txId }}</div>
+        <div class="text-subtitle"> Included in
+          <span><router-link :to="returnBlockLink(tx.block_num)"> Block {{ tidyNumber(tx.block_num) }}</router-link></span>
+        </div>
+      </q-card-section>
+      <q-card-section>
+        <div>
           <vue-json-pretty :data="tx" />
         </div>
-      </div>
-    </div>
+      </q-card-section>
+    </q-card>
+    </span>
   </q-page>
 </template>
 <style>

@@ -17,7 +17,7 @@ export default {
   },
   data () {
     return {
-      blockNum: this.$route.params.blockNum
+      blockNum: parseInt(this.$route.params.blockNum)
     }
   },
   computed: {

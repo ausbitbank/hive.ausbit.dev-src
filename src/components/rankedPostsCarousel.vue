@@ -3,7 +3,10 @@
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered style="width: 500px;">
-      <div class="text-h6 text-center">{{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <div class="text-h6 text-center">
+        <q-icon name="trending_up" v-if="this.sortMethod === 'trending'"/>
+        <q-icon name="whatshot" v-if="this.sortMethod === 'hot'"/>
+        {{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"

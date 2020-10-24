@@ -1,13 +1,14 @@
 <template>
-    <q-card flat bordered style="q-pa-md q-gutter-md">
-        <center><q-spinner-grid v-if="loading" size="5em" color="primary" style="clear:both;" class="q-ma-lg" /></center>
+    <span>
+    <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
+    <q-card flat bordered class="q-pa-sm" style="max-width: 100%; max-width:700px; overflow-wrap: break-word" v-if="!loading">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
-                <a :href="linkPrevious"><q-icon color="white" name="navigate_before" /></a>
-                <span>Block {{ this.tidyNumber(this.blockNum) }}</span>
-                <a :href="linkNext"><q-icon color="white" name="navigate_next" /></a>
+                <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
+                <span>Block {{ this.tidyNumber(this.blockNumber) }}</span>
+                <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
             </div>
-            <span v-if="this.blockHeader" style="text-caption text-center">{{this.blockHeader.timestamp}} UTC - {{ timeDelta(this.blockHeader.timestamp) }}</span>
+            <span v-if="this.blockHeader" style="text-caption text-center">Witnessed by {{ this.blockHeader.witness }} at {{this.blockHeader.timestamp}} UTC - {{ timeDelta(this.blockHeader.timestamp) }}</span>
         </q-card-section>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
             <div class="text-h6 text-center">{{ this.blockOpsReal.length }} Transactions in this block</div>
@@ -30,8 +31,14 @@
                 </q-item-label>
                 <q-item-label v-else>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
-                    <span class="text-bold">{{ tx.op[1].author }}</span> commented on {{ tx.op[1].parent_author }} \ {{ tx.op[1].parent_permlink }} :
-                    <div><code>{{ tx.op[1].body }}</code></div>
+                    <span class="text-bold">{{ tx.op[1].author }}</span> commented on {{ tx.op[1].parent_author }} \ <router-link :to="returnLink(tx.op[1].parent_author,tx.op[1].parent_permlink)">{{ tx.op[1].parent_permlink }}</router-link> :
+                    <div><vue-json-pretty :data="tx.op[1]" /></div>
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'account_update'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> updated profile metadata
+                    <vue-json-pretty :data="tx.op[1]" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'account_update2'">
@@ -43,6 +50,11 @@
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_create'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> created limit order - selling {{ tx.op[1].amount_to_sell }} for {{ tx.op[1].min_to_receive }} (Fill or kill: {{ tx.op[1].fill_or_kill }}, Expiration {{ tx.op[1].expiration }}, Order Id {{ tx.op[1].orderid }})
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'fill_order'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].current_owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].current_owner }}</span> filled open order from <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].open_owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].open_owner}}</span> - paid {{  tx.op[1].current_pays }} for {{ tx.op[1].open_pays }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_cancel'">
@@ -73,10 +85,20 @@
                     <span v-if="tx.op[1].reward_hbd !== '0.000 HBD'"><q-chip dense>{{ tx.op[1].reward_hbd }}</q-chip></span>
                     <span v-if="tx.op[1].reward_vests !== '0.000 VESTS'"><q-chip dense>{{ tx.op[1].reward_vests }}</q-chip></span>
                 </q-item-label>
-            </q-item-section>
-            <q-item-section v-else-if="tx.op[0] === 'claim_account'">
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'claim_account'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold">{{ tx.op[1].creator }}</span> claimed account creation token with fee of {{ tx.op[1].fee }}
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> set witness properties {{ tx.op[1].props }}
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> set witness properties {{ tx.op[1].props }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'custom_json'">
@@ -87,7 +109,7 @@
                     <span v-else-if="tx.op[1].required_auths.length > 0">
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_auths[0])" /></q-avatar><span class="text-bold">{{ tx.op[1].required_auths[0] }}</span>
                     </span>
-                    sent <span class="text-bold">custom json</span> with id <q-chip dense>{{ tx.op[1].id }}</q-chip>
+                    sent <span class="text-bold">custom json</span> with id <q-chip color="primary" dense>{{ tx.op[1].id }}</q-chip>
                     <vue-json-pretty :data="JSON.parse(tx.op[1].json)" />
                 </q-item-label>
                 </q-item-section>
@@ -103,7 +125,7 @@
                 </span>
                 </q-item-section>
                 <q-item-section side class="text-caption">
-                <a :name="tx.trx_id" :href="returnTxLink(tx.trx_id)">{{ tx.trx_id.substr(0,8) }}</a>
+                <router-link :name="tx.trx_id" :to="returnTxLink(tx.trx_id)">{{ tx.trx_id.substr(0,8) }}</router-link>
                 </q-item-section>
             </q-item>
             </q-list>
@@ -120,12 +142,13 @@
             </q-item>
             </q-list>
         </q-card-section>
-        <q-card-section class="text-body text-center">
-            <a :href="linkPrevious"><q-icon color="white" name="navigate_before" /></a>
-            <span>Block {{ this.tidyNumber(this.blockNum) }}</span>
-            <a :href="linkNext"><q-icon color="white" name="navigate_next" /></a>
+        <q-card-section class="text-body text-center" v-if="!loading">
+            <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
+            <span>Block {{ this.tidyNumber(this.blockNumber) }}</span>
+            <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
         </q-card-section>
     </q-card>
+    </span>
 </template>
 <style>
 a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
@@ -150,7 +173,9 @@ export default {
     return {
       block: null,
       blockHeader: null,
-      blockOps: []
+      blockOps: [],
+      lastIrreversibleBlock: null,
+      blockNumber: this.blockNum
     }
   },
   computed: {
@@ -169,11 +194,11 @@ export default {
       }
     },
     linkPrevious: function () {
-      var num = parseInt(this.blockNum) - 1
+      var num = parseInt(this.blockNumber) - 1
       return '/block/' + num
     },
     linkNext: function () {
-      var num = parseInt(this.blockNum) + 1
+      var num = parseInt(this.blockNumber) + 1
       return '/block/' + num
     },
     loading: function () {
@@ -223,11 +248,25 @@ export default {
       } else {
         return 'red'
       }
+    },
+    updateBlock (blockNumber) {
+      this.blockNumber = blockNumber
+      this.blockOps = []
+      this.blockHeader = null
+      this.getBlockHeader(blockNumber)
+      this.getBlockOps(blockNumber)
+    },
+    getLatestIrreversibleBlock () {
+      hive.api.getDynamicGlobalPropertiesAsync()
+        .then(res => this.updateBlock(res.last_irreversible_block_num))
     }
   },
   mounted () {
-    this.getBlockHeader(this.blockNum)
-    this.getBlockOps(this.blockNum)
+    if (this.blockNum === 0) {
+      this.getLatestIrreversibleBlock()
+    } else {
+      this.updateBlock(this.blockNum)
+    }
   }
 }
 </script>

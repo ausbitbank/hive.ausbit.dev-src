@@ -4,7 +4,7 @@
     <q-card flat bordered v-if="witnesses !== null">
         <q-card-section class="text-center">
             <div class="text-h5">
-                Witnesses
+                <q-icon name="emoji_people" /> Witnesses
             </div>
             <div v-for="witness in witnesses" :key="witness.index">
                 <div>

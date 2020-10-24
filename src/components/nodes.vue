@@ -4,10 +4,10 @@
     <q-card flat bordered v-if="fullNodeUpdate !== null">
         <q-card-section class="text-center">
             <div class="text-h5 text-center">
-                Api Nodes
+                <q-icon name="dns" /> Api Nodes
             </div>
             <div v-for="node in fullNodeUpdateHive" :key="node.index" class="text-center">
-                <span class="text-bold">{{ node.node.replace('https://','') }}</span>
+                <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
                 <div>
                 <div>
                     <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>

@@ -9,6 +9,7 @@
       <nodes />
       <witnesses />
       <coingecko />
+      <block :blockNum=0 />
     </div>
   </q-page>
 </template>
@@ -24,7 +25,7 @@ import witnesses from 'components/witnesses.vue'
 import coingecko from 'components/coingecko.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import rankedPostsCarousel from 'components/rankedPostsCarousel.vue'
-// import block from 'components/block.vue'
+import block from 'components/block.vue'
 
 export default {
   name: 'Home',
@@ -37,8 +38,8 @@ export default {
     witnesses,
     coingecko,
     recentPostsCarousel,
-    rankedPostsCarousel
-    // block
+    rankedPostsCarousel,
+    block
   },
   computed: {
   },
