@@ -1,8 +1,9 @@
 <template>
   <q-page class="flex q-pa-md">
       <div class="fit row wrap justify-start items-start content-start" v-if="account !== null && globalProps !== null">
-          <div class="col-10 text-h4 q-pa-md">
-              <q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}
+          <div class="col-10 q-pa-md text-center" :style='coverImageStyle'>
+              <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
+              <div class="text-subtitle" v-if="account.posting_json_metadata">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
           </div>
           <div class="col-2">
               <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md">
@@ -84,6 +85,7 @@
                       </div>
                   </q-card-section>
               </q-card>
+              <recent-posts-carousel :account="username" />
               <q-card flat bordered class="q-pa-sm q-ma-md">
                   <q-card-section>
                       <div class="text-h6">Resource Credits</div>
@@ -405,7 +407,7 @@
                       <vue-json-pretty :data="JSON.parse(account.json_metadata)" :customValueFormatter="customLinkFormatter" />
                   </q-card-section>
               </q-card>
-              <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.post_json_metadata">
+              <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
                   <q-card-section>
                       <div class="text-h6">Posting JSON Metadata</div>
                       <vue-json-pretty :data="JSON.parse(account.posting_json_metadata)" :customValueFormatter="customLinkFormatter" />
@@ -625,10 +627,14 @@ import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import { debounce } from 'quasar'
 import DOMPurify from 'dompurify'
+import recentPostsCarousel from 'components/recentPostsCarousel.vue'
+// import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 export default {
   name: 'accountPage',
   components: {
-    VueJsonPretty
+    VueJsonPretty,
+    recentPostsCarousel
+    // recentVotedPostsCarousel
   },
   data () {
     return {
@@ -666,6 +672,41 @@ export default {
       var secondsago = (new Date() - new Date(this.account.last_vote_time + 'Z')) / 1000
       var vpow = this.account.voting_power + (10000 * secondsago / 432000)
       return Math.min(vpow / 100, 100).toFixed(2)
+    },
+    coverImage: function () {
+      if (this.account === null) {
+        return null
+      } else {
+        if (this.account.posting_json_metadata) {
+          if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
+            console.log(JSON.parse(this.account.posting_json_metadata).profile.cover_image)
+            return JSON.parse(this.account.posting_json_metadata).profile.cover_image
+          } else {
+            return null
+          }
+        } else {
+          return null
+        }
+      }
+    },
+    coverImageStyle: function () {
+      if (this.coverImage) {
+        return { 'background-image': 'linear-gradient(rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 40%, rgba(10, 10, 10, 0.75) 100%), url(' + this.coverImage + ')', 'background-position': 'center-center', 'background-repeat': 'no-repeat', 'background-size': 'cover', 'background-clip': 'border-box, border-box', 'background-color': 'rgba(0, 0, 0, 0)', 'background-attachment': 'scroll, scroll' }
+      } else {
+        return null
+      }
+    },
+    recentVotes: function () {
+      if (this.accountOperations) {
+        var last10votes = this.accountOperations.filter(this.filterOpsVotes).slice(0, 10)
+        var votesArr = []
+        for (var op in last10votes) {
+          votesArr.push({ author: last10votes[op][1].op[1].author, permlink: last10votes[op][1].op[1].permlink })
+        }
+        return votesArr
+      } else {
+        return null
+      }
     },
     resourceBudgetComments: function () {
       if (this.RC.current) {
@@ -708,6 +749,7 @@ export default {
     }
   },
   methods: {
+    filterOpsVotes (op) { if (op[1].op[0] === 'vote') { return true } else { return false } },
     async getAccountHistory (username) {
     },
     async getAccountHistoryMarker (username) {
@@ -810,7 +852,7 @@ export default {
     customLinkFormatter (data, key, parent, defaultFormatted) {
       if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
         return `<a href="/block/${data}">${data}</a>`
-      } else if (key === 'url') {
+      } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `<a href="${data}">${data}</a>`
       } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account'].includes(key)) {
         return `<a href="/@${data}">${data}</a>`

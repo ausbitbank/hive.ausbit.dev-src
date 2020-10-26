@@ -1,12 +1,26 @@
 <template>
-  <div v-html="postContent" class="q-ma-md q-pa-md">
+  <div v-html="postContent">
   </div>
 </template>
 <style>
-.postview { overflow: auto; max-height: 100vh  }
+.postview { overflow: auto; }
 a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95%; text-align: center}
+.yt-container {
+  position:relative;
+  padding-bottom:56.25%;
+  padding-top:30px;
+  height:0;
+  overflow:hidden;
+}
+.yt-container iframe, .yt-container object, .yt-container embed {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+}
 </style>
 <script>
 import { DefaultRenderer } from 'steem-content-renderer'

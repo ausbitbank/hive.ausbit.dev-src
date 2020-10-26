@@ -87,7 +87,7 @@ export default {
     },
     getCoinGecko () {
       this.coinGecko = null
-      console.log('Calling coingecko api: ' + this.apiUrl)
+      // console.log('Calling coingecko api: ' + this.apiUrl)
       this.$axios.get(this.apiUrl)
         .then((response) => { this.coinGecko = response.data })
         .catch(() => { console.log('Failed to load data from coingecko api') })

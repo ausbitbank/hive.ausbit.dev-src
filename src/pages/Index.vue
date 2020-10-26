@@ -1,7 +1,7 @@
 <template>
   <q-page class="flex flex-center">
     <div class="q-pa-md row items-start q-gutter-md content-start content-stretch self-stretch col-grow justify-center">
-      <div>
+      <div style="max-width:500px">
         <recent-posts-carousel account="ausbitbank" />
         <ranked-posts-carousel sortMethod="trending" />
         <ranked-posts-carousel sortMethod="hot" />

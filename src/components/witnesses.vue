@@ -9,7 +9,7 @@
             <div v-for="witness in witnesses" :key="witness.index">
                 <div>
                     <span class="text-bold" v-if="!alertSigningDisabled(witness.signing_key)">
-                      {{ witness.owner }}
+                      <router-link :to="linkAccount(witness.owner)">{{ witness.owner }}</router-link>
                     </span>
                     <span class="text-strike" v-else>
                       {{ witness.owner }}
@@ -83,7 +83,7 @@ export default {
     customLinkFormatter (data, key, parent, defaultFormatted) {
       if (key === 'head_block_number' || key === 'last_irreversible_block_num' || key === 'last_confirmed_block_num') {
         return `<a href="/block/${data}">${data}</a>`
-      } else if (key === 'url') {
+      } else if (['url', 'cover_image', 'profile_image'].includes(key)) {
         return `<a href="${data}">${data}</a>`
       } else {
         return DOMPurify.sanitize(defaultFormatted)
@@ -130,6 +130,9 @@ export default {
       } else {
         return false
       }
+    },
+    linkAccount (username) {
+      return '/@' + username
     }
   },
   mounted () {

@@ -2,7 +2,7 @@
   <q-page class="flex flex-center q-pa-md">
     <div class="row items-start content-start justify-center">
       <q-spinner-grid size="2em" color="primary" v-if="!post" class="q-ma-lg" />
-      <div class="col-6">
+      <div class="col-9">
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="post">
           <q-card-section class="text-h4 text-center" v-if="post.title">
             {{ post.title }}
@@ -16,8 +16,8 @@
           <comments :author="post.author" :permlink="post.permlink" v-if="post.replies !== 0" />
         </q-card>
       </div>
-      <div class="col-4 text-center">
-        <q-card flat bordered class="q-pa-md q-ma-md" v-if="post">
+      <div class="col-3 text-center">
+        <q-card flat bordered class="q-pa-md q-ma-md" v-if="post" style="max-width: 500px">
           <q-card-section>
             <q-list dense>
               <q-item>
@@ -66,7 +66,7 @@
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
           </q-card-section>
         </q-card>
-        <recent-posts-carousel :account="author" class="q-ma-md" />
+        <recent-posts-carousel :account="author" class="q-ma-md" style="max-width:500px" />
       </div>
     </div>
   </q-page>

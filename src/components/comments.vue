@@ -1,10 +1,10 @@
 <template>
-    <q-card dense flat bordered class="q-pa-sm q-ma-md col-4" v-if="Object.keys(comments).length >= 1">
+    <q-card dense flat bordered class="q-pa-sm q-ma-md col-4" v-if="Object.keys(comments).length >= 2">
         <q-card-section class="text-h6 text-center">
             <q-icon name="comment" /> {{ Object.keys(comments).length - 1 }} replies
         </q-card-section>
         <q-card-section v-for="comment in comments" :key="comment.index">
-            <q-item v-if="comment.permlink !== permlink">
+            <q-item v-if="comment.permlink !== permlink && comment.parent_permlink === permlink">
                 <q-item-section avatar>
                     <center>
                         <router-link :to="linkAccount(comment.author)">
@@ -50,7 +50,7 @@ export default {
       })
         .then((res) => {
           this.comments = res.data.result
-          console.log(this.comments)
+          // console.log(this.comments)
         })
     },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
