@@ -16,7 +16,7 @@
                     <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
                         {{ rank }}
                         <q-tooltip content-class="bg-dark">
-                            <vue-json-pretty :data="node" />
+                            <vue-json-pretty :data="node" :custom-value-formatter="customLinkFormatter" />
                         </q-tooltip>
                     </q-chip>
                 </span>
@@ -46,6 +46,7 @@ import moment from 'moment'
 import hive from '@hiveio/hive-js'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
+import DOMPurify from 'dompurify'
 export default {
   name: 'nodes',
   props: [],
@@ -196,7 +197,7 @@ export default {
       } else if (key === 'url') {
         return `<a href="${data}">${data}</a>`
       } else {
-        return defaultFormatted
+        return DOMPurify.sanitize(defaultFormatted)
       }
     }
   },

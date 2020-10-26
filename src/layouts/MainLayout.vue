@@ -58,7 +58,6 @@ export default {
   },
   methods: {
     onSearchSubmit () {
-      console.log('Searching ' + this.search)
       if (!isNaN(this.search)) {
         console.log('searching for block ' + this.search)
         this.$router.push('/block/' + this.search)
@@ -68,7 +67,7 @@ export default {
           this.$router.push('/tx/' + this.search)
         } else {
           console.log('searching for account ' + this.search)
-          this.$router.push('/@' + this.search)
+          this.$router.push({ path: '/@' + this.search })
         }
       }
     },

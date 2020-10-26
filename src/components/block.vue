@@ -26,25 +26,25 @@
                     {{ tx.op[1].author }} wrote a post
                     <span v-if="tx.op[1].title"> titled "<a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].title }}</a>"</span>
                     <div>
-                    <vue-json-pretty :data="tx.op[1]" />
+                    <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter"/>
                     </div>
                 </q-item-label>
                 <q-item-label v-else>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
                     <span class="text-bold">{{ tx.op[1].author }}</span> commented on {{ tx.op[1].parent_author }} \ <router-link :to="returnLink(tx.op[1].parent_author,tx.op[1].parent_permlink)">{{ tx.op[1].parent_permlink }}</router-link> :
-                    <div><vue-json-pretty :data="tx.op[1]" /></div>
+                    <div><vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" /></div>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'account_update'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> updated profile metadata
-                    <vue-json-pretty :data="tx.op[1]" />
+                    <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'account_update2'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> updated profile metadata
-                    <vue-json-pretty :data="tx.op[1]" />
+                    <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_create'">
@@ -75,7 +75,7 @@
                 <q-item-section v-else-if="tx.op[0] === 'comment_options'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold">{{ tx.op[1].author }}</span> changed comment options for <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a>
-                    <vue-json-pretty :data="tx.op[1]" />
+                    <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'claim_reward_balance'">
@@ -110,7 +110,7 @@
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_auths[0])" /></q-avatar><span class="text-bold">{{ tx.op[1].required_auths[0] }}</span>
                     </span>
                     sent <span class="text-bold">custom json</span> with id <q-chip color="primary" dense>{{ tx.op[1].id }}</q-chip>
-                    <vue-json-pretty :data="JSON.parse(tx.op[1].json)" />
+                    <vue-json-pretty :data="JSON.parse(tx.op[1].json)" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'transfer'">
@@ -134,7 +134,7 @@
             <q-item v-for="tx in this.blockOpsVirtual" :key="tx.index">
             <q-item-section>
                 <q-chip dense class="text-bold">{{ tx.op[0] }}</q-chip>
-                <vue-json-pretty :data='tx.op[1]' />
+                <vue-json-pretty :data='tx.op[1]' :custom-value-formatter="customLinkFormatter" />
             </q-item-section>
             <q-item-section side class="text-caption">
                 <a :name="tx.virtual_op">{{ tx.virtual_op }}</a>
@@ -161,6 +161,7 @@ hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 import moment from 'moment'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
+import DOMPurify from 'dompurify'
 export default {
   name: 'blockView',
   components: {
@@ -259,6 +260,21 @@ export default {
     getLatestIrreversibleBlock () {
       hive.api.getDynamicGlobalPropertiesAsync()
         .then(res => this.updateBlock(res.last_irreversible_block_num))
+    },
+    customLinkFormatter (data, key, parent, defaultFormatted) {
+      if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
+        return `<a href="/block/${data}">${data}</a>`
+      } else if (key === 'url') {
+        return `<a href="${data}">${data}</a>`
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account'].includes(key)) {
+        return `<a href="/@${data}">${data}</a>`
+      } else if (['permlink'].includes(key)) {
+        return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
+      } else if (['comment_permlink'].includes(key)) {
+        return `<a href="/@${parent.comment_author}/${parent.comment_permlink}">${data}</a>`
+      } else {
+        return DOMPurify.sanitize(defaultFormatted)
+      }
     }
   },
   mounted () {

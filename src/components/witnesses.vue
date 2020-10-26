@@ -55,6 +55,7 @@ import hive from '@hiveio/hive-js'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import moment from 'moment'
+import DOMPurify from 'dompurify'
 export default {
   name: 'witnesses',
   props: [],
@@ -85,7 +86,7 @@ export default {
       } else if (key === 'url') {
         return `<a href="${data}">${data}</a>`
       } else {
-        return defaultFormatted
+        return DOMPurify.sanitize(defaultFormatted)
       }
     },
     votesToHp (votes) {

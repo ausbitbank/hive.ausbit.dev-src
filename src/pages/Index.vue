@@ -9,7 +9,7 @@
       <nodes />
       <witnesses />
       <coingecko />
-      <block :blockNum=0 />
+      <block :blockNum=0 v-if="false" />
     </div>
   </q-page>
 </template>
