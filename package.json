@@ -17,6 +17,7 @@
     "@quasar/extras": "^1.9.9",
     "axios": "^0.18.1",
     "dompurify": "^2.2.0",
+    "hive-content-renderer": "^1.0.3",
     "moment": "^2.24.0",
     "quasar": "^1.14.1",
     "steem": "^0.7.11",

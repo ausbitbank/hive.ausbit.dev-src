@@ -50,7 +50,6 @@
 
 <script>
 import EssentialLink from 'components/EssentialLink'
-
 export default {
   name: 'MainLayout',
   components: {
@@ -59,14 +58,11 @@ export default {
   methods: {
     onSearchSubmit () {
       if (!isNaN(this.search)) {
-        console.log('searching for block ' + this.search)
         this.$router.push('/block/' + this.search)
       } else {
         if (this.search.length === 40) {
-          console.log('searching for txid ' + this.search)
           this.$router.push('/tx/' + this.search)
         } else {
-          console.log('searching for account ' + this.search)
           this.$router.push({ path: '/@' + this.search })
         }
       }
@@ -79,6 +75,7 @@ export default {
     return {
       search: '',
       leftDrawerOpen: false,
+      searchSuggestions: null,
       essentialLinks: [
         {
           title: 'Create an Account',

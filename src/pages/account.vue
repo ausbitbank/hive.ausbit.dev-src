@@ -5,9 +5,9 @@
               <q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}
           </div>
           <div class="col-2">
-              <q-card flat bordered class="text-center">
+              <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md">
                   <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
-                  <div> {{ account.balance }}</div>
+                  <div>{{ account.balance }}</div>
                   <div>{{ account.hbd_balance }}</div>
                   <div v-if="this.accountValue">{{ this.accountValue }}</div>
               </q-card>
@@ -555,7 +555,6 @@
               </q-card>
           </div>
           <div class="col-8 q-pa-md">
-            <q-spinner-grid size="2em" color="primary" v-if="accountOperations === []" />
             <q-card flat bordered dense class="q-ma-sm" v-for="op in accountOperations" :key="op.index">
                 <q-card-section v-if="accountOperations.length > 0">
                     <q-list dense>
@@ -605,7 +604,7 @@
                 <q-card-section>
                     <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 2"/>
                     <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 1"/>
-                    Page {{ this.page }}
+                    Page {{ this.page }} <q-spinner-grid size="2em" color="primary" v-if="accountOperations.length < 1" />
                     <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)"/>
                     <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) - 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)" />
                 </q-card-section>
@@ -743,7 +742,10 @@ export default {
         .then((response) => {
           this.account = response[0]
         })
-        .catch(() => console.log('Failed to load profile'))
+        .catch(() => {
+          console.log('Failed to load profile .. retrying')
+          debounce(this.getAccount(username), 100)
+        })
     },
     getWitness (username) {
       hive.api.getWitnessByAccountAsync(username)
@@ -758,7 +760,10 @@ export default {
         .then((response) => {
           this.globalProps = response
         })
-        .catch(() => console.log('Failed to load global properties'))
+        .catch(() => {
+          console.log('Failed to load global properties .. Retrying')
+          debounce(this.getGlobalProps(), 50)
+        })
     },
     vestToHive (vests) {
       if (this.globalProps) {

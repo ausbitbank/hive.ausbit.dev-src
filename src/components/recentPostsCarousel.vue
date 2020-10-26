@@ -1,8 +1,8 @@
 <template>
-  <div class="">
+  <div>
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
-      <q-card flat bordered style="width: 500px;">
+      <q-card flat bordered>
       <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently shared by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"

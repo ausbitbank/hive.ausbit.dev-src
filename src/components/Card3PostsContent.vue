@@ -16,7 +16,7 @@ export default {
   data () {
     return {
       renderer: new DefaultRenderer({
-        baseUrl: 'https://peakd.com/',
+        baseUrl: 'https://hive.ausbit.dev/',
         breaks: true,
         skipSanitization: false,
         allowInsecureScriptTags: false,
