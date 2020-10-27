@@ -40,8 +40,8 @@
   </div>
 </template>
 <style scoped>
-a {text-decoration: none; color: #3344dd }
-a:link { color: #3344dd; font-weight: normal; text-decoration: none; }
+a {text-decoration: none; color: #1d8ce0 }
+a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
 a:visited { color: #884488; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>

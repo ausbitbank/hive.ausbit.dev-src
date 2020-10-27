@@ -71,6 +71,9 @@
     </div>
   </q-page>
 </template>
+<style scoped>
+a, a:link { color: #1d8ce0 }
+</style>
 <script>
 import hive from '@hiveio/hive-js'
 import Card3PostsContent from 'components/Card3PostsContent.vue'

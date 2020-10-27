@@ -3,7 +3,7 @@
       <div class="fit row wrap justify-start items-start content-start" v-if="account !== null && globalProps !== null">
           <div class="col-10 q-pa-md text-center" :style='coverImageStyle'>
               <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
-              <div class="text-subtitle" v-if="account.posting_json_metadata">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
+              <div class="text-subtitle" v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
           </div>
           <div class="col-2">
               <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md">
@@ -595,7 +595,7 @@
                                     <div v-else>tx {{ op[1].trx_id.substr(0,8) }}</div>
                                     <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ op[1].block }}</router-link></div>
                                     <div v-else>block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></div>
-                                    <div>{{ timeDelta(op[1].timestamp) }}</div>
+                                    <div :title="op[1].timestamp">{{ timeDelta(op[1].timestamp) }}</div>
                                 </span>
                             </q-item-section>
                         </q-item>
@@ -616,7 +616,8 @@
   </q-page>
 </template>
 <style>
-a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
+a { color: #1d8ce0; }
+a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 .wrap { overflow:auto; overflow-wrap: break-word; }
 </style>
@@ -648,7 +649,7 @@ export default {
       RC: { max: null, current: null, percent: null },
       witness: null,
       accountOperations: [],
-      accountOperationsLimit: 200,
+      accountOperationsLimit: 100,
       accountOperationsMarker: null,
       page: this.$router.currentRoute.query.page || 1
     }
@@ -678,9 +679,13 @@ export default {
         return null
       } else {
         if (this.account.posting_json_metadata) {
-          if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-            console.log(JSON.parse(this.account.posting_json_metadata).profile.cover_image)
-            return JSON.parse(this.account.posting_json_metadata).profile.cover_image
+          if (JSON.parse(this.account.posting_json_metadata).profile) {
+            if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
+              console.log(JSON.parse(this.account.posting_json_metadata).profile.cover_image)
+              return JSON.parse(this.account.posting_json_metadata).profile.cover_image
+            } else {
+              return null
+            }
           } else {
             return null
           }
@@ -761,6 +766,7 @@ export default {
           var pageReq = this.accountOperationsMarker - (limit * page)
           pageReq = pageReq + limit
           if (page === null || page === 1) { pageReq = -1 }
+          if (pageReq < limit) { pageReq = limit } // Catch the last (first) page results
           hive.api.getAccountHistoryAsync(this.username, pageReq, this.accountOperationsLimit).then((response) => { this.accountOperations = response.reverse() })
         })
     },
@@ -854,7 +860,7 @@ export default {
         return `<a href="/block/${data}">${data}</a>`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `<a href="${data}">${data}</a>`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account'].includes(key)) {
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account'].includes(key)) {
         return `<a href="/@${data}">${data}</a>`
       } else if (['permlink'].includes(key)) {
         return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
@@ -868,6 +874,7 @@ export default {
     },
     init () {
       this.page = this.$router.currentRoute.query.page || 1
+      this.username = this.$route.params.username
       this.getAccount(this.username)
       this.getGlobalProps()
       this.getRC(this.username)

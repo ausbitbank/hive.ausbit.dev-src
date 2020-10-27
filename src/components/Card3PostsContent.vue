@@ -4,7 +4,7 @@
 </template>
 <style>
 .postview { overflow: auto; }
-a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
+a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95%; text-align: center}
 .yt-container {

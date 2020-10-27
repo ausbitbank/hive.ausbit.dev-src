@@ -151,7 +151,7 @@
     </span>
 </template>
 <style>
-a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
+a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 :target { background-color: #ffa; }
 </style>

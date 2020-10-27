@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
+    <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0 && this.hide" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently shared by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
@@ -22,8 +22,8 @@
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
           <div class="custom-caption">
-            <router-link :to="returnPostPath(post.author, post.permlink)" class="text-white text-italic">{{ post.title.substr(0,100) }}</router-link><br />
-            by <span class="text-bold">@{{ post.author }}</span><br />
+            <router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link><br />
+            by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
@@ -40,9 +40,9 @@
   </div>
 </template>
 <style scoped>
-a {text-decoration: none; color: #3344dd }
-a:link { color: #3344dd; font-weight: normal; text-decoration: none; }
-a:visited { color: #884488; }
+a {text-decoration: none; color: #1d8ce0 }
+a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
+a:visited { color: #1d8ce0; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>
 <script>
@@ -63,7 +63,8 @@ export default {
       slide: null,
       autoplay: true,
       limit: 10,
-      settings: false
+      settings: false,
+      hive: false
     }
   },
   props: {
@@ -88,6 +89,9 @@ export default {
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink
+    },
+    linkAccount (author) {
+      return '/@' + author
     },
     getHiveAvatarUrl (user) {
       return 'https://images.hive.blog/u/' + user + '/avatar'

@@ -39,8 +39,8 @@
     </span>
 </template>
 <style scoped>
-a {text-decoration: none; color: #3344dd }
-a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
+a {text-decoration: none; color: #1d8ce0 }
+a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
