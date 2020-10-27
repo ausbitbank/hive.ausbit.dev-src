@@ -608,7 +608,7 @@
                     <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 1"/>
                     Page {{ this.page }} <q-spinner-grid size="2em" color="primary" v-if="accountOperations.length < 1" />
                     <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)"/>
-                    <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) - 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)" />
+                    <q-btn icon="keyboard_tab" color="primary" dense push @click="page = (accountOperationsMarker / accountOperationsLimit).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)" />
                 </q-card-section>
             </q-card>
           </div>
@@ -765,8 +765,8 @@ export default {
           var page = this.$router.currentRoute.query.page || 1
           var pageReq = this.accountOperationsMarker - (limit * page)
           pageReq = pageReq + limit
-          if (page === null || page === 1) { pageReq = -1 }
           if (pageReq < limit) { pageReq = limit } // Catch the last (first) page results
+          if (page === null || page === 1) { pageReq = -1 }
           hive.api.getAccountHistoryAsync(this.username, pageReq, this.accountOperationsLimit).then((response) => { this.accountOperations = response.reverse() })
         })
     },
