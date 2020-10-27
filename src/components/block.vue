@@ -8,7 +8,10 @@
                 <span>Block {{ this.tidyNumber(this.blockNumber) }}</span>
                 <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
             </div>
-            <span v-if="this.blockHeader" style="text-caption text-center">Witnessed by {{ this.blockHeader.witness }} at {{this.blockHeader.timestamp}} UTC - {{ timeDelta(this.blockHeader.timestamp) }}</span>
+            <span v-if="this.blockHeader" style="text-caption text-center">
+              Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
+              <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(this.blockHeader.timestamp) }}</span></div>
+            </span>
         </q-card-section>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
             <div class="text-h6 text-center">{{ this.blockOpsReal.length }} Transactions in this block</div>
@@ -17,13 +20,13 @@
                 <q-item-section v-if="tx.op[0] === 'vote'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].voter)" /></q-avatar>
-                    <span class="text-bold">{{ tx.op[1].voter }}</span> voted <q-chip dense :color="returnVoteColor(tx.op[1].weight)">{{ tx.op[1].weight / 100 }} %</q-chip> on <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold">{{ tx.op[1].author }} \ <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a></span>
+                    <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].voter)">{{ tx.op[1].voter }}</router-link></span> voted <q-chip dense :color="returnVoteColor(tx.op[1].weight)">{{ tx.op[1].weight / 100 }} %</q-chip> on <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link> \ <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a></span>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'comment'">
                 <q-item-label v-if="tx.op[1].parent_author === ''">
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
-                    {{ tx.op[1].author }} wrote a post
+                    <router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link> wrote a post
                     <span v-if="tx.op[1].title"> titled "<a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].title }}</a>"</span>
                     <div>
                     <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter"/>
@@ -31,56 +34,56 @@
                 </q-item-label>
                 <q-item-label v-else>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
-                    <span class="text-bold">{{ tx.op[1].author }}</span> commented on {{ tx.op[1].parent_author }} \ <router-link :to="returnLink(tx.op[1].parent_author,tx.op[1].parent_permlink)">{{ tx.op[1].parent_permlink }}</router-link> :
+                    <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link></span> commented on <router-link :to="returnAccountLink(tx.op[1].parent_author)">{{ tx.op[1].parent_author }}</router-link> \ <router-link :to="returnLink(tx.op[1].parent_author,tx.op[1].parent_permlink)">{{ tx.op[1].parent_permlink }}</router-link> :
                     <div><vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" /></div>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'account_update'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> updated profile metadata
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].account)">{{ tx.op[1].account }}</router-link></span> updated profile metadata
                     <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'account_update2'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> updated profile metadata
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].account)">{{ tx.op[1].account }}</router-link></span> updated profile metadata
                     <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_create'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> created limit order - selling {{ tx.op[1].amount_to_sell }} for {{ tx.op[1].min_to_receive }} (Fill or kill: {{ tx.op[1].fill_or_kill }}, Expiration {{ tx.op[1].expiration }}, Order Id {{ tx.op[1].orderid }})
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> created limit order - selling {{ tx.op[1].amount_to_sell }} for {{ tx.op[1].min_to_receive }} (Fill or kill: {{ tx.op[1].fill_or_kill }}, Expiration {{ tx.op[1].expiration }}, Order Id {{ tx.op[1].orderid }})
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'fill_order'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].current_owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].current_owner }}</span> filled open order from <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].open_owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].open_owner}}</span> - paid {{  tx.op[1].current_pays }} for {{ tx.op[1].open_pays }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].current_owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].current_owner)">{{ tx.op[1].current_owner }}</router-link></span> filled open order from <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].open_owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].open_owner)">{{ tx.op[1].open_owner}}</router-link></span> - paid {{  tx.op[1].current_pays }} for {{ tx.op[1].open_pays }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_cancel'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> cancelled limit order id {{ tx.op[1].orderid }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> cancelled limit order id {{ tx.op[1].orderid }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'convert'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> started conversion of {{ tx.op[1].amount }} , request id {{ tx.op[1].requestid }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> started conversion of {{ tx.op[1].amount }} , request id {{ tx.op[1].requestid }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'feed_publish'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].publisher)" /></q-avatar><span class="text-bold">{{ tx.op[1].publisher }}</span> published pricefeed of ${{ tx.op[1].exchange_rate.base }} per {{ tx.op[1].exchange_rate.quote }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].publisher)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].publisher)">{{ tx.op[1].publisher }}</router-link></span> published pricefeed of ${{ tx.op[1].exchange_rate.base }} per {{ tx.op[1].exchange_rate.quote }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'comment_options'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold">{{ tx.op[1].author }}</span> changed comment options for <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link></span> changed comment options for <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a>
                     <vue-json-pretty :data="tx.op[1]" :custom-value-formatter="customLinkFormatter" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'claim_reward_balance'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold">{{ tx.op[1].account }}</span> claimed reward balance of
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].account)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].account)">{{ tx.op[1].account }}</router-link></span> claimed reward balance of
                     <span v-if="tx.op[1].reward_hive !== '0.000 HIVE'"><q-chip dense>{{ tx.op[1].reward_hive }}</q-chip></span>
                     <span v-if="tx.op[1].reward_hbd !== '0.000 HBD'"><q-chip dense>{{ tx.op[1].reward_hbd }}</q-chip></span>
                     <span v-if="tx.op[1].reward_vests !== '0.000 VESTS'"><q-chip dense>{{ tx.op[1].reward_vests }}</q-chip></span>
@@ -88,26 +91,26 @@
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'claim_account'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold">{{ tx.op[1].creator }}</span> claimed account creation token with fee of {{ tx.op[1].fee }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].creator }}</router-link></span> claimed account creation token with fee of {{ tx.op[1].fee }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> set witness properties {{ tx.op[1].props }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> set witness properties {{ tx.op[1].props }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold">{{ tx.op[1].owner }}</span> set witness properties {{ tx.op[1].props }}
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> set witness properties {{ tx.op[1].props }}
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'custom_json'">
                 <q-item-label>
                     <span v-if="tx.op[1].required_posting_auths.length > 0">
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_posting_auths[0])" /></q-avatar><span class="text-bold">{{ tx.op[1].required_posting_auths[0] }}</span>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_posting_auths[0])" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].required_posting_auths[0])">{{ tx.op[1].required_posting_auths[0] }}</router-link></span>
                     </span>
                     <span v-else-if="tx.op[1].required_auths.length > 0">
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_auths[0])" /></q-avatar><span class="text-bold">{{ tx.op[1].required_auths[0] }}</span>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].required_auths[0])" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].required_auths[0])">{{ tx.op[1].required_auths[0] }}</router-link></span>
                     </span>
                     sent <span class="text-bold">custom json</span> with id <q-chip color="primary" dense>{{ tx.op[1].id }}</q-chip>
                     <vue-json-pretty :data="JSON.parse(tx.op[1].json)" :custom-value-formatter="customLinkFormatter" />
@@ -115,7 +118,7 @@
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'transfer'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold">{{ tx.op[1].from }}</span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold">{{ tx.op[1].to }}</span> <div v-if="tx.op[1].memo !== ''">Memo : <vue-json-pretty :data="tx.op[1].memo" /></div>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].from)">{{ tx.op[1].from }}</router-link></span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold"><router-link :to="tx.op[1].to">{{ tx.op[1].to }}</router-link></span> <div v-if="tx.op[1].memo !== ''">Memo : <vue-json-pretty :data="tx.op[1].memo" /></div>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else>
@@ -239,6 +242,7 @@ export default {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnTxLink (txId) { return '/tx/' + txId },
+    returnAccountLink (account) { return '/@' + account },
     returnVoteColor (weight) {
       if (Math.sign(weight) === 1) {
         if (weight === 0) {
@@ -264,6 +268,8 @@ export default {
     customLinkFormatter (data, key, parent, defaultFormatted) {
       if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
         return `<a href="/block/${data}">${data}</a>`
+      } else if (['trx_id'].includes(key)) {
+        return `<a href="/tx/${data}">${data}</a>`
       } else if (key === 'url') {
         return `<a href="${data}">${data}</a>`
       } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account'].includes(key)) {

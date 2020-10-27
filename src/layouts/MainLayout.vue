@@ -91,9 +91,9 @@ export default {
         },
         {
           title: 'Hive Source',
-          caption: 'github.com/openhive-network',
+          caption: 'gitlab.syncad.com/hive',
           icon: 'code',
-          link: 'https://github.com/openhive-network'
+          link: 'https://gitlab.syncad.com/hive/'
         },
         {
           title: 'Hive Discord',
