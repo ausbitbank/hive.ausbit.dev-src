@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0 && this.hide" />
+    <q-spinner-grid size="2em" color="primary" v-if="loading" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently shared by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
@@ -64,7 +64,12 @@ export default {
       autoplay: true,
       limit: 10,
       settings: false,
-      hive: false
+      loading: false
+    }
+  },
+  watch: {
+    $route: function () {
+      this.getRecentPosts()
     }
   },
   props: {
@@ -103,6 +108,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     getRecentPosts () {
+      this.loading = true
       this.posts = []
       this.$axios.post(this.api, {
         id: 1,
@@ -118,6 +124,7 @@ export default {
         }
       })
         .then((res) => {
+          this.loading = false
           this.posts = res.data.result
           this.slide = this.firstPermlink
         })

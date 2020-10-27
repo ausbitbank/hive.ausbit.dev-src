@@ -2,8 +2,8 @@
   <q-page class="flex flex-center q-pa-md">
     <div class="row items-start content-start justify-center">
       <q-spinner-grid size="2em" color="primary" v-if="!post" class="q-ma-lg" />
-      <div class="col-9">
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="post">
+      <div class="col-xs-12 col-md-8">
+        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="post" style="max-width: 1000px">
           <q-card-section class="text-h4 text-center" v-if="post.title">
             {{ post.title }}
           </q-card-section>
@@ -16,7 +16,7 @@
           <comments :author="post.author" :permlink="post.permlink" v-if="post.replies !== 0" />
         </q-card>
       </div>
-      <div class="col-3 text-center">
+      <div class="col-sm-12 col-md-4 text-center justify-center">
         <q-card flat bordered class="q-pa-md q-ma-md" v-if="post" style="max-width: 500px">
           <q-card-section>
             <q-list dense>
@@ -60,6 +60,51 @@
                   {{ post.total_payout_value }}
                 </q-item-section>
               </q-item>
+              <q-item v-if="post.community && post.community_title" title="Community">
+                <q-item-section avatar>
+                    <q-icon name="label_important" />
+                </q-item-section>
+                <q-item-section class="text-caption text-grey">
+                  {{ post.community_title }} Community
+                </q-item-section>
+              </q-item>
+              <q-item v-else-if="post.category" title="Category">
+                <q-item-section avatar>
+                    <q-icon name="label_important" />
+                </q-item-section>
+                <q-item-section class="text-caption text-grey">
+                  {{ post.category }}
+                </q-item-section>
+              </q-item>
+              <q-item v-if="post.json_metadata && JSON.parse(post.json_metadata).tags" title="Tags">
+                <q-item-section avatar>
+                    <q-icon name="label" />
+                </q-item-section>
+                <q-item-section class="text-caption text-grey">
+                  <span v-for="tag in JSON.parse(post.json_metadata).tags" :key="tag.index">{{ tag }}</span>
+                </q-item-section>
+              </q-item>
+              <q-item v-if="post.json_metadata && JSON.parse(post.json_metadata).app" title="App">
+                <q-item-section avatar>
+                  <q-icon name="fingerprint" />
+                </q-item-section>
+                <q-item-section>
+                  {{ JSON.parse(post.json_metadata).app }}
+                </q-item-section>
+              </q-item>
+              <q-item title="Votes" v-if="post.active_votes.length > 0">
+                <q-item-section avatar>
+                  <q-icon name="how_to_vote" />
+                </q-item-section>
+                <q-item-section>
+                  <span class="text-blue text-bold cursor-pointer" @click="showVotes = true">{{ post.active_votes.length }} votes</span>
+                </q-item-section>
+                <q-dialog v-model="showVotes">
+                  <q-card flat bordered style="max-width: 1000px; max-width: 95%;">
+                    <q-table title="Votes" :data="post.active_votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 50 }" dense bordered separator="cell" />
+                  </q-card>
+                </q-dialog>
+              </q-item>
             </q-list>
           </q-card-section>
           <q-card-section>
@@ -88,7 +133,46 @@ export default {
       post: null,
       author: this.$router.currentRoute.params.author,
       permlink: this.$router.currentRoute.params.permlink,
-      api: 'https://rpc.ausbit.dev'
+      api: 'https://rpc.ausbit.dev',
+      showVotes: false,
+      voteColumns: [
+        {
+          name: 'voter',
+          label: 'Voter',
+          field: 'voter',
+          sortable: true
+        },
+        {
+          name: 'percent',
+          label: 'Percent',
+          field: 'percent',
+          sortable: true
+        },
+        {
+          name: 'rshares',
+          label: 'rshares',
+          field: 'rshares',
+          sortable: true
+        },
+        {
+          name: 'weight',
+          label: 'weight',
+          field: 'weight',
+          sortable: true
+        },
+        {
+          name: 'reputation',
+          label: 'reputation',
+          field: 'reputation',
+          sortable: true
+        },
+        {
+          name: 'time',
+          label: 'time',
+          field: 'time',
+          sortable: true
+        }
+      ]
     }
   },
   watch: {

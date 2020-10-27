@@ -67,7 +67,7 @@ export default {
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum) { return '/b/' + blockNum + '#' + this.txId },
     customLinkFormatter (data, key, parent, defaultFormatted) {
-      if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
+      if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num', 'block_num'].includes(key)) {
         return `<a href="/block/${data}">${data}</a>`
       } else if (key === 'url') {
         return `<a href="${data}">${data}</a>`

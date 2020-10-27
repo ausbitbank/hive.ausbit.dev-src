@@ -7,6 +7,12 @@
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95%; text-align: center}
+h1 { font-size: 28px; font-weight: 500; }
+h2 { font-size: 26px; font-weight: 500;}
+h3 { font-size: 24px; font-weight: 500;}
+h4 { font-size: 22px; font-weight: 500;}
+h5 { font-size: 20px; font-weight: 500;}
+h6 { font-size: 18px; font-weight: 500;}
 .yt-container {
   position:relative;
   padding-bottom:56.25%;

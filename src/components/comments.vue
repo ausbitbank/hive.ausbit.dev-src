@@ -4,12 +4,13 @@
             <q-icon name="comment" /> {{ Object.keys(comments).length - 1 }} replies
         </q-card-section>
         <q-card-section v-for="comment in comments" :key="comment.index">
-            <q-item v-if="comment.permlink !== permlink && comment.parent_permlink === permlink">
+            <q-list bordered separator v-if="comment.permlink !== permlink && comment.parent_permlink === permlink">
+            <q-item>
                 <q-item-section avatar>
                     <center>
                         <router-link :to="linkAccount(comment.author)">
                             <q-avatar><q-img :src="GetHiveAvatarUrl(comment.avatar)" /></q-avatar>
-                            <span class="text-bold"> {{ comment.author }}</span>
+                            <div class="text-bold"> {{ comment.author }}</div>
                         </router-link>
                     </center>
                 </q-item-section>
@@ -21,6 +22,7 @@
                     <router-link :to="returnLink(comment.author, comment.permlink)">{{ timeDelta(comment.created) }}</router-link>
                 </q-item-section>
             </q-item>
+            </q-list>
         </q-card-section>
     </q-card>
 </template>

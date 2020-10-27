@@ -84,7 +84,6 @@ export default {
       return parts.join('.')
     },
     getFullNodeUpdate () {
-      console.log('Fetching @fullnodeupdate profile data')
       hive.api.getAccountsAsync(['fullnodeupdate'])
         .then((response) => {
           this.fullNodeUpdate = response[0].json_metadata

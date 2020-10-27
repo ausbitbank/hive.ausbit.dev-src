@@ -79,9 +79,9 @@ export default {
       essentialLinks: [
         {
           title: 'Create an Account',
-          caption: 'signup.hive.io',
+          caption: 'hiveonboard.com',
           icon: 'person_add',
-          link: 'https://signup.hive.io'
+          link: 'https://hiveonboard.com?ref=ausbitbank'
         },
         {
           title: 'Developer Docs',
@@ -126,6 +126,12 @@ export default {
           link: 'https://hive.blog/@ausbitbank'
         },
         {
+          title: 'Trade HIVE on Binance',
+          caption: 'Binance.com affiliate link',
+          icon: 'monetization_on',
+          link: 'https://www.binance.com/en/register?ref=WOL9Y5F6'
+        },
+        {
           title: 'Trade HIVE on Bittrex',
           caption: 'Bittrex.com affiliate link',
           icon: 'monetization_on',
@@ -136,6 +142,12 @@ export default {
           caption: 'Ionomy.com affiliate link',
           icon: 'monetization_on',
           link: 'https://ionomy.com/en/aff/c91aa3ae712e0ab1d5eb1cd8c007bc70'
+        },
+        {
+          title: 'Anonymous Servers for Crypto',
+          caption: 'Privex.io affiliate link',
+          icon: 'monetization_on',
+          link: 'https://pay.privex.io/order/?r=ausbitbank'
         }
       ]
     }

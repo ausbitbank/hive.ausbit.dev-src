@@ -60,7 +60,8 @@ export default {
       slide: null,
       autoplay: true,
       limit: 10,
-      settings: false
+      settings: false,
+      loading: false
     }
   },
   props: {

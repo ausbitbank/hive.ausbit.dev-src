@@ -115,7 +115,7 @@
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'transfer'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold">{{ tx.op[1].from }}</span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold">{{ tx.op[1].to }}</span>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold">{{ tx.op[1].from }}</span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold">{{ tx.op[1].to }}</span> <div v-if="tx.op[1].memo !== ''">Memo : <vue-json-pretty :data="tx.op[1].memo" /></div>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else>

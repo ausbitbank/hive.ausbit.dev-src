@@ -1,50 +1,48 @@
 <template>
-  <q-page class="flex q-pa-md">
+  <q-page class="flex">
       <div class="fit row wrap justify-start items-start content-start" v-if="account !== null && globalProps !== null">
-          <div class="col-10 q-pa-md text-center" :style='coverImageStyle'>
-              <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
-              <div class="text-subtitle" v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
-          </div>
-          <div class="col-2">
-              <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md">
-                  <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
-                  <div>{{ account.balance }}</div>
-                  <div>{{ account.hbd_balance }}</div>
-                  <div v-if="this.accountValue">{{ this.accountValue }}</div>
+          <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
+              <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right">
+                <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
+                <div>{{ account.balance }}</div>
+                <div>{{ account.hbd_balance }}</div>
+                <div v-if="this.accountValue">{{ this.accountValue }}</div>
               </q-card>
+              <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
+              <div class="text-subtitle" v-if="account.posting_json_metadata"><span v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</span></div>
           </div>
-          <div class="col-4">
+          <div class="col-xs-12 col-sm-12 col-md-4">
               <q-card flat bordered class="text-center q-pa-sm q-ma-md">
                   <q-card-section>
                       <div class="text-subtitle">Vote Weight</div>
-                      <div class="text-h6">{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]) + parseInt(account.received_vesting_shares.split(' ')[0]) - parseInt(account.delegated_vesting_shares.split(' ')[0]) - parseInt(account.vesting_withdraw_rate.split(' ')[0])))}} HP</div>
+                      <div class="text-h6">{{ effectiveHPTidy }} HP</div>
                       <div class="text-caption text-grey">
                           {{ vestToHive(parseInt(account.vesting_shares.split(' ')[0])) }} + {{ vestToHive(parseInt(account.received_vesting_shares.split(' ')[0])) }} - {{ vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0])) }}
                       </div>
                       <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
-                          Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE
+                          <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
                       </div>
-                      <div>
+                      <div class="text-bold">
                           Voting Power
                       </div>
                       <div>
-                          <q-linear-progress dark stripe rounded size="20px" :value="votePower / 100" color="dark-blue" class="q-mt-sm">
+                          <q-linear-progress dark stripe rounded size="20px" :value="votePower / 100" color="blue" class="q-mt-sm">
                             <div class="absolute-full flex flex-center">
                                 <q-badge color="black" text-color="primary" :label="votePower" />
                             </div>
                           </q-linear-progress>
                       </div>
-                      <div v-if="false">
+                      <div class="text-bold">
                           Downvote Power
                       </div>
-                      <div v-if="false">
-                          <q-linear-progress dark stripe rounded size="20px" :value="downvotingPowerPct" color="blue" class="q-mt-sm">
+                      <div>
+                          <q-linear-progress dark stripe rounded size="20px" :value="this.downvotePowerPct / 100" color="red" class="q-mt-sm">
                             <div class="absolute-full flex flex-center">
-                                <q-badge color="black" text-color="primary" :label="downvotingPowerPct" />
+                                <q-badge color="black" text-color="primary" :label="this.downvotePowerPct" />
                             </div>
                           </q-linear-progress>
                       </div>
-                      <div>
+                      <div class="text-bold">
                           Resource Credits
                       </div>
                       <div>
@@ -547,7 +545,7 @@
                       </q-list>
                   </q-card-section>
               </q-card>
-              <q-card flat bordered class="q-pa-sm q-ma-md">
+              <q-card flat bordered class="q-pa-sm q-ma-md text-center">
                   <q-card-section>
                     <div class="text-h6">@{{ username }} votes for :</div>
                       <ol>
@@ -556,7 +554,7 @@
                   </q-card-section>
               </q-card>
           </div>
-          <div class="col-8 q-pa-md">
+          <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md">
             <q-card flat bordered dense class="q-ma-sm" v-for="op in accountOperations" :key="op.index">
                 <q-card-section v-if="accountOperations.length > 0">
                     <q-list dense>
@@ -570,8 +568,9 @@
                                 <q-avatar v-if="op[1].op[1].account"><q-img :src="getHiveAvatarUrl(op[1].op[1].account)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].voter"><q-img :src="getHiveAvatarUrl(op[1].op[1].voter)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].from_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].from_account)" /></q-avatar>
+                                <q-avatar v-if="op[1].op[1].payer"><q-img :src="getHiveAvatarUrl(op[1].op[1].payer)" /></q-avatar>
                                 <q-avatar v-if="['vote', 'account_witness_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
-                                <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw'].includes(op[1].op[0])"><q-icon name="monetization_on" /></q-avatar>
+                                <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay'].includes(op[1].op[0])"><q-icon name="monetization_on" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].comment_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].comment_author)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].author"><q-img :src="getHiveAvatarUrl(op[1].op[1].author)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].from"><q-img :src="getHiveAvatarUrl(op[1].op[1].from)" /></q-avatar>
@@ -582,8 +581,9 @@
                                 <q-avatar v-if="op[1].op[1].parent_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].parent_author)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].delegatee"><q-img :src="getHiveAvatarUrl(op[1].op[1].delegatee)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].to_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].to_account)" /></q-avatar>
+                                <q-avatar v-if="op[1].op[1].receiver"><q-img :src="getHiveAvatarUrl(op[1].op[1].receiver)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].witness"><q-img :src="getHiveAvatarUrl(op[1].op[1].witness)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[0] == 'custom_json'"><q-icon name="notes" /></q-avatar>
+                                <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
                             </q-item-section>
                             <q-item-section class="wrap">
                                 <div class="text-bold">{{ op[1].op[0] }}</div>
@@ -592,7 +592,7 @@
                             <q-item-section side>
                                 <span>
                                     <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</div>
-                                    <div v-else>tx {{ op[1].trx_id.substr(0,8) }}</div>
+                                    <div v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></div>
                                     <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ op[1].block }}</router-link></div>
                                     <div v-else>block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></div>
                                     <div :title="op[1].timestamp">{{ timeDelta(op[1].timestamp) }}</div>
@@ -673,6 +673,23 @@ export default {
       var secondsago = (new Date() - new Date(this.account.last_vote_time + 'Z')) / 1000
       var vpow = this.account.voting_power + (10000 * secondsago / 432000)
       return Math.min(vpow / 100, 100).toFixed(2)
+    },
+    effectiveHPTidy: function () {
+      return this.tidyNumber(this.effectiveHP)
+    },
+    effectiveHP: function () {
+      return this.vestToHive(this.effectiveVests)
+    },
+    effectiveVests: function () {
+      return parseInt(this.account.vesting_shares.split(' ')[0]) + parseInt(this.account.received_vesting_shares.split(' ')[0]) - parseInt(this.account.delegated_vesting_shares.split(' ')[0]) - parseInt(this.account.vesting_withdraw_rate.split(' ')[0])
+    },
+    downvotePower: function () {
+      return (this.account.downvote_manabar.current_mana / ((this.effectiveVests / 4) * 1e4)) * 100
+    },
+    downvotePowerPct: function () {
+      var pct = (this.downvotePower / 100).toFixed(2)
+      if (pct > 100) { pct = 100.00 }
+      return pct
     },
     coverImage: function () {
       if (this.account === null) {
@@ -782,6 +799,9 @@ export default {
     linkHiveWorld (username) {
       return '/hiveworld/@' + username
     },
+    linkTx (txid) {
+      return '/tx/' + txid
+    },
     getReputation (rep) {
       return hive.formatter.reputation(rep)
     },
@@ -860,7 +880,7 @@ export default {
         return `<a href="/block/${data}">${data}</a>`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `<a href="${data}">${data}</a>`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account'].includes(key)) {
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator'].includes(key)) {
         return `<a href="/@${data}">${data}</a>`
       } else if (['permlink'].includes(key)) {
         return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
