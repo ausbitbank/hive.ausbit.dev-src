@@ -49,15 +49,11 @@ a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
-// import moment from 'moment'
 import hive from '@hiveio/hive-js'
 import { debounce } from 'quasar'
 import coingecko from 'components/coingecko.vue'
-// import VueJsonPretty from 'vue-json-pretty'
-// import 'vue-json-pretty/lib/styles.css'
 export default {
   name: 'hbd',
-  // components: { VueJsonPretty },
   data () {
     return {
       globalProps: null,
