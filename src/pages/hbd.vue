@@ -60,7 +60,8 @@ export default {
   data () {
     return {
       globalProps: null,
-      medianPrice: null
+      medianPrice: null,
+      daoHbdBalance: 0
     }
   },
   components: { coingecko },
@@ -87,7 +88,7 @@ export default {
     },
     hbdCap: function () {
       if (this.globalProps) {
-        return this.globalProps.current_hbd_supply.split(' ')[0]
+        return (parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) - parseFloat(this.daoHbdBalance)).toFixed(3) // HF24 Ignores DAO HBD in debt calculations
       } else {
         return null
       }
@@ -126,10 +127,18 @@ export default {
           console.log('Failed to load global properties .. Retrying')
           debounce(this.getGlobalProps(), 50)
         })
+    },
+    getDaoBalance () {
+      hive.api.getAccountsAsync(['hive.fund'])
+        .then((response) => {
+          this.daoHbdBalance = response[0].hbd_balance.split(' ')[0]
+        })
+        .catch(() => console.log('Failed to load @hive.fund profile'))
     }
   },
   mounted () {
     this.getGlobalProps()
+    this.getDaoBalance()
     this.getMedianPrice()
   }
 }
