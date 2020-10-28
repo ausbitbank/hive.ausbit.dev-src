@@ -111,7 +111,7 @@
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
           </q-card-section>
         </q-card>
-        <recent-posts-carousel :account="author" class="q-ma-md" style="max-width:500px" />
+        <recent-posts-carousel :account="author" class="q-ma-md" style="width:400px; height:250px;" />
       </div>
     </div>
   </q-page>

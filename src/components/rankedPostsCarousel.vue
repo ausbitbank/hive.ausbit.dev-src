@@ -1,8 +1,8 @@
 <template>
   <div class="">
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
-    <div v-if="posts.length > 0">
-      <q-card flat bordered style="width: 500px;">
+    <div v-if="posts.length > 0" style="width: 450px; height: 250px;">
+      <q-card flat bordered>
       <div class="text-h6 text-center">
         <q-icon name="trending_up" v-if="this.sortMethod === 'trending'"/>
         <q-icon name="whatshot" v-if="this.sortMethod === 'hot'"/>
@@ -19,6 +19,7 @@
         infinite
         :autoplay="autoplay"
         height="250px"
+        width="400px"
         @mouseenter="autoplay = false"
         @mouseleave="autoplay = true"
         class="bg-dark text-white shadow-2 rounded-borders"

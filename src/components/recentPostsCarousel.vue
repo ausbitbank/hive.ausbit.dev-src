@@ -16,6 +16,7 @@
         infinite
         :autoplay="autoplay"
         height="250px"
+        width="450px"
         @mouseenter="autoplay = false"
         @mouseleave="autoplay = true"
         class="bg-dark text-white shadow-2 rounded-borders"
