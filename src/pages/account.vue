@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex">
-      <div class="fit row wrap justify-start items-start content-start" v-if="account !== null && globalProps !== null">
+      <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && globalProps !== null">
           <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
               <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right">
                 <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
@@ -11,7 +11,7 @@
               <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
               <div class="text-subtitle" v-if="account.posting_json_metadata"><span v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</span></div>
           </div>
-          <div class="col-xs-12 col-sm-12 col-md-4">
+          <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
               <q-card flat bordered class="text-center q-pa-sm q-ma-md">
                   <q-card-section>
                       <div class="text-subtitle">Vote Weight</div>
@@ -84,7 +84,7 @@
                   </q-card-section>
               </q-card>
               <recent-posts-carousel :account="username" />
-              <q-card flat bordered class="q-pa-sm q-ma-md">
+              <q-card flat bordered class="q-ma-md">
                   <q-card-section>
                       <div class="text-h6">Resource Credits</div>
                       <q-list bordered separator dense>
@@ -114,8 +114,8 @@
                           </q-item>
                       </q-list>
                   </q-card-section>
-                  <q-card-section>
-                      <div>Enough credits for approximately:</div>
+                  <q-card-section class="text-center">
+                      <div class="text-bold">Enough credits for approximately:</div>
                       <div>{{ resourceBudgetComments }} comments</div>
                       <div>{{ resourceBudgetVotes }} votes</div>
                       <div>{{ resourceBudgetTransfers }} transfers</div>
@@ -123,280 +123,7 @@
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md">
                   <q-card-section>
-                      <q-list bordered separator dense>
-                          <q-item>
-                              <q-item-section>
-                                  Id
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.id }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Name
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.name }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Proxy
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.proxy }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last owner update
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_owner_update}}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last account update
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_account_update }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Created
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.created }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Mined
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.mined }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Recovery Account
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.recovery_account }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last account recovery
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_account_recovery }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reset account
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reset_account }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Post count
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.post_count }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Can vote
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.can_vote }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reward HBD Balance
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reward_hbd_balance }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reward Hive Balance
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reward_hive_balance }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reward Vesting Balance
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reward_vesting_balance }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reward Vesting Hive
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reward_vesting_hive }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Vesting Shares
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.vesting_shares }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Delegated Vesting Shares
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.delegated_vesting_shares }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Received Vesting Shares
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.received_vesting_shares }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Vesting Withdraw Rate
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.vesting_withdraw_rate }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Withdrawn
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.withdrawn }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  To Withdraw
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.to_withdraw }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Withdraw Routes
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.withdraw_routes }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Pending Transfers
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.pending_transfers }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Curation Rewards
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.curation_rewards }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Posting Rewards
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.posting_rewards }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Proxied vsf votes
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.proxied_vsf_votes }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Witnesses voted for
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.witnesses_voted_for }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last post
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_post }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last root post
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_root_post }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Last vote time
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.last_vote_time }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Pending claimed accounts
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.pending_claimed_accounts }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Delayed votes
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.delayed_votes }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section>
-                                  Reputation
-                              </q-item-section>
-                              <q-item-section side>
-                                  {{ account.reputation }}
-                              </q-item-section>
-                          </q-item>
-                      </q-list>
+                      <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']"/>
                   </q-card-section>
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.json_metadata">
@@ -446,8 +173,11 @@
                             </q-item-section>
                         </q-item>
                         <q-item v-for="auth in account.owner.account_auths" :key="auth.index">
+                            <q-item-section avatar>
+                               <q-icon name="person" />
+                            </q-item-section>
                             <q-item-section>
-                               <q-icon name="person" />{{ auth[0] }}
+                                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
                             </q-item-section>
                             <q-item-section side>
                                 {{ auth[1] }}
@@ -474,7 +204,7 @@
                                <q-icon name="person" />
                             </q-item-section>
                             <q-item-section>
-                                {{ auth[0] }}
+                                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
                             </q-item-section>
                             <q-item-section side>
                                 {{ auth[1] }}
@@ -501,7 +231,7 @@
                                <q-icon name="person" />
                             </q-item-section>
                             <q-item-section>
-                                {{ auth[0] }}
+                                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
                             </q-item-section>
                             <q-item-section side>
                                 {{ auth[1] }}
@@ -531,21 +261,10 @@
                       <div class="text-h6">
                           Witness
                       </div>
-                      <q-list bordered separator dense v-for="prop in Object.entries(witness)" :key="prop.index">
-                          <q-item>
-                              <q-item-section class="text-bold">
-                                  {{ prop[0] }}
-                              </q-item-section>
-                          </q-item>
-                          <q-item>
-                              <q-item-section class="wrap">
-                                  {{ prop[1] }}
-                              </q-item-section>
-                          </q-item>
-                      </q-list>
+                      <props-list :obj="witness" :ignoreKeys="[]"/>
                   </q-card-section>
               </q-card>
-              <q-card flat bordered class="q-pa-sm q-ma-md text-center">
+              <q-card flat bordered class="q-pa-sm q-ma-md text-center" v-if="account.witness_votes.length > 0">
                   <q-card-section>
                     <div class="text-h6">@{{ username }} votes for :</div>
                       <ol>
@@ -554,7 +273,7 @@
                   </q-card-section>
               </q-card>
           </div>
-          <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md">
+          <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
             <q-card flat bordered dense class="q-ma-sm" v-for="op in accountOperations" :key="op.index">
                 <q-card-section v-if="accountOperations.length > 0">
                     <q-list dense>
@@ -577,6 +296,7 @@
                                 <q-avatar v-if="op[1].op[0] == 'comment'"><q-icon name="comment" /></q-avatar>
                                 <q-avatar v-if="op[1].op[0] == 'delegate_vesting_shares'"><q-icon name="add_circle" /></q-avatar>
                                 <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" /></q-avatar>
+                                <q-avatar v-if="op[1].op[0] == 'comment_options'"><q-icon name="settings" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].to"><q-img :src="getHiveAvatarUrl(op[1].op[1].to)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].parent_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].parent_author)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].delegatee"><q-img :src="getHiveAvatarUrl(op[1].op[1].delegatee)" /></q-avatar>
@@ -629,12 +349,14 @@ import 'vue-json-pretty/lib/styles.css'
 import { debounce } from 'quasar'
 import DOMPurify from 'dompurify'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
+import propsList from 'components/propsList.vue'
 // import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 export default {
   name: 'accountPage',
   components: {
     VueJsonPretty,
-    recentPostsCarousel
+    recentPostsCarousel,
+    propsList
     // recentVotedPostsCarousel
   },
   data () {
@@ -692,8 +414,9 @@ export default {
       return pct
     },
     coverImage: function () {
+      var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
       if (this.account === null) {
-        return null
+        return defaultCover
       } else {
         if (this.account.posting_json_metadata) {
           if (JSON.parse(this.account.posting_json_metadata).profile) {
@@ -701,13 +424,13 @@ export default {
               console.log(JSON.parse(this.account.posting_json_metadata).profile.cover_image)
               return JSON.parse(this.account.posting_json_metadata).profile.cover_image
             } else {
-              return null
+              return defaultCover
             }
           } else {
-            return null
+            return defaultCover
           }
         } else {
-          return null
+          return defaultCover
         }
       }
     },
@@ -882,7 +605,7 @@ export default {
         return `<a href="${data}">${data}</a>`
       } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator'].includes(key)) {
         return `<a href="/@${data}">${data}</a>`
-      } else if (['permlink'].includes(key)) {
+      } else if (['permlink', 'parent_permlink'].includes(key)) {
         return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
       } else if (['json_metadata', 'json'].includes(key)) {
         return DOMPurify.sanitize(defaultFormatted)

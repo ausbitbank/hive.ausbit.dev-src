@@ -1,11 +1,11 @@
 <template>
     <span>
     <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
-    <q-card flat bordered class="q-pa-sm" style="max-width: 100%; max-width:700px; overflow-wrap: break-word" v-if="!loading">
+    <q-card flat bordered class="q-pa-sm" style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
-                <span>Block {{ this.tidyNumber(this.blockNumber) }}</span>
+                <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
                 <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
             </div>
             <span v-if="this.blockHeader" style="text-caption text-center">
@@ -94,6 +94,12 @@
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].creator }}</router-link></span> claimed account creation token with fee of {{ tx.op[1].fee }}
                 </q-item-label>
                 </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'create_claimed_account'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].creator }}</router-link></span> created claimed account <q-avatar><q-img :src="getHiveAvatarUrl(tx.op[1].new_account_name)" /></q-avatar> <span class="text-bold">{{ tx.op[1].new_account_name }}</span>
+                    <vue-json-pretty :data="tx.op[1]" :deep="1" :custom-value-formatter="customLinkFormatter" />
+                </q-item-label>
+                </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> set witness properties {{ tx.op[1].props }}
@@ -145,9 +151,16 @@
             </q-item>
             </q-list>
         </q-card-section>
+        <q-card-section>
+          <div class="text-grey cursor-hand text-center" @click="getRawBlock(blockNumber); showRawBlock = !showRawBlock">Show Raw Block Data</div>
+          <q-card v-if="showRawBlock">
+            <div class="text-h6 text-center">Raw Block Data</div>
+            <vue-json-pretty :data="block" :custom-value-formatter="customLinkFormatter" :deep="1" :showLength="true" />
+          </q-card>
+        </q-card-section>
         <q-card-section class="text-body text-center" v-if="!loading">
             <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
-            <span>Block {{ this.tidyNumber(this.blockNumber) }}</span>
+            <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
             <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
         </q-card-section>
     </q-card>
@@ -179,7 +192,8 @@ export default {
       blockHeader: null,
       blockOps: [],
       lastIrreversibleBlock: null,
-      blockNumber: this.blockNum
+      blockNumber: this.blockNum,
+      showRawBlock: false
     }
   },
   computed: {
@@ -241,6 +255,7 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
+    returnBlockLink (blocknum) { return '/b/' + blocknum },
     returnTxLink (txId) { return '/tx/' + txId },
     returnAccountLink (account) { return '/@' + account },
     returnVoteColor (weight) {
@@ -256,6 +271,7 @@ export default {
     },
     updateBlock (blockNumber) {
       this.blockNumber = blockNumber
+      // this.blockNum = blockNumber
       this.blockOps = []
       this.blockHeader = null
       this.getBlockHeader(blockNumber)
@@ -264,6 +280,15 @@ export default {
     getLatestIrreversibleBlock () {
       hive.api.getDynamicGlobalPropertiesAsync()
         .then(res => this.updateBlock(res.last_irreversible_block_num))
+    },
+    getRawBlock (blocknum) {
+      if (!this.block) {
+        hive.api.getBlockAsync(blocknum)
+          .then(res => this.setRawBlock(res))
+      }
+    },
+    setRawBlock (block) {
+      this.block = block
     },
     customLinkFormatter (data, key, parent, defaultFormatted) {
       if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {

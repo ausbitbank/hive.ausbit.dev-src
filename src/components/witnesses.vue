@@ -9,7 +9,7 @@
             <div v-for="witness in witnesses" :key="witness.index">
                 <div>
                     <span class="text-bold" v-if="!alertSigningDisabled(witness.signing_key)">
-                      <router-link :to="linkAccount(witness.owner)">{{ witness.owner }}</router-link>
+                      <router-link :to="linkAccount(witness.owner)">{{ witness.owner }}  </router-link>
                     </span>
                     <span class="text-strike" v-else>
                       {{ witness.owner }}
