@@ -42,12 +42,24 @@
       </q-list>
     </q-drawer>
 
-    <q-page-container>
+    <q-page-container class="gradientBg">
       <router-view />
     </q-page-container>
   </q-layout>
 </template>
+<style>
+.gradientBg {
+background: linear-gradient(-45deg, #9C27B0, #E31337, #3E92CC, #23d5ab); /* -45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab */
+background-size: 400% 400%;
+animation: gradient 15s ease infinite;
+}
 
+@keyframes gradient {
+0% {background-position: 0% 50%;}
+50% {background-position: 100% 50%;}
+100% {background-position: 0% 50%;}
+}
+</style>
 <script>
 import EssentialLink from 'components/EssentialLink'
 export default {

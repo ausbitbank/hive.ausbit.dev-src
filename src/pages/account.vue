@@ -8,7 +8,7 @@
                 <div>{{ account.hbd_balance }}</div>
                 <div v-if="this.accountValue">{{ this.accountValue }}</div>
               </q-card>
-              <div class="text-h4"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
+              <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
               <div class="text-subtitle" v-if="account.posting_json_metadata"><span v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</span></div>
           </div>
           <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
@@ -603,7 +603,7 @@ export default {
         return `<a href="/block/${data}">${data}</a>`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `<a href="${data}">${data}</a>`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator'].includes(key)) {
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer'].includes(key)) {
         return `<a href="/@${data}">${data}</a>`
       } else if (['permlink', 'parent_permlink'].includes(key)) {
         return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
