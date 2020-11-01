@@ -23,7 +23,7 @@
     </q-item>
     <q-item v-if="this.comment.children !== 0">
       <div v-for="authperm in comment.replies" :key="authperm.index">
-        <span v-if="comment.depth >= parentDepth">
+        <span v-if="(comments[authperm].depth > parentDepth) && comments[authperm].parent_permlink === comment.permlink && comments[authperm].parent_author === comment.author">
           <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
           </span>
         <span v-else>

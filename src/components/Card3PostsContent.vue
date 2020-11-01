@@ -1,9 +1,17 @@
 <template>
-  <div v-html="postContent">
+  <div v-html="postContent" class="postview">
   </div>
 </template>
 <style>
-.postview { overflow: auto; }
+.postview { overflow: visible; text-wrap: normal; word-wrap: break-word; overflow-wrap: break-word; display:flow-root}
+code { text-wrap: normal; word-wrap: break-word; overflow-wrap: break-word }
+pre {
+ white-space: pre-wrap;
+ white-space: -moz-pre-wrap;
+ white-space: -pre-wrap;
+ white-space: -o-pre-wrap;
+ word-wrap: break-word;
+}
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 img { max-width: 95%; max-height: 95%; text-align: center}

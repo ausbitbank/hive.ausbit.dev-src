@@ -23,7 +23,8 @@
     "steem": "^0.7.11",
     "steem-content-renderer": "^2.1.1",
     "vue-json-pretty": "^1.7.0",
-    "vue-sparklines": "^0.2.1"
+    "vue-sparklines": "^0.2.1",
+    "vue-timers": "^2.0.4"
   },
   "devDependencies": {
     "@quasar/app": "^1.9.6",

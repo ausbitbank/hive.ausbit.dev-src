@@ -1,7 +1,7 @@
 <template>
     <span>
     <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
-    <q-card flat bordered class="q-pa-sm" style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading">
+    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
@@ -124,7 +124,7 @@
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'transfer'">
                 <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].from)">{{ tx.op[1].from }}</router-link></span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold"><router-link :to="tx.op[1].to">{{ tx.op[1].to }}</router-link></span> <div v-if="tx.op[1].memo !== ''">Memo : <vue-json-pretty :data="tx.op[1].memo" /></div>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].from)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].from)">{{ tx.op[1].from }}</router-link></span> transferred <code class="text-bold">{{ tx.op[1].amount }}</code> to <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].to)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].to)">{{ tx.op[1].to }}</router-link></span> <div v-if="tx.op[1].memo !== ''">Memo : <vue-json-pretty :data="tx.op[1].memo" /></div>
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else>
@@ -152,7 +152,8 @@
             </q-list>
         </q-card-section>
         <q-card-section>
-          <div class="text-grey cursor-hand text-center" @click="getRawBlock(blockNumber); showRawBlock = !showRawBlock">Show Raw Block Data</div>
+          <div class="text-center" v-if="false"><q-toggle left-label v-model="liveRefresh" label="Live Block Refresh" class="text-center" /></div>
+          <div class="text-grey cursor-pointer text-center" @click="getRawBlock(blockNumber); showRawBlock = !showRawBlock">Show Raw Block Data</div>
           <q-card v-if="showRawBlock">
             <div class="text-h6 text-center">Raw Block Data</div>
             <vue-json-pretty :data="block" :custom-value-formatter="customLinkFormatter" :deep="1" :showLength="true" />
@@ -178,8 +179,23 @@ import moment from 'moment'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import DOMPurify from 'dompurify'
+import { mixin as VueTimers } from 'vue-timers'
 export default {
   name: 'blockView',
+  mixins: [VueTimers],
+  timers: [
+    {
+      name: 'blockTimer',
+      time: 3000,
+      repeat: false,
+      autostart: false,
+      isSwitchTab: false,
+      callback: function () {
+        var d = new Date(); var n = d.getTime(); console.log('timer triggered at ' + n)
+        this.updateBlock(this.blockNumber + 1)
+      }
+    }
+  ],
   components: {
     VueJsonPretty
   },
@@ -193,7 +209,18 @@ export default {
       blockOps: [],
       lastIrreversibleBlock: null,
       blockNumber: this.blockNum,
-      showRawBlock: false
+      showRawBlock: false,
+      liveRefresh: false
+    }
+  },
+  watch: {
+    liveRefresh: function (newState, oldState) {
+      if (newState === true) {
+        this.$timer.start('blockTimer')
+      } else {
+        this.$timer.stop('blockTimer')
+      }
+      console.log('blockTimer ' + this.timers.blockTimer.isRunning)
     }
   },
   computed: {

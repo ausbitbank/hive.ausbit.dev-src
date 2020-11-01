@@ -4,8 +4,8 @@
           <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
               <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right">
                 <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
-                <div>{{ account.balance }}</div>
-                <div>{{ account.hbd_balance }}</div>
+                <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
+                <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
                 <div v-if="this.accountValue">{{ this.accountValue }}</div>
               </q-card>
               <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
@@ -287,7 +287,9 @@
                                 <q-avatar v-if="op[1].op[1].account"><q-img :src="getHiveAvatarUrl(op[1].op[1].account)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].voter"><q-img :src="getHiveAvatarUrl(op[1].op[1].voter)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].from_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].from_account)" /></q-avatar>
+                                <q-avatar v-if="op[1].op[1].publisher"><q-img :src="getHiveAvatarUrl(op[1].op[1].publisher)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].payer"><q-img :src="getHiveAvatarUrl(op[1].op[1].payer)" /></q-avatar>
+                                <q-avatar v-if="op[1].op[1].owner"><q-img :src="getHiveAvatarUrl(op[1].op[1].owner)" /></q-avatar>
                                 <q-avatar v-if="['vote', 'account_witness_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
                                 <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay'].includes(op[1].op[0])"><q-icon name="monetization_on" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].comment_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].comment_author)" /></q-avatar>
@@ -296,14 +298,14 @@
                                 <q-avatar v-if="op[1].op[0] == 'comment'"><q-icon name="comment" /></q-avatar>
                                 <q-avatar v-if="op[1].op[0] == 'delegate_vesting_shares'"><q-icon name="add_circle" /></q-avatar>
                                 <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" /></q-avatar>
-                                <q-avatar v-if="op[1].op[0] == 'comment_options'"><q-icon name="settings" /></q-avatar>
+                                <q-avatar v-if="['comment_options', 'feed_publish'].includes(op[1].op[0])"><q-icon name="settings" /></q-avatar>
+                                <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].to"><q-img :src="getHiveAvatarUrl(op[1].op[1].to)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].parent_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].parent_author)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].delegatee"><q-img :src="getHiveAvatarUrl(op[1].op[1].delegatee)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].to_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].to_account)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].receiver"><q-img :src="getHiveAvatarUrl(op[1].op[1].receiver)" /></q-avatar>
                                 <q-avatar v-if="op[1].op[1].witness"><q-img :src="getHiveAvatarUrl(op[1].op[1].witness)" /></q-avatar>
-                                <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
                             </q-item-section>
                             <q-item-section class="wrap">
                                 <div class="text-bold">{{ op[1].op[0] }}</div>
