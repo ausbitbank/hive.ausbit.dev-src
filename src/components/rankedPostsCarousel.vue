@@ -51,12 +51,8 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 import moment from 'moment'
-// import hive from '@hiveio/hive-js'
-// import VueJsonPretty from 'vue-json-pretty'
-// import 'vue-json-pretty/lib/styles.css'
 export default {
   name: 'trendingPostsCarousel',
-  // components: { VueJsonPretty },
   data () {
     return {
       posts: [],
@@ -68,7 +64,6 @@ export default {
     }
   },
   props: {
-    // tag: String,
     sortMethod: String // eg 'trending'
   },
   computed: {

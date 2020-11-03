@@ -6,7 +6,6 @@
                 <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
                 <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
                 <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
-                <div v-if="this.accountValue">{{ this.accountValue }}</div>
               </q-card>
               <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
               <div class="text-subtitle" v-if="account.posting_json_metadata"><span v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</span></div>
@@ -21,6 +20,7 @@
                       </div>
                       <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
                           <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
+                          <div class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</div>
                       </div>
                       <div class="text-bold">
                           Voting Power
@@ -129,13 +129,13 @@
               <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.json_metadata">
                   <q-card-section>
                       <div class="text-h6">JSON Metadata</div>
-                      <vue-json-pretty :data="JSON.parse(account.json_metadata)" :customValueFormatter="customLinkFormatter" />
+                      <json-viewer :data="JSON.parse(account.json_metadata)" />
                   </q-card-section>
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
                   <q-card-section>
                       <div class="text-h6">Posting JSON Metadata</div>
-                      <vue-json-pretty :data="JSON.parse(account.posting_json_metadata)" :customValueFormatter="customLinkFormatter" />
+                      <json-viewer :data="JSON.parse(account.posting_json_metadata)" />
                   </q-card-section>
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md">
@@ -274,56 +274,7 @@
               </q-card>
           </div>
           <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
-            <q-card flat bordered dense class="q-ma-sm" v-for="op in accountOperations" :key="op.index">
-                <q-card-section v-if="accountOperations.length > 0">
-                    <q-list dense>
-                        <q-item>
-                            <q-item-section avatar>
-                                <q-avatar v-if="op[1].op[1].producer"><q-img :src="getHiveAvatarUrl(op[1].op[1].producer)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].creator"><q-img :src="getHiveAvatarUrl(op[1].op[1].creator)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].curator"><q-img :src="getHiveAvatarUrl(op[1].op[1].curator)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].benefactor"><q-img :src="getHiveAvatarUrl(op[1].op[1].benefactor)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].delegator"><q-img :src="getHiveAvatarUrl(op[1].op[1].delegator)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].account"><q-img :src="getHiveAvatarUrl(op[1].op[1].account)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].voter"><q-img :src="getHiveAvatarUrl(op[1].op[1].voter)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].from_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].from_account)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].publisher"><q-img :src="getHiveAvatarUrl(op[1].op[1].publisher)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].payer"><q-img :src="getHiveAvatarUrl(op[1].op[1].payer)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].owner"><q-img :src="getHiveAvatarUrl(op[1].op[1].owner)" /></q-avatar>
-                                <q-avatar v-if="['vote', 'account_witness_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
-                                <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay'].includes(op[1].op[0])"><q-icon name="monetization_on" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].comment_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].comment_author)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].author"><q-img :src="getHiveAvatarUrl(op[1].op[1].author)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].from"><q-img :src="getHiveAvatarUrl(op[1].op[1].from)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[0] == 'comment'"><q-icon name="comment" /></q-avatar>
-                                <q-avatar v-if="op[1].op[0] == 'delegate_vesting_shares'"><q-icon name="add_circle" /></q-avatar>
-                                <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" /></q-avatar>
-                                <q-avatar v-if="['comment_options', 'feed_publish'].includes(op[1].op[0])"><q-icon name="settings" /></q-avatar>
-                                <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].to"><q-img :src="getHiveAvatarUrl(op[1].op[1].to)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].parent_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].parent_author)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].delegatee"><q-img :src="getHiveAvatarUrl(op[1].op[1].delegatee)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].to_account"><q-img :src="getHiveAvatarUrl(op[1].op[1].to_account)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].receiver"><q-img :src="getHiveAvatarUrl(op[1].op[1].receiver)" /></q-avatar>
-                                <q-avatar v-if="op[1].op[1].witness"><q-img :src="getHiveAvatarUrl(op[1].op[1].witness)" /></q-avatar>
-                            </q-item-section>
-                            <q-item-section class="wrap">
-                                <div class="text-bold">{{ op[1].op[0] }}</div>
-                                <vue-json-pretty :data="op[1].op[1]" :customValueFormatter="customLinkFormatter" />
-                            </q-item-section>
-                            <q-item-section side>
-                                <span>
-                                    <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</div>
-                                    <div v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></div>
-                                    <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ op[1].block }}</router-link></div>
-                                    <div v-else>block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></div>
-                                    <div :title="op[1].timestamp">{{ timeDelta(op[1].timestamp) }}</div>
-                                </span>
-                            </q-item-section>
-                        </q-item>
-                    </q-list>
-                </q-card-section>
-            </q-card>
+            <account-operations :accountOperations="accountOperations" />
             <q-card class="text-center">
                 <q-card-section>
                     <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 2"/>
@@ -345,20 +296,42 @@ a:visited { color: #884488; }
 </style>
 <script>
 import hive from '@hiveio/hive-js'
+// hive.api.setOptions({ url: 'https://api.hive.blog' })
+// hive.config.set('alternative_api_endpoints', ['https://rpc.ausbit.dev', 'https://api.hive.blog', 'https://anyx.io', 'https://api.hivekings.com'])
 import moment from 'moment'
-import VueJsonPretty from 'vue-json-pretty'
-import 'vue-json-pretty/lib/styles.css'
 import { debounce } from 'quasar'
-import DOMPurify from 'dompurify'
+import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
+import accountOperations from 'components/accountOperations.vue'
+/* import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+const op = ChainTypes.operations
+const walletBitmask = makeBitMaskFilter([
+  op.transfer,
+  op.transfer_to_vesting,
+  op.withdraw_vesting,
+  op.interest,
+  op.liquidity_reward,
+  op.transfer_to_savings,
+  op.transfer_from_savings,
+  op.escrow_transfer,
+  op.cancel_transfer_from_savings,
+  op.escrow_approve,
+  op.escrow_dispute,
+  op.escrow_release,
+  op.fill_convert_request,
+  op.fill_order,
+  op.claim_reward_balance
+])
+console.log(walletBitmask) */
 // import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 export default {
   name: 'accountPage',
   components: {
-    VueJsonPretty,
+    jsonViewer,
     recentPostsCarousel,
-    propsList
+    propsList,
+    accountOperations
     // recentVotedPostsCarousel
   },
   data () {
@@ -366,10 +339,10 @@ export default {
       account: null,
       username: this.$route.params.username,
       globalProps: null,
-      accountValue: null,
       votingPowerPct: 0.5,
       downvotingPowerPct: 0.5,
       resourceCreditsPct: 0.5,
+      accountValue: null,
       RC: { max: null, current: null, percent: null },
       witness: null,
       accountOperations: [],
@@ -497,20 +470,24 @@ export default {
   },
   methods: {
     filterOpsVotes (op) { if (op[1].op[0] === 'vote') { return true } else { return false } },
-    async getAccountHistory (username) {
+    getAccountHistory (username) {
+      var limit = this.accountOperationsLimit
+      var page = this.$router.currentRoute.query.page || 1
+      var pageReq = this.accountOperationsMarker - (limit * page)
+      pageReq = pageReq + limit
+      if (pageReq < limit) { pageReq = limit } // Catch the last (first) page results
+      if (page === null || page === 1) { pageReq = -1 }
+      hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, '', '', function (err, response) {
+        if (err) { console.log(err) }
+        this.accountOperations = response.reverse()
+      }.bind(this))
     },
-    async getAccountHistoryMarker (username) {
-      hive.api.getAccountHistoryAsync(username, -1, 1)
-        .then((response) => {
-          this.accountOperationsMarker = response[0][0]
-          var limit = this.accountOperationsLimit
-          var page = this.$router.currentRoute.query.page || 1
-          var pageReq = this.accountOperationsMarker - (limit * page)
-          pageReq = pageReq + limit
-          if (pageReq < limit) { pageReq = limit } // Catch the last (first) page results
-          if (page === null || page === 1) { pageReq = -1 }
-          hive.api.getAccountHistoryAsync(this.username, pageReq, this.accountOperationsLimit).then((response) => { this.accountOperations = response.reverse() })
-        })
+    getAccountHistoryMarker (username) {
+      hive.api.getAccountHistory(username, -1, 1, '', '', function (err, response) {
+        if (err) { console.log(err) }
+        this.accountOperationsMarker = response[0][0]
+        this.getAccountHistory(username)
+      }.bind(this))
     },
     accountLink (username) {
       return '/@' + username
@@ -565,13 +542,6 @@ export default {
         return null
       }
     },
-    getAccountValue (username) {
-      hive.formatter.estimateAccountValue(username)
-        .then((response) => {
-          this.accountValue = response
-          console.log(response)
-        })
-    },
     getRC (username) {
       var url = 'https://anyx.io/v1/rc_api/find_rc_accounts?accounts=' + username
       this.$axios.get(url)
@@ -594,37 +564,25 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     tidyNumber (x) {
-      var parts = x.toString().split('.')
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-      return parts.join('.')
+      if (x) {
+        var parts = x.toString().split('.')
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        return parts.join('.')
+      } else {
+        return null
+      }
     },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
-    customLinkFormatter (data, key, parent, defaultFormatted) {
-      if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
-        return `<a href="/block/${data}">${data}</a>`
-      } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
-        return `<a href="${data}">${data}</a>`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer'].includes(key)) {
-        return `<a href="/@${data}">${data}</a>`
-      } else if (['permlink', 'parent_permlink'].includes(key)) {
-        return `<a href="/@${parent.author}/${parent.permlink}">${data}</a>`
-      } else if (['json_metadata', 'json'].includes(key)) {
-        return DOMPurify.sanitize(defaultFormatted)
-      } else if (['comment_permlink'].includes(key)) {
-        return `<a href="/@${parent.comment_author}/${parent.comment_permlink}">${data}</a>`
-      } else {
-        return DOMPurify.sanitize(defaultFormatted)
-      }
-    },
     init () {
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
-      this.getAccount(this.username)
-      this.getGlobalProps()
-      this.getRC(this.username)
-      // this.getAccountValue(this.username)
-      this.getWitness(this.username)
+      if (!this.account || this.account.name !== this.username) {
+        this.getAccount(this.username)
+        this.getRC(this.username)
+        this.getWitness(this.username)
+      }
+      if (!this.globalProps) { this.getGlobalProps() }
       this.getAccountHistoryMarker(this.username)
     }
   },

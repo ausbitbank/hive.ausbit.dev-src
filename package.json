@@ -1,6 +1,6 @@
 {
   "name": "hive.ausbit.dev",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Hive blockchain tools",
   "productName": "hive.ausbit.dev",
   "cordovaId": "org.cordova.quasar.app",
@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@hiveio/dhive": "^0.14.8",
-    "@hiveio/hive-js": "^0.1.0",
+    "@hiveio/hive-js": "^0.8.4",
     "@quasar/extras": "^1.9.9",
     "axios": "^0.18.1",
     "dompurify": "^2.2.0",
     "hive-content-renderer": "^1.0.3",
-    "moment": "^2.24.0",
+    "moment": "^2.29.0",
     "quasar": "^1.14.1",
     "steem": "^0.7.11",
     "steem-content-renderer": "^2.1.1",

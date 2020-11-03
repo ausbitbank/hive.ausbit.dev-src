@@ -48,17 +48,11 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 import moment from 'moment'
-// import hive from '@hiveio/hive-js'
-// import VueJsonPretty from 'vue-json-pretty'
-// import 'vue-json-pretty/lib/styles.css'
 export default {
   name: 'recentPostsCarousel',
-  // components: { VueJsonPretty },
   data () {
     return {
       posts: [],
-      // account: 'ausbitbank',
-      // limit: 10,
       showResteems: true,
       api: 'https://rpc.ausbit.dev',
       slide: null,

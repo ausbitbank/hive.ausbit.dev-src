@@ -16,7 +16,7 @@
                     <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
                         {{ rank }}
                         <q-tooltip content-class="bg-dark">
-                            <vue-json-pretty :data="node" :custom-value-formatter="customLinkFormatter" />
+                            <json-viewer :data="node" />
                         </q-tooltip>
                     </q-chip>
                 </span>
@@ -29,7 +29,7 @@
                     <q-icon name="access_time" /> {{ timeDelta(fullNodeUpdateTime) }} at {{ fullNodeUpdateTime }}
                 </div>
                 <div class="text-caption">
-                    Alternative : <a href="https://hivekings.com/nodes" target="_blank">hivekings.com/nodes</a>
+                    Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
                 </div>
                 <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense push icon="link" /></router-link></div>
         </q-card-section>
@@ -44,13 +44,11 @@ a:visited { color: #884488; }
 <script>
 import moment from 'moment'
 import hive from '@hiveio/hive-js'
-import VueJsonPretty from 'vue-json-pretty'
-import 'vue-json-pretty/lib/styles.css'
-import DOMPurify from 'dompurify'
+import jsonViewer from 'components/jsonViewer.vue'
 export default {
   name: 'nodes',
   props: [],
-  components: { VueJsonPretty },
+  components: { jsonViewer },
   data () {
     return {
       fullNodeUpdate: null,
@@ -189,15 +187,6 @@ export default {
         }
       }
       return score
-    },
-    customLinkFormatter (data, key, parent, defaultFormatted) {
-      if (key === 'head_block_number' || key === 'last_irreversible_block_num' || key === 'last_confirmed_block_num') {
-        return `<a href="/block/${data}">${data}</a>`
-      } else if (key === 'url') {
-        return `<a href="${data}">${data}</a>`
-      } else {
-        return DOMPurify.sanitize(defaultFormatted)
-      }
     }
   },
   mounted () {

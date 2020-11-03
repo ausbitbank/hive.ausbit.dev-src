@@ -40,8 +40,8 @@
           v-bind="link"
         />
       </q-list>
+      <div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
-
     <q-page-container class="gradientBg">
       <router-view />
     </q-page-container>

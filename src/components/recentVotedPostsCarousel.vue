@@ -47,11 +47,8 @@ a:visited { color: #884488; }
 </style>
 <script>
 import moment from 'moment'
-// import VueJsonPretty from 'vue-json-pretty'
-// import 'vue-json-pretty/lib/styles.css'
 export default {
   name: 'recentVotedPostsCarousel',
-  // components: { VueJsonPretty },
   data () {
     return {
       posts: [],

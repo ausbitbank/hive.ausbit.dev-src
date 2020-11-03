@@ -240,7 +240,7 @@
           </q-item-section>
         </template>
         <q-card bordered dense class="shadow-1">
-            <vue-json-pretty :data="JSON.parse(syntaxHighlight)" :custom-value-formatter="customLinkFormatter" />
+            <json-viewer :data="JSON.parse(syntaxHighlight)" />
           <q-card-actions vertical>
             <a :href='linkBlock' target="_blank">
               <q-btn label="View Block" color="secondary" />
@@ -253,13 +253,11 @@
 </template>
 <script>
 import moment from 'moment'
-import VueJsonPretty from 'vue-json-pretty'
-import 'vue-json-pretty/lib/styles.css'
-import DOMPurify from 'dompurify'
+import jsonViewer from 'components/jsonViewer.vue'
 export default {
   name: 'txView',
   props: ['tx', 'username', 'globalPropsHive', 'filter'],
-  components: { VueJsonPretty },
+  components: { jsonViewer },
   data () {
     return {
     }
@@ -348,15 +346,6 @@ export default {
     },
     syntaxHighlight: function () {
       return JSON.stringify(this.tx[1], null, 2)
-    },
-    customLinkFormatter (data, key, parent, defaultFormatted) {
-      if (key === 'head_block_number' || key === 'last_irreversible_block_num' || key === 'last_confirmed_block_num') {
-        return `<a href="/block/${data}">${data}</a>`
-      } else if (key === 'url') {
-        return `<a href="${data}">${data}</a>`
-      } else {
-        return DOMPurify.sanitize(defaultFormatted)
-      }
     }
   },
   methods: {

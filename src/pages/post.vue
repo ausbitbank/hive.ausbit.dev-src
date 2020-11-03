@@ -13,7 +13,7 @@
           <q-card-section>
             <Card3PostsContent :post="post" />
           </q-card-section>
-          <comments :author="post.author" :permlink="post.permlink" v-if="post.replies !== 0" />
+          <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
         </q-card>
       </div>
       <div class="col-sm-12 col-md-4 text-center justify-center">
