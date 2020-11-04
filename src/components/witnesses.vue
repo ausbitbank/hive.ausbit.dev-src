@@ -18,6 +18,12 @@
                       v{{ witness.running_version }}
                     </q-badge>
                     <div>
+                      <div v-if="showMissed">
+                        <q-badge dense outline><q-icon name="info" color="blue" /> Missed: {{ witness.total_missed }}</q-badge>
+                      </div>
+                      <div v-if="showLastBlock">
+                        <q-badge dense outline><q-icon name="info" color="blue" v-if="(globalProps.head_block_number - witness.last_confirmed_block_num) < 22" /><q-icon name="info" color="orange" v-else /> Blocks Since Last: {{ globalProps.head_block_number - witness.last_confirmed_block_num }}</q-badge>
+                      </div>
                       <div v-if="alertPricefeedAge(witness.last_hbd_exchange_update) === true && alertSigningDisabled(witness.signing_key) == false">
                         <q-badge dense outline><q-icon name="error" color="orange" /> Pricefeed : {{ timeDelta(witness.last_hbd_exchange_update) }}</q-badge>
                       </div>
@@ -29,7 +35,7 @@
                       <q-badge dense outline><q-icon name="account_balance" color="blue" /> HBD APR {{ witness.props.hbd_interest_rate / 100 }}%</q-badge>
                     </div>
                     <q-tooltip content-class="bg-dark">
-                      <vue-json-pretty :data="witness" :custom-value-formatter="customLinkFormatter" />
+                      <json-viewer :data="witness" />
                     </q-tooltip>
                     </div>
                 </div>
@@ -38,7 +44,7 @@
             <a href="https://peakd.com/me/witnesses"><q-btn dense icon="info" color="primary" label="Vote Witnesses" /></a>
             <div class="text-center">
               <router-link to="witnesses" v-if="this.$route.path !== '/witnesses'"><q-btn dense push icon="link" /></router-link>
-              <q-btn dense push icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit === 40 "/>
+              <q-btn dense push icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit < 200 "/>
               <q-btn dense push icon="unfold_less" @click="limit = 40; witnesses = null; getWitnessesByVote()" v-if="limit === 200 "/>
             </div>
         </q-card-section>
@@ -52,19 +58,37 @@ a:visited { color: #884488; }
 </style>
 <script>
 import hive from '@hiveio/hive-js'
-import VueJsonPretty from 'vue-json-pretty'
-import 'vue-json-pretty/lib/styles.css'
 import moment from 'moment'
-import DOMPurify from 'dompurify'
+import jsonViewer from 'components/jsonViewer.vue'
 export default {
   name: 'witnesses',
-  props: [],
-  components: { VueJsonPretty },
+  props: {
+    showMissed: {
+      required: false,
+      type: Boolean,
+      default: false
+    },
+    showLastBlock: {
+      required: false,
+      type: Boolean,
+      default: false
+    },
+    globalProps: {
+      required: false,
+      type: Object,
+      default: null
+    },
+    limit: {
+      required: false,
+      type: Number,
+      default: 40
+    }
+  },
+  components: { jsonViewer },
   data () {
     return {
       witnesses: null,
-      hardforkVersion: null,
-      limit: 40
+      hardforkVersion: null
     }
   },
   computed: {
@@ -79,15 +103,6 @@ export default {
     getWitnessesByVote () {
       hive.api.getWitnessesByVoteAsync('', this.limit)
         .then((response) => { this.witnesses = response })
-    },
-    customLinkFormatter (data, key, parent, defaultFormatted) {
-      if (key === 'head_block_number' || key === 'last_irreversible_block_num' || key === 'last_confirmed_block_num') {
-        return `<a href="/block/${data}">${data}</a>`
-      } else if (['url', 'cover_image', 'profile_image'].includes(key)) {
-        return `<a href="${data}">${data}</a>`
-      } else {
-        return DOMPurify.sanitize(defaultFormatted)
-      }
     },
     votesToHp (votes) {
       return this.numberWithCommas(((votes * this.hivePerMvests) / 1000000000000).toFixed(0))

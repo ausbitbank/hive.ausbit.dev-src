@@ -1,7 +1,20 @@
 <template>
     <span>
     <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
-    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading">
+    <q-card dense flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && view === 'simple'">
+        <q-card-section class="text-center q-pa-md">
+            <div class="text-h5">
+                <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
+            </div>
+            <span v-if="this.blockHeader" style="text-caption text-center">
+              Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
+              <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
+              <div>{{ this.blockOpsReal.length }} transactions</div>
+              <div>{{ this.blockOpsVirtual.length }} virtual transactions</div>
+            </span>
+        </q-card-section>
+    </q-card>
+    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && view === 'full'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
@@ -198,7 +211,12 @@ export default {
     jsonViewer
   },
   props: {
-    blockNum: Number
+    blockNum: Number,
+    view: {
+      type: String,
+      required: false,
+      default: 'full'
+    }
   },
   data () {
     return {

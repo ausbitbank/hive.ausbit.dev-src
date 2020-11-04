@@ -18,7 +18,8 @@ const routes = [
       { path: 'witnesses', component: () => import('pages/witnesses.vue') },
       { path: 'markets', component: () => import('pages/markets.vue') },
       { path: 'hbd', component: () => import('pages/hbd.vue') },
-      { path: 'twittergiveaway', component: () => import('pages/twittergiveaway.vue') }
+      { path: 'twittergiveaway', component: () => import('pages/twittergiveaway.vue') },
+      { path: 'health', component: () => import('pages/health.vue') }
     ]
   }
 ]
