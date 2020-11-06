@@ -8,7 +8,13 @@
                 <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
               </q-card>
               <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
-              <div class="text-subtitle" v-if="account.posting_json_metadata"><span v-if="JSON.parse(account.posting_json_metadata).profile">{{ JSON.parse(account.posting_json_metadata).profile.about }}</span></div>
+              <div class="text-subtitle" v-if="account.posting_json_metadata">
+                <span v-if="JSON.parse(account.posting_json_metadata).profile">
+                  <div v-if="JSON.parse(account.posting_json_metadata).profile.about">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
+                  <div v-if="JSON.parse(account.posting_json_metadata).profile.location"><q-icon name="location_on" /> {{ JSON.parse(account.posting_json_metadata).profile.location }}</div>
+                  <div v-if="JSON.parse(account.posting_json_metadata).profile.website"><a :href="JSON.parse(account.posting_json_metadata).profile.website"><q-icon name="link" /> {{ JSON.parse(account.posting_json_metadata).profile.website }}</a></div>
+                </span>
+              </div>
           </div>
           <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
               <q-card flat bordered class="text-center q-pa-sm q-ma-md">
@@ -79,7 +85,7 @@
                         </div>
                       </div>
                       <div>
-                        View in : <a :href="linkHiveWorld(username)">hiveworld</a>, <a :href="linkHiveBlog(username)">hive.blog</a> , <a :href="linkPeakd(username)">peakd</a>
+                        View in : <a :href="linkHiveBlog(username)">hive.blog</a> , <a :href="linkPeakd(username)">peakd</a>
                       </div>
                   </q-card-section>
               </q-card>

@@ -7,21 +7,21 @@
         <div>Hive Marketcap = ${{ tidyNumber(hiveCap) }}</div>
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
         <div>HBD Marketcap is currently <span class="text-bold">{{ percentCap }}</span> % of Hive Marketcap</div>
-        <div v-if="medianPrice !== null">HIVE median price must stay above <span class="text-bold">${{ haircutPrice }}</span> to avoid haircut (now ${{ medianPrice.base.split(' ')[0] }})</div>
+        <div v-if="medianPrice !== null">HIVE median price must stay above <span class="text-bold">${{ haircutPrice }}</span> to avoid haircut (now ${{ medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0]) }})</div>
       </q-card-section>
       <q-card-section v-if="percentCap >= 9 && percentCap < 10 && globalProps.hbd_print_rate !== 10000">
         <div class="text-bold"><q-icon name="warning" color="orange" />Print Rate slowed to {{ globalProps.hbd_print_rate / 100 }} %</div>
       </q-card-section>
       <q-card-section v-if="percentCap < 10">
         <div class="text-bold"><q-icon name="info" color="primary" />Normal Conditions Apply:</div>
-        <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price (${{ medianPrice.base.split(' ')[0] }})</div>
+        <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price (${{ medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0]) }})</div>
       </q-card-section>
       <q-card-section v-if="percentCap > 10 && medianPrice !== null">
         <div class="text-bold"><q-icon name="warning" color="red" />Haircut Conditions Apply:</div>
         <div>Formula for redemption price during a haircut :</div>
         <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (10 x TOTAL ISSUED HBD)</code></div>
-        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
-        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * parseFloat(medianPrice.base.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
+        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
+        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
       </q-card-section>
       <q-card-section v-if="false">
         <q-list dense bordered separator>
@@ -81,7 +81,7 @@ export default {
     },
     hiveCap: function () {
       if (this.globalProps !== null && this.medianPrice !== null) {
-        return parseFloat(parseFloat(this.globalProps.current_supply.split(' ')[0]) * parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3)
+        return parseFloat(parseFloat(this.globalProps.current_supply.split(' ')[0]) * (parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3) / parseFloat(this.medianPrice.quote.split(' ')[0]))
       } else {
         return null
       }

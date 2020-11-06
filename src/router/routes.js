@@ -5,8 +5,9 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/Index.vue') },
-      { path: 'exodus', component: () => import('pages/exodus.vue') },
       { path: '@:username', component: () => import('pages/account.vue') },
+      { path: '@:username/wallet', component: () => import('pages/wallet.vue') },
+      { path: '@:username/transfers', component: () => import('pages/wallet.vue') },
       { path: 'hiveworld/@:username', component: () => import('pages/hiveworld.vue') },
       { path: 'account/@:username', component: () => import('pages/account.vue') },
       { path: '@:author/:permlink', component: () => import('pages/post.vue') },
