@@ -177,7 +177,7 @@
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
                                 + {{ tx[1].op[1].reward_hive }}
                               </q-item-label>
-                              <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HBD'">
+                              <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
                                 + {{ tx[1].op[1].reward_hbd }}
                               </q-item-label>
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
