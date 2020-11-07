@@ -4,8 +4,9 @@
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
+            <div><router-link :to="getWalletLink(account.name)"><q-icon name="account_balance_wallet" title="View Wallet" /> View Wallet</router-link></div>
         </q-card>
-      <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ account.name }}</div>
+      <div class="text-h4"><router-link :to="getAccountLink(account.name)"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link> {{ account.name }}</div>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="JSON.parse(account.posting_json_metadata).profile">
             <div v-if="JSON.parse(account.posting_json_metadata).profile.about">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
@@ -41,6 +42,8 @@ export default {
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getAccountLink (user) { return '/@' + user },
+    getWalletLink (user) { return '/@' + user + '/wallet' },
     vestToHive (vests) {
       if (this.globalProps) {
         return hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)

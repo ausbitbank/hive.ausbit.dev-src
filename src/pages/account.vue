@@ -1,21 +1,7 @@
 <template>
   <q-page class="flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && globalProps !== null">
-          <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
-              <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right">
-                <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
-                <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
-                <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
-              </q-card>
-              <div class="text-h4"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar> {{ account.name }}</div>
-              <div class="text-subtitle" v-if="account.posting_json_metadata">
-                <span v-if="JSON.parse(account.posting_json_metadata).profile">
-                  <div v-if="JSON.parse(account.posting_json_metadata).profile.about">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
-                  <div v-if="JSON.parse(account.posting_json_metadata).profile.location"><q-icon name="location_on" /> {{ JSON.parse(account.posting_json_metadata).profile.location }}</div>
-                  <div v-if="JSON.parse(account.posting_json_metadata).profile.website"><a :href="JSON.parse(account.posting_json_metadata).profile.website"><q-icon name="link" /> {{ JSON.parse(account.posting_json_metadata).profile.website }}</a></div>
-                </span>
-              </div>
-          </div>
+        <account-header :globalProps="globalProps" :account="account" :showBalances="true" v-if="globalProps !== null && account !== null"/>
           <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
               <q-card flat bordered class="text-center q-pa-sm q-ma-md">
                   <q-card-section>
@@ -310,6 +296,7 @@ import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
 import accountOperations from 'components/accountOperations.vue'
+import accountHeader from 'components/accountHeader.vue'
 /* import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
@@ -337,7 +324,8 @@ export default {
     jsonViewer,
     recentPostsCarousel,
     propsList,
-    accountOperations
+    accountOperations,
+    accountHeader
     // recentVotedPostsCarousel
   },
   data () {
