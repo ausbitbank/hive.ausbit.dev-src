@@ -137,6 +137,7 @@ export default {
     }
   },
   mounted () {
+    document.title = 'Hive Dollar Monitor'
     this.getGlobalProps()
     this.getDaoBalance()
     this.getMedianPrice()

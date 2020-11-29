@@ -9,6 +9,9 @@
 import coingecko from 'components/coingecko.vue'
 export default {
   name: 'markets',
-  components: { coingecko }
+  components: { coingecko },
+  mounted () {
+    document.title = 'Markets'
+  }
 }
 </script>

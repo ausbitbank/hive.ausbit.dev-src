@@ -170,7 +170,7 @@
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'withdraw_vesting'">
                               <q-item-label class="text-bold">
-                                {{ tidyNumber(parseFloat(vestToHive(tx[1].op[1].vesting_shares))) }} HIVE
+                                {{ vestToHive(tx[1].op[1].vesting_shares) }} HIVE
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'">
@@ -385,6 +385,7 @@ export default {
       if (!this.globalProps) { this.getGlobalProps() }
       this.username = this.$route.params.username
       if (!this.account || this.account.name !== this.username) {
+        document.title = this.username + '\'s wallet'
         this.getAccount(this.username)
         this.getHiveWalletTransactions()
       }

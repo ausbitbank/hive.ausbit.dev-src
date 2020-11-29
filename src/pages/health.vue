@@ -49,6 +49,7 @@ export default {
     }
   },
   mounted () {
+    document.title = 'Hive Network Health'
     this.getGlobalProps()
     // this.getConfig()
   }

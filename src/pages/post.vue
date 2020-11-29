@@ -188,6 +188,7 @@ export default {
     },
     setPost (post) {
       this.post = post
+      document.title = post.title
     },
     linkHiveBlogPost (author, permlink) {
       return 'https://hive.blog/@' + author + '/' + permlink

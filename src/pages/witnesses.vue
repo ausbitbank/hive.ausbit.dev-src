@@ -9,6 +9,9 @@
 import witnesses from 'components/witnesses.vue'
 export default {
   name: 'witnessPage',
-  components: { witnesses }
+  components: { witnesses },
+  mounted () {
+    document.title = 'Witnesses'
+  }
 }
 </script>

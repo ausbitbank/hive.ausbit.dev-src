@@ -25,6 +25,7 @@ export default {
   methods: {
   },
   mounted () {
+    document.title = 'Block ' + this.blockNum
   }
 }
 </script>

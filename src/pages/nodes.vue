@@ -9,6 +9,9 @@
 import nodes from 'components/nodes.vue'
 export default {
   name: 'nodePage',
-  components: { nodes }
+  components: { nodes },
+  mounted () {
+    document.title = 'Hive API Nodes'
+  }
 }
 </script>

@@ -67,6 +67,7 @@ export default {
   },
   mounted () {
     this.getTx(this.$route.params.txId)
+    document.title = 'Transaction ' + this.$route.params.txId
   }
 }
 </script>

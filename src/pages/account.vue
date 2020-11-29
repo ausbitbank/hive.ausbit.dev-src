@@ -75,7 +75,7 @@
                       </div>
                   </q-card-section>
               </q-card>
-              <recent-posts-carousel :account="username" />
+              <recent-posts-carousel :account="username" v-if="account.post_count > 0" />
               <q-card flat bordered class="q-ma-md">
                   <q-card-section>
                       <div class="text-h6">Resource Credits</div>
@@ -272,8 +272,8 @@
                     <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 2"/>
                     <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 1"/>
                     Page {{ this.page }} <q-spinner-grid size="2em" color="primary" v-if="accountOperations.length < 1" />
-                    <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)"/>
-                    <q-btn icon="keyboard_tab" color="primary" dense push @click="page = (accountOperationsMarker / accountOperationsLimit).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (accountOperationsMarker / accountOperationsLimit).toFixed(0)" />
+                    <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
+                    <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
                 </q-card-section>
             </q-card>
           </div>
@@ -469,7 +469,7 @@ export default {
       var page = this.$router.currentRoute.query.page || 1
       var pageReq = this.accountOperationsMarker - (limit * page)
       pageReq = pageReq + limit
-      if (pageReq < limit) { pageReq = limit } // Catch the last (first) page results
+      if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
       if (page === null || page === 1) { pageReq = -1 }
       hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, '', '', function (err, response) {
         if (err) { console.log(err) }
@@ -571,6 +571,7 @@ export default {
     init () {
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
+      document.title = this.username
       if (!this.account || this.account.name !== this.username) {
         this.getAccount(this.username)
         this.getRC(this.username)

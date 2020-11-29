@@ -46,6 +46,7 @@ export default {
   methods: {
   },
   mounted () {
+    document.title = 'hive.ausbit.dev'
   }
 }
 </script>
