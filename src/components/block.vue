@@ -4,13 +4,22 @@
     <q-card dense flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && view === 'simple'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
+                <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
                 <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
+                <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
             </div>
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-              <div>{{ this.blockOpsReal.length }} transactions</div>
-              <div>{{ this.blockOpsVirtual.length }} virtual transactions</div>
+              <div>{{ this.blockOpsReal.length }} transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
+              <span v-for="op in this.blockOpsReal" :key="op.index">
+                <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
+              </span>
+              <div>{{ this.blockOpsVirtual.length }} virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
+              <span v-for="op in this.blockOpsVirtual" :key="op.index">
+                <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
+              </span>
+              <div><q-btn v-if="view !== 'full'" @click="view = 'full'" icon="unfold_more" /></div>
             </span>
         </q-card-section>
     </q-card>
@@ -24,6 +33,7 @@
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(this.blockHeader.timestamp) }}</span></div>
+              <div><q-btn v-if="view !== 'simple'" @click="view = 'simple'" icon="unfold_less" /></div>
             </span>
         </q-card-section>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
@@ -118,11 +128,6 @@
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> set witness properties {{ tx.op[1].props }}
                 </q-item-label>
                 </q-item-section>
-                <q-item-section v-else-if="tx.op[0] === 'witness_set_properties'">
-                <q-item-label>
-                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> set witness properties {{ tx.op[1].props }}
-                </q-item-label>
-                </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'custom_json'">
                 <q-item-label>
                     <span v-if="tx.op[1].required_posting_auths.length > 0">
@@ -151,7 +156,7 @@
                 </q-item-section>
             </q-item>
             </q-list>
-            <div class="text-h6 text-center">{{ this.blockOpsVirtual.length }} Virtual Operations</div>
+            <div class="text-h6 text-center">{{ this.blockOpsVirtual.length }} Virtual Operation<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
             <q-list bordered separator dense>
             <q-item v-for="tx in this.blockOpsVirtual" :key="tx.index">
             <q-item-section>
@@ -310,6 +315,132 @@ export default {
         }
       } else {
         return 'red'
+      }
+    },
+    returnOpColor (op) {
+      switch (op.op[0]) {
+        case 'vote':
+          if (Math.sign(op.op[1].weight) === -1) {
+            return 'bg-red'
+          } else {
+            return 'bg-green'
+          }
+        case 'comment':
+          return 'bg-cyan-6'
+        case 'transfer':
+          return 'bg-teal-14'
+        case 'transfer_to_vesting':
+          return 'bg-teal-12'
+        case 'withdraw_vesting':
+          return 'bg-red-10'
+        case 'limit_order_create':
+          return 'bg-orange-10'
+        case 'limit_order_cancel':
+          return 'bg-orange-11'
+        case 'feed_publish':
+          return 'bg-deep-purple-10'
+        case 'convert':
+          return 'bg-orange-12'
+        case 'account_create':
+          return 'bg-light-blue-10'
+        case 'account_update':
+          return 'bg-red-14'
+        case 'witness_update':
+          return 'bg-red-13'
+        case 'account_witness_vote':
+          return 'bg-green-14'
+        case 'account_witness_proxy':
+          return 'bg-indigo-14'
+        case 'custom':
+          return 'bg-grey-7'
+        case 'delete_comment':
+          return 'bg-grey-8'
+        case 'custom_json':
+          return 'bg-blue-grey-10'
+        case 'comment_options':
+          return 'bg-blue-grey-12'
+        case 'set_withdraw_vesting_route':
+          return 'bg-red-12'
+        case 'limit_order_create2':
+          return 'bg-orange-9'
+        case 'claim_account':
+          return 'bg-blue-grey-9'
+        case 'create_claimed_account':
+          return 'bg-blue-grey-8'
+        case 'request_account_recovery':
+          return 'bg-red-8'
+        case 'recover_account':
+          return 'bg-red-7'
+        case 'change_recovery_account':
+          return 'bg-red-6'
+        case 'escrow_transfer':
+          return 'bg-orange-6'
+        case 'escrow_dispute':
+          return 'bg-orange-5'
+        case 'escrow_release':
+          return 'bg-orange-4'
+        case 'escrow_approve':
+          return 'bg-orange-3'
+        case 'transfer_to_savings':
+          return 'bg-teal-9'
+        case 'transfer_from_savings':
+          return 'bg-teal-8'
+        case 'cancel_transfer_from_savings':
+          return 'bg-teal-7'
+        case 'custom_binary':
+          return 'bg-pink-6'
+        case 'decline_voting_rights':
+          return 'bg-red-5'
+        case 'reset_account':
+          return 'bg-red-4'
+        case 'set_reset_account':
+          return 'bg-red-3'
+        case 'claim_reward_balance':
+          return 'bg-teal-9'
+        case 'delegate_vesting_shares':
+          return 'bg-teal-8'
+        case 'account_create_with_delegation':
+          return 'bg-blue-grey-7'
+        case 'witness_set_properties':
+          return 'bg-blue-grey-6'
+        case 'account_update2':
+          return 'bg-red-5'
+        case 'create_proposal':
+          return 'bg-cyan-10'
+        case 'update_proposal_votes':
+          return 'bg-cyan-9'
+        case 'remove_proposal':
+          return 'bg-cyan-8'
+        case 'update_proposal':
+          return 'bg-cyan-7'
+        case 'claim_reward_balance2':
+          return 'bg-teal-7'
+        case 'vote2':
+          return 'bg-green-10'
+        case 'fill_convert_request':
+          return 'bg-orange-9'
+        case 'author_reward':
+          return 'bg-teal-5'
+        case 'curation_reward':
+          return 'bg-teal-4'
+        case 'comment_reward':
+          return 'bg-teal-3'
+        case 'fill_vesting_withdraw':
+          return 'bg-red-2'
+        case 'fill_order':
+          return 'bg-orange-2'
+        case 'fill_transfer_from_savings':
+          return 'bg-orange-1'
+        case 'hardfork':
+          return 'bg-red'
+        case 'comment_payout_update':
+          return 'bg-blue-grey-5'
+        case 'return_vesting_delegation':
+          return 'bg-blue-grey-4'
+        case 'comment_benefactor_reward':
+          return 'bg-blue-grey-1'
+        default:
+          return 'bg-grey'
       }
     },
     updateBlock (blockNumber) {

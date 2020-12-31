@@ -76,6 +76,7 @@
                   </q-card-section>
               </q-card>
               <recent-posts-carousel :account="username" v-if="account.post_count > 0" />
+              <!-- <recent-voted-posts-carousel :account="username" v-if="account.last_vote_time !== '1970-01-01T00:00:00'" /> -->
               <q-card flat bordered class="q-ma-md">
                   <q-card-section>
                       <div class="text-h6">Resource Credits</div>
@@ -294,30 +295,10 @@ import moment from 'moment'
 import { debounce } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
+// import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
-/* import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
-const op = ChainTypes.operations
-const walletBitmask = makeBitMaskFilter([
-  op.transfer,
-  op.transfer_to_vesting,
-  op.withdraw_vesting,
-  op.interest,
-  op.liquidity_reward,
-  op.transfer_to_savings,
-  op.transfer_from_savings,
-  op.escrow_transfer,
-  op.cancel_transfer_from_savings,
-  op.escrow_approve,
-  op.escrow_dispute,
-  op.escrow_release,
-  op.fill_convert_request,
-  op.fill_order,
-  op.claim_reward_balance
-])
-console.log(walletBitmask) */
-// import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 export default {
   name: 'accountPage',
   components: {

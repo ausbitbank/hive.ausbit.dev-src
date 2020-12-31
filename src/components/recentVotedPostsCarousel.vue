@@ -29,12 +29,9 @@
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
-      <q-dialog v-model="settings">
-        <q-card class="q-pa-md q-ma-md">
-          <q-input label="account" v-model="account" />
-          <q-btn push label="update" color="primary" @click="settings = false; getRecentPosts()"/>
-        </q-card>
-      </q-dialog>
+      <ul v-for="post in posts" :key="post.index">
+        <li>{{ post.author }}\{{ post.permlink }} : {{ post.title }}</li>
+      </ul>
       </q-card>
     </div>
   </div>
@@ -47,6 +44,14 @@ a:visited { color: #884488; }
 </style>
 <script>
 import moment from 'moment'
+import hive from '@hiveio/hive-js'
+import { debounce } from 'quasar'
+import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+const op = ChainTypes.operations
+const voteBitmask = makeBitMaskFilter([
+  op.vote
+])
+hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export default {
   name: 'recentVotedPostsCarousel',
   data () {
@@ -58,7 +63,11 @@ export default {
       autoplay: true,
       limit: 10,
       settings: false,
-      loading: false
+      loading: false,
+      votes: [],
+      accountHistoryPointer: -1,
+      accountHistoryLimit: 100,
+      bitmask: voteBitmask
     }
   },
   props: {
@@ -74,9 +83,71 @@ export default {
     }
   },
   methods: {
+    getPost (author, permlink) {
+      hive.api.getContentAsync(author, permlink)
+        .then(res => {
+          if (res.title !== '' && res.author !== this.account) {
+            this.posts.push(res)
+          }
+        })
+    },
+    async getRecentVotes (username) {
+      this.loading = true
+      await hive.api.callAsync(
+        'call',
+        ['database_api',
+          'get_account_history',
+          [this.account,
+            this.accountHistoryPointer,
+            this.accountHistoryLimit,
+            ...this.bitmask
+          ]
+        ]
+      )
+        .then(res => {
+          this.accountHistoryPointer = parseInt(res[0][0]) - 1
+          if (this.votes.length === 0) {
+            this.votes = res.reverse()
+          } else {
+            this.votes = this.votes.concat(res.reverse())
+          }
+          this.loading = false
+          this.votesToPosts(this.votes)
+        })
+        .catch(err => {
+          this.loading = false
+          if (err.data && err.cause) {
+            if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
+              this.accountHistoryPointer = err.data.stack[0].data.sequence
+              debounce(this.getRecentVotes(username), 100)
+            }
+          }
+        })
+    },
+    filterOwnPosts (tx) {
+      if (tx[1].op[1].author === this.account) {
+        return true
+      } else {
+        return false
+      }
+    },
+    votesToPosts (votes) {
+      votes.filter(this.filterOwnPosts).slice(0, 20).forEach(function (tx) {
+        this.getPost(tx[1].op[1].author, tx[1].op[1].permlink)
+      }.bind(this))
+    },
     returnPostImage (post) {
-      if (post.json_metadata.image) {
-        return post.json_metadata.image[0]
+      if (post.json_metadata) {
+        var meta = JSON.parse(post.json_metadata)
+      } else {
+        return null
+      }
+      if (meta.image) {
+        if (meta.image[0]) {
+          return meta.image[0]
+        } else {
+          return null
+        }
       } else {
         return null
       }
@@ -95,6 +166,7 @@ export default {
     }
   },
   mounted () {
+    this.getRecentVotes(this.account)
   }
 }
 </script>

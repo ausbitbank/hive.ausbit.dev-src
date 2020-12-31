@@ -58,7 +58,7 @@ export default {
       coins: ['hive', 'hive_dollar', 'bitcoin'],
       coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'link', 'litecoin', 'eos', 'monero', 'dash', 'uniswap', 'yearn.finance', 'dogecoin', 'steem', 'steem_dollar', 'tron'],
       currency: 'usd',
-      sortOrder: 'market_cap_desc',
+      sortOrder: 'market_cap_asc',
       settingsDialog: false
       // url: 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive%2C%20hive_dollar&order=market_cap_desc&per_page=2&page=1&sparkline=true'
     }

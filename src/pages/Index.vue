@@ -9,7 +9,7 @@
       <nodes />
       <witnesses />
       <coingecko />
-      <block :blockNum=0 />
+      <block :blockNum="0" view="simple" />
     </div>
   </q-page>
 </template>
@@ -19,7 +19,6 @@ a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-// import hive from '@hiveio/hive-js'
 import nodes from 'components/nodes.vue'
 import witnesses from 'components/witnesses.vue'
 import coingecko from 'components/coingecko.vue'
@@ -31,6 +30,7 @@ export default {
   name: 'Home',
   data () {
     return {
+      globalProps: null
     }
   },
   components: {

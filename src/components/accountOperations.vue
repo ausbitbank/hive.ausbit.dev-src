@@ -41,7 +41,7 @@
                       <span>
                           <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</div>
                           <div v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></div>
-                          <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ op[1].block }}</router-link></div>
+                          <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ tidyNumber(op[1].block) }}</router-link></div>
                           <div v-else>block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></div>
                           <div :title="op[1].timestamp">{{ timeDelta(op[1].timestamp) }}</div>
                       </span>
@@ -77,6 +77,11 @@ export default {
       var stamp = moment.utc(timestamp)
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
+    },
+    tidyNumber (x) {
+      var parts = x.toString().split('.')
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      return parts.join('.')
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
