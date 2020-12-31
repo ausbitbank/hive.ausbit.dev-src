@@ -2266,6 +2266,13 @@ axios@^0.18.1:
     follow-redirects "1.5.10"
     is-buffer "^2.0.2"
 
+axios@^0.19.0:
+  version "0.19.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.19.2.tgz#3ea36c5d8818d0d5f8a8a97a6d36b86cdc00cb27"
+  integrity sha512-fjgm5MvRHLhx+osE2xoekY70AhARk3a6hkN+3Io1jc00jtquGvxYlKlsFUhmUET0V5te6CcZI7lcv2Ym61mjHA==
+  dependencies:
+    follow-redirects "1.5.10"
+
 babel-eslint@^10.0.1:
   version "10.1.0"
   resolved "https://registry.yarnpkg.com/babel-eslint/-/babel-eslint-10.1.0.tgz#6968e568a910b78fb3779cdd8b6ac2f479943232"
@@ -10093,6 +10100,13 @@ squeak@^1.0.0:
     chalk "^1.0.0"
     console-stream "^0.1.1"
     lpad-align "^1.0.1"
+
+sscjs@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/sscjs/-/sscjs-0.0.8.tgz#68b7c8901b9e22cc39482a8e6d2f28eeae898cc5"
+  integrity sha512-uu7zaFHUqUL5YySNrRg0MKN9PtZA356mX080ETJgGXNy7Wdc1RgwxHWbZJySTyywZRjn3BdIZRrNCEId6AS+Yw==
+  dependencies:
+    axios "^0.19.0"
 
 sshpk@^1.7.0:
   version "1.16.1"

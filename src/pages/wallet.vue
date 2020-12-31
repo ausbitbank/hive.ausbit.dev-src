@@ -25,7 +25,7 @@
                             <q-item-section top side>
                                 <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHive = true" />
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-btn dense icon="arrow_upward" color="primary" title="Power Up" />
+                                <q-btn v-if="false" dense icon="arrow_upward" color="primary" title="Power Up" />
                             </q-item-section>
                         </q-item>
                         <q-item>
@@ -42,7 +42,7 @@
                                 </q-item-label>
                             </q-item-section>
                             <q-item-section top side>
-                                <q-btn dense icon="cancel" color="red" title="Cancel Powerdown" />
+                                <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
                             </q-item-section>
                         </q-item>
                         <q-item>
@@ -219,14 +219,42 @@
                       </div>
                     </div>
                 </q-tab-panel>
-                <q-tab-panel name="hive-engine">
-                    <q-list bordered class="rounded-borders">
-                        <q-item-label header>
-                            Hive-Engine (Layer 2) Tokens:
-                        </q-item-label>
-                        <q-item>
+                <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null">
+                    <q-list bordered separator class="rounded-borders">
+                        <q-item v-for="token in hiveEngineBalances" :key="token.index">
+                          <q-item-section>
+                            <q-chip>{{ token.symbol }}</q-chip>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
+                            <q-item-label caption>Liquid</q-item-label>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ tidyNumber(token.stake) }}</q-item-label>
+                            <q-item-label caption>Staked</q-item-label>
+                          </q-item-section>
+                          <q-item-section v-if="token.pendingUnstake !== '0'">
+                            <q-item-label>{{ tidyNumber(token.pendingUnstake) }}</q-item-label>
+                            <q-item-label caption>Unstaking</q-item-label>
+                          </q-item-section>
+                          <q-item-section v-if="token.delegationsIn !== '0'">
+                            <q-item-label>{{ tidyNumber(token.delegationsIn) }}</q-item-label>
+                            <q-item-label caption>Delegated In</q-item-label>
+                          </q-item-section>
+                          <q-item-section v-if="token.delegationsOut !== '0'">
+                            <q-item-label>{{ tidyNumber(token.delegationsOut) }}</q-item-label>
+                            <q-item-label caption>Delegated out</q-item-label>
+                          </q-item-section>
+                          <q-item-section v-if="token.pendingUndelegations !== '0'">
+                            <q-item-label>{{ tidyNumber(token.pendingUndelegations) }}</q-item-label>
+                            <q-item-label caption>Undelegating</q-item-label>
+                          </q-item-section>
+                          <q-item-section side>
+                            <q-item-label><q-btn dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" /></q-item-label>
+                          </q-item-section>
                         </q-item>
                     </q-list>
+                    <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
                 </q-tab-panel>
             </q-tab-panels>
           </q-card>
@@ -239,6 +267,8 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
+const SSC = require('sscjs')
+const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import hive from '@hiveio/hive-js'
 // hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
@@ -276,6 +306,7 @@ export default {
       tab: 'hive',
       transferHive: false,
       transferHbd: false,
+      transferHiveEngine: false,
       transferDialogTokenName: '',
       transferDialogNetwork: 'hive',
       transferDialogBalance: null,
@@ -283,7 +314,8 @@ export default {
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
       bitmask: walletBitmask,
-      loading: false
+      loading: false,
+      hiveEngineBalances: null
     }
   },
   components: { accountHeader, transferDialog },
@@ -335,9 +367,8 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     tidyNumber (x) {
-      console.log(x)
       if (x) {
-        var parts = x.toString().split('.')``
+        var parts = x.toString().split('.')
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
         return parts.join('.')
       } else {
@@ -375,6 +406,13 @@ export default {
           }
         })
     },
+    getHiveEngineBalances (username) {
+      hiveEngine.find('tokens', 'balances', { account: username }, 1000, 0, [])
+        .then((response) => { this.hiveEngineBalances = response })
+        .catch(() => {
+          console.error('Error connecting to Hive-Engine api')
+        })
+    },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
@@ -388,6 +426,7 @@ export default {
         document.title = this.username + '\'s wallet'
         this.getAccount(this.username)
         this.getHiveWalletTransactions()
+        this.getHiveEngineBalances(this.username)
       }
     }
   },
