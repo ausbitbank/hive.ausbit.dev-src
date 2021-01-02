@@ -12,53 +12,104 @@
                 <q-tab-panel name="hive">
                     <q-list bordered class="rounded-borders">
                         <q-item>
-                            <q-item-section top>
+                            <q-item-section avatar>
+                              <q-avatar>
+                                <img src="/statics/hextacular.svg"/>
+                              </q-avatar>
+                            </q-item-section>
+                            <q-item-section>
                                 <q-item-label>
-                                    Hive Tokens
+                                    Hive
                                 </q-item-label>
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                     {{ account.balance.split(' ')[0] }} HIVE
+                                     {{ tidyNumber(account.balance.split(' ')[0]) }}
+                                </q-item-label>
+                                <q-item-label caption>
+                                  Liquid
                                 </q-item-label>
                             </q-item-section>
-                            <q-item-section top side>
+                            <q-item-section>
+                              <q-item-label>
+                                {{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}
+                              </q-item-label>
+                              <q-item-label caption>
+                                Staked
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>
+                                {{ tidyNumber(account.savings_balance.split(' ')[0]) }}
+                              </q-item-label>
+                              <q-item-label caption>
+                                Savings
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>
+                                $ {{ tidyNumber(((parseFloat(account.savings_balance.split(' ')[0]) + parseFloat(account.balance.split(' ')[0])) + vestToHive(parseInt(account.vesting_shares.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
+                              </q-item-label>
+                              <q-item-label caption>
+                                Value (USD)
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side>
                                 <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHive = true" />
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn v-if="false" dense icon="arrow_upward" color="primary" title="Power Up" />
                             </q-item-section>
                         </q-item>
                         <q-item>
-                            <q-item-section top>
-                                <q-item-label>
-                                    Hive Power
-                                </q-item-label>
+                            <q-item-section avatar>
+                              <q-avatar>
+                                <img src="/statics/hextacular.svg"/>
+                              </q-avatar>
                             </q-item-section>
                             <q-item-section>
-                                <q-item-label class="text-weight-medium">
-                                     {{ vestToHive(parseInt(account.vesting_shares.split(' ')[0])) }} HP
-                                     <div v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">Next powerdown: {{ vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0])) }} HIVE</div>
-                                     <div v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'" class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</div>
-                                </q-item-label>
-                            </q-item-section>
-                            <q-item-section top side>
-                                <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
-                            </q-item-section>
-                        </q-item>
-                        <q-item>
-                            <q-item-section top>
                                 <q-item-label>
                                     Hive Dollars
                                 </q-item-label>
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                     {{ account.hbd_balance.split(' ')[0] }} HBD
+                                     {{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD
                                 </q-item-label>
+                                <q-item-label caption>
+                                  Liquid
+                                </q-item-label>
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>
+                                {{ tidyNumber(account.savings_hbd_balance.split(' ')[0]) }}
+                              </q-item-label>
+                              <q-item-label caption>
+                                Savings
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section>
+                              <q-item-label>
+                                $ {{ tidyNumber(((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2))}}
+                              </q-item-label>
+                              <q-item-label caption>
+                                Value (USD)
+                              </q-item-label>
                             </q-item-section>
                             <q-item-section top side>
                                 <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHbd = true" />
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
+                            <q-item-section>
+                              <q-item-label>
+                                <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
+                                <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
+                                <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section top side>
+                                <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
                             </q-item-section>
                         </q-item>
                     </q-list>
@@ -144,10 +195,16 @@
                               <q-item-label class="text-bold">
                                 + {{ tx[1].op[1].amount }}
                               </q-item-label>
-                              <q-item-label>
-                                <div v-if="tx[1].op[1].memo !== ''" class="wrap text-center">
+                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
+                              </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
+                              </q-item-label>
+                              <q-item-label v-if="tx[1].op[1].memo !== ''">
+                                <div class="wrap text-center">
                                   <q-icon name="comment" title="" />
-                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,10) }}</code>..
+                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,30) }}</code>..
                                   <q-tooltip content-class="bg-primary">
                                     {{ sanitize(tx[1].op[1].memo) }}
                                   </q-tooltip>
@@ -157,6 +214,12 @@
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to !== username">
                               <q-item-label class="text-bold">
                                 - {{ tx[1].op[1].amount }}
+                              </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
+                              </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
                               </q-item-label>
                               <q-item-label>
                                 <div v-if="tx[1].op[1].memo !== ''" class="wrap text-center">
@@ -177,11 +240,20 @@
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
                                 + {{ tx[1].op[1].reward_hive }}
                               </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
+                                + ${{ parseFloat(tx[1].op[1].reward_hive.split(' ')[0]) * hivePriceUsd }}
+                              </q-item-label>
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
                                 + {{ tx[1].op[1].reward_hbd }}
                               </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
+                                (${{ (parseFloat(tx[1].op[1].reward_hbd.split(' ')[0]) * hbdPriceUsd).toFixed(2) }})
+                              </q-item-label>
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
                                 + {{ vestToHive(tx[1].op[1].reward_vests) }} HP
+                              </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
+                                (${{ (parseFloat(vestToHive(tx[1].op[1].reward_vests.split(' ')[0])) * hivePriceUsd).toFixed(2) }})
                               </q-item-label>
                               <q-item-label>
                                 <div v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].memo !== ''" class="wrap text-center">
@@ -222,8 +294,29 @@
                 <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null">
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalances" :key="token.index">
+                          <q-item-section avatar v-if="hiveEngineTokenInfo">
+                            <q-avatar>
+                              <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
+                            </q-avatar>
+                          </q-item-section>
                           <q-item-section>
-                            <q-chip>{{ token.symbol }}</q-chip>
+                            <q-item-label caption v-if="hiveEngineTokenInfo">
+                              <q-expansion-item expand-separator :label="token.symbol">
+                                <q-card dense>
+                                  <q-card-section>
+                                    {{ returnTokenInfoMeta(token.symbol).desc }}
+                                  </q-card-section>
+                                  <q-card-section caption>
+                                    Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
+                                    Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
+                                    Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
+                                    Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
+                                    Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
+                                    <a :href="returnMarketLink(token.symbol)" target="_blank">{{ token.symbol }} Market</a>
+                                  </q-card-section>
+                                </q-card>
+                              </q-expansion-item>
+                            </q-item-label>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
@@ -233,27 +326,218 @@
                             <q-item-label>{{ tidyNumber(token.stake) }}</q-item-label>
                             <q-item-label caption>Staked</q-item-label>
                           </q-item-section>
-                          <q-item-section v-if="token.pendingUnstake !== '0'">
+                          <q-item-section v-if="token.pendingUnstake > 0">
                             <q-item-label>{{ tidyNumber(token.pendingUnstake) }}</q-item-label>
                             <q-item-label caption>Unstaking</q-item-label>
                           </q-item-section>
-                          <q-item-section v-if="token.delegationsIn !== '0'">
+                          <q-item-section v-if="token.delegationsIn > 0">
                             <q-item-label>{{ tidyNumber(token.delegationsIn) }}</q-item-label>
                             <q-item-label caption>Delegated In</q-item-label>
                           </q-item-section>
-                          <q-item-section v-if="token.delegationsOut !== '0'">
+                          <q-item-section v-if="token.delegationsOut > 0">
                             <q-item-label>{{ tidyNumber(token.delegationsOut) }}</q-item-label>
                             <q-item-label caption>Delegated out</q-item-label>
                           </q-item-section>
-                          <q-item-section v-if="token.pendingUndelegations !== '0'">
+                          <q-item-section v-if="token.pendingUndelegations > 0">
                             <q-item-label>{{ tidyNumber(token.pendingUndelegations) }}</q-item-label>
                             <q-item-label caption>Undelegating</q-item-label>
                           </q-item-section>
+                          <q-item-section v-if="hiveEngineMarketInfo">
+                            <q-item-label>
+                              ${{ tidyNumber((returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake))).toFixed(2)) }}
+                            </q-item-label>
+                            <q-item-label caption>Value (USD)</q-item-label>
+                          </q-item-section>
                           <q-item-section side>
-                            <q-item-label><q-btn dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" /></q-item-label>
+                            <q-item-label v-if="token.balance !== '0'"><q-btn dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" /></q-item-label>
                           </q-item-section>
                         </q-item>
                     </q-list>
+                    <div v-if="hiveEngineTransactionHistory">
+                      <div class="text-h6 text-center">Transaction History</div>
+                      <q-list bordered v-for="tx in this.hiveEngineTransactionHistory" :key="tx.index">
+                        <q-item>
+                          <q-item-section avatar>
+                            <q-item-label>
+                              <q-icon name="add_circle" color="green" v-if="(tx.to === username && tx.operation === 'tokens_transfer')" />
+                              <q-icon name="remove_circle" color="red" v-else-if="(tx.from === username && tx.operation === 'tokens_transfer')" />
+                              <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx.to === username && tx.operation === 'tokens_stake')" />
+                              <q-icon name="arrow_circle_up" color="red-8" v-else-if="(tx.to !== username && tx.operation === 'tokens_stake')" />
+                              <q-icon name="arrow_circle_up" color="red-10" v-else-if="(tx.operation === 'tokens_unstake')" />
+                              <q-icon name="arrow_circle_up" color="green-6" v-else-if="(tx.to === username && tx.operation === 'tokens_issue')" />
+                              <q-icon name="remove_circle" color="red-2" v-else-if="(tx.from === username && tx.operation === 'tokens_issue')" />
+                              <q-icon name="arrow_circle_up" color="green-4" v-else-if="(tx.operation === 'mining_lottery')" />
+                              <q-icon name="gavel" color="orange-10" v-else-if="(tx.operation === 'market_placeOrder')" />
+                              <q-icon name="gavel" color="orange-9" v-else-if="(tx.operation === 'market_expire')" />
+                              <q-icon name="gavel" color="orange-8" v-else-if="(tx.operation === 'market_closeOrder')" />
+                              <q-icon name="gavel" color="orange-7" v-else-if="(tx.operation === 'market_cancel')" />
+                              <q-icon name="gavel" color="orange-6" v-else-if="(tx.operation === 'market_buy')" />
+                              <q-icon name="gavel" color="orange-4" v-else-if="(tx.operation === 'market_sell')" />
+                              <q-icon name="gavel" color="green-2" v-else-if="(tx.operation === 'hivepegged_buy')" />
+                              <q-icon name="gavel" color="red-6" v-else-if="(tx.operation === 'hivepegged_withdraw')" />
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>
+                              <span v-if="(tx.from === username && tx.operation === 'tokens_transfer')">Sent </span>
+                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_transfer')">Received </span>
+                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_stake')">Staked </span>
+                              <span v-else-if="(tx.from === username && tx.operation === 'tokens_stake')">Staked </span>
+                              <span v-else-if="(tx.operation === 'tokens_unstake')">Unstaked </span>
+                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_issue')">Issued </span>
+                              <span v-else-if="(tx.operation === 'mining_lottery')">Mined </span>
+                              <span v-else-if="(tx.operation === 'market_placeOrder')">Market {{ tx.orderType }} order</span>
+                              <span v-else-if="(tx.operation === 'market_closeOrder')">Cancel {{ tx.orderType }} order</span>
+                              <span v-else-if="(tx.operation === 'market_expire')">Expired {{ tx.orderType }} order</span>
+                              <span v-else-if="(tx.operation === 'market_cancel')">Cancel Market {{ tx.orderType }} order</span>
+                              <span v-else-if="(tx.operation === 'market_buy')">Market buy</span>
+                              <span v-else-if="(tx.operation === 'market_sell')">Market sell</span>
+                              <span v-else-if="(tx.operation === 'hivepegged_buy')">Deposit Hive</span>
+                              <span v-else-if="(tx.operation === 'hivepegged_withdraw')">Withdraw Hive</span>
+                            </q-item-label>
+                            <q-item-label caption>
+                              <router-link :to="getTxLink(tx.transactionId.split('-')[0])">{{ tx.transactionId.substr(0,8) }}</router-link>
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>
+                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.to === username && tx.operation === 'tokens_issue'"> {{ tx.from }}</span>
+                              <span v-else-if="tx.from === username && tx.operation === 'tokens_issue'"> {{ tx.to }}</span>
+                              <span v-else-if="tx.operation === 'mining_lottery'"> {{ tx.poolId }}</span>
+                              <span v-else-if="tx.account === username && tx.operation === 'market_placeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_closeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_cancel'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_expire'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_sell'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'hivepegged_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'hivepegged_withdraw'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section :title="tx.timestamp">
+                            <q-item-label>
+                              {{ getDateStringHiveEngine(tx.timestamp) }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ getTimeStringHiveEngine(tx.timestamp) }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_transfer' && tx.to === username">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label>
+                              <div v-if="tx.memo !== ''" class="wrap text-center">
+                                <q-icon name="comment" title="" />
+                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
+                                <q-tooltip content-class="bg-primary">
+                                  {{ sanitize(tx.memo) }}
+                                </q-tooltip>
+                              </div>
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_transfer' && tx.to !== username">
+                            <q-item-label class="text-bold">
+                              - {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label>
+                              <div v-if="tx.memo !== ''" class="wrap text-center">
+                                <q-icon name="comment" title="" />
+                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
+                                <q-tooltip content-class="bg-primary">
+                                  {{ sanitize(tx.memo) }}
+                                </q-tooltip>
+                              </div>
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_stake' && tx.to === username">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_stake' && tx.to !== username">
+                            <q-item-label class="text-bold">
+                              - {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_unstake'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'tokens_issue' && tx.to === username">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label>
+                              <div v-if="tx.memo !== null" class="wrap text-center">
+                                <q-icon name="comment" title="" />
+                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
+                                <q-tooltip content-class="bg-primary">
+                                  {{ sanitize(tx.memo) }}
+                                </q-tooltip>
+                              </div>
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'mining_lottery'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'market_placeOrder' && tx.orderType === 'sell'">
+                            <q-item-label class="text-bold">
+                              - {{ tx.quantityLocked }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ tx.price }} Hive each
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'market_placeOrder' && tx.orderType === 'buy'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantityLocked }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ tx.price }} Hive each
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'market_expire'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantityUnlocked }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'market_buy'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantityTokens }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ (tx.quantitySteem / tx.quantityTokens).toFixed(3) }} Hive each
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'market_sell'">
+                            <q-item-label class="text-bold">
+                              - {{ tx.quantityTokens }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              {{ (tx.quantitySteem / tx.quantityTokens).toFixed(3) }} Hive each
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'hivepegged_buy'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'hivepegged_withdraw'">
+                            <q-item-label class="text-bold">
+                              - {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </div>
                     <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
                 </q-tab-panel>
             </q-tab-panels>
@@ -315,7 +599,12 @@ export default {
       accountHistoryLimit: 1000,
       bitmask: walletBitmask,
       loading: false,
-      hiveEngineBalances: null
+      hiveEngineBalances: null,
+      hiveEngineMarketInfo: null,
+      hiveEngineTokenInfo: null,
+      hiveEngineTransactionHistory: null,
+      hivePriceUsd: null,
+      hbdPriceUsd: null
     }
   },
   components: { accountHeader, transferDialog },
@@ -328,6 +617,12 @@ export default {
     },
     getTimeString (timestamp) {
       return moment(timestamp).format('h:mm a')
+    },
+    getDateStringHiveEngine (timestamp) {
+      return moment.unix(timestamp).format('MMM D[,] YYYY')
+    },
+    getTimeStringHiveEngine (timestamp) {
+      return moment.unix(timestamp).format('h:mm a')
     },
     getAccountLink (account) {
       return '/@' + account
@@ -357,6 +652,10 @@ export default {
           console.log('Failed to load global properties .. Retrying')
           debounce(this.getGlobalProps(), 50)
         })
+    },
+    getPricesCoingecko () {
+      this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=false')
+        .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hbdPriceUsd = response.data.hive_dollar.usd })
     },
     vestToHive (vests) {
       if (this.globalProps) {
@@ -408,10 +707,70 @@ export default {
     },
     getHiveEngineBalances (username) {
       hiveEngine.find('tokens', 'balances', { account: username }, 1000, 0, [])
-        .then((response) => { this.hiveEngineBalances = response })
+        .then((response) => { this.hiveEngineBalances = response; this.getHiveEngineMarketInfo(); this.getHiveEngineTokenInfo() })
         .catch(() => {
           console.error('Error connecting to Hive-Engine api')
         })
+    },
+    getHiveEngineTokenInfo (username) {
+      var tokens = this.returnTokenArray()
+      hiveEngine.find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
+        .then((response) => { this.hiveEngineTokenInfo = response })
+        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+    },
+    getHiveEngineMarketInfo () {
+      /* var json = '{"jsonrpc":"2.0","id":3,"method":"find","params":{"contract":"market","table":"metrics","query":{"symbol":{"$in":["TEST.EON","STEM","LOTUS","WEED","LEOMM","WEEDMM","LEO","BPC","BATTLE","SPORTS","SIM","SWAP.HIVE","SAND","CCC","NEOXAG","STARBITS","PAL","PALMM","HUSTLER","GAMER","EPC","JAHM","TRUMPWINS","ENTRY","CTP","SPACO","SPT","ASH","SUFB","BEER"]}},"limit":1000,"offset":0,"indexes":""}}'
+      this.$axios.post('https://api.hive-engine/rpc/contracts', json)
+        .then(response => { this.hiveEngineMarketInfo = response.data; console.log(response.data) })
+        .catch(err => { console.error(err) }) */
+      var tokens = this.returnTokenArray()
+      hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
+        .then((response) => { this.hiveEngineMarketInfo = response })
+        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+    },
+    getHiveEngineTransactionHistory () {
+      this.$axios.get('https://accounts.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
+        .then((response) => { this.hiveEngineTransactionHistory = response.data })
+        .catch(err => { console.error(err) })
+    },
+    returnTokenArray () {
+      var tokens = []
+      if (this.hiveEngineBalances) {
+        this.hiveEngineBalances.forEach(function (token, index) { tokens.push(token.symbol) })
+        return tokens
+      } else {
+        return null
+      }
+    },
+    returnTokenPriceHive (symbol) {
+      if (this.hiveEngineMarketInfo !== null) {
+        var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
+        if (t) { return t.lastPrice } else { return null }
+      } else {
+        return null
+      }
+    },
+    returnTokenPriceUsd (symbol) {
+      if (this.hivePriceUsd) {
+        return (this.returnTokenPriceHive(symbol) * this.hivePriceUsd)
+      } else {
+        return null
+      }
+    },
+    returnTokenInfo (symbol) {
+      if (this.getHiveEngineTokenInfo !== null) {
+        var t = this.hiveEngineTokenInfo.find(obj => obj.symbol === symbol)
+        if (t) { return t } else { return null }
+      }
+    },
+    returnTokenInfoMeta (symbol) {
+      return JSON.parse(this.returnTokenInfo(symbol).metadata)
+    },
+    returnAccountLink (account) {
+      return '/@' + account
+    },
+    returnMarketLink (symbol) {
+      return 'https://hive-engine.com/?p=market&t=' + symbol
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -427,6 +786,8 @@ export default {
         this.getAccount(this.username)
         this.getHiveWalletTransactions()
         this.getHiveEngineBalances(this.username)
+        this.getPricesCoingecko()
+        this.getHiveEngineTransactionHistory()
       }
     }
   },
