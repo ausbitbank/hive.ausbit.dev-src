@@ -1,5 +1,5 @@
 <template>
-  <q-card-section v-if="this.comment.author !== this.parentAuthor && this.comment.permlink !== this.parentPermlink">
+  <q-card-section v-if="this.comment.permlink !== this.parentPermlink">
   <q-list bordered separator>
     <q-item>
       <q-item-section avatar>
@@ -15,28 +15,21 @@
         </center>
       </q-item-section>
       <q-item-section>
-        <Card3PostsContent :post="comment" />
+        <comment-body :post="comment" />
       </q-item-section>
       <q-item-section side class="text-grey text-subtitle">
         <router-link :to="returnLink(this.comment.author, this.comment.permlink)">{{ timeDelta(this.comment.created) }}</router-link>
       </q-item-section>
     </q-item>
-    <q-item v-if="this.comment.children !== 0">
-      <div v-for="authperm in comment.replies" :key="authperm.index">
-        <span v-if="(comments[authperm].depth > parentDepth) && comments[authperm].parent_permlink === comment.permlink && comments[authperm].parent_author === comment.author">
-          <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
-          </span>
-        <span v-else>
-          View <router-link :to="returnLink(comment.author, comment.permlink)">{{ comment.children }} replies</router-link>
-        </span>
-      </div>
-    </q-item>
   </q-list>
+  <span v-for="authperm in comment.replies" :key="authperm.index">
+    <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
+  </span>
   </q-card-section>
 </template>
 <script>
 // import hive from '@hiveio/hive-js'
-import Card3PostsContent from 'components/Card3PostsContent.vue'
+import commentBody from 'components/commentBody.vue'
 import comment from 'components/comment.vue'
 import moment from 'moment'
 export default {
@@ -46,7 +39,7 @@ export default {
     }
   },
   props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { Card3PostsContent, comment },
+  components: { commentBody, comment },
   methods: {
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     linkAccount (author) { return '/@' + author },

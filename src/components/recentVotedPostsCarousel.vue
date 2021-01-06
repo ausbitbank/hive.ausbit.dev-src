@@ -1,5 +1,12 @@
 <template>
   <div>
+    <q-card>
+    <div v-for="vote in votes" :key="vote.index">
+      <router-link :to="returnPostPath(vote[1].op[1].author, vote[1].op[1].permlink)" v-if="vote[1].op[1].author !== account">
+        {{ vote[1].op[1].permlink }}
+        </router-link>
+    </div>
+    </q-card>
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>

@@ -2,7 +2,7 @@
     <span>
     <q-spinner-grid size="2em" color="primary" v-if="!coinGecko" />
     <span v-if="coinGecko">
-    <q-card flat bordered v-for="coin in coinGecko" :key="coin.index">
+    <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
             <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }}</div>
                 <sparkline width="250" height="60" v-if="coin.sparkline_in_7d">
@@ -17,9 +17,9 @@
             <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green">({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
         </q-card-section>
     </q-card>
-    <q-card flat bordered>
+    <q-card flat bordered dense>
         <q-card-section class="text-center">
-            <q-btn icon="settings" label="Settings" color="primary" dense @click="settingsDialog = true" />
+            <q-btn push icon="settings" label="Settings" color="primary" dense @click="settingsDialog = true" />
             <q-dialog v-model="settingsDialog">
                 <q-card>
                     <q-card-section>
@@ -55,7 +55,6 @@ export default {
       spotStyle: { fill: '#54a5ff' },
       spotProps: { size: 2 },
       sparklineEnabled: 'true',
-      coins: ['hive', 'hive_dollar', 'bitcoin'],
       coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'link', 'litecoin', 'eos', 'monero', 'dash', 'uniswap', 'yearn.finance', 'dogecoin', 'steem', 'steem_dollar', 'tron'],
       currency: 'usd',
       sortOrder: 'market_cap_asc',
@@ -65,6 +64,15 @@ export default {
   },
   components: {
     sparkline
+  },
+  props: {
+    coins: {
+      type: Array,
+      required: false,
+      default () {
+        return ['hive', 'hive_dollar', 'bitcoin']
+      }
+    }
   },
   computed: {
     apiUrl: function () {

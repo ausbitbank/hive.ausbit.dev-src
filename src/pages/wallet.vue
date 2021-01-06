@@ -13,7 +13,7 @@
                     <q-list bordered class="rounded-borders">
                         <q-item>
                             <q-item-section avatar>
-                              <q-avatar>
+                              <q-avatar size="sm">
                                 <img src="/statics/hextacular.svg"/>
                               </q-avatar>
                             </q-item-section>
@@ -62,7 +62,7 @@
                         </q-item>
                         <q-item>
                             <q-item-section avatar>
-                              <q-avatar>
+                              <q-avatar size="sm">
                                 <img src="/statics/hextacular.svg"/>
                               </q-avatar>
                             </q-item-section>
@@ -294,14 +294,14 @@
                 <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null">
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalances" :key="token.index">
-                          <q-item-section avatar v-if="hiveEngineTokenInfo">
-                            <q-avatar>
+                          <q-item-section dense avatar v-if="hiveEngineTokenInfo">
+                            <q-avatar size="sm">
                               <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
                             </q-avatar>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label caption v-if="hiveEngineTokenInfo">
-                              <q-expansion-item expand-separator :label="token.symbol">
+                              <q-expansion-item expand-separator dense dense-toggle :caption="token.symbol">
                                 <q-card dense>
                                   <q-card-section>
                                     {{ returnTokenInfoMeta(token.symbol).desc }}
@@ -554,7 +554,6 @@ a:visited { color: #1d8ce0; }
 const SSC = require('sscjs')
 const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import hive from '@hiveio/hive-js'
-// hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 import { debounce } from 'quasar'
 import accountHeader from 'components/accountHeader.vue'
@@ -580,7 +579,6 @@ const walletBitmask = makeBitMaskFilter([
   op.fill_order,
   op.claim_reward_balance
 ])
-// console.log(walletBitmask) // returns ["49821653785378844", null] */
 export default {
   name: 'wallet',
   data () {
@@ -707,7 +705,17 @@ export default {
     },
     getHiveEngineBalances (username) {
       hiveEngine.find('tokens', 'balances', { account: username }, 1000, 0, [])
-        .then((response) => { this.hiveEngineBalances = response; this.getHiveEngineMarketInfo(); this.getHiveEngineTokenInfo() })
+        .then((response) => {
+          this.hiveEngineBalances = response
+          var preferredTokens = ['SWAP.HIVE', 'PAL', 'PALMM', 'LEO', 'LEOMM', 'CCC', 'STEM'].reverse()
+          preferredTokens.forEach(function (t, index) {
+            var currentIndex = this.hiveEngineBalances.findIndex(token => token.symbol === t)
+            this.hiveEngineBalances.splice(this.hiveEngineBalances.length - 1, 1, ...this.hiveEngineBalances.splice(currentIndex, 1))
+          }.bind(this))
+          this.hiveEngineBalances.reverse()
+          this.getHiveEngineMarketInfo()
+          this.getHiveEngineTokenInfo()
+        })
         .catch(() => {
           console.error('Error connecting to Hive-Engine api')
         })
@@ -719,10 +727,6 @@ export default {
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineMarketInfo () {
-      /* var json = '{"jsonrpc":"2.0","id":3,"method":"find","params":{"contract":"market","table":"metrics","query":{"symbol":{"$in":["TEST.EON","STEM","LOTUS","WEED","LEOMM","WEEDMM","LEO","BPC","BATTLE","SPORTS","SIM","SWAP.HIVE","SAND","CCC","NEOXAG","STARBITS","PAL","PALMM","HUSTLER","GAMER","EPC","JAHM","TRUMPWINS","ENTRY","CTP","SPACO","SPT","ASH","SUFB","BEER"]}},"limit":1000,"offset":0,"indexes":""}}'
-      this.$axios.post('https://api.hive-engine/rpc/contracts', json)
-        .then(response => { this.hiveEngineMarketInfo = response.data; console.log(response.data) })
-        .catch(err => { console.error(err) }) */
       var tokens = this.returnTokenArray()
       hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
         .then((response) => { this.hiveEngineMarketInfo = response })

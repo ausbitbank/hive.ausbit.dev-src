@@ -43,7 +43,7 @@
         </q-list>
       </q-card-section>
     </q-card>
-    <coingecko />
+    <coingecko :coins="['hive_dollar']" />
   </q-page>
 </template>
 <style scoped>
