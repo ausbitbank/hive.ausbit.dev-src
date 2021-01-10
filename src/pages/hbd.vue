@@ -94,7 +94,6 @@ export default {
       }
     },
     percentCap: function () {
-      // return this.hiveCap / this.hbdCap
       return parseFloat((this.hbdCap / this.hiveCap) * 100).toFixed(3)
     },
     haircutPrice: function () {

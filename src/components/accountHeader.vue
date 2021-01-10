@@ -10,8 +10,17 @@
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="JSON.parse(account.posting_json_metadata).profile">
             <div v-if="JSON.parse(account.posting_json_metadata).profile.about">{{ JSON.parse(account.posting_json_metadata).profile.about }}</div>
-            <div v-if="JSON.parse(account.posting_json_metadata).profile.location"><q-icon name="location_on" /> {{ JSON.parse(account.posting_json_metadata).profile.location }}</div>
-            <div v-if="JSON.parse(account.posting_json_metadata).profile.website"><a :href="JSON.parse(account.posting_json_metadata).profile.website"><q-icon name="link" /> {{ JSON.parse(account.posting_json_metadata).profile.website }}</a></div>
+            <div v-if="JSON.parse(account.posting_json_metadata).profile.location" title="Location"><q-icon name="location_on" /> {{ JSON.parse(account.posting_json_metadata).profile.location }}</div>
+            <div v-if="JSON.parse(account.posting_json_metadata).profile.website" title="Website"><a :href="JSON.parse(account.posting_json_metadata).profile.website"><q-icon name="link" /> {{ JSON.parse(account.posting_json_metadata).profile.website }}</a></div>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.email" title="Email"><a :href="returnEmailLink(JSON.parse(account.posting_json_metadata).profile.email)"><q-avatar><q-icon name="email" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.twitter" title="Twitter"><a :href="returnTwitterLink(JSON.parse(account.posting_json_metadata).profile.twitter)" target="_blank"><q-avatar><q-icon name="img:statics/twitter.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.twitch" title="Twitch"><a :href="returnTwitchLink(JSON.parse(account.posting_json_metadata).profile.twitch)" target="_blank"><q-avatar><q-icon name="img:statics/twitch.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.github" title="Github"><a :href="returnGithubLink(JSON.parse(account.posting_json_metadata).profile.github)" target="_blank"><q-avatar><q-icon name="img:statics/github.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.discord" title="Discord"><a :href="returnDiscordLink(JSON.parse(account.posting_json_metadata).profile.discord)" target="_blank"><q-avatar><q-icon name="img:statics/discord.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.telegram" title="Telegram"><a :href="returnTelegramLink(JSON.parse(account.posting_json_metadata).profile.telegram)" target="_blank"><q-avatar><q-icon name="img:statics/telegram.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.bitcoin" title="Bitcoin"><a :href="returnBitcoinLink(JSON.parse(account.posting_json_metadata).profile.bitcoin)"><q-avatar><q-icon name="img:statics/bitcoin.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.litecoin" title="Litecoin"><a :href="returnLitecoinLink(JSON.parse(account.posting_json_metadata).profile.litecoin)"><q-avatar><q-icon name="img:statics/litecoin.svg" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.ethereum" title="Ethereum"><a :href="returnEthereumLink(JSON.parse(account.posting_json_metadata).profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" style="max-width:100%;" /></q-avatar></a></span>
         </span>
       </div>
     </div>
@@ -59,6 +68,33 @@ export default {
       } else {
         return null
       }
+    },
+    returnTwitterLink (username) {
+      return 'https://twitter.com/' + username
+    },
+    returnTwitchLink (username) {
+      return 'https://twitch.tv/' + username
+    },
+    returnGithubLink (username) {
+      return 'https://github.com/' + username
+    },
+    returnDiscordLink (username) {
+      return 'https://discordapp.com/users/' + username
+    },
+    returnTelegramLink (username) {
+      return 'https://www.t.me/' + username
+    },
+    returnEmailLink (address) {
+      return 'mailto:' + address
+    },
+    returnBitcoinLink (address) {
+      return 'bitcoin:' + address + '?label=' + this.account.name
+    },
+    returnLitecoinLink (address) {
+      return 'litecoin:' + address + '?label=' + this.account.name
+    },
+    returnEthereumLink (address) {
+      return 'ethereum:' + address
     }
   },
   computed: {

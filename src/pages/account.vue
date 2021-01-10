@@ -128,7 +128,9 @@
               <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
                   <q-card-section>
                       <div class="text-h6">Posting JSON Metadata</div>
-                      <json-viewer :data="JSON.parse(account.posting_json_metadata)" />
+                      <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
+                      <q-btn icon="edit" label="Edit Posting JSON Metadata" color="primary" @click="editPostingJson = !editPostingJson" dense push />
+                      <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" />
                   </q-card-section>
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md">
@@ -297,6 +299,7 @@ import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 // import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
+import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
 export default {
@@ -305,6 +308,7 @@ export default {
     jsonViewer,
     recentPostsCarousel,
     propsList,
+    propsEditor,
     accountOperations,
     accountHeader
     // recentVotedPostsCarousel
@@ -323,7 +327,8 @@ export default {
       accountOperations: [],
       accountOperationsLimit: 100,
       accountOperationsMarker: null,
-      page: this.$router.currentRoute.query.page || 1
+      page: this.$router.currentRoute.query.page || 1,
+      editPostingJson: false
     }
   },
   watch: {
