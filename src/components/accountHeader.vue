@@ -13,6 +13,7 @@
             <div v-if="JSON.parse(account.posting_json_metadata).profile.location" title="Location"><q-icon name="location_on" /> {{ JSON.parse(account.posting_json_metadata).profile.location }}</div>
             <div v-if="JSON.parse(account.posting_json_metadata).profile.website" title="Website"><a :href="JSON.parse(account.posting_json_metadata).profile.website"><q-icon name="link" /> {{ JSON.parse(account.posting_json_metadata).profile.website }}</a></div>
             <span v-if="JSON.parse(account.posting_json_metadata).profile.email" title="Email"><a :href="returnEmailLink(JSON.parse(account.posting_json_metadata).profile.email)"><q-avatar><q-icon name="email" style="max-width:100%;" /></q-avatar></a></span>
+            <span v-if="JSON.parse(account.posting_json_metadata).profile.ipfs" title="Inter Planetary File System"><a :href="returnIpfsLink(JSON.parse(account.posting_json_metadata).profile.ipfs)"><q-avatar><q-icon name="img:statics/ipfs.svg" style="max-width:100%;" /></q-avatar></a></span>
             <span v-if="JSON.parse(account.posting_json_metadata).profile.twitter" title="Twitter"><a :href="returnTwitterLink(JSON.parse(account.posting_json_metadata).profile.twitter)" target="_blank"><q-avatar><q-icon name="img:statics/twitter.svg" style="max-width:100%;" /></q-avatar></a></span>
             <span v-if="JSON.parse(account.posting_json_metadata).profile.twitch" title="Twitch"><a :href="returnTwitchLink(JSON.parse(account.posting_json_metadata).profile.twitch)" target="_blank"><q-avatar><q-icon name="img:statics/twitch.svg" style="max-width:100%;" /></q-avatar></a></span>
             <span v-if="JSON.parse(account.posting_json_metadata).profile.github" title="Github"><a :href="returnGithubLink(JSON.parse(account.posting_json_metadata).profile.github)" target="_blank"><q-avatar><q-icon name="img:statics/github.svg" style="max-width:100%;" /></q-avatar></a></span>
@@ -95,6 +96,9 @@ export default {
     },
     returnEthereumLink (address) {
       return 'ethereum:' + address
+    },
+    returnIpfsLink (hash) {
+      return 'https://cloudflare-ipfs.com/ipfs/' + hash
     }
   },
   computed: {
