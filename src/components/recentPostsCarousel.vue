@@ -56,7 +56,6 @@ export default {
       showResteems: true,
       api: 'https://rpc.ausbit.dev',
       slide: null,
-      autoplay: true,
       limit: 10,
       settings: false,
       loading: false
@@ -68,7 +67,12 @@ export default {
     }
   },
   props: {
-    account: String
+    account: String,
+    autoplay: {
+      type: Boolean,
+      required: false,
+      default: true
+    }
   },
   computed: {
     firstPermlink: function () {
@@ -77,6 +81,9 @@ export default {
       } else {
         return null
       }
+    },
+    autoplayProp: function () {
+      return this.autoplay
     }
   },
   methods: {

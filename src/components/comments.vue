@@ -1,7 +1,7 @@
 <template>
   <span>
     <span v-if="!viewComments" class="text-center">
-      <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View replies</div>
+      <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View {{ comments.length }} replies</div>
     </span>
     <span v-if="viewComments">
     <q-spinner-grid size="2em" color="primary" v-if="loading" />

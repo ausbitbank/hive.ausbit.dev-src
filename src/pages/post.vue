@@ -2,8 +2,8 @@
   <q-page class="flex flex-center q-pa-md">
     <div class="row items-start content-start justify-center">
       <q-spinner-grid size="2em" color="primary" v-if="!post" class="q-ma-lg" />
-      <div class="col-xs-12 col-md-8">
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="post" style="max-width: 1000px">
+      <div class="col-xs-12 col-md-9 justify-center">
+        <q-card flat bordered class="q-pa-sm q-ma-sm" v-if="post" style="max-width: 1000px">
           <q-card-section class="text-h4 text-center" v-if="post.title">
             {{ post.title }}
           </q-card-section>
@@ -16,8 +16,8 @@
           <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
         </q-card>
       </div>
-      <div class="col-sm-12 col-md-4 text-center justify-center">
-        <q-card flat bordered class="q-pa-md q-ma-md" v-if="post" style="max-width: 500px">
+      <div class="col-sm-12 col-md-3 text-center justify-center">
+        <q-card flat bordered class="q-pa-sm q-ma-sm" v-if="post" style="max-width: 500px">
           <q-card-section>
             <q-list dense>
               <q-item>
@@ -111,7 +111,7 @@
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
           </q-card-section>
         </q-card>
-        <recent-posts-carousel :account="author" class="q-ma-md" style="width:400px; height:250px;" />
+        <recent-posts-carousel :account="author" :autoplay=false />
       </div>
     </div>
   </q-page>

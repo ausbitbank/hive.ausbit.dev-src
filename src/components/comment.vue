@@ -6,7 +6,7 @@
         <center>
           <router-link :to="linkAccount(this.comment.author)">
             <q-avatar>
-              <q-img :src="GetHiveAvatarUrl(this.comment.avatar)" />
+              <q-img :src="GetHiveAvatarUrl(this.comment.author)" />
             </q-avatar>
             <div class="text-bold">
               {{ this.comment.author }}
