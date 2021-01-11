@@ -109,9 +109,9 @@ export default {
         },
         {
           title: 'Hive Discord',
-          caption: 'discord.gg/xHKUjeC',
+          caption: 'myhive.li/discord',
           icon: 'chat',
-          link: 'https://discord.gg/xHKUjeC'
+          link: 'https://myhive.li/discord'
         },
         {
           title: 'Hive Telegram',

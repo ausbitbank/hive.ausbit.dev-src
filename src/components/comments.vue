@@ -4,7 +4,7 @@
       <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View {{ comments.length }} replies</div>
     </span>
     <span v-if="viewComments">
-    <q-spinner-grid size="2em" color="primary" v-if="loading" />
+    <center><q-spinner-grid size="2em" color="primary" v-if="loading" class="text-center" /></center>
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
           <q-icon name="comment" /> Replies
