@@ -9,7 +9,7 @@ export default {
   name: 'jsonViewer',
   data () {
     return {
-      supportedServices: ['twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'location']
+      supportedServices: ['twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase']
     }
   },
   components: { VueJsonPretty },
@@ -61,9 +61,11 @@ export default {
         case 'github':
           return 'https://github.com/' + sanitize(data)
         case 'discord':
-          // TODO Expand to support both userid (integer) and server invite links (hex string)
-          // Server invite format : https://discord.gg/INVITECODE
-          return 'https://discordapp.com/users/' + sanitize(data)
+          if (!isNaN(data)) {
+            return 'https://discordapp.com/users/' + sanitize(data) // If it's a number, its a user
+          } else {
+            return 'https://discord.gg/' + sanitize(data) // If not, it's an invite code
+          }
         case 'telegram':
           return 'https://www.t.me/' + sanitize(data)
         case 'email':
@@ -80,12 +82,41 @@ export default {
           return 'https://account.xbox.com/en-us/profile?gamertag=' + sanitize(data)
         case 'psn':
           return 'https://my.playstation.com/profile/' + sanitize(data)
-        case 'location':
+        case 'steam':
+          return 'https://steamcommunity.com/id/' + sanitize(data)
+        case 'flickr':
+          return 'https://www.flickr.com/photos/' + sanitize(data)
+        case 'facebook':
+          return 'https://facebook.com/' + sanitize(data)
+        case 'tumblr':
+          return 'https://' + sanitize(data) + '.tumblr.com'
+        case 'linkedin':
+          return 'https://linkedin.com/in/' + sanitize(data)
+        case 'instagram':
+          return 'https://instagram.com/' + sanitize(data)
+        case 'reddit':
+          return 'https://reddit.com/user/' + sanitize(data)
+        case 'tiktok':
+          return 'https://tiktok.com/@' + sanitize(data)
+        case 'soundcloud':
+          return 'https://soundcloud.com/' + sanitize(data)
+        case 'vimeo':
+          return 'https://vimeo.com/' + sanitize(data)
+        case 'spotify':
+          return 'https://open.spotify.com/artist/' + sanitize(data)
+        case 'youtube':
+          return 'https://youtube.com/channel/' + sanitize(data)
+        case 'bandcamp':
+          return 'https://' + sanitize(data) + '.bandcamp.com'
+        case 'medium':
+          return 'https://medium.com/@' + sanitize(data)
+        case 'keybase':
+          return 'https://keybase.io/' + sanitize(data)
+        // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
-          return 'https://pinmapple.com/search/' + sanitize(data)
+          // return 'https://pinmapple.com/search/' + sanitize(data)
       }
     }
-
   },
   mounted () {
     // console.log(this.data)
