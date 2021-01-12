@@ -43,6 +43,8 @@
             <span v-if="postingJsonMeta.profile.threespeak" title="3speak"><a :href="returnServiceLink('threespeak', postingJsonMeta.profile.threespeak)"><q-avatar><q-icon name="img:statics/threespeak.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.gab" title="Gab"><a :href="returnServiceLink('gab', postingJsonMeta.profile.gab)"><q-avatar><q-icon name="img:statics/gab.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.dbuzz" title="dBuzz"><a :href="returnServiceLink('dbuzz', postingJsonMeta.profile.dbuzz)"><q-avatar><q-icon name="img:statics/dbuzz.svg" class="hvr"/></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.wordpress" title="Wordpress"><a :href="returnServiceLink('wordpress', postingJsonMeta.profile.wordpress)"><q-avatar><q-icon name="img:statics/wordpress.svg" class="hvr"/></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.nftshowroom" title="NFTShowroom"><a :href="returnServiceLink('nftshowroom', postingJsonMeta.profile.nftshowroom)"><q-avatar><q-icon name="img:statics/nftshowroom.svg" class="hvr"/></q-avatar></a></span>
         </span>
       </div>
     </div>
@@ -194,6 +196,10 @@ export default {
           return 'https://gab.com/' + d
         case 'dbuzz':
           return 'https://d.buzz/#/@' + d
+        case 'wordpress':
+          return 'https://' + d + '.wordpress.com'
+        case 'nftshowroom':
+          return 'https://nftshowroom.com/' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

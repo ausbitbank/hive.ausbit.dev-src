@@ -9,7 +9,7 @@ export default {
   name: 'jsonViewer',
   data () {
     return {
-      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz']
+      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz', 'wordpress', 'nftshowroom']
     }
   },
   components: { VueJsonPretty },
@@ -135,6 +135,10 @@ export default {
           return 'https://gab.com/' + d
         case 'dbuzz':
           return 'https://d.buzz/#/@' + d
+        case 'wordpress':
+          return 'https://' + d + '.wordpress.com'
+        case 'nftshowroom':
+          return 'https://nftshowroom.com/' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

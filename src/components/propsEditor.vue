@@ -3,7 +3,7 @@
         <q-input outlined style="height: 100%" type="textarea" v-model="newjson" label="Edit your metadata directly here or use the tags below" />
         <q-btn label="Submit changes" color="orange" icon="warning" @click="submitChanges()" v-if="newjson !== json && !edited" />
         <div v-if="edited" class="text-caption">
-            Your posting JSON metadata has been edited. <a href="" :@click="window.location.reload()">Refresh the page</a> in a moment to see the changes
+            Your posting JSON metadata has been edited. Refresh the page in a moment to see the changes
         </div>
         <div v-if="log !== ''"><q-icon name="info" color="primary" v-if="!error" /><q-icon name="error" color="red" v-if="error" /> {{ log }}</div>
         <div>
@@ -46,7 +46,7 @@ export default {
       keyDialogCurrentKey: '',
       keyDialogCurrentData: '',
       log: '',
-      myTags: ['twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'vimm', 'threespeak', 'mastodon', 'gab', 'dbuzz'],
+      myTags: ['twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'vimm', 'threespeak', 'mastodon', 'gab', 'dbuzz', 'wordpress', 'nftshowroom'],
       commonTags: ['name', 'about', 'location', 'profile_image', 'cover_image', 'website', 'witness_description', 'dtube_pub', 'pinned', 'portfolio', 'trail']
     }
   },
