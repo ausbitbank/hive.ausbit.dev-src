@@ -45,6 +45,7 @@
             <span v-if="postingJsonMeta.profile.dbuzz" title="dBuzz"><a :href="returnServiceLink('dbuzz', postingJsonMeta.profile.dbuzz)"><q-avatar><q-icon name="img:statics/dbuzz.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.wordpress" title="Wordpress"><a :href="returnServiceLink('wordpress', postingJsonMeta.profile.wordpress)"><q-avatar><q-icon name="img:statics/wordpress.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.nftshowroom" title="NFTShowroom"><a :href="returnServiceLink('nftshowroom', postingJsonMeta.profile.nftshowroom)"><q-avatar><q-icon name="img:statics/nftshowroom.svg" class="hvr"/></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.palnet" title="PALnet"><a :href="returnServiceLink('palnet', postingJsonMeta.profile.palnet)"><q-avatar><q-icon name="img:statics/palnet.svg" class="hvr"/></q-avatar></a></span>
         </span>
       </div>
     </div>
@@ -200,6 +201,8 @@ export default {
           return 'https://' + d + '.wordpress.com'
         case 'nftshowroom':
           return 'https://nftshowroom.com/' + d
+        case 'palnet':
+          return 'https://palnet.io/@' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)
