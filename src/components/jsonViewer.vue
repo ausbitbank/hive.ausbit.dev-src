@@ -9,7 +9,7 @@ export default {
   name: 'jsonViewer',
   data () {
     return {
-      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase']
+      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz']
     }
   },
   components: { VueJsonPretty },
@@ -53,65 +53,88 @@ export default {
     },
     // TODO reduce redundant code, import this from elsewhere
     returnServiceLink (service, data) {
+      var d = sanitize(data)
       switch (service) {
         case 'twitter':
-          return 'https://twitter.com/' + sanitize(data)
+          return 'https://twitter.com/' + d
         case 'twitch':
-          return 'https://twitch.tv/' + sanitize(data)
+          return 'https://twitch.tv/' + d
         case 'github':
-          return 'https://github.com/' + sanitize(data)
+          return 'https://github.com/' + d
         case 'discord':
           if (!isNaN(data)) {
-            return 'https://discordapp.com/users/' + sanitize(data) // If it's a number, its a user
+            return 'https://discordapp.com/users/' + d // If it's a number, its a user
           } else {
-            return 'https://discord.gg/' + sanitize(data) // If not, it's an invite code
+            return 'https://discord.gg/' + d // If not, it's an invite code
           }
         case 'telegram':
-          return 'https://www.t.me/' + sanitize(data)
+          return 'https://www.t.me/' + d
         case 'email':
-          return 'mailto:' + sanitize(data)
+          return 'mailto:' + d
         case 'bitcoin':
-          return 'bitcoin:' + sanitize(data)
+          return 'bitcoin:' + d
         case 'litecoin':
-          return 'litecoin:' + sanitize(data)
+          return 'litecoin:' + d
         case 'ethereum':
-          return 'ethereum:' + sanitize(data)
+          return 'ethereum:' + d
         case 'ipfs':
-          return 'https://cloudflare-ipfs.com/ipfs/' + sanitize(data)
+          return 'https://cloudflare-ipfs.com/ipfs/' + d
         case 'xbox':
-          return 'https://account.xbox.com/en-us/profile?gamertag=' + sanitize(data)
+          return 'https://account.xbox.com/en-us/profile?gamertag=' + d
         case 'psn':
-          return 'https://my.playstation.com/profile/' + sanitize(data)
+          return 'https://my.playstation.com/profile/' + d
         case 'steam':
-          return 'https://steamcommunity.com/id/' + sanitize(data)
+          return 'https://steamcommunity.com/id/' + d
         case 'flickr':
-          return 'https://www.flickr.com/photos/' + sanitize(data)
+          return 'https://www.flickr.com/photos/' + d
         case 'facebook':
-          return 'https://facebook.com/' + sanitize(data)
+          return 'https://facebook.com/' + d
         case 'tumblr':
-          return 'https://' + sanitize(data) + '.tumblr.com'
+          return 'https://' + d + '.tumblr.com'
         case 'linkedin':
-          return 'https://linkedin.com/in/' + sanitize(data)
+          return 'https://linkedin.com/in/' + d
         case 'instagram':
-          return 'https://instagram.com/' + sanitize(data)
+          return 'https://instagram.com/' + d
         case 'reddit':
-          return 'https://reddit.com/user/' + sanitize(data)
+          return 'https://reddit.com/user/' + d
         case 'tiktok':
-          return 'https://tiktok.com/@' + sanitize(data)
+          return 'https://tiktok.com/@' + d
         case 'soundcloud':
-          return 'https://soundcloud.com/' + sanitize(data)
+          return 'https://soundcloud.com/' + d
         case 'vimeo':
-          return 'https://vimeo.com/' + sanitize(data)
+          return 'https://vimeo.com/' + d
         case 'spotify':
-          return 'https://open.spotify.com/artist/' + sanitize(data)
+          return 'https://open.spotify.com/artist/' + d
         case 'youtube':
-          return 'https://youtube.com/channel/' + sanitize(data)
+          return 'https://youtube.com/channel/' + d
         case 'bandcamp':
-          return 'https://' + sanitize(data) + '.bandcamp.com'
+          return 'https://' + d + '.bandcamp.com'
         case 'medium':
-          return 'https://medium.com/@' + sanitize(data)
+          return 'https://medium.com/@' + d
         case 'keybase':
-          return 'https://keybase.io/' + sanitize(data)
+          return 'https://keybase.io/' + d
+        case 'mastodon':
+          // Officially, a full mastodon identifier is in this format @[Username]@[Server]  -> https://MastodonInstance.Domain/@Username
+          switch (d.indexOf('@')) {
+            case -1: // No @, assuming just username on largest server
+              return 'https://mstdn.social/@' + d
+            case 0:
+              if (d.indexOf('@', (d.indexOf('@') + 1)) === -1) { // Only one @ at index 0, asssume just username
+                return 'https://mstdn.social/' + d
+              } else { // Assume official format of @[Username]@[Server]
+                return 'https://' + d.substr(d.indexOf('@', 1) + 1, d.length) + '/@' + d.substr(1, (d.indexOf('@', 1) - 1), 2)
+              }
+            default: // Assuming shortened format of [Username]@[Server]
+              return 'https://' + d.substr(d.indexOf('@', 1) + 1, d.length) + '/@' + d.substr(0, (d.indexOf('@', 1)), 2)
+          }
+        case 'vimm':
+          return 'https://vimm.tv/@' + d
+        case 'threespeak':
+          return 'https://3speak.co/user/' + d
+        case 'gab':
+          return 'https://gab.com/' + d
+        case 'dbuzz':
+          return 'https://d.buzz/#/@' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

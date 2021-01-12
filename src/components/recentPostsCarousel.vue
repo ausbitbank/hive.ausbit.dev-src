@@ -14,11 +14,11 @@
         padding
         arrows
         infinite
-        :autoplay="autoplay"
+        :autoplay="autoplaySlides"
         height="250px"
         width="450px"
-        @mouseenter="autoplay = false"
-        @mouseleave="autoplay = true"
+        @mouseenter="autoplaySlides = false"
+        @mouseleave="autoplaySlides = true"
         class="bg-dark text-white shadow-2 rounded-borders"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
@@ -58,7 +58,8 @@ export default {
       slide: null,
       limit: 10,
       settings: false,
-      loading: false
+      loading: false,
+      autoplaySlides: this.autoplay
     }
   },
   watch: {
