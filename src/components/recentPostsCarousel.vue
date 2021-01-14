@@ -118,7 +118,7 @@ export default {
         jsonrpc: '2.0',
         method: 'bridge.get_account_posts',
         params: {
-          sort: 'blog',
+          sort: 'posts', // blog or posts
           account: this.account,
           limit: this.limit,
           observer: this.account,
