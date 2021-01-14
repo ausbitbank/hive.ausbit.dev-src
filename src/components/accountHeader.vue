@@ -74,7 +74,6 @@
 }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import sanitize from 'sanitize-html'
 export default {
   name: 'accountHeader',
@@ -104,7 +103,7 @@ export default {
     getWalletLink (user) { return '/@' + user + '/wallet' },
     vestToHive (vests) {
       if (this.globalProps) {
-        return hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       } else {
         return null
       }

@@ -1,7 +1,7 @@
 <template>
     <span>
     <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
-    <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="!loading && view === 'simple'">
+    <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="!loading && viewType === 'simple'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
@@ -19,11 +19,11 @@
               <span v-for="op in this.blockOpsVirtual" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
-              <div><q-btn v-if="view !== 'full'" @click="view = 'full'" icon="unfold_more" /></div>
+              <div><q-btn v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" /></div>
             </span>
         </q-card-section>
     </q-card>
-    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && view === 'full'">
+    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && viewType === 'full'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
@@ -33,7 +33,7 @@
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(this.blockHeader.timestamp) }}</span></div>
-              <div><q-btn v-if="view !== 'simple'" @click="view = 'simple'" icon="unfold_less" /></div>
+              <div><q-btn v-if="viewType !== 'simple'" @click="viewType = 'simple'" icon="unfold_less" /></div>
             </span>
         </q-card-section>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
@@ -191,8 +191,6 @@ a:visited { color: #884488; }
 :target { background-color: #ffa; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
-hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
 import { mixin as VueTimers } from 'vue-timers'
@@ -231,7 +229,8 @@ export default {
       lastIrreversibleBlock: null,
       blockNumber: this.blockNum,
       showRawBlock: false,
-      liveRefresh: false
+      liveRefresh: false,
+      viewType: this.view
     }
   },
   watch: {
@@ -279,12 +278,12 @@ export default {
     filterOpsVirtual (op) { if (op.trx_id === '0000000000000000000000000000000000000000') { return true } else { return false } },
     filterOpsReal (op) { if (op.trx_id !== '0000000000000000000000000000000000000000') { return true } else { return false } },
     getBlockHeader (blocknum) {
-      hive.api.getBlockHeaderAsync(blocknum)
+      this.$hive.api.getBlockHeaderAsync(blocknum)
         .then(blockHeader => this.setBlockHeader(blockHeader))
         .catch(error => console.log(error))
     },
     getBlockOps (blocknum) {
-      hive.api.getOpsInBlockAsync(blocknum, false)
+      this.$hive.api.getOpsInBlockAsync(blocknum, false)
         .then(blockOps => this.setBlockOps(blockOps))
         .catch(error => console.log(error))
     },
@@ -451,12 +450,12 @@ export default {
       this.getBlockOps(blockNumber)
     },
     getLatestIrreversibleBlock () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then(res => this.updateBlock(res.last_irreversible_block_num))
     },
     getRawBlock (blocknum) {
       if (!this.block) {
-        hive.api.getBlockAsync(blocknum)
+        this.$hive.api.getBlockAsync(blocknum)
           .then(res => this.setRawBlock(res))
       }
     },

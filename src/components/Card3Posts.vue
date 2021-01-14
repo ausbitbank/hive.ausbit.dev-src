@@ -20,8 +20,6 @@
 
 <script>
 import card3PostsList from 'components/Card3PostsList.vue'
-import hive from '@hiveio/hive-js'
-hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export default {
   name: 'Card3Posts',
   props: ['username'],
@@ -37,7 +35,7 @@ export default {
   },
   methods: {
     getPosts () {
-      hive.api.getDiscussionsByAuthorBeforeDate(this.username, null, new Date().toISOString().split('.')[0], this.limit, function (err, result) {
+      this.$hive.api.getDiscussionsByAuthorBeforeDate(this.username, null, new Date().toISOString().split('.')[0], this.limit, function (err, result) {
         if (err) { console.log(err) }
         this.posts = result
       }.bind(this))

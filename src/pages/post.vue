@@ -120,7 +120,6 @@
 a, a:link { color: #1d8ce0 }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import Card3PostsContent from 'components/Card3PostsContent.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
@@ -133,7 +132,7 @@ export default {
       post: null,
       author: this.$router.currentRoute.params.author,
       permlink: this.$router.currentRoute.params.permlink,
-      api: 'https://rpc.ausbit.dev',
+      // api: 'https://rpc.ausbit.dev',
       showVotes: false,
       voteColumns: [
         {
@@ -182,7 +181,7 @@ export default {
   },
   methods: {
     getPost (author, permlink) {
-      hive.api.getContentAsync(author, permlink)
+      this.$hive.api.getContentAsync(author, permlink)
         .then(post => this.setPost(post))
         .catch(error => console.log(error))
     },

@@ -43,7 +43,6 @@ a:visited { color: #884488; }
 </style>
 <script>
 import moment from 'moment'
-import hive from '@hiveio/hive-js'
 import jsonViewer from 'components/jsonViewer.vue'
 export default {
   name: 'nodes',
@@ -82,7 +81,7 @@ export default {
       return parts.join('.')
     },
     getFullNodeUpdate () {
-      hive.api.getAccountsAsync(['fullnodeupdate'])
+      this.$hive.api.getAccountsAsync(['fullnodeupdate'])
         .then((response) => {
           this.fullNodeUpdate = response[0].json_metadata
           this.fullNodeUpdateTime = response[0].last_account_update

@@ -10,7 +10,6 @@
 </template>
 
 <script>
-import hive from '@hiveio/hive-js'
 export default {
   name: 'Card5ToolsWitnessOverview',
   props: ['username', 'globalPropsHive'],
@@ -181,7 +180,7 @@ export default {
   },
   methods: {
     async get_data () {
-      this.witnesses = await hive.api.getWitnessesByVoteAsync('', 200)
+      this.witnesses = await this.$hive.api.getWitnessesByVoteAsync('', 200)
       this.loading = false
     },
     votes_to_hp (votes) {

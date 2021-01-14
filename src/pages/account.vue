@@ -290,9 +290,6 @@ a:visited { color: #884488; }
 .wrap { overflow:auto; overflow-wrap: break-word; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
-// hive.api.setOptions({ url: 'https://api.hive.blog' })
-// hive.config.set('alternative_api_endpoints', ['https://rpc.ausbit.dev', 'https://api.hive.blog', 'https://anyx.io', 'https://api.hivekings.com'])
 import moment from 'moment'
 import { debounce } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
@@ -457,13 +454,13 @@ export default {
       pageReq = pageReq + limit
       if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
       if (page === null || page === 1) { pageReq = -1 }
-      hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, '', '', function (err, response) {
+      this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, '', '', function (err, response) {
         if (err) { console.log(err) }
         this.accountOperations = response.reverse()
       }.bind(this))
     },
     getAccountHistoryMarker (username) {
-      hive.api.getAccountHistory(username, -1, 1, '', '', function (err, response) {
+      this.$hive.api.getAccountHistory(username, -1, 1, '', '', function (err, response) {
         if (err) { console.log(err) }
         this.accountOperationsMarker = response[0][0]
         this.getAccountHistory(username)
@@ -485,10 +482,10 @@ export default {
       return '/tx/' + txid
     },
     getReputation (rep) {
-      return hive.formatter.reputation(rep)
+      return this.$hive.formatter.reputation(rep)
     },
     getAccount (username) {
-      hive.api.getAccountsAsync([username])
+      this.$hive.api.getAccountsAsync([username])
         .then((response) => {
           this.account = response[0]
         })
@@ -498,7 +495,7 @@ export default {
         })
     },
     getWitness (username) {
-      hive.api.getWitnessByAccountAsync(username)
+      this.$hive.api.getWitnessByAccountAsync(username)
         .then((response) => {
           this.witness = response
         })
@@ -506,7 +503,7 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getGlobalProps () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then((response) => {
           this.globalProps = response
         })
@@ -517,12 +514,12 @@ export default {
     },
     vestToHive (vests) {
       if (this.globalProps) {
-        return hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       } else {
         return null
       }
     },
-    getRC (username) {
+    getRC (username) { // TODO update this to use hivejs
       var url = 'https://anyx.io/v1/rc_api/find_rc_accounts?accounts=' + username
       this.$axios.get(url)
         .then((res) => {

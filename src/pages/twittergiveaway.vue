@@ -47,7 +47,6 @@
 a, a:link { color: #1d8ce0 }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import moment from 'moment'
 import { debounce } from 'quasar'
 export default {
@@ -85,7 +84,7 @@ export default {
     },
     validateEntries () {
       this.loading = true
-      hive.api.getAccountsAsync(this.entries)
+      this.$hive.api.getAccountsAsync(this.entries)
         .then((r) => {
           this.loading = false
           this.validEntries = r
@@ -98,7 +97,7 @@ export default {
       return items[Math.floor(Math.random() * items.length)]
     },
     getGlobalProps () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then((response) => {
           this.globalProps = response
         })
@@ -111,7 +110,7 @@ export default {
       if (this.globalProps === null) {
         return vests
       } else {
-        return hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       }
     },
     GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' }

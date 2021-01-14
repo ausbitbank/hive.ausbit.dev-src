@@ -98,7 +98,6 @@ border-top-right-radius: 90px;
 }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import moment from 'moment'
 import card1Stats from 'components/Card1Stats.vue'
 import card1Balances from 'components/Card1Balances.vue'
@@ -177,7 +176,7 @@ export default {
       }
     },
     rep: function () {
-      return hive.formatter.reputation(this.A.reputation)
+      return this.$hive.formatter.reputation(this.A.reputation)
     },
     upvoteValue: function () { // Aims to return the value in dollars of a 100% vote at full strength
       if (this.A !== null && this.rewardFundPost && this.feedPrice !== null) {
@@ -206,15 +205,13 @@ export default {
   },
   methods: {
     async getGlobalPropsHive () {
-      hive.api.setOptions({ url: this.rpcListHive[0] })
-      hive.api.getDynamicGlobalPropertiesAsync().then(function (res, err) {
+      this.$hive.api.getDynamicGlobalPropertiesAsync().then(function (res, err) {
         if (err) { console.log(err) }
         this.globalPropsHive = res
       }.bind(this))
     },
     async checkUsername (username) {
-      hive.api.setOptions({ url: this.rpcListHive[0] })
-      hive.api.getAccounts([username], (err, result) => {
+      this.$hive.api.getAccounts([username], (err, result) => {
         if (err) { this.$q.notify({ color: 'negative', position: 'top', message: 'Error checking hive api', icon: 'report_problem' }) }
         if (result.length === 0) {
           console.log('Invalid hive username: ' + username)
@@ -236,15 +233,13 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     async getFollowCount (username) {
-      hive.api.setOptions({ url: this.rpcListHive[0] })
-      hive.api.getFollowCount(username, function (err, result) {
+      this.$hive.api.getFollowCount(username, function (err, result) {
         if (err) { console.log(err) }
         this.followCounts = result
       }.bind(this))
     },
     async getFeedPrice () {
-      hive.api.setOptions({ url: this.rpcListHive[0] })
-      hive.api.getCurrentMedianHistoryPrice(function (err, result) {
+      this.$hive.api.getCurrentMedianHistoryPrice(function (err, result) {
         if (err) { console.log(err) }
         var b = result.base.split(' ')[0]
         var q = result.quote.split(' ')[0]
@@ -252,8 +247,7 @@ export default {
       }.bind(this))
     },
     async getRewardFundPost () {
-      hive.api.setOptions({ url: this.rpcListHive[0] })
-      hive.api.getRewardFund('post', function (err, result) {
+      this.$hive.api.getRewardFund('post', function (err, result) {
         if (err) { console.log(err) }
         this.rewardFundPost = result
       }.bind(this))

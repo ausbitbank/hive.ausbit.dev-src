@@ -83,9 +83,7 @@
 </template>
 
 <script>
-// import hive from '@hiveio/hive-js'
 import card2AccountOperationsTab from 'components/Card2AccountOperationsTab.vue'
-import hive from '@hiveio/hive-js'
 import moment from 'moment'
 export default {
   name: 'Card2AccountOperations',
@@ -122,7 +120,7 @@ export default {
   methods: {
     getAccountHistory (account, from, limit) {
       console.log('Fetching last ' + limit + ' transactions')
-      hive.api.getAccountHistory(account, from, limit, function (err, result) {
+      this.$hive.api.getAccountHistory(account, from, limit, function (err, result) {
         if (err) { console.log(err) }
         this.loading = false
         this.accountHistory = result.reverse()

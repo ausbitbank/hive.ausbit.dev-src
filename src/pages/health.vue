@@ -22,7 +22,6 @@
 <script>
 import witnesses from 'components/witnesses.vue'
 import nodes from 'components/nodes.vue'
-import hive from '@hiveio/hive-js'
 import jsonViewer from 'components/jsonViewer.vue'
 import block from 'components/block.vue'
 export default {
@@ -44,7 +43,7 @@ export default {
   },
   methods: {
     getGlobalProps () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then(res => { this.globalProps = res })
     }
   },

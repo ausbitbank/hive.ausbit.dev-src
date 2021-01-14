@@ -553,8 +553,6 @@ a:visited { color: #1d8ce0; }
 <script>
 const SSC = require('sscjs')
 const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
-import hive from '@hiveio/hive-js'
-hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 import { debounce } from 'quasar'
 import accountHeader from 'components/accountHeader.vue'
 import transferDialog from 'components/transferDialog.vue'
@@ -632,7 +630,7 @@ export default {
       return '/b/' + tx[1].block + '#' + tx[1].virtual_op
     },
     getAccount (username) {
-      hive.api.getAccountsAsync([username])
+      this.$hive.api.getAccountsAsync([username])
         .then((response) => {
           this.account = response[0]
         })
@@ -642,7 +640,7 @@ export default {
         })
     },
     getGlobalProps () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then((response) => {
           this.globalProps = response
         })
@@ -657,7 +655,7 @@ export default {
     },
     vestToHive (vests) {
       if (this.globalProps) {
-        return hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       } else {
         return null
       }
@@ -674,7 +672,7 @@ export default {
     },
     async getHiveWalletTransactions () {
       this.loading = true
-      await hive.api.callAsync(
+      await this.$hive.api.callAsync(
         'call',
         ['database_api',
           'get_account_history',
@@ -722,15 +720,19 @@ export default {
     },
     getHiveEngineTokenInfo (username) {
       var tokens = this.returnTokenArray()
-      hiveEngine.find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
-        .then((response) => { this.hiveEngineTokenInfo = response })
-        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      if (tokens.length > 0) {
+        hiveEngine.find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
+          .then((response) => { this.hiveEngineTokenInfo = response })
+          .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      }
     },
     getHiveEngineMarketInfo () {
       var tokens = this.returnTokenArray()
-      hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
-        .then((response) => { this.hiveEngineMarketInfo = response })
-        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      if (tokens.length > 0) {
+        hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
+          .then((response) => { this.hiveEngineMarketInfo = response })
+          .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      }
     },
     getHiveEngineTransactionHistory () {
       this.$axios.get('https://accounts.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')

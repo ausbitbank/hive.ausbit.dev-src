@@ -22,8 +22,6 @@ a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
-hive.api.setOptions({ url: 'https://anyx.io' })
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
 export default {
@@ -41,14 +39,12 @@ export default {
   },
   methods: {
     getTx (txId) {
-      hive.api.getTransactionAsync(txId)
+      this.$hive.api.getTransactionAsync(txId)
         .then(tx => this.setTx(tx))
         .catch(error => console.log(error))
     },
     setTx (tx) {
       this.tx = tx
-      console.log('Transaction')
-      console.log(tx)
     },
     timeDelta (timestamp) {
       var now = moment.utc()

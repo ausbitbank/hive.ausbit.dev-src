@@ -174,7 +174,6 @@
 </template>
 
 <script>
-import hive from '@hiveio/hive-js'
 export default {
   name: 'Card1WitnessDetails',
   props: ['username'],
@@ -186,7 +185,7 @@ export default {
   },
   methods: {
     async getWitness (username) {
-      hive.api.getWitnessByAccount(username, function (err, result) {
+      this.$hive.api.getWitnessByAccount(username, function (err, result) {
         if (err) { console.log(err) }
         if (result === null) { this.witnessDisabled = true }
         this.witnessState = result

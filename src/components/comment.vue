@@ -28,7 +28,6 @@
   </q-card-section>
 </template>
 <script>
-// import hive from '@hiveio/hive-js'
 import commentBody from 'components/commentBody.vue'
 import comment from 'components/comment.vue'
 import moment from 'moment'

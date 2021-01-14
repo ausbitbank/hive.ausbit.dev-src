@@ -57,7 +57,6 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
 export default {
@@ -101,7 +100,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     getWitnessesByVote () {
-      hive.api.getWitnessesByVoteAsync('', this.limit)
+      this.$hive.api.getWitnessesByVoteAsync('', this.limit)
         .then((response) => { this.witnesses = response })
     },
     votesToHp (votes) {
@@ -122,7 +121,7 @@ export default {
       }
     },
     getHardforkVersion () {
-      hive.api.getHardforkVersionAsync()
+      this.$hive.api.getHardforkVersionAsync()
         .then((res) => { this.hardforkVersion = res })
     },
     alertPricefeedAge (age) {

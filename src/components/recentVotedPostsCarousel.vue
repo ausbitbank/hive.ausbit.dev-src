@@ -51,14 +51,12 @@ a:visited { color: #884488; }
 </style>
 <script>
 import moment from 'moment'
-import hive from '@hiveio/hive-js'
 import { debounce } from 'quasar'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const voteBitmask = makeBitMaskFilter([
   op.vote
 ])
-hive.api.setOptions({ url: 'https://rpc.ausbit.dev' })
 export default {
   name: 'recentVotedPostsCarousel',
   data () {
@@ -91,7 +89,7 @@ export default {
   },
   methods: {
     getPost (author, permlink) {
-      hive.api.getContentAsync(author, permlink)
+      this.$hive.api.getContentAsync(author, permlink)
         .then(res => {
           if (res.title !== '' && res.author !== this.account) {
             this.posts.push(res)
@@ -100,7 +98,7 @@ export default {
     },
     async getRecentVotes (username) {
       this.loading = true
-      await hive.api.callAsync(
+      await this.$hive.api.callAsync(
         'call',
         ['database_api',
           'get_account_history',

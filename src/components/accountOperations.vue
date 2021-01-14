@@ -58,7 +58,6 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-// import hive from '@hiveio/hive-js'
 import jsonViewer from 'components/jsonViewer.vue'
 import moment from 'moment'
 export default {

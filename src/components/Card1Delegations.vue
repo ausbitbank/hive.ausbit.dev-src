@@ -39,7 +39,6 @@
 </template>
 
 <script>
-import hive from '@hiveio/hive-js'
 export default {
   name: 'Card1Delegations',
   props: ['A', 'username', 'hivePerMvests', 'rpcListHive'],
@@ -156,7 +155,7 @@ export default {
   },
   methods: {
     getOutgoingDelegations (username) {
-      hive.api.getVestingDelegations(username, '', 50, function (err, result) {
+      this.$hive.api.getVestingDelegations(username, '', 50, function (err, result) {
         if (err) { console.log(err) }
         this.delegationData = result
       }.bind(this))

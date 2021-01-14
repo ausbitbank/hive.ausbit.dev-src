@@ -52,7 +52,6 @@ a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
-import hive from '@hiveio/hive-js'
 import { debounce } from 'quasar'
 import coingecko from 'components/coingecko.vue'
 export default {
@@ -108,7 +107,7 @@ export default {
       return parts.join('.')
     },
     getMedianPrice () {
-      hive.api.getCurrentMedianHistoryPriceAsync()
+      this.$hive.api.getCurrentMedianHistoryPriceAsync()
         .then((response) => {
           this.medianPrice = response
         })
@@ -118,7 +117,7 @@ export default {
         })
     },
     getGlobalProps () {
-      hive.api.getDynamicGlobalPropertiesAsync()
+      this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then((response) => {
           this.globalProps = response
         })
@@ -128,7 +127,7 @@ export default {
         })
     },
     getDaoBalance () {
-      hive.api.getAccountsAsync(['hive.fund'])
+      this.$hive.api.getAccountsAsync(['hive.fund'])
         .then((response) => {
           this.daoHbdBalance = response[0].hbd_balance.split(' ')[0]
         })

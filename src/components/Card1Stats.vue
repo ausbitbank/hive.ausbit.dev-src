@@ -60,7 +60,6 @@
 </template>
 
 <script>
-import hive from '@hiveio/hive-js'
 import moment from 'moment'
 export default {
   name: 'Card1Stats',
@@ -71,7 +70,7 @@ export default {
   },
   computed: {
     rep: function () {
-      return hive.formatter.reputation(this.A.reputation)
+      return this.$hive.formatter.reputation(this.A.reputation)
     },
     baseHP: function () {
       return this.mvestsToHP(parseInt(this.A.vesting_shares.split(' ')[0]))
