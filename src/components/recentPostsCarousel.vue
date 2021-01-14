@@ -73,6 +73,10 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    type: {
+      type: String,
+      default: 'posts' // posts or blog
     }
   },
   computed: {
@@ -118,7 +122,7 @@ export default {
         jsonrpc: '2.0',
         method: 'bridge.get_account_posts',
         params: {
-          sort: 'posts', // blog or posts
+          sort: this.type, // blog or posts
           account: this.account,
           limit: this.limit,
           observer: this.account,
