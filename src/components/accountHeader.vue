@@ -13,6 +13,7 @@
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
             <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
             <span v-if="postingJsonMeta.profile.email" title="Email"><a :href="returnServiceLink('email', postingJsonMeta.profile.email)"><q-avatar><q-icon name="email" class="hvr" /></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', postingJsonMeta.profile.protonmail)"><q-avatar><q-icon name="img:statics/protonmail.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.ipfs" title="Inter Planetary File System"><a :href="returnServiceLink('ipfs', postingJsonMeta.profile.ipfs)"><q-avatar><q-icon name="img:statics/ipfs.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.twitter" title="Twitter"><a :href="returnServiceLink('twitter', postingJsonMeta.profile.twitter)" target="_blank"><q-avatar><q-icon name="img:statics/twitter.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.twitch" title="Twitch"><a :href="returnServiceLink('twitch', postingJsonMeta.profile.twitch)" target="_blank"><q-avatar><q-icon name="img:statics/twitch.svg" class="hvr" /></q-avatar></a></span>
@@ -47,6 +48,7 @@
             <span v-if="postingJsonMeta.profile.nftshowroom" title="NFTShowroom"><a :href="returnServiceLink('nftshowroom', postingJsonMeta.profile.nftshowroom)"><q-avatar><q-icon name="img:statics/nftshowroom.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.palnet" title="PALnet"><a :href="returnServiceLink('palnet', postingJsonMeta.profile.palnet)"><q-avatar><q-icon name="img:statics/palnet.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.leofinance" title="LEOFinance"><a :href="returnServiceLink('leofinance', postingJsonMeta.profile.leofinance)"><q-avatar><q-icon name="img:statics/leofinance.svg" class="hvr"/></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.pgp" title="PGP / GPG Key"><a :href="returnServiceLink('pgp', postingJsonMeta.profile.pgp)"><q-avatar><q-icon name="img:statics/pgp.svg" class="hvr"/></q-avatar></a></span>
         </span>
       </div>
     </div>
@@ -134,6 +136,8 @@ export default {
           return 'https://www.t.me/' + d
         case 'email':
           return 'mailto:' + d
+        case 'protonmail':
+          return 'mailto:' + d
         case 'bitcoin':
           return 'bitcoin:' + d
         case 'litecoin':
@@ -206,6 +210,12 @@ export default {
           return 'https://palnet.io/@' + d
         case 'leofinance':
           return 'https://leofinance.io/@' + d
+        case 'pgp':
+          if (d.indexOf('0x') === 0) { // Key fingerprint, link to server
+            return 'https://keys.openpgp.org/search?q=' + d
+          } else { // Assume hive post authperm to full key, link it  (@username/permlink)
+            return 'https://hive.ausbit.dev/' + d
+          }
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

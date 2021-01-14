@@ -9,7 +9,7 @@ export default {
   name: 'jsonViewer',
   data () {
     return {
-      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz', 'wordpress', 'nftshowroom', 'palnet', 'leofinance']
+      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz', 'wordpress', 'nftshowroom', 'palnet', 'leofinance', 'protonmail']
     }
   },
   components: { VueJsonPretty },
@@ -70,6 +70,8 @@ export default {
         case 'telegram':
           return 'https://www.t.me/' + d
         case 'email':
+          return 'mailto:' + d
+        case 'protonmail':
           return 'mailto:' + d
         case 'bitcoin':
           return 'bitcoin:' + d
@@ -143,6 +145,12 @@ export default {
           return 'https://palnet.io/@' + d
         case 'leofinance':
           return 'https://leofinance.io/@' + d
+        case 'pgp':
+          if (d.indexOf('0x') === 0) { // Key fingerprint, link to server
+            return 'https://keys.openpgp.org/search?q=' + d
+          } else { // Assume hive post authperm to full key, link it  (@username/permlink)
+            return 'https://hive.ausbit.dev/' + d
+          }
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

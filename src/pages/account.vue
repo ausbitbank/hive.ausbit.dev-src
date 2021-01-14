@@ -127,9 +127,9 @@
               </q-card>
               <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
                   <q-card-section>
-                      <div class="text-h6">Posting JSON Metadata</div>
-                      <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
+                      <div id="posting_meta" class="text-h6">Posting JSON Metadata</div>
                       <q-btn icon="edit" label="Edit Posting JSON Metadata" color="primary" @click="editPostingJson = !editPostingJson" dense push />
+                      <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
                       <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" />
                   </q-card-section>
               </q-card>
