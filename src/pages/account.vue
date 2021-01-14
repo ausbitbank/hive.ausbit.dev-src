@@ -75,7 +75,8 @@
                       </div>
                   </q-card-section>
               </q-card>
-              <recent-posts-carousel :account="username" v-if="account.post_count > 0" />
+              <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="posts" />
+              <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="blog" />
               <!-- <recent-voted-posts-carousel :account="username" v-if="account.last_vote_time !== '1970-01-01T00:00:00'" /> -->
               <q-card flat bordered class="q-ma-md">
                   <q-card-section>
