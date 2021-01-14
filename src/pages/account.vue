@@ -454,13 +454,13 @@ export default {
       pageReq = pageReq + limit
       if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
       if (page === null || page === 1) { pageReq = -1 }
-      this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, '', '', function (err, response) {
+      this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, function (err, response) {
         if (err) { console.log(err) }
         this.accountOperations = response.reverse()
       }.bind(this))
     },
     getAccountHistoryMarker (username) {
-      this.$hive.api.getAccountHistory(username, -1, 1, '', '', function (err, response) {
+      this.$hive.api.getAccountHistory(username, -1, 1, function (err, response) {
         if (err) { console.log(err) }
         this.accountOperationsMarker = response[0][0]
         this.getAccountHistory(username)
