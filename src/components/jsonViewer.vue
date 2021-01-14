@@ -9,7 +9,7 @@ export default {
   name: 'jsonViewer',
   data () {
     return {
-      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz', 'wordpress', 'nftshowroom', 'palnet']
+      supportedServices: ['website', 'twitter', 'twitch', 'github', 'discord', 'telegram', 'email', 'bitcoin', 'litecoin', 'ethereum', 'ipfs', 'psn', 'steam', 'xbox', 'flickr', 'facebook', 'tumblr', 'linkedin', 'instagram', 'reddit', 'tiktok', 'soundcloud', 'vimeo', 'spotify', 'youtube', 'bandcamp', 'medium', 'keybase', 'mastodon', 'threespeak', 'vimm', 'gab', 'dbuzz', 'wordpress', 'nftshowroom', 'palnet', 'leofinance']
     }
   },
   components: { VueJsonPretty },
@@ -141,6 +141,8 @@ export default {
           return 'https://nftshowroom.com/' + d
         case 'palnet':
           return 'https://palnet.io/@' + d
+        case 'leofinance':
+          return 'https://leofinance.io/@' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)

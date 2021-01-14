@@ -160,6 +160,12 @@ export default {
           caption: 'Privex.io affiliate link',
           icon: 'monetization_on',
           link: 'https://pay.privex.io/order/?r=ausbitbank'
+        },
+        {
+          title: 'Project announcement post',
+          caption: 'ANN',
+          icon: 'help',
+          link: 'https://hive.ausbit.dev/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
         }
       ]
     }

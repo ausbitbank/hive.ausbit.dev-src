@@ -203,6 +203,8 @@ export default {
           return 'https://nftshowroom.com/' + d
         case 'palnet':
           return 'https://palnet.io/@' + d
+        case 'leofinance':
+          return 'https://leofinance.io/@' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)
