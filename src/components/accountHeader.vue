@@ -12,6 +12,7 @@
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
             <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
+            <span v-if="postingJsonMeta.profile.pinned" title="Pinned Post"><a :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.email" title="Email"><a :href="returnServiceLink('email', postingJsonMeta.profile.email)"><q-avatar><q-icon name="email" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', postingJsonMeta.profile.protonmail)"><q-avatar><q-icon name="img:statics/protonmail.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.ipfs" title="Inter Planetary File System"><a :href="returnServiceLink('ipfs', postingJsonMeta.profile.ipfs)"><q-avatar><q-icon name="img:statics/ipfs.svg" class="hvr" /></q-avatar></a></span>
@@ -216,6 +217,8 @@ export default {
           } else { // Assume hive post authperm to full key, link it  (@username/permlink)
             return 'https://hive.ausbit.dev/' + d
           }
+        case 'pinned':
+          return 'https://hive.ausbit.dev/@' + this.account.name + '/' + d
         // case 'location':
           // TODO: This url doesnt exist yet, poke devs till it does :)
           // return 'https://pinmapple.com/search/' + sanitize(data)
