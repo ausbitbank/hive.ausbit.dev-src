@@ -7,7 +7,7 @@
           <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></router-link>
           hive.ausbit.dev
         </q-toolbar-title>
-        <q-form @submit="onSearchSubmit" @reset="onSearchReset">
+        <q-form @submit="onSearchSubmit" @reset="onSearchReset" class="q-mr-md">
           <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Search Account, Txid or Block">
           <template v-slot:append>
             <q-icon v-if="search !== ''" name="search" @click="onSearchSubmit" />
@@ -15,9 +15,8 @@
           </template>
         </q-input>
         </q-form>
-        <q-btn flat dense round aria-label="Login" @click="rightDrawerOpen = !rightDrawerOpen" class="hvr">
-          <q-avatar><q-img :src="userAvatar" /></q-avatar>
-        </q-btn>
+        <notifications />
+        <user-login />
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
@@ -37,6 +36,9 @@
       <router-view />
     </q-page-container>
     <user-login :drawerState="rightDrawerOpen"/>
+    <q-drawer v-model="notificationDrawerOpen" overlay elevated side="right">
+      <notifications />
+    </q-drawer>
   </q-layout>
 </template>
 <style>
@@ -54,12 +56,14 @@ animation: gradient 15s ease infinite;
 </style>
 <script>
 import EssentialLink from 'components/EssentialLink'
-import userLogin from 'components/userLoginDrawer.vue'
+import userLogin from 'components/userLogin.vue'
+import Notifications from 'src/components/notifications.vue'
 export default {
   name: 'MainLayout',
   components: {
     EssentialLink,
-    userLogin
+    userLogin,
+    Notifications
   },
   methods: {
     onSearchSubmit () {
@@ -80,11 +84,6 @@ export default {
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
-    },
-    userAvatar: {
-      get () {
-        return 'https://images.hive.blog/u/' + this.$store.state.hive.user.username + '/avatar'
-      }
     }
   },
   data () {
@@ -93,6 +92,7 @@ export default {
       leftDrawerOpen: false,
       rightDrawerOpen: false,
       searchSuggestions: null,
+      notificationDrawerOpen: false,
       essentialLinks: [
         {
           title: 'Create an Account',

@@ -289,10 +289,6 @@
   </q-page>
 </template>
 <style>
-a { color: #1d8ce0; }
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
-.wrap { overflow:auto; overflow-wrap: break-word; }
 </style>
 <script>
 import moment from 'moment'
@@ -494,7 +490,6 @@ export default {
     getAccount (username) {
       this.$hive.api.getAccountsAsync([username])
         .then((response) => {
-          console.log(response)
           if (response[0] === undefined) {
             this.error = true
             this.errorMessage = 'Account ' + username + ' was not found'
@@ -502,7 +497,6 @@ export default {
             this.account = null
           } else {
             this.account = response[0]
-            console.log(this.account)
           }
         })
         .catch(() => {

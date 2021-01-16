@@ -28,7 +28,9 @@
           <div class="custom-caption">
             <router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link><br />
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
-            <span class="text-caption">{{ timeDelta(post.created) }}</span>
+            <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
+            <span class="text-caption wrap" v-if="post.json_metadata.description">{{ s(post.json_metadata.description).substr(0,150) }}</span>
+            <span class="text-caption wrap" v-else>{{ s(post.body).substr(0,150) }}..</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
@@ -51,6 +53,7 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 import moment from 'moment'
+import sanitize from 'sanitize-html'
 export default {
   name: 'trendingPostsCarousel',
   data () {
@@ -116,6 +119,13 @@ export default {
           this.posts = res.data.result
           this.slide = this.firstPermlink
         })
+    },
+    s (input) {
+      var options = { allowedTags: [] }
+      return sanitize(input, options)
+        .replace(/<a\b[^>]*>(.*?)<\/a>/i, '') // remove links
+        .replace('![[^]]*?]([^)]+)', '') // remove markdown images
+        .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '') // remove tags
     }
   },
   mounted () {

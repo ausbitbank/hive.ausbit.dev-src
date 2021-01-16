@@ -1,10 +1,13 @@
+import { SessionStorage } from 'quasar'
 export default function () {
   return {
     user: {
-      username: null,
+      username: SessionStorage.getItem('loggedInUser') || null,
       following: [],
       followers: [],
-      state: {}
+      state: {},
+      notifications: SessionStorage.getItem('notifications') || [],
+      unreadNotificationCount: 0
     }
   }
 }

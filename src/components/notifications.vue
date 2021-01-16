@@ -1,25 +1,76 @@
 <template>
-  <div class="text-center">
-    Show notifications for {{ loggedInUser }} here<br />
-    {{ notifications }}
-  </div>
+  <q-btn v-if="loggedInUser && this.$store.state.hive.user.unreadNotificationCount > 0" flat icon="notifications">
+    <q-badge color="red" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
+    <q-popup-proxy>
+    <q-card flat bordered class="text-center">
+      <q-card-section class="text-h6">
+        Notifications <q-btn flat icon="check_circle" color="green" title="Mark all notifications as read" @click="markNotificationsRead(notifications[0].date)"/>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+      <q-spinner-pie color="secondary" size="5em" v-if="loading" />
+      <div v-if="this.notifications !== null">
+      <q-item v-for="n in this.notifications" :key="n.index">
+        <q-item-section avatar>
+          <router-link :to="n.url">
+            <q-avatar>
+              <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" />
+            </q-avatar>
+          </router-link>
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>
+            {{ n.msg.substr(1) }}
+          </q-item-label>
+          <q-item-label caption>
+            <router-link :to="getUrl(n.url)">{{ n.url.substr(0,40) }}</router-link> ..
+          </q-item-label>
+          <q-item-label caption>
+            {{ timeDelta(n.date) }}
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+      </div>
+      </q-card-section>
+      <q-separator />
+      <q-card-actions v-if="false">
+        <q-btn flat label="Load more notifications" v-if="unreadNotificationCount > notifications.length"/>
+      </q-card-actions>
+    </q-card>
+    </q-popup-proxy>
+  </q-btn>
 </template>
 <script>
+import moment from 'moment'
+import { keychain } from '@hiveio/keychain'
 export default {
   name: 'notifications',
   props: [],
   data () {
     return {
       loading: false,
-      params: {
-        account: this.loggedInUser,
-        limit: 1000
-      }
+      last_id: null,
+      limit: 100
     }
   },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
+    },
+    notifications: {
+      get () { return this.$store.state.hive.user.notifications },
+      set (val) { this.$store.commit('hive/updateNotifications', val) }
+    },
+    unreadNotificationCount: {
+      get () { return this.$store.state.hive.user.unreadNotificationCount },
+      set (val) { this.$store.commit('hive/updateUnreadNotificationCount', val) }
+    }
+  },
+  watch: {
+    loggedInUser: function (newState, oldState) {
+      if (newState !== '') {
+        this.getUnreadNotificationCount()
+      }
     }
   },
   methods: {
@@ -27,15 +78,67 @@ export default {
     getAccountLink (user) { return '/@' + user },
     async getNotifications () {
       this.loading = true
-      this.$hive.api.callAsync('bridge.account_notifications', this.params)
-        .then(res => {
-          this.notifications = res
+      var params = { account: this.loggedInUser, last_id: this.last_id, limit: Math.min(this.unreadNotificationCount, this.limit) }
+      this.$hive.api.callAsync('bridge.account_notifications', params)
+        .then(response => {
+          this.notifications = response
           this.loading = false
         })
+    },
+    async getUnreadNotificationCount () {
+      this.loading = true
+      var params = { account: this.loggedInUser }
+      this.$hive.api.callAsync('bridge.unread_notifications', params)
+        .then(res => {
+          this.unreadNotificationCount = res.unread
+          this.loading = false
+          if (this.unreadNotificationCount > 0) {
+            this.getNotifications()
+          }
+        })
+    },
+    async markNotificationsRead (date) {
+      var json = '{ "date": ' + date + '}'
+      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'setLastRead', json, 'Mark notifications as read up until ' + date, 'test')
+      if (success) {
+        this.notifications = []
+        this.getUnreadNotificationCount()
+      }
+      if (!cancel) {
+        if (notActive) {
+          console.error('Please allow Keychain to access this website')
+        } else if (notInstalled) { // alert('Please install Keychain')
+          console.error('Keychain not available')
+        } else {
+          console.info(msg)
+        }
+      }
+    },
+    filterMentions (n) {
+      if (n.type === 'mention') {
+        return true
+      } else {
+        return false
+      }
+    },
+    getRelativeTime (time) {
+      return moment(time).fromNow()
+    },
+    getUrl (permlink) {
+      return '/' + permlink
+    },
+    getUserFromMention (mention) {
+      return mention.split(' ')[0].substr(1)
+    },
+    timeDelta (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
     }
   },
   mounted () {
-    this.getNotifications()
+    this.getUnreadNotificationCount()
   }
 }
 </script>
