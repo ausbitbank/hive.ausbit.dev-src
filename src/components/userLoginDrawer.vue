@@ -14,7 +14,7 @@
           <q-item-section>Wallet</q-item-section>
         </q-item>
         <q-item>
-          <q-btn label="Logout" color="red" @click="loggedInUser = null" icon="exit_to_app" class="text-center hvr" push/>
+          <q-btn label="Logout" color="red" @click="loggedInUser = ''" icon="exit_to_app" class="text-center hvr" push/>
         </q-item>
       </q-list>
       <!-- <notifications /> -->
@@ -37,7 +37,7 @@
         </q-item-section>
       </q-item>
       <q-item v-for="user in savedUsers" :key="user.index">
-        <q-btn dense push class="hvr" @click="checkLogin(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-btn>
+        <q-chip outline class="hvr" size="md" removable @remove="removeSavedUser(user)" clickable @click="rememberLogin = true; checkLogin(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-chip>
       </q-item>
     </q-list>
   </q-drawer>
@@ -64,17 +64,27 @@ export default {
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username },
-      set (val) { this.$store.commit('hive/updateLoggedInUser', val) }
+      set (val) {
+        this.$store.commit('hive/updateLoggedInUser', val)
+        if (this.rememberLogin) {
+          this.$q.sessionStorage.set('loggedInUser', val)
+        }
+      }
     }
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
+    removeSavedUser (user) {
+      this.savedUsers.splice(this.savedUsers.indexOf(user), 1)
+      this.$q.localStorage.set('savedUsers', this.savedUsers)
+    },
     async checkLogin (user) {
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestSignBuffer', user, 'hive.ausbit.dev login for ' + user, 'Posting')
       if (success) {
         this.loggedInUser = user
+        this.$q.sessionStorage.set('loggedInUser', user)
         if (this.rememberLogin) {
           if (!this.savedUsers.includes(this.loggedInUser)) {
             this.$q.localStorage.set('savedUsers', this.savedUsers.concat([this.loggedInUser]))
@@ -94,6 +104,9 @@ export default {
     }
   },
   mounted () {
+    if (this.$q.sessionStorage.getItem('loggedInUser')) {
+      this.loggedInUser = this.$q.sessionStorage.getItem('loggedInUser')
+    }
     /* if (this.$q.localStorage.getItem('savedUsers') === null) {
       this.savedUsers = []
     } else {

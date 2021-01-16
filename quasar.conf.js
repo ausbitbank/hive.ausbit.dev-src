@@ -48,7 +48,7 @@ module.exports = function (ctx) {
       directives: [],
 
       // Quasar plugins
-      plugins: ['LocalStorage'],
+      plugins: ['LocalStorage', 'SessionStorage'],
       config: {
         dark: true
       }
