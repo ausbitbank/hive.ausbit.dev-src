@@ -1,13 +1,13 @@
 <template>
   <span>
     <span v-if="!viewComments" class="text-center">
-      <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View {{ comments.length }} replies</div>
+      <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View replies</div>
     </span>
     <span v-if="viewComments">
     <center><q-spinner-grid size="2em" color="primary" v-if="loading" class="text-center" /></center>
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
-          <q-icon name="comment" /> Replies
+          <q-icon name="comment" />Replies
       </q-card-section>
       <span v-for="comment in comments" :key="comment.index">
         <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.depth === 1" />

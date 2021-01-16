@@ -1,5 +1,10 @@
 export default function () {
   return {
-    username: null
+    user: {
+      username: null,
+      following: [],
+      followers: [],
+      state: {}
+    }
   }
 }

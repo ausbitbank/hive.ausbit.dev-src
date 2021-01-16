@@ -1149,6 +1149,11 @@
     secure-random "^1.1.2"
     ws "^3.3.2"
 
+"@hiveio/keychain@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@hiveio/keychain/-/keychain-1.0.4.tgz#c590ecdfffd7e733d63ca85bd44dc7d49c29ff7e"
+  integrity sha512-+d58dJnYj4NIExfgXzbqveg2xRjzj06d6tbMLPhHpE7EeLpIkzbh7y7+6+dpzyoJaAch33PSTj9IktXiv6KDcg==
+
 "@jimp/bmp@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@jimp/bmp/-/bmp-0.14.0.tgz#6df246026554f276f7b354047c6fff9f5b2b5182"

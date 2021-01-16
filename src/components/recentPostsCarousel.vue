@@ -18,14 +18,14 @@
         height="250px"
         width="450px"
         @mouseenter="autoplaySlides = false"
-        @mouseleave="autoplaySlides = true"
         class="bg-dark text-white shadow-2 rounded-borders"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
           <div class="custom-caption">
             <router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link><br />
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
-            <span class="text-caption">{{ timeDelta(post.created) }}</span>
+            <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
+            <span class="text-caption" v-if="post.json_metadata.description">{{ post.json_metadata.description }}</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>

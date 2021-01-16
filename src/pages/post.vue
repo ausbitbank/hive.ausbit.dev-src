@@ -51,7 +51,7 @@
                   <q-icon name="monetization_on"/>
                 </q-item-section>
                 <q-item-section class="text-caption" title="Pending payout value" v-if="post.pending_payout_value !== '0.000 HBD'">
-                  {{ post.pending_payout_value }}
+                  {{ post.pending_payout_value.split(' ')[0] }} Hive Rewards
                 </q-item-section>
                 <q-item-section v-if="post.pending_payout_value !== '0.000 HBD'" title="Cashout time">
                   {{ timeDelta(post.cashout_time) }}
@@ -107,6 +107,13 @@
               </q-item>
             </q-list>
           </q-card-section>
+          <q-card-section v-if="loggedInUser && postPastPayout" class="text-caption">
+            <div>This post is past its payout window.</div>
+            <div>You can still vote, but it will not affect rewards.</div>
+          </q-card-section>
+          <q-card-section v-if="loggedInUser">
+            <vote :author='author' :permlink="permlink" :active_votes="this.post.active_votes"/>
+          </q-card-section>
           <q-card-section>
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
           </q-card-section>
@@ -124,9 +131,10 @@ import Card3PostsContent from 'components/Card3PostsContent.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
 import moment from 'moment'
+import vote from 'components/vote.vue'
 export default {
   name: 'postView',
-  components: { Card3PostsContent: Card3PostsContent, recentPostsCarousel, comments },
+  components: { Card3PostsContent, recentPostsCarousel, comments, vote },
   data () {
     return {
       post: null,
@@ -177,6 +185,20 @@ export default {
   watch: {
     $route: function () {
       this.init()
+    }
+  },
+  computed: {
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    },
+    postPastPayout: function () {
+      var now = moment.utc()
+      var stamp = moment.utc(this.post.cashout_time)
+      if (now > stamp) {
+        return true
+      } else {
+        return false
+      }
     }
   },
   methods: {

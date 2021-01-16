@@ -1,35 +1,26 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar class="bg-dark text-primary">
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        />
-
+  <q-layout view="hHh lpR fFf">
+    <q-header reveal elevated>
+      <q-toolbar reveal elevated class="bg-dark text-primary">
+        <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
           <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></router-link>
           hive.ausbit.dev
         </q-toolbar-title>
         <q-form @submit="onSearchSubmit" @reset="onSearchReset">
-          <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Account, Txid or Block">
+          <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Search Account, Txid or Block">
           <template v-slot:append>
-            <q-icon v-if="search === ''" name="search" />
-            <q-icon v-else name="clear" class="cursor-pointer" @click="search = ''" />
+            <q-icon v-if="search !== ''" name="search" @click="onSearchSubmit" />
+            <q-icon v-if="search !== ''" name="clear" class="cursor-pointer" @click="search = ''" />
           </template>
         </q-input>
         </q-form>
+        <q-btn flat dense round aria-label="Login" @click="rightDrawerOpen = !rightDrawerOpen" class="hvr">
+          <q-avatar><q-img :src="userAvatar" /></q-avatar>
+        </q-btn>
       </q-toolbar>
     </q-header>
-
-    <q-drawer
-      v-model="leftDrawerOpen"
-      bordered
-    >
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
       <q-list>
         <q-item-label header>
           <!-- <q-icon name="img:statics/badge_powered-by-hive_dark.svg" size="lg" /> -->
@@ -45,6 +36,7 @@
     <q-page-container class="gradientBg">
       <router-view />
     </q-page-container>
+    <user-login :drawerState="rightDrawerOpen"/>
   </q-layout>
 </template>
 <style>
@@ -62,10 +54,12 @@ animation: gradient 15s ease infinite;
 </style>
 <script>
 import EssentialLink from 'components/EssentialLink'
+import userLogin from 'components/userLoginDrawer.vue'
 export default {
   name: 'MainLayout',
   components: {
-    EssentialLink
+    EssentialLink,
+    userLogin
   },
   methods: {
     onSearchSubmit () {
@@ -83,10 +77,21 @@ export default {
       this.search = ''
     }
   },
+  computed: {
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    },
+    userAvatar: {
+      get () {
+        return 'https://images.hive.blog/u/' + this.$store.state.hive.user.username + '/avatar'
+      }
+    }
+  },
   data () {
     return {
       search: '',
       leftDrawerOpen: false,
+      rightDrawerOpen: false,
       searchSuggestions: null,
       essentialLinks: [
         {

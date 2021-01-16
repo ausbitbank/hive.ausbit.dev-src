@@ -1,3 +1,3 @@
-export function setUsername (state, username) {
-  state.username = username
+export function updateLoggedInUser (state, username) {
+  state.user.username = username
 }

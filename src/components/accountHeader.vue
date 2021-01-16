@@ -12,7 +12,7 @@
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
             <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
-            <span v-if="postingJsonMeta.profile.pinned" title="Pinned Post"><a :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><a v-if="postingJsonMeta.profile.pinned !== 'none'" :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.email" title="Email"><a :href="returnServiceLink('email', postingJsonMeta.profile.email)"><q-avatar><q-icon name="email" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', postingJsonMeta.profile.protonmail)"><q-avatar><q-icon name="img:statics/protonmail.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.ipfs" title="Inter Planetary File System"><a :href="returnServiceLink('ipfs', postingJsonMeta.profile.ipfs)"><q-avatar><q-icon name="img:statics/ipfs.svg" class="hvr" /></q-avatar></a></span>
@@ -54,25 +54,6 @@
       </div>
     </div>
 </template>
-<style scoped>
-/* Grow Shadow */
-.hvr {
-  display: inline-block;
-  vertical-align: middle;
-  -webkit-transform: perspective(1px) translateZ(0);
-  transform: perspective(1px) translateZ(0);
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0);
-  -webkit-transition-duration: 0.3s;
-  transition-duration: 0.3s;
-  -webkit-transition-property: box-shadow, transform;
-  transition-property: box-shadow, transform;
-}
-.hvr:hover, .hvr:focus, .hvr:active {
-  box-shadow: 0 10px 10px -10px rgba(227, 19, 55, 0.5);
-  -webkit-transform: scale(1.4);
-  transform: scale(1.4) rotate(-355deg);
-}
-</style>
 <script>
 import sanitize from 'sanitize-html'
 export default {
