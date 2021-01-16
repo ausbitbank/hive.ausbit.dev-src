@@ -35,10 +35,6 @@
     <q-page-container class="gradientBg">
       <router-view />
     </q-page-container>
-    <user-login :drawerState="rightDrawerOpen"/>
-    <q-drawer v-model="notificationDrawerOpen" overlay elevated side="right">
-      <notifications />
-    </q-drawer>
   </q-layout>
 </template>
 <style>
@@ -90,9 +86,7 @@ export default {
     return {
       search: '',
       leftDrawerOpen: false,
-      rightDrawerOpen: false,
       searchSuggestions: null,
-      notificationDrawerOpen: false,
       essentialLinks: [
         {
           title: 'Create an Account',
