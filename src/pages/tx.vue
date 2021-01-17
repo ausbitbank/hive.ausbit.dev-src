@@ -5,7 +5,7 @@
       <q-card-section>
         <div class="text-h6">Transaction {{ txId }}</div>
         <div class="text-subtitle"> Included in
-          <span><router-link :to="returnBlockLink(tx.block_num)"> Block {{ tidyNumber(tx.block_num) }}</router-link></span>
+          <span><router-link :to="returnBlockLink(tx.block)"> Block {{ tidyNumber(tx.block) }}</router-link></span>
         </div>
       </q-card-section>
       <q-card-section>
@@ -32,15 +32,29 @@ export default {
   data () {
     return {
       txId: this.$route.params.txId,
-      tx: null
+      tx: null,
+      blockNum: null,
+      blockOps: null
     }
   },
   computed: {
   },
   methods: {
     getTx (txId) {
-      this.$hive.api.getTransactionAsync(txId)
-        .then(tx => this.setTx(tx))
+      var params = { transaction_id: txId }
+      this.$hive.api.callAsync('transaction_status_api.find_transaction', params)
+        .then(res => {
+          console.log('Tx found in block ' + res.block_num)
+          this.getBlockOps(res.block_num)
+        })
+    },
+    getTxFromBlockOps (blockOps) {
+      this.blockOps = blockOps
+      this.tx = (this.blockOps.filter(op => op.trx_id === this.txId))[0]
+    },
+    getBlockOps (blocknum) {
+      this.$hive.api.getOpsInBlockAsync(blocknum, false)
+        .then(blockOps => this.getTxFromBlockOps(blockOps))
         .catch(error => console.log(error))
     },
     setTx (tx) {

@@ -25,7 +25,7 @@
             <router-link :to="returnPostPath(post.author, post.permlink)">{{ s(post.title).substr(0,100) }}</router-link><br />
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
-            <span class="text-caption wrap" v-if="post.json_metadata.description">{{ s(post.json_metadata.description).substr(0,150) }}</span>
+            <span class="text-caption wrap" v-if="post.json_metadata.description">{{ s(post.json_metadata.description).substr(0,120) }}</span>
             <span class="text-caption wrap" v-else>{{ s(post.body).substr(0,150) }}..</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
