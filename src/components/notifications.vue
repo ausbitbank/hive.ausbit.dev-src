@@ -4,7 +4,7 @@
     <q-popup-proxy>
     <q-card flat bordered class="text-center">
       <q-card-section class="text-h6">
-        Notifications <q-btn flat icon="check_circle" color="green" title="Mark all notifications as read" @click="markNotificationsRead(notifications[0].date)"/>
+        Notifications <q-btn flat icon="check_circle" color="green" title="Mark all notifications as read" @click="markNotificationsRead()"/>
       </q-card-section>
       <q-separator />
       <q-card-section>
@@ -42,7 +42,7 @@
 </template>
 <script>
 import moment from 'moment'
-import { keychain } from '@hiveio/keychain'
+// import { keychain } from '@hiveio/keychain'
 export default {
   name: 'notifications',
   props: [],
@@ -97,9 +97,16 @@ export default {
           }
         })
     },
-    async markNotificationsRead (date) {
-      var json = '{ "date": ' + date + '}'
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'setLastRead', json, 'Mark notifications as read up until ' + date, 'test')
+    markedNotificationsRead (x) {
+      console.log(x)
+    },
+    async markNotificationsRead () {
+      var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
+      window.hive_keychain.requestCustomJson(this.loggedInUser, 'notify', 'Posting', json, 'Mark notifications as read', function (response) {
+        console.log(response)
+      })
+      /* window.hive_keychain.requestCustomJson(username, id, KeyType, json of request, friendly message for user, callback (res) {
+      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, json, 'Posting', 'Mark Notifications as read')
       if (success) {
         this.notifications = []
         this.getUnreadNotificationCount()
@@ -112,7 +119,7 @@ export default {
         } else {
           console.info(msg)
         }
-      }
+      } */
     },
     filterMentions (n) {
       if (n.type === 'mention') {
