@@ -2,18 +2,18 @@
   <q-btn v-if="loggedInUser && this.$store.state.hive.user.unreadNotificationCount > 0" flat icon="notifications">
     <q-badge color="red" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
-    <q-card flat bordered class="text-center">
-      <q-card-section class="text-h6">
-        Notifications <q-btn flat icon="check_circle" color="green" title="Mark all notifications as read" @click="markNotificationsRead()"/>
+    <q-card dense flat bordered class="text-center q-pa-none q-ma-none">
+      <q-card-section horizontal class="text-title flex-center text-center">
+        Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator />
-      <q-card-section>
+      <q-card-section class="q-ma-none q-pa-none">
       <q-spinner-pie color="secondary" size="5em" v-if="loading" />
-      <div v-if="this.notifications !== null">
-      <q-item v-for="n in this.notifications" :key="n.index">
+      <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
+      <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
         <q-item-section avatar>
           <router-link :to="n.url">
-            <q-avatar>
+            <q-avatar size="md">
               <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" />
             </q-avatar>
           </router-link>
@@ -30,7 +30,7 @@
           </q-item-label>
         </q-item-section>
       </q-item>
-      </div>
+      </q-list>
       </q-card-section>
       <q-separator />
       <q-card-actions v-if="false">
