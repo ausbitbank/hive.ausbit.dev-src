@@ -121,11 +121,8 @@ export default {
         })
     },
     s (input) {
-      var options = { allowedTags: [] }
+      var options = { allowedTags: [], allowedAttributes: {} }
       return sanitize(input, options)
-        .replace(/<a\b[^>]*>(.*?)<\/a>/i, '') // remove links
-        .replace('![[^]]*?]([^)]+)', '') // remove markdown images
-        .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '') // remove tags
     }
   },
   mounted () {
