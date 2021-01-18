@@ -63,7 +63,7 @@ export default {
       if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'cancel' } return 'thumb_up' } else { return 'thumb_down' }
     },
     voteLabel: function () {
-      if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'Undo vote on this post' } return 'Upvote this post at ' + this.weight + '%' } else { return 'Downvote this post at ' + this.weight + '%' }
+      if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'Cancel vote on this post' } return this.weight + '% upvote this post' } else { return this.weight + '% downvote this post' }
     }
   },
   methods: {

@@ -30,6 +30,11 @@
                   <router-link :to="linkAccount(author)">{{ author }}</router-link>
                 </q-item-section>
               </q-item>
+              <q-item v-if="postMeta.description">
+                <q-item-section v-if="postMeta.description">
+                  <span v-html="this.renderer.render(postMeta.description)" />
+                </q-item-section>
+              </q-item>
               <q-item>
                 <q-item-section avatar>
                   <q-icon name="history" />
@@ -76,20 +81,20 @@
                   {{ post.category }}
                 </q-item-section>
               </q-item>
-              <q-item v-if="post.json_metadata && JSON.parse(post.json_metadata).tags" title="Tags">
+              <q-item v-if="postMeta && postMeta.tags" title="Tags">
                 <q-item-section avatar>
                     <q-icon name="label" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
-                  <span v-for="tag in JSON.parse(post.json_metadata).tags" :key="tag.index">{{ tag }}</span>
+                  <span v-for="tag in postMeta.tags" :key="tag.index">{{ tag }}</span>
                 </q-item-section>
               </q-item>
-              <q-item v-if="post.json_metadata && JSON.parse(post.json_metadata).app" title="App">
+              <q-item v-if="postMeta && postMeta.app" title="App">
                 <q-item-section avatar>
                   <q-icon name="fingerprint" />
                 </q-item-section>
                 <q-item-section>
-                  {{ JSON.parse(post.json_metadata).app }}
+                  {{ postMeta.app }}
                 </q-item-section>
               </q-item>
               <q-item title="Votes" v-if="post.active_votes.length > 0">
@@ -104,6 +109,14 @@
                     <q-table title="Votes" :data="post.active_votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 50 }" dense bordered separator="cell" />
                   </q-card>
                 </q-dialog>
+              </q-item>
+              <q-item class="text-left" v-if="postMeta">
+                <q-item-section avatar v-if="false">
+                  <q-icon name="info" color="blue" />
+                </q-item-section>
+                <q-item-section>
+                  <json-viewer :data="postMeta" :deep="0" title="Post json_metadata" />
+                </q-item-section>
               </q-item>
             </q-list>
           </q-card-section>
@@ -132,9 +145,12 @@ import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
+import jsonViewer from 'components/jsonViewer.vue'
+import { DefaultRenderer } from 'steem-content-renderer'
+// import sanitize from 'sanitize-html'
 export default {
   name: 'postView',
-  components: { Card3PostsContent, recentPostsCarousel, comments, vote },
+  components: { Card3PostsContent, recentPostsCarousel, comments, vote, jsonViewer },
   data () {
     return {
       post: null,
@@ -179,7 +195,22 @@ export default {
           field: 'time',
           sortable: true
         }
-      ]
+      ],
+      renderer: new DefaultRenderer({
+        baseUrl: 'https://hive.ausbit.dev/',
+        breaks: true,
+        skipSanitization: false,
+        allowInsecureScriptTags: false,
+        addNofollowToLinks: true,
+        doNotShowImages: false,
+        ipfsPrefix: '',
+        assetsWidth: 640,
+        assetsHeight: 480,
+        imageProxyFn: (url) => url,
+        usertagUrlFn: (account) => '/@' + account,
+        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
+        isLinkSafeFn: (url) => true
+      })
     }
   },
   watch: {
@@ -198,6 +229,13 @@ export default {
         return true
       } else {
         return false
+      }
+    },
+    postMeta: function () {
+      if (this.post.json_metadata) {
+        return JSON.parse(this.post.json_metadata)
+      } else {
+        return null
       }
     }
   },

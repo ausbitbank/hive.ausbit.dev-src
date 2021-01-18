@@ -8,7 +8,7 @@
       </q-card-section>
       <q-separator />
       <q-card-section class="q-ma-none q-pa-none">
-      <q-spinner-pie color="secondary" size="5em" v-if="loading" />
+      <q-spinner-pie color="primary" size="md" v-if="loading" />
       <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
       <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
         <q-item-section avatar>

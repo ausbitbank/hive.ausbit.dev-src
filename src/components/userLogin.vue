@@ -1,15 +1,13 @@
 <template>
   <q-btn flat dense round aria-label="Login" class="hvr q-ml-md">
     <q-avatar>
-      <q-img :src="userAvatar" />
+      <q-img :src="userAvatar"/>
     </q-avatar>
+    <span class="q-ma-sm">{{ loggedInUser }}</span>
     <q-popup-proxy>
       <q-card flat bordered>
       <div v-if="loggedInUser">
-        <q-list bordered padding class="rounded-borders text-primary">
-          <q-item-label header>
-            {{ loggedInUser }}
-          </q-item-label>
+        <q-list bordered class="rounded-borders text-primary">
           <q-item clickable :to="getAccountLink(loggedInUser)">
             <q-item-section avatar><q-icon name="perm_identity" /></q-item-section>
             <q-item-section>Profile</q-item-section>

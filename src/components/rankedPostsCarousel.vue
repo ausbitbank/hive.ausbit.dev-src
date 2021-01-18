@@ -54,6 +54,7 @@ a:visited { color: #1d8ce0; }
 <script>
 import moment from 'moment'
 import sanitize from 'sanitize-html'
+import { DefaultRenderer } from 'steem-content-renderer'
 export default {
   name: 'trendingPostsCarousel',
   data () {
@@ -63,7 +64,22 @@ export default {
       slide: null,
       autoplay: true,
       settings: false,
-      newSort: null
+      newSort: null,
+      renderer: new DefaultRenderer({
+        baseUrl: 'https://hive.ausbit.dev/',
+        breaks: false,
+        skipSanitization: false,
+        allowInsecureScriptTags: false,
+        addNofollowToLinks: true,
+        doNotShowImages: true,
+        ipfsPrefix: '',
+        assetsWidth: 640,
+        assetsHeight: 480,
+        imageProxyFn: (url) => url,
+        usertagUrlFn: (account) => '/@' + account,
+        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
+        isLinkSafeFn: (url) => true
+      })
     }
   },
   props: {
@@ -121,8 +137,10 @@ export default {
         })
     },
     s (input) {
-      var options = { allowedTags: [], allowedAttributes: {} }
-      return sanitize(input, options)
+      // Render markdown to html, strip all tags and attributes, remove URLS
+      var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
+      return sanitize(this.renderer.render(input), options)
+        .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '')
     }
   },
   mounted () {

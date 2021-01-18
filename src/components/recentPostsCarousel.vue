@@ -25,8 +25,8 @@
             <router-link :to="returnPostPath(post.author, post.permlink)">{{ s(post.title).substr(0,100) }}</router-link><br />
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
-            <span class="text-caption wrap" v-if="post.json_metadata.description">{{ s(post.json_metadata.description).substr(0,120) }}</span>
-            <span class="text-caption wrap" v-else>{{ s(post.body).substr(0,150) }}..</span>
+            <span class="text-caption wrap" v-if="post.json_metadata.description"> {{s(post.json_metadata.description).substr(0,100)}}</span>
+            <span class="text-caption wrap" v-else> {{ s(post.body).substr(0,100) }}</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
@@ -50,6 +50,7 @@ a:visited { color: #1d8ce0; }
 <script>
 import moment from 'moment'
 import sanitize from 'sanitize-html'
+import { DefaultRenderer } from 'steem-content-renderer'
 export default {
   name: 'recentPostsCarousel',
   data () {
@@ -61,7 +62,22 @@ export default {
       limit: 10,
       settings: false,
       loading: false,
-      autoplaySlides: this.autoplay
+      autoplaySlides: this.autoplay,
+      renderer: new DefaultRenderer({
+        baseUrl: 'https://hive.ausbit.dev/',
+        breaks: false,
+        skipSanitization: false,
+        allowInsecureScriptTags: false,
+        addNofollowToLinks: true,
+        doNotShowImages: true,
+        ipfsPrefix: '',
+        assetsWidth: 640,
+        assetsHeight: 480,
+        imageProxyFn: (url) => url,
+        usertagUrlFn: (account) => '/@' + account,
+        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
+        isLinkSafeFn: (url) => true
+      })
     }
   },
   watch: {
@@ -139,8 +155,10 @@ export default {
         })
     },
     s (input) {
-      var options = { allowedTags: [], allowedAttributes: {} }
-      return sanitize(input, options)
+      // Render markdown to html, strip all tags and attributes, remove URLS
+      var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
+      return sanitize(this.renderer.render(input), options)
+        .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '')
     }
   },
   mounted () {
