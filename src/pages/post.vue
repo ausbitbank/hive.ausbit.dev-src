@@ -17,9 +17,9 @@
         </q-card>
       </div>
       <div class="col-sm-12 col-md-4 text-center justify-center">
-        <q-card dense flat bordered class="" v-if="post" style="min-width: 250px">
+        <q-card dense flat bordered class="q-pa-none q-ma-none" v-if="post">
           <q-card-section>
-            <q-list dense>
+            <q-list dense separator>
               <q-item>
                 <q-item-section avatar>
                 <q-avatar>
@@ -37,7 +37,7 @@
               </q-item>
               <q-item>
                 <q-item-section avatar>
-                  <q-icon name="history" />
+                  <q-icon name="history" color="blue-grey"/>
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
                   Posted {{ timeDelta(post.created) }}
@@ -45,15 +45,15 @@
               </q-item>
               <q-item v-if="post.last_update !== post.created">
                 <q-item-section avatar>
-                    <q-icon name="create" />
+                    <q-icon name="create" color="red" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
                   <a :href="GetEditHistoryUrl(post.author, post.permlink)" target="_blank">Edited {{ timeDelta(post.last_update) }}</a>
                 </q-item-section>
               </q-item>
               <q-item v-if="post.pending_payout_value !== '0.000 HBD' || post.total_payout_value !== '0.000 HBD'">
-                  <q-item-section avatar>
-                  <q-icon name="monetization_on"/>
+                <q-item-section avatar>
+                  <q-icon name="monetization_on" color="green"/>
                 </q-item-section>
                 <q-item-section class="text-caption" title="Pending payout value" v-if="post.pending_payout_value !== '0.000 HBD'">
                   {{ post.pending_payout_value.split(' ')[0] }} Hive Rewards
@@ -65,9 +65,33 @@
                   {{ post.total_payout_value }}
                 </q-item-section>
               </q-item>
+              <q-item v-if="post.max_accepted_payout === '0.000 HBD'">
+                <q-item-section avatar>
+                  <q-icon name="money_off" color="grey" />
+                </q-item-section>
+                <q-item-section caption class="text-caption">
+                  Author declined payout on this post
+                </q-item-section>
+              </q-item>
+              <q-item v-if="post.percent_hbd === 0">
+                <q-item-section avatar>
+                  <q-icon name="offline_bolt" title="100% Power Up Post" color="yellow" />
+                </q-item-section>
+                <q-item-section caption class="text-caption">
+                  Rewards 100% powered up
+                </q-item-section>
+              </q-item>
+              <q-item v-if="post.beneficiaries.length > 0">
+                <q-item-section avatar>
+                  <q-icon name="alt_route" title="Sharing payout with" color="purple" />
+                </q-item-section>
+                <q-item-section v-for="bene in post.beneficiaries" :key="bene.index">
+                  <router-link :to="linkAccount(bene.account)">{{ bene.account }}</router-link>{{ bene.weight / 100}} %
+                </q-item-section>
+              </q-item>
               <q-item v-if="post.community && post.community_title" title="Community">
                 <q-item-section avatar>
-                    <q-icon name="label_important" />
+                    <q-icon name="label_important" color="amber" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
                   {{ post.community_title }} Community
@@ -75,7 +99,7 @@
               </q-item>
               <q-item v-else-if="post.category" title="Category">
                 <q-item-section avatar>
-                    <q-icon name="label_important" />
+                    <q-icon name="label_important" color="orange"/>
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
                   {{ post.category }}
@@ -83,7 +107,7 @@
               </q-item>
               <q-item v-if="postMeta && postMeta.tags" title="Tags">
                 <q-item-section avatar>
-                    <q-icon name="label" />
+                    <q-icon name="label" color="primary" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
                   <span v-for="tag in postMeta.tags" :key="tag.index">{{ tag }}</span>
@@ -91,7 +115,7 @@
               </q-item>
               <q-item v-if="postMeta && postMeta.app" title="App">
                 <q-item-section avatar>
-                  <q-icon name="fingerprint" />
+                  <q-icon name="fingerprint" color="brown" />
                 </q-item-section>
                 <q-item-section>
                   {{ postMeta.app }}
@@ -99,7 +123,7 @@
               </q-item>
               <q-item title="Votes" v-if="post.active_votes.length > 0">
                 <q-item-section avatar>
-                  <q-icon name="how_to_vote" />
+                  <q-icon name="how_to_vote" color="purple" />
                 </q-item-section>
                 <q-item-section>
                   <span class="text-blue text-bold cursor-pointer" @click="showVotes = true">{{ post.active_votes.length }} votes</span>
@@ -109,6 +133,9 @@
                     <q-table title="Votes" :data="post.active_votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 50 }" dense bordered separator="cell" />
                   </q-card>
                 </q-dialog>
+              </q-item>
+              <q-item v-if="post.stats">
+                  flag weight {{ post.stats.flag_weight }}
               </q-item>
               <q-item class="text-left" v-if="postMeta">
                 <q-item-section avatar v-if="false">
