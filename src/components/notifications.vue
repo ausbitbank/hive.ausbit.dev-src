@@ -145,7 +145,9 @@ export default {
     }
   },
   mounted () {
-    this.getUnreadNotificationCount()
+    if (this.loggedInUser) {
+      this.getUnreadNotificationCount()
+    }
   }
 }
 </script>
