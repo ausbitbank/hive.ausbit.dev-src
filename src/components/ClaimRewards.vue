@@ -1,9 +1,9 @@
 <template>
-  <q-btn label="Claim Rewards" dense rounded color="secondary" @click="dialog = true; claimRewardsKeychain()">
+  <q-btn label="Claim Rewards" icon="redeem" v-if="!submitted" dense rounded color="primary" @click="dialog = true; claimRewardsKeychain()">
     <q-dialog v-model="dialog">
       <q-card class="q-pa-md justify">
         <div class="text-h5">Claiming Rewards</div>
-        <q-spinner-pie color="secondary" v-if="loading" size="lg" />
+        <q-spinner-pie color="primary" v-if="loading" size="sm" />
       </q-card>
     </q-dialog>
   </q-btn>
@@ -11,12 +11,13 @@
 
 <script>
 export default {
-  name: 'ClaimRewards',
+  name: 'claimRewards',
   props: ['A'],
   data () {
     return {
       dialog: false,
       loading: true,
+      submitted: false,
       username: this.A.name
     }
   },
@@ -29,6 +30,7 @@ export default {
       window.hive_keychain.requestBroadcast(this.username, operations, 'posting', function (response) {
         this.loading = false
         this.dialog = false
+        this.submitted = true
       }.bind(this))
     }
   }

@@ -73,7 +73,7 @@
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                     {{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD
+                                  {{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD
                                 </q-item-label>
                                 <q-item-label caption>
                                   Liquid
@@ -105,12 +105,25 @@
                               <q-item-label>
                                 <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
                                 <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
+                              </q-item-label>
+                              <q-item-label>
                                 <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section top side>
                                 <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
                             </q-item-section>
+                        </q-item>
+                        <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
+                          <q-item-section>
+                            <div>Outstanding Rewards:</div>
+                            <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
+                            <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
+                            <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
+                          </q-item-section>
+                          <q-item-section v-if="account.name === loggedInUser">
+                            <claim-rewards :A="account"/>
+                          </q-item-section>
                         </q-item>
                     </q-list>
                     <div id="scrollTargetRef">
@@ -300,23 +313,28 @@
                             </q-avatar>
                           </q-item-section>
                           <q-item-section>
-                            <q-item-label caption v-if="hiveEngineTokenInfo">
-                              <q-expansion-item expand-separator dense dense-toggle :caption="token.symbol">
-                                <q-card dense>
-                                  <q-card-section>
-                                    {{ returnTokenInfoMeta(token.symbol).desc }}
-                                  </q-card-section>
-                                  <q-card-section caption>
-                                    Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
-                                    Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
-                                    Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
-                                    Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
-                                    Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
-                                    <a :href="returnMarketLink(token.symbol)" target="_blank">{{ token.symbol }} Market</a>
-                                  </q-card-section>
-                                </q-card>
-                              </q-expansion-item>
+                            <q-item-label v-if="hiveEngineTokenInfo">
+                              {{ token.symbol }}
                             </q-item-label>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-btn flat icon="info" color="cyan" size="sm">
+                              <q-popup-proxy>
+                              <q-card dense flat bordered>
+                                <q-card-section class="text-caption">
+                                  <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/></q-avatar>{{ token.symbol }}<br />
+                                  {{ returnTokenInfoMeta(token.symbol).desc }}
+                                </q-card-section>
+                                <q-card-section caption class="text-caption">
+                                  Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
+                                  Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
+                                  Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
+                                  Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
+                                  Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
+                                </q-card-section>
+                              </q-card>
+                              </q-popup-proxy>
+                            </q-btn>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
@@ -348,8 +366,11 @@
                             </q-item-label>
                             <q-item-label caption>Value (USD)</q-item-label>
                           </q-item-section>
-                          <q-item-section side>
-                            <q-item-label v-if="token.balance !== '0'"><q-btn dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" /></q-item-label>
+                          <q-item-section side v-if="loggedInUser === username">
+                            <q-item-label>
+                              <q-btn v-if="token.balance !== '0'" dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" title="Transfer token" />
+                              <q-btn type="a" dense icon="transform" color="orange" :href="returnMarketLink(token.symbol)" target="_blank" title="Trade on HiveEngine Market" />
+                            </q-item-label>
                           </q-item-section>
                         </q-item>
                     </q-list>
@@ -556,6 +577,7 @@ const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import { debounce } from 'quasar'
 import accountHeader from 'components/accountHeader.vue'
 import transferDialog from 'components/transferDialog.vue'
+import claimRewards from 'components/claimRewards.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
@@ -603,7 +625,12 @@ export default {
       hbdPriceUsd: null
     }
   },
-  components: { accountHeader, transferDialog },
+  components: { accountHeader, transferDialog, claimRewards },
+  computed: {
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    }
+  },
   methods: {
     sanitize (x) {
       return DOMPurify.sanitize(x)

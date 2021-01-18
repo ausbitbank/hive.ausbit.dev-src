@@ -136,7 +136,7 @@
 
 <script>
 import moment from 'moment'
-import claimRewards from 'components/ClaimRewards.vue'
+import claimRewards from 'components/claimRewards.vue'
 import transfer from 'components/Transfer.vue'
 import moveToSavings from 'components/MoveToSavings.vue'
 import powerUp from 'components/PowerUp.vue'
