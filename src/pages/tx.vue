@@ -5,7 +5,8 @@
       <q-card-section>
         <div class="text-h6">Transaction {{ txId }}</div>
         <div class="text-subtitle"> Included in
-          <span><router-link :to="returnBlockLink(tx.block)"> Block {{ tidyNumber(tx.block) }}</router-link></span>
+          <span v-if="tx.block"><router-link :to="returnBlockLink(tx.block)"> Block {{ tidyNumber(tx.block) }}</router-link></span>
+          <span v-if="tx.block_num"><router-link :to="returnBlockLink(tx.block_num)"> Block {{ tidyNumber(tx.block_num) }}</router-link></span>
         </div>
       </q-card-section>
       <q-card-section>
@@ -34,18 +35,32 @@ export default {
       txId: this.$route.params.txId,
       tx: null,
       blockNum: null,
-      blockOps: null
+      blockOps: null,
+      api: null,
+      txLookupApiNode: 'https://api.hive.blog'
     }
   },
   computed: {
   },
   methods: {
+    getTx2 (txId) {
+      this.api = this.$hive.config.get('url')
+      this.$hive.api.setOptions({ url: 'https://api.hive.blog' })
+      this.$hive.api.getTransactionAsync(txId)
+        .then(tx => this.setTx(tx))
+        .catch(error => console.log(error))
+    },
     getTx (txId) {
       var params = { transaction_id: txId }
       this.$hive.api.callAsync('transaction_status_api.find_transaction', params)
         .then(res => {
-          console.log('Tx found in block ' + res.block_num)
-          this.getBlockOps(res.block_num)
+          if (res.block_num) {
+            console.log('Tx found in block ' + res.block_num)
+            this.getBlockOps(res.block_num)
+          } else {
+            console.log('Unable to find tx with transaction status api, attempting getTransaction api')
+            this.getTx2(txId)
+          }
         })
     },
     getTxFromBlockOps (blockOps) {
@@ -58,6 +73,7 @@ export default {
         .catch(error => console.log(error))
     },
     setTx (tx) {
+      if (this.api !== this.$hive.config.get('url') && this.api !== null) { this.$hive.api.setOptions({ url: this.api }) } // If we changed api node to get a tx, change back to the original now
       this.tx = tx
     },
     timeDelta (timestamp) {

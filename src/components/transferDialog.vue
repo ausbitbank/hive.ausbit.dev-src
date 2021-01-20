@@ -3,7 +3,8 @@
       <div>Transfer {{ tokenName }}</div>
       <div><q-input label="To account" v-model="toAccount" /></div>
       <div><q-input label="Amount" v-model="amount" /></div>
-      <div class="text-center text-caption">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
       <div><q-input label="Memo" v-model="memo" /></div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
@@ -928,7 +929,7 @@ export default {
   name: 'transferDialog',
   data () {
     return {
-      toAccount: '',
+      toAccount: this.to,
       amount: 0.000,
       memo: '',
       err: false,
@@ -947,7 +948,8 @@ export default {
     },
     balance: {
       type: Number,
-      required: true
+      required: false,
+      default: null
     },
     username: {
       type: String,
@@ -957,6 +959,22 @@ export default {
       type: Number,
       required: false,
       default: 3
+    },
+    to: {
+      type: String,
+      required: false,
+      default: ''
+    }
+  },
+  computed: {
+    availableBalance: function () {
+      if (this.network === 'hive' && this.tokenName === 'HIVE') {
+        return this.$store.state.hive.accounts[this.username].balance.split(' ')[0]
+      } else if (this.network === 'hive' && this.tokenName === 'HBD') {
+        return this.$store.state.hive.accounts[this.username].hbd_balance.split(' ')[0]
+      } else {
+        return null
+      }
     }
   },
   methods: {
@@ -973,6 +991,8 @@ export default {
       }
     },
     transferHiveKeychain () {
+      console.log('Trigger transfer')
+      console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)
       window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
         if (response.success === true) {
           this.err = false
@@ -985,7 +1005,6 @@ export default {
       }.bind(this))
     },
     transferHiveEngineKeychain () {
-      // todo
       var json = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
       window.hive_keychain.requestCustomJson(this.username, 'ssc-mainnet-hive', 'Active', json, 'Transfer ' + this.amount + ' ' + this.tokenName + ' to ' + this.toAccount, function (response) {
         if (response.success === true) {
@@ -996,6 +1015,12 @@ export default {
           this.log = response.message
         }
       }.bind(this))
+    }
+  },
+  mounted () {
+    if (this.$store.state.hive.accounts[this.username] === undefined) {
+      console.log('dispatch sent to get account info for ' + this.username)
+      this.$store.dispatch('hive/getAccount', this.username)
     }
   }
 }

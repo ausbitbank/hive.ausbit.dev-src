@@ -134,8 +134,8 @@
                   </q-card>
                 </q-dialog>
               </q-item>
-              <q-item v-if="post.stats">
-                  flag weight {{ post.stats.flag_weight }}
+              <q-item>
+                <tip-button :account="post.author" style="width: 100%" />
               </q-item>
               <q-item class="text-left" v-if="postMeta">
                 <q-item-section avatar v-if="false">
@@ -174,10 +174,11 @@ import moment from 'moment'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
 import { DefaultRenderer } from 'steem-content-renderer'
+import tipButton from 'components/tipButton.vue'
 // import sanitize from 'sanitize-html'
 export default {
   name: 'postView',
-  components: { Card3PostsContent, recentPostsCarousel, comments, vote, jsonViewer },
+  components: { Card3PostsContent, recentPostsCarousel, comments, vote, jsonViewer, tipButton },
   data () {
     return {
       post: null,

@@ -24,7 +24,7 @@
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                     {{ tidyNumber(account.balance.split(' ')[0]) }}
+                                {{ tidyNumber(account.balance.split(' ')[0]) }}
                                 </q-item-label>
                                 <q-item-label caption>
                                   Liquid
@@ -603,7 +603,6 @@ export default {
   name: 'wallet',
   data () {
     return {
-      account: null,
       username: this.$route.params.username,
       tab: 'hive',
       transferHive: false,
@@ -627,6 +626,12 @@ export default {
   },
   components: { accountHeader, transferDialog, claimRewards },
   computed: {
+    account: {
+      cache: false,
+      get () {
+        return this.$store.state.hive.accounts[this.username] || null
+      }
+    },
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
     }
@@ -657,19 +662,15 @@ export default {
       return '/b/' + tx[1].block + '#' + tx[1].virtual_op
     },
     getAccount (username) {
-      this.$hive.api.getAccountsAsync([username])
-        .then((response) => {
-          this.account = response[0]
-        })
-        .catch(() => {
-          console.log('Failed to load profile .. retrying')
-          debounce(this.getAccount(username), 100)
-        })
+      if (this.$store.state.hive.accounts[username] === undefined) {
+        console.log('dispatch sent to get account info for ' + username)
+        this.$store.dispatch('hive/getAccount', username)
+      }
     },
     getGlobalProps () {
       this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then((response) => {
-          this.globalProps = response
+          this.globalProps = response || null
         })
         .catch(() => {
           console.log('Failed to load global properties .. Retrying')
@@ -681,7 +682,7 @@ export default {
         .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hbdPriceUsd = response.data.hive_dollar.usd })
     },
     vestToHive (vests) {
-      if (this.globalProps) {
+      if (this.globalProps !== undefined) {
         return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       } else {
         return null
@@ -812,7 +813,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     init () {
-      if (!this.globalProps) { this.getGlobalProps() }
+      if (this.globalProps !== null || this.globalProps !== undefined) { this.getGlobalProps() }
       this.username = this.$route.params.username
       if (!this.account || this.account.name !== this.username) {
         document.title = this.username + '\'s wallet'

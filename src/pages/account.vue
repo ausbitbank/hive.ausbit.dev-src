@@ -313,7 +313,6 @@ export default {
   },
   data () {
     return {
-      account: null,
       username: this.$route.params.username,
       globalProps: null,
       votingPowerPct: 0.5,
@@ -340,6 +339,12 @@ export default {
     }
   },
   computed: {
+    account: {
+      // cache: false,
+      get () {
+        return this.$store.state.hive.accounts[this.username] || null
+      }
+    },
     accountAge: function () {
       return moment(this.account.created).fromNow()
     },
@@ -488,21 +493,10 @@ export default {
       return this.$hive.formatter.reputation(rep)
     },
     getAccount (username) {
-      this.$hive.api.getAccountsAsync([username])
-        .then((response) => {
-          if (response[0] === undefined) {
-            this.error = true
-            this.errorMessage = 'Account ' + username + ' was not found'
-            console.error(this.errorMessage)
-            this.account = null
-          } else {
-            this.account = response[0]
-          }
-        })
-        .catch(() => {
-          console.log('Failed to load profile .. retrying')
-          debounce(this.getAccount(username), 100)
-        })
+      if (this.$store.state.hive.accounts[username] === undefined) {
+        console.log('dispatch sent to get account info for ' + this.username)
+        this.$store.dispatch('hive/getAccount', this.username)
+      }
     },
     getWitness (username) {
       this.$hive.api.getWitnessByAccountAsync(username)

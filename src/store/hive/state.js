@@ -8,6 +8,7 @@ export default function () {
       state: {},
       notifications: SessionStorage.getItem('notifications') || [],
       unreadNotificationCount: 0
-    }
+    },
+    accounts: {}
   }
 }
