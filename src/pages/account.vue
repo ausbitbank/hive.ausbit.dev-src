@@ -4,7 +4,7 @@
       <q-icon size="lg" name="error" color="yellow" /><br />
       {{ errorMessage }}
     </q-dialog>
-    <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && globalProps !== null && !error">
+    <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null && !error">
       <account-header :globalProps="globalProps" :account="account" :showBalances="true" v-if="globalProps !== null && account !== null"/>
         <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
           <q-card flat bordered class="text-center q-pa-sm q-ma-md">
@@ -314,7 +314,6 @@ export default {
   data () {
     return {
       username: this.$route.params.username,
-      globalProps: null,
       votingPowerPct: 0.5,
       downvotingPowerPct: 0.5,
       resourceCreditsPct: 0.5,
@@ -339,10 +338,15 @@ export default {
     }
   },
   computed: {
-    account: {
-      // cache: false,
+    globalProps: {
       get () {
-        return this.$store.state.hive.accounts[this.username] || null
+        return this.$store.state.hive.globalProps
+      }
+    },
+    account: {
+      cache: false,
+      get () {
+        return this.$store.state.hive.accounts[this.username]
       }
     },
     accountAge: function () {
@@ -363,7 +367,11 @@ export default {
       return this.vestToHive(this.effectiveVests)
     },
     effectiveVests: function () {
-      return parseInt(this.account.vesting_shares.split(' ')[0]) + parseInt(this.account.received_vesting_shares.split(' ')[0]) - parseInt(this.account.delegated_vesting_shares.split(' ')[0]) - parseInt(this.account.vesting_withdraw_rate.split(' ')[0])
+      if (this.account !== undefined && this.account !== null) {
+        return parseInt(this.account.vesting_shares.split(' ')[0]) + parseInt(this.account.received_vesting_shares.split(' ')[0]) - parseInt(this.account.delegated_vesting_shares.split(' ')[0]) - parseInt(this.account.vesting_withdraw_rate.split(' ')[0])
+      } else {
+        return null
+      }
     },
     downvotePower: function () {
       return (this.account.downvote_manabar.current_mana / ((this.effectiveVests / 4) * 1e4)) * 100
@@ -507,14 +515,9 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getGlobalProps () {
-      this.$hive.api.getDynamicGlobalPropertiesAsync()
-        .then((response) => {
-          this.globalProps = response
-        })
-        .catch(() => {
-          console.log('Failed to load global properties .. Retrying')
-          debounce(this.getGlobalProps(), 50)
-        })
+      if (!this.globalProps) {
+        this.$store.dispatch('hive/getGlobalProps')
+      }
     },
     vestToHive (vests) {
       if (this.globalProps) {
@@ -556,19 +559,19 @@ export default {
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
     init () {
+      this.getGlobalProps()
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
       document.title = this.username
-      if (!this.account || this.account.name !== this.username) {
+      if (this.account === undefined || this.account.name !== this.username) {
         this.getAccount(this.username)
         this.getRC(this.username)
         this.getWitness(this.username)
       }
-      if (!this.globalProps) { this.getGlobalProps() }
       this.getAccountHistoryMarker(this.username)
     }
   },
-  mounted () {
+  created () {
     this.init()
   }
 }

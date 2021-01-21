@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
-    <q-card v-if="globalProps !== null">
+    <q-card v-if="globalProps !== undefined && globalProps !== null">
       <q-card-section>
         <div class="text-bold">Rule : HBD Marketcap cannot be more then 10% total HIVE marketcap</div>
         <div>HBD Marketcap = ${{ tidyNumber(hbdCap) }}</div>
@@ -58,17 +58,17 @@ export default {
   name: 'hbd',
   data () {
     return {
-      globalProps: null,
       medianPrice: null,
       daoHbdBalance: 0
     }
   },
   components: { coingecko },
-  watch: {
-  },
-  props: {
-  },
   computed: {
+    globalProps: {
+      get () {
+        return this.$store.state.hive.globalProps
+      }
+    },
     percentColor: function () {
       if ((this.percentCap) >= 9) {
         return 'red'
@@ -79,14 +79,14 @@ export default {
       }
     },
     hiveCap: function () {
-      if (this.globalProps !== null && this.medianPrice !== null) {
+      if (this.globalProps !== undefined && this.medianPrice !== null) {
         return parseFloat(parseFloat(this.globalProps.current_supply.split(' ')[0]) * (parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3) / parseFloat(this.medianPrice.quote.split(' ')[0])).toFixed(3)
       } else {
         return null
       }
     },
     hbdCap: function () {
-      if (this.globalProps) {
+      if (this.globalProps !== undefined) {
         return (parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) - parseFloat(this.daoHbdBalance)).toFixed(3) // HF24 Ignores DAO HBD in debt calculations
       } else {
         return null
@@ -116,16 +116,6 @@ export default {
           debounce(this.getMedianPrice(), 50)
         })
     },
-    getGlobalProps () {
-      this.$hive.api.getDynamicGlobalPropertiesAsync()
-        .then((response) => {
-          this.globalProps = response
-        })
-        .catch(() => {
-          console.log('Failed to load global properties .. Retrying')
-          debounce(this.getGlobalProps(), 50)
-        })
-    },
     getDaoBalance () {
       this.$hive.api.getAccountsAsync(['hive.fund'])
         .then((response) => {
@@ -136,9 +126,11 @@ export default {
   },
   mounted () {
     document.title = 'Hive Dollar Monitor'
-    this.getGlobalProps()
     this.getDaoBalance()
     this.getMedianPrice()
+  },
+  created () {
+    this.$store.dispatch('hive/getGlobalProps')
   }
 }
 </script>

@@ -9,6 +9,8 @@ export default function () {
       notifications: SessionStorage.getItem('notifications') || [],
       unreadNotificationCount: 0
     },
-    accounts: {}
+    accounts: {},
+    posts: {},
+    globalProps: {}
   }
 }

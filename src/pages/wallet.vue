@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex">
-      <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && globalProps !== null">
+      <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
           <q-card flat bordered class="q-ma-md q-pa-md" style="max-width:1000px; max-width:100%; min-width:750px">
             <div class="text-h6 text-center" style="clear:both">Wallet</div>
@@ -304,10 +304,10 @@
                       </div>
                     </div>
                 </q-tab-panel>
-                <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null">
+                <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null && hiveEngineTokenInfo !== null">
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalances" :key="token.index">
-                          <q-item-section dense avatar v-if="hiveEngineTokenInfo">
+                          <q-item-section dense avatar>
                             <q-avatar size="sm">
                               <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
                             </q-avatar>
@@ -626,10 +626,15 @@ export default {
   },
   components: { accountHeader, transferDialog, claimRewards },
   computed: {
+    globalProps: {
+      get () {
+        return this.$store.state.hive.globalProps
+      }
+    },
     account: {
       cache: false,
       get () {
-        return this.$store.state.hive.accounts[this.username] || null
+        return this.$store.state.hive.accounts[this.username]
       }
     },
     loggedInUser: {
@@ -663,19 +668,13 @@ export default {
     },
     getAccount (username) {
       if (this.$store.state.hive.accounts[username] === undefined) {
-        console.log('dispatch sent to get account info for ' + username)
         this.$store.dispatch('hive/getAccount', username)
       }
     },
     getGlobalProps () {
-      this.$hive.api.getDynamicGlobalPropertiesAsync()
-        .then((response) => {
-          this.globalProps = response || null
-        })
-        .catch(() => {
-          console.log('Failed to load global properties .. Retrying')
-          debounce(this.getGlobalProps(), 50)
-        })
+      if (this.globalProps) {
+        this.$store.dispatch('hive/getGlobalProps')
+      }
     },
     getPricesCoingecko () {
       this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=false')
@@ -815,7 +814,7 @@ export default {
     init () {
       if (this.globalProps !== null || this.globalProps !== undefined) { this.getGlobalProps() }
       this.username = this.$route.params.username
-      if (!this.account || this.account.name !== this.username) {
+      if (this.account === undefined || this.account.name !== this.username) {
         document.title = this.username + '\'s wallet'
         this.getAccount(this.username)
         this.getHiveWalletTransactions()

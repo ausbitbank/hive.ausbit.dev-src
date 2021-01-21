@@ -11,3 +11,13 @@ export async function getAccount (context, account) {
       console.error('Failed to load profile')
     })
 }
+
+export async function getGlobalProps (context) {
+  hive.api.getDynamicGlobalPropertiesAsync()
+    .then((response) => {
+      context.commit('updateGlobalProps', response)
+    })
+    .catch(() => {
+      console.log('Failed to load global properties')
+    })
+}

@@ -1,7 +1,8 @@
 <template>
   <q-page class="flex flex-center">
     <div class="q-pa-md row items-start q-gutter-md content-start content-stretch self-stretch col-grow justify-center">
-      <div style="width:450px">
+      <div style="width:400px" class="justify-center">
+        <block :blockNum="0" view="simple" />
         <recent-posts-carousel account="ausbitbank" type="blog" />
         <ranked-posts-carousel sortMethod="trending" />
         <ranked-posts-carousel sortMethod="hot" />
@@ -9,7 +10,6 @@
       <nodes />
       <witnesses />
       <coingecko />
-      <block :blockNum="0" view="simple" />
     </div>
   </q-page>
 </template>

@@ -13,6 +13,10 @@ export function updateUnreadNotificationCount (state, count) {
   SessionStorage.set('unreadNotificationCount', count)
 }
 export function updateAccountData (state, accountData) {
-  state.accounts[accountData.name] = accountData
-  Vue.set(state.accounts, state.accounts[accountData.name], accountData)
+  Vue.set(state.accounts, accountData.name, accountData)
+}
+
+export function updateGlobalProps (state, props) {
+  state.globalProps = props
+  Vue.set(state, state.globalProps, props)
 }
