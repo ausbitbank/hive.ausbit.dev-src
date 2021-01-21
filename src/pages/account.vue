@@ -476,7 +476,9 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getGlobalProps () {
-      if (!this.globalProps) {
+      console.log(this.globalProps)
+      console.log(this.globalProps.length)
+      if (this.globalProps.empty) {
         this.$store.dispatch('hive/getGlobalProps')
       }
     },

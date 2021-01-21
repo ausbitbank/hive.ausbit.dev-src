@@ -11,6 +11,8 @@ export default function () {
     },
     accounts: {},
     posts: {},
-    globalProps: {}
+    globalProps: {
+      empty: true
+    }
   }
 }

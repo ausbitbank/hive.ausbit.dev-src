@@ -6,7 +6,8 @@
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
             <div><router-link :to="getWalletLink(account.name)"><q-icon name="account_balance_wallet" title="View Wallet" /> View Wallet</router-link></div>
         </q-card>
-      <div class="text-h4"><router-link :to="getAccountLink(account.name)"><q-avatar size="2.5em"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link> {{ account.name }}</div>
+      <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
+      <div class="text-h4">{{ account.name }}</div>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>

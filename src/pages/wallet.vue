@@ -102,27 +102,25 @@
                         </q-item>
                         <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
                             <q-item-section>
-                              <q-item-label>
-                                <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
-                                <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
-                              </q-item-label>
-                              <q-item-label>
+                              <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
+                              <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
+                            </q-item-section>
+                            <q-item-section>
                                 <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
-                              </q-item-label>
                             </q-item-section>
                             <q-item-section top side>
                                 <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
                             </q-item-section>
                         </q-item>
                         <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
+                          <q-item-section v-if="account.name === loggedInUser">
+                            <claim-rewards :A="account"/>
+                          </q-item-section>
                           <q-item-section>
                             <div>Outstanding Rewards:</div>
                             <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
                             <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
                             <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
-                          </q-item-section>
-                          <q-item-section v-if="account.name === loggedInUser">
-                            <claim-rewards :A="account"/>
                           </q-item-section>
                         </q-item>
                     </q-list>
@@ -672,7 +670,7 @@ export default {
       }
     },
     getGlobalProps () {
-      if (this.globalProps) {
+      if (this.globalProps.empty) {
         this.$store.dispatch('hive/getGlobalProps')
       }
     },
@@ -681,7 +679,7 @@ export default {
         .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hbdPriceUsd = response.data.hive_dollar.usd })
     },
     vestToHive (vests) {
-      if (this.globalProps !== undefined) {
+      if (!this.globalProps.empty) {
         return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
       } else {
         return null
@@ -812,7 +810,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     init () {
-      if (this.globalProps !== null || this.globalProps !== undefined) { this.getGlobalProps() }
+      if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
       if (this.account === undefined || this.account.name !== this.username) {
         document.title = this.username + '\'s wallet'

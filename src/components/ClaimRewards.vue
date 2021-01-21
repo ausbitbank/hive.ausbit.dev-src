@@ -1,8 +1,8 @@
 <template>
-  <q-btn label="Claim Rewards" icon="redeem" v-if="!submitted" dense rounded color="primary" @click="dialog = true; claimRewardsKeychain()">
+  <q-btn label="Claim Rewards" icon="redeem" dense push color="primary" @click="dialog = true; claimRewardsKeychain()">
     <q-dialog v-model="dialog">
-      <q-card class="q-pa-md justify">
-        <div class="text-h5">Claiming Rewards</div>
+      <q-card class="justify">
+        Claiming Rewards
         <q-spinner-pie color="primary" v-if="loading" size="sm" />
       </q-card>
     </q-dialog>
@@ -17,7 +17,6 @@ export default {
     return {
       dialog: false,
       loading: true,
-      submitted: false,
       username: this.A.name
     }
   },
@@ -30,7 +29,7 @@ export default {
       window.hive_keychain.requestBroadcast(this.username, operations, 'posting', function (response) {
         this.loading = false
         this.dialog = false
-        this.submitted = true
+        this.$store.dispatch('hive/getAccount', this.username)
       }.bind(this))
     }
   }
