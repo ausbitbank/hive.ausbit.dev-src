@@ -17,6 +17,5 @@ export function updateAccountData (state, accountData) {
 }
 
 export function updateGlobalProps (state, props) {
-  state.globalProps = props
-  Vue.set(state, state.globalProps, props)
+  Vue.set(state, 'globalProps', props)
 }

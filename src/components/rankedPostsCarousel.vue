@@ -1,7 +1,7 @@
 <template>
-  <div class="">
+  <div>
     <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
-    <div v-if="posts.length > 0" style="width: 450px; height: 250px;">
+    <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center">
         <q-icon name="trending_up" v-if="this.sortMethod === 'trending'"/>
@@ -65,6 +65,7 @@ export default {
       autoplay: true,
       settings: false,
       newSort: null,
+      autoplaySlides: this.autoplay,
       renderer: new DefaultRenderer({
         baseUrl: 'https://hive.ausbit.dev/',
         breaks: false,

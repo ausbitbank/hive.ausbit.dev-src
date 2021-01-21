@@ -3,7 +3,9 @@
     <q-spinner-grid size="2em" color="primary" v-if="loading" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
-      <div class="text-h6 text-center"><q-icon name="rss_feed" /> <span v-if="type === 'blog'">Recently shared</span><span v-if="type === 'posts'">Recently posted</span> by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <div class="text-h6 text-center">
+        <q-icon name="rss_feed" /> <span v-if="type === 'blog'">Recently shared</span><span v-if="type === 'posts'">Recently posted</span> by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" />
+      </div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
