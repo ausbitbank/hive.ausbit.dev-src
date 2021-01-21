@@ -11,9 +11,9 @@
             </q-card-section>
         </q-card>
         <nodes />
-        <div v-if="globalProps">
+        <div>
             <span v-for="n in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]" :key="n.index">
-                <block :blockNum="globalProps.last_irreversible_block_num - n" view="simple" />
+                <block v-if="globalProps.last_irreversible_block_num !== undefined" :blockNum="globalProps.last_irreversible_block_num - n" view="simple" />
             </span>
         </div>
         </div>
@@ -34,12 +34,16 @@ export default {
   },
   data () {
     return {
-      globalProps: null,
       hardforkVersion: null,
       config: null
     }
   },
   computed: {
+    globalProps: {
+      get () {
+        return this.$store.state.hive.globalProps
+      }
+    }
   },
   methods: {
     getGlobalProps () {
@@ -49,7 +53,7 @@ export default {
   },
   mounted () {
     document.title = 'Hive Network Health'
-    this.getGlobalProps()
+    this.$store.dispatch('hive/getGlobalProps')
     // this.getConfig()
   }
 }

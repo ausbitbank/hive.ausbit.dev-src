@@ -30,7 +30,6 @@ export default {
   name: 'Home',
   data () {
     return {
-      globalProps: null
     }
   },
   components: {

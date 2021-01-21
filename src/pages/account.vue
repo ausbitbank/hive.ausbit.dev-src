@@ -42,11 +42,7 @@
                     Resource Credits
                 </div>
                 <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="RC.percent / 100" color="green" class="q-mt-sm">
-                      <div class="absolute-full flex flex-center">
-                          <q-badge color="black" text-color="primary" :label="RC.percent" />
-                      </div>
-                    </q-linear-progress>
+                    <rc :username="account.name" />
                 </div>
             </q-card-section>
             <q-card-section>
@@ -82,43 +78,6 @@
         <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="posts" />
         <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="blog" />
         <!-- <recent-voted-posts-carousel :account="username" v-if="account.last_vote_time !== '1970-01-01T00:00:00'" /> -->
-        <q-card flat bordered class="q-ma-md">
-            <q-card-section>
-                <div class="text-h6">Resource Credits</div>
-                <q-list bordered separator dense>
-                    <q-item bordered>
-                        <q-item-section>
-                            max_mana
-                        </q-item-section>
-                        <q-item-section side>
-                            {{ RC.max }}
-                        </q-item-section>
-                    </q-item>
-                    <q-item>
-                        <q-item-section>
-                            current_mana
-                        </q-item-section>
-                        <q-item-section side>
-                            {{ RC.current }}
-                        </q-item-section>
-                    </q-item>
-                    <q-item>
-                        <q-item-section>
-                            current_pct
-                        </q-item-section>
-                        <q-item-section side>
-                            {{ RC.percent }}
-                        </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-card-section>
-            <q-card-section class="text-center">
-                <div class="text-bold">Enough credits for approximately:</div>
-                <div>{{ resourceBudgetComments }} comments</div>
-                <div>{{ resourceBudgetVotes }} votes</div>
-                <div>{{ resourceBudgetTransfers }} transfers</div>
-            </q-card-section>
-        </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md">
             <q-card-section>
                 <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']"/>
@@ -300,6 +259,7 @@ import propsList from 'components/propsList.vue'
 import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
+import rc from 'components/rc.vue'
 export default {
   name: 'accountPage',
   components: {
@@ -308,7 +268,8 @@ export default {
     propsList,
     propsEditor,
     accountOperations,
-    accountHeader
+    accountHeader,
+    rc
     // recentVotedPostsCarousel
   },
   data () {

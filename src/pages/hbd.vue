@@ -86,7 +86,7 @@ export default {
       }
     },
     hbdCap: function () {
-      if (this.globalProps !== undefined) {
+      if (this.globalProps.current_hbd_supply !== undefined) {
         return (parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) - parseFloat(this.daoHbdBalance)).toFixed(3) // HF24 Ignores DAO HBD in debt calculations
       } else {
         return null
