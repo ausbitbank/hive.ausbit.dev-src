@@ -8,12 +8,28 @@
       <q-card flat bordered>
       <div v-if="loggedInUser">
         <q-list bordered class="rounded-borders text-primary">
+          <q-item clickable :to="linkFeed(loggedInUser)">
+            <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
+            <q-item-section>Feed</q-item-section>
+          </q-item>
+          <q-item clickable :to="linkBlog(loggedInUser)">
+            <q-item-section avatar><q-icon name="menu_book" color="purple" /></q-item-section>
+            <q-item-section>Blog</q-item-section>
+          </q-item>
+          <q-item clickable :to="linkBlog(loggedInUser)">
+            <q-item-section avatar><q-icon name="library_books" color="deep_purple" /></q-item-section>
+            <q-item-section>Posts</q-item-section>
+          </q-item>
+          <q-item clickable :to="linkReplies(loggedInUser)">
+            <q-item-section avatar><q-icon name="comment" color="blue-grey" /></q-item-section>
+            <q-item-section>Replies</q-item-section>
+          </q-item>
           <q-item clickable :to="getAccountLink(loggedInUser)">
-            <q-item-section avatar><q-icon name="perm_identity" /></q-item-section>
+            <q-item-section avatar><q-icon name="perm_identity" color="indigo" /></q-item-section>
             <q-item-section>Profile</q-item-section>
           </q-item>
           <q-item :to="getWalletLink(loggedInUser)">
-            <q-item-section avatar><q-icon name="account_balance" /></q-item-section>
+            <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
             <q-item-section>Wallet</q-item-section>
           </q-item>
           <q-item>
@@ -111,7 +127,12 @@ export default {
           console.info(msg)
         }
       }
-    }
+    },
+    linkBlog (username) { return '/@' + username + '/blog' },
+    linkPosts (username) { return '/@' + username + '/posts' },
+    linkComments (username) { return '/@' + username + '/comments' },
+    linkReplies (username) { return '/@' + username + '/replies' },
+    linkFeed (username) { return '/@' + username + '/feed' }
   },
   mounted () {
     if (this.$q.sessionStorage.getItem('loggedInUser')) {

@@ -71,12 +71,14 @@
                   </div>
                 </div>
                 <div>
+                  View <router-link :to="linkBlog(username)">Blog</router-link> , <router-link :to="linkPosts(username)">Posts</router-link>, <router-link :to="linkComments(username)">Comments</router-link>, <router-link :to="linkReplies(username)">Replies</router-link>
+                </div>
+                <div>
                   View in : <a :href="linkHiveBlog(username)">hive.blog</a> , <a :href="linkPeakd(username)">peakd</a>
                 </div>
             </q-card-section>
         </q-card>
         <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="posts" />
-        <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="blog" />
         <!-- <recent-voted-posts-carousel :account="username" v-if="account.last_vote_time !== '1970-01-01T00:00:00'" /> -->
         <q-card flat bordered class="q-pa-sm q-ma-md">
             <q-card-section>
@@ -430,7 +432,7 @@ export default {
       var pageReq = this.accountOperationsMarker - (limit * page)
       pageReq = pageReq + limit
       if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
-      if (page === null || page === 1) { pageReq = -1 }
+      if (page === null || page === 1) { pageReq = -1 } // Get most recent activities on page 1
       this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, function (err, response) {
         if (err) { console.log(err) }
         this.accountOperations = response.reverse()
@@ -446,6 +448,11 @@ export default {
     accountLink (username) {
       return '/@' + username
     },
+    linkBlog (username) { return '/@' + username + '/blog' },
+    linkPosts (username) { return '/@' + username + '/posts' },
+    linkComments (username) { return '/@' + username + '/comments' },
+    linkReplies (username) { return '/@' + username + '/replies' },
+    linkFeed (username) { return '/@' + username + '/feed' },
     linkHiveBlog (username) {
       return 'https://hive.blog/@' + username
     },

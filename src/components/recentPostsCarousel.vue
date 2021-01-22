@@ -1,12 +1,13 @@
 <template>
   <div>
-    <q-spinner-grid size="2em" color="primary" v-if="loading" />
-    <div v-if="posts.length > 0">
+    <div>
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <q-icon name="rss_feed" /> <span v-if="type === 'blog'">Recently shared</span><span v-if="type === 'posts'">Recently posted</span> by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" />
+        <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
+      <q-spinner-grid size="2em" color="primary" class="text-center" v-if="loading" />
       <q-carousel
+        v-if="posts.length > 0"
         v-model="slide"
         transition-prev="jump-left"
         transition-next="jump-right"
@@ -34,9 +35,9 @@
         </q-carousel-slide>
       </q-carousel>
       <q-dialog v-model="settings">
-        <q-card class="q-pa-md q-ma-md">
-          <q-input label="account" v-model="account" />
-          <q-btn push label="update" color="primary" @click="settings = false; getRecentPosts()"/>
+        <q-card flat bordered class="q-pa-sm">
+          <q-input label="account" v-model="account" @submit="init()"/>
+          <q-btn push label="update" color="primary" @click="settings = false; init()"/>
         </q-card>
       </q-dialog>
       </q-card>
@@ -65,6 +66,7 @@ export default {
       settings: false,
       loading: false,
       autoplaySlides: this.autoplay,
+      postType: this.type,
       renderer: new DefaultRenderer({
         baseUrl: 'https://hive.ausbit.dev/',
         breaks: false,
@@ -142,10 +144,10 @@ export default {
         jsonrpc: '2.0',
         method: 'bridge.get_account_posts',
         params: {
-          sort: this.type, // blog or posts
+          sort: this.postType, // blog or posts
           account: this.account,
           limit: this.limit,
-          observer: this.account,
+          observer: this.loggedInUser || this.account,
           start_author: null,
           start_permlink: null
         }
@@ -161,10 +163,13 @@ export default {
       var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
       return sanitize(input, options)
       //  .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '')
+    },
+    init () {
+      this.getRecentPosts()
     }
   },
   mounted () {
-    this.getRecentPosts()
+    this.init()
   }
 }
 </script>

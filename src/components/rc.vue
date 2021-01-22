@@ -76,7 +76,6 @@ export default {
   },
   methods: {
     getRcForAccount (account) {
-      console.log('Get RC for account ' + account)
       this.loading = true
       var params = { accounts: [account] }
       this.$hive.api.callAsync('rc_api.find_rc_accounts', params)

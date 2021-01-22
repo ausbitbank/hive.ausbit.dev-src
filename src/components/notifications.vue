@@ -1,10 +1,10 @@
 <template>
-  <q-btn v-if="loggedInUser && this.$store.state.hive.user.unreadNotificationCount > 0" flat icon="notifications">
-    <q-badge color="red" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
+  <q-btn v-if="loggedInUser" flat icon="notifications">
+    <q-badge color="red" v-if="this.$store.state.hive.user.unreadNotificationCount > 0" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
     <q-card dense flat bordered class="text-center q-pa-none q-ma-none">
       <q-card-section horizontal class="text-title flex-center text-center">
-        Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
+        Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator />
       <q-card-section class="q-ma-none q-pa-none">
@@ -42,7 +42,7 @@
 </template>
 <script>
 import moment from 'moment'
-// import { keychain } from '@hiveio/keychain'
+import { keychain } from '@hiveio/keychain'
 export default {
   name: 'notifications',
   props: [],
@@ -92,9 +92,8 @@ export default {
         .then(res => {
           this.unreadNotificationCount = res.unread
           this.loading = false
-          if (this.unreadNotificationCount > 0) {
-            this.getNotifications()
-          }
+          if (this.unreadNotificationCount === 0) { this.notifications = null }
+          if (this.unreadNotificationCount > 0) { this.getNotifications() }
         })
     },
     markedNotificationsRead (x) {
@@ -102,11 +101,7 @@ export default {
     },
     async markNotificationsRead () {
       var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
-      window.hive_keychain.requestCustomJson(this.loggedInUser, 'notify', 'Posting', json, 'Mark notifications as read', function (response) {
-        console.log(response)
-      })
-      /* window.hive_keychain.requestCustomJson(username, id, KeyType, json of request, friendly message for user, callback (res) {
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, json, 'Posting', 'Mark Notifications as read')
+      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
       if (success) {
         this.notifications = []
         this.getUnreadNotificationCount()
@@ -119,7 +114,7 @@ export default {
         } else {
           console.info(msg)
         }
-      } */
+      }
     },
     filterMentions (n) {
       if (n.type === 'mention') {

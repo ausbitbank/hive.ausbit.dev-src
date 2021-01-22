@@ -1,5 +1,5 @@
 <template>
-    <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
+    <div class="col-12 text-center full-wdith" :style='coverImageStyle' v-if="account !== undefined">
         <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances">
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
@@ -61,8 +61,7 @@ export default {
   name: 'accountHeader',
   props: {
     account: {
-      type: Object,
-      required: true
+      required: false
     },
     globalProps: {
       type: Object,
