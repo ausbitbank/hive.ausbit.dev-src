@@ -4,9 +4,9 @@
     <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <q-icon name="trending_up" v-if="this.sortMethod === 'trending'" color="green" />
-        <q-icon name="whatshot" v-if="this.sortMethod === 'hot'" color="red" />
-        {{ this.sortMethod.charAt(0).toUpperCase() + this.sortMethod.slice(1) }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+        <router-link to="/trending" v-if="this.sortMethod === 'trending'"><q-icon name="trending_up" color="green" /> Trending</router-link>
+        <router-link to="/hot" v-if="this.sortMethod === 'hot'"><q-icon name="whatshot" v-if="this.sortMethod === 'hot'" color="red" /> Hot</router-link>
+        <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
