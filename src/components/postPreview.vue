@@ -2,7 +2,12 @@
     <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post">
       <q-card-section horizontal>
         <q-card-section v-if="postImage">
-            <router-link :to="returnPostPath(post.author, post.permlink)"><q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" /></router-link>
+            <router-link :to="returnPostPath(post.author, post.permlink)">
+              <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
+            </router-link>
+              <!-- <q-carousel animated v-model="thumbslide" arrows navigation infinite v-if="postMeta.image.length > 0">
+                <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
+              </q-carousel> -->
         </q-card-section>
         <q-separator vertical v-if="postImage" />
         <q-item>
@@ -19,7 +24,7 @@
       <q-card-section dense class="text-left">
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
           <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
-          <q-btn dense :icon="voteIcon" flat color="secondary" :label="post.active_votes.length"/>
+          <q-btn dense :icon="voteIcon" flat color="secondary" v-if="post.active_votes" :label="post.active_votes.length"><q-popup-proxy v-if="myVote === undefined"><q-banner><vote :votes="post.active_votes" :author="post.author" :permlink="post.permlink" /></q-banner></q-popup-proxy></q-btn>
           <q-btn dense icon="comment" flat color="blue-grey" :label="post.children" />
           <q-btn flat dense>
             <q-icon name="img:statics/hextacular.svg" color="secondary" class="q-mr-sm" />
@@ -37,11 +42,13 @@
 import sanitize from 'sanitize-html'
 import { DefaultRenderer } from 'steem-content-renderer'
 import moment from 'moment'
+import vote from 'components/vote.vue'
 export default {
   name: 'postPreview',
   props: ['post'],
   data () {
     return {
+      thumbslide: 0,
       renderer: new DefaultRenderer({
         baseUrl: 'https://hive.ausbit.dev/',
         breaks: true,
@@ -59,6 +66,7 @@ export default {
       })
     }
   },
+  components: { vote },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }

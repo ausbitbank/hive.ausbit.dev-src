@@ -96,9 +96,6 @@ export default {
           if (this.unreadNotificationCount > 0) { this.getNotifications() }
         })
     },
-    markedNotificationsRead (x) {
-      console.log(x)
-    },
     async markNotificationsRead () {
       var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')

@@ -352,7 +352,6 @@ export default {
         if (this.account.posting_json_metadata) {
           if (JSON.parse(this.account.posting_json_metadata).profile) {
             if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-              console.log(JSON.parse(this.account.posting_json_metadata).profile.cover_image)
               return JSON.parse(this.account.posting_json_metadata).profile.cover_image
             } else {
               return defaultCover
@@ -483,8 +482,6 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getGlobalProps () {
-      console.log(this.globalProps)
-      console.log(this.globalProps.length)
       if (this.globalProps.empty) {
         this.$store.dispatch('hive/getGlobalProps')
       }

@@ -29,7 +29,7 @@ const routes = [
       { path: 'health', component: () => import('pages/health.vue') },
       { path: 'cryptoDomains', component: () => import('pages/cryptoDomains.vue') },
       { path: 'browse', component: () => import('pages/browse.vue') },
-      { path: 'trending/:tag', component: () => import('pages/browse.vue') },
+      /* { path: 'trending/:tag', component: () => import('pages/browse.vue') },
       { path: 'trending', component: () => import('pages/browse.vue') },
       { path: 'created/:tag', component: () => import('pages/browse.vue') },
       { path: 'created', component: () => import('pages/browse.vue') },
@@ -40,7 +40,11 @@ const routes = [
       { path: 'payout/:tag', component: () => import('pages/browse.vue') },
       { path: 'payout', component: () => import('pages/browse.vue') },
       { path: 'payout_comments/:tag', component: () => import('pages/browse.vue') },
-      { path: 'payout_comments', component: () => import('pages/browse.vue') }
+      { path: 'payout_comments', component: () => import('pages/browse.vue') }, */
+      { path: 'c/:username/:sortMethod', component: () => import('pages/browse.vue') },
+      { path: 'c/:username', component: () => import('pages/browse.vue') },
+      { path: ':sortMethod', component: () => import('pages/browse.vue') },
+      { path: ':sortMethod/:tag', component: () => import('pages/browse.vue') }
     ]
   }
 ]

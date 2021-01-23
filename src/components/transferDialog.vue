@@ -991,7 +991,6 @@ export default {
       }
     },
     transferHiveKeychain () {
-      console.log('Trigger transfer')
       console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)
       window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
         if (response.success === true) {
@@ -1019,7 +1018,6 @@ export default {
   },
   mounted () {
     if (this.$store.state.hive.accounts[this.username] === undefined) {
-      console.log('dispatch sent to get account info for ' + this.username)
       this.$store.dispatch('hive/getAccount', this.username)
     }
   }

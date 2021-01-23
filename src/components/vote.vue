@@ -54,7 +54,11 @@ export default {
       get () { return this.$store.state.hive.user.username }
     },
     myVote: function () {
-      return this.active_votes.filter(this.filterMyVote)[0]
+      if (this.active_votes) {
+        return this.active_votes.filter(this.filterMyVote)[0]
+      } else {
+        return undefined
+      }
     },
     voteColor: function () {
       if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'grey' } return 'green' } else { return 'red' }

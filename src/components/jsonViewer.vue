@@ -158,8 +158,6 @@ export default {
     }
   },
   mounted () {
-    // console.log(this.data)
-    // console.log(DOMPurify.sanitize(JSON.parse(this.data)))
   }
 }
 </script>

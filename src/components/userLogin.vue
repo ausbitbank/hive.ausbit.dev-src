@@ -16,7 +16,7 @@
             <q-item-section avatar><q-icon name="menu_book" color="purple" /></q-item-section>
             <q-item-section>Blog</q-item-section>
           </q-item>
-          <q-item clickable :to="linkBlog(loggedInUser)">
+          <q-item clickable :to="linkPosts(loggedInUser)">
             <q-item-section avatar><q-icon name="library_books" color="deep_purple" /></q-item-section>
             <q-item-section>Posts</q-item-section>
           </q-item>

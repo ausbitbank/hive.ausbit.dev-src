@@ -102,7 +102,7 @@
                     <q-icon name="label_important" color="orange"/>
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
-                  {{ post.category }}
+                  <router-link :to="linkDetect(post.category)">{{ post.category }}</router-link>
                 </q-item-section>
               </q-item>
               <q-item v-if="postMeta && postMeta.tags" title="Tags">
@@ -110,7 +110,7 @@
                     <q-icon name="label" color="primary" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
-                  <span v-for="tag in postMeta.tags" :key="tag.index">{{ tag }}</span>
+                  <router-link v-for="tag in postMeta.tags" :key="tag.index" :to="linkTag(tag)">{{ tag }}</router-link>
                 </q-item-section>
               </q-item>
               <q-item v-if="postMeta && postMeta.app" title="App">
@@ -288,6 +288,19 @@ export default {
     },
     linkPost (author, permlink) {
       return '/@' + author + '/' + permlink
+    },
+    linkCommunity (community) {
+      return '/c/' + community
+    },
+    linkTag (tag) {
+      return '/trending/' + tag
+    },
+    linkDetect (link) {
+      if (link.startsWith('hive-')) {
+        return this.linkCommunity(link)
+      } else {
+        return this.linkTag(link)
+      }
     },
     timeDelta (timestamp) {
       var now = moment.utc()

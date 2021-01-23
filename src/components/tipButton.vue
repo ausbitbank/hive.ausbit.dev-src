@@ -59,7 +59,6 @@ export default {
   },
   mounted () {
     if (this.$store.state.hive.accounts[this.account] === undefined) {
-      console.log('dispatch sent to get account info for ' + this.account)
       this.$store.dispatch('hive/getAccount', this.account)
     }
   }
