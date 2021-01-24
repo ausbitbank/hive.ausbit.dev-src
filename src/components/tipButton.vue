@@ -1,11 +1,9 @@
 <template>
   <span>
-    <q-btn outline rounded color="primary" class="q-ma-none q-pa-none">
+    <q-btn outline rounded color="primary" class="q-ma-none q-pa-none" @click="dialog = !dialog">
       <q-icon v-for="coin in coins" :key="coin.index" :name="returnCoinSvg(coin)" /><q-icon name="img:statics/hextacular.svg" class="q-mr-md" /> Send {{ account }} a tip
-      <q-popup-proxy>
-        <tip-dialog :account="account" :accountData="accountData" :accountMeta="accountMeta" :coins="coins" />
-      </q-popup-proxy>
     </q-btn>
+    <tip-dialog v-if="dialog" :account="account" :accountData="accountData" :accountMeta="accountMeta" :coins="coins" />
   </span>
 </template>
 <style>
@@ -19,7 +17,8 @@ export default {
   },
   data () {
     return {
-      supportedCoins: ['bitcoin', 'litecoin', 'ethereum']
+      supportedCoins: ['bitcoin', 'litecoin', 'ethereum'],
+      dialog: false
     }
   },
   props: ['account'],
