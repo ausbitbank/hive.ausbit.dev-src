@@ -13,7 +13,7 @@
         </q-item-label>
       </q-item-section>
       <q-item-section side>
-        <q-btn dense round icon="send" title="Transfer" color="primary" @click="hivetransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr"/>
+        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivetransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr"/>
       </q-item-section>
       <q-item-section side>
         <q-btn dense round icon="content_copy" title="Copy address to clipboard" color="blue-grey" @click="copy(account)" class="hvr"/>
@@ -35,7 +35,7 @@
         </q-item-label>
       </q-item-section>
       <q-item-section side>
-        <q-btn dense round icon="send" title="Transfer" color="primary" @click="hivedollartransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr" />
+        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivedollartransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr" />
       </q-item-section>
       <q-item-section side>
         <q-btn dense round icon="content_copy" color="blue-grey" title="Copy address to clipboard" @click="copy(account)" class="hvr"/>

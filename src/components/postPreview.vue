@@ -1,4 +1,9 @@
 <template>
+    <span>
+    <div v-if="post.reblogged_by" class="text-center">
+      <span class="text-bold">Reblogged By: </span>
+      <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
+    </div>
     <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post">
       <q-card-section horizontal>
         <q-card-section v-if="postImage">
@@ -34,6 +39,7 @@
           <q-btn dense icon="more_horiz" flat color="grey" />
       </q-card-section>
     </q-card>
+    </span>
 </template>
 <style>
 .postPreviewCard { max-width: 95% }
@@ -114,6 +120,9 @@ export default {
     },
     getHiveAvatarUrl (user) {
       return 'https://images.hive.blog/u/' + user + '/avatar'
+    },
+    getAccountLink (user) {
+      return '/@' + user
     },
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } },
     timeDelta (timestamp) {

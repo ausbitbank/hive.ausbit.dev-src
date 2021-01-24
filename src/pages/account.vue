@@ -493,21 +493,6 @@ export default {
         return null
       }
     },
-    getRC (username) { // TODO update this to use hivejs
-      var url = 'https://anyx.io/v1/rc_api/find_rc_accounts?accounts=' + username
-      this.$axios.get(url)
-        .then((res) => {
-          res = res.data
-          this.RC.max = res.rc_accounts[0].max_rc
-          this.RC.current = res.rc_accounts[0].rc_manabar.current_mana
-          var percent = parseFloat((this.RC.current / this.RC.max) * 100).toFixed(2)
-          if (percent > 100.00) { percent = 100 }
-          this.RC.percent = percent
-        })
-        .catch(() => {
-          console.log('error loading RC from anyx.io')
-        })
-    },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
@@ -532,7 +517,6 @@ export default {
       document.title = this.username
       if (this.account === undefined || this.account.name !== this.username) {
         this.getAccount(this.username)
-        this.getRC(this.username)
         this.getWitness(this.username)
       }
       this.getAccountHistoryMarker(this.username)

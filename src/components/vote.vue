@@ -70,6 +70,12 @@ export default {
       if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'Cancel vote on this post' } return this.weight + '% upvote this post' } else { return this.weight + '% downvote this post' }
     }
   },
+  watch: {
+    myVote: function () {
+      console.log('myvote updated')
+      this.weight = (this.myVote.percent / 100)
+    }
+  },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getAccountLink (user) { return '/@' + user },
@@ -92,6 +98,7 @@ export default {
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
   },
   mounted () {
+    this.weight = (this.myVote.percent / 100)
     /* if (this.$q.localStorage.getItem('savedUsers') === null) {
       this.savedUsers = []
     } else {
