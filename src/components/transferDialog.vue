@@ -1,5 +1,7 @@
 <template>
-  <q-card flat bordered class="q-ma-md q-pa-md">
+  <span>
+  <q-spinner-pie color="primary" size="md" v-if="this.$store.state.hive.accounts[this.username] === undefined" />
+  <q-card flat bordered class="q-ma-md q-pa-md" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
       <div>Transfer {{ tokenName }}</div>
       <div><q-input label="To account" v-model="toAccount" /></div>
       <div><q-input label="Amount" v-model="amount" /></div>
@@ -11,6 +13,7 @@
         <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" />
       </div>
   </q-card>
+  </span>
 </template>
 <script>
 
