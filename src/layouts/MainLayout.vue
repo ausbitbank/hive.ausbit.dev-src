@@ -20,7 +20,7 @@
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
-      <q-list>
+      <q-list :class="getBackgroundStyle()">
         <q-item-label header>
           <!-- <q-icon name="img:statics/badge_powered-by-hive_dark.svg" size="lg" /> -->
         </q-item-label>
@@ -29,10 +29,11 @@
           :key="link.title"
           v-bind="link"
         />
+        <q-item><q-item-section><q-toggle v-model="darkBackgroundToggle" :label="getBackgroundLabel()" /></q-item-section></q-item>
       </q-list>
-      <div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
+      <span :class="getBackgroundStyle()"><div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div></span>
     </q-drawer>
-    <q-page-container class="gradientBg">
+    <q-page-container :class="getBackgroundStyle()">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -75,6 +76,20 @@ export default {
     },
     onSearchReset () {
       this.search = ''
+    },
+    getBackgroundStyle () {
+      if (this.darkBackgroundToggle) {
+        return null
+      } else {
+        return 'gradientBg'
+      }
+    },
+    getBackgroundLabel () {
+      if (this.darkBackgroundToggle) {
+        return 'Dark'
+      } else {
+        return 'Fabulous'
+      }
     }
   },
   computed: {
@@ -87,6 +102,7 @@ export default {
       search: '',
       leftDrawerOpen: false,
       searchSuggestions: null,
+      darkBackgroundToggle: true,
       essentialLinks: [
         {
           title: 'Create an Account',
