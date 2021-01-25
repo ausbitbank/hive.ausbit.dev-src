@@ -2,13 +2,13 @@
   <q-btn v-if="loggedInUser" flat icon="notifications">
     <q-badge color="red" v-if="this.$store.state.hive.user.unreadNotificationCount > 0" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
+    <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
     <q-card dense flat bordered class="text-center q-pa-none q-ma-none">
       <q-card-section horizontal class="text-title flex-center text-center">
         Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator />
       <q-card-section class="q-ma-none q-pa-none">
-      <q-spinner-pie color="primary" size="md" v-if="loading" />
       <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
       <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
         <q-item-section avatar>
@@ -37,6 +37,7 @@
         <q-btn flat label="Load more notifications" v-if="unreadNotificationCount > notifications.length"/>
       </q-card-actions>
     </q-card>
+    </transition>
     </q-popup-proxy>
   </q-btn>
 </template>

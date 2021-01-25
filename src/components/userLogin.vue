@@ -7,6 +7,7 @@
     <q-popup-proxy>
       <q-card flat bordered>
       <div v-if="loggedInUser">
+        <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
         <q-list bordered class="rounded-borders text-primary">
           <q-item clickable :to="linkFeed(loggedInUser)">
             <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
@@ -36,6 +37,7 @@
             <q-btn label="Logout" color="red" @click="loggedInUser = ''" icon="exit_to_app" class="text-center hvr" push/>
           </q-item>
         </q-list>
+        </transition>
       </div>
       <q-list v-else>
         <q-item-label header class="text-h5 text-center">

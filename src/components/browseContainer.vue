@@ -13,7 +13,6 @@
       <q-space />
       <q-btn label="Search" @click="getPosts()" />
     </q-toolbar>
-    <q-spinner-pie class="text-center" color="primary" size="lg" v-if="loading" />
     <post-preview v-for="post in posts" :key="post.index" :post="post" />
     <div v-if="posts.length > 0" class="text-center">
       <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />

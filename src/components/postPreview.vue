@@ -1,9 +1,10 @@
 <template>
     <span>
-    <div v-if="post.reblogged_by" class="text-center">
+    <div v-if="post.reblogged_by && this.$route.path.endsWith('feed')" class="text-center">
       <span class="text-bold">Reblogged By: </span>
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
+    <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
     <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post">
       <q-card-section horizontal>
         <q-card-section v-if="postImage">
@@ -19,8 +20,8 @@
             <q-item-section>
                 <q-item-label>
                     <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-                    <span class="text-caption wrap" v-if="postMeta.description">{{ s(postMeta.description).substr(0,650) }}</span>
-                    <span class="text-caption wrap" v-else>{{ s(post.body).substr(0,650) }}..</span>
+                    <span class="text-caption wrap" v-if="postMeta.description">{{ postMeta.description.substr(0,650) }}</span>
+                    <span class="text-caption wrap" v-else>{{ summary }}</span>
                 </q-item-label>
             </q-item-section>
         </q-item>
@@ -33,12 +34,13 @@
           <q-btn dense icon="comment" flat color="blue-grey" :label="post.children" />
           <q-btn flat dense>
             <q-icon name="img:statics/hextacular.svg" color="secondary" class="q-mr-sm" />
-            <span v-if="!post.is_paidout">{{ post.pending_payout_value.split(' ')[0] }} Hive Rewards</span>
-            <span v-else>{{ post.payout }} Hive Rewards</span>
+            <span title="Hive Rewards" v-if="!post.is_paidout">{{ post.pending_payout_value.split(' ')[0] }}</span>
+            <span title="Hive Rewards" v-else>{{ post.payout }}</span>
           </q-btn>
-          <q-btn dense icon="more_horiz" flat color="grey" />
+          <q-btn dense icon="more_horiz" flat color="grey" v-if="false" />
       </q-card-section>
     </q-card>
+    </transition>
     </span>
 </template>
 <style>
@@ -46,30 +48,17 @@
 </style>
 <script>
 import sanitize from 'sanitize-html'
-import { DefaultRenderer } from 'steem-content-renderer'
+// import { DefaultRenderer } from 'steem-content-renderer'
 import moment from 'moment'
 import vote from 'components/vote.vue'
+import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'postPreview',
   props: ['post'],
   data () {
     return {
       thumbslide: 0,
-      renderer: new DefaultRenderer({
-        baseUrl: 'https://hive.ausbit.dev/',
-        breaks: true,
-        skipSanitization: false,
-        allowInsecureScriptTags: false,
-        addNofollowToLinks: true,
-        doNotShowImages: false,
-        ipfsPrefix: '',
-        assetsWidth: 640,
-        assetsHeight: 480,
-        imageProxyFn: (url) => url,
-        usertagUrlFn: (account) => '/@' + account,
-        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
-        isLinkSafeFn: (url) => true
-      })
+      summary: postBodySummary(this.post, 650)
     }
   },
   components: { vote },
@@ -85,11 +74,7 @@ export default {
       }
     },
     postImage: function () {
-      if (this.postMeta.image) {
-        return this.postMeta.image[0]
-      } else {
-        return null
-      }
+      return catchPostImage(this.post)
     },
     downVotes: function () {
       return null

@@ -1,22 +1,25 @@
 <template>
   <q-page class="flex flex-center q-pa-sm">
     <div class="row items-start content-start justify-center">
-      <q-spinner-grid size="2em" color="primary" v-if="!post" class="q-ma-lg" />
       <div v-if="post" class="col-xs-12 col-md-8 justify-center">
         <q-card flat bordered class="q-pa-sm" style="max-width: 1000px">
           <q-card-section class="text-h4 text-center" v-if="post.title">
-            {{ post.title }}
+            {{ Sanitize(post.title) }}
           </q-card-section>
           <q-card-section v-if="post.parent_author !== ''">
             Reply to <router-link :to="linkAccount(post.parent_author)">{{ post.parent_author }}</router-link> / <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
           </q-card-section>
-          <q-card-section>
-            <Card3PostsContent :post="post" />
+          <q-card-section v-if="postBody">
+            <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
+            <div v-html="postBody" class="postview" />
+            </transition>
+            <!-- <Card3PostsContent :post="post" /> -->
           </q-card-section>
           <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
         </q-card>
       </div>
       <div class="col-sm-12 col-md-4 text-center justify-center" v-if="post">
+        <transition appear enter-active-class="animated bounceInRight" leave-active-class="animated bounceOutRight">
         <q-card dense flat bordered class="q-pa-none q-ma-none">
           <q-card-section>
             <q-list dense separator>
@@ -32,7 +35,7 @@
               </q-item>
               <q-item v-if="postMeta.description">
                 <q-item-section v-if="postMeta.description">
-                  <span v-html="this.renderer.render(postMeta.description)" />
+                  <span>{{ postDescription }}</span>
                 </q-item-section>
               </q-item>
               <q-item>
@@ -158,27 +161,48 @@
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
           </q-card-section>
         </q-card>
-        <recent-posts-carousel :account="author" :autoplay=false />
+        </transition>
+        <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
+          <recent-posts-carousel :account="author" :autoplay=false />
+        </transition>
       </div>
     </div>
   </q-page>
 </template>
 <style scoped>
 a, a:link { color: #1d8ce0 }
+a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
+a:visited { color: #884488; }
+.yt-container {
+  position:relative;
+  padding-bottom:56.25%;
+  padding-top:30px;
+  height:0;
+  overflow:hidden;
+}
+.yt-container iframe, .yt-container object, .yt-container embed {
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+}
+
 </style>
 <script>
-import Card3PostsContent from 'components/Card3PostsContent.vue'
+import { renderPostBody } from '@ecency/render-helper'
+// import Card3PostsContent from 'components/Card3PostsContent.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
-import { DefaultRenderer } from 'steem-content-renderer'
+// import { DefaultRenderer } from 'steem-content-renderer'
 import tipButton from 'components/tipButton.vue'
-// import sanitize from 'sanitize-html'
+import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 export default {
   name: 'postView',
-  components: { Card3PostsContent, recentPostsCarousel, comments, vote, jsonViewer, tipButton },
+  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton },
   data () {
     return {
       post: null,
@@ -224,7 +248,9 @@ export default {
           sortable: true
         }
       ],
-      renderer: new DefaultRenderer({
+      postBody: null,
+      postDescription: null
+      /* renderer: new DefaultRenderer({
         baseUrl: 'https://hive.ausbit.dev/',
         breaks: true,
         skipSanitization: false,
@@ -238,7 +264,7 @@ export default {
         usertagUrlFn: (account) => '/@' + account,
         hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
         isLinkSafeFn: (url) => true
-      })
+      }) */
     }
   },
   watch: {
@@ -275,7 +301,9 @@ export default {
     },
     setPost (post) {
       this.post = post
+      this.postBody = renderPostBody(this.post.body, false, false)
       document.title = post.title
+      if (post.description) { this.postDescription = this.Sanitize(post.description) }
     },
     linkHiveBlogPost (author, permlink) {
       return 'https://hive.blog/@' + author + '/' + permlink
@@ -310,6 +338,7 @@ export default {
     },
     GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     GetEditHistoryUrl (author, permlink) { return 'https://scribe.hivekings.com/?url=https%3A%2F%2Fhive.blog%2F%40' + author + '%2F' + permlink },
+    Sanitize (input) { return sanitize(input) },
     init () {
       this.post = null
       this.author = this.$router.currentRoute.params.author

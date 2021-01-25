@@ -812,14 +812,14 @@ export default {
     init () {
       if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
-      if (this.account === undefined || this.account.name !== this.username) {
-        document.title = this.username + '\'s wallet'
+      document.title = this.username + '\'s wallet'
+      if (this.account === undefined) {
         this.getAccount(this.username)
-        this.getHiveWalletTransactions()
-        this.getHiveEngineBalances(this.username)
-        this.getPricesCoingecko()
-        this.getHiveEngineTransactionHistory()
       }
+      this.getHiveWalletTransactions()
+      this.getHiveEngineBalances(this.username)
+      this.getPricesCoingecko()
+      this.getHiveEngineTransactionHistory()
     }
   },
   mounted () {

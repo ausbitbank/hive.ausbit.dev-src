@@ -1,11 +1,10 @@
 <template>
   <div>
-    <div>
+    <div v-if="!loading">
       <q-card flat bordered>
       <div class="text-h6 text-center">
         <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
-      <q-spinner-grid size="2em" color="primary" class="text-center" v-if="loading" />
       <q-carousel
         v-if="posts.length > 0"
         v-model="slide"
@@ -29,7 +28,7 @@
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
             <span class="text-caption wrap" v-if="post.json_metadata.description"> {{s(post.json_metadata.description).substr(0,100)}}</span>
-            <span class="text-caption wrap" v-else> {{ s(post.body).substr(0,100) }}</span>
+            <span class="text-caption wrap" v-else> {{ returnPostSummary(post) }}</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
@@ -53,7 +52,7 @@ a:visited { color: #1d8ce0; }
 <script>
 import moment from 'moment'
 import sanitize from 'sanitize-html'
-import { DefaultRenderer } from 'steem-content-renderer'
+import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'recentPostsCarousel',
   data () {
@@ -66,22 +65,7 @@ export default {
       settings: false,
       loading: false,
       autoplaySlides: this.autoplay,
-      postType: this.type,
-      renderer: new DefaultRenderer({
-        baseUrl: 'https://hive.ausbit.dev/',
-        breaks: false,
-        skipSanitization: false,
-        allowInsecureScriptTags: false,
-        addNofollowToLinks: true,
-        doNotShowImages: true,
-        ipfsPrefix: '',
-        assetsWidth: 640,
-        assetsHeight: 480,
-        imageProxyFn: (url) => url,
-        usertagUrlFn: (account) => '/@' + account,
-        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
-        isLinkSafeFn: (url) => true
-      })
+      postType: this.type
     }
   },
   watch: {
@@ -115,14 +99,13 @@ export default {
   },
   methods: {
     returnPostImage (post) {
-      if (post.json_metadata.image) {
-        return post.json_metadata.image[0]
-      } else {
-        return null
-      }
+      return catchPostImage(post)
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink
+    },
+    returnPostSummary (post) {
+      return postBodySummary(post, 150)
     },
     linkAccount (author) {
       return '/@' + author

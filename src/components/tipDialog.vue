@@ -59,7 +59,10 @@
           <a :href="returnCoinLink(coin)" :title="accountMeta.profile[coin]">{{ accountMeta.profile[coin].substr(0,20) }}</a>..
         </q-item-label>
       </q-item-section>
-      <q-item-section side>
+      <q-item-section side v-if="false"> <!-- v-if="coin === 'ethereum'" -->
+        <!-- <metamask type='button' /> -->
+      </q-item-section>
+      <q-item-section side v-else>
         <q-btn dense round type="a" :href="returnCoinLink(coin)" icon="send" title="Open Wallet Client" color="primary" class="hvr" />
       </q-item-section>
       <q-item-section side>
@@ -72,15 +75,17 @@
 </style>
 <script>
 import transferDialog from 'components/transferDialog.vue'
-import { copyToClipboard } from 'quasar' // eslint-disable-line no-unused-vars
+// import metamask from 'components/metamask.vue'
+import { copyToClipboard } from 'quasar'
 export default {
   name: 'tipDialog',
-  components: { transferDialog },
+  components: { transferDialog }, // metamask
   data () {
     return {
       supportedCoins: ['bitcoin', 'litecoin', 'ethereum'],
       hivetransfer: false,
-      hivedollartransfer: false
+      hivedollartransfer: false,
+      ethFromAddress: null
     }
   },
   props: ['account'],

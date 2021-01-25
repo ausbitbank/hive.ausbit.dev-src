@@ -2,7 +2,11 @@
     <q-page v-if="this.account !== undefined">
         <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
         <q-card class="text-center q-ma-md q-pa-md" padding rounded>
-          <div class="text-center"><q-icon name="img:statics/piggyBank.svg" size="10em" /></div>
+          <div class="text-center">
+            <transition appear enter-active-class="animated zoomInDown" leave-active-class="animated fadeOut">
+            <q-icon name="img:statics/piggyBank.svg" size="10em" />
+            </transition>
+          </div>
           <p class="q-ma-sm">{{ username }} accepts donations in <strong class="color-primary">Hive</strong> - Near instant, secure, free transactions with no middle-man.</p>
           <tipButton :account="this.account.name" />
         </q-card>

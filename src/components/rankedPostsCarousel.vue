@@ -1,6 +1,5 @@
 <template>
   <div>
-    <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center">
@@ -30,7 +29,7 @@
             by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
             <span class="text-caption wrap" v-if="post.json_metadata.description">{{ s(post.json_metadata.description).substr(0,150) }}</span>
-            <span class="text-caption wrap" v-else>{{ s(post.body).substr(0,150) }}..</span>
+            <span class="text-caption wrap" v-else>{{ returnPostSummary(post) }}</span>
           </div>
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
@@ -54,7 +53,7 @@ a:visited { color: #1d8ce0; }
 <script>
 import moment from 'moment'
 import sanitize from 'sanitize-html'
-import { DefaultRenderer } from 'steem-content-renderer'
+import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'trendingPostsCarousel',
   data () {
@@ -65,22 +64,7 @@ export default {
       autoplay: true,
       settings: false,
       newSort: null,
-      autoplaySlides: this.autoplay,
-      renderer: new DefaultRenderer({
-        baseUrl: 'https://hive.ausbit.dev/',
-        breaks: false,
-        skipSanitization: false,
-        allowInsecureScriptTags: false,
-        addNofollowToLinks: true,
-        doNotShowImages: true,
-        ipfsPrefix: '',
-        assetsWidth: 640,
-        assetsHeight: 480,
-        imageProxyFn: (url) => url,
-        usertagUrlFn: (account) => '/@' + account,
-        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
-        isLinkSafeFn: (url) => true
-      })
+      autoplaySlides: this.autoplay
     }
   },
   props: {
@@ -97,11 +81,10 @@ export default {
   },
   methods: {
     returnPostImage (post) {
-      if (post.json_metadata.image) {
-        return post.json_metadata.image[0]
-      } else {
-        return null
-      }
+      return catchPostImage(post)
+    },
+    returnPostSummary (post) {
+      return postBodySummary(post, 150)
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <q-spinner-pie color="secondary" size="5em" v-if="loading.notifications" />
     <div v-if="this.notifications !== null">
     <q-item v-for="n in this.notifications.filter(filterMentions)" :key="n.index">
       <q-item-section avatar>

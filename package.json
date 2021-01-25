@@ -12,8 +12,10 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
+    "@ecency/render-helper": "^2.0.15",
     "@hiveio/hive-js": "^0.8.9",
     "@hiveio/keychain": "^1.0.4",
+    "@metamask/detect-provider": "^1.2.0",
     "@quasar/extras": "^1.9.13",
     "@unstoppabledomains/resolution": "^1.16.0",
     "axios": ">=0.21.1",

@@ -1,6 +1,5 @@
 <template>
     <span>
-    <q-spinner-grid size="2em" color="primary" v-if="!coinGecko" />
     <span v-if="coinGecko">
     <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">

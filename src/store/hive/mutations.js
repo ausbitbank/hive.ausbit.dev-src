@@ -19,3 +19,7 @@ export function updateAccountData (state, accountData) {
 export function updateGlobalProps (state, props) {
   Vue.set(state, 'globalProps', props)
 }
+
+export function updateCommunityInfo (state, communityInfo) {
+  Vue.set(state.communityInfo, communityInfo.name, communityInfo)
+}

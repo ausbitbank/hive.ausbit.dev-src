@@ -13,7 +13,6 @@
           </div>
         </div>
         <q-btn label="Transfer" color="secondary" @click="transferKeychain()" />
-        <q-spinner-pie color="secondary" v-if="loading" size="lg" />
       </q-card>
     </q-dialog>
   </q-btn>

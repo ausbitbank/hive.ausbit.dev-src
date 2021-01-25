@@ -41,9 +41,9 @@
         <div class="text-h6">{{ communityInfo.title }}</div>
         <div>{{ communityInfo.about }}</div>
         <div class="text-h6">Description</div>
-        <div v-if="communityInfo.description !== undefined">{{communityInfo.description}}</div>
+        <div v-if="communityInfo.description !== undefined" v-html="communityDescription" />
         <div class="text-h6">Rules</div>
-        <div>{{ communityInfo.flag_text }}</div>
+        <div v-if="communityRules" v-html="communityRules" />
         <q-separator />
         <div class="text-h6">Team</div>
         <q-list>
@@ -122,6 +122,7 @@
 <script>
 import sanitize from 'sanitize-html'
 import moment from 'moment'
+import { renderPostBody } from '@ecency/render-helper'
 export default {
   name: 'accountHeader',
   data () {
@@ -210,6 +211,20 @@ export default {
     }
   },
   computed: {
+    communityDescription: function () {
+      if (this.communityInfo.description) {
+        return renderPostBody(this.communityInfo.description)
+      } else {
+        return null
+      }
+    },
+    communityRules: function () {
+      if (this.communityInfo.flag_text) {
+        return renderPostBody(this.communityInfo.flag_text)
+      } else {
+        return null
+      }
+    },
     coverImage: function () {
       var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
       if (this.account === null) {
@@ -247,6 +262,7 @@ export default {
   },
   mounted () {
     this.getCommunity()
+    // this.$store.hive.commit('hive/getCommunityInfo', this.account.name)
     this.getCommunitySubscribers()
     this.getCommunityActivities()
   }

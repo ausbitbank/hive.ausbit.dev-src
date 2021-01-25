@@ -10,9 +10,9 @@
       <div class="text-h4">{{ account.name }}</div>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
-            <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
-            <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
-            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
+            <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
+            <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ Sanitize(postingJsonMeta.profile.location) }}</div>
+            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website) }}</a></div>
             <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><a v-if="postingJsonMeta.profile.pinned !== 'none'" :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.email" title="Email"><a :href="returnServiceLink('email', postingJsonMeta.profile.email)"><q-avatar><q-icon name="email" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', postingJsonMeta.profile.protonmail)"><q-avatar><q-icon name="img:statics/protonmail.svg" class="hvr" /></q-avatar></a></span>
@@ -27,6 +27,7 @@
             <span v-if="postingJsonMeta.profile.telegram" title="Telegram"><a :href="returnServiceLink('telegram', postingJsonMeta.profile.telegram)" target="_blank"><q-avatar><q-icon name="img:statics/telegram.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.bitcoin" title="Bitcoin"><a :href="returnServiceLink('bitcoin', postingJsonMeta.profile.bitcoin)"><q-avatar><q-icon name="img:statics/bitcoin.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.litecoin" title="Litecoin"><a :href="returnServiceLink('litecoin', postingJsonMeta.profile.litecoin)"><q-avatar><q-icon name="img:statics/litecoin.svg" class="hvr" /></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.ethereum" title="Ethereum"><a :href="returnServiceLink('ethereum', postingJsonMeta.profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.flickr" title="Flickr"><a :href="returnServiceLink('flickr', postingJsonMeta.profile.flickr)"><q-avatar><q-icon name="img:statics/flickr.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.facebook" title="Facebook"><a :href="returnServiceLink('facebook', postingJsonMeta.profile.facebook)"><q-avatar><q-icon name="img:statics/facebook.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.tumblr" title="Tumblr"><a :href="returnServiceLink('tumblr', postingJsonMeta.profile.tumblr)"><q-avatar><q-icon name="img:statics/tumblr.svg" class="hvr"/></q-avatar></a></span>
@@ -97,6 +98,9 @@ export default {
       } else {
         return null
       }
+    },
+    Sanitize (input) {
+      return sanitize(input)
     },
     returnServiceLink (service, data) {
       var d = sanitize(data)

@@ -11,6 +11,7 @@ export default function () {
     },
     accounts: {},
     posts: {},
+    communityInfo: {},
     globalProps: {
       empty: true
     }

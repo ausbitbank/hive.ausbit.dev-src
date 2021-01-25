@@ -1,6 +1,5 @@
 <template>
     <span>
-    <q-spinner-grid size="2em" color="primary" v-if="fullNodeUpdate === null" />
     <q-card flat bordered v-if="fullNodeUpdate !== null">
         <q-card-section class="text-center">
             <div class="text-h5 text-center">

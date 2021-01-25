@@ -1,6 +1,5 @@
 <template>
     <span>
-    <q-spinner-grid v-if="loading" size="2em" color="primary" style="clear:both;" class="q-ma-lg" />
     <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="!loading && viewType === 'simple'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">

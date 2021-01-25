@@ -18,6 +18,17 @@ export async function getGlobalProps (context) {
       context.commit('updateGlobalProps', response)
     })
     .catch(() => {
-      console.log('Failed to load global properties')
+      console.error('Failed to load global properties')
+    })
+}
+
+export async function getCommunityInfo (context, username) {
+  var params = { observer: context.state.loggedInUser, name: username }
+  hive.api.callAsync('bridge.get_community', params)
+    .then(response => {
+      context.commit('UpdateCommunityInfo', response)
+    })
+    .catch(() => {
+      console.error('Failed to get community info')
     })
 }
