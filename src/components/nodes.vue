@@ -23,7 +23,7 @@
             </div>
             </q-card-section>
             <q-card-section class="text-center">
-                <a href="https://peakd.com/@fullnodeupdate"><q-btn dense icon="info" color="primary" label="Tests by @fullnodeupdate" /></a>
+                <router-link to="/@fullnodeupdate/posts"><q-btn dense icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
                 <div v-if="fullNodeUpdateTime" class="text-subtitle">
                     <q-icon name="access_time" /> {{ timeDelta(fullNodeUpdateTime) }} at {{ fullNodeUpdateTime }}
                 </div>
