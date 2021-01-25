@@ -162,7 +162,7 @@
           </q-card-section>
         </q-card>
         </transition>
-        <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
+        <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown">
           <recent-posts-carousel :account="author" :autoplay=false />
         </transition>
       </div>

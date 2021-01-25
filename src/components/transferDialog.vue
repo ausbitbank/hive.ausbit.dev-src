@@ -8,7 +8,7 @@
       <div><q-input label="Memo" v-model="memo" /></div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
-        <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" />
+        <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" />
       </div>
   </q-card>
 </template>
@@ -933,7 +933,8 @@ export default {
       amount: 0.000,
       memo: '',
       err: false,
-      log: ''
+      log: '',
+      sent: false
     }
   },
   props: {
@@ -995,6 +996,7 @@ export default {
       window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
         if (response.success === true) {
           this.err = false
+          this.sent = true
           this.log = response.message
         }
         if (response.success === false) {
@@ -1008,6 +1010,7 @@ export default {
       window.hive_keychain.requestCustomJson(this.username, 'ssc-mainnet-hive', 'Active', json, 'Transfer ' + this.amount + ' ' + this.tokenName + ' to ' + this.toAccount, function (response) {
         if (response.success === true) {
           this.err = false
+          this.sent = true
           this.log = response.message
         } else {
           this.err = true
