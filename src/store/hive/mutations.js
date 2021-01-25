@@ -23,3 +23,7 @@ export function updateGlobalProps (state, props) {
 export function updateCommunityInfo (state, communityInfo) {
   Vue.set(state.communityInfo, communityInfo.name, communityInfo)
 }
+
+export function updateCommunitySubscriptions (state, communitySubscriptions) {
+  state.user.communities = communitySubscriptions
+}

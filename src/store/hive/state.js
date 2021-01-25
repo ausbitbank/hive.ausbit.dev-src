@@ -5,6 +5,7 @@ export default function () {
       username: SessionStorage.getItem('loggedInUser') || null,
       following: [],
       followers: [],
+      communities: [],
       state: {},
       notifications: SessionStorage.getItem('notifications') || [],
       unreadNotificationCount: 0

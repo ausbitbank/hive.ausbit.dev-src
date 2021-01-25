@@ -17,6 +17,7 @@ const routes = [
       { path: '@:account/replies', component: () => import('pages/browse.vue') },
       { path: '@:account/comments', component: () => import('pages/browse.vue') },
       { path: '@:account/tip', component: () => import('pages/tip.vue') },
+      { path: '@:account/communities', component: () => import('pages/communities.vue') },
       { path: '@:author/:permlink', component: () => import('pages/post.vue') },
       { path: ':tag/@:author/:permlink', component: () => import('pages/post.vue') },
       { path: 'block/:blockNum', component: () => import('pages/block.vue') },

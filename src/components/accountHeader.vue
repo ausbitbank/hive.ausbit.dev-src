@@ -4,7 +4,6 @@
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
-            <div><router-link :to="getWalletLink(account.name)"><q-icon name="account_balance_wallet" title="View Wallet" /> View Wallet</router-link></div>
         </q-card>
       <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
       <div class="text-h4">{{ account.name }}</div>
@@ -54,12 +53,30 @@
             <span v-if="postingJsonMeta.profile.pgp" title="PGP / GPG Key"><a :href="returnServiceLink('pgp', postingJsonMeta.profile.pgp)"><q-avatar><q-icon name="img:statics/pgp.svg" class="hvr"/></q-avatar></a></span>
         </span>
       </div>
+<q-toolbar dense class="rounded-borders bg-dark text-white text-center">
+  <q-tabs v-model="tab" dense animated shrink active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
+    <q-route-tab name="posts" label="posts" :to="'/@' + account.name + '/posts'"/>
+    <q-route-tab name="blog" label="blog" :to="'/@' + account.name + '/blog'"/>
+    <q-route-tab name="feed" label="feed" :to="'/@' + account.name + '/feed'"/>
+    <q-route-tab name="replies" label="replies" :to="'/@' + account.name + '/replies'"/>
+    <q-route-tab name="comments" label="comments" :to="'/@' + account.name + '/comments'"/>
+    <q-route-tab name="communities" label="communities" :to="'/@' + account.name + '/communities'"/>
+    <q-route-tab name="wallet" label="wallet" :to="'/@' + account.name + '/wallet'"/>
+    <q-route-tab name="explorer" label="explorer" :to="'/@' + account.name"/>
+    <q-route-tab v-if="this.$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
+  </q-tabs>
+    </q-toolbar>
     </div>
 </template>
 <script>
 import sanitize from 'sanitize-html'
 export default {
   name: 'accountHeader',
+  data () {
+    return {
+      tab: 'posts'
+    }
+  },
   props: {
     account: {
       required: false

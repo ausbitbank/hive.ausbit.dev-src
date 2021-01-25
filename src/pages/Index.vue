@@ -3,7 +3,7 @@
     <div class="q-pa-md row items-start q-gutter-md content-start content-stretch self-stretch col-grow justify-center">
       <transition appear enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutLeft">
         <div style="width:400px" class="justify-center">
-          <block :blockNum="0" view="simple" />
+          <block :blockNum="0" view="simple" class="q-mb-lg" />
           <recent-posts-carousel account="ausbitbank" type="blog" />
           <ranked-posts-carousel sortMethod="trending" />
           <ranked-posts-carousel sortMethod="hot" />

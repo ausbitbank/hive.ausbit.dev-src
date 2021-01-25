@@ -9,13 +9,13 @@
         <browse-container v-else-if="this.$route.path.startsWith('/payout')" callMethod="bridge.get_ranked_posts" sortMethod="payout" :showTag="this.$route.params.tag" :showToolbar="true"/>
         <browse-container v-else-if="this.$route.path.startsWith('/payout_comments')" callMethod="bridge.get_ranked_posts" sortMethod="payout_comments" :showTag="this.$route.params.tag" :showToolbar="true"/>
         <browse-container v-else-if="this.$route.path.startsWith('/muted')" callMethod="bridge.get_ranked_posts" sortMethod="muted" :showTag="this.$route.params.tag" :showToolbar="true"/> -->
-        <browse-container v-if="username !== undefined && this.$route.path.endsWith('/posts')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="posts" :showToolbar="true"/>
-        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/blog')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="blog" :showToolbar="true"/>
-        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/feed')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="feed" :showToolbar="true"/>
-        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/replies')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="replies" :showToolbar="true"/>
-        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/comments')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="comments" :showToolbar="true"/>
-        <browse-container v-else-if="this.$route.path.startsWith('/c/') && ['hot','created', 'trending'].includes(this.$route.params.sortMethod)" callMethod="bridge.get_ranked_posts" :sortMethod="this.$route.params.sortMethod" :showTag="this.$route.params.username" :showToolbar="true"/>
-        <browse-container v-else-if="this.$route.path.startsWith('/c/')" callMethod="bridge.get_ranked_posts" sortMethod="created" :showTag="this.$route.params.username" :showToolbar="true"/>
+        <browse-container v-if="username !== undefined && this.$route.path.endsWith('/posts')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="posts" :showToolbar="false"/>
+        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/blog')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="blog" :showToolbar="false"/>
+        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/feed')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="feed" :showToolbar="false"/>
+        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/replies')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="replies" :showToolbar="false"/>
+        <browse-container v-else-if="username !== undefined && this.$route.path.endsWith('/comments')" :showAccount="username" callMethod="bridge.get_account_posts" sortMethod="comments" :showToolbar="false"/>
+        <browse-container v-else-if="this.$route.path.startsWith('/c/') && ['hot','created', 'trending', 'promoted', 'payout', 'payout_comments'].includes(this.$route.params.sortMethod)" callMethod="bridge.get_ranked_posts" :sortMethod="this.$route.params.sortMethod" :showTag="this.$route.params.username" :showToolbar="false"/>
+        <browse-container v-else-if="this.$route.path.startsWith('/c/')" callMethod="bridge.get_ranked_posts" sortMethod="trending" :showTag="this.$route.params.username" :showToolbar="false"/>
         <browse-container v-else-if="this.$route.params.sortMethod" callMethod="bridge.get_ranked_posts" :sortMethod="this.$route.params.sortMethod" :showTag="this.$route.params.tag" :showToolbar="true"/>
         <browse-container v-else callMethod="bridge.get_ranked_posts" sortMethod="created" :showToolbar="true"/>
     </q-page>
@@ -47,6 +47,7 @@ export default {
     }
   },
   mounted () {
+    // if (this.$route.path.startsWith('/c/') && this.$route.path.endsWith('/')) { this.$router.push({ params: { sortMethod: 'created' } }) }
     if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
     if (this.account === undefined) {
       this.$store.dispatch('hive/getAccount', this.username)

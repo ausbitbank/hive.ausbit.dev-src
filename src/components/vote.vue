@@ -25,12 +25,14 @@
         <q-list dense>
           <q-item>
             <q-item-section>
-              <q-slider v-model="weight" :min="-100" :max="100" label :color="voteColor" />
-            </q-item-section>
-          </q-item>
-          <q-item>
-            <q-item-section>
               <q-btn push :icon="voteIcon" :color="voteColor" :label="voteLabel" @click="vote(permlink, author, weight)" />
+            </q-item-section>
+            <q-item-section>
+              <q-slider v-model="weight" :min="-100" :max="100" label :color="voteColor" /><br />
+              <q-btn size="sm" dense label="25%" @click="weight = 25" />
+              <q-btn size="sm" dense label="50%" @click="weight = 50" />
+              <q-btn size="sm" dense label="75%" @click="weight = 75" />
+              <q-btn size="sm" dense label="100%" @click="weight = 100" />
             </q-item-section>
           </q-item>
         </q-list>

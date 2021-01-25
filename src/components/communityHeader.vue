@@ -1,6 +1,6 @@
 <template>
   <span v-if="account !== undefined">
-    <div class="col-12 text-center full-wdith" :style='coverImageStyle'>
+    <div class="col-12 text-center full-width" :style='coverImageStyle'>
       <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
       <div v-if="communityInfo" class="text-h4">{{ communityInfo.title }}</div>
       <div v-else-if="postingJsonMeta && postingJsonMeta.name" class="text-h4" :title="account.name">{{ postingJsonMeta.profile.name }}</div>
@@ -20,24 +20,28 @@
         </span>
       </div>
     </div>
-    <q-toolbar class="bg-dark text-white" v-if="communityInfo">
-      <q-tabs v-model="tab" shrink stretch dense>
+    <q-toolbar class="shadow-2 rounded-borders" v-if="communityInfo">
+      <q-tabs v-model="tab" animated shrink dense style="margin:auto">
         <q-tab name="posts" label="Posts" />
         <q-tab name="about" label="About" />
         <q-tab name="subscribers" label="Subscribers" />
         <q-tab name="activities" label="Activities" />
       </q-tabs>
     </q-toolbar>
-    <q-tab-panels v-model="tab" animated v-if="communityInfo">
-      <q-tab-panel name="posts">
-        <q-tabs v-model="postTab" dense animated shrink stretch>
-          <q-route-tab name="created" icon="fiber_new" label="created" :to="'/c/' + account.name + '/created'"/>
-          <q-route-tab name="trending" icon="trending_up" color="red" label="trending" :to="'/c/' + account.name + '/trending'"/>
-          <q-route-tab name="hot" icon="whatshot" label="hot" :to="'/c/' + account.name + '/hot'"/>
+    <q-toolbar class="rounded-borders text-white q-pa-none q-ma-none">
+    <q-tab-panels v-model="tab" animated dense v-if="communityInfo" class="text-white" style="margin:auto">
+      <q-tab-panel name="posts" class="q-pa-none rounded-borders">
+        <q-tabs v-model="postTab" dense animated shrink active-color="white" indicator-color="secondary">
+          <q-route-tab name="created" label="created" :to="'/c/' + account.name + '/created'"/>
+          <q-route-tab name="trending" label="trending" :to="'/c/' + account.name + '/trending'"/>
+          <q-route-tab name="hot" label="hot" :to="'/c/' + account.name + '/hot'"/>
+          <q-route-tab name="promoted" label="promoted" :to="'/c/' + account.name + '/promoted'"/>
+          <q-route-tab name="payout" label="payout" :to="'/c/' + account.name + '/payout'"/>
+          <q-route-tab name="payout_comments" label="comments" :to="'/c/' + account.name + '/payout_comments'"/>
           <q-space />
         </q-tabs>
       </q-tab-panel>
-      <q-tab-panel name="about" v-if="communityInfo">
+      <q-tab-panel name="about" v-if="communityInfo" style="text-center; margin:auto">
         <div class="text-h6">{{ communityInfo.title }}</div>
         <div>{{ communityInfo.about }}</div>
         <div class="text-h6">Description</div>
@@ -117,6 +121,7 @@
         </q-card>
       </q-tab-panel>
     </q-tab-panels>
+    </q-toolbar>
   </span>
 </template>
 <script>
