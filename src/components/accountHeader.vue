@@ -53,7 +53,7 @@
             <span v-if="postingJsonMeta.profile.pgp" title="PGP / GPG Key"><a :href="returnServiceLink('pgp', postingJsonMeta.profile.pgp)"><q-avatar><q-icon name="img:statics/pgp.svg" class="hvr"/></q-avatar></a></span>
         </span>
       </div>
-<q-toolbar dense class="rounded-borders bg-dark text-white text-center">
+<q-toolbar dense class="rounded-borders bg-dark text-white text-center" v-if="showNavBar">
   <q-tabs v-model="tab" dense animated shrink active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
     <q-route-tab name="posts" label="posts" :to="'/@' + account.name + '/posts'"/>
     <q-route-tab name="blog" label="blog" :to="'/@' + account.name + '/blog'"/>
@@ -91,6 +91,11 @@ export default {
       default: true
     },
     showProfile: {
+      type: Boolean,
+      required: false,
+      default: true
+    },
+    showNavBar: {
       type: Boolean,
       required: false,
       default: true

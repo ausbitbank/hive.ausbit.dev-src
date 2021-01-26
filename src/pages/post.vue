@@ -1,6 +1,7 @@
 <template>
-  <q-page class="flex flex-center q-pa-sm">
-    <div class="row items-start content-start justify-center">
+  <q-page class="flex flex-center">
+    <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
+    <div class="row items-start content-start justify-center q-pa-sm">
       <div v-if="post" class="col-xs-12 col-md-8 justify-center">
         <q-card flat bordered class="q-pa-sm" style="max-width: 1000px">
           <q-card-section class="text-h4 text-center" v-if="post.title">
@@ -13,7 +14,6 @@
             <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
             <div v-html="postBody" class="postview" />
             </transition>
-            <!-- <Card3PostsContent :post="post" /> -->
           </q-card-section>
           <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
         </q-card>
@@ -191,7 +191,7 @@ a:visited { color: #884488; }
 </style>
 <script>
 import { renderPostBody } from '@ecency/render-helper'
-// import Card3PostsContent from 'components/Card3PostsContent.vue'
+import accountHeader from 'components/accountHeader.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
 import moment from 'moment'
@@ -202,7 +202,7 @@ import tipButton from 'components/tipButton.vue'
 import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 export default {
   name: 'postView',
-  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton },
+  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader },
   data () {
     return {
       post: null,
@@ -273,6 +273,11 @@ export default {
     }
   },
   computed: {
+    account: {
+      get () {
+        return this.$store.state.hive.accounts[this.author]
+      }
+    },
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
     },

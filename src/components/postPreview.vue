@@ -44,7 +44,7 @@
     </span>
 </template>
 <style>
-.postPreviewCard { max-width: 95% }
+.postPreviewCard { max-width: 100%; margin:auto }
 </style>
 <script>
 import sanitize from 'sanitize-html'

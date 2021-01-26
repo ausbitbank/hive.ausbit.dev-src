@@ -1,6 +1,6 @@
 <template>
     <q-page v-if="this.account !== undefined">
-        <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
+        <account-header :globalProps="this.globalProps" :account="this.account" :showNavBar="false" :showBalances="false" />
         <q-card class="text-center q-ma-md q-pa-md" padding rounded>
           <div class="text-center">
             <transition appear enter-active-class="animated zoomInDown" leave-active-class="animated fadeOut">
