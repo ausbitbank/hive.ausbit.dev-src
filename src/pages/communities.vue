@@ -45,7 +45,7 @@ export default {
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    linkCommunity (community) { return '/c/' + community },
+    linkCommunity (community) { return '/c/' + community + '/trending' },
     getCommunitySubscriptions () {
       var params = { account: this.username }
       this.$hive.api.callAsync('bridge.list_all_subscriptions', params)

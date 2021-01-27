@@ -189,6 +189,7 @@ export default {
         .then(response => {
           this.communityInfo = response
           this.loading = false
+          document.title = response.title + ' : ' + response.about
         })
     },
     async getCommunitySubscribers () {

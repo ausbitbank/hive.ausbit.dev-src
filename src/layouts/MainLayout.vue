@@ -4,8 +4,7 @@
       <q-toolbar reveal elevated class="bg-dark text-primary">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
-          <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /></router-link>
-          hive.ausbit.dev
+          <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <q-form @submit="onSearchSubmit" @reset="onSearchReset" class="q-mr-md">
           <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Search Account, Txid or Block">

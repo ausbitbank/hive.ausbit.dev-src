@@ -1,15 +1,15 @@
 <template>
   <span>
     <span v-if="!viewComments" class="text-center">
-      <div @click="viewComments = !viewComments" class="cursor-pointer"><q-icon name="comment" />  View replies</div>
+      <q-btn @click="viewComments = !viewComments" icon="forum" color="blue-grey-6" dense push label="View replies" />
     </span>
     <span v-if="viewComments">
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
-          <q-icon name="comment" />Replies
+          <q-icon name="forum" />Replies
       </q-card-section>
       <span v-for="comment in comments" :key="comment.index">
-        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.depth === 1" />
+        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.parent_permlink === permlink" />
       </span>
     </q-card>
     </span>

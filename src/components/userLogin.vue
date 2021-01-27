@@ -21,6 +21,10 @@
             <q-item-section avatar><q-icon name="library_books" color="deep_purple" /></q-item-section>
             <q-item-section>Posts</q-item-section>
           </q-item>
+          <q-item clickable :to="linkCommunities(loggedInUser)">
+            <q-item-section avatar><q-icon name="forum" color="teal" /></q-item-section>
+            <q-item-section>Communities</q-item-section>
+          </q-item>
           <q-item clickable :to="linkReplies(loggedInUser)">
             <q-item-section avatar><q-icon name="comment" color="blue-grey" /></q-item-section>
             <q-item-section>Replies</q-item-section>
@@ -134,7 +138,8 @@ export default {
     linkPosts (username) { return '/@' + username + '/posts' },
     linkComments (username) { return '/@' + username + '/comments' },
     linkReplies (username) { return '/@' + username + '/replies' },
-    linkFeed (username) { return '/@' + username + '/feed' }
+    linkFeed (username) { return '/@' + username + '/feed' },
+    linkCommunities (username) { return '/@' + username + '/communities' }
   },
   mounted () {
     if (this.$q.sessionStorage.getItem('loggedInUser')) {

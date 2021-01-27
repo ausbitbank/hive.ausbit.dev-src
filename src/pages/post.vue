@@ -15,7 +15,10 @@
             <div v-html="postBody" class="postview" />
             </transition>
           </q-card-section>
+          <div class="text-center">
+          <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push dense color="blue-grey-10"><q-popup-proxy><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
           <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
+          </div>
         </q-card>
       </div>
       <div class="col-sm-12 col-md-4 text-center justify-center" v-if="post">
@@ -33,8 +36,8 @@
                   <router-link :to="linkAccount(author)">{{ author }}</router-link>
                 </q-item-section>
               </q-item>
-              <q-item v-if="postMeta.description">
-                <q-item-section v-if="postMeta.description">
+              <q-item v-if="postDescription">
+                <q-item-section>
                   <span>{{ postDescription }}</span>
                 </q-item-section>
               </q-item>
@@ -194,6 +197,7 @@ import { renderPostBody } from '@ecency/render-helper'
 import accountHeader from 'components/accountHeader.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
+import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
@@ -202,7 +206,7 @@ import tipButton from 'components/tipButton.vue'
 import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 export default {
   name: 'postView',
-  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader },
+  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox },
   data () {
     return {
       post: null,
@@ -250,21 +254,6 @@ export default {
       ],
       postBody: null,
       postDescription: null
-      /* renderer: new DefaultRenderer({
-        baseUrl: 'https://hive.ausbit.dev/',
-        breaks: true,
-        skipSanitization: false,
-        allowInsecureScriptTags: false,
-        addNofollowToLinks: true,
-        doNotShowImages: false,
-        ipfsPrefix: '',
-        assetsWidth: 640,
-        assetsHeight: 480,
-        imageProxyFn: (url) => url,
-        usertagUrlFn: (account) => '/@' + account,
-        hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
-        isLinkSafeFn: (url) => true
-      }) */
     }
   },
   watch: {
@@ -323,7 +312,7 @@ export default {
       return '/@' + author + '/' + permlink
     },
     linkCommunity (community) {
-      return '/c/' + community
+      return '/c/' + community + '/trending'
     },
     linkTag (tag) {
       return '/trending/' + tag
