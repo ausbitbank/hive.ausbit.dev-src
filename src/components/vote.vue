@@ -17,9 +17,6 @@
         </q-list>
       </div>
     </span>
-    <span v-else-if="voteSent">
-      Voted at {{ weight }} %
-    </span>
     <span v-else>
       <div class="q-pa-md">
         <q-list dense>
@@ -86,6 +83,8 @@ export default {
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
       if (success) {
         this.voteSent = true
+        this.$q.notify('Voted ' + weight + '% on @' + author + '/' + permlink)
+        this.$emit('Voted', weight)
       }
       if (!cancel) {
         if (notActive) {
@@ -100,7 +99,6 @@ export default {
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
   },
   mounted () {
-    this.weight = (this.myVote.percent / 100)
     /* if (this.$q.localStorage.getItem('savedUsers') === null) {
       this.savedUsers = []
     } else {

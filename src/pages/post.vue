@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
+    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
     <div class="row items-start content-start justify-center q-pa-sm">
       <div v-if="post" class="col-xs-12 col-md-8 justify-center">
         <q-card flat bordered class="q-pa-sm" style="max-width: 1000px">
@@ -127,6 +127,15 @@
                   {{ postMeta.app }}
                 </q-item-section>
               </q-item>
+              <q-item v-if="postMeta && postMeta.countdown">
+                <q-item-section avatar>
+                  <q-icon name="alarm_on" color="gray" />
+                </q-item-section>
+                <q-item-section>
+                  Countdown to {{ postMeta.countdown }}<br />
+                  ( {{ timeDelta(postMeta.countdown )}} )
+                </q-item-section>
+              </q-item>
               <q-item title="Votes" v-if="post.active_votes.length > 0">
                 <q-item-section avatar>
                   <q-icon name="how_to_vote" color="purple" />
@@ -142,6 +151,17 @@
               </q-item>
               <q-item>
                 <tip-button :account="post.author" style="width: 100%" />
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
+                  <q-icon name="share" color="orange" />
+                </q-item-section>
+                <q-item-section>
+                  <q-btn rounded bordered @click="showShareDialog = !showShareDialog">
+                    Share this post:
+                  </q-btn>
+                  <shareButtons :title="post.title" v-if="showShareDialog" />
+                </q-item-section>
               </q-item>
               <q-item class="text-left" v-if="postMeta">
                 <q-item-section avatar v-if="false">
@@ -202,12 +222,12 @@ import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
-// import { DefaultRenderer } from 'steem-content-renderer'
 import tipButton from 'components/tipButton.vue'
+import shareButtons from 'components/shareButtons.vue'
 import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 export default {
   name: 'postView',
-  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox },
+  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons },
   data () {
     return {
       post: null,
@@ -215,6 +235,7 @@ export default {
       permlink: this.$router.currentRoute.params.permlink,
       // api: 'https://rpc.ausbit.dev',
       showVotes: false,
+      showShareDialog: false,
       voteColumns: [
         {
           name: 'voter',
@@ -304,7 +325,7 @@ export default {
       return 'https://hive.blog/@' + author + '/' + permlink
     },
     linkPeakdPost (author, permlink) {
-      return 'https://peakd.com/@' + author + '/' + permlink
+      return 'https://peakd.com/@' + author + '/' + permlink + '?ref=ausbitbank'
     },
     linkAccount (username) {
       return '/@' + username

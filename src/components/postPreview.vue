@@ -33,7 +33,7 @@
           <q-chip color="primary" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
           <span v-if="post.author_title" class="text-caption">{{ post.author_title }}</span>
           <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
-          <q-btn dense :icon="voteIcon" flat color="secondary" v-if="post.active_votes" :label="post.active_votes.length"><q-popup-proxy v-if="myVote === undefined"><q-banner><vote :votes="post.active_votes" :author="post.author" :permlink="post.permlink" /></q-banner></q-popup-proxy></q-btn>
+          <q-btn dense :icon="voteIcon" flat color="secondary" v-if="post.active_votes" :label="post.active_votes.length"><q-popup-proxy v-if="myVote === undefined"><q-banner><vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" /></q-banner></q-popup-proxy></q-btn>
           <q-btn dense icon="comment" flat color="blue-grey" :label="post.children">
             <q-popup-proxy>
               <commentBox :parent_author="post.author" :parent_permlink="post.permlink" />
@@ -65,7 +65,8 @@ export default {
   data () {
     return {
       thumbslide: 0,
-      summary: postBodySummary(this.post, 650)
+      summary: postBodySummary(this.post, 650),
+      votedWeight: null
     }
   },
   components: { vote, commentBox },
@@ -87,7 +88,15 @@ export default {
       return null
     },
     myVote: function () {
-      return this.post.active_votes.filter(this.filterMyVote)[0]
+      if (this.votedWeight !== null) {
+        return { voter: this.loggedInUser, weight: this.votedWeight, author: this.post.author, permlink: this.post.permlink, rshares: this.votedWeight }
+      } else {
+        if (this.post !== undefined) {
+          return this.post.active_votes.filter(this.filterMyVote)[0]
+        } else {
+          return null
+        }
+      }
     },
     voteIcon: function () {
       if (this.myVote !== undefined) {
@@ -102,6 +111,9 @@ export default {
     }
   },
   methods: {
+    showVoteEarly (weight) {
+      this.votedWeight = weight
+    },
     s (input) {
       // Render markdown to html, strip all tags and attributes, remove URLS
       var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
