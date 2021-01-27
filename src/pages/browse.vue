@@ -1,6 +1,6 @@
 <template>
     <q-page>
-        <community-header v-if="this.$route.path.startsWith('/c/') && username !== undefined" :globalProps="this.globalProps" :account="this.account" />
+        <community-header v-if="this.$route.path.startsWith('/c/') && this.account !== undefined" :globalProps="this.globalProps" :account="this.account" />
         <account-header v-else-if="username !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
         <!-- <browse-container v-if="this.$route.path.startsWith('/trending')" callMethod="bridge.get_ranked_posts" sortMethod="trending" :showTag="this.$route.params.tag" :showToolbar="true"/>
         <browse-container v-else-if="this.$route.path.startsWith('/created')" callMethod="bridge.get_ranked_posts" sortMethod="created" :showTag="this.$route.params.tag" :showToolbar="true"/>

@@ -233,7 +233,7 @@ export default {
     },
     coverImage: function () {
       var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
-      if (this.account === null) {
+      if (this.account === undefined) {
         return defaultCover
       } else {
         if (this.account.posting_json_metadata) {

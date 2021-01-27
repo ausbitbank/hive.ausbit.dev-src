@@ -2,7 +2,8 @@
     <q-page v-if="this.account !== undefined" class="text-center">
         <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
         <q-card class="text-center q-ma-lg q-pa-md" padding rounded style="max-width: 400px; margin:auto">
-            {{ account.name }} is subscribed to these communities
+            <div v-if="this.$store.state.hive.user.username === account.name"><router-link to='/created/my'>View my community feed</router-link></div>
+            {{ account.name }} is subscribed to these communities :
           <q-list bordered separator>
             <q-item v-for="community in subscriptions" :key="community.index">
               <q-item-section avatar>

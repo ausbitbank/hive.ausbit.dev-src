@@ -13,12 +13,12 @@
       <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
         <q-item-section avatar>
           <router-link :to="n.url">
-            <q-avatar size="md">
+            <q-avatar size="md" v-if="n.msg">
               <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" />
             </q-avatar>
           </router-link>
         </q-item-section>
-        <q-item-section>
+        <q-item-section v-if="n.msg">
           <q-item-label>
             {{ n.msg.substr(1) }}
           </q-item-label>

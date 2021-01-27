@@ -5,10 +5,11 @@
       <q-input v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
       <q-select v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
       <q-select v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
-      <q-input v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'"/>
+      <q-input v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'" clearable @clear="tag = ''"/>
       <q-input v-model.number="limit" label="limit" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" />
-      <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = '';" />
-      <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = '';" />
+      <q-input v-model="observer" label="observer" clearable @clear="observer = ''" />
+      <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" />
+      <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" />
       <q-input v-model="name" label="name" v-if="method === 'bridge.get_community'" />
       <q-space />
       <q-btn label="Search" @click="getPosts()" />
@@ -42,7 +43,7 @@ export default {
       loading: false,
       posts: [],
       method: this.callMethod || 'bridge.get_ranked_posts',
-      observer: this.loggedInUser,
+      observer: this.$store.state.hive.user.username,
       limit: this.responseLimit || 42,
       sort: this.sortMethod,
       start_author: this.Pstart_author,
