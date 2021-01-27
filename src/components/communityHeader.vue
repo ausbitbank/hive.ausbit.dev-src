@@ -10,7 +10,7 @@
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
             <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
-            <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><a v-if="postingJsonMeta.profile.pinned !== 'none'" :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><router-link v-if="postingJsonMeta.profile.pinned !== 'none'" :to="returnPostLink(account.name, postingJsonMeta.profile.pinned)"><q-icon name="push_pin" /></router-link></span>
         </span>
         <span v-if="communityInfo">
           <div v-if="communityInfo.about">{{ communityInfo.about }}</div>
@@ -128,11 +128,12 @@
 import sanitize from 'sanitize-html'
 import moment from 'moment'
 import { renderPostBody } from '@ecency/render-helper'
+// import { mapGetters } from 'vuex'
 export default {
   name: 'accountHeader',
   data () {
     return {
-      communityInfo: null,
+      // communityInfo: null,
       tab: 'posts',
       postTab: 'created',
       subscribers: null,
@@ -214,9 +215,15 @@ export default {
           this.activities = response
           this.loading = false
         })
+    },
+    returnPostLink (author, permlink) {
+      return '/@' + author + '/' + permlink
     }
   },
   computed: {
+    communityInfo: function () {
+      return this.$store.state.hive.communityInfo[this.account.name]
+    },
     communityDescription: function () {
       if (this.communityInfo.description) {
         return renderPostBody(this.communityInfo.description)
@@ -267,8 +274,10 @@ export default {
     }
   },
   mounted () {
-    this.getCommunity()
-    // this.$store.hive.commit('hive/getCommunityInfo', this.account.name)
+    // this.getCommunity()
+    if (this.communityInfo === undefined) {
+      this.$store.dispatch('hive/getCommunityInfo', this.account.name)
+    }
     this.getCommunitySubscribers()
     this.getCommunityActivities()
   }

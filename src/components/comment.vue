@@ -20,7 +20,7 @@
       <q-item-section side class="text-grey text-center text-subtitle">
         <router-link :to="returnLink(this.comment.author, this.comment.permlink)">{{ timeDelta(this.comment.created) }}</router-link>
         <q-btn icon="comment" dense flat v-if="this.loggedInUser">
-          <q-popup-proxy>
+          <q-popup-proxy persistent>
             <commentBox :parent_author="this.comment.author" :parent_permlink="this.comment.permlink" />
           </q-popup-proxy>
         </q-btn>

@@ -4,7 +4,7 @@
     <div class="row items-start content-start justify-center q-pa-sm">
       <div v-if="post" class="col-xs-12 col-md-8 justify-center">
         <q-card flat bordered class="q-pa-sm" style="max-width: 1000px">
-          <q-card-section class="text-h4 text-center" v-if="post.title">
+          <q-card-section class="text-h5 text-center" v-if="post.title">
             {{ Sanitize(post.title) }}
           </q-card-section>
           <q-card-section v-if="post.parent_author !== ''">
@@ -16,7 +16,7 @@
             </transition>
           </q-card-section>
           <div class="text-center">
-          <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push dense color="blue-grey-10"><q-popup-proxy><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
+          <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push dense color="blue-grey-10"><q-popup-proxy persistent><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
           <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
           </div>
         </q-card>
@@ -176,6 +176,7 @@
 a, a:link { color: #1d8ce0 }
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
+h1, h2, h3, h4, h5, h6 {font-size: 1em; font-weight: 500 }
 .yt-container {
   position:relative;
   padding-bottom:56.25%;
