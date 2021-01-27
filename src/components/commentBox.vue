@@ -1,23 +1,38 @@
 <template>
-    <div flat bordered v-if="this.loggedInUser" style="margin:auto; min-width: 400px; max-width: 95%" class="q-ma-md q-pa-md rounded-borders">
+    <div flat bordered v-if="this.loggedInUser" style="margin:auto; min-width: 500px; max-width: 95%" class="q-ma-md q-pa-md rounded-borders">
         <q-card v-if="!commentSent">
-        <q-input v-model="commentText" type="textarea" autogrow label="Write a reply" class="text-center bg-blue-grey-10 q-pa-sm" />
+        <vue-simplemde v-model="commentText" ref="markdownEditor" :configs="editorConfig" class="q-pa-sm" />
         <q-btn @click="comment()" push color="primary" style="margin:auto">Reply to {{ parent_author }}</q-btn>
         <q-icon name="info" color="primary" title="10% comment beneficiary to ausbitbank" class="q-ma-sm"/>
         </q-card>
         <span v-if="commentSent">Comment Sent</span>
     </div>
 </template>
+<style>
+  @import '~simplemde/dist/simplemde.min.css';
+</style>
 <script>
 import { keychain } from '@hiveio/keychain'
+import VueSimplemde from 'vue-simplemde'
 export default {
   name: 'commentBox',
   props: ['parent_author', 'parent_permlink', 'tags'],
+  components: { VueSimplemde },
   data () {
     return {
       commentText: '',
       commentSent: false,
-      title: ''
+      title: '',
+      editorConfig: {
+        autosave: {
+          enabled: false,
+          uniqueId: 'ausbitCommentForm',
+          delay: 1000
+        },
+        autofocus: true,
+        hideIcons: ['guide', 'side-by-side'],
+        spellChecker: true
+      }
     }
   },
   computed: {
