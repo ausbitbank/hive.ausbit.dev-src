@@ -14,7 +14,31 @@
       <q-space />
       <q-btn label="Search" @click="getPosts()" />
     </q-toolbar>
-    <post-preview v-for="post in posts" :key="post.index" :post="post" />
+    <div class="text-center">
+      <q-btn label="filter" flat color="grey" icon="filter">
+        <q-popup-proxy>
+          <q-list separator bordered dense>
+            <q-item>
+              <q-item-section>
+                <q-checkbox v-model="filter.hideVoted" />
+              </q-item-section>
+              <q-item-section>
+                Hide Voted
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-checkbox v-model="filter.hideReblogs" />
+              </q-item-section>
+              <q-item-section>
+                Hide Reblogs
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-popup-proxy>
+      </q-btn>
+    </div>
+    <post-preview v-for="post in filteredPosts" :key="post.index" :post="post" />
     <div v-if="posts.length > 0" class="text-center">
       <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />
     </div>
@@ -51,12 +75,26 @@ export default {
       page: this.Ppage,
       account: this.showAccount,
       name: null,
-      tag: this.showTag
+      tag: this.showTag,
+      filter: {
+        hideVoted: false,
+        hideReblogs: false
+      }
     }
   },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
+    },
+    filteredPosts: function () {
+      var p = this.posts
+      if (this.filter.hideReblogs) {
+        p = p.filter(post => !post.reblogged_by)
+      }
+      if (this.filter.hideVoted) {
+        p = p.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0)
+      }
+      return p
     }
   },
   watch: {
