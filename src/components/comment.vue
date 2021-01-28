@@ -51,6 +51,9 @@ export default {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
     },
+    defaultVoteWeight: {
+      get () { return this.$store.state.hive.user.settings.voteWeightComment }
+    },
     myVote: function () {
       return this.comment.active_votes.filter(this.filterMyVote)[0]
     },

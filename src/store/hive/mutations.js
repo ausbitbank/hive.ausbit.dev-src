@@ -27,3 +27,8 @@ export function updateCommunityInfo (state, communityInfo) {
 export function updateCommunitySubscriptions (state, communitySubscriptions) {
   state.user.communities = communitySubscriptions
 }
+
+export function updateSettings (state, settings) {
+  state.user.settings = settings
+  LocalStorage.set('settings', settings)
+}

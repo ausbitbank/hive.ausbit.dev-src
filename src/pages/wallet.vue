@@ -213,13 +213,11 @@
                                 (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
                               </q-item-label>
                               <q-item-label v-if="tx[1].op[1].memo !== ''">
-                                <div class="wrap text-center">
-                                  <q-icon name="comment" title="" />
-                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,30) }}</code>..
-                                  <q-tooltip content-class="bg-primary">
-                                    {{ sanitize(tx[1].op[1].memo) }}
-                                  </q-tooltip>
-                                </div>
+                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
+                                <span class="text-caption" style="word-wrap:break-word">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
+                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h5">
+                                  {{ sanitize(tx[1].op[1].memo) }}
+                                </q-tooltip>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to !== username">
@@ -232,14 +230,12 @@
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
                                 (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
                               </q-item-label>
-                              <q-item-label>
-                                <div v-if="tx[1].op[1].memo !== ''" class="wrap text-center">
-                                  <q-icon name="comment" title="" />
-                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,10) }}</code>..
-                                  <q-tooltip content-class="bg-primary">
-                                    {{ sanitize(tx[1].op[1].memo) }}
-                                  </q-tooltip>
-                                </div>
+                              <q-item-label v-if="tx[1].op[1].memo !== ''">
+                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
+                                <span class="text-caption" style="word-wrap:break-word;">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
+                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h5">
+                                  {{ sanitize(tx[1].op[1].memo) }}
+                                </q-tooltip>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'withdraw_vesting'">
@@ -573,6 +569,7 @@ a:visited { color: #1d8ce0; }
 const SSC = require('sscjs')
 const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import { debounce } from 'quasar'
+import { keychain } from '@hiveio/keychain'
 import accountHeader from 'components/accountHeader.vue'
 import transferDialog from 'components/transferDialog.vue'
 import claimRewards from 'components/claimRewards.vue'
@@ -619,7 +616,8 @@ export default {
       hiveEngineTokenInfo: null,
       hiveEngineTransactionHistory: null,
       hivePriceUsd: null,
-      hbdPriceUsd: null
+      hbdPriceUsd: null,
+      decodedMemo: null
     }
   },
   components: { accountHeader, transferDialog, claimRewards },
@@ -639,7 +637,26 @@ export default {
       get () { return this.$store.state.hive.user.username }
     }
   },
+  watch: {
+    account: function () {
+      this.init()
+    }
+  },
   methods: {
+    async decodeMemo (message, tx) {
+      this.decodedMemo = 'Decrypting Memo ...'
+      const { success, msg } = await keychain(window, 'requestVerifyKey', this.loggedInUser, message, 'Memo')
+      if (success) {
+        this.decodedMemo = msg
+        // this.hiveTransactions[index][1].op[1].memo = msg
+        var txToReplace = tx
+        console.log(txToReplace)
+        txToReplace[1].op[1].memo = msg.slice(1)
+        console.log(this.hiveTransactions.indexOf(tx))
+        this.hiveTransactions[this.hiveTransactions.indexOf(tx)] = txToReplace
+        console.log(this.hiveTransactions[this.hiveTransactions.indexOf(tx)])
+      }
+    },
     sanitize (x) {
       return DOMPurify.sanitize(x)
     },

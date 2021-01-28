@@ -1,11 +1,11 @@
 <template>
-  <q-card flat bordered class="q-ma-md q-pa-md" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
+  <q-card flat bordered class="q-ma-md q-pa-md" style="margin:auto; min-width: 50%; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
       <div>Transfer {{ tokenName }}</div>
       <div><q-input label="To account" v-model="toAccount" /></div>
       <div><q-input label="Amount" v-model="amount" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
-      <div><q-input label="Memo" v-model="memo" /></div>
+      <div><q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" /></div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
         <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" />
@@ -934,7 +934,8 @@ export default {
       memo: '',
       err: false,
       log: '',
-      sent: false
+      sent: false,
+      encrypted: false
     }
   },
   props: {
@@ -979,6 +980,20 @@ export default {
     }
   },
   methods: {
+    checkEncryption () {
+      if (this.memo.startsWith('#')) {
+        this.encrypted = true
+      } else {
+        this.encrypted = false
+      }
+    },
+    toggleEncryption () {
+      if (this.memo.startsWith('#')) {
+        this.memo = this.memo.slice(1)
+      } else {
+        this.memo = '#' + this.memo
+      }
+    },
     transfer () {
       if (badActorList.includes(this.toAccount)) {
         this.err = true

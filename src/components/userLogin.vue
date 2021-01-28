@@ -37,8 +37,12 @@
             <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
             <q-item-section>Wallet</q-item-section>
           </q-item>
+          <q-item clickable @click="settingsDialog = !settingsDialog">
+            <q-item-section avatar><q-icon name="settings" color="grey" /></q-item-section>
+            <q-item-section>Settings</q-item-section>
+          </q-item>
           <q-item>
-            <q-btn label="Logout" color="red" @click="loggedInUser = ''" icon="exit_to_app" class="text-center hvr" push/>
+            <q-btn label="Logout" color="red" @click="logout()" icon="exit_to_app" class="text-center hvr" push/>
           </q-item>
         </q-list>
         </transition>
@@ -66,6 +70,9 @@
       </q-list>
       </q-card>
     </q-popup-proxy>
+    <q-dialog v-model="settingsDialog">
+      <settings />
+    </q-dialog>
   </q-btn>
 </template>
 <style>
@@ -75,15 +82,17 @@ a:visited { color: #1d8ce0; }
 <script>
 // import { keychain, isKeychainInstalled, hasKeychainBeenUsed } from '@hiveio/keychain'
 import { keychain } from '@hiveio/keychain'
+import settings from 'components/settings.vue'
 export default {
   name: 'userLogin',
   props: [],
-  components: {},
+  components: { settings },
   data () {
     return {
       username: '',
       savedUsers: this.$q.localStorage.getItem('savedUsers') || [],
-      rememberLogin: false
+      rememberLogin: false,
+      settingsDialog: false
     }
   },
   computed: {
@@ -139,17 +148,22 @@ export default {
     linkComments (username) { return '/@' + username + '/comments' },
     linkReplies (username) { return '/@' + username + '/replies' },
     linkFeed (username) { return '/@' + username + '/feed' },
-    linkCommunities (username) { return '/@' + username + '/communities' }
+    linkCommunities (username) { return '/@' + username + '/communities' },
+    login (username) {
+      this.loggedInUser = username
+      if (this.$store.state.hive.user.communities.length === 0) {
+        console.log('No communities found for ' + username + ' , updating')
+        this.$store.dispatch('hive/getCommunitySubscriptions', username)
+      }
+    },
+    logout () {
+      this.loggedInUser = ''
+    }
   },
   mounted () {
     if (this.$q.sessionStorage.getItem('loggedInUser')) {
-      this.loggedInUser = this.$q.sessionStorage.getItem('loggedInUser')
+      this.login(this.$q.sessionStorage.getItem('loggedInUser'))
     }
-    /* if (this.$q.localStorage.getItem('savedUsers') === null) {
-      this.savedUsers = []
-    } else {
-      this.savedUsers = this.$q.localStorage.getItem('savedUsers')
-    } */
   }
 }
 </script>

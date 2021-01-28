@@ -28,6 +28,6 @@ export async function getCommunityInfo (context, username) {
 export async function getCommunitySubscriptions (context, username) {
   var params = { account: username }
   hive.api.callAsync('bridge.list_all_subscriptions', params)
-    .then(response => { context.commit('UpdateCommunitySubscriptions', response) })
+    .then(response => { context.commit('updateCommunitySubscriptions', response) })
     .catch(() => { console.error('Failed to get community subscriptions') })
 }

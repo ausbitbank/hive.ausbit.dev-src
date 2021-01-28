@@ -44,7 +44,7 @@ export default {
   props: ['votes', 'active_votes', 'author', 'permlink'],
   data () {
     return {
-      weight: 100, // TODO move default vote weight to stored per user setting
+      weight: this.$store.state.hive.user.settings.voteWeightPost,
       voteSent: false
     }
   },
@@ -70,10 +70,6 @@ export default {
     }
   },
   watch: {
-    myVote: function () {
-      console.log('myvote updated')
-      this.weight = (this.myVote.percent / 100)
-    }
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },

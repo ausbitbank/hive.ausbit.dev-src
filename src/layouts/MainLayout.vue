@@ -19,7 +19,7 @@
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
-      <q-list :class="getBackgroundStyle()">
+      <q-list>
         <q-item-label header>
           <!-- <q-icon name="img:statics/badge_powered-by-hive_dark.svg" size="lg" /> -->
         </q-item-label>
@@ -28,12 +28,11 @@
           :key="link.title"
           v-bind="link"
         />
-        <q-item><q-item-section><q-toggle v-model="darkBackgroundToggle" :label="getBackgroundLabel()" /></q-item-section></q-item>
       </q-list>
-      <span :class="getBackgroundStyle()"><div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div></span>
+      <div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
-    <q-page-container :class="getBackgroundStyle()">
-      <router-view />
+    <q-page-container>
+      <router-view :class="backgroundStyle" />
     </q-page-container>
   </q-layout>
 </template>
@@ -75,25 +74,18 @@ export default {
     },
     onSearchReset () {
       this.search = ''
-    },
-    getBackgroundStyle () {
-      if (this.darkBackgroundToggle) {
-        return null
-      } else {
-        return 'gradientBg'
-      }
-    },
-    getBackgroundLabel () {
-      if (this.darkBackgroundToggle) {
-        return 'Dark'
-      } else {
-        return 'Fabulous'
-      }
     }
   },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
+    },
+    backgroundStyle: function () {
+      if (this.$store.state.hive.user.settings.darkBackground) {
+        return ''
+      } else {
+        return 'gradientBg'
+      }
     }
   },
   data () {

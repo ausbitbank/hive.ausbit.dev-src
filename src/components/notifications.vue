@@ -102,7 +102,7 @@ export default {
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
       if (success) {
         this.notifications = []
-        this.getUnreadNotificationCount()
+        this.getUnreadNotificationCount() // TODO delay 4 seconds before checking again
       }
       if (!cancel) {
         if (notActive) {
@@ -138,7 +138,8 @@ export default {
     }
   },
   mounted () {
-    if (this.loggedInUser) {
+    if (this.loggedInUser !== '') {
+      console.log('getting unread notification count for ' + this.loggedInUser)
       this.getUnreadNotificationCount()
     }
   }
