@@ -19,6 +19,10 @@
           <q-btn flat icon="military_tech" title="Pending Payouts"> {{ tidyNumber(communityInfo.sum_pending) }}</q-btn>
         </span>
       </div>
+      <div v-if="this.loggedInUser !== ''">
+        <q-btn v-if="userSubscribed === false" color="primary" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'subscribe')"><q-icon name="person_add" class="q-mr-sm" /> Subscribe to <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
+        <q-btn v-else-if="userSubscribed === true" color="red" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'unsubscribe')"><q-icon name="person_remove" class="q-mr-sm" /> Unsubscribe from <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
+      </div>
     </div>
     <q-toolbar class="shadow-2 rounded-borders" v-if="communityInfo">
       <q-tabs v-model="tab" animated shrink dense style="margin:auto">
@@ -183,16 +187,6 @@ export default {
       if (role === 'admin') { return 'green' }
       if (role === 'mod') { return 'orange' }
     },
-    async getCommunity () {
-      this.loading = true
-      var params = { observer: this.observer, name: this.account.name }
-      this.$hive.api.callAsync('bridge.get_community', params)
-        .then(response => {
-          this.communityInfo = response
-          this.loading = false
-          document.title = response.title + ' : ' + response.about
-        })
-    },
     async getCommunitySubscribers () {
       this.loadingSubscribers = true
       var params = { community: this.account.name }
@@ -218,15 +212,34 @@ export default {
     },
     returnPostLink (author, permlink) {
       return '/@' + author + '/' + permlink
+    },
+    manageCommunity (communityAccount, action) {
+      var json = '["' + action + '",{"community":"' + communityAccount + '"}]'
+      window.hive_keychain.requestCustomJson(this.loggedInUser, 'community', 'Posting', json, action + ' community ' + communityAccount, function (response) {
+        if (response.success === true) {
+          console.log(response.message)
+          // setTimeout(this.$store.dispatch('hive/getCommunitySubscriptions', this.loggedInUser), 10000)
+          setTimeout(this.getCommunitySubscribers(), 10000)
+        } else {
+          console.error(response.message)
+        }
+      }.bind(this))
     }
   },
   computed: {
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    },
     communityInfo: function () {
       return this.$store.state.hive.communityInfo[this.account.name]
     },
     communityDescription: function () {
-      if (this.communityInfo.description) {
-        return renderPostBody(this.communityInfo.description)
+      if (this.communityInfo) {
+        if (this.communityInfo.description) {
+          return renderPostBody(this.communityInfo.description)
+        } else {
+          return null
+        }
       } else {
         return null
       }
@@ -270,6 +283,18 @@ export default {
         return JSON.parse(sanitize(this.account.posting_json_metadata))
       } else {
         return null
+      }
+    },
+    userSubscribed: function () {
+      if (this.subscribers === null) {
+        return false
+      } else {
+        var tc = this.subscribers.filter(c => c[0] === this.loggedInUser)
+        if (tc.length === 0) {
+          return false
+        } else {
+          return true
+        }
       }
     }
   },

@@ -151,10 +151,7 @@ export default {
     linkCommunities (username) { return '/@' + username + '/communities' },
     login (username) {
       this.loggedInUser = username
-      if (this.$store.state.hive.user.communities.length === 0) {
-        console.log('No communities found for ' + username + ' , updating')
-        this.$store.dispatch('hive/getCommunitySubscriptions', username)
-      }
+      // this.$store.dispatch('hive/getCommunitySubscriptions', username)
     },
     logout () {
       this.loggedInUser = ''

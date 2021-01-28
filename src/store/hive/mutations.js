@@ -25,7 +25,8 @@ export function updateCommunityInfo (state, communityInfo) {
 }
 
 export function updateCommunitySubscriptions (state, communitySubscriptions) {
-  state.user.communities = communitySubscriptions
+  Vue.set(state.user, 'communities', communitySubscriptions)
+  SessionStorage.set('communitySubscriptions', communitySubscriptions)
 }
 
 export function updateSettings (state, settings) {

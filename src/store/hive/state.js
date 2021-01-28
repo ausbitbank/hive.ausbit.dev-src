@@ -6,7 +6,7 @@ export default function () {
       lastUpdateTime: null,
       following: [],
       followers: [],
-      communities: [],
+      communities: SessionStorage.getItem('communitySubscriptions') || [],
       state: {},
       notifications: SessionStorage.getItem('notifications') || [],
       unreadNotificationCount: 0,
