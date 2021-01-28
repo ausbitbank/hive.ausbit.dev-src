@@ -18,13 +18,14 @@
       </div>
     </span>
     <span v-else>
-      <div class="q-pa-md">
+      <div class="q-pa-md text-center">
         <q-list dense>
           <q-item>
             <q-item-section>
-              <q-btn push :icon="voteIcon" :color="voteColor" :label="voteLabel" @click="vote(permlink, author, weight)" />
+              <q-spinner-grid color="primary" size="lg" v-if="voteSent" class="q-ma-md" />
+              <q-btn push :disable="voteSent" :icon="voteIcon" :color="voteColor" :label="voteLabel" @click="vote(permlink, author, weight)" />
             </q-item-section>
-            <q-item-section>
+            <q-item-section v-if="!voteSent">
               <q-slider v-model="weight" :min="-100" :max="100" label :color="voteColor" /><br />
               <q-btn size="sm" dense label="25%" @click="weight = 25" />
               <q-btn size="sm" dense label="50%" @click="weight = 50" />
@@ -76,13 +77,14 @@ export default {
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
     async vote (permlink, author, weight) {
+      this.voteSent = true
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
       if (success) {
-        this.voteSent = true
         this.$q.notify('Voted ' + weight + '% on @' + author + '/' + permlink)
         this.$emit('Voted', weight)
       }
       if (!cancel) {
+        this.voteSent = false
         if (notActive) {
           console.error('Please allow Keychain to access this website')
         } else if (notInstalled) { // alert('Please install Keychain')

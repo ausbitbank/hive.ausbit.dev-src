@@ -178,7 +178,7 @@
             <div>You can still vote, but it will not affect rewards.</div>
           </q-card-section>
           <q-card-section v-if="loggedInUser">
-            <vote :author='author' :permlink="permlink" :active_votes="this.post.active_votes"/>
+            <vote v-on:Voted="init()" :author='author' :permlink="permlink" :active_votes="this.post.active_votes"/>
           </q-card-section>
           <q-card-section>
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
