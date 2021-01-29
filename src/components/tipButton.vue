@@ -17,7 +17,7 @@ export default {
   },
   data () {
     return {
-      supportedCoins: ['bitcoin', 'litecoin', 'ethereum'],
+      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin'],
       dialog: false
     }
   },

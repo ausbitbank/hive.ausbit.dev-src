@@ -27,6 +27,7 @@
             <span v-if="postingJsonMeta.profile.bitcoin" title="Bitcoin"><a :href="returnServiceLink('bitcoin', postingJsonMeta.profile.bitcoin)"><q-avatar><q-icon name="img:statics/bitcoin.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.litecoin" title="Litecoin"><a :href="returnServiceLink('litecoin', postingJsonMeta.profile.litecoin)"><q-avatar><q-icon name="img:statics/litecoin.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.ethereum" title="Ethereum"><a :href="returnServiceLink('ethereum', postingJsonMeta.profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" class="hvr" /></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.dogecoin" title="Dogecoin"><a :href="returnServiceLink('dogecoin', postingJsonMeta.profile.dogecoin)"><q-avatar><q-icon name="img:statics/dogecoin.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.flickr" title="Flickr"><a :href="returnServiceLink('flickr', postingJsonMeta.profile.flickr)"><q-avatar><q-icon name="img:statics/flickr.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.facebook" title="Facebook"><a :href="returnServiceLink('facebook', postingJsonMeta.profile.facebook)"><q-avatar><q-icon name="img:statics/facebook.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.tumblr" title="Tumblr"><a :href="returnServiceLink('tumblr', postingJsonMeta.profile.tumblr)"><q-avatar><q-icon name="img:statics/tumblr.svg" class="hvr"/></q-avatar></a></span>
@@ -151,6 +152,8 @@ export default {
           return 'litecoin:' + d
         case 'ethereum':
           return 'ethereum:' + d
+        case 'dogecoin':
+          return 'dogecoin:' + d
         case 'ipfs':
           return 'https://cloudflare-ipfs.com/ipfs/' + d
         case 'xbox':

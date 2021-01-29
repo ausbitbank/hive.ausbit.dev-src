@@ -215,7 +215,7 @@
                               <q-item-label v-if="tx[1].op[1].memo !== ''">
                                 <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
                                 <span class="text-caption" style="word-wrap:break-word">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
-                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h5">
+                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
                                   {{ sanitize(tx[1].op[1].memo) }}
                                 </q-tooltip>
                               </q-item-label>
@@ -233,7 +233,7 @@
                               <q-item-label v-if="tx[1].op[1].memo !== ''">
                                 <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
                                 <span class="text-caption" style="word-wrap:break-word;">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
-                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h5">
+                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
                                   {{ sanitize(tx[1].op[1].memo) }}
                                 </q-tooltip>
                               </q-item-label>

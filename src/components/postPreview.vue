@@ -5,7 +5,7 @@
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
-    <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post && !post.stats.hide && !post.stats.gray">
+    <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post">
       <q-card-section horizontal>
         <q-card-section v-if="postImage">
             <router-link :to="returnPostPath(post.author, post.permlink)">

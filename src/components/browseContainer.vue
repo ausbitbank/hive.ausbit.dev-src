@@ -34,6 +34,47 @@
                 Hide Reblogs
               </q-item-section>
             </q-item>
+            <q-item>
+              <q-item-section>
+                <q-checkbox v-model="filter.hidePinned" />
+              </q-item-section>
+              <q-item-section>
+                Hide Pinned
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-checkbox v-model="filter.hideHidden" />
+              </q-item-section>
+              <q-item-section>
+                Hide Muted
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-checkbox v-model="filter.hideGray" />
+              </q-item-section>
+              <q-item-section>
+                Hide Moderated
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section avatar>
+                <q-checkbox v-model="filter.hideRewardsFilter" />
+              </q-item-section>
+              <q-item-section>
+                Hide posts rewards below
+              </q-item-section>
+              <q-item-section>
+                <q-input v-model="filter.hideRewardsBelow" :disable="!filter.hideRewardsFilter" debounce="500" style="max-width: 3em" />
+              </q-item-section>
+              <q-item-section>
+                Hide posts rewards above
+              </q-item-section>
+              <q-item-section>
+                <q-input v-model="filter.hideRewardsAbove" :disable="!filter.hideRewardsFilter" debounce="500" style="max-width: 3em" />
+              </q-item-section>
+            </q-item>
           </q-list>
         </q-popup-proxy>
       </q-btn>
@@ -78,7 +119,13 @@ export default {
       tag: this.showTag,
       filter: {
         hideVoted: false,
-        hideReblogs: false
+        hideReblogs: false,
+        hidePinned: false,
+        hideHidden: true,
+        hideGray: true,
+        hideRewardsFilter: false,
+        hideRewardsAbove: 10000,
+        hideRewardsBelow: 0
       }
     }
   },
@@ -93,6 +140,24 @@ export default {
       }
       if (this.filter.hideVoted) {
         p = p.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0)
+      }
+      if (this.filter.hidePinned) {
+        p = p.filter(post => !post.stats.is_pinned)
+      }
+      if (this.filter.hideHidden) {
+        p = p.filter(post => !post.stats.hidden)
+      }
+      if (this.filter.hideGray) {
+        p = p.filter(post => !post.stats.gray)
+      }
+      if (this.filter.hideRewardsFilter) {
+        if (this.filter.hideRewardsBelow !== null) {
+          p = p.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) > this.filter.hideRewardsBelow) || (parseFloat(post.payout) > this.filter.hideRewardsBelow))
+        }
+        if (this.filter.hideRewardsAbove !== null) {
+          p = p.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) < this.filter.hideRewardsAbove) || (parseFloat(post.payout) < this.filter.hideRewardsAbove))
+          // p = p.filter(post => (parseFloat(post.payout.split(' ')[0]) < this.filter.hideRewardsAbove))
+        }
       }
       return p
     }

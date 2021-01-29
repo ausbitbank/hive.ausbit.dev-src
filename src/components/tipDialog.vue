@@ -82,7 +82,7 @@ export default {
   components: { transferDialog }, // metamask
   data () {
     return {
-      supportedCoins: ['bitcoin', 'litecoin', 'ethereum'],
+      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin'],
       hivetransfer: false,
       hivedollartransfer: false,
       ethFromAddress: null
