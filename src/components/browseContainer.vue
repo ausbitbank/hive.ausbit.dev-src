@@ -117,6 +117,7 @@ export default {
       account: this.showAccount,
       name: null,
       tag: this.showTag,
+      filteredPosts: [],
       filter: {
         hideVoted: false,
         hideReblogs: false,
@@ -132,34 +133,6 @@ export default {
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
-    },
-    filteredPosts: function () {
-      var p = this.posts
-      if (this.filter.hideReblogs) {
-        p = p.filter(post => !post.reblogged_by)
-      }
-      if (this.filter.hideVoted) {
-        p = p.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0)
-      }
-      if (this.filter.hidePinned) {
-        p = p.filter(post => !post.stats.is_pinned)
-      }
-      if (this.filter.hideHidden) {
-        p = p.filter(post => !post.stats.hidden)
-      }
-      if (this.filter.hideGray) {
-        p = p.filter(post => !post.stats.gray)
-      }
-      if (this.filter.hideRewardsFilter) {
-        if (this.filter.hideRewardsBelow !== null) {
-          p = p.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) > this.filter.hideRewardsBelow) || (parseFloat(post.payout) > this.filter.hideRewardsBelow))
-        }
-        if (this.filter.hideRewardsAbove !== null) {
-          p = p.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) < this.filter.hideRewardsAbove) || (parseFloat(post.payout) < this.filter.hideRewardsAbove))
-          // p = p.filter(post => (parseFloat(post.payout.split(' ')[0]) < this.filter.hideRewardsAbove))
-        }
-      }
-      return p
     }
   },
   watch: {
@@ -167,6 +140,16 @@ export default {
       console.log('sortmethod changed')
       this.sort = newData
       this.getPosts()
+    },
+    posts: {
+      deep: true,
+      immediate: false,
+      handler: 'filterPosts'
+    },
+    filter: {
+      deep: true,
+      immediate: false,
+      handler: 'filterPosts'
     }
   },
   methods: {
@@ -187,6 +170,21 @@ export default {
           }
           this.loading = false
         })
+    },
+    filterPosts () {
+      console.log('filtering posts')
+      var fp = this.posts
+      this.filteredPosts = []
+      if (this.filter.hideReblogs) { fp = fp.filter(post => !post.reblogged_by) }
+      if (this.filter.hideVoted) { fp = fp.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0) }
+      if (this.filter.hidePinned) { fp = fp.filter(post => !post.stats.is_pinned) }
+      if (this.filter.hideHidden) { fp = fp.filter(post => !post.stats.hidden) }
+      if (this.filter.hideGray) { fp = fp.filter(post => !post.stats.gray) }
+      if (this.filter.hideRewardsFilter) {
+        if (this.filter.hideRewardsBelow !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) > this.filter.hideRewardsBelow) || (parseFloat(post.payout) > this.filter.hideRewardsBelow)) }
+        if (this.filter.hideRewardsAbove !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) < this.filter.hideRewardsAbove) || (parseFloat(post.payout) < this.filter.hideRewardsAbove)) }
+      }
+      this.filteredPosts = fp
     }
   },
   mounted () {

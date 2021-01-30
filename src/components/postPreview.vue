@@ -21,7 +21,7 @@
                 <q-item-label>
                     <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
                     <span class="text-caption wrap" v-if="postMeta.description">{{ postMeta.description.substr(0,650) }}</span>
-                    <span class="text-caption wrap" v-else>{{ summary }}</span>
+                    <span class="text-caption wrap" v-else>{{ this.summary }}</span>
                 </q-item-label>
             </q-item-section>
         </q-item>
@@ -66,10 +66,20 @@ export default {
     return {
       thumbslide: 0,
       summary: postBodySummary(this.post, 650),
+      postImage: catchPostImage(this.post),
       votedWeight: null
     }
   },
   components: { vote, commentBox },
+  watch: {
+    post: {
+      deep: true,
+      handler () {
+        this.summary = postBodySummary(this.post, 650)
+        this.postImage = catchPostImage(this.post)
+      }
+    }
+  },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
@@ -80,9 +90,6 @@ export default {
       } else {
         return null
       }
-    },
-    postImage: function () {
-      return catchPostImage(this.post)
     },
     downVotes: function () {
       return null
