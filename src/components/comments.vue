@@ -6,10 +6,10 @@
     <span v-if="viewComments">
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
-          <q-icon name="forum" />Replies
+          {{ comments.replies }} Replies <q-icon name="filter_alt" /><q-checkbox v-model="filter" />
       </q-card-section>
       <span v-for="comment in comments" :key="comment.index">
-        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.parent_permlink === permlink" />
+        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="!comment.stats.grey && !comment.stats.hide && comment.parent_permlink === permlink" />
       </span>
     </q-card>
     </span>
@@ -24,7 +24,8 @@ export default {
       comments: [],
       api: 'https://rpc.ausbit.dev',
       viewComments: false,
-      loading: false
+      loading: false,
+      filter: true
     }
   },
   watch: {
@@ -41,7 +42,7 @@ export default {
   methods: {
     getReplies () {
       this.loading = true
-      this.$axios.post(this.api, {
+      this.$axios.post(this.api, { // TODO change this to hivejs call
         jsonrpc: '2.0',
         method: 'bridge.get_discussion',
         params: {
