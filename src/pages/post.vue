@@ -157,18 +157,23 @@
                   <q-icon name="share" color="orange" />
                 </q-item-section>
                 <q-item-section>
-                  <q-btn rounded bordered @click="showShareDialog = !showShareDialog">
+                  <q-btn rounded flat @click="showShareDialog = !showShareDialog">
                     Share this post:
                   </q-btn>
                   <shareButtons :title="post.title" v-if="showShareDialog" />
                 </q-item-section>
               </q-item>
-              <q-item class="text-left" v-if="postMeta">
-                <q-item-section avatar v-if="false">
-                  <q-icon name="info" color="blue" />
+              <q-item>
+                <q-item-section avatar>
+                  <q-icon name="code" color="blue" />
                 </q-item-section>
                 <q-item-section>
-                  <json-viewer :data="postMeta" :deep="0" title="Post json_metadata" />
+                  <q-btn label="Full Post Metadata" @click="showFullPostMetadata = !showFullPostMetadata" rounded flat />
+                  <q-dialog v-model="showFullPostMetadata">
+                    <div class="bg-dark">
+                      <json-viewer :data="post" :deep="1" title="Post json_metadata" />
+                    </div>
+                  </q-dialog>
                 </q-item-section>
               </q-item>
             </q-list>
@@ -233,7 +238,6 @@ export default {
       post: null,
       author: this.$router.currentRoute.params.author,
       permlink: this.$router.currentRoute.params.permlink,
-      // api: 'https://rpc.ausbit.dev',
       showVotes: false,
       showShareDialog: false,
       voteColumns: [
@@ -275,7 +279,8 @@ export default {
         }
       ],
       postBody: null,
-      postDescription: null
+      postDescription: null,
+      showFullPostMetadata: false
     }
   },
   watch: {

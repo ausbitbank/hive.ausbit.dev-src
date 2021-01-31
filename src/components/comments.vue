@@ -6,10 +6,21 @@
     <span v-if="viewComments">
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
-          {{ comments.replies }} Replies <q-icon name="filter_alt" /><q-checkbox v-model="filter" />
+          {{ Object.keys(this.comments).length - 1 }} Replies
+          <div>
+            <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense glossy rounded push>
+              <q-popup-proxy>
+                <q-card class="q-pa-md shadow-4" bordered>
+                  <span class="text-caption">Gray <q-checkbox v-model="filter.gray" /> Hidden <q-checkbox v-model="filter.hide" /></span>
+                  <q-select v-model="commentSortMethod" :options="commentSortMethods" label="Sort" dense />
+                  <q-select v-model="commentSortDirection" :options="commentSortDirections" label="Direction" dense />
+              </q-card>
+              </q-popup-proxy>
+            </q-btn>
+          </div>
       </q-card-section>
-      <span v-for="comment in comments" :key="comment.index">
-        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="!comment.stats.grey && !comment.stats.hide && comment.parent_permlink === permlink" />
+      <span v-for="comment in comments" :key="comment.index" class="text-justify">
+        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.parent_permlink === permlink && returnFilterStatus(comment)" />
       </span>
     </q-card>
     </span>
@@ -25,7 +36,22 @@ export default {
       api: 'https://rpc.ausbit.dev',
       viewComments: false,
       loading: false,
-      filter: true
+      filter: {
+        gray: true,
+        hide: true
+      },
+      commentSortMethod: 'net_rshares',
+      commentSortMethods: [
+        { label: 'Votes (rshares)', value: 'net_rshares' },
+        { label: 'Age', value: 'post_id' },
+        { label: 'Author Reputation', value: 'author_reputation' },
+        { label: 'Replies', value: 'children' }
+      ],
+      commentSortDirection: 'desc',
+      commentSortDirections: [
+        { label: 'Ascending', value: 'asc' },
+        { label: 'Descending', value: 'desc' }
+      ]
     }
   },
   watch: {
@@ -33,6 +59,14 @@ export default {
       if (this.viewComments) {
         this.getReplies()
       }
+    },
+    commentSortMethod: {
+      deep: true,
+      handler: 'resortComments'
+    },
+    commentSortDirection: {
+      deep: true,
+      handler: 'resortComments'
     }
   },
   props: ['author', 'permlink'],
@@ -40,6 +74,16 @@ export default {
   computed: {
   },
   methods: {
+    resortComments () {
+      var c = this.comments
+      this.comments = null
+      this.comments = this.sortData(this.commentSortMethod.value, c, this.commentSortDirection.value)
+    },
+    returnFilterStatus (comment) {
+      if (this.filter.gray && comment.stats.gray) { return false }
+      if (this.filter.hide && comment.stats.hide) { return false }
+      return true
+    },
     getReplies () {
       this.loading = true
       this.$axios.post(this.api, { // TODO change this to hivejs call
@@ -53,7 +97,8 @@ export default {
         .then((res) => {
           this.loading = false
           this.comments = res.data.result
-          this.comments = this.sortData('net_rshares', this.comments, 'desc')
+          console.log(this.comments)
+          this.comments = this.sortData(this.commentSortMethod.value, this.comments, this.commentSortDirection.value)
         })
         .catch((err) => {
           this.loading = false
