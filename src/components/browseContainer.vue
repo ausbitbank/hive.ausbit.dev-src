@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-toolbar class="bg-dark text-white" v-if="showToolbar">
-      <q-select v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'bridge.get_community']" label="method" />
+      <q-select v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" />
       <q-input v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
       <q-select v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
       <q-select v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
@@ -10,7 +10,6 @@
       <q-input v-model="observer" label="observer" clearable @clear="observer = ''" />
       <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" />
       <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" />
-      <q-input v-model="name" label="name" v-if="method === 'bridge.get_community'" />
       <q-space />
       <q-btn label="Search" @click="getPosts()" />
     </q-toolbar>
@@ -172,7 +171,6 @@ export default {
         })
     },
     filterPosts () {
-      console.log('filtering posts')
       var fp = this.posts
       this.filteredPosts = []
       if (this.filter.hideReblogs) { fp = fp.filter(post => !post.reblogged_by) }

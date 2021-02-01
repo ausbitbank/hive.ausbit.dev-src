@@ -1,11 +1,10 @@
 <template>
-    <div flat bordered v-if="this.loggedInUser" style="margin:auto; min-width: 500px; max-width: 95%" class="q-ma-md q-pa-md rounded-borders">
-        <q-card v-if="!commentSent">
+    <div flat bordered v-if="this.loggedInUser && !commentSent" style="margin:auto; min-width: 500px; max-width: 95%" class="q-ma-md q-pa-md rounded-borders">
+        <q-card>
         <vue-simplemde v-model="commentText" ref="markdownEditor" :configs="editorConfig" class="q-pa-sm" />
         <q-btn @click="comment()" push color="primary" style="margin:auto">Reply to {{ parent_author }}</q-btn>
         <q-icon name="info" color="primary" title="10% comment beneficiary to ausbitbank" class="q-ma-sm"/>
         </q-card>
-        <span v-if="commentSent">Comment Sent</span>
     </div>
 </template>
 <style>

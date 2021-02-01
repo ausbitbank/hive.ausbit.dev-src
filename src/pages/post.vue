@@ -136,12 +136,16 @@
                   ( {{ timeDelta(postMeta.countdown )}} )
                 </q-item-section>
               </q-item>
-              <q-item title="Votes" v-if="post.active_votes.length > 0">
+              <q-item title="Votes">
                 <q-item-section avatar>
-                  <q-icon name="how_to_vote" color="purple" />
+                  <q-icon name="thumbs_up_down" color="purple" title="View voter information" class="cursor-hand" @click="showVotes = true" />
                 </q-item-section>
-                <q-item-section>
-                  <span class="text-blue text-bold cursor-pointer" @click="showVotes = true">{{ post.active_votes.length }} votes</span>
+                <q-item-section v-if="loggedInUser && postPastPayout" class="text-caption">
+                  <div>This post is past its payout window.</div>
+                  <div>You can still vote, but it will not affect rewards.</div>
+                </q-item-section>
+                <q-item-section v-if="loggedInUser">
+                  <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
                 </q-item-section>
                 <q-dialog v-model="showVotes">
                   <q-card flat bordered style="max-width: 1000px; max-width: 95%;">
@@ -177,13 +181,6 @@
                 </q-item-section>
               </q-item>
             </q-list>
-          </q-card-section>
-          <q-card-section v-if="loggedInUser && postPastPayout" class="text-caption">
-            <div>This post is past its payout window.</div>
-            <div>You can still vote, but it will not affect rewards.</div>
-          </q-card-section>
-          <q-card-section v-if="loggedInUser">
-            <vote v-on:Voted="init()" :author='author' :permlink="permlink" :active_votes="this.post.active_votes"/>
           </q-card-section>
           <q-card-section>
             View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
@@ -361,10 +358,13 @@ export default {
     GetEditHistoryUrl (author, permlink) { return 'https://scribe.hivekings.com/?url=https%3A%2F%2Fhive.blog%2F%40' + author + '%2F' + permlink },
     Sanitize (input) { return sanitize(input) },
     init () {
-      this.post = null
+      // this.post = null
       this.author = this.$router.currentRoute.params.author
       this.permlink = this.$router.currentRoute.params.permlink
       this.getPost(this.author, this.permlink)
+    },
+    delayedInit () {
+      setTimeout(this.init(), 6000)
     }
   },
   mounted () {
