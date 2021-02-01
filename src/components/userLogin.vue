@@ -11,35 +11,35 @@
         <q-list bordered class="rounded-borders text-primary">
           <q-item clickable :to="linkFeed(loggedInUser)">
             <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
-            <q-item-section>Feed</q-item-section>
+            <q-item-section class="text-orange">Feed</q-item-section>
           </q-item>
           <q-item clickable :to="linkBlog(loggedInUser)">
             <q-item-section avatar><q-icon name="menu_book" color="purple" /></q-item-section>
-            <q-item-section>Blog</q-item-section>
+            <q-item-section class="text-purple">Blog</q-item-section>
           </q-item>
           <q-item clickable :to="linkPosts(loggedInUser)">
             <q-item-section avatar><q-icon name="library_books" color="deep_purple" /></q-item-section>
-            <q-item-section>Posts</q-item-section>
+            <q-item-section class="text-deep_purple">Posts</q-item-section>
           </q-item>
           <q-item clickable :to="linkCommunities(loggedInUser)">
             <q-item-section avatar><q-icon name="forum" color="teal" /></q-item-section>
-            <q-item-section>Communities</q-item-section>
+            <q-item-section class="text-teal">Communities</q-item-section>
           </q-item>
           <q-item clickable :to="linkReplies(loggedInUser)">
             <q-item-section avatar><q-icon name="comment" color="blue-grey" /></q-item-section>
-            <q-item-section>Replies</q-item-section>
+            <q-item-section class="text-blue-grey">Replies</q-item-section>
           </q-item>
           <q-item clickable :to="getAccountLink(loggedInUser)">
             <q-item-section avatar><q-icon name="perm_identity" color="indigo" /></q-item-section>
-            <q-item-section>Profile</q-item-section>
+            <q-item-section class="text-indigo">Profile</q-item-section>
           </q-item>
           <q-item :to="getWalletLink(loggedInUser)">
             <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
-            <q-item-section>Wallet</q-item-section>
+            <q-item-section class="text-green">Wallet</q-item-section>
           </q-item>
           <q-item clickable @click="settingsDialog = !settingsDialog">
             <q-item-section avatar><q-icon name="settings" color="grey" /></q-item-section>
-            <q-item-section>Settings</q-item-section>
+            <q-item-section class="text-grey">Settings</q-item-section>
           </q-item>
           <q-item>
             <q-btn label="Logout" color="red" @click="logout()" icon="exit_to_app" class="text-center hvr" push/>
