@@ -2,6 +2,7 @@
     <q-page v-if="this.account !== undefined" class="text-center">
         <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
         <q-card class="text-center q-ma-lg q-pa-md" padding rounded style="max-width: 400px; margin:auto">
+          <community-feed-carousel :account="account.name" />
             <div v-if="this.$store.state.hive.user.username === account.name"><router-link to='/created/my'>View my community feed</router-link></div>
             {{ account.name }} is subscribed to these communities :
           <q-list bordered separator>
@@ -23,20 +24,16 @@
 </template>
 <script>
 import accountHeader from 'components/accountHeader.vue'
+import communityFeedCarousel from 'components/communityPostsCarousel.vue'
 export default {
   name: 'browsePage',
   components: {
-    accountHeader
+    accountHeader,
+    communityFeedCarousel
   },
   computed: {
-    globalProps: {
-      get () { return this.$store.state.hive.globalProps }
-    },
-    account: {
-      get () {
-        return this.$store.state.hive.accounts[this.username]
-      }
-    }
+    globalProps: { get () { return this.$store.state.hive.globalProps } },
+    account: { get () { return this.$store.state.hive.accounts[this.username] } }
   },
   data () {
     return {

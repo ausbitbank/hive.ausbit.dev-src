@@ -1,18 +1,7 @@
 <template>
   <span>
-    <q-select new-value-mode="add" filled :value="input" use-input hide-selected fill-input input-debounce="250" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="width: 250px; padding-bottom: 32px" @input="$emit('selectUsername', input)">
+    <q-select clearable new-value-mode="add" filled :value="input" use-input hide-selected fill-input input-debounce="250" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="width: 250px; padding-bottom: 32px" @input="$emit('selectUsername', input)">
     </q-select>
-    <q-btn label="Deposit to Exchange" color="primary" glossy v-if="input === ''" dense>
-      <q-popup-proxy>
-        <q-card>
-        Common Exchange Accounts :<br />
-        <q-btn label="deepcrypto8 (binance)" @click="input = 'deepcrypto8'" v-close-popup />
-        <q-btn label="bittrex" @click="input = 'bittrex'" v-close-popup />
-        <q-btn label="ionomy" @click="input = 'ionomy'" v-close-popup />
-        <q-btn label="huobi-pro" @click="input = 'huobi-pro'" v-close-popup />
-        </q-card>
-      </q-popup-proxy>
-    </q-btn>
   </span>
 </template>
 <script>
@@ -20,12 +9,17 @@ export default {
   name: 'userSearchBox',
   data () {
     return {
-      input: this.username || '',
+      input: this.username,
       usernameSuggestions: [],
       badActors: badActorList
     }
   },
   props: ['username', 'label'],
+  watch: {
+    username: function (newState) {
+      this.input = newState
+    }
+  },
   methods: {
     filterFn (val, update, abort) {
       update(() => {

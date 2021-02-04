@@ -3,7 +3,7 @@
     <div v-if="!loading">
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
+        <q-icon name="forum" color="teal" /> Community Feed for {{ this.account }}
       </div>
       <q-carousel
         v-if="posts.length > 0"
@@ -33,12 +33,6 @@
           <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
-      <q-dialog v-model="settings">
-        <q-card flat bordered class="q-pa-sm">
-          <q-input label="account" v-model="account" @submit="init()"/>
-          <q-btn push label="update" color="primary" @click="settings = false; init()"/>
-        </q-card>
-      </q-dialog>
       </q-card>
     </div>
   </div>
@@ -54,7 +48,7 @@ import moment from 'moment'
 import sanitize from 'sanitize-html'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
-  name: 'recentPostsCarousel',
+  name: 'communityFeedCarousel',
   data () {
     return {
       posts: [],
@@ -78,10 +72,6 @@ export default {
       type: Boolean,
       required: false,
       default: true
-    },
-    type: {
-      type: String,
-      default: 'posts' // posts or blog
     }
   },
   computed: {
@@ -118,11 +108,11 @@ export default {
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
-    async getRecentPosts () {
+    async getCommunityFeed () {
       this.loading = true
       this.posts = []
-      var params = { sort: this.postType, account: this.account, limit: this.limit, observer: this.loggedInUser || this.account, start_author: null, start_permlink: null }
-      this.$hive.api.callAsync('bridge.get_account_posts', params)
+      var params = { sort: 'created', limit: this.limit, observer: this.account, tag: 'my' }
+      this.$hive.api.callAsync('bridge.get_ranked_posts', params)
         .then(res => {
           this.loading = false
           this.posts = res
@@ -130,13 +120,11 @@ export default {
         })
     },
     s (input) {
-      // Render markdown to html, strip all tags and attributes, remove URLS
       var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
       return sanitize(input, options)
-      //  .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '')
     },
     init () {
-      this.getRecentPosts()
+      this.getCommunityFeed()
     }
   },
   mounted () {

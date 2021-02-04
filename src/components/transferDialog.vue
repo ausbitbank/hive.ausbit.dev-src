@@ -3,6 +3,15 @@
       <div>Transfer {{ tokenName }}</div>
       <user-search-box :username="toAccount" @selectUsername="setUsername" label="To account" />
       <div v-if="false"><q-input label="To account" v-model="toAccount" /></div>
+      <q-btn label="Deposit to Exchange" color="primary" glossy v-if="toAccount === '' && network === 'hive'" dense>
+        <q-popup-proxy>
+          <q-card>
+          Common Exchange Accounts :<br />
+          <q-btn v-for="ea in exchanges" :key="ea.index" :label="ea" @click="setUsername(ea)" v-close-popup />
+          </q-card>
+        </q-popup-proxy>
+      </q-btn>
+      {{ toAccount }}
       <div><q-input label="Amount" v-model="amount" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
@@ -73,7 +82,6 @@ export default {
   },
   methods: {
     setUsername (u) {
-      console.log('set username ' + u)
       this.toAccount = u
     },
     checkEncryption () {
