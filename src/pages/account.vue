@@ -99,124 +99,7 @@
                 <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" />
             </q-card-section>
         </q-card>
-        <q-card flat bordered class="q-pa-sm q-ma-md">
-            <q-card-section>
-              <div class="text-h5 text-center">Authorities</div>
-            </q-card-section>
-            <q-card-section v-if="witness">
-                <div class="text-h6">Signing</div>
-                <q-list bordered seperator dense>
-                    <q-item>
-                        <q-item-section avatar>
-                          <q-icon name="lock" />
-                        </q-item-section>
-                        <q-item-section class="wrap">
-                            {{ witness.signing_key }}
-                        </q-item-section>
-                      <q-item-section side>
-                          1
-                      </q-item-section>
-                    </q-item>
-                </q-list>
-            </q-card-section>
-            <q-card-section>
-                <div class="text-h6">Owner</div>
-                <q-list bordered seperator dense>
-                  <q-item v-for="auth in account.owner.key_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="lock" />
-                      </q-item-section>
-                      <q-item-section class="wrap">
-                          {{ auth[0] }}
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                  <q-item v-for="auth in account.owner.account_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="person" />
-                      </q-item-section>
-                      <q-item-section>
-                          <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                </q-list>
-            </q-card-section>
-            <q-card-section>
-                <div class="text-h6">Active</div>
-                <q-list bordered seperator dense class="wrap">
-                  <q-item v-for="auth in account.active.key_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="lock" />
-                      </q-item-section>
-                      <q-item-section class="wrap">
-                          {{ auth[0] }}
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                  <q-item v-for="auth in account.active.account_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="person" />
-                      </q-item-section>
-                      <q-item-section>
-                          <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                </q-list>
-            </q-card-section>
-            <q-card-section>
-                <div class="text-h6">Posting</div>
-                <q-list bordered seperator dense>
-                  <q-item v-for="auth in account.posting.key_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="lock" />
-                      </q-item-section>
-                      <q-item-section class="wrap">
-                          {{ auth[0] }}
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                  <q-item v-for="auth in account.posting.account_auths" :key="auth.index">
-                      <q-item-section avatar>
-                          <q-icon name="person" />
-                      </q-item-section>
-                      <q-item-section>
-                          <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-                      </q-item-section>
-                      <q-item-section side>
-                          {{ auth[1] }}
-                      </q-item-section>
-                  </q-item>
-                </q-list>
-            </q-card-section>
-            <q-card-section>
-                <div class="text-h6">Memo</div>
-                <q-list bordered seperator dense>
-                  <q-item>
-                      <q-item-section avatar>
-                          <q-icon name="lock" />
-                      </q-item-section>
-                      <q-item-section class="wrap">
-                          {{ account.memo_key }}
-                      </q-item-section>
-                      <q-item-section side>
-                          1
-                      </q-item-section>
-                  </q-item>
-                </q-list>
-            </q-card-section>
-        </q-card>
+        <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="witness">
             <q-card-section>
                 <div class="text-h6">
@@ -261,6 +144,7 @@ import propsList from 'components/propsList.vue'
 import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
+import accountAuthorities from 'components/accountAuthorities.vue'
 import rc from 'components/rc.vue'
 export default {
   name: 'accountPage',
@@ -271,7 +155,8 @@ export default {
     propsEditor,
     accountOperations,
     accountHeader,
-    rc
+    rc,
+    accountAuthorities
     // recentVotedPostsCarousel
   },
   data () {

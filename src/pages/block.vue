@@ -20,6 +20,11 @@ export default {
       blockNum: parseInt(this.$route.params.blockNum)
     }
   },
+  watch: {
+    blockNum: function () {
+      this.blockNum = parseInt(this.$route.params.blockNum)
+    }
+  },
   computed: {
   },
   methods: {

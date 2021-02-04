@@ -5,7 +5,7 @@
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
-    <q-card class="postPreviewCard q-ma-sm" dark dense bordered v-if="post">
+    <q-card class="postPreviewCard q-ma-md" dark dense bordered v-if="post">
       <q-card-section horizontal>
         <q-card-section v-if="postImage">
             <router-link :to="returnPostPath(post.author, post.permlink)">
@@ -30,7 +30,8 @@
       <q-card-section dense class="text-left">
           <q-btn color="blue-gray" icon="push_pin" v-if="post.stats.is_pinned" label="Pinned" flat dense />
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
-          <q-chip color="primary" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
+          <router-link :to="linkCommunity(post.community)"><q-chip color="orange" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
+          <q-chip color="grey" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
           <span v-if="post.author_title" class="text-caption">{{ post.author_title }}</span>
           <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
           <q-btn dense icon="comment" flat color="blue-grey" :label="post.children">
@@ -142,9 +143,8 @@ export default {
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
-    linkAccount (account) {
-      return '/@' + account
-    }
+    linkAccount (account) { return '/@' + account },
+    linkCommunity (community) { return '/c/' + community + '/created' }
   }
 }
 </script>

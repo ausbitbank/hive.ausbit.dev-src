@@ -6,14 +6,7 @@
         <q-toolbar-title>
           <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
-        <q-form @submit="onSearchSubmit" @reset="onSearchReset" class="q-mr-md">
-          <q-input dark dense borderless v-model="search" input-class="text-right" class="q-ml-md" label="Search Account, Txid or Block">
-          <template v-slot:append>
-            <q-icon v-if="search !== ''" name="search" @click="onSearchSubmit" />
-            <q-icon v-if="search !== ''" name="clear" class="cursor-pointer" @click="search = ''" />
-          </template>
-        </q-input>
-        </q-form>
+        <searchbox />
         <notifications />
         <user-login />
       </q-toolbar>
@@ -52,29 +45,17 @@ animation: gradient 15s ease infinite;
 <script>
 import EssentialLink from 'components/EssentialLink'
 import userLogin from 'components/userLogin.vue'
-import Notifications from 'src/components/notifications.vue'
+import Notifications from 'components/notifications.vue'
+import searchbox from 'components/searchbox.vue'
 export default {
   name: 'MainLayout',
   components: {
     EssentialLink,
     userLogin,
-    Notifications
+    Notifications,
+    searchbox
   },
   methods: {
-    onSearchSubmit () {
-      if (!isNaN(this.search)) {
-        this.$router.push('/block/' + this.search)
-      } else {
-        if (this.search.length === 40) {
-          this.$router.push('/tx/' + this.search)
-        } else {
-          this.$router.push({ path: '/@' + this.search })
-        }
-      }
-    },
-    onSearchReset () {
-      this.search = ''
-    }
   },
   computed: {
     loggedInUser: {
@@ -95,6 +76,12 @@ export default {
       searchSuggestions: null,
       darkBackgroundToggle: true,
       essentialLinks: [
+        {
+          title: 'Front page',
+          caption: 'hive.ausbit.dev',
+          icon: 'home',
+          link: 'https://hive.ausbit.dev'
+        },
         {
           title: 'Create an Account',
           caption: 'hiveonboard.com',

@@ -640,6 +640,9 @@ export default {
   watch: {
     account: function () {
       this.init()
+    },
+    $router: function () {
+      this.init()
     }
   },
   methods: {

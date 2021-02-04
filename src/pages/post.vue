@@ -87,6 +87,14 @@
                   Rewards 100% powered up
                 </q-item-section>
               </q-item>
+              <q-item v-if="post.max_accepted_payout !== '1000000.000 HBD'">
+                <q-item-section avatar>
+                  <q-icon name="money_off" title="Rewards capped" color="yellow" />
+                </q-item-section>
+                <q-item-section caption class="text-caption">
+                  Author rewards capped at {{ post.max_accepted_payout }}
+                </q-item-section>
+              </q-item>
               <q-item v-if="post.beneficiaries.length > 0">
                 <q-item-section avatar>
                   <q-icon name="alt_route" title="Sharing payout with" color="purple" />

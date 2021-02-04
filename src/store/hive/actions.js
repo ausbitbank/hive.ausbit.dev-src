@@ -31,3 +31,11 @@ export async function getCommunitySubscriptions (context, username) {
     .then(response => { context.commit('updateCommunitySubscriptions', response) })
     .catch(() => { console.error('Failed to get community subscriptions') })
 }
+
+export async function getAccountFollowing (context, username) { // ToDo
+  hive.api.getFollowingAsync()
+    .then(response => {
+      context.commit('updateAccountFollowing', response)
+    })
+    .catch(() => { console.error('Failed to get followers of account ' + username) })
+}

@@ -42,8 +42,13 @@ export default {
   methods: {
     async comment () {
       var newpermlink = this.$hive.formatter.commentPermlink(this.parent_author, this.parent_permlink)
-      var metadata = { app: 'ausbit/2021.02.01' }
-      var commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: '10000.000 HBD', percent_hbd: 10000, allow_votes: true, allow_curation_rewards: true, extensions: [[0, { beneficiaries: this.$store.state.hive.user.settings.beneficiary }]] }
+      var metadata = { app: 'ausbit/2021.02.04' }
+      var commentOptions = []
+      if (this.$store.state.hive.user.settings.beneficiary.length !== 0) {
+        commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: '100000.000 HBD', percent_hbd: 10000, allow_votes: true, allow_curation_rewards: true, extensions: [[0, { beneficiaries: this.$store.state.hive.user.settings.beneficiary }]] }
+      } else {
+        commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: '100000.000 HBD', percent_hbd: 10000, allow_votes: true, allow_curation_rewards: true }
+      }
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', this.loggedInUser, this.title, this.commentText, this.parent_permlink, this.parent_author, JSON.stringify(metadata), newpermlink, JSON.stringify(commentOptions))
       if (success) { this.$q.notify('Comment Sent'); this.commentSent = true }
       if (!cancel) {
