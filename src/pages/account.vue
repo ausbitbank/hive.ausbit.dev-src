@@ -95,7 +95,7 @@
             <q-card-section>
                 <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn icon="edit" title="Edit" color="orange" @click="editPostingJson = !editPostingJson" dense glossy round v-if="account.name === loggedInUser"/></div>
                 <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
-                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" />
+                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" @editedProps="refreshAccount()" />
             </q-card-section>
         </q-card>
         <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
@@ -397,6 +397,7 @@ export default {
     },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
+    refreshAccount () { this.$store.dispatch('hive/getAccount', this.username) },
     init () {
       this.getGlobalProps()
       this.page = this.$router.currentRoute.query.page || 1

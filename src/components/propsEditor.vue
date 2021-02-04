@@ -67,6 +67,7 @@ export default {
             this.error = false
             this.log = response.message
             this.edited = true
+            this.$emit('editedProps')
           }
           if (response.success === false) {
             this.error = true
