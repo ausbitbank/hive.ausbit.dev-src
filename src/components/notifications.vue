@@ -102,7 +102,7 @@ export default {
       const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
       if (success) {
         this.notifications = []
-        this.getUnreadNotificationCount() // TODO delay 4 seconds before checking again
+        setTimeout(function () { this.getUnreadNotificationCount() }, 5000)
       }
       if (!cancel) {
         if (notActive) {

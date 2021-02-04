@@ -45,7 +45,15 @@
             <span title="Hive Rewards" v-else>{{ post.payout }}</span>
           </q-btn>
           <vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" />
-          <q-btn dense icon="more_horiz" flat color="grey" v-if="false" />
+          <q-btn dense icon="more_horiz" flat color="grey">
+            <q-popup-proxy>
+              <q-list>
+                <q-item>
+                  <reblog :author="post.author" :permlink="post.permlink" />
+                </q-item>
+              </q-list>
+            </q-popup-proxy>
+          </q-btn>
       </q-card-section>
     </q-card>
     </transition>
@@ -59,6 +67,7 @@ import sanitize from 'sanitize-html'
 import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
+import reblog from 'components/reblog.vue'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'postPreview',
@@ -71,7 +80,7 @@ export default {
       votedWeight: null
     }
   },
-  components: { vote, commentBox },
+  components: { vote, commentBox, reblog },
   watch: {
     post: {
       deep: true,

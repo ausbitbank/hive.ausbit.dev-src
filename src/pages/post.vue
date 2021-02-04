@@ -166,6 +166,14 @@
               </q-item>
               <q-item>
                 <q-item-section avatar>
+                  <q-icon name="share" color="secondary" />
+                </q-item-section>
+                <q-item-section>
+                  <reblog :author="post.author" :permlink="post.permlink" />
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section avatar>
                   <q-icon name="share" color="orange" />
                 </q-item-section>
                 <q-item-section>
@@ -235,9 +243,10 @@ import jsonViewer from 'components/jsonViewer.vue'
 import tipButton from 'components/tipButton.vue'
 import shareButtons from 'components/shareButtons.vue'
 import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
+import reblog from 'components/reblog.vue'
 export default {
   name: 'postView',
-  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons },
+  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog },
   data () {
     return {
       post: null,

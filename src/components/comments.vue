@@ -84,24 +84,19 @@ export default {
       if (this.filter.hide && comment.stats.hide) { return false }
       return true
     },
-    getReplies () {
+    async getReplies () {
       this.loading = true
-      this.$axios.post(this.api, { // TODO change this to hivejs call
-        jsonrpc: '2.0',
-        method: 'bridge.get_discussion',
-        params: {
-          author: this.author,
-          permlink: this.permlink
-        }
-      })
-        .then((res) => {
+      var params = { author: this.author, permlink: this.permlink }
+      if (this.loggedInUser) { params.observer = this.loggedInUser }
+      this.$hive.api.callAsync('bridge.get_discussion', params)
+        .then(response => {
           this.loading = false
-          this.comments = res.data.result
+          this.comments = response
           this.comments = this.sortData(this.commentSortMethod.value, this.comments, this.commentSortDirection.value)
         })
         .catch((err) => {
           this.loading = false
-          console.log(err)
+          console.error(err)
         })
     },
     sortData (key, data, type) {

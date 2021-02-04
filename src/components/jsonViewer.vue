@@ -151,9 +151,6 @@ export default {
           } else { // Assume hive post authperm to full key, link it  (@username/permlink)
             return 'https://hive.ausbit.dev/' + d
           }
-        // case 'location':
-          // TODO: This url doesnt exist yet, poke devs till it does :)
-          // return 'https://pinmapple.com/search/' + sanitize(data)
       }
     }
   },
