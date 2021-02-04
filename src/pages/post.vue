@@ -87,7 +87,7 @@
                   Rewards 100% powered up
                 </q-item-section>
               </q-item>
-              <q-item v-if="post.max_accepted_payout !== '1000000.000 HBD'">
+              <q-item v-if="parseInt(post.max_accepted_payout.split(' ')[0]) < 100">
                 <q-item-section avatar>
                   <q-icon name="money_off" title="Rewards capped" color="yellow" />
                 </q-item-section>

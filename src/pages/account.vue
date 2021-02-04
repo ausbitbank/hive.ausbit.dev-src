@@ -93,8 +93,7 @@
         </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
             <q-card-section>
-                <div id="posting_meta" class="text-h6">Posting JSON Metadata</div>
-                <q-btn icon="edit" label="Edit Posting JSON Metadata" color="primary" @click="editPostingJson = !editPostingJson" dense push />
+                <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn icon="edit" title="Edit" color="orange" @click="editPostingJson = !editPostingJson" dense glossy round v-if="account.name === loggedInUser"/></div>
                 <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
                 <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" />
             </q-card-section>
@@ -186,6 +185,9 @@ export default {
     }
   },
   computed: {
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    },
     globalProps: {
       get () {
         return this.$store.state.hive.globalProps
