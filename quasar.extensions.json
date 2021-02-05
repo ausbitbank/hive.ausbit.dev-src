@@ -16,7 +16,7 @@
           "iconHash": "035902ab9f2f1762e931964f16f8e138"
         },
         "electron": {
-          "iconHash": "035902ab9f2f1762e931964f16f8e138"
+          "iconHash": "f963f4a211e4c5c5533c261adb003eab"
         }
       },
       "build": {
@@ -41,7 +41,11 @@
     },
     "build_always": false,
     "__internal": {
-      "dev": {},
+      "dev": {
+        "electron": {
+          "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
+        }
+      },
       "build": {
         "electron": {
           "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
