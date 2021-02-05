@@ -15,10 +15,6 @@
             <div v-html="postBody" class="postview" />
             </transition>
           </q-card-section>
-          <div class="text-center">
-          <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push dense color="blue-grey-10"><q-popup-proxy persistent><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
-          <comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" />
-          </div>
         </q-card>
       </div>
       <div class="col-sm-12 col-md-4 text-center justify-center" v-if="post">
@@ -31,9 +27,13 @@
                 <q-avatar>
                     <q-img :src="GetHiveAvatarUrl(author)" />
                 </q-avatar>
+                <q-avatar v-if="postMeta.author">
+                    <q-img :src="GetHiveAvatarUrl(postMeta.author)" />
+                </q-avatar>
                 </q-item-section>
                 <q-item-section>
-                  <router-link :to="linkAccount(author)">{{ author }}</router-link>
+                  <div>Posted by <router-link :to="linkAccount(author)">{{ author }}</router-link></div>
+                  <div v-if="postMeta.author">Authored by <router-link :to="linkAccount(postMeta.author)">{{ postMeta.author }}</router-link></div>
                 </q-item-section>
               </q-item>
               <q-item v-if="postDescription">
@@ -196,6 +196,9 @@
                   </q-dialog>
                 </q-item-section>
               </q-item>
+              <q-item>
+                <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push color="blue-grey-10" class="text-center" style="margin: auto"><q-popup-proxy persistent><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
+              </q-item>
             </q-list>
           </q-card-section>
           <q-card-section>
@@ -207,10 +210,12 @@
           <recent-posts-carousel :account="author" :autoplay=false />
         </transition>
       </div>
+      <div class="q-md-md" style="margin: auto"><comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" /></div>
     </div>
   </q-page>
 </template>
 <style scoped>
+.postview img { display:block; margin-left:auto; margin-right: auto; width: 50% }
 a, a:link { color: #1d8ce0 }
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }

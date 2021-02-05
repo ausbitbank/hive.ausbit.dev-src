@@ -1,14 +1,20 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
-      <q-toolbar reveal elevated class="bg-dark text-primary">
+      <q-toolbar reveal elevated class="bg-dark text-primary q-electron-drag">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
-          <router-link to="/"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
+          <router-link to="/" class="q-electron-drag--exception"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
         <notifications />
         <user-login />
+        <span v-if="$q.platform.is.electron">
+        <q-btn dense flat icon="cached" title="refresh" @click="refresh" />
+        <q-btn dense flat icon="minimize" title="minimize" @click="minimize" />
+        <q-btn dense flat icon="crop_square" title="maximize" @click="maximize" />
+        <q-btn dense flat icon="close" title="close" @click="closeApp" />
+        </span>
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
@@ -56,6 +62,29 @@ export default {
     searchbox
   },
   methods: {
+    minimize () {
+      if (process.env.MODE === 'electron') {
+        this.$q.electron.remote.BrowserWindow.getFocusedWindow().minimize()
+      }
+    },
+    maximize () {
+      if (process.env.MODE === 'electron') {
+        const win = this.$q.electron.remote.BrowserWindow.getFocusedWindow()
+        if (win.isMaximized()) {
+          win.unmaximize()
+        } else {
+          win.maximize()
+        }
+      }
+    },
+    closeApp () {
+      if (process.env.MODE === 'electron') {
+        this.$q.electron.remote.BrowserWindow.getFocusedWindow().close()
+      }
+    },
+    refresh () {
+      window.location.reload()
+    }
   },
   computed: {
     loggedInUser: {

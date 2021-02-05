@@ -5,13 +5,13 @@
 <style>
 </style>
 <script>
-import { DefaultRenderer } from 'steem-content-renderer'
+import { renderPostBody } from '@ecency/render-helper'
 export default {
   name: 'commentBody',
   props: ['post'],
   data () {
     return {
-      renderer: new DefaultRenderer({
+      /* renderer: new DefaultRenderer({
         baseUrl: 'https://hive.ausbit.dev/',
         breaks: true,
         skipSanitization: false,
@@ -25,12 +25,13 @@ export default {
         usertagUrlFn: (account) => '/@' + account,
         hashtagUrlFn: (hashtag) => '/trending/' + hashtag,
         isLinkSafeFn: (url) => true
-      })
+      }) */
     }
   },
   computed: {
     postContent: function () {
-      return this.renderer.render(this.post.body)
+      return renderPostBody(this.post.body, false, false)
+      // return this.renderer.render(this.post.body)
     }
   },
   methods: {

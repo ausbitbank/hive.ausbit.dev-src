@@ -33,8 +33,7 @@ export default {
   data () {
     return {
       comments: [],
-      api: 'https://rpc.ausbit.dev',
-      viewComments: false,
+      viewComments: true,
       loading: false,
       filter: {
         gray: true,

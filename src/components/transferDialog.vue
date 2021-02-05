@@ -11,7 +11,6 @@
           </q-card>
         </q-popup-proxy>
       </q-btn>
-      {{ toAccount }}
       <div><q-input label="Amount" v-model="amount" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>

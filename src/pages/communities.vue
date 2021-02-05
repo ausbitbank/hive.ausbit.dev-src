@@ -24,7 +24,7 @@
 </template>
 <script>
 import accountHeader from 'components/accountHeader.vue'
-import communityFeedCarousel from 'components/communityPostsCarousel.vue'
+import communityFeedCarousel from 'components/communityFeedCarousel.vue'
 export default {
   name: 'browsePage',
   components: {
