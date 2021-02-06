@@ -13,7 +13,7 @@
           "iconHash": "035902ab9f2f1762e931964f16f8e138"
         },
         "spa": {
-          "iconHash": "035902ab9f2f1762e931964f16f8e138"
+          "iconHash": "f963f4a211e4c5c5533c261adb003eab"
         },
         "electron": {
           "iconHash": "f963f4a211e4c5c5533c261adb003eab"
@@ -24,7 +24,7 @@
           "iconHash": "035902ab9f2f1762e931964f16f8e138"
         },
         "spa": {
-          "iconHash": "035902ab9f2f1762e931964f16f8e138"
+          "iconHash": "f963f4a211e4c5c5533c261adb003eab"
         },
         "electron": {
           "iconHash": "f963f4a211e4c5c5533c261adb003eab"
@@ -44,10 +44,16 @@
       "dev": {
         "electron": {
           "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
+        },
+        "spa": {
+          "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
         }
       },
       "build": {
         "electron": {
+          "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
+        },
+        "spa": {
           "iconHash": "7939556f7dee5b7a4ce89c6646f2b52b"
         }
       }
