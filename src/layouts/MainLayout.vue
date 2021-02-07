@@ -7,7 +7,7 @@
           <router-link to="/" class="q-electron-drag--exception"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
-        <notifications />
+        <notifications v-if="loggedInUser !== null" />
         <user-login />
         <span v-if="$q.platform.is.electron">
         <q-btn dense flat icon="cached" title="refresh" @click="refresh" />

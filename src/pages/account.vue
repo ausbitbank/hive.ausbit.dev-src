@@ -120,11 +120,11 @@
         <account-operations :accountOperations="accountOperations" />
         <q-card class="text-center">
             <q-card-section>
-                <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 2"/>
-                <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); page = getAccountHistory(username)" v-if="page > 1"/>
+                <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2"/>
+                <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1"/>
                 Page {{ this.page }} <q-spinner-grid size="2em" color="primary" v-if="accountOperations.length < 1" />
-                <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
-                <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page }}); getAccountHistory(username)" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
+                <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
+                <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
             </q-card-section>
         </q-card>
       </div>
@@ -144,6 +144,8 @@ import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
 import accountAuthorities from 'components/accountAuthorities.vue'
+import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+const op = ChainTypes.operations
 import rc from 'components/rc.vue'
 export default {
   name: 'accountPage',
@@ -173,7 +175,13 @@ export default {
       page: this.$router.currentRoute.query.page || 1,
       editPostingJson: false,
       error: false,
-      errorMessage: ''
+      errorMessage: '',
+      operationsBitmask: null,
+      accountHistoryPointer: -1,
+      accountHistoryLimit: 1000,
+      filteredOperationsArray: [],
+      failCount: 0,
+      failCountMax: 10
     }
   },
   watch: {
@@ -311,8 +319,39 @@ export default {
     }
   },
   methods: {
+    async getAccountHistoryFiltered () {
+      if (this.operationsBitmask === null) {
+        this.getAccountHistory(this.username)
+      } else {
+        var limit = this.accountOperationsLimit
+        var page = this.$router.currentRoute.query.page || 1
+        var pageReq = this.accountOperationsMarker - (limit * page)
+        pageReq = pageReq + limit
+        if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
+        if (page === null || page === 1) { pageReq = -1 } // Get most recent activities on page 1
+        console.log('page: ' + page + ' , accountOpsMarker: ' + this.accountOperationsMarker, ' pagReq: ' + pageReq + ' limit: ' + this.accountOperationsLimit)
+        this.loading = true
+        await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask]])
+          .then(res => {
+            this.accountHistoryPointer = parseInt(res[0][0]) - 1
+            if (this.accountOperations.length === 0) { this.accountOperations = res.reverse() } else { this.accountOperations = this.accountOperations.concat(res.reverse()) }
+            this.loading = false
+          })
+          .catch(err => {
+            this.loading = false
+            console.error(err)
+            if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
+              this.failCount++
+              console.log('fails: ' + this.failCount)
+              this.accountOperationsMarker = err.data.stack[0].data.sequence
+              console.log('account operations marker: ' + this.accountOperationsMarker)
+              if (this.failCount <= this.failCountMax) { debounce(this.getAccountHistoryFiltered(), 5000) }
+            }
+          })
+      }
+    },
     filterOpsVotes (op) { if (op[1].op[0] === 'vote') { return true } else { return false } },
-    getAccountHistory (username) {
+    getAccountHistory () {
       var limit = this.accountOperationsLimit
       var page = this.$router.currentRoute.query.page || 1
       var pageReq = this.accountOperationsMarker - (limit * page)
@@ -324,12 +363,19 @@ export default {
         this.accountOperations = response.reverse()
       }.bind(this))
     },
-    getAccountHistoryMarker (username) {
-      this.$hive.api.getAccountHistory(username, -1, 1, function (err, response) {
-        if (err) { console.log(err) }
-        this.accountOperationsMarker = response[0][0]
-        this.getAccountHistory(username)
-      }.bind(this))
+    async getAccountHistoryMarker () {
+      if (this.$route.query.filter) {
+        var filter = this.$route.query.filter.split(',')
+        filter.forEach(element => this.filteredOperationsArray.push(op[element]))
+        this.operationsBitmask = makeBitMaskFilter(this.filteredOperationsArray)
+        await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
+          .then(res => { console.log('account operations marker: '); console.log(res); this.accountOperationsMarker = res[0][0]; this.getAccountHistoryFiltered() })
+          .catch(err => { console.error(err) })
+      } else {
+        await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1]])
+          .then(res => { this.accountOperationsMarker = res[0][0]; this.getAccountHistoryFiltered() })
+          .catch(err => { console.error(err) })
+      }
     },
     accountLink (username) {
       return '/@' + username
@@ -400,6 +446,8 @@ export default {
     refreshAccount () { this.$store.dispatch('hive/getAccount', this.username) },
     init () {
       this.getGlobalProps()
+      // var throwaway = makeBitMaskFilter(op.vote) // TODO remove after upgrading account history method, only serves to stop linter warnings
+      // console.log(throwaway)
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
       document.title = this.username
@@ -407,7 +455,7 @@ export default {
         this.getAccount(this.username)
         this.getWitness(this.username)
       }
-      this.getAccountHistoryMarker(this.username)
+      this.getAccountHistoryMarker()
     }
   },
   created () {
