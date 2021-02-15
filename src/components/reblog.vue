@@ -2,7 +2,7 @@
   <q-btn label="Reblog this post" :disabled="reblogged" dense push rounded flat size="md" @click="reblog(author, permlink)"/>
 </template>
 <script>
-import { keychain } from '@hiveio/keychain'
+// import { keychain } from '@hiveio/keychain'
 export default {
   name: 'reblog',
   data () {
@@ -19,7 +19,8 @@ export default {
   methods: {
     async reblog (author, permlink) {
       var json = '["reblog",{"account":"' + this.loggedInUser + '","author":"' + author + '","permlink":"' + permlink + '"}]'
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'follow', 'Posting', json, 'Reblog post ' + permlink + ' by ' + author)
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
+      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'follow', 'Posting', json, 'Reblog post ' + permlink + ' by ' + author)
       if (success) {
         this.$q.notify('Reblogged post ' + permlink + ' by ' + author + ' as ' + this.loggedInUser)
         this.reblogged = true
@@ -32,7 +33,7 @@ export default {
         } else {
           console.info(msg)
         }
-      }
+      } */
     }
   }
 }

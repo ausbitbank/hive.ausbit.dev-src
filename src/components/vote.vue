@@ -1,14 +1,14 @@
 <template>
   <span>
-    <q-btn size="sm" rounded flat :icon="upvoteIcon" color="green" :label="upvoteLabel" @click="voteClicked('up')" :disable="disableVoting" v-if="direction === null || direction === 'up'" class="hvr" />
-    <q-btn size="sm" flat :icon="downvoteIcon" color="red" :label="downvoteLabel" @click="voteClicked('down')" :disable="disableVoting" v-if="direction === null || direction === 'down'" class="hvr" />
+    <q-btn size="sm" dense flat :icon="upvoteIcon" color="green" :label="upvoteLabel" @click="voteClicked('up')" :disable="disableVoting" v-if="direction === null || direction === 'up'" class="hvr" />
+    <q-btn size="sm" dense flat :icon="downvoteIcon" color="red" :label="downvoteLabel" @click="voteClicked('down')" :disable="disableVoting" v-if="direction === null || direction === 'down'" class="hvr" />
     <q-knob v-model="upvotePercent" :min="1" :max="100" :step="5" show-value color="green" v-if="weight > 0 && direction === 'up' && !voteSent"> {{ upvotePercent }} %</q-knob>
     <q-knob v-model="downvotePercent" :min="1" :max="100" :step="5" show-value color="red" v-if="weight < 0 && direction === 'down' && !voteSent"> {{ downvotePercent }} % </q-knob>
     <q-btn dense flat round icon="clear" title="Close" @click="direction = null" v-if="direction !== null && !voteSent" class="hvr" />
   </span>
 </template>
 <script>
-import { keychain } from '@hiveio/keychain'
+// import { keychain } from '@hiveio/keychain'
 export default {
   name: 'vote',
   props: ['votes', 'active_votes', 'author', 'permlink'],
@@ -151,7 +151,8 @@ export default {
     async vote (permlink, author, weight) {
       this.voteSent = true
       this.voteSentWeight = weight
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]])
+      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
       if (success) {
         this.$q.notify('Voted ' + weight + '% on @' + author + '/' + permlink)
         this.$emit('Voted', weight)
@@ -167,7 +168,7 @@ export default {
         } else {
           console.info(msg)
         }
-      }
+      } */
     },
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
   },

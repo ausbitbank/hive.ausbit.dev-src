@@ -1,5 +1,5 @@
 <template>
-  <q-btn label="Claim Rewards" icon="redeem" dense push color="primary" @click="dialog = true; claimRewardsKeychain()">
+  <q-btn label="Claim Rewards" icon="redeem" dense push color="primary" @click="dialog = true; claimRewards()">
     <q-dialog v-model="dialog">
       <q-card class="justify">
         Claiming Rewards
@@ -21,16 +21,11 @@ export default {
     }
   },
   methods: {
-    claimRewardsKeychain () {
-      this.loading = true
+    claimRewards () {
       var claimjson = { account: this.username, reward_hive: this.A.reward_hive_balance, reward_hbd: this.A.reward_hbd_balance, reward_vests: this.A.reward_vesting_balance }
-      console.log(claimjson)
-      var operations = [['claim_reward_balance', claimjson]]
-      window.hive_keychain.requestBroadcast(this.username, operations, 'posting', function (response) {
-        this.loading = false
-        this.dialog = false
-        this.$store.dispatch('hive/getAccount', this.username)
-      }.bind(this))
+      this.$store.commit('hive/addToQueue', [this.username, 'posting', ['claim_reward_balance', claimjson]])
+      this.loading = false
+      this.dialog = false
     }
   }
 }

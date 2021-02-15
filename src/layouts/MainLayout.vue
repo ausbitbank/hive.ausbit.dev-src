@@ -7,6 +7,7 @@
           <router-link to="/" class="q-electron-drag--exception"><q-icon name="img:statics/hextacular.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
+        <queue v-if="loggedInUser !== null && queue.length > 0" /> <!-- TODO swap >= for > after finished debugging -->
         <notifications v-if="loggedInUser !== null" />
         <user-login />
         <span v-if="$q.platform.is.electron">
@@ -53,13 +54,15 @@ import EssentialLink from 'components/EssentialLink'
 import userLogin from 'components/userLogin.vue'
 import Notifications from 'components/notifications.vue'
 import searchbox from 'components/searchbox.vue'
+import queue from 'components/queue.vue'
 export default {
   name: 'MainLayout',
   components: {
     EssentialLink,
     userLogin,
     Notifications,
-    searchbox
+    searchbox,
+    queue
   },
   methods: {
     minimize () {
@@ -89,6 +92,9 @@ export default {
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
+    },
+    queue: {
+      get () { return this.$store.state.hive.queue }
     },
     backgroundStyle: function () {
       if (this.$store.state.hive.user.settings.darkBackground) {

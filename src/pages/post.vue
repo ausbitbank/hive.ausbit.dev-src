@@ -10,9 +10,9 @@
           <q-card-section v-if="post.parent_author !== ''">
             Reply to <router-link :to="linkAccount(post.parent_author)">{{ post.parent_author }}</router-link> / <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
           </q-card-section>
-          <q-card-section v-if="postBody">
+          <q-card-section v-if="post.body">
             <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
-            <div v-html="postBody" class="postview" />
+            <render :input="post.body" class="postbody" />
             </transition>
           </q-card-section>
         </q-card>
@@ -220,24 +220,11 @@ a, a:link { color: #1d8ce0 }
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 h1, h2, h3, h4, h5, h6 {font-size: 1em; font-weight: 500 }
-.yt-container {
-  position:relative;
-  padding-bottom:56.25%;
-  padding-top:30px;
-  height:0;
-  overflow:hidden;
-}
-.yt-container iframe, .yt-container object, .yt-container embed {
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-}
 
 </style>
 <script>
-import { renderPostBody } from '@ecency/render-helper'
+import render from 'components/render.vue'
+// import { renderPostBody } from '@ecency/render-helper'
 import accountHeader from 'components/accountHeader.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
@@ -251,7 +238,7 @@ import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 import reblog from 'components/reblog.vue'
 export default {
   name: 'postView',
-  components: { recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog },
+  components: { render, recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog },
   data () {
     return {
       post: null,
@@ -341,7 +328,8 @@ export default {
     },
     setPost (post) {
       this.post = post
-      this.postBody = renderPostBody(this.post.body, false, false)
+      /* this.postBody = renderPostBody(post.body, false, false)
+      console.log(this.postBody) */
       document.title = post.title
       if (post.description) { this.postDescription = this.Sanitize(post.description) }
     },

@@ -17,7 +17,7 @@ export default function () {
         beneficiary: [{ account: 'ausbitbank', weight: 1000 }]
       }
     },
-
+    queue: [],
     accounts: {},
     posts: {},
     communityInfo: {},

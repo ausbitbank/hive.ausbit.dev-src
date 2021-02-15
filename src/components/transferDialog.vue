@@ -99,10 +99,13 @@ export default {
     },
     transfer () {
       if (this.network === 'hive') {
-        this.transferHiveKeychain()
+        this.transferHive()
       } else if (this.network === 'hiveEngine') {
         this.transferHiveEngineKeychain()
       }
+    },
+    transferHive () {
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo }]])
     },
     transferHiveKeychain () {
       console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)

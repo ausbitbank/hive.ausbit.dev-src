@@ -215,15 +215,15 @@ export default {
     },
     manageCommunity (communityAccount, action) {
       var json = '["' + action + '",{"community":"' + communityAccount + '"}]'
-      window.hive_keychain.requestCustomJson(this.loggedInUser, 'community', 'Posting', json, action + ' community ' + communityAccount, function (response) {
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'community', json: json }]])
+      /* window.hive_keychain.requestCustomJson(this.loggedInUser, 'community', 'Posting', json, action + ' community ' + communityAccount, function (response) {
         if (response.success === true) {
           console.log(response.message)
-          // setTimeout(this.$store.dispatch('hive/getCommunitySubscriptions', this.loggedInUser), 10000)
           setTimeout(this.getCommunitySubscribers(), 10000)
         } else {
           console.error(response.message)
         }
-      }.bind(this))
+      }.bind(this)) */
     }
   },
   computed: {

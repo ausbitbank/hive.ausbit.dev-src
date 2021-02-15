@@ -1,7 +1,7 @@
 <template>
   <span>
     <q-btn outline rounded color="primary" class="q-ma-none q-pa-none hvr" @click="dialog = !dialog">
-      <q-icon v-for="coin in coins" :key="coin.index" :name="returnCoinSvg(coin)" /><q-icon name="img:statics/hextacular.svg" class="q-mr-md" /> Send {{ account }} a tip
+      <q-icon v-for="coin in coins" :key="coin.index" :name="returnCoinSvg(coin)" /><q-icon name="img:statics/hextacular.svg" /><q-icon name="img:statics/hbd.svg" class="q-mr-md" /> Send {{ account }} a tip
     </q-btn>
     <tip-dialog v-if="dialog" :account="account" :accountData="accountData" :accountMeta="accountMeta" :coins="coins" />
   </span>

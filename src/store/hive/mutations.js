@@ -2,7 +2,7 @@ import Vue from 'vue'
 import { SessionStorage, LocalStorage } from 'quasar'
 export function updateLoggedInUser (state, username) {
   state.user.username = username
-  LocalStorage.set('loggedInUser', username)
+  SessionStorage.set('loggedInUser', username)
 }
 export function updateNotifications (state, notifications) {
   state.user.notifications = notifications
@@ -32,4 +32,11 @@ export function updateCommunitySubscriptions (state, communitySubscriptions) {
 export function updateSettings (state, settings) {
   state.user.settings = settings
   LocalStorage.set('settings', settings)
+}
+
+export async function addToQueue (state, newItem) {
+  state.queue.push(newItem)
+}
+export async function removeFromQueue (state, itemToRemove) {
+  state.queue = state.queue.filter(a => a !== itemToRemove)
 }

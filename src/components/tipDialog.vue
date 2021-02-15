@@ -24,7 +24,7 @@
     </q-item>
     <q-item clickable>
       <q-item-section avatar>
-        <q-avatar><q-icon name="img:statics/hextacular.svg" title="Hive" /></q-avatar>
+        <q-avatar><q-icon name="img:statics/hbd.svg" title="Hive Dollars" /></q-avatar>
       </q-item-section>
       <q-item-section>
         <q-item-label>

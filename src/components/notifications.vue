@@ -8,7 +8,7 @@
         Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator />
-      <q-card-section class="q-ma-none q-pa-none">
+      <q-card-section class="q-ma-none q-pa-none" v-if="this.$store.state.hive.user.unreadNotificationCount > 0">
       <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
       <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
         <q-item-section avatar>
@@ -32,7 +32,6 @@
       </q-item>
       </q-list>
       </q-card-section>
-      <q-separator />
       <q-card-actions v-if="false">
         <q-btn flat label="Load more notifications" v-if="unreadNotificationCount > notifications.length"/>
       </q-card-actions>
@@ -43,7 +42,7 @@
 </template>
 <script>
 import moment from 'moment'
-import { keychain } from '@hiveio/keychain'
+// import { keychain } from '@hiveio/keychain'
 export default {
   name: 'notifications',
   props: [],
@@ -99,7 +98,8 @@ export default {
     },
     async markNotificationsRead () {
       var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
+      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
       if (success) {
         this.notifications = []
         setTimeout(function () { this.getUnreadNotificationCount() }, 5000)
@@ -112,7 +112,7 @@ export default {
         } else {
           console.info(msg)
         }
-      }
+      } */
     },
     filterMentions (n) {
       if (n.type === 'mention') {

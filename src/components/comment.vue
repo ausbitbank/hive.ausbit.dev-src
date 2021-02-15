@@ -15,7 +15,7 @@
         </center>
       </q-item-section>
       <q-item-section>
-        <comment-body :post="comment" />
+        <render :input="this.comment.body" />
       </q-item-section>
       <q-item-section side class="text-grey text-center text-subtitle">
         <router-link :to="returnLink(this.comment.author, this.comment.permlink)">{{ timeDelta(this.comment.created) }}</router-link>
@@ -24,7 +24,7 @@
             <commentBox :parent_author="this.comment.author" :parent_permlink="this.comment.permlink" />
           </q-popup-proxy>
         </q-btn>
-        <q-btn dense flat :icon="voteIcon" color="secondary" v-if="comment.active_votes" :label="comment.active_votes.length"><q-popup-proxy v-if="myVote === undefined"><q-banner><vote :votes="comment.active_votes" :author="comment.author" :permlink="comment.permlink" /></q-banner></q-popup-proxy></q-btn>
+        <vote :votes="comment.active_votes" :author="comment.author" :permlink="comment.permlink" />
       </q-item-section>
     </q-item>
   </q-list>
@@ -34,7 +34,8 @@
   </q-card-section>
 </template>
 <script>
-import commentBody from 'components/commentBody.vue'
+// import commentBody from 'components/commentBody.vue'
+import render from 'components/render.vue'
 import comment from 'components/comment.vue'
 import commentBox from 'components/commentBox.vue'
 import vote from 'components/vote.vue'
@@ -46,7 +47,7 @@ export default {
     }
   },
   props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { commentBody, comment, commentBox, vote },
+  components: { render, comment, commentBox, vote },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
