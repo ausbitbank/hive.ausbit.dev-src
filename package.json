@@ -30,7 +30,8 @@
     "vue-json-pretty": "^1.7.0",
     "vue-simplemde": "^2.0.0",
     "vue-sparklines": "^0.2.1",
-    "vue-timers": "^2.0.4"
+    "vue-timers": "^2.0.4",
+    "vue-trading-view": "^1.0.1"
   },
   "devDependencies": {
     "@quasar/app": "^1.9.6",
