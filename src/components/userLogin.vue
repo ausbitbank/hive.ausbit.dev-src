@@ -63,7 +63,7 @@
                 <q-input v-model="postkey" label="Posting Key" filled type="password" />
                 <q-input v-model="activekey" label="Active Key (optional)" filled type="password" />
                 <q-input v-model="memokey" label="Memo Key (optional)" filled type="password" />
-                <q-input v-model="password" label="Password" filled type="password" />
+                <q-input v-model="password" label="Unlock Password" filled type="password" />
                 <q-btn flat glossy dense label="Save and login" icon="save" color="primary" @click="smartLockImportAccount()"/>
               </q-card>
             </q-popup-proxy>

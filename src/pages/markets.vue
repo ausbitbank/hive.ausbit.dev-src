@@ -2,11 +2,13 @@
   <q-page class="flex q-pa-md flex-center">
     <div><coingecko /></div>
     <div><tradingView class="q-ml-md" :options="tvOptions" /></div>
+    <internalMarket />
   </q-page>
 </template>
 <script>
 import tradingView from 'vue-trading-view'
 import coingecko from 'components/coingecko.vue'
+import internalMarket from 'components/internalMarket.vue'
 export default {
   name: 'markets',
   data () {
@@ -26,6 +28,7 @@ export default {
         details: true,
         hide_top_toolbar: false,
         hide_side_toolbar: false,
+        toolbar_bg: '#1d1d1d',
         watchlist: [
           'BINANCE:HIVEUSDT',
           'BITTREX:HIVEUSD',
@@ -42,7 +45,9 @@ export default {
       }
     }
   },
-  components: { coingecko, tradingView },
+  computed: {
+  },
+  components: { coingecko, tradingView, internalMarket },
   mounted () {
     document.title = 'Markets'
   }
