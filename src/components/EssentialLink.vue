@@ -2,8 +2,7 @@
   <q-item
     clickable
     tag="a"
-    target="_blank"
-    :href="link"
+    @click="open(link)"
   >
     <q-item-section
       v-if="icon"
@@ -20,8 +19,8 @@
     </q-item-section>
   </q-item>
 </template>
-
 <script>
+import { openURL } from 'quasar'
 export default {
   name: 'EssentialLink',
   props: {
@@ -43,6 +42,11 @@ export default {
     icon: {
       type: String,
       default: ''
+    }
+  },
+  methods: {
+    open (link) {
+      openURL(link)
     }
   }
 }

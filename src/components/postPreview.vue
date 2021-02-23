@@ -40,7 +40,7 @@
             </q-popup-proxy>
           </q-btn>
           <q-btn flat dense>
-            <q-icon name="img:statics/hextacular.svg" color="secondary" class="q-mr-sm" />
+            <q-icon name="img:statics/hive.svg" color="secondary" class="q-mr-sm" />
             <span title="Hive Rewards" v-if="!post.is_paidout">{{ post.pending_payout_value.split(' ')[0] }}</span>
             <span title="Hive Rewards" v-else>{{ post.payout }}</span>
           </q-btn>

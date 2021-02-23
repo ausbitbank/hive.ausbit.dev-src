@@ -3,7 +3,6 @@
         <q-card>
         <vue-simplemde v-model="commentText" ref="markdownEditor" :configs="editorConfig" class="q-pa-sm" />
         <q-btn @click="comment()" push color="primary" style="margin:auto">Reply to {{ parent_author }}</q-btn>
-        <q-icon name="info" color="primary" title="10% comment beneficiary to ausbitbank" class="q-ma-sm"/>
         </q-card>
     </div>
 </template>
@@ -11,7 +10,7 @@
   @import '~simplemde/dist/simplemde.min.css';
 </style>
 <script>
-import { keychain } from '@hiveio/keychain'
+// import { keychain } from '@hiveio/keychain'
 import VueSimplemde from 'vue-simplemde'
 export default {
   name: 'commentBox',
@@ -42,14 +41,26 @@ export default {
   methods: {
     async comment () {
       var newpermlink = this.$hive.formatter.commentPermlink(this.parent_author, this.parent_permlink)
-      var metadata = { app: 'ausbit/2021.02.04' }
+      var metadata = { app: 'ausbit/2021.02.17' }
       var commentOptions = []
       if (this.$store.state.hive.user.settings.beneficiary.length !== 0) {
         commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: '100000.000 HBD', percent_hbd: 10000, allow_votes: true, allow_curation_rewards: true, extensions: [[0, { beneficiaries: this.$store.state.hive.user.settings.beneficiary }]] }
       } else {
         commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: '100000.000 HBD', percent_hbd: 10000, allow_votes: true, allow_curation_rewards: true }
       }
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', this.loggedInUser, this.title, this.commentText, this.parent_permlink, this.parent_author, JSON.stringify(metadata), newpermlink, JSON.stringify(commentOptions))
+      var op1 = ['comment', {
+        parent_author: this.parent_author,
+        parent_permlink: this.parent_permlink,
+        author: this.loggedInUser,
+        permlink: newpermlink,
+        title: this.title,
+        body: this.commentText,
+        json_metadata: metadata
+      }]
+      var op2 = ['comment_options', commentOptions]
+      var ops = [op1, op2]
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ops])
+      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', this.loggedInUser, this.title, this.commentText, this.parent_permlink, this.parent_author, JSON.stringify(metadata), newpermlink, JSON.stringify(commentOptions))
       if (success) { this.$q.notify('Comment Sent'); this.commentSent = true }
       if (!cancel) {
         if (notActive) {
@@ -59,7 +70,7 @@ export default {
         } else {
           console.info(msg)
         }
-      }
+      } */
     }
   }
 }

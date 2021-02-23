@@ -4,6 +4,10 @@ export function updateLoggedInUser (state, username) {
   state.user.username = username
   SessionStorage.set('loggedInUser', username)
 }
+export function updateLoginType (state, type) {
+  state.user.loginType = type
+  SessionStorage.set('loginType', type)
+}
 export function updateNotifications (state, notifications) {
   state.user.notifications = notifications
   SessionStorage.set('notifications', notifications)

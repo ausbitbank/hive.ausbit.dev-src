@@ -60,7 +60,7 @@ const broadcastAsync = async (username, operations, role = 'posting', password) 
     })
     return Promise.reject(new Error('The key required to sign this transaction is not available!!'))
   }
-
+  // if (operations.length === 1) { operations = [operations] }
   const result = await hive.broadcast.sendAsync({ extensions: [], operations: operations }, auth)
   return {
     success: result.id && result.id.length > 0,

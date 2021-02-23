@@ -4,7 +4,6 @@
 <script>
 document.addEventListener('click', function (event) {
   var el = event.target
-  console.log(el)
   while (el.tagName !== 'A') {
     if (!el.parentNode) {
       break

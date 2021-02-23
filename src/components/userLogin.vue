@@ -44,6 +44,9 @@
           <q-item>
             <q-btn label="Logout" color="red" @click="logout()" icon="exit_to_app" class="text-center hvr" push/>
           </q-item>
+          <q-item class="text-caption">
+            logintype: {{ loginType }}
+          </q-item>
         </q-list>
         </transition>
       </div>
@@ -52,11 +55,13 @@
             Login
           </q-item-label>
         <q-item>
-          <userSearchBox @selectUsername="setUsername" label="Username" />
+          <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" style="margin:auto" />
         </q-item>
-        <q-item v-if="username !== ''">
-          <q-btn dense push glossy color="primary" label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
-          <q-btn dense push glossy color="primary" label="SmartLock" icon="lock">
+        <q-item dense v-if="username !== ''">
+          <q-btn-group rounded>
+          <q-btn rounded label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
+          <q-btn rounded label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
+          <q-btn rounded label="SmartLock" icon="lock">
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders">
                 <q-input v-model="username" label="Username" />
@@ -68,6 +73,7 @@
               </q-card>
             </q-popup-proxy>
           </q-btn>
+          </q-btn-group>
         </q-item>
         <q-item>
           <q-item-section>
@@ -137,6 +143,12 @@ export default {
         if (this.rememberLogin) { this.$q.sessionStorage.set('loggedInUser', val) }
       }
     },
+    loginType: {
+      get () { return this.$store.state.hive.user.loginType },
+      set (val) {
+        this.$store.commit('hive/updateLoginType', val)
+      }
+    },
     userAvatar: function () {
       if (this.loggedInUser !== '') {
         return 'https://images.hive.blog/u/' + this.loggedInUser + '/avatar'
@@ -175,6 +187,7 @@ export default {
       if (smartlock.isAccountUnlocked(user)) {
         this.loggedInUser = user
         this.$q.sessionStorage.set('loggedInUser', user)
+        this.loginType = 'smartlock'
       } else {
         this.getPasswordPrompt(user)
       }
@@ -205,6 +218,7 @@ export default {
       if (success) {
         this.loggedInUser = user
         this.$q.sessionStorage.set('loggedInUser', user)
+        this.loginType = 'keychain'
         if (this.rememberLogin) {
           if (!this.savedUsers.includes(this.loggedInUser)) {
             this.$q.localStorage.set('savedUsers', this.savedUsers.concat([this.loggedInUser]))
@@ -234,6 +248,7 @@ export default {
     logout () {
       this.smartLockLockAccount(this.loggedInUser)
       this.loggedInUser = ''
+      this.loginType = ''
     }
   },
   mounted () {

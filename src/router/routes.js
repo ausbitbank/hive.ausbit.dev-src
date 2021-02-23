@@ -25,6 +25,7 @@ const routes = [
       { path: 'tx/:txId', component: () => import('pages/tx.vue') },
       { path: 'nodes', component: () => import('pages/nodes.vue') },
       { path: 'witnesses', component: () => import('pages/witnesses.vue') },
+      { path: 'market', component: () => import('pages/market.vue') },
       { path: 'markets', component: () => import('pages/markets.vue') },
       { path: 'hbd', component: () => import('pages/hbd.vue') },
       { path: 'twittergiveaway', component: () => import('pages/twittergiveaway.vue') },

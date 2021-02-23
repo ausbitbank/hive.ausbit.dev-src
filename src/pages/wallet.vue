@@ -14,7 +14,7 @@
                         <q-item>
                             <q-item-section avatar>
                               <q-avatar size="sm">
-                                <img src="/statics/hextacular.svg"/>
+                                <img src="/statics/hive.svg"/>
                               </q-avatar>
                             </q-item-section>
                             <q-item-section>

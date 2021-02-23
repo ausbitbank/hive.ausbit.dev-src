@@ -1,8 +1,8 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
-    <div><coingecko /></div>
-    <div><tradingView class="q-ml-md" :options="tvOptions" /></div>
-    <internalMarket />
+    <transition appear enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutLeft"><div><coingecko /></div></transition>
+    <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut"><div><tradingView class="q-ml-md" :options="tvOptions" /></div></transition>
+    <transition appear enter-active-class="animated fadeInRight" leave-active-class="animated fadeOutRight"><internalMarket /></transition>
   </q-page>
 </template>
 <script>

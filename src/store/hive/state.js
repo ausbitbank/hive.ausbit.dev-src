@@ -3,6 +3,7 @@ export default function () {
   return {
     user: {
       username: SessionStorage.getItem('loggedInUser') || null,
+      loginType: SessionStorage.getItem('loginType') || null,
       lastUpdateTime: null,
       following: [],
       followers: [],

@@ -12,7 +12,6 @@
         <q-separator />
         <q-card-section class="q-ma-none q-pa-none">
           <q-list separator dense>
-            <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
             <q-item v-for="(a, index) in this.queue" :key="index" clickable dense>
               <q-item-section avatar>
                 <q-avatar><q-img :src="getHiveAvatarUrl(a[0])" /></q-avatar>
@@ -28,7 +27,6 @@
                 <q-btn title="push queue item" icon="check" color="orange" @click="broadcast(a)" dense flat/>
               </q-item-section>
             </q-item>
-            </transition>
           </q-list>
         </q-card-section>
       </q-card>
@@ -40,6 +38,7 @@
 import { keychain } from '@hiveio/keychain'
 import smartlock from 'components/smartlock'
 import jsonViewer from 'components/jsonViewer.vue'
+import { openURL } from 'quasar'
 export default {
   name: 'queue',
   data () {
@@ -51,6 +50,7 @@ export default {
   components: { jsonViewer },
   computed: {
     loggedInUser: { get () { return this.$store.state.hive.user.username } },
+    loginType: { get () { return this.$store.state.hive.user.loginType } },
     queue: { get () { return this.$store.state.hive.queue } }
   },
   methods: {
@@ -58,37 +58,67 @@ export default {
       this.timerEnabled = !this.timerEnabled
       if (this.timerEnabled) { setTimeout(this.broadcastNext, this.timerStart) }
     },
-    successfullBroadcast (action) {
+    successfullBroadcast (action, notify = true) {
       this.$store.commit('hive/removeFromQueue', action)
-      this.$q.notify({
-        message: 'Successful ' + action[2][0],
-        color: 'green',
-        avatar: this.getHiveAvatarUrl(action[0]),
-        progress: true
-      })
+      if (notify) {
+        this.$q.notify({
+          message: 'Successful ' + action[2][0],
+          color: 'green',
+          avatar: this.getHiveAvatarUrl(action[0]),
+          progress: true
+        })
+      }
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
     },
     broadcastNext () { if (this.queue.length > 0) { this.broadcast(this.queue[0]) } },
     broadcast (action) {
       var user = action[0]
       var keytype = action[1]
-      var operation = action[2]
-      if (smartlock.isAccountUnlocked(user)) {
-        if (keytype === 'active') {
-          this.getPasswordForAction(action)
-        } else if (keytype === 'posting') {
-          smartlock.api.broadcastAsync(user, [operation], keytype)
-            .then(res => { if (res.success) { this.successfullBroadcast(action) } })
-            .catch(err => console.error(err))
+      var operation = [action[2]]
+      if (this.loginType === 'smartlock') {
+        if (smartlock.isAccountUnlocked(user)) {
+          console.log('hive-js broadcast')
+          if (keytype === 'active') {
+            this.getPasswordForAction(action)
+          } else if (keytype === 'posting') {
+            smartlock.api.broadcastAsync(user, operation, keytype)
+              .then(res => { if (res.success) { this.successfullBroadcast(action) } })
+              .catch(err => console.error(err))
+          }
         }
-      } else {
+      }
+      if (this.loginType === 'keychain') {
         this.broadcastKeychain(action)
       }
+      if (this.loginType === 'hivesigner_popup') {
+        this.broadcastHivesignerPopup(action)
+      }
+    },
+    broadcastHivesignerPopup (action) {
+      var url = 'https://www.hivesigner.com/sign/' + action[2][0] + '?'
+      var params = action[2][1]
+      var command = action[2][1]
+      if (action[2][0].length > 1) {
+        params = action[2][0][1]
+        command = action[2][0][0]
+        url = 'https://www.hivesigner.com/sign/' + command + '?'
+        if (action[2][0][0] === 'comment' && params.json_metadata) {
+          params.json_metadata = JSON.stringify(params.json_metadata)
+        }
+      }
+      var qs = new URLSearchParams(params)
+      url = url + qs
+      console.log(qs)
+      openURL(url)
+      this.$q.notify('Opened hivesigner popup: ' + url)
+      this.successfullBroadcast(action, false)
     },
     async broadcastKeychain (action) {
+      console.log('keychain broadcast')
       var user = action[0]
       var keytype = action[1]
-      var op = action[2]
+      var op = null
+      if (action[2].length > 1) { op = action[2] } else { op = action[2] }
       var ops = [op]
       console.info(op)
       if (op[0] === 'vote') {
@@ -97,12 +127,17 @@ export default {
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
       } else if (op[0] === 'custom_json') {
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, op[1].id, keytype, op[1].json)
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', user, op[1].id, keytype, op[1].json)
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
       } else if (op[0] === 'transfer') {
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestTransfer', this.loggedInUser, op[1].to, op[1].amount.split(' ')[0], op[1].memo, op[1].amount.split(' ')[1])
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestTransfer', user, op[1].to, op[1].amount.split(' ')[0], op[1].memo, op[1].amount.split(' ')[1])
+        if (success) { this.successfullBroadcast(action) }
+        if (cancel) { this.$q.notify('Cancelled by user') }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      } else if (op[0][0] === 'comment') {
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', user, op[0][1].title, op[0][1].body, op[0][1].parent_permlink, op[0][1].parent_author, JSON.stringify(op[0][1].json_metadata), op[0][1].permlink, JSON.stringify(op[1][1]))
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }

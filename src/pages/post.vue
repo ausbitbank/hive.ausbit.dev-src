@@ -2,7 +2,7 @@
   <q-page class="flex flex-center">
     <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
     <div class="row items-start content-start justify-center q-pa-sm">
-      <div v-if="post" class="col-xs-11 col-md-9 col-lg-10 justify-center">
+      <div v-if="post" class="col-xs-11 col-md-9 col-lg-9 justify-center">
         <q-card flat bordered class="q-pa-sm" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
             {{ Sanitize(post.title) }}
@@ -17,7 +17,7 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="col-sm-11 col-md-3 col-lg-2 text-center justify-center" v-if="post">
+      <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center" v-if="post">
         <transition appear enter-active-class="animated bounceInRight" leave-active-class="animated bounceOutRight">
         <q-card dense flat bordered class="q-pa-none q-ma-none">
           <q-card-section>
