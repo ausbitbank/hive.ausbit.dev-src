@@ -8,6 +8,7 @@
             </q-card-section>
             <q-card-section v-if="globalProps">
                 <json-viewer :data="globalProps" />
+                <div v-if="accountCount">Account Count : {{ tidyNumber(accountCount) }}</div>
             </q-card-section>
         </q-card>
         <nodes />
@@ -35,7 +36,8 @@ export default {
   data () {
     return {
       hardforkVersion: null,
-      config: null
+      config: null,
+      accountCount: null
     }
   },
   computed: {
@@ -49,12 +51,18 @@ export default {
     getGlobalProps () {
       this.$hive.api.getDynamicGlobalPropertiesAsync()
         .then(res => { this.globalProps = res })
+    },
+    tidyNumber (x) {
+      var parts = x.toString().split('.')
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      return parts.join('.')
     }
   },
   mounted () {
     document.title = 'Hive Network Health'
     this.$store.dispatch('hive/getGlobalProps')
-    // this.getConfig()
+    this.$hive.api.getAccountCountAsync()
+      .then(res => { if (res) { this.accountCount = res } })
   }
 }
 </script>
