@@ -27,13 +27,13 @@
                 <q-avatar>
                     <q-img :src="GetHiveAvatarUrl(author)" />
                 </q-avatar>
-                <q-avatar v-if="postMeta.author">
+                <q-avatar v-if="postMeta.author && (postMeta.author !== author)">
                     <q-img :src="GetHiveAvatarUrl(postMeta.author)" />
                 </q-avatar>
                 </q-item-section>
                 <q-item-section>
                   <div>Posted by <router-link :to="linkAccount(author)">{{ author }}</router-link></div>
-                  <div v-if="postMeta.author">Authored by <router-link :to="linkAccount(postMeta.author)">{{ postMeta.author }}</router-link></div>
+                  <div v-if="postMeta.author && (postMeta.author !== author) ">Authored by <router-link :to="linkAccount(postMeta.author)">{{ postMeta.author }}</router-link></div>
                 </q-item-section>
               </q-item>
               <q-item v-if="postDescription">
