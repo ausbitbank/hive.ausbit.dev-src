@@ -1,30 +1,44 @@
 <template>
-    <span>
+    <div class="q-ma-sm">
     <div v-if="post.reblogged_by && this.$route.path.endsWith('feed')" class="text-center">
       <span class="text-bold">Reblogged By: </span>
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
     <q-card class="postPreviewCard q-ma-md" dark dense bordered v-if="post">
-      <q-card-section horizontal>
+      <q-card-section horizontal v-if="styleType === 'preview'">
         <q-card-section v-if="postImage">
             <router-link :to="returnPostPath(post.author, post.permlink)">
               <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
             </router-link>
-              <!-- <q-carousel animated v-model="thumbslide" arrows navigation infinite v-if="postMeta.image.length > 0">
-                <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
-              </q-carousel> -->
         </q-card-section>
         <q-separator vertical v-if="postImage" />
         <q-item>
             <q-item-section>
                 <q-item-label>
                     <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-                    <span class="text-caption wrap" v-if="postMeta.description">{{ postMeta.description.substr(0,650) }}</span>
-                    <span class="text-caption wrap" v-else>{{ this.summary }}</span>
+                    <span class="" v-if="postMeta.description"><render :input="postMeta.description.substr(0,650)" /></span>
+                    <span class="" v-else><render :input="this.summary" /></span>
                 </q-item-label>
             </q-item-section>
         </q-item>
+      </q-card-section>
+      <q-card-section v-if="styleType === 'grid'" class="text-center">
+        <div class="text-h6"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,50) }}</router-link></div>
+        <router-link v-if="postImage" :to="returnPostPath(post.author, post.permlink)">
+          <q-img style="width: 300px; height: 300px" :src="postImage" :title="post.title" />
+        </router-link>
+        <div>
+          <span class="text-caption" v-if="postMeta.description"><render :input="postMeta.description.substr(0,100)" /></span>
+          <span class="text-caption" v-else><render :input="this.summary.substr(0,100)" /></span>
+        </div>
+        <!-- <q-carousel animated v-model="thumbslide" arrows navigation infinite v-if="postMeta.image.length > 0">
+          <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
+        </q-carousel> -->
+      </q-card-section>
+      <q-card-section v-if="styleType === 'full'">
+        <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
+        <render :input="post.body" />
       </q-card-section>
       <q-separator />
       <q-card-section dense class="text-left">
@@ -57,7 +71,7 @@
       </q-card-section>
     </q-card>
     </transition>
-    </span>
+    </div>
 </template>
 <style>
 .postPreviewCard { max-width: 100%; margin:auto }
@@ -68,10 +82,11 @@ import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
 import vote from 'components/vote.vue'
 import reblog from 'components/reblog.vue'
+import render from 'components/render.vue'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'postPreview',
-  props: ['post'],
+  props: ['post', 'styleType'],
   data () {
     return {
       thumbslide: 0,
@@ -80,7 +95,7 @@ export default {
       votedWeight: null
     }
   },
-  components: { vote, commentBox, reblog },
+  components: { vote, commentBox, reblog, render },
   watch: {
     post: {
       deep: true,

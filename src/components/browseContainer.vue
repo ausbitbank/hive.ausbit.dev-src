@@ -77,14 +77,19 @@
           </q-list>
         </q-popup-proxy>
       </q-btn>
+      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full Posts', value: 'full'}, {label: 'Previews', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
     </div>
-    <post-preview v-for="post in filteredPosts" :key="post.index" :post="post" />
+    <div class="row justify-around">
+      <div v-for="post in filteredPosts" :key="post.index">
+        <post-preview :post="post" :styleType="styleType" />
+      </div>
+    </div>
     <div v-if="posts.length > 0" class="text-center">
       <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />
     </div>
   </div>
 </template>
-<style lang="sass" scoped>
+<style>
 </style>
 <script>
 import postPreview from 'components/postPreview.vue'
@@ -105,6 +110,7 @@ export default {
   data () {
     return {
       loading: false,
+      styleType: 'preview',
       posts: [],
       method: this.callMethod || 'bridge.get_ranked_posts',
       observer: this.$store.state.hive.user.username,
@@ -187,6 +193,8 @@ export default {
   },
   mounted () {
     this.getPosts()
+    document.title = 'Browsing ' + this.sortMethod
+    if (this.tag) { document.title = document.title + ' / ' + this.tag }
   }
 }
 </script>
