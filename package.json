@@ -1,7 +1,7 @@
 {
   "name": "hive.ausbit.dev",
   "version": "0.0.2",
-  "description": "Hive blockchain tools",
+  "description": "A block explorer and toolkit for the Hive blockchain",
   "productName": "hive.ausbit.dev",
   "cordovaId": "org.cordova.quasar.app",
   "capacitorId": "",

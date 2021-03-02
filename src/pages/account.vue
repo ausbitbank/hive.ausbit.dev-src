@@ -5,7 +5,7 @@
       {{ errorMessage }}
     </q-dialog>
     <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null && !error">
-      <account-header :globalProps="globalProps" :account="account" :showBalances="true" v-if="globalProps !== null && account !== null"/>
+      <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
         <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
           <q-card flat bordered class="text-center q-pa-sm q-ma-md">
             <q-card-section>

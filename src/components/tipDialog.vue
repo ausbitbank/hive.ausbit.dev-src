@@ -82,7 +82,7 @@ export default {
   components: { transferDialog }, // metamask
   data () {
     return {
-      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin'],
+      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin', 'lightning'],
       hivetransfer: false,
       hivedollartransfer: false,
       ethFromAddress: null
@@ -124,7 +124,7 @@ export default {
   },
   methods: {
     returnCoinSvg (coin) {
-      return 'img:statics/' + coin + '.svg'
+      if (coin === 'lightning') { return 'img:statics/' + coin + '.png' } else { return 'img:statics/' + coin + '.svg' }
     },
     returnCoinLink (coin) {
       return coin + ':' + this.accountMeta.profile[coin]

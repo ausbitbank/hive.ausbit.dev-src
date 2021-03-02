@@ -69,7 +69,7 @@
                             <q-item-section>
                                 <q-item-label>
                                     Hive Dollars
-                                    <router-link to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" v-if="globalProps.hbd_interest_rate !== 0">
+                                    <router-link to="/hbd" v-if="globalProps.hbd_interest_rate !== 0">
                                       <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
                                     </router-link>
                                 </q-item-label>
@@ -135,6 +135,7 @@
                               <q-item-label>
                                 <q-icon name="add_circle" color="green" v-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer')" />
                                 <q-icon name="add_circle" color="green-10" v-else-if="(tx[1].op[0] === 'claim_reward_balance')" />
+                                <q-icon name="add_circle" color="green-9" v-else-if="(tx[1].op[0] === 'interest')" />
                                 <q-icon name="remove_circle" color="red" v-else-if="(tx[1].op[1].from === username && tx[1].op[0] === 'transfer')" />
                                 <q-icon name="cached" color="blue" v-else-if="(tx[1].op[0] === 'fill_convert_request')" />
                                 <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer_to_vesting')" />
@@ -152,6 +153,7 @@
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'">Staked</span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'">Unstaked</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'">Fill Order</span>
+                                <span v-else-if="tx[1].op[0] === 'interest'">Interest</span>
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[0] === 'fill_convert_request'">
                                 <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
@@ -169,6 +171,7 @@
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section :title="tx[1].timestamp">
@@ -246,6 +249,14 @@
                                 {{ vestToHive(tx[1].op[1].vesting_shares) }} HIVE
                               </q-item-label>
                             </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'interest'">
+                              <q-item-label class="text-bold">
+                                + {{ tx[1].op[1].interest }}
+                              </q-item-label>
+                              <q-item-label caption v-if="tx[1].op[0] === 'interest'">
+                                (${{ tidyNumber((tx[1].op[1].interest.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
+                              </q-item-label>
+                            </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'">
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
                                 + {{ tx[1].op[1].reward_hive }}
@@ -293,7 +304,7 @@
                               </q-item-label>
                             </q-item-section>
                           </q-item>
-                          <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
+                          <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                       <div class="text-center text-h6 q-pa-sm">
                         <q-spinner-grid size="2em" color="primary" v-if="loading" />

@@ -25,6 +25,7 @@
             <span v-if="postingJsonMeta.profile.discord" title="Discord"><a :href="returnServiceLink('discord', postingJsonMeta.profile.discord)" target="_blank"><q-avatar><q-icon name="img:statics/discord.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.telegram" title="Telegram"><a :href="returnServiceLink('telegram', postingJsonMeta.profile.telegram)" target="_blank"><q-avatar><q-icon name="img:statics/telegram.svg" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.bitcoin" title="Bitcoin"><a :href="returnServiceLink('bitcoin', postingJsonMeta.profile.bitcoin)"><q-avatar><q-icon name="img:statics/bitcoin.svg" class="hvr"/></q-avatar></a></span>
+            <span v-if="postingJsonMeta.profile.lightning" title="Lightning"><a :href="returnServiceLink('lightning', postingJsonMeta.profile.lightning)"><q-avatar><q-icon name="img:statics/lightning.png" class="hvr"/></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.litecoin" title="Litecoin"><a :href="returnServiceLink('litecoin', postingJsonMeta.profile.litecoin)"><q-avatar><q-icon name="img:statics/litecoin.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.ethereum" title="Ethereum"><a :href="returnServiceLink('ethereum', postingJsonMeta.profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.dogecoin" title="Dogecoin"><a :href="returnServiceLink('dogecoin', postingJsonMeta.profile.dogecoin)"><q-avatar><q-icon name="img:statics/dogecoin.svg" class="hvr" /></q-avatar></a></span>
@@ -148,6 +149,8 @@ export default {
           return 'mailto:' + d
         case 'bitcoin':
           return 'bitcoin:' + d
+        case 'lightning':
+          return 'lightning:' + d
         case 'litecoin':
           return 'litecoin:' + d
         case 'ethereum':

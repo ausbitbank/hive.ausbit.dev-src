@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="text-bold">Rule: Held HBD will pay monthly interest</div>
         <div>The current interest rate is <q-badge :color="hbdAprColor">{{ hbdApr }} %</q-badge>, as determined by <router-link to="/witnesses">consensus witnesses</router-link></div>
-        <div class="text-center"><q-btn dense glossy type="a" to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" label="More info" icon="info" color="primary" /></div>
+        <div class="text-center"><q-btn dense outline glossy type="a" to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" label="More info" icon="info" color="primary" /></div>
       </q-card-section>
       <q-card-section>
         <div class="text-bold">Rule : HBD Marketcap cannot be more then 10% total HIVE marketcap</div>

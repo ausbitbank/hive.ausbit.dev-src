@@ -17,13 +17,13 @@
                       <q-avatar v-if="op[1].op[1].payer"><q-img :src="getHiveAvatarUrl(op[1].op[1].payer)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].owner"><q-img :src="getHiveAvatarUrl(op[1].op[1].owner)" /></q-avatar>
                       <q-avatar v-if="['vote', 'account_witness_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
-                      <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay'].includes(op[1].op[0])"><q-icon name="monetization_on" /></q-avatar>
+                      <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay', 'interest'].includes(op[1].op[0])"><q-icon color="green" name="monetization_on" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].comment_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].comment_author)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].author"><q-img :src="getHiveAvatarUrl(op[1].op[1].author)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].from"><q-img :src="getHiveAvatarUrl(op[1].op[1].from)" /></q-avatar>
                       <q-avatar v-if="op[1].op[0] == 'comment'"><q-icon name="comment" /></q-avatar>
                       <q-avatar v-if="op[1].op[0] == 'delegate_vesting_shares'"><q-icon name="add_circle" /></q-avatar>
-                      <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" /></q-avatar>
+                      <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" color="primary" /></q-avatar>
                       <q-avatar v-if="['comment_options', 'feed_publish'].includes(op[1].op[0])"><q-icon name="settings" /></q-avatar>
                       <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].to"><q-img :src="getHiveAvatarUrl(op[1].op[1].to)" /></q-avatar>
