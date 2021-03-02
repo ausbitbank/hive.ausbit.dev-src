@@ -95,20 +95,11 @@ export default {
       }
     },
     broadcastHivesignerPopup (action) {
+      console.log(action)
       var url = 'https://www.hivesigner.com/sign/' + action[2][0] + '?'
       var params = action[2][1]
-      var command = action[2][1]
-      if (action[2][0].length > 1) {
-        params = action[2][0][1]
-        command = action[2][0][0]
-        url = 'https://www.hivesigner.com/sign/' + command + '?'
-        if (action[2][0][0] === 'comment' && params.json_metadata) {
-          params.json_metadata = JSON.stringify(params.json_metadata)
-        }
-      }
       var qs = new URLSearchParams(params)
-      url = url + qs
-      console.log(qs)
+      url = url + qs.toString()
       openURL(url)
       this.$q.notify('Opened hivesigner popup: ' + url)
       this.successfullBroadcast(action, false)

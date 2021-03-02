@@ -15,12 +15,14 @@ document.addEventListener('click', function (event) {
     const embedSrc = el.getAttribute('data-embed-src')
     if (embedSrc) {
       el.innerHTML = `<iframe frameborder='0' allowfullscreen src='${embedSrc}'></iframe>`
+      // el.innerHTML = `<video id='my-video' class='video-js' controls preload='auto'><source src='${embedSrc}' type='video/mp4' /></video>`
       return false
     }
     const videoHref = el.getAttribute('data-video-href')
     if (videoHref) {
-      window.open(videoHref)
-      el.preventDefault()
+      el.innerHTML = `<video id='my-video' class='video-js' controls preload='auto'><source src='${videoHref}' type='video/mp4' /></video>`
+      // window.open(videoHref)
+      // el.preventDefault()
       return false
     }
   }

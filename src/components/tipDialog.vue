@@ -111,8 +111,12 @@ export default {
     coins: function () {
       var userCoins = []
       if (this.accountMeta) {
-        Object.keys(this.accountMeta.profile).forEach(e => this.supportedCoins.includes(e) ? userCoins.push(e) : console.log())
-        return userCoins
+        if ('profile' in this.accountMeta) {
+          Object.keys(this.accountMeta.profile).forEach(e => this.supportedCoins.includes(e) ? userCoins.push(e) : console.log())
+          return userCoins
+        } else {
+          return []
+        }
       } else {
         return []
       }

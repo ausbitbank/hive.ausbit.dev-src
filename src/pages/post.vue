@@ -164,7 +164,7 @@
               <q-item>
                 <tip-button :account="post.author" style="width: 100%" />
               </q-item>
-              <q-item>
+              <q-item v-if="loggedInUser">
                 <q-item-section avatar>
                   <q-icon name="share" color="secondary" />
                 </q-item-section>

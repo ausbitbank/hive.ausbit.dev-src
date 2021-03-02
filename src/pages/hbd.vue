@@ -2,6 +2,11 @@
   <q-page class="flex q-pa-md flex-center">
     <q-card v-if="globalProps !== undefined && globalProps !== null">
       <q-card-section>
+        <div class="text-bold">Rule: Held HBD will pay monthly interest</div>
+        <div>The current interest rate is <q-badge :color="hbdAprColor">{{ hbdApr }} %</q-badge>, as determined by <router-link to="/witnesses">consensus witnesses</router-link></div>
+        <div class="text-center"><q-btn dense glossy type="a" to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" label="More info" icon="info" color="primary" /></div>
+      </q-card-section>
+      <q-card-section>
         <div class="text-bold">Rule : HBD Marketcap cannot be more then 10% total HIVE marketcap</div>
         <div>HBD Marketcap = ${{ tidyNumber(hbdCap) }}</div>
         <div>Hive Marketcap = ${{ tidyNumber(hiveCap) }}</div>
@@ -76,6 +81,22 @@ export default {
         return 'orange'
       } else {
         return 'green'
+      }
+    },
+    hbdAprColor: function () {
+      if ((this.hbdApr) === 0) {
+        return 'red'
+      } else if ((this.hbdApr) === 1) {
+        return 'orange'
+      } else {
+        return 'green'
+      }
+    },
+    hbdApr: function () {
+      if (this.globalProps !== undefined) {
+        return this.globalProps.hbd_interest_rate / 100
+      } else {
+        return null
       }
     },
     hiveCap: function () {

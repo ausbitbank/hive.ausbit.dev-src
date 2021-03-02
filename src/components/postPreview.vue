@@ -37,11 +37,11 @@
         </q-carousel> -->
       </q-card-section>
       <q-card-section v-if="styleType === 'full'">
-        <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
+        <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
         <render :input="post.body" />
       </q-card-section>
       <q-separator />
-      <q-card-section dense class="text-left">
+      <q-card-section dense class="text-center">
           <q-btn color="blue-gray" icon="push_pin" v-if="post.stats.is_pinned" label="Pinned" flat dense />
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
           <router-link :to="linkCommunity(post.community)"><q-chip color="orange" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>

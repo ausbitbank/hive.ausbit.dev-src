@@ -69,6 +69,9 @@
                             <q-item-section>
                                 <q-item-label>
                                     Hive Dollars
+                                    <router-link to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" v-if="globalProps.hbd_interest_rate !== 0">
+                                      <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
+                                    </router-link>
                                 </q-item-label>
                             </q-item-section>
                             <q-item-section>
