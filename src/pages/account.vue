@@ -402,7 +402,6 @@ export default {
     },
     getAccount (username) {
       if (this.$store.state.hive.accounts[username] === undefined) {
-        console.log('dispatch sent to get account info for ' + this.username)
         this.$store.dispatch('hive/getAccount', this.username)
       }
     },
