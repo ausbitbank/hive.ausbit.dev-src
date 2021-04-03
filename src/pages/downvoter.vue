@@ -6,7 +6,7 @@
             <p class="text-italic text-bold text-red">Alpha software, buggy, don't use if you don't understand the risks.</p>
             <q-input label="username" v-model="usernameField" />
             <q-btn label="Find pending payouts" @click="lookup(usernameField)" color="primary" bordered glossy class="q-ma-md" />
-            <div>
+            <div v-if="loggedInUser">
               Downvote Power for {{ loggedInUser }}
               <q-linear-progress dark stripe rounded size="20px" :value="this.downvotePowerPct / 100" color="red" class="q-mt-sm">
                 <div class="absolute-full flex flex-center">
@@ -66,12 +66,20 @@ export default {
       }
     },
     downvotePower: function () {
-      return (this.account.downvote_manabar.current_mana / ((this.effectiveVests / 4) * 1e4)) * 100
+      if (this.account !== undefined) {
+        return (this.account.downvote_manabar.current_mana / ((this.effectiveVests / 4) * 1e4)) * 100
+      } else {
+        return null
+      }
     },
     downvotePowerPct: function () {
-      var pct = (this.downvotePower / 100).toFixed(2)
-      if (pct > 100) { pct = 100.00 }
-      return pct
+      if (this.account !== undefined) {
+        var pct = (this.downvotePower / 100).toFixed(2)
+        if (pct > 100) { pct = 100.00 }
+        return pct
+      } else {
+        return null
+      }
     }
   },
   methods: {
