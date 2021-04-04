@@ -80,7 +80,7 @@
       <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full Posts', value: 'full'}, {label: 'Previews', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
     </div>
     <div class="row justify-around">
-      <div v-for="post in filteredPosts" :key="post.index">
+      <div v-for="post in filteredPosts" :key="post.id">
         <post-preview :post="post" :styleType="styleType" />
       </div>
     </div>
