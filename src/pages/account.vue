@@ -117,6 +117,9 @@
         </q-card>
       </div>
       <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
+        <div class="text-center">
+          <q-btn title="Check for new transactions" icon="refresh" size="sm" color="green" round @click="getAccountHistoryMarker()" />
+        </div>
         <account-operations :accountOperations="accountOperations" />
         <q-card class="text-center">
             <q-card-section>
@@ -445,8 +448,6 @@ export default {
     refreshAccount () { this.$store.dispatch('hive/getAccount', this.username) },
     init () {
       this.getGlobalProps()
-      // var throwaway = makeBitMaskFilter(op.vote) // TODO remove after upgrading account history method, only serves to stop linter warnings
-      // console.log(throwaway)
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
       document.title = this.username
