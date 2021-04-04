@@ -809,8 +809,12 @@ export default {
     },
     returnTokenPriceHive (symbol) {
       if (this.hiveEngineMarketInfo !== null) {
-        var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
-        if (t) { return t.lastPrice } else { return null }
+        if (symbol === 'SWAP.HIVE') {
+          return 1.000
+        } else {
+          var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
+          if (t) { return t.lastPrice } else { return null }
+        }
       } else {
         return null
       }
