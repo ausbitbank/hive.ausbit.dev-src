@@ -117,8 +117,23 @@
         </q-card>
       </div>
       <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
-        <div class="text-center">
-          <q-btn title="Check for new transactions" icon="refresh" size="sm" color="green" round @click="getAccountHistoryMarker()" />
+        <q-toolbar rounded flat class="text-center">
+          <q-space />
+          <q-btn title="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
+          <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @input="autoRefreshToggle()"  /><span v-if="autorefresh" class="q-ml-md">&nbsp; every <q-input v-model.number="autorefreshMinutes" type="number" dense standout style="max-width: 80px" :rules="[ val => val > 0.5 || 'Too fast!']" /> minutes</span>
+          <q-btn title="Filter Operations" icon="sort" dense size="sm" round color="blue-grey" class="q-ml-sm hvr">
+            <q-popup-proxy>
+              <q-card class="q-ma-md" rounded>
+                <p>What hive operations do you want to see ?</p>
+                <q-input v-model="filter" label="Operations seperated by commas" />
+                <q-btn label="Set" color="primary" dense icon="save" size="sm" @click="$router.push({ query:{ filter: filter } }); getAccountHistoryMarker()" />
+              </q-card>
+            </q-popup-proxy>
+          </q-btn>
+          <q-space />
+        </q-toolbar>
+        <div v-if="this.$route.query.filter" class="text-center">
+            Only showing: <span v-for="i in this.$route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" disable /></span>
         </div>
         <account-operations :accountOperations="accountOperations" />
         <q-card class="text-center">
@@ -141,7 +156,6 @@ import moment from 'moment'
 import { debounce } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
-// import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
 import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
@@ -183,8 +197,12 @@ export default {
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
       filteredOperationsArray: [],
+      filter: this.$route.query.filter || null,
       failCount: 0,
-      failCountMax: 10
+      failCountMax: 10,
+      autorefresh: false,
+      autorefreshMinutes: 2,
+      autorefreshTimer: null
     }
   },
   watch: {
@@ -322,7 +340,23 @@ export default {
     }
   },
   methods: {
+    autoRefreshToggle () {
+      if (this.autorefresh === true) {
+        this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
+      } else {
+        clearTimeout(this.autorefreshTimer)
+      }
+    },
+    autoRefreshTrigger () {
+      clearTimeout(this.autorefreshTimer)
+      if (this.autorefreshMinutes < 0.5) { this.autorefreshMinutes = 1 }
+      if (this.autorefresh === true) {
+        this.getAccountHistoryMarker()
+        this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
+      }
+    },
     async getAccountHistoryFiltered () {
+      this.accountOperations = []
       if (this.operationsBitmask === null) {
         this.getAccountHistory(this.username)
       } else {
@@ -367,16 +401,18 @@ export default {
       }.bind(this))
     },
     async getAccountHistoryMarker () {
+      var prev = this.accountOperationsMarker
+      if (prev !== null) { console.log('previous marker:' + prev) }
       if (this.$route.query.filter) {
         var filter = this.$route.query.filter.split(',')
         filter.forEach(element => this.filteredOperationsArray.push(op[element]))
         this.operationsBitmask = makeBitMaskFilter(this.filteredOperationsArray)
         await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
-          .then(res => { console.log('account operations marker: '); console.log(res); this.accountOperationsMarker = res[0][0]; this.getAccountHistoryFiltered() })
+          .then(res => { this.accountOperationsMarker = res[0][0]; if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       } else {
         await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1]])
-          .then(res => { this.accountOperationsMarker = res[0][0]; this.getAccountHistoryFiltered() })
+          .then(res => { this.accountOperationsMarker = res[0][0]; if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       }
     },
@@ -456,10 +492,15 @@ export default {
         this.getWitness(this.username)
       }
       this.getAccountHistoryMarker()
+      if (this.autoRefresh === true) { setTimeout(this.autoRefreshTrigger(), this.autorefreshMinutes * 60 * 1000) }
     }
   },
   created () {
     this.init()
+  },
+  destroy () {
+    console.log('clear timer')
+    clearTimeout(this.autorefreshTimer)
   }
 }
 </script>
