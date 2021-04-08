@@ -1,6 +1,6 @@
 <template>
     <q-page class="flex q-pa-md flex-center">
-        <q-card class="text-center">
+        <q-card class="text-center" dense>
           <q-card-section>
             <p>Abuse fighting tool. Select a user, find and attempt to remove payouts.</p>
             <p class="text-italic text-bold text-red">Alpha, buggy, don't use if you don't understand the risks.</p>
@@ -16,8 +16,8 @@
               <q-btn title="Refresh logged in account data" size="sm" round color="green" icon="refresh" class="q-ma-sm" />
             </div>
           </q-card-section>
-          <q-card-section v-if="posts.length > 0">
-            <h4>Pending payouts for {{ username }}</h4>
+          <q-card-section dense v-if="posts.length > 0">
+            <h5>Pending payouts for {{ username }}</h5>
             <q-btn color="red" flat label="Downvote all" icon="thumb_down" @click="downvoteAll()" v-if="loggedInUser" />
             <q-list flat bordered separator>
             <q-item v-for="post in postsWithPayoutNotVoted" :key="post.index">
@@ -28,6 +28,17 @@
               </q-item-section>
             </q-item>
             </q-list>
+            <q-expansion-item expand-separator label="Pending payouts with my vote already" v-if="loggedInUser && postsWithPayoutVoted.length > 0">
+            <q-list flat bordered separator>
+            <q-item v-for="post in postsWithPayoutVoted" :key="post.index">
+              <q-item-section>
+                <router-link :to="returnPostLink(post.author, post.permlink)"><q-icon name="link" /> {{ post.permlink.substr(0,50) }}</router-link> Pays out ${{ post.payout }} {{ timeDelta(post.payout_at) }}
+                <q-table :data="post.active_votes" :columns="voteColumns" :pagination="{ sortBy: 'rshares', descending: true, rowsPerPage: 5 }" dense bordered separator="cell" />
+                <q-btn color="warning" icon="thumb_down" flat @click="vote(post.author, post.permlink, calcWeightForRshares(post.net_rshares))" v-if="loggedInUser" >&nbsp;&nbsp;&nbsp;Downvote {{ calcWeightForRshares(post.net_rshares) }} %</q-btn>
+              </q-item-section>
+            </q-item>
+            </q-list>
+            </q-expansion-item>
           </q-card-section>
         </q-card>
     </q-page>
@@ -99,6 +110,13 @@ export default {
     postsWithPayoutNotVoted: function () {
       if (this.posts.length > 0) {
         return this.posts.filter(p => p.net_rshares > 0 && p.active_votes.filter(v => v.voter === this.loggedInUser).length === 0)
+      } else {
+        return []
+      }
+    },
+    postsWithPayoutVoted: function () {
+      if (this.posts.length > 0) {
+        return this.posts.filter(p => p.net_rshares > 0 && p.active_votes.filter(v => v.voter === this.loggedInUser).length !== 0)
       } else {
         return []
       }
