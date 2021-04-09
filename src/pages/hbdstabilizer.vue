@@ -3,7 +3,7 @@
     <q-card v-if="globalProps !== undefined && globalProps !== null" class="text-center q-pa-sm q-ma-sm" bordered>
       <q-card-section>
         <div class="text-h5"><q-icon name="img:statics/hbd.svg" title="HBD" size="md" />&nbsp; HBD Stabilizer</div>
-        <p><router-link to="@hbdstabilizer">@hbdstabilizer</router-link> is a project by <router-link to="@smooth">@smooth</router-link> that uses HBD from <router-link to="@hive.fund">@hive.fund</router-link> to purchase Hive & return it back to <router-link to="@hive.fund">@hive.fund</router-link> whenever HBD is above its fair-value ($1 USD).</p>
+        <p><router-link to="@hbdstabilizer">@hbdstabilizer</router-link> is a project by <router-link to="@smooth">@smooth</router-link> that uses HBD from <router-link to="@hive.fund">@hive.fund</router-link> to buy Hive & return it back to <router-link to="@hive.fund">@hive.fund</router-link> whenever HBD is above its fair-value ($1 USD).</p>
         <div class="text-subtitle"><router-link to="@smooth/posts"><q-icon name="info" color="blue" />&nbsp; Learn more from @smooth's posts</router-link></div>
       </q-card-section>
       <q-card-section v-if="dao !== null">
@@ -30,7 +30,7 @@
         <q-icon name="clear" color="red" />&nbsp; hbdstabilizer has no outstanding market orders
       </q-card-section>
       <q-card-section v-if="hiveTransactions.length > 0">
-        <div class="text-h6">Recent transactions from <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
+        <div class="text-h6">Recent transactions for <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
         <div class="subtitle">Only show: <q-badge color="blue-grey" class="q-mr-sm" v-for="a in ['transfer', 'fill_order', 'limit_order_create', 'interest', 'fill_convert_request' ]" :key="a.index">{{ a }}</q-badge><router-link to="@hbdstabilizer?filter=transfer,fill_order,limit_order_create,interest,fill_convert_request"><q-icon name="external_link" /></router-link></div>
         <q-scroll-area style="height: 400px; max-width: 100%;">
         <q-list separator>
