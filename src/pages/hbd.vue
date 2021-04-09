@@ -10,13 +10,13 @@
             Hive Backed Dollars
           </q-item-section>
         </q-item>
-        Hive Backed Dollars are a stablecoin on the Hive network. They are "backed" by the networks ability to convert them into $1 USD worth of Hive.<br />
+        Hive Backed Dollars are a stablecoin used on the Hive network. They are "backed" by the networks ability to convert them into $1 USD worth of Hive.<br />
         There are constraints on HBD creation within the blockchain rules to help keep the Hive economy healthy.<br />
-        This page helps track relevant statistics about HBD
+        This page helps track relevant info about HBD
       </q-card-section>
       <q-separator />
       <q-card-section>
-        <div class="text-h6">HBD Marketcap cannot be more then 10% total HIVE marketcap</div>
+        <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below 10% of HIVE marketcap</div>
         <div class="text-subtitle2">(The Debt Limit)</div>
         <div>HBD Marketcap = ${{ tidyNumber(hbdCap) }}</div>
         <div>Hive Marketcap = ${{ tidyNumber(hiveCap) }}</div>
@@ -26,21 +26,27 @@
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
-        <div class="text-h6">Held HBD now earn interest</div>
+        <div class="text-h6"><q-icon name="trending_up" color="green" />&nbsp; Held HBD now earn interest</div>
         <div class="text-subtitle2">(applies to HBD unmoved for 1 month)</div>
         <div>The current interest rate is <q-badge :color="hbdAprColor">{{ hbdApr }} %</q-badge>, as determined by <router-link to="/witnesses">consensus witnesses</router-link></div>
-        <div class="text-center"><q-btn dense outline glossy type="a" to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain" label="More info" icon="info" color="primary" /></div>
+        <div class="text-center"><q-icon name="info" color="blue" />&nbsp; <router-link to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain">Learn more about HBD interest here</router-link></div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <div class="text-h6"><q-icon name="trending_flat" color="orange" />&nbsp; HBDStabilizer is active</div>
+        <div class="text-subtitle2">Using overvalued HBD to buy Hive for the DAO</div>
+        <p><router-link to="hbdstabilizer"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Stabilizer over here</router-link></p>
       </q-card-section>
       <q-separator />
       <q-card-section v-if="percentCap >= 9 && percentCap < 10 && globalProps.hbd_print_rate !== 10000">
         <div class="text-bold"><q-icon name="warning" color="orange" />Print Rate slowed to {{ globalProps.hbd_print_rate / 100 }} %</div>
       </q-card-section>
       <q-card-section v-if="percentCap < 10">
-        <div class="text-bold"><q-icon name="info" color="primary" />Normal Conditions Apply:</div>
+        <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
         <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price (${{ medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0]) }})</div>
       </q-card-section>
       <q-card-section v-if="percentCap > 10 && medianPrice !== null">
-        <div class="text-bold"><q-icon name="warning" color="red" />Haircut Conditions Apply:</div>
+        <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
         <div>Formula for redemption price during a haircut :</div>
         <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (10 x TOTAL ISSUED HBD)</code></div>
         <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
