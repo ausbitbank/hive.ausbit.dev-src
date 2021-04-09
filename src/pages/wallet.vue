@@ -56,6 +56,7 @@
                             </q-item-section>
                             <q-item-section side>
                                 <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHive = true" />
+                                <router-link to="/market"><q-btn dense icon="transform" color="orange" title="Trade Hive/HBD on internal market" /></router-link>
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn v-if="false" dense icon="arrow_upward" color="primary" title="Power Up" />
                             </q-item-section>
