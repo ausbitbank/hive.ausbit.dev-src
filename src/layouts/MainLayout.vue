@@ -187,7 +187,7 @@ export default {
           title: 'Anonymous Servers for Crypto',
           caption: 'Privex.io affiliate link',
           icon: 'monetization_on',
-          link: 'https://pay.privex.io/order/?r=ausbitbank'
+          link: 'https://www.privex.io/?r=ausbitbank'
         },
         {
           title: 'Project announcement post',
