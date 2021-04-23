@@ -47,10 +47,10 @@
             </q-card-section>
             <q-card-section>
                 <div class="row">
-                  <div class="col">
+                  <div class="col" v-if="account.reputation">
                       <div>
                           Reputation
-                    </div>
+                      </div>
                       <div class="text-h5">
                           {{ getReputation(account.reputation) }}
                       </div>

@@ -83,6 +83,10 @@
       <div v-for="post in filteredPosts" :key="post.post_id">
         <post-preview :post="post" :styleType="styleType" />
       </div>
+      <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md" />
+      <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
+        <h5> <q-icon name="error_outline" color="orange" />&nbsp; No posts found</h5>
+      </div>
     </div>
     <div v-if="posts.length > 0" class="text-center">
       <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />
