@@ -6,10 +6,28 @@
         <p><router-link to="@hbdstabilizer">@hbdstabilizer</router-link> is a project by <router-link to="@smooth">@smooth</router-link> that uses HBD from <router-link to="@hive.fund">@hive.fund</router-link> to buy Hive & return it back to <router-link to="@hive.fund">@hive.fund</router-link> whenever HBD is above its fair-value ($1 USD).</p>
         <div class="text-subtitle"><router-link to="@smooth/posts"><q-icon name="info" color="blue" />&nbsp; Learn more from @smooth's posts</router-link></div>
       </q-card-section>
-      <q-card-section v-if="dao !== null">
-        <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hive.fund">hive.fund</router-link></div>
-        <div class="text-subtitle">{{ tidyNumber(dao.balance.split(' ')[0]) }} HIVE<br />
-        {{ tidyNumber(dao.hbd_balance.split(' ')[0]) }} HBD</div>
+      <q-card-section>
+      <div class="row">
+      <q-card class="col" flat bordered v-if="dao">
+      <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hive.fund">hive.fund</router-link></div>
+      <div class="text-subtitle">{{ tidyNumber(dao.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      {{ tidyNumber(dao.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      ~$ {{ tidyNumber(((hivePrice * parseFloat(dao.balance.split(' ')[0])) + parseFloat(dao.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      </q-card>
+      <q-card class="col" flat bordered v-if="hbdStabilizer">
+      <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
+      <div class="text-subtitle">{{ tidyNumber(hbdStabilizer.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      {{ tidyNumber(hbdStabilizer.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      ~$ {{ tidyNumber(((hivePrice * parseFloat(hbdStabilizer.balance.split(' ')[0])) + parseFloat(hbdStabilizer.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      </q-card>
+      <q-card class="col" flat bordered v-if="hbdFunder">
+      <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbd.funder">hbd.funder</router-link></div>
+      <div class="text-subtitle">{{ tidyNumber(hbdFunder.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      {{ tidyNumber(hbdFunder.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      ~$ {{ tidyNumber(((hivePrice * parseFloat(hbdFunder.balance.split(' ')[0])) + parseFloat(hbdFunder.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      </q-card>
+      </div>
+      Estimated value based on Hive price of ${{ hivePrice }} and HBD price of $1
       </q-card-section>
       <q-card-section>
         <div class="text-h6">Funding Proposals</div>
@@ -31,7 +49,7 @@
       </q-card-section>
       <q-card-section v-if="hiveTransactions.length > 0">
         <div class="text-h6">Recent transactions for <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
-        <div class="subtitle">Only show: <q-badge color="blue-grey" class="q-mr-sm" v-for="a in ['transfer', 'fill_order', 'limit_order_create', 'interest', 'fill_convert_request' ]" :key="a.index">{{ a }}</q-badge><router-link to="@hbdstabilizer?filter=transfer,fill_order,limit_order_create,interest,fill_convert_request"><q-icon name="external_link" /></router-link></div>
+        <div class="subtitle">Only show: <q-badge color="blue-grey" class="q-mr-sm" v-for="a in ['transfer', 'proposal_pay', 'fill_order', 'limit_order_create', 'interest', 'fill_convert_request' ]" :key="a.index">{{ a }}</q-badge><router-link to="@hbdstabilizer?filter=transfer,fill_order,limit_order_create,interest,fill_convert_request,proposal_pay"><q-icon name="external_link" /></router-link></div>
         <q-scroll-area style="height: 400px; max-width: 100%;">
         <q-list separator>
           <account-operations :account-operations="hiveTransactions" />
@@ -57,7 +75,8 @@ const walletBitmask = makeBitMaskFilter([
   op.interest,
   op.fill_convert_request,
   op.fill_order,
-  op.limit_order_create
+  op.limit_order_create,
+  op.proposal_pay
 ])
 export default {
   name: 'hbd',
@@ -66,6 +85,7 @@ export default {
       medianPrice: null,
       daoHbdBalance: 0,
       hbdStabilizer: null,
+      hbdFunder: null,
       dao: null,
       openOrders: [],
       accountHistoryPointer: -1,
@@ -90,6 +110,15 @@ export default {
       } else {
         return 0
       }
+    },
+    hivePrice: function () {
+      if (this.medianPrice !== null) {
+        var base = parseFloat(this.medianPrice.base.split(',')[0])
+        var quote = parseFloat(this.medianPrice.quote.split(',')[0])
+        return base / quote
+      } else {
+        return 0
+      }
     }
   },
   methods: {
@@ -99,10 +128,22 @@ export default {
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       return parts.join('.')
     },
-    getHbdStabilizerAccount () {
-      this.$hive.api.getAccountsAsync(['hive.fund'])
-        .then((response) => { this.dao = response[0] })
-        .catch(() => console.log('Failed to load @hbdstabilizer profile'))
+    getMedianPrice () {
+      this.$hive.api.getCurrentMedianHistoryPriceAsync()
+        .then((response) => { this.medianPrice = response; console.log(response) })
+        .catch(() => {
+          console.log('Failed to get median price - retrying')
+          debounce(this.getMedianPrice(), 5000)
+        })
+    },
+    getAccounts () {
+      this.$hive.api.getAccountsAsync(['hive.fund', 'hbdstabilizer', 'hbd.funder'])
+        .then((response) => {
+          this.dao = response[0]
+          this.hbdStabilizer = response[1]
+          this.hbdFunder = response[2]
+        })
+        .catch(() => console.log('Failed to load account data'))
     },
     getOpenOrders () {
       this.$hive.api.getOpenOrdersAsync('hbdstabilizer')
@@ -147,7 +188,8 @@ export default {
   },
   mounted () {
     document.title = 'HBDStabilizer Monitor'
-    this.getHbdStabilizerAccount()
+    this.getAccounts()
+    this.getMedianPrice()
     this.getOpenOrders()
     this.getHiveWalletTransactions()
     this.findProposals([158, 159, 166, 169])
