@@ -37,6 +37,7 @@ const routes = [
       { path: 'dao', component: () => import('pages/proposals.vue') },
       { path: 'downvoter', component: () => import('pages/downvoter.vue') },
       { path: 'hbdstabilizer', component: () => import('pages/hbdstabilizer.vue') },
+      { path: 'tax', component: () => import('pages/tax.vue') },
       /* { path: 'trending/:tag', component: () => import('pages/browse.vue') },
       { path: 'trending', component: () => import('pages/browse.vue') },
       { path: 'created/:tag', component: () => import('pages/browse.vue') },

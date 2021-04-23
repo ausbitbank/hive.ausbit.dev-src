@@ -11,7 +11,7 @@
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ Sanitize(postingJsonMeta.profile.location) }}</div>
-            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website) }}</a></div>
+            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a></div>
             <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><a v-if="postingJsonMeta.profile.pinned !== 'none'" :href="returnServiceLink('pinned', postingJsonMeta.profile.pinned)"><q-avatar><q-icon name="push_pin" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.email" title="Email"><a :href="returnServiceLink('email', postingJsonMeta.profile.email)"><q-avatar><q-icon name="email" class="hvr" /></q-avatar></a></span>
             <span v-if="postingJsonMeta.profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', postingJsonMeta.profile.protonmail)"><q-avatar><q-icon name="img:statics/protonmail.svg" class="hvr" /></q-avatar></a></span>

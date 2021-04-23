@@ -14,7 +14,7 @@ document.addEventListener('click', function (event) {
   if (el.classList.contains('markdown-video-link')) {
     const embedSrc = el.getAttribute('data-embed-src')
     if (embedSrc) {
-      el.innerHTML = `<iframe frameborder='0' allowfullscreen src='${embedSrc}'></iframe>`
+      el.innerHTML = `<div style="position:relative;padding-top:56.25%;"><iframe frameborder='0' style="position:absolute;top:0;left:0;width:100%;height:100%;" allowfullscreen src='${embedSrc}'></iframe></div>`
       // el.innerHTML = `<video id='my-video' class='video-js' controls preload='auto'><source src='${embedSrc}' type='video/mp4' /></video>`
       return false
     }
