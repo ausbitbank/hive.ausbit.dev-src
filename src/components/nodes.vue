@@ -3,7 +3,7 @@
     <q-card flat bordered v-if="fullNodeUpdate !== null">
         <q-card-section class="text-center">
             <div class="text-h5 text-center">
-                <q-icon name="dns" /> Api Nodes
+                <q-icon name="dns" color="blue-grey" /> Api Nodes
             </div>
             <div v-for="node in fullNodeUpdateHive" :key="node.index" class="text-center">
                 <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
@@ -23,9 +23,9 @@
             </div>
             </q-card-section>
             <q-card-section class="text-center">
-                <router-link to="/@fullnodeupdate/posts"><q-btn dense icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
+                <router-link to="/@fullnodeupdate/posts"><q-btn dense flat icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
                 <div v-if="fullNodeUpdateTime" class="text-subtitle">
-                    <q-icon name="access_time" /> {{ timeDelta(fullNodeUpdateTime) }} at {{ fullNodeUpdateTime }}
+                    <q-icon name="access_time" /> tested {{ timeDelta(fullNodeUpdateTime) }}
                 </div>
                 <div class="text-caption">
                     Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>

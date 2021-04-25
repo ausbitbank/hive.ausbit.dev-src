@@ -4,8 +4,10 @@
           <q-card-section>
             <p>Abuse fighting tool. Select a user, find and attempt to remove payouts.</p>
             <p class="text-italic text-bold text-red">Alpha, buggy, don't use if you don't understand the risks.</p>
-            <q-input label="username" v-model="usernameField" />
-            <q-btn label="Find pending payouts" @click="lookup(usernameField)" color="primary" bordered glossy class="q-ma-md" />
+            <q-form @submit="lookup(usernameField)" class="row q-gutter-sm">
+              <q-input clearable label="username" v-model="usernameField" :loading="loading" class="col" />
+              <q-btn label="Find pending payouts" flat bordered @click="lookup(usernameField)" color="primary" icon="search" dense class="col" type="submit" />
+            </q-form>
             <div v-if="loggedInUser">
               Downvote Power for {{ loggedInUser }}
               <q-linear-progress dark stripe rounded size="20px" :value="this.downvotePowerPct / 100" color="red">
@@ -16,7 +18,8 @@
               <q-btn title="Refresh logged in account data" size="sm" round color="green" icon="refresh" class="q-ma-sm" />
             </div>
           </q-card-section>
-          <q-card-section dense v-if="posts.length > 0">
+          <q-separator />
+          <q-card-section dense v-if="postsWithPayoutNotVoted.length > 0">
             <h5>Pending payouts for {{ username }}</h5>
             <q-btn color="red" flat label="Downvote all" icon="thumb_down" @click="downvoteAll()" v-if="loggedInUser" />
             <q-list flat bordered separator>
@@ -40,6 +43,9 @@
             </q-list>
             </q-expansion-item>
           </q-card-section>
+          <q-card-section dense v-if="postsWithPayoutNotVoted.length === 0 && username !== '' && !loading">
+            <q-icon name="search_off" color="red" /> No unvoted active payouts found for {{ username }}
+          </q-card-section>
         </q-card>
     </q-page>
 </template>
@@ -55,6 +61,7 @@ export default {
       posts: [],
       rewardFundPost: null,
       median: null,
+      loading: false,
       voteColumns: [
         {
           name: 'voter',
@@ -153,10 +160,12 @@ export default {
       this.username = user.toLowerCase()
       this.posts = []
       var params = { account: this.username, sort: 'payout' }
+      this.loading = true
       this.$hive.api.callAsync('bridge.get_account_posts', params)
         .then(response => {
           this.posts = response
           this.sortPostsByAge()
+          this.loading = false
         })
     },
     async vote (author, permlink, weight) {

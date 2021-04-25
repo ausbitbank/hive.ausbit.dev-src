@@ -3,7 +3,7 @@
     <q-card flat bordered v-if="witnesses !== null">
         <q-card-section class="text-center">
             <div class="text-h5">
-                <q-icon name="emoji_people" /> Witnesses
+                <q-icon name="emoji_people" color="teal" /> Witnesses
             </div>
             <div v-for="witness in witnesses" :key="witness.index">
                 <div>
@@ -40,7 +40,7 @@
                 </div>
         </q-card-section>
         <q-card-section style="text-center">
-            <a href="https://peakd.com/me/witnesses"><q-btn dense icon="info" color="primary" label="Vote Witnesses" /></a>
+            <a href="https://peakd.com/me/witnesses"><q-btn dense flat icon="info" color="primary" label="Vote Witnesses" /></a>
             <div class="text-center">
               <router-link to="witnesses" v-if="this.$route.path !== '/witnesses'"><q-btn dense push icon="link" /></router-link>
               <q-btn dense push icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit < 200 "/>

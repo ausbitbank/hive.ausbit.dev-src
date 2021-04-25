@@ -37,7 +37,7 @@ export default {
         return `<a href="/block/${sanitize(data)}">${sanitize(data)}</a>`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `<a href="${sanitize(data)}">${sanitize(data)}</a>`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer', 'receiver', 'payer', 'treasury'].includes(key)) {
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer', 'receiver', 'payer', 'treasury', 'publisher'].includes(key)) {
         return `<a href="/@${sanitize(data)}">${sanitize(data)}</a>`
       } else if (['permlink', 'parent_permlink'].includes(key)) {
         return `<a href="/@${sanitize(parent.author)}/${sanitize(parent.permlink)}">${sanitize(data)}</a>`

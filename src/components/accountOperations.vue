@@ -26,7 +26,7 @@
                       <q-avatar v-if="op[1].op[0] == 'comment'"><q-icon name="comment" /></q-avatar>
                       <q-avatar v-if="op[1].op[0] == 'delegate_vesting_shares'"><q-icon name="add_circle" /></q-avatar>
                       <q-avatar v-if="op[1].op[0] == 'transfer'"><q-icon name="send" color="primary" /></q-avatar>
-                      <q-avatar v-if="['comment_options', 'feed_publish'].includes(op[1].op[0])"><q-icon name="settings" /></q-avatar>
+                      <q-avatar v-if="['comment_options', 'feed_publish', 'sps_fund'].includes(op[1].op[0])"><q-icon name="settings" /></q-avatar>
                       <q-avatar v-if="['custom_json', 'witness_set_properties'].includes(op[1].op[0])"><q-icon name="notes" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].to"><q-img :src="getHiveAvatarUrl(op[1].op[1].to)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].parent_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].parent_author)" /></q-avatar>
