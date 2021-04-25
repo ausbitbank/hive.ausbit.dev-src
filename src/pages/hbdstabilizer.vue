@@ -12,19 +12,30 @@
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hive.fund">hive.fund</router-link></div>
       <div class="text-subtitle">{{ tidyNumber(dao.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
       {{ tidyNumber(dao.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      {{ vestToHive(parseFloat(dao.vesting_shares.split(' ')[0])) }} HP <br />
       ~$ {{ tidyNumber(((hivePrice * parseFloat(dao.balance.split(' ')[0])) + parseFloat(dao.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
       </q-card>
       <q-card class="col" flat bordered v-if="hbdStabilizer">
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
       <div class="text-subtitle">{{ tidyNumber(hbdStabilizer.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
       {{ tidyNumber(hbdStabilizer.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
-      ~$ {{ tidyNumber(((hivePrice * parseFloat(hbdStabilizer.balance.split(' ')[0])) + parseFloat(hbdStabilizer.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      {{ vestToHive(parseFloat(hbdStabilizer.vesting_shares.split(' ')[0])) }} HP <br />
+      ~$ {{ tidyNumber(((hivePrice * (parseFloat(hbdStabilizer.balance.split(' ')[0]) + vestToHive(parseFloat(hbdStabilizer.vesting_shares.split(' ')[0])))) + parseFloat(hbdStabilizer.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      <div v-if="parseInt(hbdStabilizer.vesting_withdraw_rate.split(' ')[0]) !== 0">
+          <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(hbdStabilizer.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
+          <div class="text-caption color-grey">{{ timeDelta(hbdStabilizer.next_vesting_withdrawal) }}</div>
+      </div>
       </q-card>
       <q-card class="col" flat bordered v-if="hbdFunder">
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbd.funder">hbd.funder</router-link></div>
       <div class="text-subtitle">{{ tidyNumber(hbdFunder.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
       {{ tidyNumber(hbdFunder.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
-      ~$ {{ tidyNumber(((hivePrice * parseFloat(hbdFunder.balance.split(' ')[0])) + parseFloat(hbdFunder.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      {{ vestToHive(parseFloat(hbdFunder.vesting_shares.split(' ')[0])) }} HP <br />
+      ~$ {{ tidyNumber(((hivePrice * (parseFloat(hbdFunder.balance.split(' ')[0]) + vestToHive(parseFloat(hbdFunder.vesting_shares.split(' ')[0])))) + parseFloat(hbdFunder.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      <div v-if="parseInt(hbdFunder.vesting_withdraw_rate.split(' ')[0]) !== 0">
+          <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(hbdFunder.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
+          <div class="text-caption color-grey">{{ timeDelta(hbdFunder.next_vesting_withdrawal) }}</div>
+      </div>
       </q-card>
       </div>
       Estimated value based on Hive price of ${{ hivePrice }} and HBD price of $1
@@ -66,6 +77,7 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 import { debounce } from 'quasar'
+import moment from 'moment'
 import accountOperations from 'components/accountOperations.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
@@ -128,9 +140,22 @@ export default {
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       return parts.join('.')
     },
+    vestToHive (vests) {
+      if (this.globalProps) {
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+      } else {
+        return null
+      }
+    },
+    timeDelta (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
+    },
     getMedianPrice () {
       this.$hive.api.getCurrentMedianHistoryPriceAsync()
-        .then((response) => { this.medianPrice = response; console.log(response) })
+        .then((response) => { this.medianPrice = response })
         .catch(() => {
           console.log('Failed to get median price - retrying')
           debounce(this.getMedianPrice(), 5000)
