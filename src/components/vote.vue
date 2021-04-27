@@ -173,7 +173,6 @@ export default {
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
   },
   mounted () {
-    console.log(this.$store.state.hive.user.username)
   }
 }
 </script>

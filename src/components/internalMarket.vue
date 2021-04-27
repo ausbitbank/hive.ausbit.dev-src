@@ -41,6 +41,9 @@
     </q-expansion-item>
 </q-list>
 </q-card-section>
+<q-card-section v-if="!loggedInUser" class="text-bold">
+  <q-icon name="info" color="primary" /> Login to trade on the internal market
+</q-card-section>
 <q-card-actions v-if="true">
 <q-btn flat glossy round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" /><br />
 <q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
