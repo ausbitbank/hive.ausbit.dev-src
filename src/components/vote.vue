@@ -50,7 +50,7 @@ export default {
       }
     },
     disableVoting: function () {
-      if (this.loggedInUser === undefined) { return true }
+      if (this.loggedInUser === null) { return true }
       if (this.myVote === undefined) { return false } else { return true }
     },
     upvotePercent: {
@@ -173,6 +173,7 @@ export default {
     filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
   },
   mounted () {
+    console.log(this.$store.state.hive.user.username)
   }
 }
 </script>
