@@ -37,6 +37,7 @@ export default {
           'BINANCE:HIVEBTC',
           'BITTREX:HIVEBTC',
           'HUOBI:HIVEBTC',
+          'BITHUMB:HIVEKRW',
           'BITTREX:HBDBTC',
           'BITTREX:HBDUSD',
           'CRYPTOCAP:BTC.D',

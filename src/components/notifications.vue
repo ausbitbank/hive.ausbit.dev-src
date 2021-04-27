@@ -4,7 +4,7 @@
     <q-popup-proxy>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
     <q-card dense flat bordered class="text-center q-pa-none q-ma-none">
-      <q-card-section horizontal class="text-title flex-center text-center">
+      <q-card-section horizontal dense class="text-title flex-center text-center">
         Notifications <q-btn flat icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator />
@@ -23,7 +23,7 @@
             {{ n.msg.substr(1) }}
           </q-item-label>
           <q-item-label caption>
-            <router-link :to="getUrl(n.url)">{{ n.url.substr(0,40) }}</router-link> ..
+            <router-link :to="getUrl(n.url)">{{ n.url.substr(0,40) }}</router-link>
           </q-item-label>
           <q-item-label caption>
             {{ timeDelta(n.date) }}

@@ -13,18 +13,18 @@
       <q-item-section v-else><b>{{ tidyNumber(stat.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
     </q-item>
     </q-expansion-item>
-    <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-opened>
+    <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
     <q-item dense v-for="amt in [10000, 5000, 1000, 100, 10, 1]" :key="amt.index">
     <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-separator />
-    <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-opened>
+    <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
     <q-item dense v-for="amt in [1, 10, 100, 1000, 5000, 10000]" :key="amt.index">
     <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
-    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-opened>
+    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
     <q-scroll-area dark class="bg-dark text-white" style="height: 300px; width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
     <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
     <q-item-section v-if="getTradeLine(trade).action === 'buy'">
