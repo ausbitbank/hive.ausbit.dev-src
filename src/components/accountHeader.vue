@@ -56,15 +56,15 @@
         </span>
       </div>
 <q-toolbar dense class="rounded-borders bg-dark text-white text-center" v-if="showNavBar">
-  <q-tabs v-model="tab" dense animated shrink active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
-    <q-route-tab name="posts" label="posts" :to="'/@' + account.name + '/posts'"/>
-    <q-route-tab name="blog" label="blog" :to="'/@' + account.name + '/blog'"/>
-    <q-route-tab name="feed" label="feed" :to="'/@' + account.name + '/feed'"/>
-    <q-route-tab name="replies" label="replies" :to="'/@' + account.name + '/replies'"/>
-    <q-route-tab name="comments" label="comments" :to="'/@' + account.name + '/comments'"/>
-    <q-route-tab name="communities" label="communities" :to="'/@' + account.name + '/communities'"/>
-    <q-route-tab name="wallet" label="wallet" :to="'/@' + account.name + '/wallet'"/>
-    <q-route-tab name="explorer" label="explorer" :to="'/@' + account.name"/>
+  <q-tabs v-model="tab" dense animated shrink inline-label active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
+    <q-route-tab name="posts" class="text-deep-purple" label="posts" icon="library_books" :to="'/@' + account.name + '/posts'"/>
+    <q-route-tab name="blog" class="text-purple" label="blog" icon="menu_book" :to="'/@' + account.name + '/blog'"/>
+    <q-route-tab name="feed" class="text-orange" label="feed" icon="rss_feed" :to="'/@' + account.name + '/feed'"/>
+    <q-route-tab name="replies" class="text-blue-grey" label="replies" icon="comment" :to="'/@' + account.name + '/replies'"/>
+    <q-route-tab name="comments" label="comments" icon="message" :to="'/@' + account.name + '/comments'"/>
+    <q-route-tab name="communities" class="text-teal" label="communities" icon="forum" :to="'/@' + account.name + '/communities'"/>
+    <q-route-tab name="wallet" class="text-green" label="wallet" icon="account_balance" :to="'/@' + account.name + '/wallet'"/>
+    <q-route-tab name="explorer" class="text-indigo" icon="perm_identity" label="profile" :to="'/@' + account.name"/>
     <q-route-tab v-if="this.$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
   </q-tabs>
     </q-toolbar>

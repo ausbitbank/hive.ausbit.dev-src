@@ -1,7 +1,8 @@
 <template>
   <q-btn flat dense round aria-label="Login" class="hvr q-ml-md">
     <q-avatar>
-      <q-img :src="userAvatar"/>
+      <q-img :src="userAvatar" v-if="loggedInUser !== ''" />
+      <q-icon name="login" color="primary" title="Login" v-else />
     </q-avatar>
     <span class="q-ma-sm">{{ loggedInUser }}</span>
     <q-popup-proxy>
@@ -18,8 +19,8 @@
             <q-item-section class="text-purple">Blog</q-item-section>
           </q-item>
           <q-item clickable :to="linkPosts(loggedInUser)">
-            <q-item-section avatar><q-icon name="library_books" color="deep_purple" /></q-item-section>
-            <q-item-section class="text-deep_purple">Posts</q-item-section>
+            <q-item-section avatar><q-icon name="library_books" color="deep-purple" /></q-item-section>
+            <q-item-section class="text-deep-purple">Posts</q-item-section>
           </q-item>
           <q-item clickable :to="linkCommunities(loggedInUser)">
             <q-item-section avatar><q-icon name="forum" color="teal" /></q-item-section>
