@@ -26,6 +26,7 @@ a:visited { color: #884488; }
 <script>
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
+// import accountOperations from 'components/accountOperations.vue'
 export default {
   name: 'blockView',
   components: {
@@ -44,13 +45,15 @@ export default {
   computed: {
     operations: function () {
       if (this.tx !== null) {
-        var arrayofoperations = []
+        var ops = {}
         if ('block_num' in this.tx) { // 2 different api's are for tx's with diff response formats, make them look the same
-          this.tx.operations.forEach(t => { arrayofoperations.push(t) })
+          ops = { ref_block_num: this.tx.ref_block_num, ref_block_prefix: this.tx.ref_block_prefix, expiration: this.tx.expiration, operations: [], extensions: this.tx.extensions, signatures: this.tx.signatures, transaction_id: this.tx.transaction_id, block_num: this.tx.block_num, transaction_num: this.tx.transaction_num }
+          this.tx.operations.forEach(t => { ops.operations.push(t) })
         } else {
-          this.tx.forEach(t => { arrayofoperations.push(t.op) })
+          ops = { operations: [] }
+          this.tx.forEach(t => { ops.operations.push(t.op) })
         }
-        return arrayofoperations
+        return ops
       } else {
         return {}
       }
@@ -106,7 +109,7 @@ export default {
     returnBlockLink (blockNum) { return '/b/' + blockNum + '#' + this.txId }
   },
   mounted () {
-    this.getTx(this.$route.params.txId)
+    this.getTx2(this.$route.params.txId) // Use method 2 only for the most info
     document.title = 'Transaction ' + this.$route.params.txId
   }
 }
