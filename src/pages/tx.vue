@@ -5,13 +5,14 @@
       <q-card-section>
         <div class="text-h6">Transaction {{ txId }}</div>
         <div class="text-subtitle"> Included in
-          <span v-if="tx[0].block"><router-link :to="returnBlockLink(tx[0].block)"> Block {{ tidyNumber(tx[0].block) }}</router-link></span>
-          <span v-if="tx[0].block_num"><router-link :to="returnBlockLink(tx[0].block_num)"> Block {{ tidyNumber(tx[0].block_num) }}</router-link></span>
+          <span v-if="tx.block_num"><router-link :to="returnBlockLink(tx.block_num)"> Block {{ tidyNumber(tx.block_num) }}</router-link></span>
+          <span v-else><router-link :to="returnBlockLink(tx[0].block)"> Block {{ tidyNumber(tx[0].block) }}</router-link></span>
         </div>
       </q-card-section>
       <q-card-section>
         <div>
-          <json-viewer v-for="op in tx" :data="op.op" :key="op.index" />
+          <json-viewer :data="operations" />
+          <!-- <json-viewer v-for="op in tx" :data="op.op" :key="op.index" /> -->
         </div>
       </q-card-section>
     </q-card>
@@ -41,6 +42,19 @@ export default {
     }
   },
   computed: {
+    operations: function () {
+      if (this.tx !== null) {
+        var arrayofoperations = []
+        if ('block_num' in this.tx) { // 2 different api's are for tx's with diff response formats, make them look the same
+          this.tx.operations.forEach(t => { arrayofoperations.push(t) })
+        } else {
+          this.tx.forEach(t => { arrayofoperations.push(t.op) })
+        }
+        return arrayofoperations
+      } else {
+        return {}
+      }
+    }
   },
   methods: {
     getTx2 (txId) {
