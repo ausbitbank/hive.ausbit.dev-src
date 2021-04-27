@@ -7,7 +7,7 @@
         </router-link>
     </div>
     </q-card>
-    <q-spinner-grid size="2em" color="primary" v-if="posts.length === 0" />
+    <q-spinner-puff size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
       <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently voted by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>

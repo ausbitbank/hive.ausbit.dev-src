@@ -2,15 +2,15 @@
   <q-page class="flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-          <q-card flat bordered class="q-ma-md q-pa-md" style="max-width:1000px; max-width:100%; min-width:750px">
-            <div class="text-h6 text-center" style="clear:both">Wallet</div>
+          <q-card flat bordered class="q-ma-md q-pa-md" style="max-width:1000px; max-width:100%; min-width:600px">
+            <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
-                <q-tab name="hive" label="Hive (Layer 1)" />
-                <q-tab name="hive-engine" label="Hive-Engine (Layer 2)" />
+                <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="md" />Hive</q-tab>
+                <q-tab name="hive-engine"><q-icon name="img:statics/hive-engine.png" size="md" />Hive-Engine</q-tab>
             </q-tabs>
             <q-tab-panels v-model="tab" animated class="shadow-2 rounded-borders">
                 <q-tab-panel name="hive">
-                    <q-list bordered class="rounded-borders">
+                    <q-list bordered separator class="rounded-borders">
                         <q-item>
                             <q-item-section avatar>
                               <q-avatar size="sm">
@@ -210,7 +210,7 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to === username">
-                              <q-item-label class="text-bold">
+                              <q-item-label class="text-bold text-green">
                                 + {{ tx[1].op[1].amount }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
@@ -228,7 +228,7 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to !== username">
-                              <q-item-label class="text-bold">
+                              <q-item-label class="text-bold text-red">
                                 - {{ tx[1].op[1].amount }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
@@ -250,7 +250,7 @@
                                 {{ vestToHive(tx[1].op[1].vesting_shares) }} HIVE
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'interest'">
+                            <q-item-section side top v-if="tx[1].op[0] === 'interest'" class="text-green-9">
                               <q-item-label class="text-bold">
                                 + {{ tx[1].op[1].interest }}
                               </q-item-label>
@@ -258,7 +258,7 @@
                                 (${{ tidyNumber((tx[1].op[1].interest.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'">
+                            <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'" class="text-green-10">
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
                                 + {{ tx[1].op[1].reward_hive }}
                               </q-item-label>
@@ -308,8 +308,8 @@
                           <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                       <div class="text-center text-h6 q-pa-sm">
-                        <q-spinner-grid size="2em" color="primary" v-if="loading" />
-                        <q-btn @click="getHiveWalletTransactions()" class="cursor-pointer text-bold" icon="update" v-if="!loading"> Load More Transactions</q-btn>
+                        <q-spinner-puff size="2em" color="primary" v-if="loading" />
+                        <q-btn @click="getHiveWalletTransactions()" class="cursor-pointer text-bold" icon="update" color="primary" dense flat bordered v-if="!loading"> Load More Transactions</q-btn>
                       </div>
                     </div>
                 </q-tab-panel>
