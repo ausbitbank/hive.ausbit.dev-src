@@ -42,9 +42,9 @@
         <q-card-section style="text-center">
             <a href="https://peakd.com/me/witnesses"><q-btn dense flat icon="info" color="primary" label="Vote Witnesses" /></a>
             <div class="text-center">
-              <router-link to="witnesses" v-if="this.$route.path !== '/witnesses'"><q-btn dense push icon="link" /></router-link>
-              <q-btn dense push icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit < 200 "/>
-              <q-btn dense push icon="unfold_less" @click="limit = 40; witnesses = null; getWitnessesByVote()" v-if="limit === 200 "/>
+              <router-link to="witnesses" v-if="this.$route.path !== '/witnesses'"><q-btn dense flat icon="link" /></router-link>
+              <q-btn dense flat icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit < 200 "/>
+              <q-btn dense flat icon="unfold_less" @click="limit = 40; witnesses = null; getWitnessesByVote()" v-if="limit === 200 "/>
             </div>
         </q-card-section>
     </q-card>

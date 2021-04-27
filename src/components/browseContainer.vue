@@ -77,7 +77,7 @@
           </q-list>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full Posts', value: 'full'}, {label: 'Previews', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
+      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
     </div>
     <div class="row justify-around">
       <div v-for="post in filteredPosts" :key="post.post_id">

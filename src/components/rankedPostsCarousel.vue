@@ -1,12 +1,14 @@
 <template>
   <div>
-    <div v-if="posts.length > 0">
+    <div>
       <q-card flat bordered>
       <div class="text-h6 text-center">
         <router-link to="/trending" v-if="this.sortMethod === 'trending'"><q-icon name="trending_up" color="green" /> Trending</router-link>
         <router-link to="/hot" v-if="this.sortMethod === 'hot'"><q-icon name="whatshot" v-if="this.sortMethod === 'hot'" color="red" /> Hot</router-link>
         <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <q-skeleton height="250px" width="400" class="bg-primary" animation="fade" rect v-if="loading" />
       <q-carousel
+        v-if="posts.length > 0"
         v-model="slide"
         transition-prev="jump-left"
         transition-next="jump-right"
@@ -64,7 +66,8 @@ export default {
       autoplay: true,
       settings: false,
       newSort: null,
-      autoplaySlides: this.autoplay
+      autoplaySlides: this.autoplay,
+      loading: false
     }
   },
   props: {
@@ -103,6 +106,7 @@ export default {
     },
     getRankedPosts () {
       this.posts = []
+      this.loading = true
       this.$axios.post(this.api, {
         id: 1,
         jsonrpc: '2.0',
@@ -116,6 +120,7 @@ export default {
         }
       })
         .then((res) => {
+          this.loading = false
           this.posts = res.data.result
           this.slide = this.firstPermlink
         })

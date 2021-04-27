@@ -30,7 +30,7 @@
                 <div class="text-caption">
                     Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
                 </div>
-                <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense push icon="link" /></router-link></div>
+                <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense flat icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
     </span>

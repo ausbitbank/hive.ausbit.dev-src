@@ -1,10 +1,11 @@
 <template>
   <div>
-    <div v-if="!loading && posts.length > 0">
+    <div><!-- v-if="!loading && posts.length > 0" -->
       <q-card flat bordered>
       <div class="text-h6 text-center">
         <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
+      <q-skeleton height="250px" width="400" class="bg-primary" animation="fade" rect v-if="loading" />
       <q-carousel
         v-if="posts.length > 0"
         v-model="slide"

@@ -18,6 +18,9 @@
                     <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
                     <div class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</div>
                 </div>
+                <!-- <div class="text-bold" v-if="rewardFundPost !== null">
+                    Current vote value: {{ voteValue }}
+                </div> -->
                 <div class="text-bold">
                     Voting Power
                 </div>
@@ -202,7 +205,9 @@ export default {
       failCountMax: 10,
       autorefresh: false,
       autorefreshMinutes: 2,
-      autorefreshTimer: null
+      autorefreshTimer: null,
+      rewardFundPost: null,
+      medianPrice: null
     }
   },
   watch: {
@@ -337,6 +342,26 @@ export default {
       } else {
         return null
       }
+    },
+    voteValue: function () {
+      if (this.hivePrice !== 0 && this.rewardFundPost !== null && this.effectiveVests !== null) {
+        var finalVest = this.effectiveVests * 1e6
+        var power = (100 * 10000 / 10000) / 50
+        var rshares = power * finalVest / 10000
+        var estimate = rshares / parseFloat(this.rewardFundPost.recent_claims) * parseFloat(this.rewardFundPost.reward_balance.split(' ')[0]) * this.hivePrice
+        return estimate
+      } else {
+        return 0
+      }
+    },
+    hivePrice: function () {
+      if (this.medianPrice !== null) {
+        var base = parseFloat(this.medianPrice.base.split(',')[0])
+        var quote = parseFloat(this.medianPrice.quote.split(',')[0])
+        return base / quote
+      } else {
+        return 0
+      }
     }
   },
   methods: {
@@ -354,6 +379,18 @@ export default {
         this.getAccountHistoryMarker()
         this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
       }
+    },
+    async getRewardFundPost () {
+      this.$hive.api.getRewardFund('post', function (err, result) {
+        if (err) { console.log(err) }
+        this.rewardFundPost = result
+      }.bind(this))
+    },
+    async getMedianPrice () {
+      this.$hive.api.getCurrentMedianHistoryPrice(function (err, result) {
+        if (err) { console.error(err) }
+        if (result) { this.medianPrice = result }
+      }.bind(this))
     },
     async getAccountHistoryFiltered () {
       this.accountOperations = []
@@ -484,6 +521,8 @@ export default {
     refreshAccount () { this.$store.dispatch('hive/getAccount', this.username) },
     init () {
       this.getGlobalProps()
+      // this.getMedianPrice()
+      // this.getRewardFundPost()
       this.page = this.$router.currentRoute.query.page || 1
       this.username = this.$route.params.username
       document.title = this.username

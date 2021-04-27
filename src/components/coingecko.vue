@@ -18,7 +18,7 @@
     </q-card>
     <q-card flat bordered dense>
         <q-card-section class="text-center">
-            <q-btn push icon="settings" label="Settings" color="primary" dense @click="settingsDialog = true" />
+            <q-btn push icon="settings" label="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
             <q-dialog v-model="settingsDialog">
                 <q-card>
                     <q-card-section>
@@ -31,7 +31,7 @@
                 </q-card>
             </q-dialog>
             <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
-            <div v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense push icon="link" /></router-link></div>
+            <div v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></div>
         </q-card-section>
     </q-card>
     </span>
