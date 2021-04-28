@@ -17,7 +17,6 @@ export default {
     parsedJSON: function () {
       var newjson = this.data
       if ('json' in newjson) { newjson.json = JSON.parse(this.data.json) }
-      // if ('json_metadata' in newjson) { newjson.json_metadata = JSON.parse(this.data.json_metadata) }
       return newjson
     }
   },

@@ -1,7 +1,7 @@
 <template>
   <q-btn flat dense round aria-label="Login" class="hvr q-ml-md">
     <q-avatar>
-      <q-img :src="userAvatar" v-if="loggedInUser !== ''" />
+      <q-img :src="userAvatar" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />
     </q-avatar>
     <span class="q-ma-sm">{{ loggedInUser }}</span>
@@ -9,7 +9,7 @@
       <q-card flat bordered>
       <div v-if="loggedInUser">
         <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-        <q-list bordered class="rounded-borders text-primary">
+        <q-list bordered separator class="rounded-borders text-primary">
           <q-item clickable :to="linkFeed(loggedInUser)">
             <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
             <q-item-section class="text-orange">Feed</q-item-section>
@@ -42,11 +42,9 @@
             <q-item-section avatar><q-icon name="settings" color="grey" /></q-item-section>
             <q-item-section class="text-grey">Settings</q-item-section>
           </q-item>
-          <q-item>
-            <q-btn label="Logout" color="red" @click="logout()" icon="exit_to_app" class="text-center hvr" push/>
-          </q-item>
-          <q-item class="text-caption">
-            logintype: {{ loginType }}
+          <q-item clickable @click="logout()">
+            <q-item-section avatar><q-icon name="exit_to_app" color="red" class="hvr" /></q-item-section>
+            <q-item-section class="text-red">Logout</q-item-section>
           </q-item>
         </q-list>
         </transition>
