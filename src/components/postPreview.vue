@@ -42,10 +42,10 @@
       </q-card-section>
       <q-separator />
       <q-card-section dense class="text-center">
-          <q-btn color="blue-gray" icon="push_pin" v-if="post.stats.is_pinned" label="Pinned" flat dense />
+          <q-btn color="blue-grey" icon="push_pin" v-if="post.stats.is_pinned" label="Pinned" flat dense />
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
-          <router-link :to="linkCommunity(post.community)"><q-chip color="orange" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
-          <q-chip color="grey" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
+          <router-link :to="linkCommunity(post.community)"><q-chip color="blue-grey" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
+          <q-chip color="blue-grey-10" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
           <span v-if="post.author_title" class="text-caption">{{ post.author_title }}</span>
           <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
           <q-btn dense icon="comment" flat color="blue-grey" :label="post.children">
