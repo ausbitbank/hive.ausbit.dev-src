@@ -52,6 +52,10 @@ const routes = [
       { path: 'payout_comments', component: () => import('pages/browse.vue') }, */
       { path: 'c/:username/:sortMethod', component: () => import('pages/browse.vue') },
       { path: 'c/:username', component: () => import('pages/browse.vue') },
+      { path: 'tribes', component: () => import('pages/tribes.vue') },
+      { path: 'tribes/:token', component: () => import('pages/tribes.vue') },
+      { path: 'tribes/:token/:sortMethod', component: () => import('pages/tribes.vue') },
+      { path: 'tribes/:token/:sortMethod/:tag', component: () => import('pages/tribes.vue') },
       { path: ':sortMethod', component: () => import('pages/browse.vue') },
       { path: ':sortMethod/:tag', component: () => import('pages/browse.vue') }
     ]

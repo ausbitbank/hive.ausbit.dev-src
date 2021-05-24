@@ -16,24 +16,22 @@
             <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green">({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
         </q-card-section>
     </q-card>
-    <q-card flat bordered dense>
-        <q-card-section class="text-center">
-            <q-btn push icon="settings" label="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
-            <q-dialog v-model="settingsDialog">
-                <q-card>
-                    <q-card-section>
-                        <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
-                        <q-input v-model="currency" label="Currency" />
-                        <q-input v-model="sortOrder" label="Sort Order" />
-                        <q-toggle left-label v-model="sparklineEnabled" label="Sparkline Chart" />
-                        <div><q-btn push label="Update" icon="save" color="primary" @click="getCoinGecko(); settingsDialog = false" /></div>
-                    </q-card-section>
-                </q-card>
-            </q-dialog>
-            <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
-            <div v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></div>
-        </q-card-section>
-    </q-card>
+    <div class="text-center">
+      <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
+      <q-btn push icon="settings" label="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
+      <q-dialog v-model="settingsDialog">
+          <q-card>
+              <q-card-section>
+                  <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
+                  <q-input v-model="currency" label="Currency" />
+                  <q-input v-model="sortOrder" label="Sort Order" />
+                  <q-toggle left-label v-model="sparklineEnabled" label="Sparkline Chart" />
+                  <div><q-btn push label="Update" icon="save" color="primary" @click="getCoinGecko(); settingsDialog = false" /></div>
+              </q-card-section>
+          </q-card>
+      </q-dialog>
+      <span v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></span>
+    </div>
     </span>
     </span>
 </template>

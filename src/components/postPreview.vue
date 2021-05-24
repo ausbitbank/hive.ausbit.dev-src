@@ -17,8 +17,7 @@
             <q-item-section>
                 <q-item-label>
                     <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-                    <span class="" v-if="postMeta.description"><render :input="postMeta.description.substr(0,650)" /></span>
-                    <span class="" v-else><render :input="this.summary" /></span>
+                    <span><render :input="this.summary" /></span>
                 </q-item-label>
             </q-item-section>
         </q-item>
@@ -38,11 +37,12 @@
       </q-card-section>
       <q-card-section v-if="styleType === 'full'" style="clear:both;">
         <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-        <render :input="post.body" />
+        <render :input="post.body" v-if="post.body" />
+        <render :input="summary" v-else />
       </q-card-section>
       <q-separator />
       <q-card-section dense class="text-center">
-          <q-btn color="blue-grey" icon="push_pin" v-if="post.stats.is_pinned" label="Pinned" flat dense />
+          <q-btn color="blue-grey" icon="push_pin" v-if="post.stats && post.stats.is_pinned" label="Pinned" flat dense />
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
           <router-link :to="linkCommunity(post.community)"><q-chip color="blue-grey" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
           <q-chip color="blue-grey-10" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
@@ -54,8 +54,9 @@
             </q-popup-proxy>
           </q-btn>
           <q-btn flat dense>
-            <q-icon name="img:statics/hive.svg" color="secondary" class="q-mr-sm" />
-            <span title="Hive Rewards" v-if="!post.is_paidout">{{ post.pending_payout_value.split(' ')[0] }}</span>
+            <q-icon name="img:statics/hive.svg" color="secondary" class="q-mr-sm" v-if="!post.token" />
+            <span title="Hive Rewards" v-if="!post.is_paidout && post.pending_payout_value">{{ post.pending_payout_value.split(' ')[0] }}</span>
+            <span title="Token Rewards" v-else-if="!post.is_paidout && post.pending_token && post.precision">{{ post.pending_token / Math.pow(10, post.precision) }} {{ post.token }}</span>
             <span title="Hive Rewards" v-else>{{ post.payout }}</span>
           </q-btn>
           <vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" />
@@ -90,7 +91,6 @@ export default {
   data () {
     return {
       thumbslide: 0,
-      summary: postBodySummary(this.post, 650),
       postImage: catchPostImage(this.post),
       votedWeight: null
     }
@@ -100,7 +100,6 @@ export default {
     post: {
       deep: true,
       handler () {
-        this.summary = postBodySummary(this.post, 650)
         this.postImage = catchPostImage(this.post)
       }
     }
@@ -114,6 +113,13 @@ export default {
         return this.post.json_metadata
       } else {
         return null
+      }
+    },
+    summary: function () {
+      if (this.post.desc) {
+        return postBodySummary(this.post.desc, 650)
+      } else {
+        return postBodySummary(this.post, 650)
       }
     },
     downVotes: function () {

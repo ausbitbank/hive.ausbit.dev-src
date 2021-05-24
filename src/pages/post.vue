@@ -202,7 +202,7 @@
             </q-list>
           </q-card-section>
           <q-card-section>
-            View this post on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>
+            View on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>, <a :href="linkEcencyPost(author, permlink)">Ecency</a>
           </q-card-section>
         </q-card>
         </transition>
@@ -338,6 +338,9 @@ export default {
     },
     linkPeakdPost (author, permlink) {
       return 'https://peakd.com/@' + author + '/' + permlink + '?ref=ausbitbank'
+    },
+    linkEcencyPost (author, permlink) {
+      return 'https://ecency.com/@' + author + '/' + permlink
     },
     linkAccount (username) {
       return '/@' + username

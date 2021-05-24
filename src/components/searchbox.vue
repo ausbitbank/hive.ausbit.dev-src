@@ -1,6 +1,6 @@
 <template>
   <q-form @submit="onSearchSubmit" @reset="onSearchReset" class="q-mr-md q-electron-drag--exception">
-    <q-input dense v-model="search" input-class="text-right" debounce="5000" class="q-ml-md" label="Search Account, Txid or Block">
+    <q-input dense v-model="search" input-class="text-right" debounce="3000" class="q-ml-md" label="Search Account, Txid or Block">
       <template v-slot:append>
         <q-icon v-if="search !== ''" name="search" @click="onSearchSubmit" />
         <q-icon v-if="search !== ''" name="clear" class="cursor-pointer" @click="search = ''" />
@@ -20,6 +20,7 @@ export default {
   },
   methods: {
     onSearchSubmit () {
+      this.search = this.search.toLowerCase()
       if (!isNaN(this.search)) {
         this.$router.push('/block/' + this.search)
       } else {
