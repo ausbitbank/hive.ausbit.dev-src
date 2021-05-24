@@ -110,7 +110,10 @@ export default {
     Pstart_author: String,
     Pstart_permlink: String,
     Ppage: Number,
-    tribeToken: String,
+    tribeToken: {
+      type: String,
+      required: false
+    },
     showToolbar: Boolean,
     showTag: String,
     showAccount: String
@@ -131,7 +134,7 @@ export default {
       account: this.showAccount,
       name: null,
       tag: this.showTag,
-      token: this.tribeToken.toUpperCase() || null,
+      token: this.tribeToken || null,
       filteredPosts: [],
       filter: {
         hideVoted: false,
