@@ -70,9 +70,6 @@
                             <q-item-section>
                                 <q-item-label>
                                     Hive Dollars
-                                    <router-link to="/hbd" v-if="globalProps.hbd_interest_rate !== 0">
-                                      <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
-                                    </router-link>
                                 </q-item-label>
                             </q-item-section>
                             <q-item-section>
@@ -88,7 +85,10 @@
                                 {{ tidyNumber(account.savings_hbd_balance.split(' ')[0]) }}
                               </q-item-label>
                               <q-item-label caption>
-                                Savings
+                                Savings<br />
+                                <router-link to="/hbd" v-if="globalProps.hbd_interest_rate !== 0">
+                                  <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
+                                </router-link>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section>
