@@ -1,8 +1,8 @@
 <template>
   <q-page class="flex flex-center">
-    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
-    <div class="row items-start content-start justify-center q-pa-sm">
-      <div v-if="post" class="col-xs-11 col-md-9 col-lg-9 justify-center">
+    <account-header v-if="globalProps && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
+    <div v-if="post !== null" class="row items-start content-start justify-center q-pa-sm">
+      <div class="col-xs-11 col-md-9 col-lg-9 justify-center">
         <q-card flat bordered class="q-pa-sm" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
             {{ Sanitize(post.title) }}
@@ -290,7 +290,7 @@ export default {
     }
   },
   watch: {
-    $route: function () {
+    $route (to, from) {
       this.init()
     }
   },
@@ -328,8 +328,6 @@ export default {
     },
     setPost (post) {
       this.post = post
-      /* this.postBody = renderPostBody(post.body, false, false)
-      console.log(this.postBody) */
       document.title = post.title
       if (post.description) { this.postDescription = this.Sanitize(post.description) }
     },
@@ -371,7 +369,7 @@ export default {
     GetEditHistoryUrl (author, permlink) { return 'https://scribe.hivekings.com/?url=https%3A%2F%2Fhive.blog%2F%40' + author + '%2F' + permlink },
     Sanitize (input) { return sanitize(input) },
     init () {
-      // this.post = null
+      this.post = null
       this.author = this.$router.currentRoute.params.author
       this.permlink = this.$router.currentRoute.params.permlink
       this.getPost(this.author, this.permlink)
