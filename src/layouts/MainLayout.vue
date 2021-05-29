@@ -4,7 +4,7 @@
       <q-toolbar reveal elevated class="bg-dark text-primary q-electron-drag">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
-          <router-link to="/" class="q-electron-drag--exception"><q-icon name="img:statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
+          <router-link to="/" class="q-electron-drag--exception text-primary"><q-icon name="img:statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
         <queue v-if="loggedInUser !== null && queue.length > 0" /> <!-- TODO swap >= for > after finished debugging -->
