@@ -171,6 +171,13 @@ export default {
     }
   },
   methods: {
+    get () {
+      if (this.method === 'tribes') {
+        this.getTribePosts()
+      } else {
+        this.getPosts()
+      }
+    },
     async getPosts () {
       this.loading = true
       this.posts = []
