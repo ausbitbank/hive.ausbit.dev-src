@@ -9,14 +9,16 @@
                 <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
                 <div>
                 <div>
-                    <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
+                    <q-btn flat dense title="Click for full node report data">
+                      <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
+                      <q-popup-proxy>
+                        <json-viewer :data="node" />
+                      </q-popup-proxy>
+                    </q-btn>
                 </div>
                 <span v-for="rank in getNodeRanks(node)" :key="rank.id">
                     <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
                         {{ rank }}
-                        <q-tooltip content-class="bg-dark">
-                            <json-viewer :data="node" />
-                        </q-tooltip>
                     </q-chip>
                 </span>
                 </div>
