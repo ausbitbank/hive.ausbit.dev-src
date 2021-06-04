@@ -8,13 +8,13 @@
             <q-list separator dense>
               <q-item v-for="witness in witnesses" :key="witness.index">
                 <q-item-section avatar>
-                  <q-avatar>
+                  <q-avatar size="lg">
                     <q-img :src="getHiveAvatarUrl(witness.owner)"/>
                   </q-avatar>
                 </q-item-section>
                 <q-item-section>
                   <span class="text-bold" v-if="!alertSigningDisabled(witness.signing_key)">
-                    <router-link class="text-primary" :to="linkAccount(witness.owner)">{{ witness.owner }}  </router-link>
+                    <router-link class="text-primary" :to="linkAccount(witness.owner)">{{ witness.owner }}</router-link>
                   </span>
                   <span class="text-strike" v-else>
                     {{ witness.owner }}

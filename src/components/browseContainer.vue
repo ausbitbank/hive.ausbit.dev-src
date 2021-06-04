@@ -13,8 +13,8 @@
       <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
       <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
       <q-space />
-      <q-btn v-if="method === 'tribes'" label="Browse Tribe" @click="getTribePosts()" />
-      <q-btn v-else label="Browse" @click="getPosts()" />
+      <q-btn flat v-if="method === 'tribes'" color="primary" label="Browse Tribe" @click="getTribePosts()" />
+      <q-btn flat v-else color="primary" label="Browse" @click="getPosts()" />
     </q-toolbar>
     <div class="text-center">
       <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
@@ -90,7 +90,7 @@
       </div>
       <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
         <h5>
-          <q-icon name="error_outline" color="orange" />&nbsp; No posts found<br />
+          <q-icon name="error_outline" color="orange" />&nbsp; <span v-if="error">{{ error }}</span><span v-else>No posts found</span><br />
           <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
         </h5>
       </div>
@@ -140,6 +140,7 @@ export default {
       tag: this.showTag,
       token: this.tribeToken || null,
       filteredPosts: [],
+      error: null,
       filter: {
         hideVoted: false,
         hideReblogs: false,
@@ -185,6 +186,7 @@ export default {
     async getPosts () {
       this.loading = true
       this.posts = []
+      this.error = null
       var params = { observer: this.observer, limit: this.limit, sort: this.sort, start_author: this.start_author, start_permlink: this.start_permlink }
       if (this.method === 'bridge.get_account_posts') { params.account = this.account }
       if (this.method === 'bridge.get_ranked_posts') { params.tag = this.tag }
@@ -195,6 +197,10 @@ export default {
             this.posts = response
           }
           this.loading = false
+        })
+        .error(err => {
+          this.loading = false
+          this.error = err.cause.data
         })
     },
     async getTribePosts () {
