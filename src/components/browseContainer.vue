@@ -17,7 +17,8 @@
       <q-btn v-else label="Browse" @click="getPosts()" />
     </q-toolbar>
     <div class="text-center">
-      <q-btn label="filter" flat color="grey" icon="filter">
+      <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
+      <q-btn flat color="grey" title="Filter posts" icon="filter">
         <q-popup-proxy>
           <q-list separator bordered dense>
             <q-item>
@@ -88,12 +89,15 @@
         <post-preview :post="post" :styleType="styleType" />
       </div>
       <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
-        <h5> <q-icon name="error_outline" color="orange" />&nbsp; No posts found</h5>
+        <h5>
+          <q-icon name="error_outline" color="orange" />&nbsp; No posts found<br />
+          <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
+        </h5>
       </div>
     </div>
     <div v-if="posts.length > 0" class="text-center">
-      <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getTribePosts()" v-if="this.method === 'tribes'" />
-      <q-btn color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" v-else />
+      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getTribePosts()" v-if="this.method === 'tribes'" />
+      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" v-else />
     </div>
   </div>
 </template>

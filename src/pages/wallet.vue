@@ -142,6 +142,7 @@
                                 <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer_to_vesting')" />
                                 <q-icon name="arrow_circle_up" color="red-8" v-else-if="(tx[1].op[1].to !== username && tx[1].op[0] === 'transfer_to_vesting')" />
                                 <q-icon name="arrow_circle_down" color="blue-8" v-else-if="(tx[1].op[0] === 'withdraw_vesting')" />
+                                <q-icon name="arrow_circle_up" color="orange-6" v-else-if="(tx[1].op[0] === 'transfer_to_savings')" />
                                 <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
                               </q-item-label>
                             </q-item-section>
@@ -155,6 +156,7 @@
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'">Unstaked</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'">Fill Order</span>
                                 <span v-else-if="tx[1].op[0] === 'interest'">Interest</span>
+                                <span v-else-if="tx[1].op[0] === 'transfer_to_savings'">Transfer to Savings</span>
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[0] === 'fill_convert_request'">
                                 <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
@@ -169,6 +171,7 @@
                                 <span v-else-if="tx[1].op[1].from !== username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
                                 <span v-else-if="tx[1].op[1].account === username && tx[1].op[0] === 'claim_reward_balance'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_convert_request'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'transfer_to_savings'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
@@ -185,33 +188,45 @@
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_vesting' && tx[1].op[1].to === username">
                               <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].amount }}
+                                + {{ tidyNumber(tx[1].op[1].amount) }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_vesting' && tx[1].op[1].to !== username">
                               <q-item-label class="text-bold">
-                                - {{ tx[1].op[1].amount }}
+                                - {{ tidyNumber(tx[1].op[1].amount) }}
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_savings' && tx[1].op[1].to === username">
+                              <q-item-label class="text-bold">
+                                + {{ tidyNumber(tx[1].op[1].amount) }}
+                              </q-item-label>
+                              <q-item-label v-if="tx[1].op[1].memo !== ''">
+                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
+                                <span class="text-caption" style="word-wrap:break-word">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
+                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
+                                  {{ sanitize(tx[1].op[1].memo) }}
+                                </q-tooltip>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner === username">
                               <q-item-label class="text-bold">
-                                - {{ tx[1].op[1].open_pays }}
+                                - {{ tidyNumber(tx[1].op[1].open_pays) }}
                               </q-item-label>
                               <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].current_pays }}
+                                + {{ tidyNumber(tx[1].op[1].current_pays) }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner !== username">
                               <q-item-label class="text-bold">
-                                - {{ tx[1].op[1].current_pays }}
+                                - {{ tidyNumber(tx[1].op[1].current_pays) }}
                               </q-item-label>
                               <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].open_pays }}
+                                + {{ tidyNumber(tx[1].op[1].open_pays) }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to === username">
                               <q-item-label class="text-bold text-green">
-                                + {{ tx[1].op[1].amount }}
+                                + {{ tidyNumber(tx[1].op[1].amount) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
                                 (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
@@ -229,7 +244,7 @@
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to !== username">
                               <q-item-label class="text-bold text-red">
-                                - {{ tx[1].op[1].amount }}
+                                - {{ tidyNumber(tx[1].op[1].amount) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
                                 (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
@@ -260,22 +275,22 @@
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'" class="text-green-10">
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
-                                + {{ tx[1].op[1].reward_hive }}
+                                + {{ tidyNumber(tx[1].op[1].reward_hive) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
-                                + ${{ parseFloat(tx[1].op[1].reward_hive.split(' ')[0]) * hivePriceUsd }}
+                                + ${{ tidyNumber(parseFloat(tx[1].op[1].reward_hive.split(' ')[0]) * hivePriceUsd) }}
                               </q-item-label>
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
-                                + {{ tx[1].op[1].reward_hbd }}
+                                + {{ tidyNumber(tx[1].op[1].reward_hbd) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
-                                (${{ (parseFloat(tx[1].op[1].reward_hbd.split(' ')[0]) * hbdPriceUsd).toFixed(2) }})
+                                (${{ tidyNumber((parseFloat(tx[1].op[1].reward_hbd.split(' ')[0]) * hbdPriceUsd).toFixed(2)) }})
                               </q-item-label>
                               <q-item-label class="text-bold" v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
-                                + {{ vestToHive(tx[1].op[1].reward_vests) }} HP
+                                + {{ tidyNumber(vestToHive(tx[1].op[1].reward_vests)) }} HP
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
-                                (${{ (parseFloat(vestToHive(tx[1].op[1].reward_vests.split(' ')[0])) * hivePriceUsd).toFixed(2) }})
+                                (${{ tidyNumber((parseFloat(vestToHive(tx[1].op[1].reward_vests.split(' ')[0])) * hivePriceUsd).toFixed(2)) }})
                               </q-item-label>
                               <q-item-label>
                                 <div v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].memo !== ''" class="wrap text-center">
@@ -305,7 +320,7 @@
                               </q-item-label>
                             </q-item-section>
                           </q-item>
-                          <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
+                          <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                       <div class="text-center text-h6 q-pa-sm">
                         <q-spinner-puff size="2em" color="primary" v-if="loading" />
