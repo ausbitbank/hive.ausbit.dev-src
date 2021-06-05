@@ -29,6 +29,9 @@
             {{ timeDelta(n.date) }}
           </q-item-label>
         </q-item-section>
+        <q-item-section side>
+          <q-icon name="circle" :size="returnScoreSize(n.score)" :color="returnScoreColor(n.score)" :title="n.score" />
+        </q-item-section>
       </q-item>
       </q-list>
       </q-card-section>
@@ -99,20 +102,6 @@ export default {
     async markNotificationsRead () {
       var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
-      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'notify', 'Posting', json, 'Mark Notifications as read')
-      if (success) {
-        this.notifications = []
-        setTimeout(function () { this.getUnreadNotificationCount() }, 5000)
-      }
-      if (!cancel) {
-        if (notActive) {
-          console.error('Please allow Keychain to access this website')
-        } else if (notInstalled) { // alert('Please install Keychain')
-          console.error('Keychain not available')
-        } else {
-          console.info(msg)
-        }
-      } */
     },
     filterMentions (n) {
       if (n.type === 'mention') {
@@ -135,6 +124,21 @@ export default {
       var stamp = moment.utc(timestamp)
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
+    },
+    returnScoreColor (score) {
+      var s = parseInt(score)
+      if (s >= 90) { return 'red-14' } else
+      if (s >= 75) { return 'deep-purple' } else
+      if (s >= 60) { return 'indigo' } else
+      if (s >= 40) { return 'blue' } else
+      if (s >= 20) { return 'light-blue' } else { return 'grey' }
+    },
+    returnScoreSize (score) {
+      var s = parseInt(score)
+      if (s >= 90) { return 'lg' } else
+      if (s >= 60) { return 'md' } else
+      if (s >= 20) { return 'sm' } else
+      if (s >= 0) { return 'xs' }
     }
   },
   mounted () {
