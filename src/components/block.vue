@@ -3,22 +3,22 @@
     <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="!loading && viewType === 'simple'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
-                <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
+                <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" /></a>
                 <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
-                <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
+                <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" /></a>
             </div>
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-              <div>{{ this.blockOpsReal.length }} transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
+              <div><q-badge color="primary">{{ this.blockOpsReal.length }}</q-badge> transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
               <span v-for="op in this.blockOpsReal" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
-              <div>{{ this.blockOpsVirtual.length }} virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
+              <div><q-badge color="primary">{{ this.blockOpsVirtual.length }}</q-badge> virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
               <span v-for="op in this.blockOpsVirtual" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
-              <div><q-btn v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" /></div>
+              <div><q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" /></div>
             </span>
         </q-card-section>
     </q-card>
@@ -32,7 +32,7 @@
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(this.blockHeader.timestamp) }}</span></div>
-              <div><q-btn v-if="viewType !== 'simple'" @click="viewType = 'simple'" icon="unfold_less" /></div>
+              <div><q-btn flat color="primary" v-if="viewType !== 'simple'" @click="viewType = 'simple'" icon="unfold_less" /></div>
             </span>
         </q-card-section>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
