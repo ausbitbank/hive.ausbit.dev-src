@@ -6,15 +6,19 @@
                 <q-icon name="emoji_people" color="teal" /> Witnesses
             </div>
             <q-list separator dense>
-              <q-item v-for="witness in witnesses" :key="witness.index">
+              <q-item v-for="(witness, rank) in witnesses" :key="witness.id">
                 <q-item-section avatar>
+                  <router-link class="text-primary" :to="linkAccount(witness.owner)">
                   <q-avatar size="lg">
                     <q-img :src="getHiveAvatarUrl(witness.owner)"/>
                   </q-avatar>
+                  </router-link>
                 </q-item-section>
                 <q-item-section>
                   <span class="text-bold" v-if="!alertSigningDisabled(witness.signing_key)">
                     <router-link class="text-primary" :to="linkAccount(witness.owner)">{{ witness.owner }}</router-link>
+                    <q-badge v-if="rank < 20" class="q-ml-sm" color="purple" title="Consensus Witness">{{ rank + 1 }}</q-badge>
+                    <q-badge v-else class="q-ml-sm" color="blue" title="Backup Witness">{{ rank + 1 }}</q-badge>
                   </span>
                   <span class="text-strike" v-else>
                     {{ witness.owner }}
