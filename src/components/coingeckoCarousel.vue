@@ -30,10 +30,10 @@
                 <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
             </sparkline>
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
-            <div><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
+            <div v-if="coin.market_cap && coin.market_cap > 0"><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
             <div><span class="text-bold">Total Volume: </span> ${{ tidyNumber(coin.total_volume) }}</div>
-            <div><span class="text-bold">24hr Range: </span> <span>${{ tidyNumber(coin.low_24h.toFixed(3)) }} - ${{ tidyNumber(coin.high_24h.toFixed(3)) }}</span></div>
-            <div><span class="text-bold">24Hr Change: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.price_change_24h.toFixed(3)) }} ({{ coin.price_change_percentage_24h.toFixed(3) }}%)</span></div>
+            <div v-if="coin.low_24h && coin.high_24h"><span class="text-bold">24hr Range: </span> <span>${{ tidyNumber(coin.low_24h.toFixed(3)) }} - ${{ tidyNumber(coin.high_24h.toFixed(3)) }}</span></div>
+            <div v-if="coin.price_change_24h && coin.price_change_percentage_24h"><span class="text-bold">24Hr Change: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.price_change_24h.toFixed(3)) }} ({{ coin.price_change_percentage_24h.toFixed(3) }}%)</span></div>
             <div><span class="text-bold">All Time High: </span> $ <span>{{ tidyNumber(coin.ath.toFixed(3)) }}</span>  <span class="text-red">({{ coin.ath_change_percentage.toFixed(3) }} %)</span></div>
             <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green">({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
           </div>
@@ -92,7 +92,7 @@ export default {
       type: Array,
       required: false,
       default () {
-        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'eos']
+        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'eos', 'cub-finance']
       }
     }
   },
