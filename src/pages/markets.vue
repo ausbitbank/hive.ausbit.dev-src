@@ -1,13 +1,12 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
-    <transition appear enter-active-class="animated fadeInLeft" leave-active-class="animated fadeOutLeft"><div><coingecko /></div></transition>
     <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut"><div><tradingView class="q-ml-md" :options="tvOptions" /></div></transition>
-    <transition appear enter-active-class="animated fadeInRight" leave-active-class="animated fadeOutRight"><internalMarket /></transition>
+    <internalMarket />
   </q-page>
 </template>
 <script>
 import tradingView from 'vue-trading-view'
-import coingecko from 'components/coingecko.vue'
+// import coingeckoCarousel from 'components/coingeckoCarousel.vue'
 import internalMarket from 'components/internalMarket.vue'
 export default {
   name: 'markets',
@@ -48,7 +47,7 @@ export default {
   },
   computed: {
   },
-  components: { coingecko, tradingView, internalMarket },
+  components: { tradingView, internalMarket },
   mounted () {
     document.title = 'Markets'
   }
