@@ -94,6 +94,13 @@ export default {
         this.broadcastHivesignerPopup(action)
       }
     },
+    broadcastComment (comment) {
+      console.log('broadcasting comment: ')
+      console.log(comment)
+      if (this.loginType === 'keychain') {
+        console.log('with keychain')
+      }
+    },
     broadcastHivesignerPopup (action) {
       console.log(action)
       var url = 'https://www.hivesigner.com/sign/' + action[2][0] + '?'
@@ -108,10 +115,9 @@ export default {
       console.log('keychain broadcast')
       var user = action[0]
       var keytype = action[1]
-      var op = null
-      if (action[2].length > 1) { op = action[2] } else { op = action[2] }
+      var op = action[2]
       var ops = [op]
-      console.info(op)
+      console.info(op[0])
       if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }
@@ -127,8 +133,8 @@ export default {
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else if (op[0][0] === 'comment') {
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', user, op[0][1].title, op[0][1].body, op[0][1].parent_permlink, op[0][1].parent_author, JSON.stringify(op[0][1].json_metadata), op[0][1].permlink, JSON.stringify(op[1][1]))
+      } else if (op[0] === 'comment') {
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', user, op[1].title, op[1].body, op[1].parent_permlink, op[1].parent_author, JSON.stringify(op[1].json_metadata), op[1].permlink, JSON.stringify(op[1].comment_options))
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }

@@ -26,7 +26,6 @@ const broadcastAsync = async (username, operations, role = 'posting', password) 
     var commentOptions = operations[0][1].comment_options
     delete operations[0][1].comment_options
     operations.push(['comment_options', { author: commentOptions.author, permlink: commentOptions.permlink, max_accepted_payout: commentOptions.max_accepted_payout, percent_hbd: commentOptions.percent_hbd, allow_votes: commentOptions.allow_votes, allow_curation_rewards: commentOptions.allow_curation_rewards, extensions: [[0, { beneficiaries: [{ account: 'ausbit.dev', weight: 1000 }] }]] }])
-    console.log(operations)
   }
   if (operations[0][0] === 'transfer' && password) {
     var memo = operations[0][1].memo
