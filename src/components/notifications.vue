@@ -130,8 +130,8 @@ export default {
       if (s >= 90) { return 'red-14' } else
       if (s >= 75) { return 'deep-purple' } else
       if (s >= 60) { return 'indigo' } else
-      if (s >= 40) { return 'blue' } else
-      if (s >= 20) { return 'light-blue' } else { return 'grey' }
+      if (s >= 45) { return 'blue' } else
+      if (s >= 30) { return 'light-blue' } else { return 'grey' }
     },
     returnScoreSize (score) {
       var s = parseInt(score)
