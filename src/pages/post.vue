@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <account-header v-if="globalProps && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
+    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
     <div v-if="post !== null" class="row items-start content-start justify-center q-pa-sm">
       <div class="col-xs-11 col-md-9 col-lg-9 justify-center">
         <q-card flat bordered class="q-pa-sm" style="margin:auto">
