@@ -94,13 +94,6 @@ export default {
         this.broadcastHivesignerPopup(action)
       }
     },
-    broadcastComment (comment) {
-      console.log('broadcasting comment: ')
-      console.log(comment)
-      if (this.loginType === 'keychain') {
-        console.log('with keychain')
-      }
-    },
     broadcastHivesignerPopup (action) {
       console.log(action)
       var url = 'https://www.hivesigner.com/sign/' + action[2][0] + '?'
@@ -112,12 +105,10 @@ export default {
       this.successfullBroadcast(action, false)
     },
     async broadcastKeychain (action) {
-      console.log('keychain broadcast')
       var user = action[0]
       var keytype = action[1]
       var op = action[2]
       var ops = [op]
-      console.info(op[0])
       if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }
