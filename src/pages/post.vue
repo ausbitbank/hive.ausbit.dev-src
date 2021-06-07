@@ -119,7 +119,7 @@
                   <router-link :to="linkDetect(post.category)">{{ post.category }}</router-link>
                 </q-item-section>
               </q-item>
-              <q-item v-if="postMeta && postMeta.tags" title="Tags">
+              <q-item v-if="postMeta && postMeta.tags.length > 0" title="Tags">
                 <q-item-section avatar>
                     <q-icon name="label" color="primary" />
                 </q-item-section>
