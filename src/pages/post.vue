@@ -19,7 +19,7 @@
       </div>
       <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center" v-if="post">
         <transition appear enter-active-class="animated bounceInRight" leave-active-class="animated bounceOutRight">
-        <q-card dense flat bordered class="q-pa-none q-ma-none">
+        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px">
           <q-card-section>
             <q-list dense separator>
               <q-item>
@@ -119,7 +119,7 @@
                   <router-link :to="linkDetect(post.category)">{{ post.category }}</router-link>
                 </q-item-section>
               </q-item>
-              <q-item v-if="postMeta && postMeta.tags.length > 0" title="Tags">
+              <q-item v-if="postMeta && postMeta.tags && postMeta.tags.length > 0" title="Tags">
                 <q-item-section avatar>
                     <q-icon name="label" color="primary" />
                 </q-item-section>
