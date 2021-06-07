@@ -7,18 +7,18 @@
             </div>
             <q-list separator dense>
               <q-item v-for="(witness, rank) in witnesses" :key="witness.id">
-                <q-item-section avatar>
+                <q-item-section avatar class="text-center">
                   <router-link class="text-primary" :to="linkAccount(witness.owner)">
                   <q-avatar size="lg">
-                    <q-img :src="getHiveAvatarUrl(witness.owner)"/>
+                    <q-img :src="getHiveAvatarUrl(witness.owner)" />
                   </q-avatar>
                   </router-link>
                 </q-item-section>
                 <q-item-section>
                   <span class="text-bold" v-if="!alertSigningDisabled(witness.signing_key)">
                     <router-link class="text-primary" :to="linkAccount(witness.owner)">{{ witness.owner }}</router-link>
-                    <q-badge v-if="rank < 20" class="q-ml-sm" color="purple" title="Consensus Witness">{{ rank + 1 }}</q-badge>
-                    <q-badge v-else class="q-ml-sm" color="blue" title="Backup Witness">{{ rank + 1 }}</q-badge>
+                    <span v-if="rank < 20" class="q-ml-sm text-white" title="Consensus Witness">#{{ rank + 1 }}</span>
+                    <span v-else class="q-ml-sm text-grey" title="Backup Witness">#{{ rank + 1 }}</span>
                   </span>
                   <span class="text-strike" v-else>
                     {{ witness.owner }}
@@ -28,7 +28,13 @@
                       v{{ witness.running_version }}
                     </q-badge>
                     <q-popup-proxy>
-                      <json-viewer :data="witness" />
+                      <q-card flat bordered>
+                        <q-card-section header>
+                          <div class="text-h5"><router-link :to="linkAccount(witness.owner)" class="text-primary"><q-avatar class="q-mr-sm"><q-img :src="getHiveAvatarUrl(witness.owner)" /></q-avatar>{{ witness.owner }}</router-link></div>
+                          <div>Currently in rank <b>#{{ rank + 1 }}</b> with <b>{{ tidyNumber((witness.votes / 1000000000000).toFixed(0)) }}</b> MVests of approval</div>
+                        </q-card-section>
+                        <json-viewer :data="witness" />
+                      </q-card>
                     </q-popup-proxy>
                   </q-btn>
                   <div v-if="showMissed">
@@ -112,9 +118,6 @@ export default {
         .then((response) => { this.witnesses = response })
     },
     votesToHp (votes) {
-      return this.numberWithCommas(((votes * this.hivePerMvests) / 1000000000000).toFixed(0))
-    },
-    votesToHpRaw (votes) {
       return ((votes * this.hivePerMvests) / 1000000000000).toFixed(0)
     },
     getVersionColor (version) {
@@ -156,7 +159,12 @@ export default {
     linkAccount (username) {
       return '/@' + username
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' }
+    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    tidyNumber (x) {
+      var parts = x.toString().split('.')
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      return parts.join('.')
+    }
   },
   mounted () {
     this.getWitnessesByVote()
