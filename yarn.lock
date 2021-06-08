@@ -1163,10 +1163,10 @@
   dependencies:
     "@hapi/hoek" "^8.3.0"
 
-"@hiveio/hive-js@^0.8.9":
-  version "0.8.13"
-  resolved "https://registry.yarnpkg.com/@hiveio/hive-js/-/hive-js-0.8.13.tgz#f4c099d13cae7e6b4530abe42c0712be2f334129"
-  integrity sha512-txRsjNYElc+frU2nYnOWtCD5lGoE2ZZcJ7ULyyorojcMiY4qfGpEKFvGxIYdD4BgqwGPnExIQhzTpPzuWJ7Njw==
+"@hiveio/hive-js@^0.8.15":
+  version "0.8.15"
+  resolved "https://registry.yarnpkg.com/@hiveio/hive-js/-/hive-js-0.8.15.tgz#b2665c019b2ab18cb083c981d7bec81092a82f2b"
+  integrity sha512-duyBtkqpKmxDuTV3mW7tyICGiQqnv+QYG/A+QBWziabLQLoW5TVcgEp/VZouYcmXaYn050FM4nZEcZfIZZcAEQ==
   dependencies:
     "@steemit/rpc-auth" "^1.1.1"
     bigi "^1.4.2"
