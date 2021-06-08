@@ -4,8 +4,9 @@
       <div class="text-h6 text-center">
         <router-link to="markets" class="text-primary"><q-icon name="monetization_on" color="green" />&nbsp; Coin Prices</router-link>
       </div>
+      <q-spinner-puff color="primary" size="lg" v-if="coinGecko === null" />
       <q-carousel
-        v-if="coinGecko.length > 0"
+        v-if="coinGecko !== null"
         v-model="slide"
         transition-prev="jump-left"
         transition-next="jump-right"
@@ -126,9 +127,7 @@ export default {
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       return parts.join('.')
     },
-    returnCoinGeckoLink (coin) {
-      return 'https://coingecko.com/en/coins/' + coin.toLowerCase()
-    }
+    returnCoinGeckoLink (coin) { return 'https://coingecko.com/en/coins/' + coin.toLowerCase() }
   },
   mounted () {
     this.getCoinGecko()
