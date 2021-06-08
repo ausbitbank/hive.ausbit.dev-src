@@ -1,8 +1,8 @@
 <template>
-  <span v-if="account !== undefined">
+  <span v-if="account !== undefined && communityInfo !== undefined">
     <div class="col-12 text-center full-width" :style='coverImageStyle'>
       <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
-      <div v-if="communityInfo" class="text-h4">{{ communityInfo.title }}</div>
+      <div v-if="communityInfo !== undefined" class="text-h4">{{ communityInfo.title }}</div>
       <div v-else-if="postingJsonMeta && postingJsonMeta.name" class="text-h4" :title="account.name">{{ postingJsonMeta.profile.name }}</div>
       <div v-else class="text-h4">{{ account.name }}</div>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
@@ -12,7 +12,7 @@
             <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
             <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><router-link v-if="postingJsonMeta.profile.pinned !== 'none'" :to="returnPostLink(account.name, postingJsonMeta.profile.pinned)"><q-icon name="push_pin" /></router-link></span>
         </span>
-        <span v-if="communityInfo">
+        <span>
           <div v-if="communityInfo.about">{{ communityInfo.about }}</div>
           <q-btn @click="tab = 'subscribers'" flat v-if="communityInfo.subscribers"> <q-icon name="groups" title="Subscribers (Active Users)" /> {{ tidyNumber(communityInfo.subscribers) }} ({{ tidyNumber(communityInfo.num_authors) }})</q-btn>
           <q-btn flat icon="forum" title="Weekly Interactions"> {{ tidyNumber(communityInfo.num_pending) }}</q-btn>
@@ -24,7 +24,7 @@
         <q-btn v-else-if="userSubscribed === true" color="red" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'unsubscribe')"><q-icon name="person_remove" class="q-mr-sm" /> Unsubscribe from <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
       </div>
     </div>
-    <q-toolbar class="shadow-2 rounded-borders" v-if="communityInfo">
+    <q-toolbar class="shadow-2 rounded-borders">
       <q-tabs v-model="tab" animated shrink dense style="margin:auto">
         <q-tab name="posts" label="Posts" />
         <q-tab name="about" label="About" />
@@ -33,7 +33,7 @@
       </q-tabs>
     </q-toolbar>
     <q-toolbar class="rounded-borders text-white q-pa-none q-ma-none">
-    <q-tab-panels v-model="tab" animated dense v-if="communityInfo" class="text-white" style="margin:auto">
+    <q-tab-panels v-model="tab" animated dense class="text-white" style="margin:auto">
       <q-tab-panel name="posts" class="q-pa-none rounded-borders">
         <q-tabs v-model="postTab" dense animated shrink active-color="white" indicator-color="secondary">
           <q-route-tab name="created" label="created" :to="'/c/' + account.name + '/created'"/>
@@ -45,7 +45,7 @@
           <q-space />
         </q-tabs>
       </q-tab-panel>
-      <q-tab-panel name="about" v-if="communityInfo" style="text-center; margin:auto">
+      <q-tab-panel name="about" style="text-center; margin:auto">
         <div class="text-h6">{{ communityInfo.title }}</div>
         <div>{{ communityInfo.about }}</div>
         <div class="text-h6">Description</div>
