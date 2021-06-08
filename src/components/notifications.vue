@@ -3,11 +3,11 @@
     <q-badge color="primary" v-if="this.$store.state.hive.user.unreadNotificationCount > 0" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-    <q-card dense flat bordered class="text-center q-pa-none q-ma-none">
+    <q-card dense flat bordered class="text-center q-pa-sm q-ma-none">
       <q-card-section horizontal dense class="text-title flex-center text-center">
-        Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
+        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
-      <q-separator />
+      <q-separator v-if="notifications !== null" />
       <q-card-section class="q-ma-none q-pa-none" v-if="this.$store.state.hive.user.unreadNotificationCount > 0">
       <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
       <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
@@ -142,10 +142,7 @@ export default {
     }
   },
   mounted () {
-    if (this.loggedInUser !== '') {
-      console.log('getting unread notification count for ' + this.loggedInUser)
-      this.getUnreadNotificationCount()
-    }
+    if (this.loggedInUser !== '') { this.getUnreadNotificationCount() }
   }
 }
 </script>
