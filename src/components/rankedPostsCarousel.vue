@@ -113,7 +113,7 @@ export default {
         method: 'bridge.get_ranked_posts',
         params: {
           observer: null,
-          limit: 10,
+          limit: 15,
           sort: this.sortMethod,
           start_author: null,
           start_permlink: null
