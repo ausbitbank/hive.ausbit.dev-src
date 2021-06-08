@@ -1,13 +1,18 @@
 <template>
-  <q-card flat bordered class="q-ma-md q-pa-md" style="margin:auto; min-width: 50%; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
-      <div>Transfer {{ tokenName }}</div>
+  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
+    <q-card-section header>
+      <h4 class="text-center text-bold q-ma-none">Transfer {{ tokenName }}</h4>
+    </q-card-section>
+    <q-card-section>
       <user-search-box :username="toAccount" @selectUsername="setUsername" label="To account" />
       <div v-if="false"><q-input label="To account" v-model="toAccount" /></div>
-      <q-btn label="Deposit to Exchange" color="primary" glossy v-if="toAccount === '' && network === 'hive'" dense>
+      <q-btn flat label="Deposit to Exchange" color="primary" icon="shortcut" v-if="toAccount === '' && network === 'hive'" dense>
         <q-popup-proxy>
-          <q-card>
-          Common Exchange Accounts :<br />
-          <q-btn v-for="ea in exchanges" :key="ea.index" :label="ea" @click="setUsername(ea)" v-close-popup />
+          <q-card flat bordered>
+            <q-card-header class="text-bold q-ml-sm">
+              Common Exchange Accounts
+            </q-card-header>
+            <q-btn v-for="ea in exchanges" :key="ea.index" :label="ea" @click="setUsername(ea)" v-close-popup />
           </q-card>
         </q-popup-proxy>
       </q-btn>
@@ -19,6 +24,7 @@
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
         <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" />
       </div>
+    </q-card-section>
   </q-card>
 </template>
 <script>
