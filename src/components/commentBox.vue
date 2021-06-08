@@ -1,6 +1,6 @@
 <template>
-    <div flat bordered v-if="this.loggedInUser && !commentSent" style="" class="q-ma-md q-pa-sm rounded-borders">
-        <q-card>
+    <div flat bordered v-if="this.loggedInUser && !commentSent">
+        <q-card flat bordered class="q-ma-none q-pa-sm rounded-borders">
         <div class="text-center">Reply to <router-link :to="returnUserLink(parent_author)">{{ parent_author }}</router-link> / <router-link :to="returnPostLink(parent_author, parent_permlink)">{{ parent_permlink.substr(0, 20) }}...</router-link></div>
         <vue-simplemde v-model="commentText" ref="markdownEditor" :configs="editorConfig" class="q-pa-sm" />
         <q-expansion-item v-model="advanced" label="Advanced Options" icon="settings" color="grey">
@@ -17,10 +17,10 @@
     </div>
 </template>
 <style>
-  @import '~simplemde/dist/simplemde.min.css';
+  /*@import '~simplemde/dist/simplemde.min.css';*/
+  @import '../statics/simplemde-theme-dark.min.css';
 </style>
 <script>
-// import { keychain } from '@hiveio/keychain'
 import VueSimplemde from 'vue-simplemde'
 export default {
   name: 'commentBox',
