@@ -9,7 +9,7 @@
               <q-item v-for="(witness, rank) in witnesses" :key="witness.id">
                 <q-item-section avatar class="text-center">
                   <router-link class="text-primary" :to="linkAccount(witness.owner)">
-                  <q-avatar size="lg">
+                  <q-avatar size="xl">
                     <q-img :src="getHiveAvatarUrl(witness.owner)" />
                   </q-avatar>
                   </router-link>
@@ -29,11 +29,15 @@
                     </q-badge>
                     <q-popup-proxy>
                       <q-card flat bordered>
-                        <q-card-section header>
+                        <q-card-section header class="text-center">
                           <div class="text-h5"><router-link :to="linkAccount(witness.owner)" class="text-primary"><q-avatar class="q-mr-sm"><q-img :src="getHiveAvatarUrl(witness.owner)" /></q-avatar>{{ witness.owner }}</router-link></div>
                           <div>Currently in rank <b>#{{ rank + 1 }}</b> with <b>{{ tidyNumber((witness.votes / 1000000000000).toFixed(0)) }}</b> MVests of approval</div>
+                          <div>Last pricefeed update was <b>{{ timeDelta(witness.last_hbd_exchange_update) }}</b></div>
+                          <div v-if="witness.created !== '1970-01-01T00:00:00'">{{ witness.owner }} first registered their witness <b>{{ timeDelta(witness.created) }}</b></div>
+                          <div v-else>{{ witness.owner }} has been a witness for <b>at least 5 years.</b></div>
+                          <div><router-link :to="linkAccount(witness.owner)">Profile</router-link>, <router-link :to="linkAccountBlog(witness.owner)">Blog</router-link>, <router-link :to="linkAccountPosts(witness.owner)">Posts</router-link>, <router-link :to="linkAccountWallet(witness.owner)">Wallet</router-link></div>
                         </q-card-section>
-                        <json-viewer :data="witness" />
+                        <json-viewer :data="witness" class="q-ml-md" />
                       </q-card>
                     </q-popup-proxy>
                   </q-btn>
@@ -156,9 +160,10 @@ export default {
         return false
       }
     },
-    linkAccount (username) {
-      return '/@' + username
-    },
+    linkAccount (username) { return '/@' + username },
+    linkAccountBlog (username) { return '/@' + username + '/blog' },
+    linkAccountPosts (username) { return '/@' + username + '/posts' },
+    linkAccountWallet (username) { return '/@' + username + '/wallet' },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     tidyNumber (x) {
       var parts = x.toString().split('.')
