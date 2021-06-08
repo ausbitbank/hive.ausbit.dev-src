@@ -54,11 +54,26 @@
                                 Value (USD)
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section side>
-                                <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHive = true" />
-                                <router-link to="/market"><q-btn dense icon="transform" color="orange" title="Trade Hive/HBD on internal market" /></router-link>
+                            <q-item-section side v-if="loggedInUser === username">
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" />
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-btn v-if="false" dense icon="arrow_upward" color="primary" title="Power Up" />
+                                <q-btn dense flat icon="more_horiz">
+                                  <q-menu>
+                                    <q-list style="min-width: 100px">
+                                      <q-item clickable @click="transferHive = true">
+                                        <q-item-section>
+                                          <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
+                                        </q-item-section>
+                                      </q-item>
+                                      <q-item>
+                                        <router-link to="/market"><q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Internal Market" /></router-link>
+                                      </q-item>
+                                      <q-item v-if="false">
+                                        <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
+                                      </q-item>
+                                    </q-list>
+                                  </q-menu>
+                                </q-btn>
                             </q-item-section>
                         </q-item>
                         <q-item>
@@ -99,9 +114,26 @@
                                 Value (USD)
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section top side>
-                                <q-btn dense icon="send" color="primary" title="Transfer" @click="transferHbd = true" />
+                            <q-item-section top side v-if="loggedInUser">
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHbd = true" />
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
+                                <q-btn dense flat icon="more_horiz">
+                                  <q-menu>
+                                    <q-list style="min-width: 100px">
+                                      <q-item clickable @click="transferHbd = true">
+                                        <q-item-section>
+                                          <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
+                                        </q-item-section>
+                                      </q-item>
+                                      <q-item>
+                                        <router-link to="/market"><q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Internal Market" /></router-link>
+                                      </q-item>
+                                      <q-item v-if="false">
+                                        <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
+                                      </q-item>
+                                    </q-list>
+                                  </q-menu>
+                                </q-btn>
                             </q-item-section>
                         </q-item>
                         <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
@@ -338,27 +370,24 @@
                           </q-item-section>
                           <q-item-section>
                             <q-item-label v-if="hiveEngineTokenInfo">
-                              {{ token.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section>
-                            <q-btn flat icon="info" color="cyan" size="sm">
-                              <q-popup-proxy>
-                              <q-card dense flat bordered>
-                                <q-card-section class="text-caption">
-                                  <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/></q-avatar>{{ token.symbol }}<br />
-                                  {{ returnTokenInfoMeta(token.symbol).desc }}
-                                </q-card-section>
-                                <q-card-section caption class="text-caption">
-                                  Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
-                                  Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
-                                  Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
-                                  Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
-                                  Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
-                                </q-card-section>
-                              </q-card>
-                              </q-popup-proxy>
+                              <q-btn dense flat :label="token.symbol">
+                                <q-popup-proxy>
+                                  <q-card dense flat bordered>
+                                    <q-card-section header class="text-caption text-center">
+                                      <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/></q-avatar>{{ token.symbol }}<br />
+                                      {{ returnTokenInfoMeta(token.symbol).desc }}
+                                    </q-card-section>
+                                    <q-card-section caption class="text-caption">
+                                      Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
+                                      Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
+                                      Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
+                                      Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
+                                      Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
+                                    </q-card-section>
+                                  </q-card>
+                                </q-popup-proxy>
                             </q-btn>
+                            </q-item-label>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
@@ -391,10 +420,24 @@
                             <q-item-label caption>Value (USD)</q-item-label>
                           </q-item-section>
                           <q-item-section side v-if="loggedInUser === username">
-                            <q-item-label>
-                              <q-btn v-if="token.balance !== '0'" dense icon="send" color="blue" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" title="Transfer token" />
-                              <q-btn type="a" dense icon="transform" color="orange" :href="returnMarketLink(token.symbol)" target="_blank" title="Trade on HiveEngine Market" />
-                            </q-item-label>
+                          <q-btn v-if="token.balance !== '0'" dense flat icon="send" color="primary" title="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
+                              <q-btn dense flat icon="more_horiz">
+                                <q-menu>
+                                  <q-list style="min-width: 100px">
+                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" v-if="token.balance !== '0'">
+                                      <q-item-section>
+                                        <q-btn dense flat icon="send" color="primary" title="Transfer Token" label="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
+                                      </q-item-section>
+                                    </q-item>
+                                    <q-item>
+                                      <q-btn type="a" dense flat icon="transform" color="orange" :href="returnMarketLink(token.symbol)" target="_blank" title="Trade on HiveEngine" label="Trade on Hive-Engine" />
+                                    </q-item>
+                                    <q-item v-if="false">
+                                      <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
+                                    </q-item>
+                                  </q-list>
+                                </q-menu>
+                              </q-btn>
                           </q-item-section>
                         </q-item>
                     </q-list>
