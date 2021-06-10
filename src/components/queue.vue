@@ -129,6 +129,11 @@ export default {
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      } else if (op[0] === 'transfer_to_vesting') {
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPowerUp', user, op[1].to, op[1].amount.split(' ')[0])
+        if (success) { this.successfullBroadcast(action) }
+        if (cancel) { this.$q.notify('Cancelled by user') }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
       } else {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, ops, keytype)
         if (success) { this.successfullBroadcast(action) }
