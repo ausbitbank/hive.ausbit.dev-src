@@ -6,13 +6,13 @@
     <q-card-section>
       <user-search-box :username="toAccount" @selectUsername="setUsername" label="To account" />
       <div v-if="false"><q-input label="To account" v-model="toAccount" /></div>
-      <q-btn flat label="Deposit to Exchange" color="primary" icon="shortcut" v-if="toAccount === '' && network === 'hive'" dense>
+      <q-btn dense flat label="To Exchange" color="primary" icon="shortcut" v-if="toAccount === '' && network === 'hive'">
         <q-popup-proxy>
           <q-card flat bordered>
-            <q-card-header class="text-bold q-ml-sm">
+            <q-card-section header class="text-bold text-center">
               Common Exchange Accounts
-            </q-card-header>
-            <q-btn v-for="ea in exchanges" :key="ea.index" :label="ea" @click="setUsername(ea)" v-close-popup />
+            </q-card-section>
+            <q-btn flat v-for="ea in exchanges" :key="ea.index" :label="ea" color="primary" @click="setUsername(ea)" v-close-popup />
           </q-card>
         </q-popup-proxy>
       </q-btn>
