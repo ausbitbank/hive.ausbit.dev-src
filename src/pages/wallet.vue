@@ -4,9 +4,9 @@
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
           <q-card flat bordered class="q-ma-md q-pa-md" style="max-width:1000px; max-width:100%; min-width:600px">
             <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
-            <q-tabs v-model="tab" dense class="text-grey" active-color="primary" indicator-color="primary" align="justify" narrow-indicator>
-                <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="md" />Hive</q-tab>
-                <q-tab name="hive-engine"><q-icon name="img:statics/hive-engine.png" size="md" />Hive-Engine</q-tab>
+            <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
+                <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
+                <q-tab name="hive-engine"><q-icon name="img:statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
             </q-tabs>
             <q-tab-panels v-model="tab" animated class="shadow-2 rounded-borders">
                 <q-tab-panel name="hive">
@@ -57,12 +57,18 @@
                             <q-item-section side v-if="loggedInUser === username">
                                 <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" />
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
+                                <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
                                     <q-list style="min-width: 100px">
                                       <q-item clickable @click="transferHive = true">
                                         <q-item-section>
                                           <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
+                                        </q-item-section>
+                                      </q-item>
+                                      <q-item v-if="false" clickable @click="stakeHive = true">
+                                        <q-item-section>
+                                          <q-btn dense flat icon="account_balance" color="primary" title="Stake" label="Stake" />
                                         </q-item-section>
                                       </q-item>
                                       <q-item>
@@ -102,7 +108,7 @@
                               <q-item-label caption>
                                 Savings<br />
                                 <router-link to="/hbd" v-if="globalProps.hbd_interest_rate !== 0">
-                                  <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
+                                  <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month to balances held in savings">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
                                 </router-link>
                               </q-item-label>
                             </q-item-section>
@@ -114,7 +120,7 @@
                                 Value (USD)
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section top side v-if="loggedInUser">
+                            <q-item-section top side v-if="loggedInUser === username">
                                 <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHbd = true" />
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
@@ -364,13 +370,13 @@
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalances" :key="token.index">
                           <q-item-section dense avatar>
-                            <q-avatar size="sm">
+                            <q-avatar size="md">
                               <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
                             </q-avatar>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label v-if="hiveEngineTokenInfo">
-                              <q-btn dense flat :label="token.symbol">
+                              <q-btn dense flat :label="token.symbol" title="Click for more info about this token">
                                 <q-popup-proxy>
                                   <q-card dense flat bordered>
                                     <q-card-section header class="text-caption text-center">
@@ -645,6 +651,7 @@ import { debounce } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import accountHeader from 'components/accountHeader.vue'
 import transferDialog from 'components/transferDialog.vue'
+import stakingDialog from 'components/stakingDialog.vue'
 import claimRewards from 'components/claimRewards.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
@@ -679,6 +686,7 @@ export default {
       transferDialogTokenName: '',
       transferDialogNetwork: 'hive',
       transferDialogBalance: null,
+      stakeHive: false,
       hiveTransactions: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
@@ -693,30 +701,21 @@ export default {
       decodedMemo: null
     }
   },
-  components: { accountHeader, transferDialog, claimRewards },
+  components: { accountHeader, transferDialog, stakingDialog, claimRewards },
   computed: {
-    globalProps: {
-      get () {
-        return this.$store.state.hive.globalProps
-      }
-    },
+    globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
       cache: false,
       get () {
         return this.$store.state.hive.accounts[this.username]
       }
     },
-    loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
-    }
+    loggedInUser: function () { return this.$store.state.hive.user.username }
   },
   watch: {
-    account: function () {
-      this.init()
-    },
-    $router: function () {
-      this.init()
-    }
+    account: function () { this.init() },
+    $router: function () { this.init() },
+    username: function () { this.init() }
   },
   methods: {
     async decodeMemo (message, tx) {
@@ -724,60 +723,26 @@ export default {
       const { success, msg } = await keychain(window, 'requestVerifyKey', this.loggedInUser, message, 'Memo')
       if (success) {
         this.decodedMemo = msg
-        // this.hiveTransactions[index][1].op[1].memo = msg
         var txToReplace = tx
-        console.log(txToReplace)
         txToReplace[1].op[1].memo = msg.slice(1)
-        console.log(this.hiveTransactions.indexOf(tx))
         this.hiveTransactions[this.hiveTransactions.indexOf(tx)] = txToReplace
-        console.log(this.hiveTransactions[this.hiveTransactions.indexOf(tx)])
       }
     },
-    sanitize (x) {
-      return DOMPurify.sanitize(x)
-    },
-    getDateString (timestamp) {
-      return moment(timestamp).format('MMM D[,] YYYY')
-    },
-    getTimeString (timestamp) {
-      return moment(timestamp).format('h:mm a')
-    },
-    getDateStringHiveEngine (timestamp) {
-      return moment.unix(timestamp).format('MMM D[,] YYYY')
-    },
-    getTimeStringHiveEngine (timestamp) {
-      return moment.unix(timestamp).format('h:mm a')
-    },
-    getAccountLink (account) {
-      return '/@' + account
-    },
-    getTxLink (txid) {
-      return '/tx/' + txid
-    },
-    getVirtualTxLink (tx) {
-      return '/b/' + tx[1].block + '#' + tx[1].virtual_op
-    },
-    getAccount (username) {
-      if (this.$store.state.hive.accounts[username] === undefined) {
-        this.$store.dispatch('hive/getAccount', username)
-      }
-    },
-    getGlobalProps () {
-      if (this.globalProps.empty) {
-        this.$store.dispatch('hive/getGlobalProps')
-      }
-    },
+    sanitize (x) { return DOMPurify.sanitize(x) },
+    getDateString (timestamp) { return moment(timestamp).format('MMM D[,] YYYY') },
+    getTimeString (timestamp) { return moment(timestamp).format('h:mm a') },
+    getDateStringHiveEngine (timestamp) { return moment.unix(timestamp).format('MMM D[,] YYYY') },
+    getTimeStringHiveEngine (timestamp) { return moment.unix(timestamp).format('h:mm a') },
+    getAccountLink (account) { return '/@' + account },
+    getTxLink (txid) { return '/tx/' + txid },
+    getVirtualTxLink (tx) { return '/b/' + tx[1].block + '#' + tx[1].virtual_op },
+    getAccount (username) { if (this.$store.state.hive.accounts[username] === undefined) { this.$store.dispatch('hive/getAccount', username) } },
+    getGlobalProps () { if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') } },
     getPricesCoingecko () {
       this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=false')
         .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hbdPriceUsd = response.data.hive_dollar.usd })
     },
-    vestToHive (vests) {
-      if (!this.globalProps.empty) {
-        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
-      } else {
-        return null
-      }
-    },
+    vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     tidyNumber (x) {
       if (x) {
@@ -832,9 +797,7 @@ export default {
           this.getHiveEngineMarketInfo()
           this.getHiveEngineTokenInfo()
         })
-        .catch(() => {
-          console.error('Error connecting to Hive-Engine api')
-        })
+        .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineTokenInfo (username) {
       var tokens = this.returnTokenArray()
@@ -878,28 +841,15 @@ export default {
         return null
       }
     },
-    returnTokenPriceUsd (symbol) {
-      if (this.hivePriceUsd) {
-        return (this.returnTokenPriceHive(symbol) * this.hivePriceUsd)
-      } else {
-        return null
-      }
-    },
+    returnTokenPriceUsd (symbol) { if (this.hivePriceUsd) { return (this.returnTokenPriceHive(symbol) * this.hivePriceUsd) } else { return null } },
     returnTokenInfo (symbol) {
       if (this.getHiveEngineTokenInfo !== null) {
         var t = this.hiveEngineTokenInfo.find(obj => obj.symbol === symbol)
         if (t) { return t } else { return null }
       }
     },
-    returnTokenInfoMeta (symbol) {
-      return JSON.parse(this.returnTokenInfo(symbol).metadata)
-    },
-    returnAccountLink (account) {
-      return '/@' + account
-    },
-    returnMarketLink (symbol) {
-      return 'https://hive-engine.com/?p=market&t=' + symbol
-    },
+    returnTokenInfoMeta (symbol) { return JSON.parse(this.returnTokenInfo(symbol).metadata) },
+    returnMarketLink (symbol) { return 'https://hive-engine.com/?p=market&t=' + symbol },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
@@ -909,10 +859,9 @@ export default {
     init () {
       if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
+      console.log('loading wallet info for ' + this.username)
       document.title = this.username + '\'s wallet'
-      if (this.account === undefined) {
-        this.getAccount(this.username)
-      }
+      if (this.account === undefined) { this.getAccount(this.username) }
       this.getHiveWalletTransactions()
       this.getHiveEngineBalances(this.username)
       this.getPricesCoingecko()
