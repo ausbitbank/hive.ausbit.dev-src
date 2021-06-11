@@ -48,7 +48,7 @@
                             </q-item-section>
                             <q-item-section>
                               <q-item-label>
-                                $ {{ tidyNumber(((parseFloat(account.savings_balance.split(' ')[0]) + parseFloat(account.balance.split(' ')[0])) + vestToHive(parseInt(account.vesting_shares.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
+                                {{ tidyNumber(((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
                               </q-item-label>
                               <q-item-label caption>
                                 Value (USD)
@@ -60,7 +60,7 @@
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
-                                    <q-list style="min-width: 100px">
+                                    <q-list>
                                       <q-item clickable @click="transferHive = true">
                                         <q-item-section>
                                           <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
@@ -71,10 +71,10 @@
                                           <q-btn dense flat icon="account_balance" color="primary" title="Stake" label="Stake" />
                                         </q-item-section>
                                       </q-item>
-                                      <q-item>
-                                        <router-link to="/market"><q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Internal Market" /></router-link>
+                                      <q-item clickable @click="$router.push('/market')">
+                                        <q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Market" />
                                       </q-item>
-                                      <q-item v-if="false">
+                                      <q-item clickable @click="stakeHive = true">
                                         <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
                                       </q-item>
                                     </q-list>
