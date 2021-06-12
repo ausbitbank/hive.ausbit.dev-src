@@ -155,6 +155,9 @@
                 <q-item-section v-if="loggedInUser">
                   <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
                 </q-item-section>
+                <q-item-section v-else>
+                  Login to vote
+                </q-item-section>
                 <q-dialog v-model="showVotes">
                   <votes-dialog :votes="post.active_votes" />
                 </q-dialog>
