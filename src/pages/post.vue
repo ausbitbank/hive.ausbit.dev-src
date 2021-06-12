@@ -156,9 +156,7 @@
                   <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
                 </q-item-section>
                 <q-dialog v-model="showVotes">
-                  <q-card flat bordered style="max-width: 1000px; max-width: 95%;">
-                    <q-table title="Votes" :data="post.active_votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 50 }" dense bordered separator="cell" />
-                  </q-card>
+                  <votes-dialog :votes="post.active_votes" />
                 </q-dialog>
               </q-item>
               <q-item>
@@ -236,9 +234,10 @@ import tipButton from 'components/tipButton.vue'
 import shareButtons from 'components/shareButtons.vue'
 import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
 import reblog from 'components/reblog.vue'
+import votesDialog from 'components/votesDialog.vue'
 export default {
   name: 'postView',
-  components: { render, recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog },
+  components: { render, recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog, votesDialog },
   data () {
     return {
       post: null,
@@ -246,44 +245,6 @@ export default {
       permlink: this.$router.currentRoute.params.permlink,
       showVotes: false,
       showShareDialog: false,
-      voteColumns: [
-        {
-          name: 'voter',
-          label: 'Voter',
-          field: 'voter',
-          sortable: true
-        },
-        {
-          name: 'percent',
-          label: 'Percent',
-          field: 'percent',
-          sortable: true
-        },
-        {
-          name: 'rshares',
-          label: 'rshares',
-          field: 'rshares',
-          sortable: true
-        },
-        {
-          name: 'weight',
-          label: 'weight',
-          field: 'weight',
-          sortable: true
-        },
-        {
-          name: 'reputation',
-          label: 'reputation',
-          field: 'reputation',
-          sortable: true
-        },
-        {
-          name: 'time',
-          label: 'time',
-          field: 'time',
-          sortable: true
-        }
-      ],
       postBody: null,
       postDescription: null,
       showFullPostMetadata: false
