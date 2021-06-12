@@ -18,14 +18,16 @@
                 {{ voter.voter }}
                 </router-link>
             </span>
-            <div class="text-h5">The {{ biggestDownvotes.length }} largest downvotes came from</div>
-            <span v-for="voter in biggestDownvotes" :key="voter.voter" class="q-ma-sm">
-                <router-link :to="linkAccount(voter.voter)">
-                <q-avatar>
-                    <q-img :src="getHiveAvatarUrl(voter.voter)" :title="voter.voter" />
-                </q-avatar>
-                {{ voter.voter }}
-                </router-link>
+            <span v-if="downvotesOnly.length > 0">
+                <div class="text-h5">The {{ biggestDownvotes.length }} largest downvotes came from</div>
+                <span v-for="voter in biggestDownvotes" :key="voter.voter" class="q-ma-sm">
+                    <router-link :to="linkAccount(voter.voter)">
+                    <q-avatar>
+                        <q-img :src="getHiveAvatarUrl(voter.voter)" :title="voter.voter" />
+                    </q-avatar>
+                    {{ voter.voter }}
+                    </router-link>
+                </span>
             </span>
         </q-card-section>
     </q-card>
