@@ -1,9 +1,17 @@
 <template>
   <q-page class="flex">
-    <q-dialog v-model="error" persistent>
-      <q-icon size="lg" name="error" color="yellow" /><br />
-      {{ errorMessage }}
-    </q-dialog>
+    <q-card flat bordered v-if="error" class="q-ma-lg q-pa-lg" style="margin:auto">
+      <q-list>
+        <q-item>
+          <q-item-section avatar>
+            <q-icon size="lg" name="error" color="orange" />
+          </q-item-section>
+          <q-item-section>
+            {{ errorMessage }}
+          </q-item-section>
+        </q-item>
+      </q-list>
+    </q-card>
     <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null && !error">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
         <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
@@ -449,7 +457,7 @@ export default {
           .catch(err => { console.error(err) })
       } else {
         await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1]])
-          .then(res => { this.accountOperationsMarker = res[0][0]; if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
+          .then(res => { if (res.length === 0) { this.errorMessage = 'Account ' + this.username + ' not found'; this.error = true } else { this.accountOperationsMarker = res[0][0] } if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       }
     },
