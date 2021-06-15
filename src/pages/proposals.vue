@@ -142,7 +142,7 @@ export default {
         if (this.filterVoted) { fp = fp.filter(proposal => proposal.voted !== true) }
         if (this.filterFunded) { fp = fp.filter(proposal => proposal.total_votes < this.returnProposalVotes) }
         if (this.filterUnfunded) { fp = fp.filter(proposal => proposal.total_votes >= this.returnProposalVotes) }
-        if (this.search !== '') { fp = fp.filter(proposal => proposal.subject.includes(this.search) || proposal.receiver.includes(this.search) || proposal.creator.includes(this.search) || proposal.id === parseInt(this.search)) }
+        if (this.search !== '') { fp = fp.filter(proposal => proposal.subject.includes(this.search) || proposal.receiver.includes(this.search) || proposal.creator.includes(this.search)) }
         return fp
       } else {
         return []

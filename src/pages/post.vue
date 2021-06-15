@@ -1,7 +1,7 @@
 <template>
   <q-page class="flex flex-center">
     <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
-    <div v-if="post !== null" class="row items-start content-start justify-center q-pa-sm" style="max-width:1000px">
+    <div v-if="post !== null" class="row items-start content-start justify-center q-pa-sm">
       <div class="col-xs-11 col-md-9 col-lg-9 justify-center">
         <q-card flat bordered class="q-pa-sm" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
@@ -207,11 +207,11 @@
           </q-card-section>
         </q-card>
         </transition>
+        <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown">
+          <recent-posts-carousel :account="author" :autoplay=false />
+        </transition>
       </div>
       <div class="q-md-md" style="margin: auto"><comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" /></div>
-      <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown">
-          <recent-posts-carousel :account="author" :autoplay=true />
-      </transition>
     </div>
   </q-page>
 </template>
