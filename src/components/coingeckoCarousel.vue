@@ -93,7 +93,7 @@ export default {
       type: Array,
       required: false,
       default () {
-        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'eos', 'cub-finance']
+        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'eos']
       }
     }
   },
