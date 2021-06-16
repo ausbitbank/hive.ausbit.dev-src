@@ -58,6 +58,7 @@
                                 <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" />
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
+                                <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
                                     <q-list>
@@ -75,7 +76,10 @@
                                         <q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Market" />
                                       </q-item>
                                       <q-item clickable @click="stakeHive = true">
-                                        <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
+                                        <q-btn dense flat icon="lock" color="primary" title="Stake" label="Stake" />
+                                      </q-item>
+                                      <q-item clickable @click="unstakeHive = true">
+                                        <q-btn dense flat icon="lock_open" color="primary" title="Unstake" label="Unstake" />
                                       </q-item>
                                     </q-list>
                                   </q-menu>
@@ -652,6 +656,7 @@ import { keychain } from '@hiveio/keychain'
 import accountHeader from 'components/accountHeader.vue'
 import transferDialog from 'components/transferDialog.vue'
 import stakingDialog from 'components/stakingDialog.vue'
+import unstakingDialog from 'components/unstakingDialog.vue'
 import claimRewards from 'components/claimRewards.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
@@ -687,6 +692,7 @@ export default {
       transferDialogNetwork: 'hive',
       transferDialogBalance: null,
       stakeHive: false,
+      unstakeHive: false,
       hiveTransactions: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
@@ -701,7 +707,7 @@ export default {
       decodedMemo: null
     }
   },
-  components: { accountHeader, transferDialog, stakingDialog, claimRewards },
+  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, claimRewards },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
