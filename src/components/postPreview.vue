@@ -35,8 +35,8 @@
           <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
         </q-carousel> -->
       </q-card-section>
-      <q-card-section v-if="styleType === 'full'" style="clear:both;">
-        <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
+      <q-card-section v-if="styleType === 'full'" style="clear:both; max-width:900px">
+        <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title }}</router-link></div>
         <render :input="post.body" v-if="post.body" />
         <render :input="summary" v-else />
       </q-card-section>
