@@ -1,11 +1,11 @@
 <template>
-    <div class="q-ma-sm">
+    <div>
     <div v-if="post.reblogged_by && this.$route.path.endsWith('feed')" class="text-center">
       <span class="text-bold">Reblogged By: </span>
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
-    <q-card class="postPreviewCard q-ma-md" dark dense bordered v-if="post">
+    <q-card class="postPreviewCard q-ma-xs" dark dense bordered v-if="post">
       <q-card-section horizontal v-if="styleType === 'preview'">
         <q-card-section v-if="postImage">
             <router-link :to="returnPostPath(post.author, post.permlink)">
@@ -35,13 +35,13 @@
           <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
         </q-carousel> -->
       </q-card-section>
-      <q-card-section v-if="styleType === 'full'" style="clear:both; max-width:900px">
+      <q-card-section v-if="styleType === 'full'" class="postPreviewCard" style="clear:both; max-width:900px">
         <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title }}</router-link></div>
         <render :input="post.body" v-if="post.body" />
         <render :input="summary" v-else />
       </q-card-section>
       <q-separator />
-      <q-card-section dense class="text-center">
+      <q-card-section dense class="text-center q-my-none q-pb-xs q-pt-xs">
           <q-btn color="blue-grey" icon="push_pin" v-if="post.stats && post.stats.is_pinned" label="Pinned" flat dense />
           <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
           <router-link :to="linkCommunity(post.community)"><q-chip color="blue-grey" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
@@ -75,7 +75,7 @@
     </div>
 </template>
 <style>
-.postPreviewCard { max-width: 100%; margin:auto }
+.postPreviewCard { word-wrap:break-word; word-break: break-word; width: 100% }
 </style>
 <script>
 import sanitize from 'sanitize-html'
