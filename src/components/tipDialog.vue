@@ -8,7 +8,7 @@
         <q-item-label>
           Hive
         </q-item-label>
-        <q-item-label caption>
+        <q-item-label caption v-if="false">
           {{ account }}
         </q-item-label>
       </q-item-section>
@@ -30,7 +30,7 @@
         <q-item-label>
           Hive Dollars
         </q-item-label>
-        <q-item-label caption>
+        <q-item-label caption v-if="false">
           {{ account }}
         </q-item-label>
       </q-item-section>
@@ -55,7 +55,7 @@
         <q-item-label>
           {{ coin }}
         </q-item-label>
-        <q-item-label caption>
+        <q-item-label caption v-if="false">
           <a :href="returnCoinLink(coin)" :title="accountMeta.profile[coin]">{{ accountMeta.profile[coin].substr(0,20) }}</a>..
         </q-item-label>
       </q-item-section>
