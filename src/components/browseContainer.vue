@@ -1,6 +1,8 @@
 <template>
   <div>
-    <q-toolbar class="bg-dark text-white" v-if="showToolbar">
+    <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
+    <q-toolbar class="bg-dark text-white text-center" v-if="showToolbar">
+      <q-space />
       <q-select v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'tribes']" label="method" />
       <q-input v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
       <q-input v-model="token" label="token" v-if="method === 'tribes' " />
@@ -12,10 +14,11 @@
       <q-input v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" />
       <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
       <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
-      <q-space />
       <q-btn flat v-if="method === 'tribes'" color="primary" label="Browse Tribe" @click="getTribePosts()" />
-      <q-btn flat v-else color="primary" label="Browse" @click="getPosts()" />
+      <q-btn flat v-else color="primary" icon="search" label="Browse" @click="getPosts()" />
+      <q-space />
     </q-toolbar>
+    </transition>
     <div class="text-center">
       <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
       <q-btn flat color="grey" title="Filter posts" icon="filter">
@@ -91,16 +94,18 @@
       </q-btn>
       <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
     </div>
-    <div class="row justify-around">
-      <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md text-center" />
-      <div v-for="post in filteredPosts" :key="post.post_id">
-        <post-preview :post="post" :styleType="styleType" />
-      </div>
-      <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
-        <h5>
-          <q-icon name="error_outline" color="orange" />&nbsp; <span v-if="error">{{ error }}</span><span v-else>No posts found</span><br />
-          <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
-        </h5>
+    <div class="masonry-wrapper">
+      <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md text-center" style="margin:auto" />
+      <div class="masonry justify-center">
+        <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
+          <post-preview :post="post" :styleType="styleType" />
+        </div>
+        <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
+          <h5>
+            <q-icon name="error_outline" color="orange" />&nbsp; <span v-if="error">{{ error }}</span><span v-else>No posts found</span><br />
+            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
+          </h5>
+        </div>
       </div>
     </div>
     <div v-if="posts.length > 0" class="text-center">
@@ -110,6 +115,44 @@
   </div>
 </template>
 <style>
+.masonry-wrapper {
+  padding: 1.5em;
+  margin-right: auto;
+  margin-left: auto;
+}
+.masonry {
+  columns: 1;
+  column-gap: 15px;
+}
+.masonry-item {
+  display: inline-block;
+  vertical-align: top;
+  margin-bottom: 10px;
+}
+.masonry-item, .masonry-content {
+  border-radius: 4px;
+  overflow: visible;
+}
+@media only screen and (max-width: 1365px) and (min-width: 1024px) {
+  .masonry {
+    columns: 2;
+  }
+}
+@media only screen and (min-width: 1366px) {
+  .masonry {
+    columns: 3;
+  }
+}
+@media only screen and (min-width: 1920px) {
+  .masonry {
+    columns: 4;
+  }
+}
+@media only screen and (min-width: 3600px) {
+  .masonry {
+    columns: 5;
+  }
+}
 </style>
 <script>
 import postPreview from 'components/postPreview.vue'
