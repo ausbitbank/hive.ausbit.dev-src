@@ -7,7 +7,7 @@
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
     <q-card class="postPreviewCard q-ma-xs" dark dense bordered v-if="post">
       <q-card-section horizontal v-if="styleType === 'preview'">
-        <q-card-section v-if="postImage">
+        <q-card-section v-if="postImage && $q.screen.gt.sm">
             <router-link :to="returnPostPath(post.author, post.permlink)">
               <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
             </router-link>
@@ -16,8 +16,13 @@
         <q-item>
             <q-item-section>
                 <q-item-label>
-                    <div class="text-h6 vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-                    <span><render :input="this.summary" /></span>
+                    <div class="text-h6 vertical-top text-center"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
+                    <span v-if="$q.screen.gt.xs"><render :input="this.summary" /></span>
+                    <div style="margin:auto; text-align:center" v-if="$q.screen.lt.md">
+                    <router-link :to="returnPostPath(post.author, post.permlink)">
+                      <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
+                    </router-link>
+                    </div>
                 </q-item-label>
             </q-item-section>
         </q-item>
