@@ -57,6 +57,24 @@
                   <a :href="GetEditHistoryUrl(post.author, post.permlink)" target="_blank">Edited {{ timeDelta(post.last_update) }}</a>
                 </q-item-section>
               </q-item>
+              <q-item title="Votes">
+                <q-item-section avatar>
+                  <q-icon name="thumbs_up_down" color="purple" title="View voter information" class="cursor-hand" @click="showVotes = true" />
+                </q-item-section>
+                <q-item-section v-if="loggedInUser && postPastPayout" class="text-caption">
+                  <div>This post is past its payout window.</div>
+                  <div>You can still vote, but it will not affect rewards.</div>
+                </q-item-section>
+                <q-item-section v-if="loggedInUser">
+                  <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
+                </q-item-section>
+                <q-item-section v-else>
+                  Login to vote
+                </q-item-section>
+                <q-dialog v-model="showVotes">
+                  <votes-dialog :votes="post.active_votes" />
+                </q-dialog>
+              </q-item>
               <q-item v-if="post.pending_payout_value !== '0.000 HBD' || post.total_payout_value !== '0.000 HBD'">
                 <q-item-section avatar>
                   <q-icon name="monetization_on" color="green"/>
@@ -143,24 +161,6 @@
                   Countdown to {{ postMeta.countdown }}<br />
                   ( {{ timeDelta(postMeta.countdown )}} )
                 </q-item-section>
-              </q-item>
-              <q-item title="Votes">
-                <q-item-section avatar>
-                  <q-icon name="thumbs_up_down" color="purple" title="View voter information" class="cursor-hand" @click="showVotes = true" />
-                </q-item-section>
-                <q-item-section v-if="loggedInUser && postPastPayout" class="text-caption">
-                  <div>This post is past its payout window.</div>
-                  <div>You can still vote, but it will not affect rewards.</div>
-                </q-item-section>
-                <q-item-section v-if="loggedInUser">
-                  <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
-                </q-item-section>
-                <q-item-section v-else>
-                  Login to vote
-                </q-item-section>
-                <q-dialog v-model="showVotes">
-                  <votes-dialog :votes="post.active_votes" />
-                </q-dialog>
               </q-item>
               <q-item>
                 <tip-button :account="post.author" style="width: 100%" />
