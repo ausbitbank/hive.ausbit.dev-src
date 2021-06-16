@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-lg bg-dark rounded-corners">
+  <q-card flat bordered class="rounded-corners">
     <div class="text-h5 text-center">Settings</div>
       <q-list>
         <q-item>
@@ -57,7 +57,7 @@
             <q-btn label="Save Settings" color="primary" rounded push @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
         </q-item>
       </q-list>
-  </div>
+  </q-card>
 </template>
 <script>
 export default {
