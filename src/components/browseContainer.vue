@@ -3,13 +3,13 @@
     <q-toolbar class="bg-dark text-white" v-if="showToolbar">
       <q-select v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'tribes']" label="method" />
       <q-input v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
-      <q-input v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" />
       <q-input v-model="token" label="token" v-if="method === 'tribes' " />
       <q-select v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
       <q-select v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
       <q-select v-if="method === 'tribes'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted']" label="Sort Method" />
       <q-input v-model="tag" label="tag" v-if="['bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="tag = ''"/>
       <q-input v-model.number="limit" label="limit" />
+      <q-input v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" />
       <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
       <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
       <q-space />
@@ -43,6 +43,14 @@
               </q-item-section>
               <q-item-section>
                 Hide Pinned
+              </q-item-section>
+            </q-item>
+            <q-item v-if="false">
+              <q-item-section>
+                <q-checkbox v-model="filter.hideCrossPost" />
+              </q-item-section>
+              <q-item-section>
+                Hide Cross-Post
               </q-item-section>
             </q-item>
             <q-item>
@@ -145,6 +153,7 @@ export default {
         hideVoted: false,
         hideReblogs: false,
         hidePinned: false,
+        hideCrossPost: false,
         hideHidden: true,
         hideGray: true,
         hideRewardsFilter: false,
@@ -208,7 +217,7 @@ export default {
       this.loading = true
       if (!this.sort) { this.sort = 'trending' }
       var api = 'https://scot-api.hive-engine.com/get_discussions_by_' + this.sort + '?token=' + this.token.toUpperCase() + '&limit=' + this.limit
-      if (this.tag !== undefined) { api = api + '&tag=' + this.tag }
+      if (this.tag !== undefined && this.tag !== '') { api = api + '&tag=' + this.tag }
       if (this.start_author && this.start_permlink) { api = api + '&start_author=' + this.start_author + '&start_permlink=' + this.start_permlink }
       this.$axios.get(api)
         .then((res) => {
@@ -221,6 +230,7 @@ export default {
       this.filteredPosts = []
       if (this.filter.hideReblogs) { fp = fp.filter(post => !post.reblogged_by) }
       if (this.filter.hideVoted) { fp = fp.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0) }
+      // if (this.filter.hideCrossPost) { fp = fp.filter(post => post.json_metadata.includes('"tags":["cross-post"]')) }
       if (this.method !== 'tribes') {
         if (this.filter.hidePinned) { fp = fp.filter(post => !post.stats.is_pinned) }
         if (this.filter.hideHidden) { fp = fp.filter(post => !post.stats.hidden) }
