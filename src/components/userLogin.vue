@@ -1,10 +1,10 @@
 <template>
-  <q-btn flat dense round aria-label="Login" class="hvr q-ml-md">
+  <q-btn flat dense round no-caps aria-label="Login" class="hvr q-ml-md text-capitalize">
     <q-avatar>
       <q-img :src="userAvatar" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />
     </q-avatar>
-    <span class="q-ma-sm">{{ loggedInUser }}</span>
+    <span class="q-ml-xs">{{ loggedInUser }}</span>
     <q-popup-proxy>
       <q-card flat bordered>
       <div v-if="loggedInUser">
