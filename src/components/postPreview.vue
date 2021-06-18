@@ -8,9 +8,9 @@
     <q-card class="postPreviewCard q-ma-xs" dark dense bordered v-if="post">
       <q-card-section horizontal v-if="styleType === 'preview'">
         <q-card-section v-if="postImage && $q.screen.gt.sm">
-            <router-link :to="returnPostPath(post.author, post.permlink)">
-              <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
-            </router-link>
+            <!-- <router-link :to="returnPostPath(post.author, post.permlink)"> -->
+              <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" @click="postOverlay = true" />
+            <!-- </router-link> -->
         </q-card-section>
         <q-separator vertical v-if="postImage" />
         <q-item>
@@ -27,54 +27,51 @@
             </q-item-section>
         </q-item>
       </q-card-section>
-      <q-card-section v-if="styleType === 'grid'" class="text-center">
-        <div class="text-h6"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,50) }}</router-link></div>
-        <router-link v-if="postImage" :to="returnPostPath(post.author, post.permlink)">
-          <q-img style="width: 300px; height: 300px" :src="postImage" :title="post.title" />
-        </router-link>
+      <q-card-section v-if="styleType === 'media'" class="text-center" style="width: 100%">
+        <div class="text-h6"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
+        <!-- <router-link v-if="postImage" :to="returnPostPath(post.author, post.permlink)"> -->
+          <!-- <q-img style="width: 300px; height: 300px" :src="postImage" :title="post.title" v-if="postImage" @click="postOverlay = true" /> -->
+        <!-- </router-link> -->
+      <q-carousel
+        v-if="postImages.length > 0"
+        v-model="thumbslide"
+        transition-prev="jump-left"
+        transition-next="jump-right"
+        swipeable
+        animated
+        control-color="primary"
+        padding
+        arrows
+        infinite
+        navigation
+        :autoplay="autoplaySlides"
+        @mouseenter="autoplaySlides = false"
+        class="rounded-borders"
+        :fullscreen.sync="fullscreen"
+      >
+        <q-carousel-slide class="column no-wrap flex-center" v-for="image in postImages" :key="image" :name="image" :img-src="image" />
+        <template v-slot:control>
+          <q-carousel-control position="bottom-right" :offset="[18, 18]" >
+          <q-btn push round dense color="dark" text-color="primary" :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'" @click="fullscreen = !fullscreen" />
+          </q-carousel-control>
+        </template>
+      </q-carousel>
         <div>
-          <span class="text-caption" v-if="postMeta.description"><render :input="postMeta.description.substr(0,100)" /></span>
-          <span class="text-caption" v-else><render :input="this.summary.substr(0,100)" /></span>
+          <span class="text-caption" v-if="postMeta.description"><render :input="postMeta.description.substr(0,200)" /></span>
+          <span class="text-caption" v-else-if="summary"><render :input="summary.substr(0,200)" /></span>
+          <span class="text-caption" v-else><render :input="post.body.substr(0,200)" /></span>
         </div>
-        <!-- <q-carousel animated v-model="thumbslide" arrows navigation infinite v-if="postMeta.image.length > 0">
-          <q-carousel-slide v-for="image in postMeta.image" :key="image.index" :name="image.index" :img-src="image" />
-        </q-carousel> -->
       </q-card-section>
       <q-card-section v-if="styleType === 'full'" class="postPreviewCard" style="clear:both; max-width:900px">
         <div class="text-h5 text-center vertical-top"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title }}</router-link></div>
         <render :input="post.body" v-if="post.body" />
         <render :input="summary" v-else />
       </q-card-section>
+      <q-dialog v-model="postOverlay" class="postPreviewCard">
+        <postDialog :post="post" />
+      </q-dialog>
       <q-separator />
-      <q-card-section dense class="text-center q-my-none q-pb-xs q-pt-xs">
-          <q-btn color="blue-grey" icon="push_pin" v-if="post.stats && post.stats.is_pinned" label="Pinned" flat dense />
-          <router-link :to="linkAccount(post.author)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar> {{ post.author }}</router-link>
-          <router-link :to="linkCommunity(post.community)"><q-chip color="blue-grey" dense v-if="post.community_title"><q-avatar><img :src="getHiveAvatarUrl(post.community)" size=""></q-avatar> {{ post.community_title }}</q-chip></router-link>
-          <q-chip color="blue-grey-10" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
-          <span v-if="post.author_title" class="text-caption">{{ post.author_title }}</span>
-          <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
-          <q-btn dense icon="comment" flat color="blue-grey" :label="post.children">
-            <q-popup-proxy>
-              <commentBox :parent_author="post.author" :parent_permlink="post.permlink" />
-            </q-popup-proxy>
-          </q-btn>
-          <q-btn flat dense>
-            <q-icon name="img:statics/hive.svg" color="secondary" class="q-mr-sm" v-if="!post.token" />
-            <span title="Hive Rewards" v-if="!post.is_paidout && post.pending_payout_value">{{ post.pending_payout_value.split(' ')[0] }}</span>
-            <span title="Token Rewards" v-else-if="!post.is_paidout && post.pending_token && post.precision">{{ post.pending_token / Math.pow(10, post.precision) }} {{ post.token }}</span>
-            <span title="Hive Rewards" v-else>{{ post.payout }}</span>
-          </q-btn>
-          <vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" />
-          <q-btn dense icon="more_horiz" flat color="grey">
-            <q-popup-proxy>
-              <q-list>
-                <q-item>
-                  <reblog :author="post.author" :permlink="post.permlink" />
-                </q-item>
-              </q-list>
-            </q-popup-proxy>
-          </q-btn>
-      </q-card-section>
+      <postFooter :post="post" />
     </q-card>
     </transition>
     </div>
@@ -84,23 +81,28 @@
 </style>
 <script>
 import sanitize from 'sanitize-html'
-import commentBox from 'components/commentBox.vue'
+// import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
-import vote from 'components/vote.vue'
-import reblog from 'components/reblog.vue'
+// import vote from 'components/vote.vue'
+// import reblog from 'components/reblog.vue'
 import render from 'components/render.vue'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
+import postFooter from 'components/postFooter.vue'
+import postDialog from 'components/postDialog.vue'
 export default {
   name: 'postPreview',
   props: ['post', 'styleType'],
   data () {
     return {
-      thumbslide: 0,
+      thumbslide: null,
       postImage: catchPostImage(this.post),
-      votedWeight: null
+      votedWeight: null,
+      postOverlay: false,
+      autoplaySlides: true,
+      fullscreen: false
     }
   },
-  components: { vote, commentBox, reblog, render },
+  components: { render, postFooter, postDialog },
   watch: {
     post: {
       deep: true,
@@ -151,6 +153,13 @@ export default {
       } else {
         return 'favorite_border'
       }
+    },
+    postImages: function () {
+      if (this.post && this.postMeta && this.postMeta.image) {
+        return this.postMeta.image
+      } else {
+        return []
+      }
     }
   },
   methods: {
@@ -180,6 +189,11 @@ export default {
     },
     linkAccount (account) { return '/@' + account },
     linkCommunity (community) { return '/c/' + community + '/created' }
+  },
+  mounted () {
+    if (this.postImages.length > 0) {
+      this.thumbslide = this.postImages[0]
+    }
   }
 }
 </script>
