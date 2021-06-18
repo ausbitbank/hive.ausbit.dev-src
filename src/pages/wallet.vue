@@ -78,7 +78,7 @@
                                       <q-item clickable @click="stakeHive = true">
                                         <q-btn dense flat icon="lock" color="primary" title="Stake" label="Stake" />
                                       </q-item>
-                                      <q-item clickable @click="unstakeHive = true">
+                                      <q-item clickable @click="unstakeHive = true" v-if="false">
                                         <q-btn dense flat icon="lock_open" color="primary" title="Unstake" label="Unstake" />
                                       </q-item>
                                     </q-list>
