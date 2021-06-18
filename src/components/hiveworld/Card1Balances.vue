@@ -138,11 +138,11 @@
 import moment from 'moment'
 import claimRewards from 'components/claimRewards.vue'
 import transfer from 'components/Transfer.vue'
-import moveToSavings from 'components/MoveToSavings.vue'
-import powerUp from 'components/PowerUp.vue'
-import powerDown from 'components/PowerDown.vue'
-import stopPowerDown from 'components/StopPowerDown.vue'
-import outgoingRoutes from 'components/outgoingRoutes.vue'
+import moveToSavings from 'src/components/hiveworld/MoveToSavings.vue'
+import powerUp from 'src/components/hiveworld/PowerUp.vue'
+import powerDown from 'src/components/hiveworld/PowerDown.vue'
+import stopPowerDown from 'src/components/hiveworld/StopPowerDown.vue'
+import outgoingRoutes from 'src/components/hiveworld/outgoingRoutes.vue'
 export default {
   name: 'Card1Balances',
   props: ['A', 'globalPropsHive'],

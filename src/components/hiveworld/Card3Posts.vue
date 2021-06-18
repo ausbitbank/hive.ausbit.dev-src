@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import card3PostsList from 'components/Card3PostsList.vue'
+import card3PostsList from 'src/components/hiveworld/Card3PostsList.vue'
 export default {
   name: 'Card3Posts',
   props: ['username'],

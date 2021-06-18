@@ -83,7 +83,7 @@
 </template>
 
 <script>
-import card2AccountOperationsTab from 'components/Card2AccountOperationsTab.vue'
+import card2AccountOperationsTab from 'src/components/hiveworld/Card2AccountOperationsTab.vue'
 import moment from 'moment'
 export default {
   name: 'Card2AccountOperations',

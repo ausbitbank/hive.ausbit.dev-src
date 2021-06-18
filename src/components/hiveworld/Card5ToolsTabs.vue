@@ -62,8 +62,8 @@
 </template>
 
 <script>
-import Card5ToolsManualVote from 'components/Card5ToolsManualVote.vue'
-import Card5ToolsWitnessOverview from 'components/Card5ToolsWitnessOverview'
+import Card5ToolsManualVote from 'src/components/hiveworld/Card5ToolsManualVote.vue'
+import Card5ToolsWitnessOverview from 'src/components/hiveworld/Card5ToolsWitnessOverview'
 export default {
   name: 'Card5ToolsTab',
   props: ['username', 'globalPropsHive'],

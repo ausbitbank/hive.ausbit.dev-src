@@ -34,10 +34,10 @@
 </template>
 
 <script>
-import Card3PostsSummary from 'components/Card3PostsSummary.vue'
-import Card3PostsContent from 'components/Card3PostsContent.vue'
-import Card3PostsVotes from 'components/Card3PostsVotes.vue'
-import Card3PostsImages from 'components/Card3PostsImages.vue'
+import Card3PostsSummary from 'src/components/hiveworld/Card3PostsSummary.vue'
+import Card3PostsContent from 'src/components/hiveworld/Card3PostsContent.vue'
+import Card3PostsVotes from 'src/components/hiveworld/Card3PostsVotes.vue'
+import Card3PostsImages from 'src/components/hiveworld/Card3PostsImages.vue'
 export default {
   name: 'Card3PostsTab',
   props: ['post'],
