@@ -92,7 +92,7 @@
           </q-list>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Grid', value: 'grid'}]" />
+      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Media', value: 'media'}]" />
     </div>
     <div class="masonry-wrapper">
       <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md text-center" style="margin:auto" />
@@ -100,7 +100,7 @@
         <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
           <post-preview :post="post" :styleType="styleType" />
         </div>
-        <div v-if="filteredPosts.length === 0 && !loading" class="q-ma-md">
+        <div v-if="!loading" class="q-ma-md">
           <h5>
             <q-icon name="error_outline" color="orange" />&nbsp; <span v-if="error">{{ error }}</span><span v-else>No posts found</span><br />
             <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
@@ -177,18 +177,18 @@ export default {
   data () {
     return {
       loading: false,
-      styleType: 'preview',
+      styleType: this.$route.query.style || 'preview',
       posts: [],
       method: this.callMethod || 'bridge.get_ranked_posts',
-      observer: this.$store.state.hive.user.username,
-      limit: this.responseLimit || 20,
-      sort: this.sortMethod,
-      start_author: this.Pstart_author,
-      start_permlink: this.Pstart_permlink,
+      observer: this.$route.query.observer || this.$store.state.hive.user.username,
+      limit: this.$route.query.limit || this.responseLimit || 20,
+      sort: this.$route.query.sort || this.sortMethod,
+      start_author: this.$route.query.start_author || this.Pstart_author,
+      start_permlink: this.$route.query.start_permlink || this.Pstart_permlink,
       page: this.Ppage,
       account: this.showAccount,
       name: null,
-      tag: this.showTag,
+      tag: this.$route.query.tag || this.showTag,
       token: this.tribeToken || null,
       filteredPosts: [],
       error: null,
