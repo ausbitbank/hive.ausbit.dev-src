@@ -1,5 +1,5 @@
 <template>
-  <q-btn label="Reblog this post" :disabled="reblogged" dense push rounded flat size="md" @click="reblog(author, permlink)"/>
+  <q-btn no-caps label="Reblog this post" :disabled="reblogged" dense push rounded flat size="md" @click="reblog(author, permlink)" class="capitalize" />
 </template>
 <script>
 // import { keychain } from '@hiveio/keychain'
