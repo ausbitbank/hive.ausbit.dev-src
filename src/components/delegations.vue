@@ -18,6 +18,11 @@
         <q-btn flat color="orange" icon="edit" title="Modify delegation" @click="to = dele.delegatee; amountVests = parseFloat(dele.vesting_shares.split(' ')[0]); delegationDialogVisible = true" />
       </q-item-section>
     </q-item>
+    <q-item>
+      <q-item-section>
+        <q-btn :disable="loggedInUser !== username" icon="add" color="primary" flat label="Delegate your Hive Power" @click="to = ''; amountVests = 0.000000; delegationDialogVisible = true"/>
+      </q-item-section>
+    </q-item>
   </q-list>
   <q-dialog v-model="delegationDialogVisible">
     <delegationDialog :username="username" :toModify="to" :delegations="delegations" tokenName="HIVE" :amountVestsSuggest="amountVests" />
@@ -47,8 +52,10 @@ export default {
     loggedInUser: function () { return this.$store.state.hive.user.username },
     account: function () { return this.$store.state.hive.accounts[this.username] },
     heading: function () {
-      if (this.delegations) {
+      if (this.delegations && this.delegations.length > 0) {
         return this.tidyNumber(this.vestToHive(this.account.delegated_vesting_shares.split(' ')[0])) + ' ' + this.token + ' delegated from ' + this.username + ' to ' + this.delegations.length + ' accounts'
+      } else if (this.delegations) {
+        return 'No outgoing delegations'
       } else {
         return 'Loading Delegations ..'
       }
@@ -59,12 +66,8 @@ export default {
       var method = 'condenser_api.get_vesting_delegations'
       var params = [this.username, '', 100]
       this.$hive.api.callAsync(method, params)
-        .then(response => {
-          this.delegations = response
-        })
-        .error(err => {
-          this.error = err.cause.data
-        })
+        .then(response => { this.delegations = response })
+        .error(err => { this.error = err.cause.data })
     },
     timeDelta (timestamp) {
       var now = moment.utc()

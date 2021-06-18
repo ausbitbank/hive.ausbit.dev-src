@@ -99,7 +99,7 @@
                                 <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
                             </q-item-section>
                         </q-item>
-                        <q-item v-if="account.delegated_vesting_shares !== '0.000000 VESTS'">
+                        <q-item>
                           <q-item-section>
                             <delegations :username="username" />
                           </q-item-section>
