@@ -1,24 +1,46 @@
 <template>
-  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
+  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="account !== undefined">
     <q-card-section header class="text-h5 text-center text-bold">
       Unstake {{ tokenName }}
     </q-card-section>
-    <q-card-section>
-      <div><q-input label="Amount" v-model="amount" /></div>
-      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
+    <q-card-section v-if="this.network === 'hive' & this.tokenName === 'HIVE'" class="text-center">
+      <div>The unstaking process will convert your staked {{ tokenName }} (VESTS) into unstaked liquid {{ tokenName }} in 13 weekly payments.</div>
+      <div>You currently have <b @click="amountVests = parseFloat(availableStake)" class="text-primary cursor-pointer">{{ tidyNumber(vestToHive(availableStake)) }}</b> {{ tokenName }} available for unstaking.</div>
+      <q-card dense flat v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
+        <q-card-section header class="text-h5 text-red">
+        You already have an unstake in progress.
+        </q-card-section>
+        <q-card-section>
+        <div>Unstaking: <b>{{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }}</b> Hive total</div>
+        <div>Unstaked so far: <b>{{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }}</b> Hive</div>
+        <div>Next payout: <b>{{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }}</b> Hive <span class="text-caption color-grey" :title="account.next_vesting_withdrawal">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
+        </q-card-section>
+        <q-card-actions vertical>
+          <q-btn label="Cancel Powerdown" color="red" flat icon="cancel" @click="cancelPowerdown()" />
+        </q-card-actions>
+      </q-card>
+    </q-card-section>
+    <q-card-section class="text-center" v-if="!disableUnstake">
+      <div>
+        <q-slider label label-always :label-value="'Hive: ' + amountHive" v-model="amountVests" markers :min="0" :max="availableStake" style="max-width: 350px;margin:auto" />
+        <div class="text-caption">
+          = <b class="text-primary">{{ amountHive }}</b> Hive total in 13 weekly payments of <b class="text-primary">{{ amountHiveWeekly }}</b> Hive each
+        </div>
+      </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
-        <q-btn flat label="Unstake" icon="lock_open" color="primary" @click="unstake()" v-if="!sent" />
+        <q-btn flat label="Unstake" icon="lock_open" color="red" @click="unstakeHive()" :disable="disableUnstake" v-if="!sent" />
       </div>
     </q-card-section>
   </q-card>
 </template>
 <script>
+import moment from 'moment'
 export default {
   name: 'unstakingDialog',
   data () {
     return {
-      amount: 0.000,
+      amountVests: 0.000,
       memo: '',
       err: false,
       log: '',
@@ -35,11 +57,6 @@ export default {
       required: false,
       default: 'hive'
     },
-    balance: {
-      type: Number,
-      required: false,
-      default: null
-    },
     username: {
       type: String,
       required: true
@@ -48,68 +65,45 @@ export default {
       type: Number,
       required: false,
       default: 3
-    },
-    to: {
-      type: String,
-      required: false,
-      default: ''
     }
   },
   components: {},
   computed: {
-    availableBalance: function () {
-      if (this.network === 'hive' && this.tokenName === 'HIVE') {
-        return this.$store.state.hive.accounts[this.username].balance.split(' ')[0]
-      } else if (this.network === 'hive' && this.tokenName === 'HBD') {
-        return this.$store.state.hive.accounts[this.username].hbd_balance.split(' ')[0]
+    availableStake: function () {
+      if (this.network === 'hive' & this.tokenName === 'HIVE') {
+        var vestedShares = parseFloat(this.$store.state.hive.accounts[this.username].vesting_shares.split(' ')[0])
+        var vestsDelegatedOut = parseFloat(this.$store.state.hive.accounts[this.username].delegated_vesting_shares.split(' ')[0])
+        return vestedShares - vestsDelegatedOut
       } else {
         return null
       }
-    }
+    },
+    account: function () { return this.$store.state.hive.accounts[this.username] },
+    loggedInUser: function () { return this.$store.state.hive.user.username },
+    globalProps: function () { return this.$store.state.hive.globalProps },
+    amountHive: function () { return this.vestToHive(this.amountVests) },
+    amountHiveWeekly: function () { return (this.amountHive / 13).toFixed(3) },
+    disableUnstake: function () { if (this.account.vesting_withdraw_rate !== '0.000000 VESTS') { return true } else { return false } }
   },
   methods: {
-    setUsername (u) {
-      this.toAccount = u
+    setUsername (u) { this.toAccount = u },
+    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
+    tidyNumber (x) {
+      var parts = x.toString().split('.')
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      return parts.join('.')
     },
-    stake () {
-      if (this.network === 'hive') {
-        this.stakeHive()
-      } else if (this.network === 'hiveEngine') {
-        this.stakeHiveEngineKeychain()
-      }
+    timeDelta (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
     },
-    stakeHive () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName }]])
-    },
-    transferHiveKeychain () {
-      console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)
-      window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        }
-        if (response.success === false) {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
-    },
-    transferHiveEngineKeychain () {
-      var json = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
-      window.hive_keychain.requestCustomJson(this.username, 'ssc-mainnet-hive', 'Active', json, 'Transfer ' + this.amount + ' ' + this.tokenName + ' to ' + this.toAccount, function (response) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        } else {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
-    }
+    cancelPowerdown () { this.unstakeHive('0.000') },
+    unstakeHive () { this.$store.commit('hive/addToQueue', [this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) }
   },
   mounted () {
+    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
     if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
   }
 }

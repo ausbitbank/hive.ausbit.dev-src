@@ -35,7 +35,8 @@
                                 {{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}
                               </q-item-label>
                               <q-item-label caption>
-                                Staked
+                                Staked<br />
+                                <q-badge align="top" class="text-black text-bold" color="green" :title="hivePowerAPR">{{ hivePowerAPR }}% APR</q-badge>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section>
@@ -78,13 +79,30 @@
                                       <q-item clickable @click="stakeHive = true">
                                         <q-btn dense flat icon="lock" color="primary" title="Stake" label="Stake" />
                                       </q-item>
-                                      <q-item clickable @click="unstakeHive = true" v-if="false">
+                                      <q-item clickable @click="unstakeHive = true" v-if="true">
                                         <q-btn dense flat icon="lock_open" color="primary" title="Unstake" label="Unstake" />
                                       </q-item>
                                     </q-list>
                                   </q-menu>
                                 </q-btn>
                             </q-item-section>
+                        </q-item>
+                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
+                            <q-item-section>
+                              <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
+                              <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
+                            </q-item-section>
+                            <q-item-section>
+                                <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
+                            </q-item-section>
+                            <q-item-section top side v-if="this.loggedInUser === this.username">
+                                <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
+                            </q-item-section>
+                        </q-item>
+                        <q-item v-if="account.delegated_vesting_shares !== '0.000000 VESTS'">
+                          <q-item-section>
+                            <delegations :username="username" />
+                          </q-item-section>
                         </q-item>
                         <q-item>
                             <q-item-section avatar>
@@ -146,18 +164,6 @@
                                 </q-btn>
                             </q-item-section>
                         </q-item>
-                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
-                            <q-item-section>
-                              <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
-                              <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
-                            </q-item-section>
-                            <q-item-section>
-                                <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
-                            </q-item-section>
-                            <q-item-section top side>
-                                <q-btn v-if="false" dense icon="cancel" color="red" title="Cancel Powerdown" />
-                            </q-item-section>
-                        </q-item>
                         <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
                           <q-item-section v-if="account.name === loggedInUser">
                             <claim-rewards :A="account"/>
@@ -172,7 +178,7 @@
                     </q-list>
                     <div id="scrollTargetRef">
                       <div class="text-h6 text-center">Transaction History</div>
-                        <q-list bordered v-for="tx in this.hiveTransactions" :key="tx.index">
+                        <q-list bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
                           <q-item>
                             <q-item-section avatar>
                               <q-item-label>
@@ -195,6 +201,7 @@
                                 <span v-else-if="tx[1].op[0] === 'claim_reward_balance'">Claimed Rewards</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_convert_request'">Conversion Completed</span>
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'">Staked</span>
+                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting' && tx[1].op[1].vesting_shares === '0.000000 VESTS'">Cancelled Unstake</span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'">Unstaked</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'">Fill Order</span>
                                 <span v-else-if="tx[1].op[0] === 'interest'">Interest</span>
@@ -658,6 +665,7 @@ import transferDialog from 'components/transferDialog.vue'
 import stakingDialog from 'components/stakingDialog.vue'
 import unstakingDialog from 'components/unstakingDialog.vue'
 import claimRewards from 'components/claimRewards.vue'
+import delegations from 'components/delegations.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
@@ -704,10 +712,11 @@ export default {
       hiveEngineTransactionHistory: null,
       hivePriceUsd: null,
       hbdPriceUsd: null,
-      decodedMemo: null
+      decodedMemo: null,
+      showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'interest', 'liquidity_reward', 'transfer_to_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
-  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, claimRewards },
+  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, claimRewards, delegations },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
@@ -716,7 +725,34 @@ export default {
         return this.$store.state.hive.accounts[this.username]
       }
     },
-    loggedInUser: function () { return this.$store.state.hive.user.username }
+    loggedInUser: function () { return this.$store.state.hive.user.username },
+    hivePowerAPR: function () { // orig-src https://gitlab.syncad.com/hive/wallet/-/blob/develop/src/app/components/modules/UserWallet.jsx#L105
+      // The inflation was set to 9.5% at block 7m
+      const initialInflationRate = 9.5
+      const initialBlock = 7000000
+      // It decreases by 0.01% every 250k blocks
+      const decreaseRate = 250000
+      const decreasePercentPerIncrement = 0.01
+      // How many increments have happened since block 7m?
+      const headBlock = this.globalProps.head_block_number
+      const deltaBlocks = headBlock - initialBlock
+      const decreaseIncrements = deltaBlocks / decreaseRate
+      // Current inflation rate
+      let currentInflationRate = initialInflationRate - decreaseIncrements * decreasePercentPerIncrement
+      // Cannot go lower than 0.95%
+      if (currentInflationRate < 0.95) { currentInflationRate = 0.95 }
+      // Now lets calculate the "APR"
+      const vestingRewardPercent = this.globalProps.vesting_reward_percent / 10000
+      const virtualSupply = this.globalProps.virtual_supply.split(' ').shift()
+      const totalVestingFunds = this.globalProps.total_vesting_fund_hive.split(' ').shift()
+      return ((virtualSupply * currentInflationRate * vestingRewardPercent) / totalVestingFunds).toFixed(2)
+    },
+    filteredTransactionsHive: function () {
+      var ft = this.hiveTransactions
+      console.log(this.hiveTransactions[0])
+      ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
+      return ft
+    }
   },
   watch: {
     account: function () { this.init() },
