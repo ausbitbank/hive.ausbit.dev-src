@@ -49,9 +49,10 @@ export default {
   },
   components: { jsonViewer },
   computed: {
-    loggedInUser: { get () { return this.$store.state.hive.user.username } },
-    loginType: { get () { return this.$store.state.hive.user.loginType } },
-    queue: { get () { return this.$store.state.hive.queue } }
+    loggedInUser: function () { return this.$store.state.hive.user.username },
+    loginType: function () { return this.$store.state.hive.user.loginType },
+    queue: function () { return this.$store.state.hive.queue },
+    globalProps: function () { return this.$store.state.hive.globalProps }
   },
   methods: {
     toggleTimer () {
@@ -134,6 +135,19 @@ export default {
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      } else if (op[0] === 'withdraw_vesting') {
+        var hiveToPowerUp = this.vestToHive(parseInt(op[1].vesting_shares) / 1000000)
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPowerDown', user, hiveToPowerUp)
+        if (success) { this.successfullBroadcast(action) }
+        if (cancel) { this.$q.notify('Cancelled by user') }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      } else if (op[0] === 'delegate_vesting_shares') {
+        console.log(op[1].vesting_shares)
+        console.log(user)
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestDelegation', user, op[1].delegatee, op[1].vesting_shares.split(' ')[0], 'VESTS')
+        if (success) { this.successfullBroadcast(action) }
+        if (cancel) { this.$q.notify('Cancelled by user') }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
       } else {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, ops, keytype)
         if (success) { this.successfullBroadcast(action) }
@@ -163,9 +177,17 @@ export default {
       }).onDismiss(() => {
         // triggered by both ok and cancel
       })
+    },
+    vestToHive (vests) {
+      if (this.globalProps) {
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+      } else {
+        return null
+      }
     }
   },
   mounted () {
+    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
     if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
   }
 }
