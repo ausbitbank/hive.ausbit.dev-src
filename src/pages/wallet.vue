@@ -63,31 +63,30 @@
                                 <q-dialog v-model="savings"><savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
-                                    <q-list>
-                                      <q-item clickable @click="transferHive = true">
-                                        <q-item-section>
-                                          <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
-                                        </q-item-section>
+                                    <q-list bordered separator>
+                                      <q-item clickable @click="transferHive = true" class="text-primary">
+                                        <q-item-section avatar><q-icon name="send" color="primary" title="transfer" /></q-item-section>
+                                        <q-item-section>Transfer</q-item-section>
                                       </q-item>
-                                      <q-item v-if="false" clickable @click="stakeHive = true">
-                                        <q-item-section>
-                                          <q-btn dense flat icon="account_balance" color="primary" title="Stake" label="Stake" />
-                                        </q-item-section>
+                                      <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
+                                        <q-item-section avatar><q-icon name="transform" color="orange" /></q-item-section>
+                                        <q-item-section>Market</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="$router.push('/market')">
-                                        <q-btn dense flat icon="transform" color="orange" title="Trade Hive/HBD on internal market" label="Market" />
+                                      <q-item clickable @click="stakeHive = true" class="text-green" title="Stake">
+                                        <q-item-section avatar><q-icon name="lock" /> </q-item-section>
+                                        <q-item-section>Stake</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="stakeHive = true">
-                                        <q-btn dense flat icon="lock" color="green" title="Stake" label="Stake" />
+                                      <q-item clickable @click="unstakeHive = true" class="text-red" title="Unstake">
+                                        <q-item-section avatar><q-icon name="lock_open" /></q-item-section>
+                                        <q-item-section>Unstake</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="unstakeHive = true">
-                                        <q-btn dense flat icon="lock_open" color="red" title="Unstake" label="Unstake" />
+                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'" class="text-green" title="Deposit Savings">
+                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
+                                        <q-item-section>Deposit</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'">
-                                        <q-btn dense flat icon="savings" color="green" title="Deposit Savings" label="Deposit Savings" />
-                                      </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HIVE'" v-if="account.savings_balance.split(' ')[0] !== '0.000'">
-                                        <q-btn dense flat icon="savings" color="red" title="Withdraw Savings" label="Withdraw Savings" />
+                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HIVE'" v-if="account.savings_balance.split(' ')[0] !== '0.000'" class="text-red" title="Withdraw Savings">
+                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
+                                        <q-item-section>Withdraw</q-item-section>
                                       </q-item>
                                     </q-list>
                                   </q-menu>
@@ -155,20 +154,22 @@
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
-                                    <q-list style="min-width: 100px">
-                                      <q-item clickable @click="transferHbd = true">
-                                        <q-item-section>
-                                          <q-btn dense flat icon="send" color="primary" title="Transfer" label="Transfer" />
-                                        </q-item-section>
+                                    <q-list bordered seperator>
+                                      <q-item clickable @click="transferHbd = true" class="text-primary" title="Transfer HBD">
+                                        <q-item-section avatar><q-icon name="send" /></q-item-section>
+                                        <q-item-section>Transfer</q-item-section>
                                       </q-item>
-                                      <q-item>
-                                        <router-link to="/market"><q-btn dense flat icon="transform" color="orange" title="Trade Hive/HBD on internal market" label="Market" /></router-link>
+                                      <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
+                                        <q-item-section avatar><q-icon name="transform" color="orange" /></q-item-section>
+                                        <q-item-section>Market</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'">
-                                        <q-btn dense flat icon="savings" color="green" title="Deposit Savings" label="Deposit Savings" />
+                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'" class="text-green" title="Deposit Savings">
+                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
+                                        <q-item-section>Deposit</q-item-section>
                                       </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HBD'" v-if="account.savings_hbd_balance.split(' ')[0] !== '0.000'">
-                                        <q-btn dense flat icon="savings" color="red" title="Withdraw Savings" label="Withdraw Savings" />
+                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HBD'" v-if="account.savings_hbd_balance.split(' ')[0] !== '0.000'" class="text-red" title="Withdraw Savings">
+                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
+                                        <q-item-section>Withdraw</q-item-section>
                                       </q-item>
                                     </q-list>
                                   </q-menu>
