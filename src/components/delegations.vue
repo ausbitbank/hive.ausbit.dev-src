@@ -63,9 +63,7 @@ export default {
   },
   methods: {
     getDelegations () {
-      var method = 'condenser_api.get_vesting_delegations'
-      var params = [this.username, '', 100]
-      this.$hive.api.callAsync(method, params)
+      this.$hive.api.callAsync('condenser_api.get_vesting_delegations', [this.username, '', 100])
         .then(response => { this.delegations = response })
         .error(err => { this.error = err.cause.data })
     },
