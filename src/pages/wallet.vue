@@ -60,6 +60,7 @@
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
+                                <q-dialog v-model="savings"><savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
                                     <q-list>
@@ -74,13 +75,19 @@
                                         </q-item-section>
                                       </q-item>
                                       <q-item clickable @click="$router.push('/market')">
-                                        <q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Market" />
+                                        <q-btn dense flat icon="transform" color="orange" title="Trade Hive/HBD on internal market" label="Market" />
                                       </q-item>
                                       <q-item clickable @click="stakeHive = true">
-                                        <q-btn dense flat icon="lock" color="primary" title="Stake" label="Stake" />
+                                        <q-btn dense flat icon="lock" color="green" title="Stake" label="Stake" />
                                       </q-item>
-                                      <q-item clickable @click="unstakeHive = true" v-if="true">
-                                        <q-btn dense flat icon="lock_open" color="primary" title="Unstake" label="Unstake" />
+                                      <q-item clickable @click="unstakeHive = true">
+                                        <q-btn dense flat icon="lock_open" color="red" title="Unstake" label="Unstake" />
+                                      </q-item>
+                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'">
+                                        <q-btn dense flat icon="savings" color="green" title="Deposit Savings" label="Deposit Savings" />
+                                      </q-item>
+                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HIVE'" v-if="account.savings_balance.split(' ')[0] !== '0.000'">
+                                        <q-btn dense flat icon="savings" color="red" title="Withdraw Savings" label="Withdraw Savings" />
                                       </q-item>
                                     </q-list>
                                   </q-menu>
@@ -104,6 +111,7 @@
                             <delegations :username="username" />
                           </q-item-section>
                         </q-item>
+                        <savingsWithdrawalsInProgress :username="username" />
                         <q-item>
                             <q-item-section avatar>
                               <q-avatar size="sm">
@@ -154,10 +162,13 @@
                                         </q-item-section>
                                       </q-item>
                                       <q-item>
-                                        <router-link to="/market"><q-btn dense flat icon="transform" color="primary" title="Trade Hive/HBD on internal market" label="Internal Market" /></router-link>
+                                        <router-link to="/market"><q-btn dense flat icon="transform" color="orange" title="Trade Hive/HBD on internal market" label="Market" /></router-link>
                                       </q-item>
-                                      <q-item v-if="false">
-                                        <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
+                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'">
+                                        <q-btn dense flat icon="savings" color="green" title="Deposit Savings" label="Deposit Savings" />
+                                      </q-item>
+                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HBD'" v-if="account.savings_hbd_balance.split(' ')[0] !== '0.000'">
+                                        <q-btn dense flat icon="savings" color="red" title="Withdraw Savings" label="Withdraw Savings" />
                                       </q-item>
                                     </q-list>
                                   </q-menu>
@@ -666,6 +677,8 @@ import stakingDialog from 'components/stakingDialog.vue'
 import unstakingDialog from 'components/unstakingDialog.vue'
 import claimRewards from 'components/claimRewards.vue'
 import delegations from 'components/delegations.vue'
+import savingsDialog from 'components/savingsDialog.vue'
+import savingsWithdrawalsInProgress from 'components/savingsWithdrawalsInProgress.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
@@ -701,6 +714,9 @@ export default {
       transferDialogBalance: null,
       stakeHive: false,
       unstakeHive: false,
+      savings: false,
+      savingsType: 'deposit',
+      savingsTokenName: 'HIVE',
       hiveTransactions: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
@@ -716,7 +732,7 @@ export default {
       showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'interest', 'liquidity_reward', 'transfer_to_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
-  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, claimRewards, delegations },
+  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, savingsDialog, claimRewards, delegations, savingsWithdrawalsInProgress },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
