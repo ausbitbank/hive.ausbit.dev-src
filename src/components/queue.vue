@@ -142,14 +142,12 @@ export default {
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
       } else if (op[0] === 'delegate_vesting_shares') {
-        console.log(op[1].vesting_shares)
-        console.log(user)
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestDelegation', user, op[1].delegatee, op[1].vesting_shares.split(' ')[0], 'VESTS')
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else {
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, ops, keytype)
+      } else { // Generic broadcast
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, JSON.parse(JSON.stringify(ops)), keytype)
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
