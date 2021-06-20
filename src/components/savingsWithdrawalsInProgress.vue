@@ -1,5 +1,5 @@
 <template>
-  <q-item v-if="withdrawsFrom.length > 0">
+  <q-item v-if="withdrawsFrom !== null">
     <q-item-section avatar>
       <q-icon name="warning" color="orange" />
     </q-item-section>
@@ -55,9 +55,7 @@ export default {
     },
     checkSavingsWithdrawTo (user) {
       this.$hive.api.getSavingsWithdrawFromAsync(user)
-        .then(res => {
-          this.withdrawsFrom = res
-        })
+        .then(res => { if (res.length > 0) { this.withdrawsFrom = res } })
     },
     cancelTransferFromSavings (id) {
       this.$store.commit('hive/addToQueue', [this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: id }]])
