@@ -45,6 +45,12 @@
                     <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].voter)">{{ tx.op[1].voter }}</router-link></span> voted <q-chip dense :color="returnVoteColor(tx.op[1].weight)">{{ tx.op[1].weight / 100 }} %</q-chip> on <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link> \ <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a></span>
                 </q-item-label>
                 </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'effective_comment_vote'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].voter)" /></q-avatar>
+                    <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].voter)">{{ tx.op[1].voter }}</router-link></span> effective_comment_vote <q-chip dense :color="returnVoteColor(tx.op[1].weight)">{{ tx.op[1].weight / 100 }} %</q-chip> on <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link> \ <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a> (rshares {{ tx.op[1].rshares }} total_vote_weight {{ tx.op[1].total_vote_weight }} pending_payout {{ tx.op[1].pending_payout }})</span>
+                </q-item-label>
+                </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'comment'">
                 <q-item-label v-if="tx.op[1].parent_author === ''">
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar>
