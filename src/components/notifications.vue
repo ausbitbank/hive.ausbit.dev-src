@@ -10,7 +10,7 @@
       <q-separator v-if="notifications !== null" />
       <q-card-section class="q-ma-none q-pa-none" v-if="this.$store.state.hive.user.unreadNotificationCount > 0">
       <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
-      <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push(n.url)" dense>
+      <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push('/' + n.url)" dense>
         <q-item-section avatar>
           <router-link :to="n.url">
             <q-avatar size="md" v-if="n.msg">
