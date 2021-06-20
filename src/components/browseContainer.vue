@@ -102,7 +102,7 @@
         </div>
         <div v-if="!loading" class="q-ma-md">
           <h5>
-            <q-icon name="error_outline" color="orange" />&nbsp; <span v-if="error">{{ error }}</span><span v-else>No posts found</span><br />
+            <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
             <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
           </h5>
         </div>
@@ -115,6 +115,8 @@
   </div>
 </template>
 <style>
+/* Live, working masonry layout ordered top to bottom, THEN left to right
+  TODO: Find / Design a version that works left to right, THEN top to bottom */
 .masonry-wrapper {
   padding: 1.5em;
   margin-right: auto;
