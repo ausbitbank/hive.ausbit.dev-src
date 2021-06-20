@@ -61,6 +61,8 @@
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="savings"><savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" /></q-dialog>
+                                <q-dialog v-model="delegationDialogVisible"><delegationDialog :username="username" tokenName="HIVE" :amountVestsSuggest="0" /></q-dialog>
+                                <q-dialog v-model="convertDialogVisible"><convertDialog :username="username" :tokenName="convertTokenName" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
                                     <q-list bordered separator>
@@ -88,6 +90,14 @@
                                         <q-item-section avatar><q-icon name="savings" /></q-item-section>
                                         <q-item-section>Withdraw</q-item-section>
                                       </q-item>
+                                      <q-item clickable class="text-primary" title="Delegate Hive Power" @click="delegationDialogVisible = true" v-if="account.vesting_shares.split(' ')[0] !== '0.000000'">
+                                        <q-item-section avatar><q-icon name="redeem" /></q-item-section>
+                                        <q-item-section>Delegate</q-item-section>
+                                      </q-item>
+                                      <q-item clickable class="text-green" title="Convert Hive to HBD" @click="convertDialogVisible = true; convertTokenName = 'HIVE'" v-if="false & account.balance.split(' ')[0] !== '0.000'">
+                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg"/></q-avatar></q-item-section>
+                                        <q-item-section>Convert</q-item-section>
+                                      </q-item>
                                     </q-list>
                                   </q-menu>
                                 </q-btn>
@@ -108,6 +118,7 @@
                         <q-item>
                           <q-item-section>
                             <delegations :username="username" />
+                            <convertRequests :username="username" />
                           </q-item-section>
                         </q-item>
                         <savingsWithdrawalsInProgress :username="username" />
@@ -154,7 +165,7 @@
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
-                                    <q-list bordered seperator>
+                                    <q-list bordered separator>
                                       <q-item clickable @click="transferHbd = true" class="text-primary" title="Transfer HBD">
                                         <q-item-section avatar><q-icon name="send" /></q-item-section>
                                         <q-item-section>Transfer</q-item-section>
@@ -170,6 +181,10 @@
                                       <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HBD'" v-if="account.savings_hbd_balance.split(' ')[0] !== '0.000'" class="text-red" title="Withdraw Savings">
                                         <q-item-section avatar><q-icon name="savings" /></q-item-section>
                                         <q-item-section>Withdraw</q-item-section>
+                                      </q-item>
+                                      <q-item clickable class="text-secondary" title="Convert HBD to Hive" @click="convertDialogVisible = true; convertTokenName = 'HBD'" v-if="true || account.hbd_balance.split(' ')[0] !== '0.000'">
+                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hive.svg"/></q-avatar></q-item-section>
+                                        <q-item-section>Convert</q-item-section>
                                       </q-item>
                                     </q-list>
                                   </q-menu>
@@ -672,14 +687,6 @@ const SSC = require('sscjs')
 const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import { debounce } from 'quasar'
 import { keychain } from '@hiveio/keychain'
-import accountHeader from 'components/accountHeader.vue'
-import transferDialog from 'components/transferDialog.vue'
-import stakingDialog from 'components/stakingDialog.vue'
-import unstakingDialog from 'components/unstakingDialog.vue'
-import claimRewards from 'components/claimRewards.vue'
-import delegations from 'components/delegations.vue'
-import savingsDialog from 'components/savingsDialog.vue'
-import savingsWithdrawalsInProgress from 'components/savingsWithdrawalsInProgress.vue'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
@@ -718,6 +725,9 @@ export default {
       savings: false,
       savingsType: 'deposit',
       savingsTokenName: 'HIVE',
+      delegationDialogVisible: false,
+      convertDialogVisible: false,
+      convertTokenName: 'HIVE',
       hiveTransactions: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
@@ -733,7 +743,19 @@ export default {
       showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'interest', 'liquidity_reward', 'transfer_to_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
-  components: { accountHeader, transferDialog, stakingDialog, unstakingDialog, savingsDialog, claimRewards, delegations, savingsWithdrawalsInProgress },
+  components: {
+    delegationDialog: () => import('components/delegationDialog.vue'),
+    accountHeader: () => import('components/accountHeader.vue'),
+    transferDialog: () => import('components/transferDialog.vue'),
+    stakingDialog: () => import('components/stakingDialog.vue'),
+    unstakingDialog: () => import('components/unstakingDialog.vue'),
+    savingsDialog: () => import('components/savingsDialog.vue'),
+    convertDialog: () => import('components/convertDialog.vue'),
+    convertRequests: () => import('components/convertRequests.vue'),
+    claimRewards: () => import('components/claimRewards.vue'),
+    delegations: () => import('components/delegations.vue'),
+    savingsWithdrawalsInProgress: () => import('components/savingsWithdrawalsInProgress.vue')
+  },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
