@@ -7,7 +7,7 @@
           <router-link to="/" class="q-electron-drag--exception text-primary" style="font-weight: normal"><q-icon name="img:statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
-        <queue v-if="loggedInUser !== null && queue.length > 0" /> <!-- TODO swap >= for > after finished debugging -->
+        <queue v-if="loggedInUser !== null && queue.length > 0" />
         <notifications v-if="loggedInUser !== null" />
         <user-login />
         <span v-if="$q.platform.is.electron">
