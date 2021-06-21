@@ -81,14 +81,8 @@
 </style>
 <script>
 import sanitize from 'sanitize-html'
-// import commentBox from 'components/commentBox.vue'
 import moment from 'moment'
-// import vote from 'components/vote.vue'
-// import reblog from 'components/reblog.vue'
-import render from 'components/render.vue'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
-import postFooter from 'components/postFooter.vue'
-import postDialog from 'components/postDialog.vue'
 export default {
   name: 'postPreview',
   props: ['post', 'styleType'],
@@ -102,7 +96,11 @@ export default {
       fullscreen: false
     }
   },
-  components: { render, postFooter, postDialog },
+  components: {
+    render: () => import('components/render.vue'),
+    postFooter: () => import('components/postFooter.vue'),
+    postDialog: () => import('components/postDialog.vue')
+  },
   watch: {
     post: {
       deep: true,
