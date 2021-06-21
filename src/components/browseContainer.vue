@@ -100,10 +100,10 @@
         <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
           <post-preview :post="post" :styleType="styleType" />
         </div>
-        <div v-if="!loading" class="q-ma-md">
+        <div v-if="!loading" class="q-ma-md" style="clear:both">
           <h5>
             <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
-            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length }} posts filtered
+            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length - filteredPosts.length }} posts filtered
           </h5>
         </div>
       </div>
