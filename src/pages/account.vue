@@ -96,15 +96,17 @@
                 <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']"/>
             </q-card-section>
         </q-card>
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.json_metadata">
+        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account">
             <q-card-section>
-                <div class="text-h6">JSON Metadata</div>
-                <json-viewer :data="JSON.parse(account.json_metadata)" />
+                <div class="text-h6">JSON Metadata <q-btn flat icon="edit" title="Edit JSON Metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser"/></div>
+                <json-viewer v-if="account.json_metadata" :data="account.json_metadata" />
+                <span v-else>JSON Metadata is currently empty</span>
+                <props-editor v-if="editJsonMeta" :json="account.json_metadata" :username="username" :account="account" type="jsonMeta" @editedProps="refreshAccount()" />
             </q-card-section>
         </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
             <q-card-section>
-                <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn icon="edit" title="Edit" color="orange" @click="editPostingJson = !editPostingJson" dense glossy round v-if="account.name === loggedInUser"/></div>
+                <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
                 <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
                 <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" @editedProps="refreshAccount()" />
             </q-card-section>
@@ -202,6 +204,7 @@ export default {
       accountOperationsMarker: null,
       page: this.$router.currentRoute.query.page || 1,
       editPostingJson: false,
+      editJsonMeta: false,
       error: false,
       errorMessage: '',
       operationsBitmask: null,
