@@ -59,7 +59,8 @@ export default {
   components: {
     reblog: () => import('components/reblog.vue'),
     vote: () => import('components/vote.vue'),
-    postDialog: () => import('components/postDialog.vue')
+    postDialog: () => import('components/postDialog.vue'),
+    commentBox: () => import('components/commentBox.vue')
   },
   computed: {
     loggedInUser: {
