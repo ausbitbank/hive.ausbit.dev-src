@@ -108,7 +108,7 @@
             <q-card-section>
                 <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
                 <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
-                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" type="postingMeta" @editedProps="refreshAccount()" />
+                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
             </q-card-section>
         </q-card>
         <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
