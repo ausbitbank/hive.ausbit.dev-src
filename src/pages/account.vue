@@ -114,8 +114,8 @@
         <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="witness">
             <q-card-section>
-                <div class="text-h6">
-                    Witness
+                <div class="text-h6 text-center">
+                    Witness Properties<q-btn flat icon="edit" color="orange" title="Edit witness properties" @click="$router.push('/witness')" v-if="loggedInUser === username" />
                 </div>
                 <props-list :obj="witness" :ignoreKeys="[]"/>
             </q-card-section>
