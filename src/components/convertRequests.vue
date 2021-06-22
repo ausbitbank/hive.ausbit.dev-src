@@ -1,8 +1,6 @@
 <template>
-  <q-list v-if="conversions.length > 0" dense>
-    <q-item-label header>
-      Pending Conversion Requests:
-    </q-item-label>
+  <q-expansion-item dense dense-toggle expand-separator header-class="text-primary" icon="transform" :label="headingLabel" v-if="conversions.length > 0">
+  <q-list dense>
     <q-item v-for="conversion in conversions" :key="conversion.id" label="Conversions">
       <q-item-section>
         {{ conversion.amount }} due {{ timeDelta(conversion.conversion_date)}}
@@ -12,6 +10,7 @@
       </q-item-section>
     </q-item>
   </q-list>
+  </q-expansion-item>
 </template>
 <script>
 import moment from 'moment'
@@ -28,7 +27,8 @@ export default {
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
     loggedInUser: function () { return this.$store.state.hive.user.username },
-    account: function () { return this.$store.state.hive.accounts[this.username] }
+    account: function () { return this.$store.state.hive.accounts[this.username] },
+    headingLabel: function () { return this.conversions.length + ' pending conversions requests' }
   },
   methods: {
     getConversions () {
