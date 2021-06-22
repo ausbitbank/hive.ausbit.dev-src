@@ -15,7 +15,8 @@ export default function () {
         darkBackground: true,
         voteWeightPost: 100,
         voteWeightComment: 100,
-        beneficiary: [{ account: 'ausbitbank', weight: 1000 }]
+        beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
+        apiNode: 'https://rpc.ausbit.dev'
       }
     },
     queue: [],
