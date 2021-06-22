@@ -54,6 +54,12 @@
           </q-btn>
         </q-item>
         <q-item>
+          <q-item-label header>
+            Api Node
+          </q-item-label>
+          <q-input label='Api Node' v-model="apiNode" />
+        </q-item>
+        <q-item>
             <q-btn label="Save Settings" color="primary" rounded push @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
         </q-item>
       </q-list>
@@ -69,7 +75,8 @@ export default {
       voteWeightComment: this.$store.state.hive.user.settings.voteWeightComment,
       beneficiaries: this.$store.state.hive.user.settings.beneficiary,
       newBeneAccount: '',
-      newBeneWeight: 1000
+      newBeneWeight: 1000,
+      apiNode: this.$store.state.hive.user.settings.apiNode
     }
   },
   computed: {
@@ -94,14 +101,14 @@ export default {
       this.beneficiaries.splice(this.beneficiaries.findIndex(b => b.account === account), 1)
     },
     checkBene () {
-
     },
     saveSettings () {
       var s = {
         darkBackground: this.darkBackground,
         voteWeightPost: this.voteWeightPost,
         voteWeightComment: this.voteWeightComment,
-        beneficiary: this.beneficiaries
+        beneficiary: this.beneficiaries,
+        apiNode: this.apiNode
       }
       this.$store.commit('hive/updateSettings', s)
       this.$emit('hide')
