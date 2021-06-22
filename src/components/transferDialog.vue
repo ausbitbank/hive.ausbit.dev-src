@@ -22,7 +22,7 @@
       <div><q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" /></div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
-        <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" />
+        <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" v-close-popup />
       </div>
     </q-card-section>
   </q-card>
