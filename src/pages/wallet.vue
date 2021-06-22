@@ -116,13 +116,6 @@
                             </q-item-section>
                         </q-item>
                         <q-item>
-                          <q-item-section>
-                            <delegations :username="username" />
-                            <convertRequests :username="username" />
-                          </q-item-section>
-                        </q-item>
-                        <savingsWithdrawalsInProgress :username="username" />
-                        <q-item>
                             <q-item-section avatar>
                               <q-avatar size="sm">
                                 <img src="/statics/hbd.svg"/>
@@ -191,6 +184,13 @@
                                 </q-btn>
                             </q-item-section>
                         </q-item>
+                        <q-item>
+                          <q-item-section>
+                            <delegations :username="username" />
+                            <convertRequests :username="username" />
+                          </q-item-section>
+                        </q-item>
+                        <savingsWithdrawalsInProgress :username="username" />
                         <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
                           <q-item-section v-if="account.name === loggedInUser">
                             <claim-rewards :A="account"/>
@@ -467,14 +467,18 @@
                           <q-btn v-if="token.balance !== '0'" dense flat icon="send" color="primary" title="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
                               <q-btn dense flat icon="more_horiz">
                                 <q-menu>
-                                  <q-list style="min-width: 100px">
-                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" v-if="token.balance !== '0'">
-                                      <q-item-section>
-                                        <q-btn dense flat icon="send" color="primary" title="Transfer Token" label="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
-                                      </q-item-section>
+                                  <q-list style="min-width: 100px" bordered separator>
+                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" v-if="token.balance !== '0'" class="text-primary" title="Transfer Token">
+                                      <q-item-section avatar><q-icon name="send" /></q-item-section>
+                                      <q-item-section>Transfer</q-item-section>
                                     </q-item>
-                                    <q-item>
-                                      <q-btn type="a" dense flat icon="transform" color="orange" :href="returnMarketLink(token.symbol)" target="_blank" title="Trade on HiveEngine" label="Trade on Hive-Engine" />
+                                    <q-item clickable @click="$router.push(returnMarketLink('hiveengine', token.symbol))" title="Trade on Hive-Engine.com" class="text-orange">
+                                      <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
+                                      <q-item-section>Hive-Engine.com</q-item-section>
+                                    </q-item>
+                                    <q-item clickable @click="$router.push(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange">
+                                      <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
+                                      <q-item-section>TribalDex.com</q-item-section>
                                     </q-item>
                                     <q-item v-if="false">
                                       <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
@@ -930,7 +934,13 @@ export default {
       }
     },
     returnTokenInfoMeta (symbol) { return JSON.parse(this.returnTokenInfo(symbol).metadata) },
-    returnMarketLink (symbol) { return 'https://hive-engine.com/?p=market&t=' + symbol },
+    returnMarketLink (market, symbol) {
+      if (market === 'hiveengine') {
+        return 'https://hive-engine.com/?p=market&t=' + symbol
+      } else {
+        return 'https://tribaldex.com/trade/' + symbol
+      }
+    },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
