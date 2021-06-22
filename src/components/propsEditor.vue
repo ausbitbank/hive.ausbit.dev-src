@@ -73,21 +73,22 @@ export default {
   methods: {
     submitChanges () {
       if (this.type === 'postingMeta') {
-        this.$store.commit('hive/addToQueue', [this.username, 'posting', ['account_update2', { account: this.username, posting_json_metadata: this.newjson }]])
+        this.$store.commit('hive/addToQueue', [this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson }]])
         this.$emit('editedProps')
       }
-      if (this.type === 'jsonMeta' && this.account.posting && this.account.memo_key) {
-        var p = {
-          account: this.username,
-          posting: this.account.posting,
-          memo_key: this.account.memo_key,
-          json_metadata: this.newjson
+      if (this.type === 'jsonMeta') {
+        if (this.account.posting && this.account.memo_key) {
+          var p = {
+            account: this.username,
+            posting: this.account.posting,
+            memo_key: this.account.memo_key,
+            json_metadata: this.newjson
+          }
+          this.$store.commit('hive/addToQueue', [this.username, 'active', ['account_update', p]])
+          this.$emit('editedProps')
+        } else {
+          console.log('missing required info to update json meta')
         }
-        console.log(p)
-        this.$store.commit('hive/addToQueue', [this.username, 'active', ['account_update', p]])
-        this.$emit('editedProps')
-      } else {
-        console.log('Error, cannot find info required to update JSON metadata')
       }
     },
     doesKeyExist (key) {
