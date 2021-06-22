@@ -35,6 +35,7 @@
                           <div>Last pricefeed update was <b>{{ timeDelta(witness.last_hbd_exchange_update) }}</b></div>
                           <div v-if="witness.created !== '1970-01-01T00:00:00'">{{ witness.owner }} first registered their witness <b>{{ timeDelta(witness.created) }}</b></div>
                           <div v-else>{{ witness.owner }} has been a witness for <b>at least 5 years.</b></div>
+                          <div v-if="loggedInUser === witness.owner"><q-btn flat icon="edit" color="orange" @click="$router.push('/witness')" label="Edit witness properties" /></div>
                           <div><router-link :to="linkAccount(witness.owner)">Profile</router-link>, <router-link :to="linkAccountBlog(witness.owner)">Blog</router-link>, <router-link :to="linkAccountPosts(witness.owner)">Posts</router-link>, <router-link :to="linkAccountWallet(witness.owner)">Wallet</router-link></div>
                         </q-card-section>
                         <json-viewer :data="witness" class="q-ml-md" />
@@ -109,6 +110,7 @@ export default {
     }
   },
   computed: {
+    loggedInUser: { get () { return this.$store.state.hive.user.username } }
   },
   methods: {
     timeDelta (timestamp) {
