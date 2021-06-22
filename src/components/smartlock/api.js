@@ -2,6 +2,9 @@ import hive from '@hiveio/hive-js'
 import signature from '@hiveio/hive-js/lib/auth/ecc'
 import { getPosting, getActive, getMemo } from './store'
 import { Notify } from 'quasar'
+import store from '../../store'
+
+if (store().state.hive.user.settings.apiNode !== undefined) { hive.api.setOptions({ url: store().state.hive.user.settings.apiNode }) } else { hive.api.setOptions({ url: 'https://rpc.ausbit.dev' }) }
 
 const signBuffer = (username, data) => {
   // try to parse Buffer
