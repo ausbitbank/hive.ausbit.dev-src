@@ -17,8 +17,8 @@
         </q-popup-proxy>
       </q-btn>
       <div><q-input label="Amount" v-model="amount" /></div>
-      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
-      <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
       <div><q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" /></div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
@@ -86,9 +86,7 @@ export default {
     }
   },
   methods: {
-    setUsername (u) {
-      this.toAccount = u
-    },
+    setUsername (u) { this.toAccount = u },
     checkEncryption () {
       if (this.memo.startsWith('#')) {
         this.encrypted = true
@@ -107,38 +105,21 @@ export default {
       if (this.network === 'hive') {
         this.transferHive()
       } else if (this.network === 'hiveEngine') {
-        this.transferHiveEngineKeychain()
+        this.transferHiveEngine()
       }
     },
     transferHive () {
       this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo }]])
     },
-    transferHiveKeychain () {
-      console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)
-      window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        }
-        if (response.success === false) {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
-    },
-    transferHiveEngineKeychain () {
-      var json = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
-      window.hive_keychain.requestCustomJson(this.username, 'ssc-mainnet-hive', 'Active', json, 'Transfer ' + this.amount + ' ' + this.tokenName + ' to ' + this.toAccount, function (response) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        } else {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
+    transferHiveEngine () {
+      var j = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
+      var cj = {
+        required_auths: [this.username],
+        required_posting_auths: [],
+        id: 'ssc-mainnet-hive',
+        json: j
+      }
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
     }
   },
   mounted () {
