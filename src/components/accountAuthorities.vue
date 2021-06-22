@@ -3,7 +3,7 @@
   <q-card-section>
     <div class="text-h5 text-center">
         Authorities
-        <q-btn icon="edit" color="orange" v-if="loggedInUser === account.name" dense round glossy title="Edit account authorities" @click="editorEnabled = !editorEnabled" class="hvr" />
+        <q-btn flat icon="edit" color="orange" v-if="loggedInUser === account.name" title="Edit account authorities" @click="editorEnabled = !editorEnabled" class="hvr" />
     </div>
   </q-card-section>
   <q-card-section v-if="witness">
@@ -51,7 +51,7 @@
             </q-item-section>
         </q-item>
         <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn style="margin: auto" title="Add owner authority" icon="person_add" color="green" dense round glossy>
+            <q-btn flat style="margin: auto" title="Add owner authority" icon="person_add" color="green">
                 <q-popup-proxy>
                     <q-card class="q-pa-md">
                         <q-card-section>
