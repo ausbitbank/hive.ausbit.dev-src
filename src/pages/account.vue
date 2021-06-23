@@ -98,8 +98,8 @@
         </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account">
             <q-card-section>
-                <div class="text-h6">JSON Metadata <q-btn flat icon="edit" title="Edit JSON Metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser"/></div>
-                <json-viewer v-if="account.json_metadata" :data="account.json_metadata" />
+                <div class="text-h6 text-center">JSON Metadata <q-btn flat icon="edit" title="Edit JSON Metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser"/></div>
+                <json-viewer v-if="account.json_metadata" :data="JSON.parse(account.json_metadata)" />
                 <span v-else>JSON Metadata is currently empty</span>
                 <props-editor v-if="editJsonMeta" :json="account.json_metadata" :username="username" :account="account" type="jsonMeta" @editedProps="refreshAccount()" />
             </q-card-section>
@@ -107,8 +107,9 @@
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
             <q-card-section>
                 <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
-                <json-viewer v-if="editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
-                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
+                <json-viewer v-if="account.posting_json_metadata && editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
+                <span v-else>Posting JSON Metadata is currently empty</span>
+                <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
             </q-card-section>
         </q-card>
         <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
@@ -120,12 +121,22 @@
                 <props-list :obj="witness" :ignoreKeys="[]"/>
             </q-card-section>
         </q-card>
-        <q-card flat bordered class="q-pa-sm q-ma-md text-center" v-if="account.witness_votes.length > 0">
+        <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
             <q-card-section>
-              <div class="text-h6">@{{ username }} votes for :</div>
+              <div class="text-h6">Witness Votes <q-btn flat dense icon="edit" color="orange" title="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser"/></div>
                 <ol>
                   <li v-for="witness in account.witness_votes" :key="witness.index"><router-link :to="accountLink(witness)">{{ witness }}</router-link></li>
                 </ol>
+                <div v-if="account.proxy !== ''">
+                  Voting proxy set to <router-link :to="accountLink(account.proxy)">{{ account.proxy }}</router-link>
+                </div>
+                <div v-else-if="account.witness_votes.length === 0">
+                  No witness votes or voting proxy have been set.
+                  <span v-if="loggedInUser && username === loggedInUser">
+                    <div class="text-bold">Like this site ? <router-link to="/witnesses">Vote for ausbitbank</router-link>!</div>
+                    <q-btn flat dense icon="edit" color="primary" title="Edit witness votes" @click="$router.push('/witnesses')" label="Vote for some witnesses" />
+                  </span>
+                </div>
             </q-card-section>
         </q-card>
       </div>
