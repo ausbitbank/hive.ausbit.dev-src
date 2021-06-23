@@ -22,7 +22,7 @@
         <div>Hive Marketcap = ${{ tidyNumber(hiveCap) }}</div>
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
         <div>HBD Marketcap is currently <span class="text-bold">{{ percentCap }}</span> % of Hive Marketcap</div>
-        <div v-if="medianPrice !== null">HIVE median price must stay above <span class="text-bold">${{ haircutPrice }}</span> to avoid haircut (currently ${{ medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0]) }})</div>
+        <div v-if="medianPrice !== null">HIVE median price must stay above <span class="text-bold">${{ haircutPrice }}</span> to avoid haircut (currently ${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }})</div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
@@ -43,7 +43,7 @@
       </q-card-section>
       <q-card-section v-if="percentCap < 10">
         <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
-        <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price (${{ medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0]) }})</div>
+        <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price (${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }})</div>
       </q-card-section>
       <q-card-section v-if="percentCap > 10 && medianPrice !== null">
         <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
@@ -122,7 +122,7 @@ export default {
       return parseFloat((this.hbdCap / this.hiveCap) * 100).toFixed(3)
     },
     haircutPrice: function () {
-      return parseFloat((this.hbdCap * 10) / parseFloat(this.globalProps.current_supply.split(' ')[0])).toFixed(3)
+      return parseFloat((this.hbdCap * 10) / parseFloat(this.globalProps.current_supply.split(' ')[0])).toFixed(4)
     }
   },
   methods: {
