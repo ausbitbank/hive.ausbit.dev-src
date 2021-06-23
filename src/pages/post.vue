@@ -24,10 +24,10 @@
             <q-list dense separator>
               <q-item>
                 <q-item-section avatar>
-                <q-avatar>
+                <q-avatar size="sm">
                     <q-img :src="GetHiveAvatarUrl(author)" />
                 </q-avatar>
-                <q-avatar v-if="postMeta.author && (postMeta.author !== author)">
+                <q-avatar v-if="postMeta.author && (postMeta.author !== author)"  size="sm" class="q-pt-xs q-mb-xs">
                     <q-img :src="GetHiveAvatarUrl(postMeta.author)" />
                 </q-avatar>
                 </q-item-section>
