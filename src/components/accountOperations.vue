@@ -1,11 +1,11 @@
 <template>
   <span>
   <q-intersection transition="flip-up">
-  <q-card flat bordered dense class="q-ma-sm" v-for="op in accountOperations" :key="op.index">
+  <q-card flat bordered dense class="q-ma-none q-mb-sm" v-for="op in accountOperations" :key="op.index">
       <q-card-section v-if="accountOperations.length > 0">
           <q-list dense>
               <q-item>
-                  <q-item-section avatar>
+                  <q-item-section avatar class="gt-xs">
                       <q-avatar v-if="op[1].op[1].producer"><q-img :src="getHiveAvatarUrl(op[1].op[1].producer)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].creator"><q-img :src="getHiveAvatarUrl(op[1].op[1].creator)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].curator"><q-img :src="getHiveAvatarUrl(op[1].op[1].curator)" /></q-avatar>
