@@ -9,7 +9,7 @@
       <q-card flat bordered>
       <div v-if="loggedInUser">
         <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-        <q-list bordered separator class="rounded-borders text-primary">
+        <q-list bordered separator class="text-primary">
           <q-item clickable :to="linkFeed(loggedInUser)">
             <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
             <q-item-section class="text-orange">Feed</q-item-section>
@@ -50,11 +50,11 @@
         </transition>
       </div>
       <q-list v-else>
-        <q-item-label header class="text-h5 text-center">
-            Login
+        <q-item-label header class="text-center">
+            Login as:
           </q-item-label>
         <q-item>
-          <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" style="margin:auto" />
+          <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" />
         </q-item>
         <q-item dense v-if="username !== ''">
           <q-btn-group rounded>
