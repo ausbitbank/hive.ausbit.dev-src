@@ -1,39 +1,40 @@
 <template>
-    <span>
+  <span>
     <q-card flat bordered v-if="fullNodeUpdate !== null">
-        <q-card-section class="text-center">
-            <div class="text-h5 text-center">
-                <q-icon name="dns" color="blue-grey" /> Api Nodes
+      <q-card-section class="text-center">
+        <div class="text-h5 text-center">
+          <q-icon name="dns" color="blue-grey" /> Api Nodes
+        </div>
+        <div v-for="node in fullNodeUpdateHiveFiltered" :key="node.node" class="text-center">
+          <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
+          <div>
+            <div>
+              <q-btn flat dense title="Click for full node report data">
+                <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
+                <q-popup-proxy>
+                  <json-viewer :data="node" />
+                </q-popup-proxy>
+              </q-btn>
             </div>
-            <div v-for="node in fullNodeUpdateHive" :key="node.index" class="text-center">
-                <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
-                <div>
-                <div>
-                    <q-btn flat dense title="Click for full node report data">
-                      <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
-                      <q-popup-proxy>
-                        <json-viewer :data="node" />
-                      </q-popup-proxy>
-                    </q-btn>
-                </div>
-                <span v-for="rank in getNodeRanks(node)" :key="rank.id">
-                    <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
-                        {{ rank }}
-                    </q-chip>
-                </span>
-                </div>
-            </div>
-            </q-card-section>
-            <q-card-section class="text-center">
-                <router-link to="/@fullnodeupdate/posts"><q-btn dense flat icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
-                <div v-if="fullNodeUpdateTime" class="text-subtitle">
-                    <q-icon name="access_time" /> tested {{ timeDelta(fullNodeUpdateTime) }}
-                </div>
-                <div class="text-caption">
-                    Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
-                </div>
-                <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense flat icon="link" /></router-link></div>
-        </q-card-section>
+            <span v-for="rank in getNodeRanks(node)" :key="rank.id">
+              <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
+                {{ rank }}
+              </q-chip>
+            </span>
+          </div>
+        </div>
+      </q-card-section>
+      <q-card-section class="text-center">
+        <q-btn-toggle dense push glossy toggle-color="primary" :options="nodeVersionsLabelled" v-model="showVersion" title="Filter results by reported node version"/><br />
+        <router-link to="/@fullnodeupdate/posts"><q-btn dense flat icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
+        <div v-if="fullNodeUpdateTime" class="text-subtitle">
+          <q-icon name="access_time" /> tested {{ timeDelta(fullNodeUpdateTime) }}
+        </div>
+        <div class="text-caption">
+          Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
+        </div>
+        <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense flat icon="link" /></router-link></div>
+      </q-card-section>
     </q-card>
     </span>
 </template>
@@ -52,7 +53,8 @@ export default {
   data () {
     return {
       fullNodeUpdate: null,
-      fullNodeUpdateTime: null
+      fullNodeUpdateTime: null,
+      showVersion: 'all'
     }
   },
   computed: {
@@ -66,6 +68,43 @@ export default {
           return this.getNodeScore(a) - this.getNodeScore(b)
         })
         return sortedResult
+      }
+    },
+    fullNodeUpdateHiveFiltered: function () {
+      if (this.fullNodeUpdateHive === null) {
+        return null
+      } else {
+        if (this.showVersion === 'all') {
+          return this.fullNodeUpdateHive
+        } else {
+          var filteredResult = this.fullNodeUpdateHive.filter(r => r.version === this.showVersion)
+          return filteredResult
+        }
+      }
+    },
+    nodeVersions: function () {
+      if (this.fullNodeUpdateHive === null) {
+        return null
+      } else {
+        var results = []
+        // console.log(this.fullNodeUpdateHive)
+        this.fullNodeUpdateHive.forEach(n => {
+          if (!results.includes(n.version)) {
+            results.push(n.version)
+          }
+        })
+        return results
+      }
+    },
+    nodeVersionsLabelled: function () {
+      if (this.nodeVersions === null) {
+        return null
+      } else {
+        var results = [{ label: 'All', value: 'all' }]
+        this.nodeVersions.forEach(n => {
+          results.push({ label: n, value: n })
+        })
+        return results
       }
     }
   },
