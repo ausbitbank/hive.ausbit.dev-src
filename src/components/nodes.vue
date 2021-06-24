@@ -54,7 +54,7 @@ export default {
     return {
       fullNodeUpdate: null,
       fullNodeUpdateTime: null,
-      showVersion: 'all'
+      showVersion: this.$route.query.version || 'all'
     }
   },
   computed: {
