@@ -78,7 +78,7 @@ export default {
         { name: 'curator_payout_value', label: 'Curator Payout Value', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
         { name: 'promoted', label: 'Promotion Value', field: 'promoted', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' }
       ],
-      postTableColumnsVisible: this.$route.query.columns.split(',') || ['author', 'title', 'pending_payout_value'],
+      postTableColumnsVisible: ['author', 'title', 'pending_payout_value'],
       postTableGridStyle: false,
       postTablePagination: { rowsPerPage: 0 }
     }
@@ -99,6 +99,11 @@ export default {
       ).join('\r\n')
       const status = exportFile('posts-expost.csv', content, 'text/csv')
       if (status !== true) { this.$q.notify({ message: 'Browser denied file download...', color: 'negative', icon: 'warning' }) }
+    }
+  },
+  mounted () {
+    if (this.$route.query.columns) {
+      this.postTableColumnsVisible = this.$route.query.columns.split(',')
     }
   }
 }
