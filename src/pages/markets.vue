@@ -40,7 +40,8 @@ export default {
           'BITTREX:HBDBTC',
           'BITTREX:HBDUSD',
           'CRYPTOCAP:BTC.D',
-          'BITSTAMP:BTCUSD'
+          'BITSTAMP:BTCUSD',
+          'BINANCE:HIVEBTC*BINANCE:BTCAUD'
         ]
       }
     }
