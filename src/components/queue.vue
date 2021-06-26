@@ -3,7 +3,7 @@
   <q-btn flat icon="schedule" title="Queued actions">
     <q-badge color="orange" floating>{{ queue.length }}</q-badge>
     <q-popup-proxy>
-      <q-card class="q-pa-none q-ma-none">
+      <q-card flat bordered class="q-pa-none q-ma-none">
         <q-card-section horizontal class="text-title text-bold flex-center text-center">
           Queued Actions
           <q-btn dense flat icon="play_circle" color="green" v-if="timerEnabled" @click="toggleTimer()" title="Queue is running, click to pause" />
@@ -39,6 +39,7 @@ import { keychain } from '@hiveio/keychain'
 import smartlock from 'components/smartlock'
 import jsonViewer from 'components/jsonViewer.vue'
 import { openURL } from 'quasar'
+// if (store().state.hive.user.settings.apiNode !== undefined) { hive.api.setOptions({ url: store().state.hive.user.settings.apiNode }) } else { hive.api.setOptions({ url: 'https://rpc.ausbit.dev' }) }
 export default {
   name: 'queue',
   data () {
@@ -63,9 +64,11 @@ export default {
       this.$store.commit('hive/removeFromQueue', action)
       if (notify) {
         this.$q.notify({
-          message: 'Successful ' + action[2][0],
+          message: 'Sent ' + action[2][0],
           color: 'green',
           avatar: this.getHiveAvatarUrl(action[0]),
+          icon: 'check_circle',
+          position: 'top-center',
           progress: true
         })
       }
@@ -110,7 +113,9 @@ export default {
       var keytype = action[1]
       var op = action[2]
       var ops = [op]
-      if (op[0] === 'vote') {
+      // All of this below was originally used to bypass a parsing issue. No longer required.
+      // var rpc = this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev'
+      /* if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
@@ -146,12 +151,12 @@ export default {
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else { // Generic broadcast
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, JSON.parse(JSON.stringify(ops)), keytype)
-        if (success) { this.successfullBroadcast(action) }
-        if (cancel) { this.$q.notify('Cancelled by user') }
-        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      }
+      } else { // Generic broadcast */
+      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, JSON.parse(JSON.stringify(ops)), keytype)
+      if (success) { this.successfullBroadcast(action) }
+      if (cancel) { this.$q.notify('Cancelled by user') }
+      if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      // }
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getPasswordForAction (action) {
