@@ -2,8 +2,8 @@
   <span>
     <q-card flat bordered v-if="fullNodeUpdate !== null">
       <q-card-section class="text-center">
-        <div class="text-h5 text-center">
-          <q-icon name="dns" color="blue-grey" /> Api Nodes
+        <div class="text-h5">
+          <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 35 minutes" name="warning" color="orange" />
         </div>
         <div v-for="node in fullNodeUpdateHiveFiltered" :key="node.node" class="text-center">
           <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
@@ -29,6 +29,7 @@
         <router-link to="/@fullnodeupdate/posts"><q-btn dense flat icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
         <div v-if="fullNodeUpdateTime" class="text-subtitle">
           <q-icon name="access_time" /> tested {{ timeDelta(fullNodeUpdateTime) }}
+          <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 35 minutes" name="warning" color="orange" />
         </div>
         <div class="text-caption">
           Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
@@ -106,6 +107,17 @@ export default {
         })
         return results
       }
+    },
+    fullNodeUpdateAgeWarning: function () {
+      if (this.fullNodeUpdateTime) {
+        if (this.timeDeltaMinutes(this.fullNodeUpdateTime) > 35) {
+          return true
+        } else {
+          return false
+        }
+      } else {
+        return false
+      }
     }
   },
   methods: {
@@ -114,6 +126,12 @@ export default {
       var stamp = moment.utc(timestamp)
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
+    },
+    timeDeltaMinutes (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      console.log(now.diff(stamp, 'minutes'))
+      return now.diff(stamp, 'minutes')
     },
     tidyNumber (x) {
       var parts = x.toString().split('.')
