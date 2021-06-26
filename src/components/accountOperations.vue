@@ -18,7 +18,7 @@
                       <q-avatar v-if="op[1].op[1].payer"><q-img :src="getHiveAvatarUrl(op[1].op[1].payer)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].owner"><q-img :src="getHiveAvatarUrl(op[1].op[1].owner)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].current_owner"><q-img :src="getHiveAvatarUrl(op[1].op[1].current_owner)" /></q-avatar>
-                      <q-avatar v-if="['vote', 'account_witness_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
+                      <q-avatar v-if="['vote', 'account_witness_vote', 'effective_comment_vote'].includes(op[1].op[0])"><q-icon name="how_to_vote" /></q-avatar>
                       <q-avatar v-if="['limit_order_create'].includes(op[1].op[0])"><q-icon name="sell" color="green-4" /></q-avatar>
                       <q-avatar v-if="['curation_reward', 'comment_benefactor_reward', 'producer_reward', 'claim_reward_balance', 'comment_reward', 'author_reward', 'fill_vesting_withdraw', 'proposal_pay', 'interest', 'fill_order'].includes(op[1].op[0])"><q-icon color="green" name="monetization_on" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].comment_author"><q-img :src="getHiveAvatarUrl(op[1].op[1].comment_author)" /></q-avatar>
