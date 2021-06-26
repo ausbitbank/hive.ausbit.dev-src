@@ -1,6 +1,11 @@
 <template>
     <vue-json-pretty :data="data" :customValueFormatter="customLinkFormatter" :deep="deep" :showLength="showLength" />
 </template>
+<style>
+.vjs-value { word-wrap: break-word; word-break: break-all }
+.vjs-tree__node { background: none !important; }
+.vjs-tree__node:hover { background: none !important; filter: invert(100); }
+</style>
 <script>
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
