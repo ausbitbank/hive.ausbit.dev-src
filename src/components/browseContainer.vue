@@ -92,15 +92,24 @@
           </q-list>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Media', value: 'media'}]" />
+      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Media', value: 'media'}, {label: 'Table', value: 'table'}]" />
     </div>
     <div class="masonry-wrapper">
       <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md text-center" style="margin:auto" />
-      <div class="masonry justify-center">
+      <div class="masonry justify-center" v-if="styleType !== 'table'">
         <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
           <post-preview :post="post" :styleType="styleType" />
         </div>
-        <div v-if="!loading" class="q-ma-md" style="clear:both">
+         <div v-if="!loading" class="q-ma-md" style="clear:both">
+          <h5>
+            <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
+            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length - filteredPosts.length }} posts filtered
+          </h5>
+        </div>
+      </div>
+      <div v-if="styleType === 'table'">
+        <browseTable :filteredPosts="filteredPosts" />
+         <div v-if="!loading" class="q-ma-md" style="clear:both">
           <h5>
             <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
             <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length - filteredPosts.length }} posts filtered
@@ -157,7 +166,6 @@
 }
 </style>
 <script>
-import postPreview from 'components/postPreview.vue'
 export default {
   name: 'browseContainer',
   props: {
@@ -175,7 +183,10 @@ export default {
     showTag: String,
     showAccount: String
   },
-  components: { postPreview },
+  components: {
+    postPreview: () => import('components/postPreview.vue'),
+    browseTable: () => import('components/browseTable.vue')
+  },
   data () {
     return {
       loading: false,
