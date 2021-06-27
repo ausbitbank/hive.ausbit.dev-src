@@ -472,11 +472,11 @@
                                       <q-item-section avatar><q-icon name="send" /></q-item-section>
                                       <q-item-section>Transfer</q-item-section>
                                     </q-item>
-                                    <q-item clickable @click="$router.push(returnMarketLink('hiveengine', token.symbol))" title="Trade on Hive-Engine.com" class="text-orange">
+                                    <q-item clickable @click="openExternal(returnMarketLink('hiveengine', token.symbol))" title="Trade on Hive-Engine.com" class="text-orange">
                                       <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
                                       <q-item-section>Hive-Engine.com</q-item-section>
                                     </q-item>
-                                    <q-item clickable @click="$router.push(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange">
+                                    <q-item clickable @click="openExternal(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange">
                                       <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
                                       <q-item-section>TribalDex.com</q-item-section>
                                     </q-item>
@@ -689,7 +689,7 @@ a:visited { color: #1d8ce0; }
 <script>
 const SSC = require('sscjs')
 const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
-import { debounce } from 'quasar'
+import { debounce, openURL } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import moment from 'moment'
 import DOMPurify from 'dompurify'
@@ -814,6 +814,7 @@ export default {
       }
     },
     sanitize (x) { return DOMPurify.sanitize(x) },
+    openExternal (url) { openURL(url, null, { noopener: true, menubar: true, toolbar: true, noreferrer: true }) },
     getDateString (timestamp) { return moment(timestamp).format('MMM D[,] YYYY') },
     getTimeString (timestamp) { return moment(timestamp).format('h:mm a') },
     getDateStringHiveEngine (timestamp) { return moment.unix(timestamp).format('MMM D[,] YYYY') },
