@@ -59,7 +59,7 @@
         <q-item dense v-if="username !== ''">
           <q-btn-group rounded>
           <q-btn rounded label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
-          <q-btn rounded label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
+          <q-btn v-if="false" rounded label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
           <q-btn rounded label="SmartLock" icon="lock">
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders">
