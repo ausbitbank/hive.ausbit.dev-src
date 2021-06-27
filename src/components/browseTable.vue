@@ -1,5 +1,5 @@
 <template>
-  <q-table :dense="$q.screen.lt.md || true" :grid="postTableGridStyle" label="Posts as table view" :data="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" row-key="post_id" :pagination="postTablePagination" separator="cell" :loading="loading">
+  <q-table :dense="$q.screen.lt.md || true" :grid="postTableGridStyle" label="Posts as table view" :data="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" row-key="permlink" :pagination="postTablePagination" separator="cell" :loading="loading">
     <template v-slot:top>
       <q-space />
       <q-checkbox v-model="postTableGridStyle" label="Grid" class="q-mr-xs" />
