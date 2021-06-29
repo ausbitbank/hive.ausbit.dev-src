@@ -1,5 +1,5 @@
 <template>
-  <q-table :dense="$q.screen.lt.md || true" :grid="postTableGridStyle" label="Posts as table view" :data="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" row-key="permlink" :pagination="postTablePagination" separator="cell" :loading="loading">
+  <q-table :dense="$q.screen.lt.md || true" :grid="postTableGridStyle" label="Posts as table view" :data="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" :row-key="row => row.post_id" :pagination="postTablePagination" separator="cell" :loading="loading">
     <template v-slot:top>
       <q-space />
       <q-checkbox v-model="postTableGridStyle" label="Grid" class="q-mr-xs" />
@@ -71,7 +71,6 @@ export default {
         { name: 'community_title', label: 'Community Title', field: 'community_title', required: false, sortable: true, align: 'left' },
         { name: 'author_role', label: 'Author Role', field: 'author_role', required: false, sortable: true, align: 'left' },
         { name: 'author_title', label: 'Author Title', field: 'author_title', required: false, sortable: true, align: 'left' },
-        { name: 'community_title', label: 'Community Title', field: 'community_title', required: false, sortable: true, align: 'left' },
         { name: 'tags', label: 'Tags', field: row => row.json_metadata.tags.join(', '), required: false, sortable: false, align: 'left' },
         { name: 'pending_payout_value', label: 'Pending Payout Value', field: 'pending_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
         { name: 'author_payout_value', label: 'Author Payout Value', field: 'author_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
