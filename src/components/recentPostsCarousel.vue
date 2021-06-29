@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="!loading && posts.length > 0">
-      <q-card flat bordered style="width: 100%">
+      <q-card flat bordered>
       <div class="text-h6 text-center">
         <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
@@ -35,9 +35,10 @@
         </q-carousel-slide>
       </q-carousel>
       <q-dialog v-model="settings">
-        <q-card flat bordered class="q-pa-sm">
-          <q-input label="account" v-model="account" @submit="init()"/>
-          <q-btn push label="update" color="primary" @click="settings = false; init()"/>
+        <q-card flat bordered class="q-pa-md text-center">
+          <q-input label="Account to view" v-model="account" @submit="init()"/>
+          <q-btn-toggle push glossy toggle-color="primary" :options="[{ label: 'Posts', value: 'posts' }, { label: 'Blog', value: 'blog' }]" v-model="postType" />
+          <q-btn dense flat icon="refresh" label="update" color="green" @click="settings = false; init()" style="margin:both"/>
         </q-card>
       </q-dialog>
       </q-card>
