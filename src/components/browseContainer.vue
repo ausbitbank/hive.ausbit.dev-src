@@ -98,7 +98,7 @@
           </q-card>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle no-caps v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full', icon: 'subject'}, {label: 'Preview', value: 'preview', icon: 'preview'}, {label: 'Media', value: 'media', icon: 'photo_library'}, {label: 'Table', value: 'table', icon: 'table_view'}]" />
+      <q-btn-toggle dense no-caps v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full', icon: 'subject'}, {label: 'Preview', value: 'preview', icon: 'preview'}, {label: 'Media', value: 'media', icon: 'photo_library'}, {label: 'Table', value: 'table', icon: 'table_view'}]" />
     </div>
     <div class="masonry-wrapper">
       <q-spinner-puff color="primary" v-if="loading && styleType !== 'table'" size="lg" class="q-ma-md text-center" style="margin:auto" />
