@@ -52,10 +52,12 @@ export default {
     loggedInUser: function () { return this.$store.state.hive.user.username },
     account: function () { return this.$store.state.hive.accounts[this.username] },
     heading: function () {
+      var incomingMsg = ''
+      if (this.account.received_vesting_shares.split(' ')[0] !== '0.000000') { incomingMsg = ', ' + this.tidyNumber(this.vestToHive(this.account.received_vesting_shares.split(' ')[0])) + ' HP of incoming delegations' }
       if (this.delegations && this.delegations.length > 0) {
-        return this.tidyNumber(this.vestToHive(this.account.delegated_vesting_shares.split(' ')[0])) + ' ' + this.token + ' delegated from ' + this.username + ' to ' + this.delegations.length + ' accounts'
+        return this.tidyNumber(this.vestToHive(this.account.delegated_vesting_shares.split(' ')[0])) + ' ' + this.token + ' delegated from ' + this.username + ' to ' + this.delegations.length + ' accounts' + incomingMsg
       } else if (this.delegations) {
-        return 'No outgoing delegations'
+        return 'No outgoing delegations' + incomingMsg
       } else {
         return 'Loading Delegations ..'
       }
