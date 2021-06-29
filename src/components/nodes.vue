@@ -3,7 +3,7 @@
     <q-card flat bordered v-if="fullNodeUpdate !== null">
       <q-card-section class="text-center">
         <div class="text-h5">
-          <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 35 minutes" name="warning" color="orange" />
+          <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 65 minutes" name="warning" color="orange" />
         </div>
         <div v-for="node in fullNodeUpdateHiveFiltered" :key="node.node" class="text-center">
           <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
@@ -110,7 +110,7 @@ export default {
     },
     fullNodeUpdateAgeWarning: function () {
       if (this.fullNodeUpdateTime) {
-        if (this.timeDeltaMinutes(this.fullNodeUpdateTime) > 35) {
+        if (this.timeDeltaMinutes(this.fullNodeUpdateTime) > 65) {
           return true
         } else {
           return false
