@@ -3,26 +3,31 @@
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
     <q-toolbar class="bg-dark text-white text-center" v-if="showToolbar">
       <q-space />
-      <q-select v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'tribes']" label="method" />
-      <q-input v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
-      <q-input v-model="token" label="token" v-if="method === 'tribes' " />
-      <q-select v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
-      <q-select v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
-      <q-select v-if="method === 'tribes'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted']" label="Sort Method" />
-      <q-input v-model="tag" label="tag" v-if="['bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="tag = ''"/>
-      <q-input v-model.number="limit" label="limit" />
-      <q-input v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" />
-      <q-input v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
-      <q-input v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" />
-      <q-btn flat v-if="method === 'tribes'" color="primary" label="Browse Tribe" @click="getTribePosts()" />
-      <q-btn flat v-else color="primary" icon="search" label="Browse" @click="getPosts()" />
+      <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'tribes']" label="method" />
+      <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
+      <q-input dense v-model="token" label="token" v-if="method === 'tribes' " />
+      <q-select dense v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
+      <q-select dense v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
+      <q-select dense v-if="method === 'tribes'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted']" label="Sort Method" />
+      <q-input dense v-model="tag" label="tag" v-if="['bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="tag = ''" style="max-width: 150px"/>
+      <q-input dense maxlength="3" v-model.number="limit" label="limit" style="max-width: 50px" />
+      <q-input dense v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" style="max-width: 150px" />
+      <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
+      <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
+      <q-btn flat dense v-if="method === 'tribes'" color="primary" label="Browse Tribe" @click="getTribePosts()" />
+      <q-btn flat dense v-else color="primary" icon="search" label="Browse" @click="getPosts()" />
       <q-space />
     </q-toolbar>
     </transition>
     <div class="text-center">
       <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
       <q-btn flat color="grey" title="Filter posts" icon="filter">
+        <q-badge color="primary" floating transparent v-if="(posts.length - filteredPosts.length) > 0">{{ posts.length - filteredPosts.length }}/{{ posts.length }}</q-badge>
         <q-popup-proxy>
+          <q-card flat bordered>
+          <div v-if="(posts.length - filteredPosts.length) > 0" class="text-center text-bold">
+            {{ posts.length - filteredPosts.length }} / {{ posts.length }} posts filtered with the settings below
+          </div>
           <q-list separator bordered dense>
             <q-item>
               <q-item-section>
@@ -90,12 +95,13 @@
               </q-item-section>
             </q-item>
           </q-list>
+          </q-card>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full'}, {label: 'Preview', value: 'preview'}, {label: 'Media', value: 'media'}, {label: 'Table', value: 'table'}]" />
+      <q-btn-toggle no-caps v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full', icon: 'subject'}, {label: 'Preview', value: 'preview', icon: 'preview'}, {label: 'Media', value: 'media', icon: 'photo_library'}, {label: 'Table', value: 'table', icon: 'table_view'}]" />
     </div>
     <div class="masonry-wrapper">
-      <q-spinner-puff color="primary" v-if="loading" size="lg" class="q-ma-md text-center" style="margin:auto" />
+      <q-spinner-puff color="primary" v-if="loading && styleType !== 'table'" size="lg" class="q-ma-md text-center" style="margin:auto" />
       <div class="masonry justify-center" v-if="styleType !== 'table'">
         <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
           <post-preview :post="post" :styleType="styleType" />
@@ -103,7 +109,6 @@
          <div v-if="!loading" class="q-ma-md" style="clear:both">
           <h5>
             <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
-            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length - filteredPosts.length }} posts filtered
           </h5>
         </div>
       </div>
@@ -112,7 +117,6 @@
          <div v-if="!loading" class="q-ma-md" style="clear:both">
           <h5>
             <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
-            <q-icon name="info" color="light-blue" />&nbsp; {{ posts.length - filteredPosts.length }} posts filtered
           </h5>
         </div>
       </div>
