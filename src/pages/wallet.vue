@@ -799,7 +799,11 @@ export default {
   },
   watch: {
     account: function () { this.init() },
-    $router: function () { this.init() },
+    '$route.params.username': {
+      handler: function () { this.init() },
+      deep: true,
+      immediate: true
+    },
     username: function () { this.init() }
   },
   methods: {
@@ -932,6 +936,8 @@ export default {
       if (this.getHiveEngineTokenInfo !== null) {
         var t = this.hiveEngineTokenInfo.find(obj => obj.symbol === symbol)
         if (t) { return t } else { return null }
+      } else {
+        return ''
       }
     },
     returnTokenInfoMeta (symbol) { return JSON.parse(this.returnTokenInfo(symbol).metadata) },
