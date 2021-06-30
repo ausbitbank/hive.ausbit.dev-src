@@ -68,7 +68,7 @@ export default {
           color: 'green',
           avatar: this.getHiveAvatarUrl(action[0]),
           icon: 'check_circle',
-          position: 'top-center',
+          position: 'top',
           progress: true
         })
       }
