@@ -13,9 +13,13 @@
         <q-card-section v-if="loggedInUser && witness">
           <div class="text-center text-title text-h6">Update Witness Properties for {{ loggedInUser }}</div>
           <q-list dense>
-            <q-item v-for="prop in ['account_creation_fee', 'maximum_block_size', 'hbd_interest_rate', 'account_subsidy_budget', 'account_subsidy_decay']" :key="prop.index">
+            <q-item v-for="prop in ['account_creation_fee']" :key="prop.index">
               <q-item-section side class="text-bold">{{ prop }}</q-item-section>
               <q-item-section class="text-right wrap"><q-input outlined v-model="witness.props[prop]" /></q-item-section>
+            </q-item>
+            <q-item v-for="prop in ['maximum_block_size', 'hbd_interest_rate', 'account_subsidy_budget', 'account_subsidy_decay']" :key="prop.index">
+              <q-item-section side class="text-bold">{{ prop }}</q-item-section>
+              <q-item-section class="text-right wrap"><q-input outlined v-model.number="witness.props[prop]" /></q-item-section>
             </q-item>
             <q-item v-for="prop in ['signing_key', 'url']" :key="prop.index">
               <q-item-section side class="text-bold">{{ prop }}</q-item-section>
