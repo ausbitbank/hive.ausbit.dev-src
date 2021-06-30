@@ -5,12 +5,10 @@
             <div class="text-h5">
                 <q-icon name="emoji_people" color="teal" /> Witnesses
             </div>
-            <div v-if="witnesses && hardforkVersion">
-              <div v-if="hardforkVersion !== witnesses[0].hardfork_version_vote">
-                <q-icon name="warning" color="orange" />
-                HardFork <a :href="getHardforkGitlab(witnesses[0].hardfork_version_vote)">v{{ witnesses[0].hardfork_version_vote }}</a>
-                {{ timeTillHardfork }}
-             </div>
+            <div v-if="timeTillHardfork">
+              <q-icon name="warning" color="orange" />
+              HardFork <a :href="getHardforkGitlab(witnesses[0].hardfork_version_vote)">v{{ witnesses[0].hardfork_version_vote }}</a><br />
+              <q-icon name="schedule" color="grey" /> {{ timeTillHardfork }}
             </div>
             <div class="text-caption" v-if="loggedInUser && account !== undefined">
               <div v-if="viewAll">
