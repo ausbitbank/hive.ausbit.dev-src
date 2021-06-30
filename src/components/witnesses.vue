@@ -5,6 +5,13 @@
             <div class="text-h5">
                 <q-icon name="emoji_people" color="teal" /> Witnesses
             </div>
+            <div v-if="witnesses && hardforkVersion">
+              <div v-if="hardforkVersion !== witnesses[0].hardfork_version_vote">
+                <q-icon name="warning" color="orange" />
+                HardFork <a :href="getHardforkGitlab(witnesses[0].hardfork_version_vote)">v{{ witnesses[0].hardfork_version_vote }}</a>
+                {{ timeTillHardfork }}
+             </div>
+            </div>
             <div class="text-caption" v-if="loggedInUser && account !== undefined">
               <div v-if="viewAll">
                 <q-btn flat dense label="My votes only"  @click="viewAll = false" color="primary" icon="face" v-if="viewAll" /><br />
@@ -215,6 +222,19 @@ export default {
           return undefined
         }
       }
+    },
+    timeTillHardfork: {
+      get () {
+        if (this.witnesses && this.hardforkVersion) {
+          if (this.hardforkVersion !== this.witnesses[0].hardfork_version_vote) {
+            return this.timeDelta(this.witnesses[0].hardfork_time_vote)
+          } else {
+            return null
+          }
+        } else {
+          return null
+        }
+      }
     }
   },
   methods: {
@@ -234,6 +254,7 @@ export default {
       this.$hive.api.getHardforkVersionAsync()
         .then((res) => { this.hardforkVersion = res })
     },
+    getHardforkGitlab (version) { return 'https://gitlab.syncad.com/hive/hive/-/tags/v' + version },
     alertPricefeedAge (age) { if (moment(age).isBefore(moment().subtract(1, 'd'))) { return true } else { return false } },
     alertSigningDisabled (key) { if (key === 'STM1111111111111111111111111111111114T1Anm') { return true } else { return false } },
     alertNewAccount (created) { if (moment(created).isAfter(moment().subtract(6, 'months'))) { return true } else { return false } },
