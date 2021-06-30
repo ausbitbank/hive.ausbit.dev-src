@@ -18,7 +18,8 @@
               <div v-else>
                 <q-btn flat dense label="Show all"  @click="viewAll = true" color="primary" icon="clear_all" /><br />
                 <div v-if="account.proxy !== ''">Voting Proxy: <q-btn size="sm" flat dense icon-right="cancel" color="red" title="Remove voting proxy" :label="account.proxy" @click="setProxy('')" /></div>
-                Viewing my votes ({{ witnessVotes.length }}/30):
+                <div v-if="account.governance_vote_expiration_ts" :title="account.governance_vote_expiration_ts">Votes Expire: {{ timeDelta(account.governance_vote_expiration_ts) }}</div>
+                <div>Viewing my votes ({{ witnessVotes.length }}/30):</div>
               </div>
             </div>
             <q-list separator dense>

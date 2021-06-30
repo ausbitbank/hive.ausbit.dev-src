@@ -124,6 +124,7 @@
         <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
             <q-card-section>
               <div class="text-h6">Witness Votes <q-btn flat dense icon="edit" color="orange" title="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser"/></div>
+              <div class="text-caption" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">Expiring: {{ timeDelta(account.governance_vote_expiration_ts) }}</div>
                 <ol>
                   <li v-for="witness in account.witness_votes" :key="witness.index"><router-link :to="accountLink(witness)">{{ witness }}</router-link></li>
                 </ol>
