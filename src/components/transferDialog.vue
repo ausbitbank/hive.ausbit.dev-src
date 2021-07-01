@@ -20,9 +20,16 @@
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
       <div><q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" /></div>
+      <div v-if="network === 'hive'">
+        <q-toggle v-model="recurrent" label="Recurring"/>
+        <div v-if="recurrent">
+          <q-input label="Hours between payments" v-model.number="recurrentHours" />
+          <q-input label="Repeat payments" v-model.number="recurrentTimes" />
+        </div>
+      </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
-        <q-btn dense label="Send" icon="send" color="primary" @click="transfer()" v-if="!sent" v-close-popup />
+        <q-btn dense label="Send" icon="send" color="primary" @click="doTheThing()" v-if="!sent" v-close-popup />
       </div>
     </q-card-section>
   </q-card>
@@ -40,6 +47,9 @@ export default {
       log: '',
       sent: false,
       encrypted: false,
+      recurrent: false,
+      recurrentHours: 24,
+      recurrentTimes: 30,
       exchanges: ['deepcrypto8', 'bittrex', 'ionomy', 'huobi-pro']
     }
   },
@@ -86,6 +96,13 @@ export default {
     }
   },
   methods: {
+    doTheThing () {
+      if (this.recurrent && this.network === 'hive') {
+        this.recurrentTransfer()
+      } else {
+        this.transfer()
+      }
+    },
     setUsername (u) { this.toAccount = u },
     checkEncryption () {
       if (this.memo.startsWith('#')) {
@@ -100,6 +117,9 @@ export default {
       } else {
         this.memo = '#' + this.memo
       }
+    },
+    recurrentTransfer () {
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes }]])
     },
     transfer () {
       if (this.network === 'hive') {
