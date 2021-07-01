@@ -94,7 +94,7 @@
                                         <q-item-section avatar><q-icon name="redeem" /></q-item-section>
                                         <q-item-section>Delegate</q-item-section>
                                       </q-item>
-                                      <q-item clickable class="text-green" title="Convert Hive to HBD" @click="convertDialogVisible = true; convertTokenName = 'HIVE'" v-if="false & account.balance.split(' ')[0] !== '0.000'">
+                                      <q-item clickable class="text-green" title="Convert Hive to HBD" @click="convertDialogVisible = true; convertTokenName = 'HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'">
                                         <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg"/></q-avatar></q-item-section>
                                         <q-item-section>Convert</q-item-section>
                                       </q-item>
@@ -175,7 +175,7 @@
                                         <q-item-section avatar><q-icon name="savings" /></q-item-section>
                                         <q-item-section>Withdraw</q-item-section>
                                       </q-item>
-                                      <q-item clickable class="text-secondary" title="Convert HBD to Hive" @click="convertDialogVisible = true; convertTokenName = 'HBD'" v-if="true || account.hbd_balance.split(' ')[0] !== '0.000'">
+                                      <q-item clickable class="text-secondary" title="Convert HBD to Hive" @click="convertDialogVisible = true; convertTokenName = 'HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'">
                                         <q-item-section avatar><q-avatar size="sm"><img src="/statics/hive.svg"/></q-avatar></q-item-section>
                                         <q-item-section>Convert</q-item-section>
                                       </q-item>

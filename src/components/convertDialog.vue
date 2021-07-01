@@ -4,9 +4,15 @@
       <span v-if="tokenName === 'HIVE'">Convert {{ tokenName }} to HBD</span>
       <span v-else-if="tokenName === 'HBD'">Convert {{ tokenName }} to HIVE</span>
     </q-card-section>
+    <q-card-section v-if="tokenName === 'HIVE'" class="text-center">
+      <q-icon name="info" color="primary" size="md" /><br />
+      Conversions from HBD to Hive will take 3.5 days to complete<br />
+      Half of the selected amount will be converted to HBD immediately.<br />
+      A 5% blockchain fee is applied to whatever HIVE is converted and the remaining HIVE will be returned to you after 3.5 days.
+    </q-card-section>
     <q-card-section v-if="tokenName === 'HBD'" class="text-center">
       <q-icon name="info" color="primary" size="md" /><br />
-      Conversions from HBD to Hive will take 3 days to complete<br />
+      Conversions from Hive to HBD will take 3 days to complete<br />
       You will receive $1 worth of Hive for each converted HBD
     </q-card-section>
     <q-card-section class="text-center">
@@ -76,7 +82,8 @@ export default {
       return parts.join('.')
     },
     convertHiveToHbd () {
-      // this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_savings', { from: this.username, to: this.to, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
+      var requestid = Math.floor((Math.random() * 10000) + 1)
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['collateralized_convert', { owner: this.username, requestid: requestid, amount: parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName }]])
     },
     convertHbdToHive () {
       var requestid = Math.floor((Math.random() * 10000) + 1)
