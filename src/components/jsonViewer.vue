@@ -1,5 +1,5 @@
 <template>
-    <vue-json-pretty :data="data" :customValueFormatter="customLinkFormatter" :deep="deep" :showLength="showLength" />
+    <vue-json-pretty :data="parsedData" :customValueFormatter="customLinkFormatter" :deep="deep" :showLength="showLength" />
 </template>
 <style>
 .vjs-value { word-wrap: break-word; word-break: break-all }
@@ -18,7 +18,13 @@ export default {
     }
   },
   components: { VueJsonPretty },
-  computed: {},
+  computed: {
+    parsedData: function () {
+      var d = this.data
+      if (d.json) { d.json = JSON.parse(d.json) }
+      return d
+    }
+  },
   props: {
     data: {
       // type: Object,
