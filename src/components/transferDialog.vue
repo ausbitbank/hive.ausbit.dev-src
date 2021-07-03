@@ -1,10 +1,10 @@
 <template>
-  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
+  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined" class="text-center">
     <q-card-section header>
       <h4 class="text-center text-bold q-ma-none">Transfer {{ tokenName }}</h4>
     </q-card-section>
-    <q-card-section>
-      <user-search-box :username="toAccount" @selectUsername="setUsername" label="To account" />
+    <q-card-section >
+      <user-search-box :username="toAccount" @selectUsername="setUsername" label="To account" style="margin: auto" />
       <div v-if="false"><q-input label="To account" v-model="toAccount" /></div>
       <q-btn dense flat label="To Exchange" color="primary" icon="shortcut" v-if="toAccount === '' && network === 'hive'">
         <q-popup-proxy>
@@ -16,20 +16,34 @@
           </q-card>
         </q-popup-proxy>
       </q-btn>
-      <div><q-input label="Amount" v-model="amount" /></div>
+      <div><q-input label="Amount" v-model="amount" style="margin: auto; max-width: 200px" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
-      <div><q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" /></div>
+      <q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" style="margin: auto; max-width: 200px" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" />
       <div v-if="network === 'hive'">
-        <q-toggle v-model="recurrent" label="Recurring"/>
-        <div v-if="recurrent">
-          <q-input label="Hours between payments" v-model.number="recurrentHours" />
-          <q-input label="Repeat payments" v-model.number="recurrentTimes" />
+        <q-toggle v-model="recurrent" label="Recurring Payments"/>
+        <div v-if="recurrent" class="shadow-5 q-pa-sm">
+          <div>
+            <q-input label="Hours between payments" v-model.number="recurrentHours" style="margin: auto; max-width: 200px" />
+            <q-btn-toggle no-caps rounded v-model="recurrentHours" toggle-color="primary" :options="[ { label: 'Daily', value: 24 },  {label: 'Weekly', value: 168 }, { label: 'Monthly', value: 720 }]" />
+          </div>
+          <q-input label="Repeat payments" v-model.number="recurrentTimes" style="margin: auto; max-width: 200px" />
+          <div class="text-center">
+            <q-icon name="info" color="info" size="sm" /><br />
+            Will send <b class="text-primary">{{ amount }}</b> {{tokenName }} to <b class="text-primary">{{ toAccount }}</b> immediately,<br />
+            repeating every <b class="text-primary">{{ recurrentHours }}</b> hours , <b class="text-primary">{{ recurrentTimes }}</b> times<br />
+            For a total cost of <b class="text-primary">{{ amount * recurrentTimes }}</b> {{ tokenName }}
+          </div>
+          <div v-if="recurrent && exchanges.includes(toAccount)" class="text-center text-red text-bold">
+            <q-icon name="warning" color="red" size="md" /><br />
+            No exchanges support recurrent transfers (yet) <br />
+            Don't do it !
+          </div>
         </div>
       </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
-        <q-btn dense label="Send" icon="send" color="primary" @click="doTheThing()" v-if="!sent" v-close-popup />
+        <q-btn dense label="Send" icon="send" color="primary" @click="doTheThing()" v-if="!sent" v-close-popup :disable="disableSendButton" />
       </div>
     </q-card-section>
   </q-card>
@@ -93,6 +107,12 @@ export default {
       } else {
         return null
       }
+    },
+    disableSendButton: function () {
+      if (this.toAccount === '') { return true }
+      if (this.recurrent && this.exchanges.includes(this.toAccount)) { return true }
+      if (!this.recurrent && this.amount === 0) { return true }
+      return false
     }
   },
   methods: {
