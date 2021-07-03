@@ -26,7 +26,7 @@
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
-        <div class="text-h6"><q-icon name="trending_up" color="green" />&nbsp; Held HBD now earn interest</div>
+        <div class="text-h6"><q-icon name="trending_up" color="green" />&nbsp; HBD held in savings now earn interest</div>
         <div class="text-subtitle2">(paid monthly)</div>
         <div>The current interest rate is <q-badge :color="hbdAprColor">{{ hbdApr }} %</q-badge>, as determined by <router-link to="/witnesses">consensus witnesses</router-link></div>
         <div class="text-center"><q-icon name="info" color="blue" />&nbsp; <router-link to="/@ats-david/hive-dollar-interest-distributions-begin-on-the-hive-blockchain">Learn more about HBD interest here</router-link></div>
