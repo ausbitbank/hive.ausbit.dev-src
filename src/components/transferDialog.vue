@@ -21,7 +21,7 @@
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
       <q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" style="margin: auto; max-width: 200px" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" />
       <div v-if="network === 'hive'">
-        <q-toggle v-model="recurrent" label="Recurring Payments"/>
+        <q-toggle v-model="recurrent" label="Recurring Payments" />
         <div v-if="recurrent" class="shadow-5 q-pa-sm">
           <div>
             <q-input label="Hours between payments" v-model.number="recurrentHours" style="margin: auto; max-width: 200px" />
@@ -40,6 +40,10 @@
             Don't do it !
           </div>
         </div>
+      </div>
+      <div v-if="exchanges.includes(toAccount) && memo === ''" class="text-center text-red shadow-5 q-pa-sm">
+        <q-icon name="warning" color="red" />
+        You must enter a memo to deposit to exchanges
       </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
@@ -112,6 +116,7 @@ export default {
       if (this.toAccount === '') { return true }
       if (this.recurrent && this.exchanges.includes(this.toAccount)) { return true }
       if (!this.recurrent && this.amount === 0) { return true }
+      if (this.exchanges.includes(this.toAccount) && this.memo === '') { return true }
       return false
     }
   },
