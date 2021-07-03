@@ -1,5 +1,5 @@
 <template>
-    <q-page class="flex q-pa-md flex-center">
+    <q-page flat bordered class="flex q-pa-md flex-center">
       <q-card>
         <q-card-section class="text-h5 text-center">
           Decentralized Hive Fund
@@ -47,10 +47,11 @@
 </template>
 <script>
 import moment from 'moment'
-import proposal from 'components/proposal.vue'
 export default {
   name: 'Proposals',
-  components: { proposal },
+  components: {
+    proposal: () => import('components/proposal.vue')
+  },
   data () {
     return {
       proposals: [],
@@ -59,7 +60,7 @@ export default {
       filterUnfunded: false,
       filterActive: false,
       filterVoted: false,
-      search: this.$route.query.search || '',
+      search: this.$route.params.proposal || this.$route.query.search || '',
       votes: null
     }
   },
@@ -142,7 +143,7 @@ export default {
         if (this.filterVoted) { fp = fp.filter(proposal => proposal.voted !== true) }
         if (this.filterFunded) { fp = fp.filter(proposal => proposal.total_votes < this.returnProposalVotes) }
         if (this.filterUnfunded) { fp = fp.filter(proposal => proposal.total_votes >= this.returnProposalVotes) }
-        if (this.search !== '') { fp = fp.filter(proposal => proposal.subject.includes(this.search) || proposal.receiver.includes(this.search) || proposal.creator.includes(this.search)) }
+        if (this.search !== '') { fp = fp.filter(proposal => proposal.subject.includes(this.search) || proposal.receiver.includes(this.search) || proposal.creator.includes(this.search) || parseInt(proposal.id) === parseInt(this.search)) }
         return fp
       } else {
         return []
