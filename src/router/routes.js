@@ -33,6 +33,7 @@ const routes = [
       { path: 'health', component: () => import('pages/health.vue') },
       { path: 'cryptoDomains', component: () => import('pages/cryptoDomains.vue') },
       { path: 'browse', component: () => import('pages/browse.vue') },
+      { path: 'proposals/:proposal', component: () => import('pages/proposals.vue') },
       { path: 'proposals', component: () => import('pages/proposals.vue') },
       { path: 'dao', component: () => import('pages/proposals.vue') },
       { path: 'downvoter', component: () => import('pages/downvoter.vue') },
