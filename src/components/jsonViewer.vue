@@ -23,7 +23,8 @@ export default {
       var d = this.data
       if (d.json) { d.json = JSON.parse(d.json) }
       return d
-    }
+    },
+    globalProps: function () { return this.$store.state.hive.globalProps }
   },
   props: {
     data: {
@@ -53,12 +54,25 @@ export default {
         return `<a href="/@${sanitize(parent.author)}/${sanitize(parent.permlink)}">${sanitize(data)}</a>`
       } else if (['json_metadata', 'json'].includes(key)) {
         return sanitize(defaultFormatted)
+      } else if (['vesting_shares', 'reward', 'reward_vests', 'withdrawn'].includes(key)) {
+        if (data.split(' ')[1] === 'VESTS' && !this.globalProps.empty) {
+          return '<span title="= ' + this.vestToHive(data.split(' ')[0]) + ' HP">"' + sanitize(data) + '"</span>' // If unit is VESTS, show HP equiv as tooltip
+        } else {
+          return sanitize(data)
+        }
       } else if (['comment_permlink'].includes(key)) {
         return `<a href="/@${sanitize(parent.comment_author)}/${sanitize(parent.comment_permlink)}">${sanitize(data)}</a>`
       } else if (this.supportedServices.includes(key)) {
         return `<a href="${this.returnServiceLink(key, data)}">${sanitize(data)}</a>`
       } else {
         return sanitize(defaultFormatted)
+      }
+    },
+    vestToHive (vests) {
+      if (this.globalProps) {
+        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+      } else {
+        return null
       }
     },
     // TODO reduce redundant code, import this from elsewhere
