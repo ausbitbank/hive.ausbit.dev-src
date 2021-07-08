@@ -45,25 +45,27 @@ export default {
   methods: {
     customLinkFormatter (data, key, parent, defaultFormatted) {
       if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
-        return `<a href="/block/${sanitize(data)}">${sanitize(data)}</a>`
+        return `"<a href="/block/${sanitize(data)}">${sanitize(data)}</a>"`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
-        return `<a href="${sanitize(data)}">${sanitize(data)}</a>`
+        return `"<a href="${sanitize(data)}">${sanitize(data)}</a>"`
       } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer', 'receiver', 'payer', 'treasury', 'publisher'].includes(key)) {
-        return `<a href="/@${sanitize(data)}">${sanitize(data)}</a>`
-      } else if (['permlink', 'parent_permlink'].includes(key)) {
-        return `<a href="/@${sanitize(parent.author)}/${sanitize(parent.permlink)}">${sanitize(data)}</a>`
+        return `"<a href="/@${sanitize(data)}">${sanitize(data)}</a>"`
+      } else if (['permlink'].includes(key)) {
+        return `"<a href="/@${sanitize(this.parsedData.author)}/${sanitize(this.parsedData.permlink)}">${sanitize(data)}</a>"`
+      } else if (['parent_permlink'].includes(key)) {
+        return `"<a href="/@${sanitize(this.parsedData.parent_author)}/${sanitize(this.parsedData.parent_permlink)}">${sanitize(data)}</a>"`
       } else if (['json_metadata', 'json'].includes(key)) {
         return sanitize(defaultFormatted)
-      } else if (['vesting_shares', 'reward', 'reward_vests', 'withdrawn'].includes(key)) {
+      } else if (['vesting_shares', 'reward', 'reward_vests', 'withdrawn', 'vesting_shares_received'].includes(key)) {
         if (data.split(' ')[1] === 'VESTS' && !this.globalProps.empty) {
           return '<span title="= ' + this.vestToHive(data.split(' ')[0]) + ' HP">"' + sanitize(data) + '"</span>' // If unit is VESTS, show HP equiv as tooltip
         } else {
           return sanitize(data)
         }
       } else if (['comment_permlink'].includes(key)) {
-        return `<a href="/@${sanitize(parent.comment_author)}/${sanitize(parent.comment_permlink)}">${sanitize(data)}</a>`
+        return `"<a href="/@${sanitize(this.parsedData.comment_author)}/${sanitize(this.parsedData.comment_permlink)}">${sanitize(data)}</a>"`
       } else if (this.supportedServices.includes(key)) {
-        return `<a href="${this.returnServiceLink(key, data)}">${sanitize(data)}</a>`
+        return `"<a href="${this.returnServiceLink(key, data)}">${sanitize(data)}</a>"`
       } else {
         return sanitize(defaultFormatted)
       }
