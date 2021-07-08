@@ -7,6 +7,12 @@
         </q-card>
       <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
       <div class="text-h4">{{ account.name }}</div>
+      <div v-if="this.relationship && this.account !== undefined">
+        <q-btn v-if="relationship.follows" no-caps push dense label="Following" color="primary" icon="star" @click="unfollowUser(account.name)" />
+        <q-btn v-if="!relationship.follows" no-caps push dense label="Follow" color="grey" icon="person_add" @click="followUser(account.name)" />
+        <q-btn v-if="relationship.ignores" no-caps push dense label="Ignored" color="red" @click="unignoreUser(account.name)" />
+        <q-btn v-if="!relationship.ignores && !relationship.follows" no-caps push dense label="Ignore" color="grey" icon="volume_off" @click="ignoreUser(account.name)" />
+      </div>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
@@ -76,7 +82,8 @@ export default {
   name: 'accountHeader',
   data () {
     return {
-      tab: 'posts'
+      tab: 'posts',
+      relationship: null
     }
   },
   props: {
@@ -125,6 +132,33 @@ export default {
     },
     Sanitize (input) {
       return sanitize(input)
+    },
+    getRelationshipBetweenAccounts (account1, account2) {
+      var method = 'bridge.get_relationship_between_accounts'
+      var params = [account1, account2]
+      this.$hive.api.callAsync(method, params)
+        .then(response => {
+          this.relationship = response
+        })
+    },
+    followUser (who) {
+      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
+      this.relationship.follows = true
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+    },
+    unfollowUser (who) {
+      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
+      this.relationship.follows = false
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+    },
+    ignoreUser (who) {
+      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
+      this.relationship.ignores = true
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+    },
+    unignoreUser (who) {
+      this.relationship.ignores = false
+      this.unfollowUser(who)
     },
     returnServiceLink (service, data) {
       var d = sanitize(data)
@@ -268,6 +302,14 @@ export default {
       } else {
         return null
       }
+    },
+    loggedInUser: {
+      get () { return this.$store.state.hive.user.username }
+    }
+  },
+  mounted () {
+    if (this.loggedInUser !== undefined && this.loggedInUser !== this.account.name) {
+      this.getRelationshipBetweenAccounts(this.loggedInUser, this.account.name)
     }
   }
 }
