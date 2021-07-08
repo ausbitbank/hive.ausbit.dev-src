@@ -1,7 +1,6 @@
 <template>
   <span>
-  <q-intersection transition="flip-up">
-  <q-card flat bordered dense class="q-ma-none q-mb-sm" v-for="op in accountOperations" :key="op.index">
+  <q-card flat bordered dense class="q-ma-none q-pa-none q-mb-sm" v-for="op in accountOperations" :key="op.index">
       <q-card-section v-if="accountOperations.length > 0">
           <q-list dense>
               <q-item>
@@ -54,7 +53,6 @@
           </q-list>
       </q-card-section>
   </q-card>
-  </q-intersection>
   </span>
 </template>
 <style scoped>
