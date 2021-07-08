@@ -1,8 +1,5 @@
 <template>
-  <span>
-    <q-select clearable new-value-mode="add" filled :value="input" use-input hide-selected fill-input input-debounce="250" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="width: 250px; padding-bottom: 32px" @input="$emit('selectUsername', input)">
-    </q-select>
-  </span>
+  <q-select clearable new-value-mode="add" filled :value="input" use-input hide-selected fill-input input-debounce="250" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="max-width: 200px;" @input="$emit('selectUsername', input)" />
 </template>
 <script>
 export default {
