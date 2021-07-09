@@ -15,7 +15,7 @@
       <span v-else>from {{ request.from }} to {{ request.to }}</span>
       <span v-if="request.memo">with memo: <b>{{ request.memo }}</b></span>
       due {{ timeDelta(request.complete) }}<br />
-      <q-btn dense flat icon="cancel" color="red" label="Cancel" title="Cancel withdrawal request" @click="cancelTransferFromSavings(request.request_id)"/>
+      <q-btn dense flat icon="cancel" color="red" label="Cancel" title="Cancel withdrawal request" @click="cancelTransferFromSavings(request.request_id)" v-if="loggedInUser === username" />
       </div>
     </q-item-section>
   </q-item>
@@ -39,7 +39,9 @@ export default {
     }
   },
   components: {},
-  computed: {},
+  computed: {
+    loggedInUser: function () { return this.$store.state.hive.user.username }
+  },
   methods: {
     vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     tidyNumber (x) {
