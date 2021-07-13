@@ -305,10 +305,10 @@
                                 + {{ tidyNumber(tx[1].op[1].amount) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(4)) }})
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
+                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(4)) }})
                               </q-item-label>
                               <q-item-label v-if="tx[1].op[1].memo !== ''">
                                 <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
