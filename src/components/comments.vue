@@ -91,7 +91,7 @@ export default {
         .then(response => {
           this.loading = false
           this.comments = response
-          this.comments = this.sortData(this.commentSortMethod.value, this.comments, this.commentSortDirection.value)
+          this.resortComments()
         })
         .catch((err) => {
           this.loading = false
