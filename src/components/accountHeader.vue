@@ -308,7 +308,7 @@ export default {
     }
   },
   mounted () {
-    if (this.loggedInUser !== undefined && this.loggedInUser !== this.account.name) {
+    if (this.loggedInUser !== undefined && this.loggedInUser !== this.account.name && this.relationship === null) {
       this.getRelationshipBetweenAccounts(this.loggedInUser, this.account.name)
     }
   }
