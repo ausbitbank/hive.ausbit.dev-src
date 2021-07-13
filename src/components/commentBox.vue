@@ -17,7 +17,6 @@
     </div>
 </template>
 <style>
-  /*@import '~simplemde/dist/simplemde.min.css';*/
   @import '../statics/simplemde-theme-dark.min.css';
 </style>
 <script>
