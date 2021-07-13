@@ -10,7 +10,7 @@
         <q-popup-proxy>
           <q-card flat bordered>
             <q-card-section header class="text-bold text-center">
-              Common Exchange Accounts
+              Known {{ this.tokenName }} exchange accounts
             </q-card-section>
             <q-btn flat v-for="ea in exchanges" :key="ea.index" :label="ea" color="primary" @click="setUsername(ea)" v-close-popup />
           </q-card>
@@ -68,7 +68,31 @@ export default {
       recurrent: false,
       recurrentHours: 24,
       recurrentTimes: 30,
-      exchanges: ['deepcrypto8', 'bittrex', 'ionomy', 'huobi-pro']
+      exchangesSupport: [
+        { account: 'bittrex', tokens: ['HIVE', 'HBD'] },
+        { account: 'deepcrypto8', tokens: ['HIVE'] },
+        { account: 'binance-hot', tokens: [] },
+        { account: 'ionomy', tokens: ['HIVE', 'HBD'] },
+        { account: 'huobi-pro', tokens: ['HIVE'] },
+        { account: 'huobi-withdrawal', tokens: [] },
+        { account: 'blocktrades', tokens: ['HIVE', 'HBD'] },
+        { account: 'mxchive', tokens: ['HIVE'] },
+        { account: 'user.dunamu', tokens: ['HIVE', 'HBD'] },
+        { account: 'probithive', tokens: ['HIVE'] }
+        /* { account: 'probitred', tokens: [] },
+        { account: 'upbitsteem', tokens: [] },
+        { account: 'bithumb.hot', tokens: [] },
+        { account: 'upbit-exchange', tokens: [] },
+        { account: 'bitfinex', tokens: [] },
+        { account: 'rudex', tokens: [] },
+        { account: 'coinpayments.net', tokens: [] },
+        { account: 'poloniex', tokens: [] },
+        { account: 'openledger', tokens: [] },
+        { account: 'openledger-dex', tokens: [] },
+        { account: 'gsr-io', tokens: [] },
+        { account: 'hot.dunamu', tokens: [] },
+        { account: 'upbitsteemhot', tokens: [] } */
+      ]
     }
   },
   props: {
@@ -103,6 +127,13 @@ export default {
   },
   components: { userSearchBox },
   computed: {
+    exchanges: function () {
+      var e = []
+      var x = []
+      x = this.exchangesSupport.filter(exchange => exchange.tokens.includes(this.tokenName))
+      x.forEach(y => e.push(y.account))
+      return e
+    },
     availableBalance: function () {
       if (this.network === 'hive' && this.tokenName === 'HIVE') {
         return this.$store.state.hive.accounts[this.username].balance.split(' ')[0]
