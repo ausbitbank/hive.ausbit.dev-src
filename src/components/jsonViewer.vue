@@ -48,7 +48,7 @@ export default {
         return `"<a href="/block/${sanitize(data)}">${sanitize(data)}</a>"`
       } else if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return `"<a href="${sanitize(data)}">${sanitize(data)}</a>"`
-      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer', 'receiver', 'payer', 'treasury', 'publisher'].includes(key)) {
+      } else if (['to', 'from', 'comment_author', 'curator', 'author', 'parent_author', 'voter', 'account', 'producer', 'from_account', 'to_account', 'new_account_name', 'creator', 'producer', 'receiver', 'payer', 'treasury', 'publisher', 'witness', 'current_witness'].includes(key)) {
         return `"<a href="/@${sanitize(data)}">${sanitize(data)}</a>"`
       } else if (['permlink'].includes(key)) {
         return `"<a href="/@${sanitize(this.parsedData.author)}/${sanitize(this.parsedData.permlink)}">${sanitize(data)}</a>"`
@@ -56,7 +56,7 @@ export default {
         return `"<a href="/@${sanitize(this.parsedData.parent_author)}/${sanitize(this.parsedData.parent_permlink)}">${sanitize(data)}</a>"`
       } else if (['json_metadata', 'json'].includes(key)) {
         return sanitize(defaultFormatted)
-      } else if (['vesting_shares', 'reward', 'reward_vests', 'withdrawn', 'vesting_shares_received'].includes(key)) {
+      } else if (['vesting_shares', 'reward', 'reward_vests', 'withdrawn', 'vesting_shares_received', 'total_vesting_shares', 'pending_rewarded_vesting_shares'].includes(key)) {
         if (data.split(' ')[1] === 'VESTS' && !this.globalProps.empty) {
           return '<span title="= ' + this.vestToHive(data.split(' ')[0]) + ' HP">"' + sanitize(data) + '"</span>' // If unit is VESTS, show HP equiv as tooltip
         } else {
