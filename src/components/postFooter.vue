@@ -16,6 +16,9 @@
     <span title="Hive Rewards" v-if="!post.is_paidout && post.pending_payout_value">{{ post.pending_payout_value.split(' ')[0] }}</span>
     <span title="Token Rewards" v-else-if="!post.is_paidout && post.pending_token && post.precision">{{ post.pending_token / Math.pow(10, post.precision) }} {{ post.token }}</span>
     <span title="Hive Rewards" v-else>{{ post.payout }}</span>
+    <q-popup-proxy v-if="!post.pending_token">
+      <votes-dialog :votes="post.active_votes" :simple="true" />
+    </q-popup-proxy>
   </q-btn>
   <vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" />
   <q-btn dense icon="more_horiz" flat color="grey">
@@ -26,7 +29,7 @@
             <q-icon name="visibility" color="primary" />
           </q-item-section>
           <q-item-section>
-            View post in dialog
+            View post
           </q-item-section>
         </q-item>
         <q-item>
@@ -60,7 +63,8 @@ export default {
     reblog: () => import('components/reblog.vue'),
     vote: () => import('components/vote.vue'),
     postDialog: () => import('components/postDialog.vue'),
-    commentBox: () => import('components/commentBox.vue')
+    commentBox: () => import('components/commentBox.vue'),
+    votesDialog: () => import('components/votesDialog.vue')
   },
   computed: {
     loggedInUser: {
