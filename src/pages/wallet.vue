@@ -12,7 +12,7 @@
                 <q-tab-panel name="hive">
                     <q-list bordered separator class="rounded-borders">
                         <q-item>
-                            <q-item-section avatar>
+                            <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
                                 <img src="/statics/hive.svg"/>
                               </q-avatar>
@@ -47,7 +47,7 @@
                                 Savings
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section>
+                            <q-item-section class="gt-xs">
                               <q-item-label>
                                 {{ tidyNumber(((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
                               </q-item-label>
@@ -56,7 +56,7 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" />
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" class="gt-xs"/>
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
@@ -109,14 +109,14 @@
                               <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
                             </q-item-section>
                             <q-item-section>
-                                <div>Next payout: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
+                                <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
                             </q-item-section>
                             <q-item-section top side v-if="this.loggedInUser === this.username">
                                 <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
                             </q-item-section>
                         </q-item>
                         <q-item>
-                            <q-item-section avatar>
+                            <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
                                 <img src="/statics/hbd.svg"/>
                               </q-avatar>
@@ -145,7 +145,7 @@
                                 </router-link>
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section>
+                            <q-item-section class="gt-xs">
                               <q-item-label>
                                 $ {{ tidyNumber(((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2))}}
                               </q-item-label>
@@ -154,7 +154,7 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section top side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHbd = true" />
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHbd = true" class="gt-xs"/>
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-btn dense flat icon="more_horiz">
                                   <q-menu>
@@ -205,9 +205,9 @@
                     </q-list>
                     <div id="scrollTargetRef">
                       <div class="text-h6 text-center">Transaction History</div>
-                        <q-list bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
+                        <q-list dense bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
                           <q-item>
-                            <q-item-section avatar>
+                            <q-item-section avatar class="gt-xs">
                               <q-item-label>
                                 <q-icon name="add_circle" color="green" v-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer')" />
                                 <q-icon name="add_circle" color="green-10" v-else-if="(tx[1].op[0] === 'claim_reward_balance')" />
@@ -254,7 +254,7 @@
                                 <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section :title="tx[1].timestamp">
+                            <q-item-section :title="tx[1].timestamp" class="gt-xs">
                               <q-item-label>
                                 {{ getDateString(tx[1].timestamp) }}
                               </q-item-label>
@@ -407,7 +407,7 @@
                 <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null && hiveEngineTokenInfo !== null">
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalances" :key="token.index">
-                          <q-item-section dense avatar>
+                          <q-item-section dense avatar class="gt-xs">
                             <q-avatar size="md">
                               <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
                             </q-avatar>
@@ -493,7 +493,7 @@
                       <div class="text-h6 text-center">Transaction History</div>
                       <q-list bordered v-for="tx in this.hiveEngineTransactionHistory" :key="tx.index">
                         <q-item>
-                          <q-item-section avatar>
+                          <q-item-section avatar class="gt-xs">
                             <q-item-label>
                               <q-icon name="add_circle" color="green" v-if="(tx.to === username && tx.operation === 'tokens_transfer')" />
                               <q-icon name="remove_circle" color="red" v-else-if="(tx.from === username && tx.operation === 'tokens_transfer')" />
@@ -537,10 +537,10 @@
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>
-                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
                               <span v-else-if="tx.to === username && tx.operation === 'tokens_issue'"> {{ tx.from }}</span>
                               <span v-else-if="tx.from === username && tx.operation === 'tokens_issue'"> {{ tx.to }}</span>
                               <span v-else-if="tx.operation === 'mining_lottery'"> {{ tx.poolId }}</span>
@@ -957,7 +957,6 @@ export default {
     init () {
       if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
-      console.log('loading wallet info for ' + this.username)
       document.title = this.username + '\'s wallet'
       if (this.account === undefined) { this.getAccount(this.username) }
       this.getHiveWalletTransactions()
