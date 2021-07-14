@@ -1,9 +1,9 @@
 <template>
     <q-card flat bordered style="max-width: 1000px; max-width: 95%">
         <q-card-section header class="text-center text-h5">
-            Votes on this post : {{ upvotesOnly.length }} upvotes<span v-if="downvotesOnly.length > 0">, {{ downvotesOnly.length }} down</span><br />
+            Votes on this post : {{ upvotesOnly.length }} upvotes<span v-if="downvotesOnly.length > 0">, {{ downvotesOnly.length }} down</span><span v-if="unvotesOnly.length > 0">, {{ unvotesOnly.length }} unvotes</span><br />
         </q-card-section>
-        <q-tabs dense inline-label v-model="view">
+        <q-tabs dense inline-label v-model="view" v-if="!simple">
           <q-tab name="influencers" icon="analytics" label="Influencers" class="text-primary" />
           <q-tab name="table" icon="table_view" label="Full vote data table" class="text-primary" />
         </q-tabs>
@@ -52,11 +52,13 @@ export default {
     }
   },
   props: {
-    votes: { type: Array, required: true }
+    votes: { type: Array, required: true },
+    simple: { type: Boolean, required: false, default: false }
   },
   computed: {
     upvotesOnly: function () { return this.votes.filter(v => Math.sign(v.rshares) === 1) },
     downvotesOnly: function () { return this.votes.filter(v => Math.sign(v.rshares) === -1) },
+    unvotesOnly: function () { return this.votes.filter(v => v.rshares === 0) },
     biggestUpvotes: function () {
       var votesSortedByRshares = this.upvotesOnly
       votesSortedByRshares.sort(this.sortByRshares)
