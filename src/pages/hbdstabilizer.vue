@@ -60,7 +60,7 @@
       </q-card-section>
       <q-card-section v-if="hiveTransactions.length > 0">
         <div class="text-h6">Recent transactions for <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
-        <div class="subtitle">Only show: <q-badge color="blue-grey" class="q-mr-sm" v-for="a in ['transfer', 'proposal_pay', 'fill_order', 'limit_order_create', 'interest', 'fill_convert_request' ]" :key="a.index">{{ a }}</q-badge><router-link to="@hbdstabilizer?filter=transfer,fill_order,limit_order_create,interest,fill_convert_request,proposal_pay"><q-icon name="external_link" /></router-link></div>
+        <div class="subtitle">Only show: <q-badge color="blue-grey" class="q-mr-sm" v-for="a in ['transfer', 'proposal_pay', 'fill_order', 'limit_order_create', 'interest', 'convert', 'fill_convert_request' ]" :key="a.index">{{ a }}</q-badge><router-link to="@hbdstabilizer?filter=transfer,fill_order,limit_order_create,interest,fill_convert_request,proposal_pay"><q-icon name="external_link" /></router-link></div>
         <q-scroll-area style="height: 400px; max-width: 100%;">
         <q-list separator>
           <account-operations :account-operations="hiveTransactions" />
@@ -88,7 +88,8 @@ const walletBitmask = makeBitMaskFilter([
   op.fill_convert_request,
   op.fill_order,
   op.limit_order_create,
-  op.proposal_pay
+  op.proposal_pay,
+  op.convert
 ])
 export default {
   name: 'hbd',
