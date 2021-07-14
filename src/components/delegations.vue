@@ -2,7 +2,7 @@
 <q-expansion-item dense dense-toggle expand-separator icon="redeem" header-class="text-primary" :label="heading" title="Click to view full delegation information">
   <q-list dense>
     <q-item v-for="dele in delegations" :key="dele.id" label="Delegations">
-      <q-item-section avatar>
+      <q-item-section avatar class="gt-xs">
         <router-link :to="returnAccountLink(dele.delegatee)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(dele.delegatee)" /></q-avatar></router-link>
       </q-item-section>
       <q-item-section>
