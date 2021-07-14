@@ -8,7 +8,7 @@
       <div v-if="false"><q-input label="To account" v-model="toAccount" /></div>
       <q-btn dense flat label="To Exchange" color="primary" icon="shortcut" v-if="toAccount === '' && network === 'hive'">
         <q-popup-proxy>
-          <q-card flat bordered>
+          <q-card flat bordered class="text-center">
             <q-card-section header class="text-bold text-center">
               Known {{ this.tokenName }} exchange accounts
             </q-card-section>
@@ -129,8 +129,7 @@ export default {
   computed: {
     exchanges: function () {
       var e = []
-      var x = []
-      x = this.exchangesSupport.filter(exchange => exchange.tokens.includes(this.tokenName))
+      var x = this.exchangesSupport.filter(exchange => exchange.tokens.includes(this.tokenName))
       x.forEach(y => e.push(y.account))
       return e
     },
