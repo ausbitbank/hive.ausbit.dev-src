@@ -35,10 +35,11 @@
               <div><q-btn flat color="primary" v-if="viewType !== 'simple'" @click="viewType = 'simple'" icon="unfold_less" /></div>
             </span>
         </q-card-section>
+        <div class="text-center" v-if="filterOps.length > 0">Showing only: {{ filterOps.join(",") }} <q-btn dense flat no-caps icon="cancel" color="red" title="Remove filter" @click="filterOps = []" /></div>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
             <div class="text-h6 text-center">{{ this.blockOpsReal.length }} Transactions in this block</div>
             <q-list bordered separator dense>
-            <q-item v-for="tx in this.blockOpsReal" :key="tx.index">
+            <q-item v-for="tx in this.blockOpsReal.filter(filterOpsType)" :key="tx.index">
                 <q-item-section v-if="tx.op[0] === 'vote'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].voter)" /></q-avatar>
@@ -48,7 +49,8 @@
                 <q-item-section v-else-if="tx.op[0] === 'effective_comment_vote'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].voter)" /></q-avatar>
-                    <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].voter)">{{ tx.op[1].voter }}</router-link></span> effective_comment_vote <q-chip dense :color="returnVoteColor(tx.op[1].weight)">{{ tx.op[1].weight / 100 }} %</q-chip> on <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].author)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].author)">{{ tx.op[1].author }}</router-link> \ <a :href="returnLink(tx.op[1].author,tx.op[1].permlink)">{{ tx.op[1].permlink }}</a> (rshares {{ tx.op[1].rshares }} total_vote_weight {{ tx.op[1].total_vote_weight }} pending_payout {{ tx.op[1].pending_payout }})</span>
+                    <span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].voter)">{{ tx.op[1].voter }}</router-link></span> effective_comment_vote
+                    <json-viewer :data="tx.op[1]" />
                 </q-item-label>
                 </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'comment'">
@@ -163,7 +165,7 @@
             </q-list>
             <div class="text-h6 text-center">{{ this.blockOpsVirtual.length }} Virtual Operation<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
             <q-list bordered separator dense>
-            <q-item v-for="tx in this.blockOpsVirtual" :key="tx.index">
+            <q-item v-for="tx in this.blockOpsVirtual.filter(filterOpsType)" :key="tx.index">
             <q-item-section>
                 <q-chip dense class="text-bold">{{ tx.op[0] }}</q-chip>
                 <json-viewer :data="tx.op[1]" />
@@ -235,7 +237,8 @@ export default {
       blockNumber: this.blockNum,
       showRawBlock: false,
       liveRefresh: false,
-      viewType: this.view
+      viewType: this.view,
+      filterOps: []
     }
   },
   watch: {
@@ -251,14 +254,18 @@ export default {
   computed: {
     blockOpsReal: function () {
       if (this.blockOps.length > 0) {
-        return this.blockOps.filter(this.filterOpsReal)
+        var r = this.blockOps.filter(this.filterOpsReal)
+        // if (this.filterOps.length > 0) { r = r.filter(this.filterOpsType) }
+        return r
       } else {
         return []
       }
     },
     blockOpsVirtual: function () {
       if (this.blockOps.length > 0) {
-        return this.blockOps.filter(this.filterOpsVirtual)
+        var r = this.blockOps.filter(this.filterOpsVirtual)
+        // if (this.filterOps.length > 0) { r = r.filter(this.filterOpsType) }
+        return r
       } else {
         return []
       }
@@ -282,6 +289,7 @@ export default {
   methods: {
     filterOpsVirtual (op) { if (op.trx_id === '0000000000000000000000000000000000000000') { return true } else { return false } },
     filterOpsReal (op) { if (op.trx_id !== '0000000000000000000000000000000000000000') { return true } else { return false } },
+    filterOpsType (op) { if (this.filterOps.includes(op.op[0]) || this.filterOps.length === 0) { return true } else { return false } },
     getBlockHeader (blocknum) {
       this.$hive.api.getBlockHeaderAsync(blocknum)
         .then(blockHeader => this.setBlockHeader(blockHeader))
@@ -473,6 +481,9 @@ export default {
       this.getLatestIrreversibleBlock()
     } else {
       this.updateBlock(this.blockNum)
+    }
+    if (this.$route.query.filter) {
+      this.filterOps = this.$route.query.filter.split(',')
     }
   }
 }
