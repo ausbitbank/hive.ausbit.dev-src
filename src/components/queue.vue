@@ -73,6 +73,8 @@ export default {
         })
       }
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
+      if (action[2][0] === 'claim_reward_balance') { this.$store.dispatch('hive/getAccount', action[2][1].account) }
+      if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].from) }
     },
     broadcastNext () { if (this.queue.length > 0) { this.broadcast(this.queue[0]) } },
     broadcast (action) {
