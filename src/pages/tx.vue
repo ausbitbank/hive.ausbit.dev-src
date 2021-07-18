@@ -12,7 +12,6 @@
       <q-card-section>
         <div>
           <json-viewer :data="operations" />
-          <!-- <json-viewer v-for="op in tx" :data="op.op" :key="op.index" /> -->
         </div>
       </q-card-section>
     </q-card>
@@ -62,7 +61,7 @@ export default {
   methods: {
     getTx2 (txId) {
       this.api = this.$hive.config.get('url')
-      this.$hive.api.setOptions({ url: 'https://api.hive.blog' })
+      this.$hive.api.setOptions({ url: this.txLookupApiNode })
       this.$hive.api.getTransactionAsync(txId)
         .then(tx => this.setTx(tx))
         .catch(error => console.log(error))
