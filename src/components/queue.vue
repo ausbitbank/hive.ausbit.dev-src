@@ -75,6 +75,7 @@ export default {
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
       if (action[2][0] === 'claim_reward_balance') { this.$store.dispatch('hive/getAccount', action[2][1].account) }
       if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].from) }
+      if (['convert', 'collateralized_convert'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].owner) }
     },
     broadcastNext () { if (this.queue.length > 0) { this.broadcast(this.queue[0]) } },
     broadcast (action) {
@@ -131,13 +132,15 @@ export default {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestTransfer', user, op[1].to, op[1].amount.split(' ')[0], op[1].memo, op[1].amount.split(' ')[1])
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
-        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else if (op[0] === 'comment') {
-        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', user, op[1].title, op[1].body, op[1].parent_permlink, op[1].parent_author, JSON.stringify(op[1].json_metadata), op[1].permlink, JSON.stringify(op[1].comment_options))
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } } */
+      if (op[0] === 'comment') {
+        var co = op[1].comment_options
+        delete op[1].comment_options
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPost', user, op[1].title, op[1].body, op[1].parent_permlink, op[1].parent_author, JSON.stringify(op[1].json_metadata), op[1].permlink, JSON.stringify(co))
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else if (op[0] === 'transfer_to_vesting') {
+      /* } else if (op[0] === 'transfer_to_vesting') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestPowerUp', user, op[1].to, op[1].amount.split(' ')[0])
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
@@ -152,13 +155,13 @@ export default {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestDelegation', user, op[1].delegatee, op[1].vesting_shares.split(' ')[0], 'VESTS')
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
-        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } } */
       } else { // Generic broadcast */
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, JSON.parse(JSON.stringify(ops)), keytype)
-      if (success) { this.successfullBroadcast(action) }
-      if (cancel) { this.$q.notify('Cancelled by user') }
-      if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      // }
+        const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestBroadcast', user, JSON.parse(JSON.stringify(ops)), keytype)
+        if (success) { this.successfullBroadcast(action) }
+        if (cancel) { this.$q.notify('Cancelled by user') }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+      }
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getPasswordForAction (action) {
