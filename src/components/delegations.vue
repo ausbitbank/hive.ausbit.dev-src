@@ -1,5 +1,6 @@
 <template>
 <q-expansion-item dense dense-toggle expand-separator icon="redeem" header-class="text-primary" :label="heading" title="Click to view full delegation information">
+  <q-scroll-area style="height:400px">
   <q-list dense>
     <q-item v-for="dele in delegations" :key="dele.id" label="Delegations">
       <q-item-section avatar class="gt-xs">
@@ -20,6 +21,7 @@
     </q-item>
     <q-item>
       <q-item-section>
+        <q-btn flat icon="search" label="Show more delegators" color="primary" @click="getDelegations()" v-if="delegations.length > 99" :disable="loadMoreButtonDisabled"/>
         <q-btn :disable="loggedInUser !== username" icon="add" color="primary" flat label="Delegate your Hive Power" @click="to = ''; amountVests = 0.000000; delegationDialogVisible = true"/>
       </q-item-section>
     </q-item>
@@ -27,6 +29,7 @@
   <q-dialog v-model="delegationDialogVisible">
     <delegationDialog :username="username" :toModify="to" :delegations="delegations" tokenName="HIVE" :amountVestsSuggest="amountVests" />
   </q-dialog>
+  </q-scroll-area>
 </q-expansion-item>
 </template>
 <script>
@@ -36,10 +39,11 @@ export default {
   props: ['username'],
   data () {
     return {
-      delegations: null,
+      delegations: [],
       error: null,
       token: 'HP',
       to: '',
+      loadMoreButtonDisabled: false,
       delegationDialogVisible: false,
       amountVests: null
     }
@@ -55,7 +59,7 @@ export default {
       var incomingMsg = ''
       if (this.account.received_vesting_shares.split(' ')[0] !== '0.000000') { incomingMsg = ', ' + this.tidyNumber(this.vestToHive(this.account.received_vesting_shares.split(' ')[0])) + ' HP of incoming delegations' }
       if (this.delegations && this.delegations.length > 0) {
-        return this.tidyNumber(this.vestToHive(this.account.delegated_vesting_shares.split(' ')[0])) + ' ' + this.token + ' delegated from ' + this.username + ' to ' + this.delegations.length + ' accounts' + incomingMsg
+        return this.tidyNumber(this.vestToHive(this.account.delegated_vesting_shares.split(' ')[0])) + ' ' + this.token + ' delegated from ' + this.username + '' + incomingMsg
       } else if (this.delegations) {
         return 'No outgoing delegations' + incomingMsg
       } else {
@@ -65,8 +69,15 @@ export default {
   },
   methods: {
     getDelegations () {
-      this.$hive.api.callAsync('condenser_api.get_vesting_delegations', [this.username, '', 100])
-        .then(response => { this.delegations = response })
+      var last = ''
+      var limit = 100
+      if (this.delegations.length > 0) { last = this.delegations[this.delegations.length - 1].delegatee }
+      this.$hive.api.callAsync('condenser_api.get_vesting_delegations', [this.username, last, limit])
+        .then(response => {
+          if ((last !== '' & response.length === 1) || (response.length < limit)) { this.loadMoreButtonDisabled = true }
+          if (last !== '') { response.shift() }
+          this.delegations.push.apply(this.delegations, response)
+        })
         .error(err => { this.error = err.cause.data })
     },
     timeDelta (timestamp) {
@@ -77,6 +88,7 @@ export default {
     },
     vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    onlyUnique (value, index, self) { return self.indexOf(value) === index },
     tidyNumber (x) {
       var parts = x.toString().split('.')
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
