@@ -23,8 +23,10 @@ export default {
       var d = this.data
       if (d.json) { d.json = JSON.parse(d.json) }
       if (d.json_metadata) { d.json_metadata = JSON.parse(d.json_metadata) }
-      // eslint-disable-next-line no-return-assign
-      if (d.operations) { d.operations.forEach(op => op[0] === 'custom_json' ? op[1].json = JSON.parse(op[1].json) : console.log()) }
+      if (d.posting_json_metadata) { d.posting_json_metadata = JSON.parse(d.posting_json_metadata) }
+      if (d.operations) { // eslint-disable-next-line no-return-assign
+        d.operations.forEach(op => op[0] === 'custom_json' ? op[1].json = JSON.parse(op[1].json) : console.log())
+      }
       return d
     },
     globalProps: function () { return this.$store.state.hive.globalProps }
