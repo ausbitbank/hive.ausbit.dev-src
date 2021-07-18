@@ -33,7 +33,7 @@
           <!-- <q-img style="width: 300px; height: 300px" :src="postImage" :title="post.title" v-if="postImage" @click="postOverlay = true" /> -->
         <!-- </router-link> -->
       <q-carousel
-        v-if="postImages.length > 0"
+        v-if="postImages.length > 1"
         v-model="thumbslide"
         transition-prev="jump-left"
         transition-next="jump-right"
@@ -56,6 +56,7 @@
           </q-carousel-control>
         </template>
       </q-carousel>
+      <q-img v-if="postImages.length === 1" :src="postImages[0]" />
         <div>
           <span class="text-caption" v-if="postMeta.description"><render :input="postMeta.description.substr(0,200)" /></span>
           <span class="text-caption" v-else-if="summary"><render :input="summary.substr(0,200)" /></span>
