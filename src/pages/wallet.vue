@@ -219,6 +219,7 @@
                                 <q-icon name="arrow_circle_down" color="blue-8" v-else-if="(tx[1].op[0] === 'withdraw_vesting')" />
                                 <q-icon name="arrow_circle_up" color="orange-6" v-else-if="(tx[1].op[0] === 'transfer_to_savings')" />
                                 <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
+                                <q-icon name="fact_check" color="orange-8" v-else-if="(tx[1].op[0] === 'escrow_release')" />
                               </q-item-label>
                             </q-item-section>
                             <q-item-section>
@@ -703,11 +704,7 @@ const walletBitmask = makeBitMaskFilter([
   op.liquidity_reward,
   op.transfer_to_savings,
   op.transfer_from_savings,
-  op.escrow_transfer,
   op.cancel_transfer_from_savings,
-  op.escrow_approve,
-  op.escrow_dispute,
-  op.escrow_release,
   op.fill_convert_request,
   op.fill_order,
   op.claim_reward_balance
