@@ -1,10 +1,10 @@
 <template>
   <span>
-  <q-card flat bordered dense class="q-ma-none q-pa-none q-mb-sm" v-for="op in accountOperations" :key="op.index">
+  <q-card flat bordered class="q-ma-none q-pa-none q-mb-xs" v-for="op in accountOperations" :key="op.index">
       <q-card-section v-if="accountOperations.length > 0">
-          <q-list dense>
+          <q-list :dense="$q.screen.lt.md">
               <q-item>
-                  <q-item-section avatar class="gt-xs">
+                  <q-item-section avatar top class="gt-xs">
                       <q-avatar v-if="op[1].op[1].producer"><q-img :src="getHiveAvatarUrl(op[1].op[1].producer)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].creator"><q-img :src="getHiveAvatarUrl(op[1].op[1].creator)" /></q-avatar>
                       <q-avatar v-if="op[1].op[1].curator"><q-img :src="getHiveAvatarUrl(op[1].op[1].curator)" /></q-avatar>
@@ -39,15 +39,13 @@
                   <q-item-section class="wrap">
                       <div class="text-bold">{{ op[1].op[0] }}</div>
                       <json-viewer :data="op[1].op[1]" />
-                  </q-item-section>
-                  <q-item-section side>
-                      <span>
-                          <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</div>
-                          <div v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></div>
-                          <div v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ tidyNumber(op[1].block) }}</router-link></div>
-                          <div v-else>block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></div>
-                          <div :title="op[1].timestamp">{{ timeDelta(op[1].timestamp) }}</div>
-                      </span>
+                      <q-item-label caption class="text-center text-caption">
+                        <span v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</span>
+                        <span v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></span>
+                        <span v-if="op[1].trx_id === '0000000000000000000000000000000000000000'"> in block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ tidyNumber(op[1].block) }}</router-link></span>
+                        <span v-else> in block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></span>
+                        <span :title="op[1].timestamp" class="text-grey"> {{ timeDelta(op[1].timestamp) }}</span>
+                      </q-item-label>
                   </q-item-section>
               </q-item>
           </q-list>
