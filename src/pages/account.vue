@@ -106,7 +106,7 @@
         </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
             <q-card-section>
-                <div id="posting_meta" class="text-h6">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
+                <div id="posting_meta" class="text-h6 text-center">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
                 <json-viewer v-if="account.posting_json_metadata && editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
                 <span v-else>Posting JSON Metadata is currently empty</span>
                 <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
@@ -561,7 +561,6 @@ export default {
     this.init()
   },
   destroy () {
-    console.log('clear timer')
     clearTimeout(this.autorefreshTimer)
   }
 }
