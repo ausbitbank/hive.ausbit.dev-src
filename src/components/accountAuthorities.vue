@@ -24,7 +24,7 @@
   </q-card-section>
   <q-card-section>
     <div class="text-h6">Owner <q-icon name="info" color="info" title="This is the admin key, that gives rights to perform any kind of transaction." /></div>
-    <q-list bordered seperator dense>
+    <q-list bordered seperator :dense="$q.screen.lt.md">
         <q-item v-for="auth in account.owner.key_auths" :key="auth.index">
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey" />
@@ -73,7 +73,7 @@
   </q-card-section>
   <q-card-section>
     <div class="text-h6">Active <q-icon name="info" color="info" title="The active key is needed to perform monetary transactions. It can also be used to change the other permissions (except for Owner)." /></div>
-    <q-list bordered seperator dense class="wrap">
+    <q-list bordered seperator :dense="$q.screen.lt.md" class="wrap">
         <q-item v-for="auth in account.active.key_auths" :key="auth.index">
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey"/>
@@ -122,7 +122,7 @@
   </q-card-section>
   <q-card-section>
     <div class="text-h6">Posting <q-icon name="info" color="info" title="The posting key is used to post, vote and perform some broadcasts." /></div>
-    <q-list bordered seperator dense>
+    <q-list bordered seperator :dense="$q.screen.lt.md">
         <q-item v-for="auth in account.posting.key_auths" :key="auth.index">
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey" />
@@ -171,7 +171,7 @@
   </q-card-section>
   <q-card-section>
     <div class="text-h6">Memo <q-icon name="info" color="info" title="Use to encode/decode private memos." /></div>
-    <q-list bordered seperator dense>
+    <q-list bordered seperator :dense="$q.screen.lt.md">
         <q-item>
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey"/>
