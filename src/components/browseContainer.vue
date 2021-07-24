@@ -21,7 +21,7 @@
     </transition>
     <div class="text-center">
       <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
-      <q-btn flat color="grey" title="Filter posts" icon="filter">
+      <q-btn flat color="grey" title="Filter posts" icon="filter_alt">
         <q-badge color="primary" floating transparent v-if="(posts.length - filteredPosts.length) > 0">{{ posts.length - filteredPosts.length }}/{{ posts.length }}</q-badge>
         <q-popup-proxy>
           <q-card flat bordered>
