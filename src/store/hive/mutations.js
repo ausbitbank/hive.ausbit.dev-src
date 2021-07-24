@@ -44,3 +44,9 @@ export async function addToQueue (state, newItem) {
 export async function removeFromQueue (state, itemToRemove) {
   state.queue = state.queue.filter(a => a !== itemToRemove)
 }
+
+export async function updateFollowCount (state, followCount) {
+  var a = followCount.account
+  delete followCount.account
+  Vue.set(state.followCounts, a, followCount)
+}

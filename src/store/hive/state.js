@@ -21,6 +21,7 @@ export default function () {
     },
     queue: [],
     accounts: {},
+    followCounts: {},
     posts: {},
     communityInfo: {},
     globalProps: {
