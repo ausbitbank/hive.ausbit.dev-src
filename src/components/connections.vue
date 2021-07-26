@@ -89,6 +89,7 @@ export default {
   mounted () {
     this.getConnections()
     if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
+    if (this.followCount === undefined) { this.$store.dispatch('hive/getFollowCount', this.username) }
     this.page = 1
   }
 }
