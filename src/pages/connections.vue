@@ -8,12 +8,12 @@
     <q-tab-panels v-model="tab" animated style="margin:auto; max-width: 1000px">
       <q-tab-panel name="following">
         <div class="text-h5 text-center">
-          {{ username }} is following
+          {{ username }} is following {{ followCount.following_count }} accounts:
         </div>
         <connections type="following" :username="this.username" />
       </q-tab-panel>
       <q-tab-panel name="followers">
-        <div class="text-h5 text-center">{{ username }} is followed by</div>
+        <div class="text-h5 text-center">{{ username }} is followed by {{ followCount.follower_count }} accounts:</div>
         <connections type="followers" :username="this.username" />
       </q-tab-panel>
     </q-tab-panels>
