@@ -51,6 +51,7 @@ export default {
   mounted () {
     if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
     if (this.account === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.followCount === undefined) { this.$store.dispatch('hive/getFollowCount', this.username) }
     // this.$route.path.endsWith('following') ? this.tab = 'following' : this.tab = 'followers'
   }
 }
