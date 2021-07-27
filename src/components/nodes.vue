@@ -32,7 +32,7 @@
           <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 35 minutes" name="warning" color="orange" />
         </div>
         <div class="text-caption">
-          Alternatives : <a href="https://hivekings.com/nodes" target="_blank">hivekings</a>, <a href="https://beacon.peakd.com/">peakd</a>
+          Alternative: <a href="https://beacon.peakd.com/">peakd beacon</a>
         </div>
         <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense flat icon="link" /></router-link></div>
       </q-card-section>
