@@ -12,9 +12,11 @@
         <div>{{ resourceBudgetTransfers }} transfers</div>
     </q-card-section>
     <q-dialog v-model="showAll">
-      <q-card flat bordered style="min-width: 300px">
+      <q-card flat bordered style="min-width: 300px text-center">
         <div class="text-h5 text-center">Resource Costs</div>
+        <div class="text-subtitle">RC for {{ username }}</div>
         <jsonViewer v-if="RC !== {}" :data="RC" />
+        <div class="text-subtitle">Live costs</div>
         <jsonViewer v-if="costs !== null" :data="costs" />
       </q-card>
     </q-dialog>
@@ -101,7 +103,7 @@ export default {
     },
     getResourceCosts () {
       this.$axios.get('https://api.ausbit.dev/rc')
-        .then((res) => { this.costs = res })
+        .then((res) => { this.costs = res.data })
     },
     tidyNumber (x) {
       if (x) {
