@@ -6,11 +6,18 @@
       </div>
     </q-linear-progress>
     <q-card-section class="text-center">
-        <div class="text-bold">Enough credits for approximately:</div>
+        <div class="text-bold">Enough credits for approximately <q-icon name="info" color="blue" title="Click for more RC info" @click="showAll = !showAll" /></div>
         <div>{{ resourceBudgetComments }} comments</div>
         <div>{{ resourceBudgetVotes }} votes</div>
         <div>{{ resourceBudgetTransfers }} transfers</div>
     </q-card-section>
+    <q-dialog v-model="showAll">
+      <q-card flat bordered style="min-width: 300px">
+        <div class="text-h5 text-center">Resource Costs</div>
+        <jsonViewer v-if="RC !== {}" :data="RC" />
+        <jsonViewer v-if="costs !== null" :data="costs" />
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 <script>
@@ -21,8 +28,13 @@ export default {
   data () {
     return {
       loading: false,
-      RC: {}
+      RC: {},
+      costs: null,
+      showAll: false
     }
+  },
+  components: {
+    jsonViewer: () => import('components/jsonViewer.vue')
   },
   computed: {
     rcPercent: function () {
@@ -36,12 +48,13 @@ export default {
     },
     resourceBudgetComments: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = (0.866099987 * 1000000000)
+        var cost = 1175937456
+        if (this.costs !== null) { cost = this.costs.comment }
         var available = (this.RC.rc_manabar.current_mana / cost)
-        if (available >= 100) {
-          return '100+'
+        if (available >= 1000000) {
+          return '1M+'
         } else {
-          return available.toFixed(0)
+          return this.tidyNumber(available.toFixed(0))
         }
       } else {
         return null
@@ -49,12 +62,13 @@ export default {
     },
     resourceBudgetVotes: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = (0.098893838 * 1000000000)
+        var cost = 109514642
+        if (this.costs !== null) { cost = this.costs.vote }
         var available = (this.RC.rc_manabar.current_mana / cost)
-        if (available >= 100) {
-          return '100+'
+        if (available >= 1000000) {
+          return '1M+'
         } else {
-          return available.toFixed(0)
+          return this.tidyNumber(available.toFixed(0))
         }
       } else {
         return null
@@ -62,12 +76,13 @@ export default {
     },
     resourceBudgetTransfers: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = (0.476452196 * 1000000000)
+        var cost = 487237759
+        if (this.costs !== null) { cost = this.costs.transfer }
         var available = (this.RC.rc_manabar.current_mana / cost)
-        if (available >= 100) {
-          return '100+'
+        if (available >= 1000000) {
+          return '1M+'
         } else {
-          return available.toFixed(0)
+          return this.tidyNumber(available.toFixed(0))
         }
       } else {
         return null
@@ -83,10 +98,24 @@ export default {
           this.loading = false
           this.RC = res.rc_accounts[0]
         })
+    },
+    getResourceCosts () {
+      this.$axios.get('https://api.ausbit.dev/rc')
+        .then((res) => { this.costs = res })
+    },
+    tidyNumber (x) {
+      if (x) {
+        var parts = x.toString().split('.')
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        return parts.join('.')
+      } else {
+        return null
+      }
     }
   },
   mounted () {
     this.getRcForAccount(this.username)
+    if (this.costs === null) { this.getResourceCosts() }
   }
 }
 </script>
