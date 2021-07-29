@@ -20,7 +20,7 @@
                 <div class="text-subtitle">Vote Weight</div>
                 <div class="text-h6">{{ effectiveHPTidy }} HP</div>
                 <div class="text-caption text-grey">
-                    {{ vestToHive(parseInt(account.vesting_shares.split(' ')[0])) }} + {{ vestToHive(parseInt(account.received_vesting_shares.split(' ')[0])) }} - {{ vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0])) }}
+                    <span title="Vested Hive">{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}</span> + <span title="Incoming delegations">{{ tidyNumber(vestToHive(parseInt(account.received_vesting_shares.split(' ')[0]))) }}</span> - <span title="Outgoing delegations">{{ tidyNumber(vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0]))) }}</span>
                 </div>
                 <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
                     <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
@@ -66,7 +66,7 @@
                           {{ getReputation(account.reputation) }}
                       </div>
                       <div class="text-caption text-grey">
-                          {{ account.post_count }} posts
+                          {{ tidyNumber(account.post_count) }} posts
                       </div>
                   </div>
                   <div class="col">
