@@ -64,10 +64,10 @@
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders">
                 <q-input v-model="username" label="Username" />
-                <q-input v-model="postkey" label="Posting Key" filled type="password" />
+                <q-input v-model="postkey" label="Posting Key" filled type="password" :rules="[val => !!val || 'Field is required']"/>
                 <q-input v-model="activekey" label="Active Key (optional)" filled type="password" />
                 <q-input v-model="memokey" label="Memo Key (optional)" filled type="password" />
-                <q-input v-model="password" label="Unlock Password" filled type="password" />
+                <q-input v-model="password" label="Unlock Password" filled type="password" :rules="[val => !!val || 'Field is required']"/>
                 <q-btn flat glossy dense label="Save and login" icon="save" color="primary" @click="smartLockImportAccount()"/>
               </q-card>
             </q-popup-proxy>
