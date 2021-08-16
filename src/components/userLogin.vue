@@ -1,5 +1,5 @@
 <template>
-  <q-btn flat dense round no-caps aria-label="Login" class="hvr q-ml-md text-capitalize">
+  <q-btn flat dense round no-caps aria-label="Login" class="q-ml-md text-capitalize">
     <q-avatar>
       <q-img :src="userAvatar" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />
@@ -9,7 +9,7 @@
       <q-card flat bordered>
       <div v-if="loggedInUser">
         <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-        <q-list bordered separator class="text-primary">
+        <q-list dense bordered class="text-primary text-center">
           <q-item clickable :to="linkFeed(loggedInUser)">
             <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
             <q-item-section class="text-orange">Feed</q-item-section>
@@ -46,10 +46,17 @@
             <q-item-section avatar><q-icon name="exit_to_app" color="red" class="hvr" /></q-item-section>
             <q-item-section class="text-red">Logout</q-item-section>
           </q-item>
+          <q-item>
+            <q-linear-progress dark stripe rounded size="20px" :value="votePower" color="blue" class="q-mt-none" title="Vote Power %">
+              <div class="absolute-full flex flex-center">
+                  <q-badge color="black" text-color="primary">VP {{ votePower }} %</q-badge>
+              </div>
+            </q-linear-progress>
+          </q-item>
         </q-list>
         </transition>
       </div>
-      <q-list v-else>
+      <q-list dense v-else>
         <q-item-label header class="text-center">
             Login as:
           </q-item-label>
@@ -93,7 +100,7 @@
           <q-item-section>
             <q-chip outline size="md" removable @remove="smartLockRemoveAccount(user)" clickable @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-chip>
           </q-item-section>
-          <q-item-section side>
+          <q-item-section side v-if="false">
             <q-btn dense flat glossy v-if="smartLockUnlockStatus(user)" icon="no_encryption" color="green" @click="smartLockLockAccount(user)" />
             <q-btn dense flat glossy v-else color="red" icon="lock" @click="checkLoginSmartLock(user)" />
           </q-item-section>
@@ -153,6 +160,21 @@ export default {
         return 'https://images.hive.blog/u/' + this.loggedInUser + '/avatar'
       } else {
         return 'https://images.hive.blog/u/null/avatar'
+      }
+    },
+    votePower: function () {
+      if (this.account !== undefined) {
+        var secondsago = (new Date() - new Date(this.account.last_vote_time + 'Z')) / 1000
+        var vpow = this.account.voting_power + (10000 * secondsago / 432000)
+        return parseFloat(Math.min(vpow / 100, 100).toFixed(2))
+      } else {
+        return null
+      }
+    },
+    account: {
+      cache: false,
+      get () {
+        return this.$store.state.hive.accounts[this.loggedInUser]
       }
     }
   },
