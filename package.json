@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@ecency/render-helper": "^2.0.15",
-    "@hiveio/hive-js": "^1.0.0",
+    "@hiveio/hive-js": "^2.0.0",
     "@hiveio/keychain": "^1.0.4",
     "@metamask/detect-provider": "^1.2.0",
     "@quasar/extras": "^1.10.7",
