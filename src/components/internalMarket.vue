@@ -74,7 +74,7 @@
         <q-input v-model="sellTotal" label="Total HBD ($)" @input="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
         <div>Available: <q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
         <div>Highest Bid: <q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
-        <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(sellTotal + ' HIVE', sellAmount + ' HBD')" />
+        <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(sellAmount + ' HIVE', sellTotal + ' HBD')" />
       </q-form>
     </q-tab-panel>
     <q-tab-panel name="orders" label="Orders">
