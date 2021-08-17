@@ -96,6 +96,10 @@
                 <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']"/>
             </q-card-section>
         </q-card>
+        <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
+          <div class="text-h6 text-center">Withdraw Routes</div>
+          <withdrawRoutes :username="this.username" />
+        </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account">
             <q-card-section>
                 <div class="text-h6 text-center">JSON Metadata <q-btn flat icon="edit" title="Edit JSON Metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser"/></div>
@@ -189,6 +193,7 @@ import accountAuthorities from 'components/accountAuthorities.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 import rc from 'components/rc.vue'
+import withdrawRoutes from 'components/withdrawRoutes.vue'
 export default {
   name: 'accountPage',
   components: {
@@ -199,7 +204,8 @@ export default {
     accountOperations,
     accountHeader,
     rc,
-    accountAuthorities
+    accountAuthorities,
+    withdrawRoutes
     // recentVotedPostsCarousel
   },
   data () {
