@@ -5,7 +5,7 @@
           {{ route.to_account }} - {{ route.percent / 100 }}%
           <span v-if="route.auto_vest">Staked</span>
           <span v-else>Liquid</span>
-          <q-btn flat dense icon="delete" color="red" title="Delete route" @click="setWithdrawRoute(username, route.to_account, 0, false)"/>
+          <q-btn v-if="loggedInUser === username" flat dense icon="delete" color="red" title="Delete route" @click="setWithdrawRoute(username, route.to_account, 0, false)"/>
       </div>
     </div>
     <div v-else>
