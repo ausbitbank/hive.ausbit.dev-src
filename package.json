@@ -12,7 +12,7 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@ecency/render-helper": "^2.0.15",
+    "@ecency/render-helper": "^2.1.24",
     "@hiveio/hive-js": "^2.0.0",
     "@hiveio/keychain": "^1.0.4",
     "@metamask/detect-provider": "^1.2.0",
