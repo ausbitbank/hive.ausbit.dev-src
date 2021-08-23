@@ -950,10 +950,10 @@
     "@babel/helper-validator-identifier" "^7.14.5"
     to-fast-properties "^2.0.0"
 
-"@ecency/render-helper@^2.0.15":
-  version "2.1.16"
-  resolved "https://registry.yarnpkg.com/@ecency/render-helper/-/render-helper-2.1.16.tgz#3a7a43ac7e89ba6e77056643dd88bc3547b1d852"
-  integrity sha512-NhgImVWbY4CtGDhOTXcfP/ZUQ25HQ3NODGrRfrVEjOwvHpm+L4+mEEzpo7wqSwPCstMYJAioEV19UclysYM1aQ==
+"@ecency/render-helper@^2.1.24":
+  version "2.1.24"
+  resolved "https://registry.yarnpkg.com/@ecency/render-helper/-/render-helper-2.1.24.tgz#ade7511d715c11bc26faac07b7de8974f3ad8701"
+  integrity sha512-X12CheyClvaidAs95hU3qqWlIhRghXtmqVtPXTqbokBer5CdT0nTKxKzsUeFpuu3L6WPGJg7onNYoUhK0UrCKg==
   dependencies:
     he "^1.2.0"
     lru-cache "^5.1.1"
@@ -1228,6 +1228,11 @@
     retry "^0.12.0"
     secure-random "^1.1.2"
     ws "^3.3.2"
+
+"@hiveio/hivescript@^1.2.4":
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/@hiveio/hivescript/-/hivescript-1.2.4.tgz#22bfa6ce3d3f6d70d5460b5aa10ddd7b63bca7aa"
+  integrity sha512-xMq9JI2E6qiXUGNvpMXy6Xzt7SH3PGneqCTt81esZCxqJXK6ZO34CngWPlsDY0xLEHk5FOCF1FLl+WyxQ4MS0g==
 
 "@hiveio/keychain@^1.0.4":
   version "1.0.4"
