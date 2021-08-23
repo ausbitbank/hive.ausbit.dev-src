@@ -31,7 +31,7 @@ export default {
         return
       }
       const partialusername = val.toLowerCase()
-      this.$hive.api.lookupAccountsAsync(partialusername, 10)
+      this.$hive.api.lookupAccountsAsync(partialusername, 20)
         .then(data => { this.usernameSuggestions = data.filter(el => { return this.badActors.indexOf(el) === -1 }) })
     },
     setModel (val) {
