@@ -1,9 +1,9 @@
 <template>
   <q-page class="flex flex-center">
-    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="false" class="full-width" />
-    <div v-if="post !== null" class="row items-start content-start justify-center q-pa-sm" style="max-width:1000px">
-      <div class="col-xs-11 col-md-9 col-lg-9 justify-center">
-        <q-card flat bordered class="q-pa-sm" style="margin:auto">
+    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="true" class="full-width" />
+    <div v-if="post !== null" class="row items-start content-start justify-center" style="margin:auto; max-width:1000px">
+      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start">
+        <q-card flat bordered class="q-pa-xs" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
             {{ Sanitize(post.title) }}
           </q-card-section>
@@ -17,9 +17,8 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center" v-if="post">
-        <transition appear enter-active-class="animated bounceInRight" leave-active-class="animated bounceOutRight">
-        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px">
+      <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center items-start" v-if="post">
+        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px; position:relative; top:0">
           <q-card-section>
             <q-list dense separator>
               <q-item>
@@ -46,7 +45,7 @@
                   <q-icon name="history" color="blue-grey"/>
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
-                  Posted {{ timeDelta(post.created) }}
+                  {{ timeDelta(post.created) }}
                 </q-item-section>
               </q-item>
               <q-item v-if="post.last_update !== post.created">
@@ -184,16 +183,17 @@
                   <shareButtons :title="post.title" v-if="showShareDialog" />
                 </q-item-section>
               </q-item>
-              <q-item>
+              <q-item v-if="false">
                 <q-item-section avatar>
                   <q-icon name="code" color="blue" />
                 </q-item-section>
                 <q-item-section>
                   <q-btn label="Full Post Metadata" @click="showFullPostMetadata = !showFullPostMetadata" rounded flat />
                   <q-dialog v-model="showFullPostMetadata">
-                    <div class="bg-dark">
-                      <json-viewer :data="post" :deep="1" title="Post json_metadata" />
-                    </div>
+                    <q-card>
+                      <json-viewer :data="post" :deep="1" title="Post json_metadata" v-if="post" />
+                      <q-btn v-close-popup label="close" icon="close" />
+                    </q-card>
                   </q-dialog>
                 </q-item-section>
               </q-item>
@@ -206,7 +206,6 @@
             View on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>, <a :href="linkEcencyPost(author, permlink)">Ecency</a>
           </q-card-section>
         </q-card>
-        </transition>
       </div>
       <div class="q-md-md" style="margin: auto"><comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" /></div>
       <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown">
@@ -259,6 +258,7 @@ export default {
     }
   },
   computed: {
+    globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
       get () {
         return this.$store.state.hive.accounts[this.author]
