@@ -12,6 +12,22 @@
       <q-item-section v-if="['latest', 'lowest_ask', 'highest_bid', 'percent_change'].includes(index)"><b>{{ parseFloat(stat).toFixed(3) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="['latest', 'lowest_ask', 'highest_bid'].includes(index)" /><span v-if="index === 'percent_change'">%</span></b></q-item-section>
       <q-item-section v-else><b>{{ tidyNumber(stat.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
     </q-item>
+    <q-item dense v-if="hiveUsd" title="Hive external market prices from coingecko api">
+      <q-item-section>
+        hive usd
+      </q-item-section>
+      <q-item-section>
+        $ {{ hiveUsd }}
+      </q-item-section>
+    </q-item>
+    <q-item dense v-if="hbdUsd" title="HBD external market prices from coingecko api">
+      <q-item-section>
+        hbd usd
+      </q-item-section>
+      <q-item-section>
+        $ {{ hbdUsd }}
+      </q-item-section>
+    </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
     <q-item dense v-for="amt in [10000, 5000, 1000, 100, 10, 1]" :key="amt.index">
@@ -62,8 +78,8 @@
         <q-input v-model="buyPrice" label="Price HBD/HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyAmount" label="Amount HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyTotal" label="Total HBD ($)" @input="buyAmount = (buyTotal / buyPrice).toFixed(3)" />
-        <div>Available: <q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal * buyPrice).toFixed(3)" /> HBD</div>
-        <div>Lowest Ask: <q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal * buyPrice).toFixed(3)"/></div>
+        <div>Available:<q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal * buyPrice).toFixed(3)" /> HBD</div>
+        <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal * buyPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(buyTotal + ' HBD', buyAmount + ' HIVE')" />
       </q-form>
     </q-tab-panel>
@@ -72,8 +88,8 @@
         <q-input v-model="sellPrice" label="Price HBD/HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellAmount" label="Amount HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellTotal" label="Total HBD ($)" @input="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
-        <div>Available: <q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
-        <div>Highest Bid: <q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
+        <div>Available:<q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
+        <div>Highest Bid:<q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(sellAmount + ' HIVE', sellTotal + ' HBD')" />
       </q-form>
     </q-tab-panel>
@@ -158,6 +174,20 @@ export default {
     balanceHive: function () {
       if (this.account) {
         return parseFloat(this.account.balance.split(' ')[0]).toFixed(3)
+      } else {
+        return null
+      }
+    },
+    hiveUsd: function () {
+      if (this.prices) {
+        return this.prices.hive.usd.toFixed(2)
+      } else {
+        return null
+      }
+    },
+    hbdUsd: function () {
+      if (this.prices) {
+        return this.prices.hive_dollar.usd.toFixed(2)
       } else {
         return null
       }
@@ -255,6 +285,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     refreshMarket () {
+      this.getCoingeckoPrices()
       if (this.internalMarketEnabled) {
         this.internalMarket.bids = {}
         this.internalMarket.asks = {}
