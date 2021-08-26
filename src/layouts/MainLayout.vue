@@ -136,6 +136,12 @@ export default {
           link: 'https://gitlab.syncad.com/hive/'
         },
         {
+          title: 'Site Source',
+          caption: 'github.com/ausbitbank/hive.ausbit.dev-src',
+          icon: 'code',
+          link: 'https://github.com/ausbitbank/hive.ausbit.dev-src'
+        },
+        {
           title: 'Hive Discord',
           caption: 'myhive.li/discord',
           icon: 'chat',
