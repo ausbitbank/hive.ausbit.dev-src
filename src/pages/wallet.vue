@@ -2,13 +2,13 @@
   <q-page class="flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-          <q-card flat bordered class="q-ma-none q-pa-none" style="max-width:1000px; max-width:100%">
+          <q-card dense flat bordered class="q-ma-none q-pa-none" style="max-width:1000px; max-width:100%; min-width: 50%">
             <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
                 <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
                 <q-tab name="hive-engine"><q-icon name="img:statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
             </q-tabs>
-            <q-tab-panels v-model="tab" animated class="shadow-2 rounded-borders">
+            <q-tab-panels v-model="tab" animated>
                 <q-tab-panel name="hive">
                     <q-list bordered separator class="rounded-borders">
                         <q-item>
@@ -206,7 +206,7 @@
                     <div id="scrollTargetRef">
                       <div class="text-h6 text-center">Transaction History</div>
                       <div class="text-center">
-                        <q-btn no-caps dense glossy label="Filter Transactions" icon="filter_alt">
+                        <q-btn no-caps dense glossy label="Filter" icon="filter_alt">
                           <q-popup-proxy>
                             <q-card flat bordered class="q-pa-sm">
                               <div class="text-h6">Show transaction types</div>
@@ -223,6 +223,8 @@
                           </q-popup-proxy>
                         </q-btn>
                       </div>
+                      <q-scroll-area style="height: 500px;" ref="infiniteScroll">
+                      <q-infinite-scroll @load="getHiveWalletTransactions" :offset="150" scroll-target=“body”>
                         <q-list dense bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
                           <q-item>
                             <q-item-section avatar class="gt-xs">
@@ -441,10 +443,17 @@
                           </q-item>
                           <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
-                      <div class="text-center text-h6 q-pa-sm">
+                        <template v-slot:loading>
+                          <div class="row justify-center q-my-md">
+                            <q-spinner-dots color="primary" size="40px" />
+                          </div>
+                        </template>
+                      </q-infinite-scroll>
+                      </q-scroll-area>
+                      <!-- <div class="text-center text-h6 q-pa-sm">
                         <q-spinner-puff size="2em" color="primary" v-if="loading" />
                         <q-btn @click="getHiveWalletTransactions()" class="cursor-pointer text-bold" icon="update" color="primary" dense flat bordered v-if="!loading"> Load More Transactions</q-btn>
-                      </div>
+                      </div> -->
                     </div>
                 </q-tab-panel>
                 <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null && hiveEngineTokenInfo !== null">
@@ -500,7 +509,7 @@
                             <q-item-label>{{ tidyNumber(token.pendingUndelegations) }}</q-item-label>
                             <q-item-label caption>Undelegating</q-item-label>
                           </q-item-section>
-                          <q-item-section v-if="hiveEngineMarketInfo">
+                          <q-item-section v-if="hiveEngineMarketInfo" class="gt-xs">
                             <q-item-label>
                               ${{ tidyNumber((returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake))).toFixed(2)) }}
                             </q-item-label>
@@ -534,6 +543,7 @@
                     </q-list>
                     <div v-if="hiveEngineTransactionHistory">
                       <div class="text-h6 text-center">Transaction History</div>
+                      <q-scroll-area style="height: 500px">
                       <q-list bordered v-for="tx in this.hiveEngineTransactionHistory" :key="tx.index">
                         <q-item>
                           <q-item-section avatar class="gt-xs">
@@ -716,6 +726,7 @@
                           </q-item-section>
                         </q-item>
                       </q-list>
+                      </q-scroll-area>
                     </div>
                     <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
                 </q-tab-panel>
@@ -902,7 +913,7 @@ export default {
         return null
       }
     },
-    async getHiveWalletTransactions () {
+    async getHiveWalletTransactions (index, done) {
       this.loading = true
       await this.$hive.api.callAsync(
         'call',
@@ -922,7 +933,9 @@ export default {
           } else {
             this.hiveTransactions = this.hiveTransactions.concat(res.reverse())
           }
+          if (res.length === 0) { this.$refs.infiniteScroll.stop() }
           this.loading = false
+          done()
         })
         .catch(err => {
           this.loading = false
@@ -1018,7 +1031,7 @@ export default {
       this.username = this.$route.params.username
       document.title = this.username + '\'s wallet'
       if (this.account === undefined) { this.getAccount(this.username) }
-      this.getHiveWalletTransactions()
+      // this.getHiveWalletTransactions()
       this.getHiveEngineBalances(this.username)
       this.getPricesCoingecko()
       this.getHiveEngineTransactionHistory()
@@ -1026,6 +1039,9 @@ export default {
   },
   mounted () {
     this.init()
+  },
+  created () {
+    // this.getHiveEngineBalances = debounce(this.getHiveEngineBalances, 500)
   }
 }
 </script>
