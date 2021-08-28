@@ -2,7 +2,7 @@
   <q-page class="flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-          <q-card flat bordered class="q-ma-md q-pa-md" style="max-width:1000px; max-width:100%; min-width:600px">
+          <q-card flat bordered class="q-ma-none q-pa-none" style="max-width:1000px; max-width:100%">
             <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
                 <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
@@ -205,6 +205,24 @@
                     </q-list>
                     <div id="scrollTargetRef">
                       <div class="text-h6 text-center">Transaction History</div>
+                      <div class="text-center">
+                        <q-btn no-caps dense glossy label="Filter Transactions" icon="filter_alt">
+                          <q-popup-proxy>
+                            <q-card flat bordered class="q-pa-sm">
+                              <div class="text-h6">Show transaction types</div>
+                              <q-toggle v-model="filter.showClaimedRewards" label="Claimed Rewards" /><br />
+                              <!-- <q-toggle v-model="filter.showDust" label="Show Dust Transfers (0.001)" /><br /> -->
+                              <q-toggle v-model="filter.showTransfers" label="Transfers" /><br />
+                              <q-toggle v-model="filter.showMarketOrders" label="Market Orders" /><br />
+                              <q-toggle v-model="filter.showStaking" label="Staking" /><br />
+                              <q-toggle v-model="filter.showUnStaking" label="Un-Staking" /><br />
+                              <q-toggle v-model="filter.showSavings" label="Savings" /><br />
+                              <q-input v-model="filter.search" label="Contains" clearable @clear="filter.search = ''" /><br />
+                              {{ hiveTransactions.length }} tx loaded, {{ filteredTransactionsHive.length }} visible after filtering
+                            </q-card>
+                          </q-popup-proxy>
+                        </q-btn>
+                      </div>
                         <q-list dense bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
                           <q-item>
                             <q-item-section avatar class="gt-xs">
@@ -217,7 +235,11 @@
                                 <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer_to_vesting')" />
                                 <q-icon name="arrow_circle_up" color="red-8" v-else-if="(tx[1].op[1].to !== username && tx[1].op[0] === 'transfer_to_vesting')" />
                                 <q-icon name="arrow_circle_down" color="blue-8" v-else-if="(tx[1].op[0] === 'withdraw_vesting')" />
+                                <q-icon name="arrow_circle_down" color="red-8" v-else-if="(tx[1].op[0] === 'fill_vesting_withdraw')" />
                                 <q-icon name="arrow_circle_up" color="orange-6" v-else-if="(tx[1].op[0] === 'transfer_to_savings')" />
+                                <q-icon name="arrow_circle_down" color="red-6" v-else-if="(tx[1].op[0] === 'transfer_from_savings')" />
+                                <q-icon name="arrow_circle_down" color="red-7" v-else-if="(tx[1].op[0] === 'cancel_transfer_from_savings')" />
+                                <q-icon name="arrow_circle_down" color="red-8" v-else-if="(tx[1].op[0] === 'fill_transfer_from_savings')" />
                                 <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
                                 <q-icon name="fact_check" color="orange-8" v-else-if="(tx[1].op[0] === 'escrow_release')" />
                               </q-item-label>
@@ -231,14 +253,18 @@
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'">Staked</span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting' && tx[1].op[1].vesting_shares === '0.000000 VESTS'">Cancelled Unstake</span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'">Unstaked</span>
+                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'">Unstake Received</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'">Fill Order</span>
                                 <span v-else-if="tx[1].op[0] === 'interest'">Interest</span>
                                 <span v-else-if="tx[1].op[0] === 'transfer_to_savings'">Transfer to Savings</span>
+                                <span v-else-if="tx[1].op[0] === 'transfer_from_savings'">Begin Transfer from Savings</span>
+                                <span v-else-if="tx[1].op[0] === 'fill_transfer_from_savings'">Complete Transfer from Savings</span>
+                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'">Cancel Transfer from Savings</span>
                               </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[0] === 'fill_convert_request'">
+                              <q-item-label caption v-if="['fill_convert_request','fill_vesting_withdraw', 'fill_transfer_from_savings'].includes(tx[1].op[0])">
                                 <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
                               </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[0] !== 'fill_convert_request'">
+                              <q-item-label caption v-else>
                                 <router-link :to="getTxLink(tx[1].trx_id)">{{ tx[1].trx_id.substr(0,8) }}</router-link>
                               </q-item-label>
                             </q-item-section>
@@ -248,11 +274,12 @@
                                 <span v-else-if="tx[1].op[1].from !== username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
                                 <span v-else-if="tx[1].op[1].account === username && tx[1].op[0] === 'claim_reward_balance'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_convert_request'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'transfer_to_savings'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
+                                <span v-else-if="['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'transfer_to_vesting'].includes(tx[1].op[0])"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'"> <router-link :to="getAccountLink(tx[1].op[1].from_account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from_account)" /></q-avatar> {{ tx[1].op[1].from_account }}</router-link></span>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section :title="tx[1].timestamp" class="gt-xs">
@@ -285,24 +312,34 @@
                                 </q-tooltip>
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner === username">
+                            <q-item-section side top v-if="tx[1].op[0] === 'fill_transfer_from_savings'">
                               <q-item-label class="text-bold">
+                                + {{ tidyNumber(tx[1].op[1].amount) }}
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_from_savings'">
+                              <q-item-label class="text-bold">
+                                ({{ tidyNumber(tx[1].op[1].amount) }})
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner === username">
+                              <q-item-label class="text-bold text-red-5">
                                 - {{ tidyNumber(tx[1].op[1].open_pays) }}
                               </q-item-label>
-                              <q-item-label class="text-bold">
+                              <q-item-label class="text-bold text-green-5">
                                 + {{ tidyNumber(tx[1].op[1].current_pays) }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner !== username">
-                              <q-item-label class="text-bold">
+                              <q-item-label class="text-bold text-red-5">
                                 - {{ tidyNumber(tx[1].op[1].current_pays) }}
                               </q-item-label>
-                              <q-item-label class="text-bold">
+                              <q-item-label class="text-bold text-green-5">
                                 + {{ tidyNumber(tx[1].op[1].open_pays) }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to === username">
-                              <q-item-label class="text-bold text-green">
+                              <q-item-label class="text-bold text-green-9">
                                 + {{ tidyNumber(tx[1].op[1].amount) }}
                               </q-item-label>
                               <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
@@ -340,6 +377,11 @@
                             <q-item-section side top v-if="tx[1].op[0] === 'withdraw_vesting'">
                               <q-item-label class="text-bold">
                                 {{ vestToHive(tx[1].op[1].vesting_shares) }} HIVE
+                              </q-item-label>
+                            </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'fill_vesting_withdraw'">
+                              <q-item-label class="text-bold">
+                                + {{ tx[1].op[1].deposited }}
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'interest'" class="text-green-9">
@@ -397,7 +439,7 @@
                               </q-item-label>
                             </q-item-section>
                           </q-item>
-                          <div v-if="!['transfer', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
+                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                       <div class="text-center text-h6 q-pa-sm">
                         <q-spinner-puff size="2em" color="primary" v-if="loading" />
@@ -704,10 +746,14 @@ const walletBitmask = makeBitMaskFilter([
   op.liquidity_reward,
   op.transfer_to_savings,
   op.transfer_from_savings,
+  op.fill_transfer_from_savings,
   op.cancel_transfer_from_savings,
   op.fill_convert_request,
   op.fill_order,
-  op.claim_reward_balance
+  op.claim_reward_balance,
+  op.convert,
+  op.collateralized_convert,
+  op.fill_vesting_withdraw
 ])
 export default {
   name: 'wallet',
@@ -741,7 +787,17 @@ export default {
       hivePriceUsd: null,
       hbdPriceUsd: null,
       decodedMemo: null,
-      showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'interest', 'liquidity_reward', 'transfer_to_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
+      filter: {
+        showClaimedRewards: true,
+        showDust: true,
+        showTransfers: true,
+        showMarketOrders: true,
+        showStaking: true,
+        showUnStaking: true,
+        showSavings: true,
+        search: ''
+      },
+      showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'fill_vesting_withdraw', 'interest', 'liquidity_reward', 'transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
   components: {
@@ -789,8 +845,14 @@ export default {
     },
     filteredTransactionsHive: function () {
       var ft = this.hiveTransactions
-      console.log(this.hiveTransactions[0])
       ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
+      if (!this.filter.showClaimedRewards) { ft = ft.filter(t => t[1].op[0] !== 'claim_reward_balance') }
+      if (!this.filter.showTransfers) { ft = ft.filter(t => t[1].op[0] !== 'transfer') }
+      if (!this.filter.showMarketOrders) { ft = ft.filter(t => t[1].op[0] !== 'fill_order') }
+      if (!this.filter.showStaking) { ft = ft.filter(t => t[1].op[0] !== 'transfer_to_vesting') }
+      if (!this.filter.showUnStaking) { ft = ft.filter(t => ['withdraw_vesting', 'fill_vesting_withdraw'].includes(t[1].op[0]) === false) }
+      if (!this.filter.showSavings) { ft = ft.filter(t => ['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings'].includes(t[1].op[0]) === false) }
+      if (this.filter.search !== '') { ft = ft.filter(t => JSON.stringify(t[1].op[1]).indexOf(this.filter.search) !== -1) }
       return ft
     }
   },
