@@ -212,7 +212,8 @@
                               <div class="text-h6">Show transaction types</div>
                               <q-toggle v-model="filter.showClaimedRewards" label="Claimed Rewards" /><br />
                               <!-- <q-toggle v-model="filter.showDust" label="Show Dust Transfers (0.001)" /><br /> -->
-                              <q-toggle v-model="filter.showTransfers" label="Transfers" /><br />
+                              <q-toggle v-model="filter.showTransfersIn" label="Transfers In" /><br />
+                              <q-toggle v-model="filter.showTransfersOut" label="Transfers Out" /><br />
                               <q-toggle v-model="filter.showMarketOrders" label="Market Orders" /><br />
                               <q-toggle v-model="filter.showStaking" label="Staking" /><br />
                               <q-toggle v-model="filter.showUnStaking" label="Un-Staking" /><br />
@@ -801,14 +802,15 @@ export default {
       filter: {
         showClaimedRewards: true,
         showDust: true,
-        showTransfers: true,
+        showTransfersIn: true,
+        showTransfersOut: true,
         showMarketOrders: true,
         showStaking: true,
         showUnStaking: true,
         showSavings: true,
         search: ''
-      },
-      showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'fill_vesting_withdraw', 'interest', 'liquidity_reward', 'transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
+      }
+      // showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'fill_vesting_withdraw', 'interest', 'liquidity_reward', 'transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
   components: {
@@ -856,9 +858,10 @@ export default {
     },
     filteredTransactionsHive: function () {
       var ft = this.hiveTransactions
-      ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
+      // ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
       if (!this.filter.showClaimedRewards) { ft = ft.filter(t => t[1].op[0] !== 'claim_reward_balance') }
-      if (!this.filter.showTransfers) { ft = ft.filter(t => t[1].op[0] !== 'transfer') }
+      if (!this.filter.showTransfersIn) { ft = ft.filter(t => t[1].op[0] === 'transfer' && t[1].op[1].to === this.username) }
+      if (!this.filter.showTransfersOut) { ft = ft.filter(t => t[1].op[0] === 'transfer' && t[1].op[1].from === this.username) }
       if (!this.filter.showMarketOrders) { ft = ft.filter(t => t[1].op[0] !== 'fill_order') }
       if (!this.filter.showStaking) { ft = ft.filter(t => t[1].op[0] !== 'transfer_to_vesting') }
       if (!this.filter.showUnStaking) { ft = ft.filter(t => ['withdraw_vesting', 'fill_vesting_withdraw'].includes(t[1].op[0]) === false) }
