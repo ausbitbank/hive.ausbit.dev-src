@@ -80,6 +80,23 @@
                     <json-viewer :data="tx.op[1]" />
                 </q-item-label>
                 </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'account_create'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].creator)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].creator }}</router-link></span> created new account <router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].new_account_name }}</router-link>
+                    <json-viewer :data="tx.op[1]" />
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'account_created'">
+                <q-item-label>
+                    New account created <router-link :to="returnAccountLink(tx.op[1].creator)">{{ tx.op[1].new_account_name }}</router-link>
+                    <json-viewer :data="tx.op[1]" />
+                </q-item-label>
+                </q-item-section>
+                <q-item-section v-else-if="tx.op[0] === 'collateralized_convert'">
+                <q-item-label>
+                    <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> started <q-badge>collateralized_convert</q-badge> of {{ tx.op[1].amount }} with request id {{ tx.op[1].requestid }}
+                </q-item-label>
+                </q-item-section>
                 <q-item-section v-else-if="tx.op[0] === 'limit_order_create'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].owner)" /></q-avatar><span class="text-bold"><router-link :to="returnAccountLink(tx.op[1].owner)">{{ tx.op[1].owner }}</router-link></span> created limit order - selling {{ tx.op[1].amount_to_sell }} for {{ tx.op[1].min_to_receive }} (Fill or kill: {{ tx.op[1].fill_or_kill }}, Expiration {{ tx.op[1].expiration }}, Order Id {{ tx.op[1].orderid }})
