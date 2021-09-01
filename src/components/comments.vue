@@ -19,7 +19,7 @@
             </q-btn>
           </div>
       </q-card-section>
-      <q-card flat bordered v-for="comment in comments" :key="comment.url" class="text-justify">
+      <q-card flat v-for="comment in comments" :key="comment.url" class="text-justify">
         <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.parent_permlink === permlink && returnFilterStatus(comment)" />
       </q-card>
     </q-card>
