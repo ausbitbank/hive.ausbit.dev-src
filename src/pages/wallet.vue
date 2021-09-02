@@ -245,6 +245,7 @@
                                 <q-icon name="arrow_circle_down" color="red-8" v-else-if="(tx[1].op[0] === 'fill_transfer_from_savings')" />
                                 <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
                                 <q-icon name="fact_check" color="orange-8" v-else-if="(tx[1].op[0] === 'escrow_release')" />
+                                <q-icon name="swap_horizontal_circle" color="orange-7" v-else-if="(tx[1].op[0] === 'collateralized_convert')" />
                               </q-item-label>
                             </q-item-section>
                             <q-item-section>
@@ -263,6 +264,7 @@
                                 <span v-else-if="tx[1].op[0] === 'transfer_from_savings'">Begin Transfer from Savings</span>
                                 <span v-else-if="tx[1].op[0] === 'fill_transfer_from_savings'">Complete Transfer from Savings</span>
                                 <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'">Cancel Transfer from Savings</span>
+                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'">Collateralized Convert Started</span>
                               </q-item-label>
                               <q-item-label caption v-if="['fill_convert_request','fill_vesting_withdraw', 'fill_transfer_from_savings'].includes(tx[1].op[0])">
                                 <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
@@ -283,6 +285,7 @@
                                 <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
                                 <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'"> <router-link :to="getAccountLink(tx[1].op[1].from_account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from_account)" /></q-avatar> {{ tx[1].op[1].from_account }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section :title="tx[1].timestamp" class="gt-xs">
@@ -387,6 +390,11 @@
                                 + {{ tx[1].op[1].deposited }}
                               </q-item-label>
                             </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'collateralized_convert'">
+                              <q-item-label class="text-bold text-orange">
+                                {{ tidyNumber(tx[1].op[1].amount.split(' ')[0]) }} {{ tx[1].op[1].amount.split(' ')[1] }}
+                              </q-item-label>
+                            </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'interest'" class="text-green-9">
                               <q-item-label class="text-bold">
                                 + {{ tx[1].op[1].interest }}
@@ -442,7 +450,7 @@
                               </q-item-label>
                             </q-item-section>
                           </q-item>
-                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
+                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings', 'collateralized_convert'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                         <template v-slot:loading>
                           <div class="row justify-center q-my-md">
