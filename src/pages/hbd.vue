@@ -106,7 +106,7 @@ export default {
     },
     hiveCap: function () {
       if (this.globalProps !== undefined && this.medianPrice !== null) {
-        return parseFloat(parseFloat(this.globalProps.current_supply.split(' ')[0]) * (parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3) / parseFloat(this.medianPrice.quote.split(' ')[0])).toFixed(3)
+        return parseFloat(parseFloat(this.globalProps.virtual_supply.split(' ')[0]) * (parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3) / parseFloat(this.medianPrice.quote.split(' ')[0])).toFixed(3)
       } else {
         return null
       }
