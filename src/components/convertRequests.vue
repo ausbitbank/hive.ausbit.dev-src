@@ -10,7 +10,7 @@
   <q-list dense>
     <q-item v-for="conversion in collateralized_conversions" :key="conversion.id" label="Conversions">
       <q-item-section>
-        {{ conversion.converted_amount }} converted already, the rest of the {{ conversion.collateral_amount }} collateral will be converted to HBD {{ timeDelta(conversion.conversion_date) }}
+        {{ conversion.converted_amount }} converted, remaining {{ conversion.collateral_amount }} to be converted to HBD {{ timeDelta(conversion.conversion_date) }}
       </q-item-section>
     </q-item>
   </q-list>
