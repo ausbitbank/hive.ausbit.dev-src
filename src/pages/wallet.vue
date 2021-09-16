@@ -989,7 +989,7 @@ export default {
       }
     },
     getHiveEngineTransactionHistory () {
-      this.$axios.get('https://accounts.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
+      this.$axios.get('https://history.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
         .then((response) => { this.hiveEngineTransactionHistory = response.data })
         .catch(err => { console.error(err) })
     },
