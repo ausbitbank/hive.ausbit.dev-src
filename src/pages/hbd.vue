@@ -122,7 +122,7 @@ export default {
       return parseFloat((this.hbdCap / this.hiveCap) * 100).toFixed(3)
     },
     haircutPrice: function () {
-      return parseFloat((this.hbdCap * 10) / parseFloat(this.globalProps.current_supply.split(' ')[0])).toFixed(4)
+      return parseFloat((this.hbdCap * 10) / parseFloat(this.globalProps.virtual_supply.split(' ')[0])).toFixed(4)
     }
   },
   methods: {
