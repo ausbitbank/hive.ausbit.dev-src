@@ -218,7 +218,7 @@ export default {
     this.getMedianPrice()
     this.getOpenOrders()
     this.getHiveWalletTransactions()
-    this.findProposals([158, 159, 166, 169])
+    this.findProposals([158, 159, 166, 169, 191])
   },
   created () {
     this.$store.dispatch('hive/getGlobalProps')
