@@ -71,7 +71,7 @@ export default {
   data () {
     return {
       medianPrice: null,
-      daoHbdBalance: 0
+      daoHbdBalance: 6177747 // hive.fund HBD balance as of Thu 23 Sep 2021 08:12:40 AM CEST
     }
   },
   components: { coingecko },
