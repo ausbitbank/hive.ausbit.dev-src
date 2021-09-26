@@ -573,10 +573,12 @@
                               <q-icon name="gavel" color="orange-4" v-else-if="(tx.operation === 'market_sell')" />
                               <q-icon name="gavel" color="green-2" v-else-if="(tx.operation === 'hivepegged_buy')" />
                               <q-icon name="gavel" color="red-6" v-else-if="(tx.operation === 'hivepegged_withdraw')" />
+                              <q-icon name="arrow_circle_up" color="green-2" v-else-if="(tx.operation === 'witnesses_proposeRound')" />
                             </q-item-label>
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>
+                              <span v-if="(tx.operation === 'witnesses_proposeRound')">Witness Round</span>
                               <span v-if="(tx.from === username && tx.operation === 'tokens_transfer')">Sent </span>
                               <span v-else-if="(tx.to === username && tx.operation === 'tokens_transfer')">Received </span>
                               <span v-else-if="(tx.to === username && tx.operation === 'tokens_stake')">Staked </span>
@@ -614,6 +616,7 @@
                               <span v-else-if="tx.operation === 'market_sell'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
                               <span v-else-if="tx.operation === 'hivepegged_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
                               <span v-else-if="tx.operation === 'hivepegged_withdraw'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'witnesses_proposeRound'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
                             </q-item-label>
                           </q-item-section>
                           <q-item-section :title="tx.timestamp">
@@ -731,6 +734,11 @@
                           <q-item-section side top v-if="tx.operation === 'hivepegged_withdraw'">
                             <q-item-label class="text-bold">
                               - {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                          </q-item-section>
+                          <q-item-section side top v-if="tx.operation === 'witnesses_proposeRound'">
+                            <q-item-label class="text-bold">
+                              + {{ tx.quantity }} {{ tx.symbol }}
                             </q-item-label>
                           </q-item-section>
                         </q-item>
