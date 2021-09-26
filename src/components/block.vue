@@ -1,11 +1,11 @@
 <template>
     <span>
-    <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="!loading && viewType === 'simple'">
+    <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="viewType === 'simple'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
-                <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" /></a>
+                <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" class="hvr"/></a>
                 <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
-                <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" /></a>
+                <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" class="hvr" /></a>
             </div>
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
@@ -22,7 +22,7 @@
             </span>
         </q-card-section>
     </q-card>
-    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="!loading && viewType === 'full'">
+    <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="viewType === 'full'">
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" /></a>
