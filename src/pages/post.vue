@@ -1,6 +1,16 @@
 <template>
   <q-page class="flex">
     <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="true" class="full-width" style="overflow:hidden" />
+    <div style="margin: auto" v-if="error !== null">
+      <q-card class="q-pa-md text-center" bordered>
+        <q-icon name="error" size="lg" color="orange" /><br />
+        <b>{{ error.name }} : {{ error.message }}</b><br />
+        {{ error.data }}
+        <q-card-section v-if="error.cause.code === -31999 && error.cause.data.startsWith('Post ')">
+          <q-btn label="Find the transaction" @click="findDeletedPost(error.data)" color="primary" icon="search" />
+        </q-card-section>
+      </q-card>
+    </div>
     <div v-if="post !== null" class="row items-start content-start justify-center" style="margin:auto; max-width:1000px">
       <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start">
         <q-card flat bordered class="q-pa-xs" style="margin:auto">
@@ -17,8 +27,8 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center items-start" v-if="post">
-        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px; position:relative; top:0">
+      <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center items-start">
+        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px; position:relative; top:0" v-if="post">
           <q-card-section>
             <q-list dense separator>
               <q-item>
@@ -249,7 +259,8 @@ export default {
       showShareDialog: false,
       postBody: null,
       postDescription: null,
-      showFullPostMetadata: false
+      showFullPostMetadata: false,
+      error: null
     }
   },
   watch: {
@@ -258,6 +269,7 @@ export default {
     }
   },
   computed: {
+    errorShown: function () { if (this.error !== null) { return true } else { return false } },
     globalProps: function () { return this.$store.state.hive.globalProps },
     account: {
       get () {
@@ -287,8 +299,8 @@ export default {
   methods: {
     getPost (author, permlink) {
       this.$hive.api.getContentAsync(author, permlink)
-        .then(post => this.setPost(post))
-        .catch(error => console.log(error))
+        .then(post => { this.error = null; this.setPost(post) })
+        .catch(error => { this.error = error; console.error(error) })
     },
     setPost (post) {
       this.post = post
@@ -340,6 +352,11 @@ export default {
     },
     delayedInit () {
       setTimeout(this.init(), 6000)
+    },
+    findDeletedPost (data) {
+      var author = data.split(' ')[1].split('/')[0]
+      var link = '/@' + author + '?filter=comment,delete_comment'
+      this.$router.push({ path: link })
     }
   },
   mounted () {
