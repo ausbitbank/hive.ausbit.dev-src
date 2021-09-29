@@ -466,8 +466,19 @@
                     </div>
                 </q-tab-panel>
                 <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null && hiveEngineTokenInfo !== null">
+                  <div style="margin: auto;" class="text-center">
+                    <q-checkbox v-model="hiveEngineBalancesFilterSmall">Filter under ${{ hiveEngineBalancesFilterUsdAmount }} USD value</q-checkbox>
+                    <q-btn dense flat title="Change filter amount" icon="settings">
+                      <q-popup-proxy>
+                        <q-card flat bordered class="q-pa-md text-center">
+                          Filter below USD amount
+                          <q-input type="number" v-model.number="hiveEngineBalancesFilterUsdAmount" style="max-width:70px" />
+                        </q-card>
+                      </q-popup-proxy>
+                    </q-btn>
+                  </div>
                     <q-list bordered separator class="rounded-borders">
-                        <q-item v-for="token in hiveEngineBalances" :key="token.index">
+                        <q-item v-for="token in hiveEngineBalancesFiltered" :key="token.index">
                           <q-item-section dense avatar class="gt-xs">
                             <q-avatar size="md">
                               <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
@@ -477,7 +488,7 @@
                             <q-item-label v-if="hiveEngineTokenInfo">
                               <q-btn dense flat :label="token.symbol" title="Click for more info about this token">
                                 <q-popup-proxy>
-                                  <q-card dense flat bordered>
+                                  <q-card dense flat bordered style="max-width: 400px">
                                     <q-card-section header class="text-caption text-center">
                                       <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/></q-avatar>{{ token.symbol }}<br />
                                       {{ returnTokenInfoMeta(token.symbol).desc }}
@@ -631,8 +642,8 @@
                             <q-item-label class="text-bold">
                               + {{ tx.quantity }} {{ tx.symbol }}
                             </q-item-label>
-                            <q-item-label>
-                              <div v-if="tx.memo !== ''" class="wrap text-center">
+                            <q-item-label v-if="tx.memo !== null">
+                              <div class="wrap text-center">
                                 <q-icon name="comment" title="" />
                                 <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
                                 <q-tooltip content-class="bg-primary">
@@ -809,6 +820,8 @@ export default {
       bitmask: walletBitmask,
       loading: false,
       hiveEngineBalances: null,
+      hiveEngineBalancesFilterSmall: true,
+      hiveEngineBalancesFilterUsdAmount: 1,
       hiveEngineMarketInfo: null,
       hiveEngineTokenInfo: null,
       hiveEngineTransactionHistory: null,
@@ -884,7 +897,13 @@ export default {
       if (!this.filter.showSavings) { ft = ft.filter(t => ['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings'].includes(t[1].op[0]) === false) }
       if (this.filter.search !== '') { ft = ft.filter(t => JSON.stringify(t[1].op[1]).indexOf(this.filter.search) !== -1) }
       return ft
+    },
+    hiveEngineBalancesFiltered: function () {
+      if (this.hiveEngineBalances !== null) {
+        if (this.hiveEngineBalancesFilterSmall) { return this.hiveEngineBalances.filter(t => (this.returnTokenPriceUsd(t.symbol) * (parseFloat(t.balance) + parseFloat(t.stake)) >= this.hiveEngineBalancesFilterUsdAmount)) } else { return this.hiveEngineBalances }
+      } else { return null }
     }
+    // (returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake)))
   },
   watch: {
     account: function () { this.init() },
