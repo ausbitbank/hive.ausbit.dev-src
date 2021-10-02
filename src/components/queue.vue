@@ -116,19 +116,19 @@ export default {
       var keytype = action[1]
       var op = action[2]
       var ops = [op]
-      // All of this below was originally used to bypass a parsing issue. No longer required.
       // var rpc = this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev'
-      /* if (op[0] === 'vote') {
+      if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else if (op[0] === 'custom_json') {
+      }
+      if (op[0] === 'custom_json') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', user, op[1].id, keytype, op[1].json)
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-      } else if (op[0] === 'transfer') {
+      } /* else if (op[0] === 'transfer') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestTransfer', user, op[1].to, op[1].amount.split(' ')[0], op[1].memo, op[1].amount.split(' ')[1])
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
