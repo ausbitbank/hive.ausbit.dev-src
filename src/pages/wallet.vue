@@ -51,6 +51,11 @@
                               <q-item-label>
                                 {{ tidyNumber(((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
                               </q-item-label>
+                              <q-item-label caption v-if="hivePriceUsdChange !== null">
+                                <q-icon name="arrow_upward" color="green" v-if="hivePriceUsdChange > 0" />
+                                <q-icon name="arrow_downward" color="red" v-else />
+                                {{ hivePriceUsdChange.toFixed(2) }} %
+                              </q-item-label>
                               <q-item-label caption>
                                 Value (USD)
                               </q-item-label>
@@ -148,6 +153,11 @@
                             <q-item-section class="gt-xs">
                               <q-item-label>
                                 $ {{ tidyNumber(((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2))}}
+                              </q-item-label>
+                              <q-item-label caption v-if="hbdPriceUsdChange !== null">
+                                <q-icon name="arrow_upward" color="green" v-if="hbdPriceUsdChange > 0" />
+                                <q-icon name="arrow_downward" color="red" v-else />
+                                {{ hbdPriceUsdChange.toFixed(2) }} %
                               </q-item-label>
                               <q-item-label caption>
                                 Value (USD)
@@ -840,7 +850,9 @@ export default {
       hiveEngineTokenInfo: null,
       hiveEngineTransactionHistory: null,
       hivePriceUsd: null,
+      hivePriceUsdChange: null,
       hbdPriceUsd: null,
+      hbdPriceUsdChange: null,
       decodedMemo: null,
       filter: {
         showClaimedRewards: true,
@@ -951,8 +963,8 @@ export default {
     getAccount (username) { if (this.$store.state.hive.accounts[username] === undefined) { this.$store.dispatch('hive/getAccount', username) } },
     getGlobalProps () { if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') } },
     getPricesCoingecko () {
-      this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=false')
-        .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hbdPriceUsd = response.data.hive_dollar.usd })
+      this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=true')
+        .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hivePriceUsdChange = response.data.hive.usd_24h_change; this.hbdPriceUsd = response.data.hive_dollar.usd; this.hbdPriceUsdChange = response.data.hive_dollar.usd_24h_change })
     },
     vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
