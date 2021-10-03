@@ -78,38 +78,21 @@ export default {
       if (this.network === 'hive') {
         this.stakeHive()
       } else if (this.network === 'hiveEngine') {
-        this.stakeHiveEngineKeychain()
+        this.stakeHiveEngine()
       }
     },
     stakeHive () {
       this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName }]])
     },
-    transferHiveKeychain () {
-      console.log(this.username, this.toAccount, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName)
-      window.hive_keychain.requestTransfer(this.username, this.toAccount, parseFloat(this.amount).toFixed(this.precision), this.memo, this.tokenName, function (response, err) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        }
-        if (response.success === false) {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
-    },
-    transferHiveEngineKeychain () {
-      var json = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
-      window.hive_keychain.requestCustomJson(this.username, 'ssc-mainnet-hive', 'Active', json, 'Transfer ' + this.amount + ' ' + this.tokenName + ' to ' + this.toAccount, function (response) {
-        if (response.success === true) {
-          this.err = false
-          this.sent = true
-          this.log = response.message
-        } else {
-          this.err = true
-          this.log = response.message
-        }
-      }.bind(this))
+    stakeHiveEngine () {
+      var j = '{ "contractName": "tokens", "contractAction": "stake", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '" } }'
+      var cj = {
+        required_auths: [this.username],
+        required_posting_auths: [],
+        id: 'ssc-mainnet-hive',
+        json: j
+      }
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
     }
   },
   mounted () {

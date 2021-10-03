@@ -476,6 +476,7 @@
                         </q-card>
                       </q-popup-proxy>
                     </q-btn>
+                    <q-btn icon="refresh" color="green" dense flat @click="initHiveEngine()" title="Refresh Hive-Engine data" />
                   </div>
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalancesFiltered" :key="token.index">
@@ -533,16 +534,25 @@
                             <q-item-label>
                               ${{ tidyNumber((returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake))).toFixed(2)) }}
                             </q-item-label>
+                            <q-item-label caption v-if="token.symbol !== 'SWAP.HIVE' && returnTokenPriceChange(token.symbol) !== 0">
+                              <q-icon v-if="returnTokenPriceChange(token.symbol) > 0" name="arrow_upward" color="green" />
+                              <q-icon v-else name="arrow_downward" color="red" />
+                              {{ returnTokenPriceChange(token.symbol) }} %
+                            </q-item-label>
                             <q-item-label caption>Value (USD)</q-item-label>
                           </q-item-section>
                           <q-item-section side v-if="loggedInUser === username">
-                          <q-btn v-if="token.balance !== '0'" dense flat icon="send" color="primary" title="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
+                          <q-btn v-if="parseFloat(token.balance) > 0" dense flat icon="send" color="primary" title="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
                               <q-btn dense flat icon="more_horiz">
                                 <q-menu>
                                   <q-list style="min-width: 100px" bordered separator>
-                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" v-if="token.balance !== '0'" class="text-primary" title="Transfer Token">
+                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance); transferHiveEngine = true" v-if="parseFloat(token.balance) > 0" class="text-primary" title="Transfer Token">
                                       <q-item-section avatar><q-icon name="send" /></q-item-section>
                                       <q-item-section>Transfer</q-item-section>
+                                    </q-item>
+                                    <q-item clickable @click="stakingDialogTokenName = token.symbol; stakingDialogBalance = parseFloat(token.balance); stakeHiveEngine = true" v-if="parseFloat(token.balance) > 0 && returnTokenInfo(token.symbol).stakingEnabled === true" class="text-green" title="Stake Token">
+                                      <q-item-section avatar><q-icon name="lock" /></q-item-section>
+                                      <q-item-section>Stake</q-item-section>
                                     </q-item>
                                     <q-item clickable @click="openExternal(returnMarketLink('hiveengine', token.symbol))" title="Trade on Hive-Engine.com" class="text-orange">
                                       <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
@@ -757,6 +767,7 @@
                       </q-scroll-area>
                     </div>
                     <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
+                    <q-dialog v-model="stakeHiveEngine"><staking-dialog :tokenName="stakingDialogTokenName" network="hiveEngine" :balance="stakingDialogBalance" :username="username" /></q-dialog>
                 </q-tab-panel>
             </q-tab-panels>
           </q-card>
@@ -806,6 +817,9 @@ export default {
       transferDialogTokenName: '',
       transferDialogNetwork: 'hive',
       transferDialogBalance: null,
+      stakeHiveEngine: false,
+      stakingDialogTokenName: '',
+      stakingDialogBalance: null,
       stakeHive: false,
       unstakeHive: false,
       savings: false,
@@ -1041,6 +1055,18 @@ export default {
         return null
       }
     },
+    returnTokenPriceChange (symbol) {
+      if (this.hiveEngineMarketInfo !== null) {
+        if (symbol === 'SWAP.HIVE') {
+          return 0
+        } else {
+          var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
+          if (t) { return parseFloat(t.priceChangePercent) } else { return null }
+        }
+      } else {
+        return null
+      }
+    },
     returnTokenPriceUsd (symbol) { if (this.hivePriceUsd) { return (this.returnTokenPriceHive(symbol) * this.hivePriceUsd) } else { return null } },
     returnTokenInfo (symbol) {
       if (this.getHiveEngineTokenInfo !== null) {
@@ -1070,8 +1096,11 @@ export default {
       document.title = this.username + '\'s wallet'
       if (this.account === undefined) { this.getAccount(this.username) }
       // this.getHiveWalletTransactions()
-      this.getHiveEngineBalances(this.username)
       this.getPricesCoingecko()
+      this.initHiveEngine()
+    },
+    initHiveEngine () {
+      this.getHiveEngineBalances(this.username)
       this.getHiveEngineTransactionHistory()
     }
   },
