@@ -85,7 +85,7 @@
                   View <router-link :to="linkBlog(username)">Blog</router-link> , <router-link :to="linkPosts(username)">Posts</router-link>, <router-link :to="linkComments(username)">Comments</router-link>, <router-link :to="linkReplies(username)">Replies</router-link>
                 </div>
                 <div>
-                  View in : <a :href="linkHiveBlog(username)">hive.blog</a> , <a :href="linkPeakd(username)">peakd</a>
+                  View in : <a :href="linkHiveBlog(username)">hive.blog</a>, <a :href="linkPeakd(username)">peakd</a>, <a :href="linkEcency(username)">ecency</a>
                 </div>
             </q-card-section>
         </q-card>
@@ -495,6 +495,9 @@ export default {
     },
     linkPeakd (username) {
       return 'https://peakd.com/@' + username
+    },
+    linkEcency (username) {
+      return 'https://ecency.com/@' + username
     },
     linkHiveWorld (username) {
       return '/hiveworld/@' + username
