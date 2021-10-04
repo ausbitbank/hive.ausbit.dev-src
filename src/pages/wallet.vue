@@ -659,8 +659,11 @@
                             </q-item-label>
                           </q-item-section>
                           <q-item-section side top v-if="tx.operation === 'tokens_transfer' && tx.to === username">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
+                            <q-item-label class="text-bold text-green">
+                              + {{ tx.quantity }} {{ tx.symbol }}<br />
+                            </q-item-label>
+                            <q-item-label caption>
+                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
                             </q-item-label>
                             <q-item-label v-if="tx.memo !== null">
                               <div class="wrap text-center">
@@ -676,6 +679,9 @@
                             <q-item-label class="text-bold">
                               - {{ tx.quantity }} {{ tx.symbol }}
                             </q-item-label>
+                            <q-item-label caption>
+                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
+                            </q-item-label>
                             <q-item-label>
                               <div v-if="tx.memo !== ''" class="wrap text-center">
                                 <q-icon name="comment" title="" />
@@ -690,10 +696,16 @@
                             <q-item-label class="text-bold">
                               + {{ tx.quantity }} {{ tx.symbol }}
                             </q-item-label>
+                            <q-item-label caption>
+                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
+                            </q-item-label>
                           </q-item-section>
                           <q-item-section side top v-if="tx.operation === 'tokens_stake' && tx.to !== username">
                             <q-item-label class="text-bold">
                               - {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
                             </q-item-label>
                           </q-item-section>
                           <q-item-section side top v-if="tx.operation === 'tokens_unstake'">
@@ -718,6 +730,9 @@
                           <q-item-section side top v-if="tx.operation === 'mining_lottery'">
                             <q-item-label class="text-bold">
                               + {{ tx.quantity }} {{ tx.symbol }}
+                            </q-item-label>
+                            <q-item-label caption>
+                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
                             </q-item-label>
                           </q-item-section>
                           <q-item-section side top v-if="tx.operation === 'market_placeOrder' && tx.orderType === 'sell'">
@@ -1114,6 +1129,20 @@ export default {
     initHiveEngine () {
       this.getHiveEngineBalances(this.username)
       this.getHiveEngineTransactionHistory()
+    },
+    returnDecimalsBeforeNonZero (x) {
+      var y = 0
+      if (x >= 1) {
+        return 2
+      } else { // https://stackoverflow.com/questions/23887400/how-to-get-first-2-non-zero-digits-after-decimal-in-javascript
+        y = x.toFixed(1 - Math.floor(Math.log(x) / Math.log(10)))
+        y = y.toString().length - 1
+        if (y > 2) {
+          return y
+        } else {
+          return 2
+        }
+      }
     }
   },
   mounted () {
