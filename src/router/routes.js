@@ -8,6 +8,7 @@ const routes = [
       { path: '@:username', component: () => import('pages/account.vue') },
       { path: '@:username/wallet', component: () => import('pages/wallet.vue') },
       { path: '@:username/transfers', component: () => import('pages/wallet.vue') },
+      { path: '@:username/~owners', component: () => import('pages/owners.vue') },
       { path: 'hiveworld/@:username', component: () => import('pages/hiveworld.vue') },
       { path: 'account/@:username', component: () => import('pages/account.vue') },
       { path: '@:account/trail', component: () => import('pages/trail.vue') },
