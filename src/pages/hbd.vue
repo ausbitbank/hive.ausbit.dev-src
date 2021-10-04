@@ -41,6 +41,7 @@
       <q-card-section v-if="globalProps.hbd_print_rate !== 10000">
         <div class="text-h6"><q-icon name="warning" color="orange" />&nbsp; HBD creation reduced</div>
         <div class="text-subtitle">The HBD "Print Rate" has been reduced to <q-badge :color="percentColor">{{ globalProps.hbd_print_rate / 100 }} %</q-badge></div>
+        <p><router-link to="@arcange/understanding-the-hive-debt-ratio"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Print Rate here</router-link></p>
       </q-card-section>
       <q-separator v-if="globalProps.hbd_print_rate !== 10000" />
       <q-card-section v-if="percentCap < 10">
