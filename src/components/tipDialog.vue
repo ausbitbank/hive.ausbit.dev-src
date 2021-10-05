@@ -75,7 +75,6 @@
 </style>
 <script>
 import transferDialog from 'components/transferDialog.vue'
-// import metamask from 'components/metamask.vue'
 import { copyToClipboard } from 'quasar'
 export default {
   name: 'tipDialog',
