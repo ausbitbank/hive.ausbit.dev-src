@@ -193,18 +193,18 @@
                   <shareButtons :title="post.title" v-if="showShareDialog" />
                 </q-item-section>
               </q-item>
-              <q-item v-if="false">
+              <q-item v-if="true">
                 <q-item-section avatar>
                   <q-icon name="code" color="blue" />
                 </q-item-section>
                 <q-item-section>
-                  <q-btn label="Full Post Metadata" @click="showFullPostMetadata = !showFullPostMetadata" rounded flat />
-                  <q-dialog v-model="showFullPostMetadata">
-                    <q-card>
-                      <json-viewer :data="post" :deep="1" title="Post json_metadata" v-if="post" />
-                      <q-btn v-close-popup label="close" icon="close" />
+                  <q-btn label="Full Post Metadata" rounded flat>
+                  <q-popup-proxy>
+                    <q-card style="margin:auto">
+                      <json-viewer :data="JSON.parse(JSON.stringify(post))" :deep="1" title="Post json_metadata" />
                     </q-card>
-                  </q-dialog>
+                  </q-popup-proxy>
+                  </q-btn>
                 </q-item-section>
               </q-item>
               <q-item>
