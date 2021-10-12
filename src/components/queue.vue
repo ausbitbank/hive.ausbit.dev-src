@@ -122,7 +122,7 @@ export default {
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
         if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
-        // }
+      }
       /* if (op[0] === 'custom_json') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', user, op[1].id, keytype, op[1].json)
         if (success) { this.successfullBroadcast(action) }
@@ -132,7 +132,7 @@ export default {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestTransfer', user, op[1].to, op[1].amount.split(' ')[0], op[1].memo, op[1].amount.split(' ')[1])
         if (success) { this.successfullBroadcast(action) }
         if (cancel) { this.$q.notify('Cancelled by user') }
-        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } }
+        if (!cancel) { if (notActive) { this.$q.notify('Please allow keychain to access this website') } else if (notInstalled) { this.$q.notify('Keychain not available') } else { console.info(msg) } } */
       if (op[0] === 'comment') {
         var co = op[1].comment_options
         delete op[1].comment_options
