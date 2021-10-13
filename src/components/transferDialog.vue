@@ -143,7 +143,7 @@ export default {
       }
     },
     disableSendButton: function () {
-      if (this.toAccount === '') { return true }
+      if (this.toAccount === '' || this.toAccount === null) { return true }
       if (this.recurrent && this.exchanges.includes(this.toAccount)) { return true }
       if (!this.recurrent && this.amount === 0) { return true }
       if (this.exchanges.includes(this.toAccount) && this.memo === '') { return true }
