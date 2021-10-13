@@ -10,7 +10,7 @@
             Hive Backed Dollars
           </q-item-section>
         </q-item>
-        Hive Backed Dollars are a stablecoin used on the Hive network. They are "backed" by the networks ability to convert them into $1 USD worth of Hive.<br />
+        Hive Backed Dollars are a stablecoin used on the Hive network. They are "backed" by the networks ability to convert them into $1 USD worth of HIVE.<br />
         There are constraints on HBD creation within the blockchain rules to help keep the Hive economy healthy.<br />
         This page helps track relevant info about HBD
       </q-card-section>
