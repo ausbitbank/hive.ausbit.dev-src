@@ -19,9 +19,9 @@
         <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below 10% of HIVE marketcap</div>
         <div class="text-subtitle2">(The Debt Limit)</div>
         <div>HBD Marketcap = <b>${{ tidyNumber(hbdCap) }}</b></div>
-        <div>Hive Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
+        <div>HIVE Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
-        <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of Hive Marketcap</div>
+        <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
         <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
       </q-card-section>
       <q-separator />
@@ -34,7 +34,7 @@
       <q-separator />
       <q-card-section>
         <div class="text-h6"><q-icon name="trending_flat" color="orange" />&nbsp; HBDStabilizer is active</div>
-        <div class="text-subtitle2">Using overvalued HBD to buy Hive for the DAO</div>
+        <div class="text-subtitle2">Using overvalued HBD to buy HIVE for the DAO</div>
         <p><router-link to="hbdstabilizer"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Stabilizer over here</router-link></p>
       </q-card-section>
       <q-separator />
@@ -46,7 +46,7 @@
       <q-separator v-if="globalProps.hbd_print_rate !== 10000" />
       <q-card-section v-if="percentCap < 10">
         <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
-        <div class="text-subtitle">Redeem each HBD for $1 of Hive at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
+        <div class="text-subtitle">Redeem each HBD for $1 of HIVE at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
       </q-card-section>
       <q-card-section v-if="percentCap > 10 && medianPrice !== null">
         <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
