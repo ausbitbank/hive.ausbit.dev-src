@@ -38,7 +38,7 @@
             <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
             <q-item-section class="text-green">Wallet</q-item-section>
           </q-item>
-          <q-item to="/witness" v-if="account.witness_votes.includes(loggedInUser)">
+          <q-item to="/witness" v-if="account !== undefined && account.witness_votes.includes(loggedInUser)">
             <q-item-section avatar><q-icon name="admin_panel_settings" color="deep-orange-6" /></q-item-section>
             <q-item-section class="text-deep-orange-6">Witness</q-item-section>
           </q-item>
