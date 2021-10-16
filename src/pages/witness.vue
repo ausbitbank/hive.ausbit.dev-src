@@ -26,7 +26,10 @@
               <q-item-section class="text-right wrap"><q-input outlined v-model="witness[prop]" /></q-item-section>
             </q-item>
           </q-list>
-          <div class="text-center q-ma-md"><q-btn icon="refresh" label="refresh witness properties" color="primary" /></div>
+          <div class="text-center q-ma-md">
+            <q-btn icon="refresh" label="refresh witness properties" color="primary" @click="init()"/>
+            <q-btn v-if="loggedInUser && witness" icon="warning" label="disable witness" color="red" @click="witness.signing_key = 'STM1111111111111111111111111111111114T1Anm'; witnessUpdate()"/>
+          </div>
           <q-separator />
           <div>
             <div class="text-h6 text-center">Update properties with cli_wallet:</div>
@@ -117,13 +120,16 @@ export default {
     },
     witnessUpdate () {
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['witness_update', this.witnessUpdateJson]])
+    },
+    init () {
+      this.getAccount(this.loggedInUser)
+      this.getWitness(this.loggedInUser)
     }
   },
   mounted () {
     document.title = 'Witness Tools'
     if (this.loggedInUser) {
-      this.getAccount(this.loggedInUser)
-      this.getWitness(this.loggedInUser)
+      this.init()
     }
   }
 }
