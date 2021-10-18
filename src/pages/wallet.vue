@@ -564,11 +564,11 @@
                                       <q-item-section avatar><q-icon name="lock" /></q-item-section>
                                       <q-item-section>Stake</q-item-section>
                                     </q-item>
-                                    <q-item clickable @click="openExternal(returnMarketLink('hiveengine', token.symbol))" title="Trade on Hive-Engine.com" class="text-orange">
-                                      <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
-                                      <q-item-section>Hive-Engine.com</q-item-section>
+                                    <q-item clickable @click="$router.push(getTokenLink(token.symbol))" title="Trade" class="text-deep-orange" v-if="token.symbol !== 'SWAP.HIVE'">
+                                      <q-item-section avatar><q-icon name="store" /></q-item-section>
+                                      <q-item-section>Market</q-item-section>
                                     </q-item>
-                                    <q-item clickable @click="openExternal(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange">
+                                    <q-item clickable @click="openExternal(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange"  v-if="token.symbol !== 'SWAP.HIVE'">
                                       <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
                                       <q-item-section>TribalDex.com</q-item-section>
                                     </q-item>
@@ -975,6 +975,7 @@ export default {
     getAccountLink (account) { return '/@' + account },
     getTxLink (txid) { return '/tx/' + txid },
     getVirtualTxLink (tx) { return '/b/' + tx[1].block + '#' + tx[1].virtual_op },
+    getTokenLink (token) { return '/@' + this.username + '/wallet/' + token },
     getAccount (username) { if (this.$store.state.hive.accounts[username] === undefined) { this.$store.dispatch('hive/getAccount', username) } },
     getGlobalProps () { if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') } },
     getPricesCoingecko () {
