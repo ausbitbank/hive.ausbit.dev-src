@@ -6,6 +6,7 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/Index.vue') },
       { path: '@:username', component: () => import('pages/account.vue') },
+      { path: '@:username/wallet/:token', component: () => import('pages/token.vue') },
       { path: '@:username/wallet', component: () => import('pages/wallet.vue') },
       { path: '@:username/transfers', component: () => import('pages/wallet.vue') },
       { path: '@:username/~owners', component: () => import('pages/owners.vue') },
