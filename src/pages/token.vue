@@ -14,7 +14,7 @@
         </q-card-section>
         <q-card-section>
           <q-list dense>
-            <q-item>
+            <q-item clickable @click="tradeForm.buy.price = mi.lastPrice; tradeForm.sell.price = mi.lastPrice">
               <q-item-section>
                 <q-item-label class="text-bold">
                   Last Price
@@ -48,7 +48,7 @@
                 </q-item-label>
               </q-item-section>
             </q-item>
-            <q-item>
+            <q-item clickable @click="tradeForm.buy.price = mi.highestBid; tradeForm.sell.price = mi.highestBid">
               <q-item-section>
                 <q-item-label class="text-bold">
                   Highest Bid
@@ -67,7 +67,7 @@
             </q-item>
             <q-item>
               <q-item-section>
-                <q-item-label class="text-bold">
+                <q-item-label class="text-bold" @click="tradeForm.buy.price = mi.lowestAsk; tradeForm.sell.price = mi.lowestAsk">
                   Lowest Ask
                 </q-item-label>
               </q-item-section>
@@ -151,6 +151,7 @@
           <q-btn dense flat icon="settings" color="grey">
             <q-popup-proxy>
               <q-card flat bordered class="q-pa-sm">
+                <q-input label="How many orders" v-model="buyBookLimit" v-if="false" />
                 Customise table
                 <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="buyOrderColumns" option-value="name" options-cover style="min-width: 150px" />
               </q-card>
@@ -168,7 +169,8 @@
           </q-item-section>
         </q-item>
         </q-list>
-        <q-table dense :data="buyBook" :columns="buyOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
+        <q-table dense :data="buyBook" :columns="buyOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible">
+        </q-table>
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="sellBook && !error">
         <div class="text-h5 text-center">
@@ -176,6 +178,7 @@
           <q-btn dense flat icon="settings" color="grey">
             <q-popup-proxy>
               <q-card flat bordered class="q-pa-sm">
+                <q-input label="How many orders" v-model="sellBookLimit" v-if="false" />
                 Customise table
                 <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="sellOrderColumns" option-value="name" options-cover style="min-width: 150px" />
               </q-card>
@@ -244,8 +247,11 @@
 </template>
 <script>
 const SSC = require('sscjs')
-const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
 import moment from 'moment'
+import store from '../store'
+var heApiNode = store().state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
+const hiveEngine = new SSC(heApiNode)
+
 export default {
   name: 'token',
   data () {
@@ -259,7 +265,9 @@ export default {
       thLimit: 20,
       hivePriceUsd: null,
       buyBook: null,
+      buyBookLimit: 100,
       sellBook: null,
+      sellBookLimit: 100,
       error: false,
       tradeTab: 'buy',
       tradeForm: {
@@ -279,7 +287,7 @@ export default {
         sell: null
       },
       buyOrderColumns: [
-        { name: 'account', label: 'Account', field: 'account' },
+        { name: 'account', label: 'Account', field: 'account', sortable: true },
         { name: 'quantity', label: 'Quantity', field: row => parseFloat(row.quantity), required: true, sortable: true },
         { name: 'price', label: 'Price', field: row => parseFloat(row.price), required: true, sortable: true, sortOrder: 'ad' },
         { name: 'txid', label: 'txId', field: 'txid', required: false, sortable: true },
@@ -287,12 +295,11 @@ export default {
         { name: 'tokensLocked', label: 'Tokens Locked', field: row => row.tokensLocked, required: false, sortable: true }
       ],
       sellOrderColumns: [
-        { name: 'account', label: 'Account', field: 'account' },
+        { name: 'account', label: 'Account', field: 'account', sortable: true },
         { name: 'quantity', label: 'Quantity', field: row => parseFloat(row.quantity), required: true, sortable: true },
         { name: 'price', label: 'Price', field: row => parseFloat(row.price), required: true, sortable: true, sortOrder: 'da' },
         { name: 'txid', label: 'txId', field: 'txid', required: false, sortable: true },
-        { name: 'symbol', label: 'Symbol', field: 'symbol', required: false, sortable: false },
-        { name: 'tokensLocked', label: 'Tokens Locked', field: row => row.tokensLocked, required: false, sortable: true }
+        { name: 'symbol', label: 'Symbol', field: 'symbol', required: false, sortable: false }
       ],
       orderColumnsVisible: ['account', 'quantity', 'price'],
       sparklineIndicatorStyle: false,
@@ -324,7 +331,20 @@ export default {
       } else { return null }
     }
   },
-  watch: {},
+  watch: {
+    account: function () { this.init() },
+    '$route.params.username': {
+      handler: function () { this.init() },
+      deep: true,
+      immediate: true
+    },
+    '$route.params.token': {
+      handler: function () { this.init() },
+      deep: true,
+      immediate: true
+    },
+    username: function () { this.init() }
+  },
   methods: {
     getHiveEngineTokenInfo () {
       var tokens = [this.token]
@@ -362,12 +382,12 @@ export default {
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineOrderBookBuy () {
-      hiveEngine.find('market', 'buyBook', { symbol: this.token }, 100, 0, [{ descending: true, index: 'priceDec' }])
+      hiveEngine.find('market', 'buyBook', { symbol: this.token }, this.buyBookLimit, 0, [{ descending: true, index: 'priceDec' }])
         .then((response) => { this.buyBook = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineOrderBookSell () {
-      hiveEngine.find('market', 'sellBook', { symbol: this.token }, 100, 0, [{ descending: false, index: 'priceDec' }])
+      hiveEngine.find('market', 'sellBook', { symbol: this.token }, this.sellBookLimit, 0, [{ descending: false, index: 'priceDec' }])
         .then((response) => { this.sellBook = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
