@@ -111,7 +111,7 @@
         <q-separator />
         <span class="q-ma-sm">Viewing Hive-Engine token :</span>
         <q-input v-model="token" label="token" dense class="text-center" />
-        <q-btn flat color="primary" label="change token" @click="$router.push('/@' + username + '/wallet/' + token); token = token; init()"/>
+        <q-btn flat color="primary" label="change token" @click="$router.push('/token/' + token); token = token; init()"/>
         <q-btn icon="refresh" color="primary" flat dense @click="init()" />
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="loggedInUser === username && !error">
@@ -152,7 +152,7 @@
             <q-popup-proxy>
               <q-card flat bordered class="q-pa-sm">
                 Customise table
-                <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="orderColumns" option-value="name" options-cover style="min-width: 150px" />
+                <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="buyOrderColumns" option-value="name" options-cover style="min-width: 150px" />
               </q-card>
             </q-popup-proxy>
           </q-btn>
@@ -168,7 +168,7 @@
           </q-item-section>
         </q-item>
         </q-list>
-        <q-table dense :data="buyBook" :columns="orderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
+        <q-table dense :data="buyBook" :columns="buyOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="sellBook && !error">
         <div class="text-h5 text-center">
@@ -177,7 +177,7 @@
             <q-popup-proxy>
               <q-card flat bordered class="q-pa-sm">
                 Customise table
-                <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="orderColumns" option-value="name" options-cover style="min-width: 150px" />
+                <q-select v-model="orderColumnsVisible" multiple outlined dense options-dense :display-value="$q.lang.table.columns" emit-value map-options :options="sellOrderColumns" option-value="name" options-cover style="min-width: 150px" />
               </q-card>
             </q-popup-proxy>
           </q-btn>
@@ -193,7 +193,7 @@
           </q-item-section>
         </q-item>
         </q-list>
-        <q-table dense :data="sellBook" :columns="orderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
+        <q-table dense :data="sellBook" :columns="sellOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="th && !error">
         <div class="text-h5 text-center">
@@ -201,13 +201,13 @@
           <q-btn dense flat icon="settings" color="grey">
             <q-popup-proxy>
               <q-card flat bordered class="q-pa-sm">
-                <q-input label="Trade History Limit" v-model.number="thLimit" />
+                <q-input label="Trade History Limit" v-model.number="thLimit" :rules="[val => !!val && val <= 1000 || 'Maximum of 1000']"/>
               </q-card>
             </q-popup-proxy>
           </q-btn>
           <q-btn icon="refresh" color="primary" flat dense @click="getHiveEngineTradeHistory()"/>
         </div>
-        <div class="text-center">
+        <div class="text-center" v-if="sparkline.length > 3">
           <sparkline width="250" height="60">
               <sparklineCurve :data="sparkline" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" :limit="sparkline.length" refLineType='avg' />
           </sparkline>
@@ -278,10 +278,18 @@ export default {
         buy: null,
         sell: null
       },
-      orderColumns: [
+      buyOrderColumns: [
         { name: 'account', label: 'Account', field: 'account' },
         { name: 'quantity', label: 'Quantity', field: row => parseFloat(row.quantity), required: true, sortable: true },
-        { name: 'price', label: 'Price', field: row => parseFloat(row.price), required: true, sortable: true },
+        { name: 'price', label: 'Price', field: row => parseFloat(row.price), required: true, sortable: true, sortOrder: 'ad' },
+        { name: 'txid', label: 'txId', field: 'txid', required: false, sortable: true },
+        { name: 'symbol', label: 'Symbol', field: 'symbol', required: false, sortable: false },
+        { name: 'tokensLocked', label: 'Tokens Locked', field: row => row.tokensLocked, required: false, sortable: true }
+      ],
+      sellOrderColumns: [
+        { name: 'account', label: 'Account', field: 'account' },
+        { name: 'quantity', label: 'Quantity', field: row => parseFloat(row.quantity), required: true, sortable: true },
+        { name: 'price', label: 'Price', field: row => parseFloat(row.price), required: true, sortable: true, sortOrder: 'da' },
         { name: 'txid', label: 'txId', field: 'txid', required: false, sortable: true },
         { name: 'symbol', label: 'Symbol', field: 'symbol', required: false, sortable: false },
         { name: 'tokensLocked', label: 'Tokens Locked', field: row => row.tokensLocked, required: false, sortable: true }
@@ -312,7 +320,7 @@ export default {
     sellTotal: function () { return (this.tradeForm.sell.price * this.tradeForm.sell.quantity).toFixed(5) },
     sparkline: function () {
       if (this.th) {
-        var sl = []; this.th.forEach(t => { sl.push(t.price) }); return sl
+        var sl = []; this.th.forEach(t => { sl.push(t.price) }); return sl.reverse()
       } else { return null }
     }
   },
