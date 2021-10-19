@@ -806,7 +806,9 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 const SSC = require('sscjs')
-const hiveEngine = new SSC('https://api.hive-engine.com/rpc')
+import store from '../store'
+var heApiNode = store().state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
+const hiveEngine = new SSC(heApiNode)
 import { debounce, openURL } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import moment from 'moment'
@@ -984,15 +986,7 @@ export default {
     },
     vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    tidyNumber (x) {
-      if (x) {
-        var parts = x.toString().split('.')
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-        return parts.join('.')
-      } else {
-        return null
-      }
-    },
+    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     async getHiveWalletTransactions (index, done) {
       this.loading = true
       await this.$hive.api.callAsync(

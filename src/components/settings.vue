@@ -55,9 +55,15 @@
         </q-item>
         <q-item>
           <q-item-label header>
-            Api Node
+            Hive Api Node
           </q-item-label>
-          <q-input label='Api Node' v-model="apiNode" />
+          <q-input label='Hive Api Node' v-model="apiNode" />
+        </q-item>
+        <q-item>
+          <q-item-label header>
+            Hive-Engine Api Node
+          </q-item-label>
+          <q-input label='Hive-Engine Api Node' v-model="heApiNode" />
         </q-item>
         <q-item>
             <q-btn label="Save Settings" color="primary" rounded push @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
@@ -76,7 +82,8 @@ export default {
       beneficiaries: this.$store.state.hive.user.settings.beneficiary,
       newBeneAccount: '',
       newBeneWeight: 1000,
-      apiNode: this.$store.state.hive.user.settings.apiNode
+      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev',
+      heApiNode: this.$store.state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
     }
   },
   computed: {
@@ -108,7 +115,8 @@ export default {
         voteWeightPost: this.voteWeightPost,
         voteWeightComment: this.voteWeightComment,
         beneficiary: this.beneficiaries,
-        apiNode: this.apiNode
+        apiNode: this.apiNode,
+        heApiNode: this.heApiNode
       }
       this.$store.commit('hive/updateSettings', s)
       this.$emit('hide')
