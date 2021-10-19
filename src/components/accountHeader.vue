@@ -148,7 +148,7 @@ export default {
     coverImage: function () {
       // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
       var defaultCover = ''
-      if (this.account === null) {
+      if (this.account === undefined) {
         return defaultCover
       } else {
         if (this.account.posting_json_metadata) {
@@ -174,17 +174,17 @@ export default {
       }
     },
     postingJsonMeta: function () {
-      if (this.account.posting_json_metadata) {
+      if (this.account && this.account.posting_json_metadata) {
         return JSON.parse(sanitize(this.account.posting_json_metadata))
       } else {
         return null
       }
     },
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$store.state.hive.user.username || null }
     },
     followCount: {
-      get () { return this.$store.state.hive.followCounts[this.account.name] }
+      get () { return this.$store.state.hive.followCounts[this.account.name] || null }
     },
     linkFollowers: { get () { return '/@' + this.account.name + '/followers' } },
     linkFollowing: { get () { return '/@' + this.account.name + '/following' } }
