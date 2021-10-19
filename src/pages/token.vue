@@ -5,7 +5,7 @@
       <q-card dense flat bordered class="q-ma-sm q-pa-sm text-center bg-red" v-if="error">
         <div><q-icon name="warning" /> Token {{ token }} doesn't exist</div>
       </q-card>
-      <q-card dense flat bordered class="q-ma-sm q-pa-sm text-center" style="max-width: 500px" v-if="ti && bi && mi && !error">
+      <q-card dense flat bordered class="q-ma-sm q-pa-sm text-center" style="max-width: 500px; min-width:400px" v-if="ti && mi">
         <div class="text-h5">{{ ti.symbol }}</div>
         <q-card-section>
             <span class="text-caption">{{ ti.metadata.desc}}</span>
@@ -123,16 +123,16 @@
         <q-separator />
         <q-tab-panels v-model="tradeTab" animated class="text-center">
           <q-tab-panel name="buy">
-            <q-input label="Price" v-model.number="tradeForm.buy.price" />
-            <q-input label="Quantity" v-model.number="tradeForm.buy.quantity" />
+            <q-input label="Price" v-model.number="tradeForm.buy.price" type="number"/>
+            <q-input label="Quantity" v-model.number="tradeForm.buy.quantity" type="number"/>
             <q-input label="Total" readonly v-model="buyTotal" />
-            <q-btn flat color="green" icon="trending_up" @click="tradeHiveEngine(token, 'buy', tradeForm.buy.quantity, tradeForm.buy.price)" :disable="swapHiveBalance === null">Buy {{ token }}</q-btn>
+            <q-btn flat color="green" icon="trending_up" @click="tradeHiveEngine(token, 'buy', tradeForm.buy.quantity, tradeForm.buy.price)" :disable="swapHiveBalance === null || parseFloat(buyTotal) === 0">Buy {{ token }}</q-btn>
           </q-tab-panel>
           <q-tab-panel name="sell">
-            <q-input label="Price" v-model.number="tradeForm.sell.price" />
-            <q-input label="Quantity" v-model.number="tradeForm.sell.quantity" />
+            <q-input label="Price" v-model.number="tradeForm.sell.price" type="number"/>
+            <q-input label="Quantity" v-model.number="tradeForm.sell.quantity" type="number"/>
             <q-input label="Total" readonly v-model="sellTotal" />
-            <q-btn flat color="red" icon="trending_down" @click="tradeHiveEngine(token, 'sell', tradeForm.sell.quantity, tradeForm.sell.price)" :disable="tokenBalance === null">Sell {{ token }}</q-btn>
+            <q-btn flat color="red" icon="trending_down" @click="tradeHiveEngine(token, 'sell', tradeForm.sell.quantity, tradeForm.sell.price)" :disable="tokenBalance === null || parseFloat(sellTotal) === 0">Sell {{ token }}</q-btn>
           </q-tab-panel>
         </q-tab-panels>
         <div class="text-center">
@@ -142,7 +142,7 @@
             <a href="https://tribaldex.com/" target="_blank">Deposit with TribalDex</a>
           </div>
           <div v-if="tokenBalance !== null">{{ token }} <q-btn @click="tradeTab = 'sell'; tradeForm.sell.quantity = tokenBalance.balance; tradeForm.sell.price = mi.highestBid">{{ tokenBalance.balance }}</q-btn></div>
-          <div v-if="swapHiveBalance !== null"><q-icon name="img:statics/hive.svg" title="Hive" /> <q-btn @click="tradeTab = 'buy'; tradeForm.buy.quantity = swapHiveBalance.balance; tradeForm.buy.price = mi.lowestAsk">{{ swapHiveBalance.balance }}</q-btn></div>
+          <div v-if="swapHiveBalance !== null"><q-icon name="img:statics/hive.svg" title="Hive" /> <q-btn @click="tradeTab = 'buy'; tradeForm.buy.price = mi.lowestAsk; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ swapHiveBalance.balance }}</q-btn></div>
         </div>
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="buyBook && !error" style="max-width: 400px">
@@ -341,10 +341,12 @@ export default {
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineBalanceInfo () {
-      var tokens = [this.token, 'SWAP.HIVE']
-      hiveEngine.find('tokens', 'balances', { account: this.username, symbol: { $in: tokens } }, 1000, 0, [])
-        .then((response) => { this.bi = response })
-        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      if (this.username) {
+        var tokens = [this.token, 'SWAP.HIVE']
+        hiveEngine.find('tokens', 'balances', { account: this.username, symbol: { $in: tokens } }, 1000, 0, [])
+          .then((response) => { this.bi = response })
+          .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      }
     },
     getHiveEngineTradeHistory () {
       hiveEngine.find('market', 'tradesHistory', { symbol: this.token }, this.thLimit, 0, [])
