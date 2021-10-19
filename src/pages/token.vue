@@ -141,8 +141,8 @@
             You have no SWAP.HIVE<br />
             <a href="https://tribaldex.com/" target="_blank">Deposit with TribalDex</a>
           </div>
-          <div v-if="tokenBalance !== null">{{ token }} <q-btn @click="tradeTab = 'sell'; tradeForm.sell.quantity = tokenBalance.balance; tradeForm.sell.price = mi.highestBid">{{ tokenBalance.balance }}</q-btn></div>
-          <div v-if="swapHiveBalance !== null"><q-icon name="img:statics/hive.svg" title="Hive" /> <q-btn @click="tradeTab = 'buy'; tradeForm.buy.price = mi.lowestAsk; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ swapHiveBalance.balance }}</q-btn></div>
+          <div v-if="tokenBalance !== null">{{ token }} <q-btn color="primary" dense flat  @click="tradeTab = 'sell'; tradeForm.sell.quantity = tokenBalance.balance; if (tradeForm.sell.price === 0) { tradeForm.sell.price = mi.highestBid }">{{ tidyNumber(tokenBalance.balance) }}</q-btn></div>
+          <div v-if="swapHiveBalance !== null"><q-icon name="img:statics/hive.svg" title="Hive" /> <q-btn color="primary" dense flat @click="tradeTab = 'buy'; if (tradeForm.buy.price === 0) { tradeForm.buy.price = mi.lowestAsk }; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ tidyNumber(swapHiveBalance.balance) }}</q-btn></div>
         </div>
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="buyBook && !error" style="max-width: 400px">
