@@ -103,6 +103,10 @@
                                         <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg"/></q-avatar></q-item-section>
                                         <q-item-section>Convert</q-item-section>
                                       </q-item>
+                                      <q-item clickable class="text-green" title="Create New Account" @click="$router.push('/create')" v-if="account.pending_claimed_accounts > 0">
+                                        <q-item-section avatar><q-avatar size="sm"><q-icon name="person_add" size="sm" color="green" /></q-avatar></q-item-section>
+                                        <q-item-section>New Account</q-item-section>
+                                      </q-item>
                                     </q-list>
                                   </q-menu>
                                 </q-btn>

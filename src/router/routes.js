@@ -43,6 +43,7 @@ const routes = [
       { path: 'hbdstabilizer', component: () => import('pages/hbdstabilizer.vue') },
       { path: 'tax', component: () => import('pages/tax.vue') },
       { path: 'submit', component: () => import('pages/submit.vue') },
+      { path: 'create', component: () => import('pages/create.vue') },
       { path: '/token/:token', component: () => import('pages/token.vue') },
       /* { path: 'trending/:tag', component: () => import('pages/browse.vue') },
       { path: 'trending', component: () => import('pages/browse.vue') },
