@@ -110,8 +110,10 @@
         </q-expansion-item>
         <q-separator />
         <span class="q-ma-sm">Viewing Hive-Engine token :</span>
+        <q-form @submit="token = token.toUpperCase(); $router.push('/token/' + token); token = token; init()">
         <q-input v-model="token" label="token" dense class="text-center" />
-        <q-btn flat color="primary" label="change token" @click="$router.push('/token/' + token); token = token; init()"/>
+        </q-form>
+        <q-btn flat color="primary" label="change token" @click="token.toUpperCase();$router.push('/token/' + token); token = token; init()"/>
         <q-btn icon="refresh" color="primary" flat dense @click="init()" />
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="loggedInUser === username && !error">
@@ -257,7 +259,7 @@ export default {
   data () {
     return {
       username: this.$route.params.username || this.loggedInUser,
-      token: this.$route.params.token,
+      token: this.$route.params.token.toUpperCase(),
       ti: null,
       mi: null,
       bi: null,
