@@ -380,7 +380,7 @@ export default {
       }
     },
     getHiveEngineTradeHistory () {
-      hiveEngine.find('market', 'tradesHistory', { symbol: this.token }, this.thLimit, 0, [])
+      hiveEngine.find('market', 'tradesHistory', { symbol: this.token }, this.thLimit, 0, [{ descending: true, index: '_id' }])
         .then((response) => { this.th = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
@@ -412,7 +412,7 @@ export default {
     },
     timeDelta (timestamp) {
       var now = moment.utc()
-      var stamp = moment.unix(timestamp)
+      var stamp = moment.unix(timestamp).utc()
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
