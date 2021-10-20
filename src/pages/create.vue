@@ -137,7 +137,7 @@ export default {
       }
     },
     init () {
-      if (this.loggedInUser && this.account === undefined) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+      if (this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
     }
   },
   mounted () {
