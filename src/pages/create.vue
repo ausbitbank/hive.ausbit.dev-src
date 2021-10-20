@@ -21,7 +21,7 @@
         <q-separator />
         <q-card-actions class="text-center">
           <q-btn flat label="Choose another username" icon="arrow_back" color="primary" @click="newUsername='';keys=null;confirmedSaved=false" v-if="availableUsername === true" />
-          <q-btn flat label="Check username availability" icon="search" color="primary" @click="keys=null;checkUsernameAvailable(newUsername)" v-if="!availableUsername && !keys" />
+          <q-btn flat label="Check username availability" icon="search" color="primary" @click="keys=null;checkUsernameAvailable(newUsername)" v-if="!availableUsername && !keys" :disable="$hive.utils.validateAccountName(newUsername) !== null" />
           <q-btn flat label="Generate Keys" icon="enhanced_encryption" color="orange" v-if="availableUsername && !keys" @click="genKeys()" />
         </q-card-actions>
       </q-card>
@@ -66,7 +66,7 @@ export default {
   },
   watch: {
     newUsername: function () { this.availableUsername = null },
-    loggedInUser: function () { this.availableUsername = null }
+    loggedInUser: function () { this.init() }
   },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
