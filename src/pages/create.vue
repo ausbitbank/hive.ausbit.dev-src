@@ -11,7 +11,7 @@
       <q-card flat bordered>
         <q-card-section>
           <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="this.$hive.utils.validateAccountName(this.newUsername)" :error="this.$hive.utils.validateAccountName(this.newUsername) !== null" v-if="availableUsername === false || availableUsername === null"/>
-          <div v-if="availableUsername === false">
+          <div v-if="availableUsername === false" class="text-h5 text-center">
             <q-icon name="error" color="red" size="md" /> Account <router-link :to="linkAccount(newUsername)">{{ newUsername }}</router-link> is already registered</div>
           <div v-if="availableUsername === true" class="text-h5 text-center">
             <b>{{ newUsername }}</b> is available!<br />
@@ -34,15 +34,18 @@
           <q-checkbox label="I have saved my keys in a secure location" v-model="confirmedSaved" />
         </q-card-section>
         <q-card-actions class="text-center">
-          <q-btn dense color="primary" icon="content_copy" label="Copy keys" @click="copy(JSON.stringify(keys))" />
-          <q-btn dense color="primary" icon="save" label="Save keys" @click="saveKeys()" />
-          <q-btn dense color="red" icon="person_add" label="Create account" @click="claimAccount()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || account.pending_claimed_accounts === 0 || !confirmedSaved"/>
+          <q-btn dense color="primary" icon="content_copy" label="Copy" @click="copy(JSON.stringify(keys))" />
+          <q-btn dense color="primary" icon="save" label="Save" @click="saveKeys()" />
+          <q-btn dense color="red" icon="person_add" label="Create with token" @click="claimAccountWithToken()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || account.pending_claimed_accounts === 0 || !confirmedSaved" v-if="account.pending_claimed_accounts > 0" />
+          <q-btn dense color="red" icon="person_add" label="Create for 3 HIVE" @click="claimAccountWithHive()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || !confirmedSaved" v-if="parseFloat(account.balance.split(' ')[0]) > 3"/>
           <q-btn dense label="Import keys to keychain" color="primary" icon="img:statics/hive-keychain.svg" @click="importToKeychain()" />
         </q-card-actions>
       </q-card>
       </q-card-section>
-      <q-card-section v-if="loggedInUser && account && account.pending_claimed_accounts">
-        {{ loggedInUser }} has <q-badge color="primary">{{ account.pending_claimed_accounts }}</q-badge> account creation tokens available
+      <q-card-section v-if="loggedInUser && account">
+        {{ loggedInUser }} has <q-badge :color="account.pending_claimed_accounts > 0 ? 'primary' : 'red'">{{ account.pending_claimed_accounts }}</q-badge> account creation tokens available<br />
+        And enough liquid HIVE to purchase <q-badge :color="parseFloat(account.balance.split(' ')[0]) > 3 ? 'primary' : 'red'">{{ (parseFloat(account.balance.split(' ')[0]) / 3).toFixed(0) }}</q-badge> accounts (at 3 HIVE each)
+        <rc :username="loggedInUser" :showAccountClaimsOnly="true" />
       </q-card-section>
     </q-card>
   </q-page>
@@ -53,7 +56,8 @@ import { keychain } from '@hiveio/keychain'
 export default {
   name: 'createAccountPage',
   components: {
-    jsonViewer: () => import('components/jsonViewer.vue')
+    jsonViewer: () => import('components/jsonViewer.vue'),
+    rc: () => import('components/rc.vue')
   },
   data () {
     return {
@@ -90,7 +94,7 @@ export default {
     },
     copy (i) { copyToClipboard(i); this.$q.notify('Copied keys to clipboard') },
     linkAccount (account) { return '/@' + account },
-    claimAccount () {
+    claimAccountWithToken () {
       var op = {
         creator: this.loggedInUser,
         new_account_name: this.newUsername,
@@ -102,7 +106,21 @@ export default {
         extensions: []
       }
       var tx = ['create_claimed_account', op]
-      // console.log(tx)
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', tx])
+    },
+    claimAccountWithHive () {
+      var op = {
+        fee: '3.000 HIVE',
+        creator: this.loggedInUser,
+        new_account_name: this.newUsername,
+        owner: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.owner), 1]] },
+        active: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.active), 1]] },
+        posting: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.posting), 1]] },
+        memo_key: this.$hive.auth.wifToPublic(this.keys.memo),
+        json_metadata: '',
+        extensions: []
+      }
+      var tx = ['account_create', op]
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', tx])
     },
     async importToKeychain () {
