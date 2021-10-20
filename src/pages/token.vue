@@ -188,7 +188,7 @@
           </q-btn>
           <q-btn dense flat icon="refresh" color="primary" @click="getHiveEngineOrderBookSell()" />
         </div>
-        <q-list dense separator>
+        <q-list dense separator class="text-center">
         <q-item v-for="o in myOrders.sell" :key="o.index" class="text-bold">
           <q-item-section>
           {{ tidyNumber(o.quantity) }} @ {{ o.price }}
@@ -230,6 +230,7 @@
             <q-icon name="arrow_downward" color="red" v-if="t.type === 'sell'" />
             <q-icon name="arrow_upward" color="green" v-else />
             {{ t.price }} <q-icon name="img:statics/hive.svg" alt="Hive" /> per {{ t.symbol }}
+            <q-icon name="schedule" color="grey" /> {{ timeDelta(t.timestamp) }}
           </q-item-label>
           <q-item-label caption v-if="false">
             <q-icon name="schedule" color="grey" /> {{ timeDelta(t.timestamp) }}
@@ -411,7 +412,7 @@ export default {
     },
     timeDelta (timestamp) {
       var now = moment.utc()
-      var stamp = moment.utc(timestamp)
+      var stamp = moment.unix(timestamp)
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
