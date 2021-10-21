@@ -144,6 +144,7 @@ export default {
     init () {
       this.getRcForAccount(this.username)
       if (this.costs === null) { this.getResourceCosts() }
+      if (this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
     }
   },
   mounted () {
