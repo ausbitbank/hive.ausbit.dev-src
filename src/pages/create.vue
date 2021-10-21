@@ -11,7 +11,7 @@
       <q-card flat bordered>
         <q-card-section>
           <q-form @submit="keys=null;checkUsernameAvailable(newUsername)">
-          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="this.$hive.utils.validateAccountName(this.newUsername)" :error="this.$hive.utils.validateAccountName(this.newUsername) !== null" v-if="availableUsername === false || availableUsername === null"/>
+          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="this.$hive.utils.validateAccountName(this.newUsername)" :error="this.$hive.utils.validateAccountName(this.newUsername) !== null" v-if="availableUsername === false || availableUsername === null" clearable />
           </q-form>
           <div v-if="availableUsername === false" class="text-h5 text-center">
             <q-icon name="error" color="red" size="md" /> Account <router-link :to="linkAccount(newUsername)">{{ newUsername }}</router-link> is already registered</div>
