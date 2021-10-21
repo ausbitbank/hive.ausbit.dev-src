@@ -65,9 +65,9 @@
                 </q-item-label>
               </q-item-section>
             </q-item>
-            <q-item>
+            <q-item clickable @click="tradeForm.buy.price = mi.lowestAsk; tradeForm.sell.price = mi.lowestAsk">
               <q-item-section>
-                <q-item-label class="text-bold" @click="tradeForm.buy.price = mi.lowestAsk; tradeForm.sell.price = mi.lowestAsk">
+                <q-item-label class="text-bold">
                   Lowest Ask
                 </q-item-label>
               </q-item-section>
@@ -159,7 +159,7 @@
               </q-card>
             </q-popup-proxy>
           </q-btn>
-          <q-btn dense flat icon="refresh" color="primary" @click="getHiveEngineOrderBookBuy()" />
+          <q-btn dense flat icon="refresh" color="primary" @click="getMyHiveEngineOrders(); getHiveEngineOrderBookBuy()" />
         </div>
         <q-list dense separator class="text-center">
         <q-item v-for="o in myOrders.buy" :key="o.index" class="text-bold">
@@ -186,7 +186,7 @@
               </q-card>
             </q-popup-proxy>
           </q-btn>
-          <q-btn dense flat icon="refresh" color="primary" @click="getHiveEngineOrderBookSell()" />
+          <q-btn dense flat icon="refresh" color="primary" @click="getMyHiveEngineOrders(); getHiveEngineOrderBookSell()" />
         </div>
         <q-list dense separator class="text-center">
         <q-item v-for="o in myOrders.sell" :key="o.index" class="text-bold">
