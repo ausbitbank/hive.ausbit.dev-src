@@ -19,7 +19,7 @@
       <div><q-input label="Amount" v-model="amount" style="margin: auto; max-width: 200px" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
-      <q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" style="margin: auto; max-width: 200px" /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" />
+      <q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" style="margin: auto; max-width: 200px" clearable /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" />
       <div v-if="network === 'hive'">
         <q-toggle v-model="recurrent" label="Recurring Payments" />
         <div v-if="recurrent" class="shadow-5 q-pa-sm">
@@ -44,6 +44,10 @@
       <div v-if="exchanges.includes(toAccount) && memo === ''" class="text-center text-red shadow-5 q-pa-sm">
         <q-icon name="warning" color="red" />
         You must enter a memo to deposit to exchanges
+      </div>
+      <div v-if="toAccount === 'deepcrypto8' && memo.length !== 9" class="text-center text-red shadow-5 q-pa-sm">
+        <q-icon name="warning" color="red" />
+        Deposits to deepcrypto8 (binance) require a 9 character memo
       </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
