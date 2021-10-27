@@ -6,7 +6,7 @@
           <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 65 minutes" name="warning" color="orange" />
         </div>
         <div v-for="node in fullNodeUpdateHiveFiltered" :key="node.node" class="text-center">
-          <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }}</span>
+          <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }} <q-icon name="star" color="orange" v-if="apiNode === node.node" title="This is the current active rpc node" /></span>
           <div>
             <div>
               <q-btn flat dense title="Click for full node report data">
@@ -55,7 +55,8 @@ export default {
     return {
       fullNodeUpdate: null,
       fullNodeUpdateTime: null,
-      showVersion: this.$route.query.version || 'all'
+      showVersion: this.$route.query.version || 'all',
+      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev'
     }
   },
   computed: {
