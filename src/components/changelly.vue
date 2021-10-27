@@ -1,5 +1,5 @@
 <template>
-  <q-card flat style="max-width: 600px; min-width: 400px; min-height: 400px;" class="q-pa-sm q-ma-sm">
+  <q-card flat bordered style="max-width: 600px; min-width: 400px; min-height: 400px;" class="q-pa-sm q-ma-sm">
     <img src="/statics/changelly.svg" />
     <q-card-section class="text-center text-title" v-if="to !== '' && address !== ''">
       Exchange for <b>{{ to }}</b>, send to <b>{{ address }}</b>
@@ -54,6 +54,7 @@ export default {
     }
   },
   methods: {
+    getAccountLink (user) { return '/@' + user }
   },
   computed: {
     loggedInUser: function () { return this.$store.state.hive.user.username },
