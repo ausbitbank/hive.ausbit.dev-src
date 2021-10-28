@@ -70,7 +70,7 @@ export default {
         defaultAmount: this.defaultAmount,
         payment_id: this.memo,
         theme: 'default', // default
-        merchant_id: 'UFrGEyEbTjdEJSkl',
+        merchant_id: 'c7178f661a12',
         v: 3
       }
       var qs = Object.keys(params).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&')
