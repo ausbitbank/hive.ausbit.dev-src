@@ -45,6 +45,7 @@ const routes = [
       { path: 'submit', component: () => import('pages/submit.vue') },
       { path: 'create', component: () => import('pages/create.vue') },
       { path: 'changelly', component: () => import('pages/changelly.vue') },
+      { path: 'exchange', component: () => import('pages/exchange.vue') },
       { path: '/token/:token', component: () => import('pages/token.vue') },
       /* { path: 'trending/:tag', component: () => import('pages/browse.vue') },
       { path: 'trending', component: () => import('pages/browse.vue') },
