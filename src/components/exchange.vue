@@ -76,8 +76,13 @@
             </div>
         </q-card-section>
         <q-separator />
+        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive'" class="text-center text-bold">
+          {{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar>
+          <q-btn @click="transferNeededHive()" push icon="send" no-caps color="primary" :disable="transaction.status !== 'waiting' || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) < transaction.amountExpectedFrom || disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
+        </q-card-section>
+        <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
-          <q-input readonly label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><a :href="getExchangeIdUrl(transaction.id)" target="_blank"><q-icon name="open_in_new" /></a></template></q-input>
+          <q-input readonly label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
           <q-input readonly label="Exchange Status" v-model="transaction.status"><template v-slot:after><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getStatus(transaction.id)"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
           <q-card flat bordered v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
@@ -117,7 +122,7 @@ export default {
   data () {
     return {
       api: 'https://exchange-api.ausbit.dev',
-      tradeFrom: null,
+      tradeFrom: this.$route.query.from || null,
       tradeTo: this.$route.query.to || 'hive',
       tradeFromAmount: null,
       tradeToAmount: null,
@@ -138,7 +143,8 @@ export default {
       // transaction: { id: 'jua50lg8jbw4x8fo', apiExtraFee: '0', changellyFee: '0.4', payinExtraId: null, payoutExtraId: 'via ausbit.dev', amountExpectedFrom: 0.003, status: 'new', currencyFrom: 'btc', currencyTo: 'hive', amountTo: 0.000, amountExpectedTo: 223.875, payinAddress: '3GtFp5e7Bw3fhkywsh1Mtoaf76fUps7Xqx', payoutAddress: 'ausbitbank', createdAt: '2021-10-31T16:41:20.000Z', redirect: null, kycRequired: false, signature: null, binaryPayload: null },
       error: null,
       step: 1,
-      exchangeId: this.$route.query.id || null
+      exchangeId: this.$route.query.id || null,
+      disableTransferButton: false
     }
   },
   components: {
@@ -226,16 +232,30 @@ export default {
     tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     swapTokens () { var x = this.tradeFrom; this.tradeFrom = this.tradeTo; this.tradeTo = x; this.updateToken() },
     copy (what) { copyToClipboard(what); this.$q.notify('Copied to clipboard: ' + what) },
-    getExchangeIdUrl (id) { return 'https://hive.ausbit.dev/exchange?id=' + id }
+    getExchangeIdUrl (id) { return 'https://hive.ausbit.dev/exchange?id=' + id },
+    openNewWindow (url) { window.open(url, '_blank') },
+    transferNeededHive () {
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['transfer', { to: this.transaction.payinAddress, from: this.loggedInUser, amount: this.transaction.amountExpectedFrom + ' HIVE', memo: this.transaction.payinExtraId }]])
+      this.disableTransferButton = true
+    }
   },
   computed: {
     loggedInUser: function () { return this.$store.state.hive.user.username },
     showTransactionDialog: function () { if (this.transaction !== null) { return true } else { return false } },
-    showErrorDialog: function () { if (this.error !== null) { return true } else { return false } }
+    showErrorDialog: function () { if (this.error !== null) { return true } else { return false } },
+    account: {
+      cache: false,
+      get () { if (this.loggedInUser) { return this.$store.state.hive.accounts[this.loggedInUser] } else { return null } }
+    }
+  },
+  watch: {
+    loggedInUser: function () { if (this.account === null && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) } }
   },
   mounted () {
     this.getCurrencies()
     if (this.exchangeId) { this.getTransaction(this.exchangeId) }
+    if (this.tradeFrom && this.tradeTo) { this.updateToken() }
+    if (this.account === null && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
   }
 }
 </script>
