@@ -175,7 +175,7 @@ export default {
       update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currencies.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v !== this.tradeFrom) })
     },
     reset () { this.tradeFrom = null; this.tradeTo = null; this.minAmount = null; this.tradeFromAmount = null; this.tradeToAmount = null; this.quote = null; this.termsAndConditions = false; this.step = 1 },
-    getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token + '.png' },
+    getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token.toLowerCase() + '.png' },
     getExchangeAmount (from, to, amount) {
       this.loading.quote = true
       this.tradeToAmount = null
