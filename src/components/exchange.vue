@@ -7,12 +7,29 @@
           <q-btn label="Dismiss" @click="error = null" q-close-dialog />
     </q-card>
   </q-dialog>
-  <q-card flat bordered class="text-center" style="max-width: 600px" v-if="step === 1">
-    <q-card-section header v-if="step === 1">
+  <q-card flat bordered class="text-center" style="max-width: 600px">
+    <q-card-section header>
         <div class="text-center text-title text-h5">Exchange <q-badge color="primary" v-if="currencies.length > 0">{{ currencies.length }}</q-badge> tokens</div>
         <div class="text-caption">Use this form to swap between cryptocurrencies</div>
     </q-card-section>
-    <q-card-section v-if="step === 1">
+    <q-card-section v-if="this.for && userMetaTokens !== []" class="text-center">
+      <q-card flat>
+      <q-list dense separator>
+        <q-item-label>These are {{ this.for }}'s token addresses</q-item-label>
+        <q-list v-for="token in Object.keys(userMetaTokens)" :key="token.index" dense>
+          <q-item>
+            <q-list dense separator bordered>
+              <q-item v-for="address in userMetaTokens[token]" :key="address.index" class="text-center text-weight-light" clickable @click="tradeTo = token; tradeToAddress = address; copy(address); updateToken()">
+                <q-item-section avatar><q-avatar size="sm"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar></q-item-section>
+                <q-item-section>{{ address }}</q-item-section>
+              </q-item>
+            </q-list>
+          </q-item>
+        </q-list>
+      </q-list>
+      </q-card>
+    </q-card-section>
+    <q-card-section>
         <q-list separator>
             <q-item class="q-mb-md">
                 <q-item-section>
@@ -22,8 +39,12 @@
                     </q-select>
                 </q-item-section>
             </q-item>
-            <q-item class="text-center" v-if="tradeFrom || tradeTo">
-              <q-btn flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" title="Swap token positions" />
+            <q-item class="text-center">
+              <q-separator />
+              <q-btn flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
+              <q-btn flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="green" />
+              <q-btn flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="red" />
+              <q-separator />
             </q-item>
             <q-item>
                 <q-item-section>
@@ -37,7 +58,7 @@
             </q-item>
         </q-list>
     </q-card-section>
-    <q-card-section v-if="!error && tradeFromAmount > minAmount && tradeToAmount && tradeFrom && tradeTo">
+    <q-card-section v-if="!error && tradeFromAmount >= minAmount && tradeToAmount && tradeFrom && tradeTo">
         <div class="text-center text-title text-h5">
             <q-input v-model="tradeToAddress" :label="'Receiving Address : ' + tradeTo" :rules="[val => !!val || 'Receiving address is required', val => val.trim() !== '' || 'Receiving address is required']" />
         </div>
@@ -123,13 +144,14 @@ export default {
     return {
       api: 'https://exchange-api.ausbit.dev',
       tradeFrom: this.$route.query.from || null,
-      tradeTo: this.$route.query.to || 'hive',
+      tradeTo: this.$route.query.to || null,
       tradeFromAmount: null,
       tradeToAmount: null,
       tradeToAddress: this.$route.query.address || null,
       optionsFrom: [],
       optionsTo: [],
       currencies: [],
+      for: this.$route.query.for || this.loggedInUser || null,
       minAmount: null,
       quote: null,
       termsAndConditions: false,
@@ -142,7 +164,6 @@ export default {
       transaction: null,
       // transaction: { id: 'jua50lg8jbw4x8fo', apiExtraFee: '0', changellyFee: '0.4', payinExtraId: null, payoutExtraId: 'via ausbit.dev', amountExpectedFrom: 0.003, status: 'new', currencyFrom: 'btc', currencyTo: 'hive', amountTo: 0.000, amountExpectedTo: 223.875, payinAddress: '3GtFp5e7Bw3fhkywsh1Mtoaf76fUps7Xqx', payoutAddress: 'ausbitbank', createdAt: '2021-10-31T16:41:20.000Z', redirect: null, kycRequired: false, signature: null, binaryPayload: null },
       error: null,
-      step: 1,
       exchangeId: this.$route.query.id || null,
       disableTransferButton: false
     }
@@ -164,7 +185,7 @@ export default {
       this.loading.minAmount = true
       this.tradeToAmount = null
       this.$axios.post(this.api + '/getMinAmount', { from: from, to: to })
-        .then((res) => { this.minAmount = res.data.result; this.tradeFromAmount = this.minAmount; this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount); this.loading.minAmount = false })
+        .then((res) => { this.minAmount = res.data.result; this.tradeFromAmount = this.minAmount * 2; this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount); this.loading.minAmount = false })
     },
     filterFrom (val, update) {
       if (val === '') { update(() => { this.optionsFrom = this.currencies.filter(v => v !== this.tradeTo) }); return }
@@ -174,7 +195,7 @@ export default {
       if (val === '') { update(() => { this.optionsTo = this.currencies.filter(v => v !== this.tradeFrom) }); return }
       update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currencies.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v !== this.tradeFrom) })
     },
-    reset () { this.tradeFrom = null; this.tradeTo = null; this.minAmount = null; this.tradeFromAmount = null; this.tradeToAmount = null; this.quote = null; this.termsAndConditions = false; this.step = 1 },
+    reset () { this.tradeFrom = null; this.tradeTo = null; this.minAmount = null; this.tradeFromAmount = null; this.tradeToAmount = null; this.quote = null; this.termsAndConditions = false },
     getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token.toLowerCase() + '.png' },
     getExchangeAmount (from, to, amount) {
       this.loading.quote = true
@@ -192,7 +213,10 @@ export default {
           if (res.data.error) {
             this.error = res.data.error.message
             if (this.error === 'Invalid address') { this.tradeToAddress = '' }
-          } else { this.transaction = res.data.result }
+          } else {
+            this.transaction = res.data.result
+            this.$router.replace('/exchange?id=' + this.transaction.id)
+          }
           this.loading.transaction = false
         })
     },
@@ -211,11 +235,6 @@ export default {
     },
     updateToken () {
       this.error = null
-      if (this.$route.query.to === this.tradeTo && this.$route.query.address) {
-        this.tradeToAddress = this.$route.query.address
-      } else {
-        this.tradeToAddress = null
-      }
       this.tradeToAmount = null
       if (this.tradeFrom && this.tradeTo && this.tradeFrom !== this.tradeTo) {
         this.tradeFromAmount = 0
@@ -237,6 +256,8 @@ export default {
     transferNeededHive () {
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['transfer', { to: this.transaction.payinAddress, from: this.loggedInUser, amount: this.transaction.amountExpectedFrom + ' HIVE', memo: this.transaction.payinExtraId }]])
       this.disableTransferButton = true
+    },
+    getUserMetaTokens (username) {
     }
   },
   computed: {
@@ -246,16 +267,26 @@ export default {
     account: {
       cache: false,
       get () { if (this.loggedInUser) { return this.$store.state.hive.accounts[this.loggedInUser] } else { return null } }
+    },
+    userMetaTokens: function () {
+      if (this.for) {
+        var acct = this.$store.state.hive.accounts[this.for]
+        if (acct !== undefined && acct.posting_json_metadata) {
+          var meta = JSON.parse(acct.posting_json_metadata)
+          if (meta.profile && meta.profile.tokens) { meta.profile.tokens.hive = [this.for]; return meta.profile.tokens } else { return { hive: [this.for] } }
+        } else { return { hive: [this.for] } }
+      } else { return {} }
     }
   },
   watch: {
-    loggedInUser: function () { if (this.account === null && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) } }
+    loggedInUser: function () { if (this.account === undefined && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) } }
   },
   mounted () {
     this.getCurrencies()
     if (this.exchangeId) { this.getTransaction(this.exchangeId) }
     if (this.tradeFrom && this.tradeTo) { this.updateToken() }
-    if (this.account === null && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+    if (this.account === undefined && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+    if (this.for) { this.$store.dispatch('hive/getAccount', this.for) }
   }
 }
 </script>
