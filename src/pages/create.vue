@@ -132,7 +132,7 @@ export default {
     },
     saveKeys () {
       if (this.keys) {
-        var status = exportFile(this.keys.username + '-HiveKeys.txt', this.keys)
+        var status = exportFile(this.keys.username + '-HiveKeys.txt', JSON.stringify(this.keys))
         if (status === true) { this.$q.notify('Downloaded ' + this.keys.username + '-HiveKeys.txt') } else { this.$q.notify(Error + ':' + status) }
       }
     },
