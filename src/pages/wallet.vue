@@ -2,7 +2,7 @@
   <q-page class="flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-          <q-card dense flat bordered class="q-ma-none q-pa-none" style="max-width:1000px; max-width:100%; min-width: 50%">
+          <q-card dense flat bordered class="q-ma-none q-pt-sm" style="max-width:1000px; max-width:100%; min-width: 50%">
             <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
                 <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
@@ -106,6 +106,10 @@
                                       <q-item clickable class="text-green" title="Create New Account" @click="$router.push('/create')">
                                         <q-item-section avatar><q-avatar size="sm"><q-icon name="person_add" size="sm" color="green" /></q-avatar></q-item-section>
                                         <q-item-section>New Account</q-item-section>
+                                      </q-item>
+                                      <q-item clickable class="text-orange" title="Exchange" @click="$router.push('/exchange?from=hive&for=' + loggedInUser)">
+                                        <q-item-section avatar><q-avatar size="sm"><q-icon name="swap_vertical_circle" size="sm" color="orange" /></q-avatar></q-item-section>
+                                        <q-item-section>Exchange</q-item-section>
                                       </q-item>
                                     </q-list>
                                   </q-menu>
