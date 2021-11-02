@@ -12,23 +12,6 @@
         <div class="text-center text-title text-h5">Exchange <q-badge color="primary" v-if="currencies.length > 0">{{ currencies.length }}</q-badge> tokens</div>
         <div class="text-caption">Use this form to swap between cryptocurrencies</div>
     </q-card-section>
-    <q-card-section v-if="this.for && userMetaTokens !== []" class="text-center">
-      <q-card flat>
-      <q-list dense separator>
-        <q-item-label>These are {{ this.for }}'s token addresses</q-item-label>
-        <q-list v-for="token in Object.keys(userMetaTokens)" :key="token.index" dense>
-          <q-item>
-            <q-list dense separator bordered>
-              <q-item v-for="address in userMetaTokens[token]" :key="address.index" class="text-center text-weight-light" clickable @click="tradeTo = token; tradeToAddress = address; copy(address); updateToken()">
-                <q-item-section avatar><q-avatar size="sm"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar></q-item-section>
-                <q-item-section>{{ address }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-item>
-        </q-list>
-      </q-list>
-      </q-card>
-    </q-card-section>
     <q-card-section>
         <q-list separator>
             <q-item class="q-mb-md">
@@ -57,6 +40,23 @@
                 </q-item-section>
             </q-item>
         </q-list>
+    </q-card-section>
+    <q-card-section v-if="this.for && userMetaTokens !== []" class="q-ma-sm">
+      <div class="text-title text-bold"><router-link :to="getUserLink(this.for)"><q-avatar size="sm"><img :src="getHiveAvatarUrl(this.for)" /></q-avatar> {{ this.for }}</router-link>'s token addresses</div>
+      <q-card flat>
+      <q-list dense separator>
+        <q-list v-for="token in Object.keys(userMetaTokens)" :key="token.index" dense>
+          <q-item>
+            <q-list dense separator bordered>
+              <q-item v-for="address in userMetaTokens[token]" :key="address.index" class="text-center text-weight-light" clickable @click="tradeTo = token; tradeToAddress = address; copy(address); updateToken()">
+                <q-item-section avatar><q-avatar size="sm"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar></q-item-section>
+                <q-item-section>{{ address }}</q-item-section>
+              </q-item>
+            </q-list>
+          </q-item>
+        </q-list>
+      </q-list>
+      </q-card>
     </q-card-section>
     <q-card-section v-if="!error && tradeFromAmount >= minAmount && tradeToAmount && tradeFrom && tradeTo">
         <div class="text-center text-title text-h5">
@@ -257,8 +257,8 @@ export default {
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['transfer', { to: this.transaction.payinAddress, from: this.loggedInUser, amount: this.transaction.amountExpectedFrom + ' HIVE', memo: this.transaction.payinExtraId }]])
       this.disableTransferButton = true
     },
-    getUserMetaTokens (username) {
-    }
+    getUserLink (user) { return '/@' + user },
+    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' }
   },
   computed: {
     loggedInUser: function () { return this.$store.state.hive.user.username },
