@@ -93,8 +93,8 @@
               <template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.payinAddress)" /></template>
             </q-input>
             <div v-if="transaction.payinExtraId">
-              <q-input v-model="transaction.payinExtraId" label="Payment Address Extra ID / MEMO">
-                <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
+              <q-input readonly v-model="transaction.payinExtraId" label="Payment Address Extra ID / MEMO">
+                <template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
               </q-input>
             </div>
         </q-card-section>
