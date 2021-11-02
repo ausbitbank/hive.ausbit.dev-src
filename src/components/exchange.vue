@@ -25,8 +25,8 @@
             <q-item class="text-center">
               <q-separator />
               <q-btn flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
-              <q-btn flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="green" />
-              <q-btn flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="red" />
+              <q-btn flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="primary" />
+              <q-btn flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="primary" />
               <q-separator />
             </q-item>
             <q-item>
@@ -61,6 +61,8 @@
     <q-card-section v-if="!error && tradeFromAmount >= minAmount && tradeToAmount && tradeFrom && tradeTo">
         <div class="text-center text-title text-h5">
             <q-input v-model="tradeToAddress" :label="'Receiving Address : ' + tradeTo" :rules="[val => !!val || 'Receiving address is required', val => val.trim() !== '' || 'Receiving address is required']" />
+            <q-input v-model="tradeToExtraId" :label="'ExtraId / Memo :'" v-if="['xrp','xlm','eos','ignis','bnb','xmr','ardor','dct','xem','hive'].includes(tradeTo)" />
+            <q-input v-model="refundAddress" :label="'Refund Address (optional):'" />
         </div>
         <div class="text-center text-title text-h5" v-if="quote">Trade confirmation</div>
         Swap <q-badge color="primary" class="text-bold">{{ tidyNumber(tradeFromAmount) }}</q-badge> <q-avatar size="sm"><img :src="getTokenImage(tradeFrom)" /></q-avatar> <b>{{ tradeFrom }}</b>
@@ -110,10 +112,10 @@
           <q-card flat bordered v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
           <q-card flat bordered v-if="transaction.status === 'exchanging'">Payment was confirmed and is being exchanged.</q-card>
           <q-card flat bordered v-if="transaction.status === 'sending'">Coins are being sent to the recipient address.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'finished'">Coins were successfully sent to the recipient address.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'failed'">Transaction has failed. In most cases, the amount was less than the minimum. Please contact support and provide a transaction id.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'refunded'">Exchange failed and coins were refunded to user's wallet. The wallet address should be provided by user.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'hold'">Due to AML/KYC procedure, exchange may be delayed</q-card>
+          <q-card flat bordered v-if="transaction.status === 'finished'">Coins were successfully sent to the recipient address</q-card>
+          <q-card flat bordered v-if="transaction.status === 'failed'">Transaction has failed. In most cases, the amount was less than the minimum. Please contact support and provide a transaction id. <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
+          <q-card flat bordered v-if="transaction.status === 'refunded'">Exchange failed and coins were refunded to your wallet.</q-card>
+          <q-card flat bordered v-if="transaction.status === 'hold'">Due to AML/KYC procedure, exchange may be delayed. Contact support <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
           <q-card flat bordered v-if="transaction.status === 'expired'">In case payin for fixed-rate transaction was not sent within the indicated timeframe</q-card>
           </span>
         </q-card-section>
@@ -148,6 +150,8 @@ export default {
       tradeFromAmount: null,
       tradeToAmount: null,
       tradeToAddress: this.$route.query.address || null,
+      refundAddress: null,
+      tradeToExtraId: null,
       optionsFrom: [],
       optionsTo: [],
       currencies: [],
@@ -208,11 +212,15 @@ export default {
     createTransaction (from, to, address, amount) {
       this.transaction = null
       this.loading.transaction = true
-      this.$axios.post(this.api + '/createTransaction', { from: from, to: to, address: address, amount: amount })
+      var params = { from: from, to: to, address: address, amount: amount }
+      if (this.refundAddress) { params.refundAddress = this.refundAddress; this.refundAddress = null }
+      if (this.tradeToExtraId) { params.extraId = this.tradeToExtraId; this.tradeToExtraId = null }
+      this.$axios.post(this.api + '/createTransaction', params)
         .then((res) => {
           if (res.data.error) {
             this.error = res.data.error.message
             if (this.error === 'Invalid address') { this.tradeToAddress = '' }
+            if (this.error === 'Invalid currency pair') { this.tradeFrom = null }
           } else {
             this.transaction = res.data.result
             this.$router.replace('/exchange?id=' + this.transaction.id)
@@ -254,7 +262,7 @@ export default {
     getExchangeIdUrl (id) { return 'https://hive.ausbit.dev/exchange?id=' + id },
     openNewWindow (url) { window.open(url, '_blank') },
     transferNeededHive () {
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['transfer', { to: this.transaction.payinAddress, from: this.loggedInUser, amount: this.transaction.amountExpectedFrom + ' HIVE', memo: this.transaction.payinExtraId }]])
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['transfer', { to: this.transaction.payinAddress, from: this.loggedInUser, amount: parseInt(this.transaction.amountExpectedFrom).toFixed(3) + ' HIVE', memo: this.transaction.payinExtraId }]])
       this.disableTransferButton = true
     },
     getUserLink (user) { return '/@' + user },
