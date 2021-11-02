@@ -17,6 +17,12 @@
     <span v-if="profile.litecoin" title="Litecoin"><a :href="returnServiceLink('litecoin', profile.litecoin)"><q-avatar><q-icon name="img:statics/litecoin.svg" class="hvr" /></q-avatar></a></span>
     <span v-if="profile.ethereum" title="Ethereum"><a :href="returnServiceLink('ethereum', profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" class="hvr" /></q-avatar></a></span>
     <span v-if="profile.dogecoin" title="Dogecoin"><a :href="returnServiceLink('dogecoin', profile.dogecoin)"><q-avatar><q-icon name="img:statics/dogecoin.svg" class="hvr" /></q-avatar></a></span>
+    <span v-if="profile.tokens" title="Tokens">
+      <span v-for="address in profile.tokens.btc" :key="address" title="Bitcoin"><a :href="returnServiceLink('bitcoin', address)"><q-avatar><q-icon name="img:statics/bitcoin.svg" class="hvr"/></q-avatar></a></span>
+      <span v-for="address in profile.tokens.ltc" :key="address" title="Litecoin"><a :href="returnServiceLink('litecoin', address)"><q-avatar><q-icon name="img:statics/litecoin.svg" class="hvr" /></q-avatar></a></span>
+      <span v-for="address in profile.tokens.eth" :key="address" title="Ethereum"><a :href="returnServiceLink('ethereum', profile.ethereum)"><q-avatar><q-icon name="img:statics/ethereum.svg" class="hvr" /></q-avatar></a></span>
+      <span v-for="address in profile.tokens.doge" :key="address" title="Dogecoin"><a :href="returnServiceLink('dogecoin', profile.dogecoin)"><q-avatar><q-icon name="img:statics/dogecoin.svg" class="hvr" /></q-avatar></a></span>
+    </span>
     <span v-if="profile.flickr" title="Flickr"><a :href="returnServiceLink('flickr', profile.flickr)"><q-avatar><q-icon name="img:statics/flickr.svg" class="hvr"/></q-avatar></a></span>
     <span v-if="profile.facebook" title="Facebook"><a :href="returnServiceLink('facebook', profile.facebook)"><q-avatar><q-icon name="img:statics/facebook.svg" class="hvr"/></q-avatar></a></span>
     <span v-if="profile.tumblr" title="Tumblr"><a :href="returnServiceLink('tumblr', profile.tumblr)"><q-avatar><q-icon name="img:statics/tumblr.svg" class="hvr"/></q-avatar></a></span>
