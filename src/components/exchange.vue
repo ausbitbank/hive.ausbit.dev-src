@@ -7,7 +7,7 @@
           <q-btn label="Dismiss" @click="error = null" q-close-dialog />
     </q-card>
   </q-dialog>
-  <q-card flat bordered class="text-center" style="max-width: 600px">
+  <q-card flat bordered class="text-center" style="max-width: 600px" v-if="!showTransactionDialog">
     <q-card-section header>
         <div class="text-center text-title text-h5">Exchange <q-badge color="primary" v-if="currencies.length > 0">{{ currencies.length }}</q-badge> tokens</div>
         <div class="text-caption">Use this form to swap between cryptocurrencies</div>
@@ -24,9 +24,10 @@
             </q-item>
             <q-item class="text-center">
               <q-separator />
-              <q-btn flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
-              <q-btn flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="primary" />
-              <q-btn flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="primary" />
+              <q-btn no-caps flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
+              <q-btn no-caps flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="green" v-if="tradeTo !== 'hive'" />
+              <q-btn no-caps flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="red" v-if="tradeFrom !== 'hive'" />
+              <q-btn no-caps flat icon="send" :label="hiveBalance + ' HIVE'" @click="tradeFromAmount = hiveBalance" color="orange" v-if="loggedInUser && tradeFrom === 'hive'" />
               <q-separator />
             </q-item>
             <q-item>
@@ -77,12 +78,12 @@
         <q-btn flat label="Continue" color="primary" icon-right="arrow_forward" :disable="!termsAndConditions || error !== null || tradeToAddress === null || tradeToAddress.trim() === ''" @click="createTransaction (tradeFrom, tradeTo, tradeToAddress, tradeFromAmount)" v-if="tradeFrom || tradeTo"/>
     </q-card-actions>
   </q-card>
-  <q-dialog v-if="transaction" v-model="showTransactionDialog" persistent>
+  <div v-if="showTransactionDialog">
     <q-card flat bordered>
         <q-card-section header class="text-heading text-h5 text-center">
             Payment Request
         </q-card-section>
-        <q-card-section>
+        <q-card-section v-if="!['finished','sending','exchanging','confirming'].includes(transaction.status)">
             Please transfer:
             <q-input readonly v-model="transaction.amountExpectedFrom">
               <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
@@ -90,64 +91,62 @@
             </q-input>
             To this {{ transaction.currencyFrom }} address:
             <q-input readonly v-model="transaction.payinAddress">
-              <template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.payinAddress)" /></template>
+              <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.payinAddress)" /></template>
             </q-input>
             <div v-if="transaction.payinExtraId">
               <q-input readonly v-model="transaction.payinExtraId" label="Payment Address Extra ID / MEMO">
-                <template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
+                <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
               </q-input>
             </div>
         </q-card-section>
         <q-separator />
-        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive'" class="text-center text-bold">
-          {{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar>
-          <q-btn @click="transferNeededHive()" push icon="send" no-caps color="primary" :disable="transaction.status !== 'waiting' || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) < transaction.amountExpectedFrom || disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
+        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
+          <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
+          <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" :disable="['waiting','new'].includes(transaction.status) || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) < transaction.amountExpectedFrom || disableTransferButton" v-if="!['finished','sending'].includes(transaction.status)">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
-          <q-input readonly label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:after><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
-          <q-input readonly label="Exchange Status" v-model="transaction.status"><template v-slot:after><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getStatus(transaction.id)"/></template></q-input>
+          <q-input readonly outlined label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
+          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction(transaction.id)"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
-          <q-card flat bordered v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'exchanging'">Payment was confirmed and is being exchanged.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'sending'">Coins are being sent to the recipient address.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'finished'">Coins were successfully sent to the recipient address</q-card>
-          <q-card flat bordered v-if="transaction.status === 'failed'">Transaction has failed. In most cases, the amount was less than the minimum. Please contact support and provide a transaction id. <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
-          <q-card flat bordered v-if="transaction.status === 'refunded'">Exchange failed and coins were refunded to your wallet.</q-card>
-          <q-card flat bordered v-if="transaction.status === 'hold'">Due to AML/KYC procedure, exchange may be delayed. Contact support <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
-          <q-card flat bordered v-if="transaction.status === 'expired'">In case payin for fixed-rate transaction was not sent within the indicated timeframe</q-card>
+          <q-card flat v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
+          <q-card flat v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
+          <q-card flat v-if="transaction.status === 'exchanging'">Payment was confirmed and is being exchanged.</q-card>
+          <q-card flat v-if="transaction.status === 'sending'">Coins are being sent to the recipient address.</q-card>
+          <q-card flat v-if="transaction.status === 'finished'">Coins were successfully sent to the recipient address</q-card>
+          <q-card flat v-if="transaction.status === 'failed'">Transaction has failed. In most cases, the amount was less than the minimum. Please contact support and provide a transaction id. <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
+          <q-card flat v-if="transaction.status === 'refunded'">Exchange failed and coins were refunded to your wallet.</q-card>
+          <q-card flat v-if="transaction.status === 'hold'">Due to AML/KYC procedure, exchange may be delayed. Contact support <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
+          <q-card flat v-if="transaction.status === 'expired'">Payin for fixed-rate transaction was not sent within the indicated timeframe</q-card>
           </span>
+        <q-card-section>
+          <q-input label="Payout Address" v-model="transaction.payoutAddress" readonly outlined>
+            <template v-slot:append>
+              <q-btn dense v-if="getAddressUrl(transaction.currencyTo)" title="Open address in block explorer" icon="open_in_new" @click="openNewWindow(getAddressUrl(transaction.currencyTo, transaction.payoutAddress))"/> {{ transaction.currencyTo }} <q-avatar><q-img :src="getTokenImage(transaction.currencyTo)" :title="transaction.currencyTo"/></q-avatar>
+            </template>
+          </q-input>
+          <q-input label="Finished Transaction Hash" v-model="transaction.payoutHash" readonly outlined v-if="transaction.payoutHash">
+            <template v-slot:append>
+              <q-btn icon="open_in_new" @click="openNewWindow(transaction.payoutHashLink)" />
+            </template>
+          </q-input>
+        </q-card-section>
         </q-card-section>
         <q-card-section>
             <q-expansion-item dense label="Full Transaction Metadata" icon="data_object">
                 <json-viewer :data="transaction" />
             </q-expansion-item>
         </q-card-section>
-        <q-card-section>
-          <q-input label="Payout Address" v-model="transaction.payoutAddress" readonly>
-            <template v-slot:after>
-              {{ transaction.currencyTo }} <q-avatar><q-img :src="getTokenImage(transaction.currencyTo)" :title="transaction.currencyTo"/></q-avatar>
-            </template>
-            <template v-slot:append>
-              <q-btn dense v-if="getAddressUrl(transaction.currencyTo)" title="Open address in block explorer" icon="open_in_new" @click="openNewWindow(getAddressUrl(transaction.currencyTo, transaction.payoutAddress))"/>
-            </template>
-          </q-input>
-          <q-input label="Finished Transaction Hash" v-model="transaction.payoutHash" readonly>
-            <template v-slot:after>
-              <q-btn icon="open_in_new" @click="openNewWindow(transaction.payoutHashLink)" />
-            </template>
-          </q-input>
-        </q-card-section>
         <q-card-actions align="around">
-            <q-btn flat label="Exit/Abort" color="red" icon="warning" @click="transaction = null" />
+            <q-btn flat label="Close" color="red" icon="warning" @click="transaction = null" />
         </q-card-actions>
     </q-card>
-  </q-dialog>
+  </div>
   </span>
 </template>
 <script>
 import { copyToClipboard } from 'quasar'
+import confetti from 'canvas-confetti'
 export default {
   name: 'exchange',
   data () {
@@ -246,14 +245,19 @@ export default {
     getStatus (id) {
       this.$axios.post(this.api + '/getStatus', { id: id })
         .then((res) => {
-          if (res.data.error) { this.error = res.data.error.message } else { this.transaction.status = res.data.result }
+          if (res.data.error) { this.error = res.data.error.message } else {
+            this.transaction.status = res.data.result
+            if (this.transaction.status === 'finished') { confetti() }
+          }
         })
     },
     getTransaction (id) {
       this.$axios.post(this.api + '/getTransaction', { id: id })
         .then((res) => {
-          console.log(res.data)
-          if (res.data.error) { this.error = res.data.error.message } else { this.transaction = res.data.result[0] }
+          if (res.data.error) { this.error = res.data.error.message } else {
+            this.transaction = res.data.result[0]
+            if (this.transaction.status === 'finished') { confetti() }
+          }
         })
     },
     updateToken () {
@@ -298,6 +302,9 @@ export default {
       if (ti !== undefined && ti !== null) {
         return ti.addressUrl.replace('%1$s', address)
       } else { return null }
+    },
+    confetti () {
+      confetti({ zIndex: 2147483647 })
     }
   },
   computed: {
@@ -316,6 +323,11 @@ export default {
           if (meta.profile && meta.profile.tokens) { meta.profile.tokens.hive = [this.for]; return meta.profile.tokens } else { return { hive: [this.for] } }
         } else { return { hive: [this.for] } }
       } else { return {} }
+    },
+    hiveBalance: function () {
+      if (this.loggedInUser && this.account !== undefined) {
+        return parseFloat(this.account.balance.split(' ')[0])
+      } else { return null }
     }
   },
   watch: {
