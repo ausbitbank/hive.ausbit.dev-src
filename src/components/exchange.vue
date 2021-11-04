@@ -16,30 +16,52 @@
         <q-list separator>
             <q-item class="q-mb-md">
                 <q-item-section>
-                    <q-select filled label="Send this Token" :options="optionsFrom" v-model="tradeFrom" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterFrom" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeFrom)">
-                      <template v-slot:before v-if="tradeFrom"><q-avatar><q-img :src="getTokenImage(tradeFrom)" :title="tradeFrom"/></q-avatar></template>
-                      <template v-slot:after v-if="tradeFrom && tradeTo"><q-input class="q-pt-md" label="Amount" v-model.number="tradeFromAmount" type="number" :rules="[ val => val > minAmount || 'Minimum trade is ' + minAmount + ' ' + tradeFrom, error !== null || error, ]" :loading="loading.minAmount" :debounce="2000" :readonly="loading.minAmount" @input="updateTradeFromAmount()" clearable /></template>
+                    <q-select label="I have" :options="optionsFrom" v-model="tradeFrom" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterFrom" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeFrom)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options>
+                      <template v-slot:prepend v-if="tradeFrom"><q-avatar><q-img :src="getTokenImage(tradeFrom)" :title="tradeFrom"/></q-avatar></template>
+                      <template v-slot:after v-if="tradeFrom && tradeTo"><q-input class="q-pt-md" label="Amount" v-model.number="tradeFromAmount" type="number" :rules="[ val => val > minAmount || 'Minimum trade is ' + minAmount + ' ' + tradeFrom, error !== null || error, ]" :loading="loading.minAmount" :debounce="2000" :readonly="loading.minAmount" @input="updateTradeFromAmount()" /></template>
+                      <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                          <q-item-section avatar>
+                            <q-avatar size="sm"><q-img :src="scope.opt.image" /></q-avatar>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ scope.opt.ticker }}</q-item-label>
+                            <q-item-label caption>{{ scope.opt.fullName }}</q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </template>
                     </q-select>
                 </q-item-section>
             </q-item>
+            <q-item v-if="tradeFromWarning">{{ tradeFromWarning }}</q-item>
             <q-item class="text-center">
               <q-separator />
               <q-btn no-caps flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
               <q-btn no-caps flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="green" v-if="tradeTo !== 'hive'" />
               <q-btn no-caps flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="red" v-if="tradeFrom !== 'hive'" />
-              <q-btn no-caps flat icon="send" :label="hiveBalance + ' HIVE'" @click="tradeFromAmount = hiveBalance" color="orange" v-if="loggedInUser && tradeFrom === 'hive'" />
+              <q-btn no-caps flat @click="tradeFromAmount = hiveBalance" color="orange" v-if="loggedInUser && tradeFrom === 'hive'"><template v-slot:default><q-avatar size="md" class="q-mr-sm"><img :src="getHiveAvatarUrl(loggedInUser)" /></q-avatar> {{ hiveBalance }} HIVE</template></q-btn>
               <q-separator />
             </q-item>
             <q-item>
                 <q-item-section>
-                    <q-select filled label="Receive this Token" :options="optionsTo" v-model="tradeTo" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterTo" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeTo)">
-                      <template v-slot:before v-if="tradeTo"><q-avatar><q-img :src="getTokenImage(tradeTo)" :title="tradeTo" /></q-avatar></template>
+                    <q-select label="I want" :options="optionsTo" v-model="tradeTo" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterTo" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeTo)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options>
+                      <template v-slot:prepend v-if="tradeTo"><q-avatar><q-img :src="getTokenImage(tradeTo)" :title="tradeTo" /></q-avatar></template>
+                      <template v-slot:after v-if="tradeFrom && tradeTo"><q-input class="q-pt-md" label="Amount" v-model.number="tradeToAmount" readonly type="number" @input="updateTradeToAmount()" /></template>
+                      <template v-slot:option="scope">
+                        <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                          <q-item-section avatar>
+                            <q-avatar size="sm"><img :src="scope.opt.image" /></q-avatar>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-item-label>{{ scope.opt.ticker }}</q-item-label>
+                            <q-item-label caption>{{ scope.opt.fullName }}</q-item-label>
+                          </q-item-section>
+                        </q-item>
+                      </template>
                     </q-select>
                 </q-item-section>
-                <q-item-section side v-if="tradeTo && tradeToAmount">
-                    <q-input label="Amount" readonly v-model="tradeToAmount" :hint="'Receive ~' + tidyNumber(tradeToAmount) + ' ' + tradeTo" :loading="loading.quote" />
-                </q-item-section>
             </q-item>
+            <q-item v-if="tradeToWarning">{{ tradeToWarning }}</q-item>
         </q-list>
     </q-card-section>
     <q-card-section v-if="this.for && userMetaTokens !== []" class="q-ma-sm">
@@ -61,9 +83,9 @@
     </q-card-section>
     <q-card-section v-if="!error && tradeFromAmount >= minAmount && tradeToAmount && tradeFrom && tradeTo">
         <div class="text-center text-title text-h5">
-            <q-input v-model="tradeToAddress" :label="'Receiving Address : ' + tradeTo" :rules="[val => !!val || 'Receiving address is required', val => val.trim() !== '' || 'Receiving address is required']" />
-            <q-input v-model="tradeToExtraId" :label="'ExtraId / Memo :'" v-if="['xrp','xlm','eos','ignis','bnb','xmr','ardor','dct','xem','hive'].includes(tradeTo)" />
-            <q-input v-model="refundAddress" :label="'Refund Address (optional):'" />
+            <q-input v-model="tradeToAddress" label="Receiving Address" :rules="[val => !!val || 'Receiving address is required', val => val.trim() !== '' || 'Receiving address is required']"><template v-slot:prepend><q-avatar><img :src="getTokenImage(tradeTo)"></q-avatar></template></q-input>
+            <q-input v-model="tradeToExtraId" :label="getTokenInfo(tradeTo).extraIdName" v-if="['xrp','xlm','eos','ignis','bnb','xmr','ardor','dct','xem','hive'].includes(tradeTo) && getTokenInfo(tradeTo).extraIdName !== null"><template v-slot:prepend><q-avatar><img :src="getTokenImage(tradeTo)"></q-avatar></template></q-input>
+            <q-input v-model="refundAddress" :label="'Refund Address (optional)'"><template v-slot:prepend><q-avatar><img :src="getTokenImage(tradeFrom)"></q-avatar></template></q-input>
         </div>
         <div class="text-center text-title text-h5" v-if="quote">Trade confirmation</div>
         Swap <q-badge color="primary" class="text-bold">{{ tidyNumber(tradeFromAmount) }}</q-badge> <q-avatar size="sm"><img :src="getTokenImage(tradeFrom)" /></q-avatar> <b>{{ tradeFrom }}</b>
@@ -81,7 +103,7 @@
   <div v-if="showTransactionDialog">
     <q-card flat bordered>
         <q-card-section header class="text-heading text-h5 text-center">
-            Payment Request
+            {{ transaction.status === 'finished' ? 'Exchange Complete!' : 'Payment Request' }}
         </q-card-section>
         <q-card-section v-if="!['finished','sending','exchanging','confirming'].includes(transaction.status)">
             Please transfer:
@@ -107,7 +129,7 @@
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
           <q-input readonly outlined label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
-          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction(transaction.id)"/></template></q-input>
+          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction(transaction.id)"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
           <q-card flat v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
           <q-card flat v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
@@ -185,17 +207,18 @@ export default {
   },
   methods: {
     getCurrencies () {
-      this.loading.currencies = true
       this.$axios.get(this.api + '/getCurrencies')
         .then((res) => {
-          this.currencies = res.data.result.sort()
+          this.currencies = res.data.result
           this.loading.currencies = false
         })
     },
     getCurrenciesFull () {
+      this.loading.currencies = true
       this.$axios.get(this.api + '/getCurrenciesFull')
         .then((res) => {
-          this.currenciesFull = res.data.result.sort()
+          this.currenciesFull = res.data.result.filter(c => c.enabled === true)
+          this.loading.currencies = false
         })
     },
     getMinAmount (from, to) {
@@ -206,12 +229,12 @@ export default {
         .then((res) => { this.minAmount = res.data.result; this.tradeFromAmount = this.minAmount * 2; this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount); this.loading.minAmount = false })
     },
     filterFrom (val, update) {
-      if (val === '') { update(() => { this.optionsFrom = this.currencies.filter(v => v !== this.tradeTo) }); return }
-      update(() => { var needle = val.toLowerCase(); this.optionsFrom = this.currencies.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v !== this.tradeTo) })
+      if (val === '') { update(() => { this.optionsFrom = this.currenciesFull.filter(v => v.ticker !== this.tradeTo) }); return }
+      update(() => { var needle = val.toLowerCase(); this.optionsFrom = this.currenciesFull.filter(v => v.ticker.toLowerCase().indexOf(needle) > -1).filter(v => v.ticker !== this.tradeTo) })
     },
     filterTo (val, update) {
-      if (val === '') { update(() => { this.optionsTo = this.currencies.filter(v => v !== this.tradeFrom) }); return }
-      update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currencies.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v !== this.tradeFrom) })
+      if (val === '') { update(() => { this.optionsTo = this.currenciesFull.filter(v => v.ticker !== this.tradeFrom) }); return }
+      update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currenciesFull.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v.ticker !== this.tradeFrom) })
     },
     reset () { this.tradeFrom = null; this.tradeTo = null; this.minAmount = null; this.tradeFromAmount = null; this.tradeToAmount = null; this.quote = null; this.termsAndConditions = false },
     getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token.toLowerCase() + '.png' },
@@ -247,7 +270,7 @@ export default {
         .then((res) => {
           if (res.data.error) { this.error = res.data.error.message } else {
             this.transaction.status = res.data.result
-            if (this.transaction.status === 'finished') { confetti() }
+            if (this.transaction.status === 'finished') { this.confetti() }
           }
         })
     },
@@ -256,7 +279,7 @@ export default {
         .then((res) => {
           if (res.data.error) { this.error = res.data.error.message } else {
             this.transaction = res.data.result[0]
-            if (this.transaction.status === 'finished') { confetti() }
+            if (this.transaction.status === 'finished') { this.confetti() }
           }
         })
     },
@@ -294,7 +317,8 @@ export default {
     getTokenChainHint (token) {
       var ti = this.getTokenInfo(token)
       if (ti !== undefined && ti !== null) {
-        return ti.fullName + ' : ' + ti.blockchain
+        var label = ti.fullName + ' on ' + ti.blockchain + ' blockchain (' + ti.protocol + ')'
+        return label
       } else { return null }
     },
     getAddressUrl (token, address) {
@@ -304,7 +328,29 @@ export default {
       } else { return null }
     },
     confetti () {
-      confetti({ zIndex: 2147483647 })
+      var duration = 5 * 1000
+      var end = Date.now() + duration;
+      (function frame () {
+        // launch a few confetti from the left edge
+        confetti({
+          particleCount: 6,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        })
+        // and launch a few from the right edge
+        confetti({
+          particleCount: 6,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        })
+
+        // keep going until we are out of time
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }())
     }
   },
   computed: {
@@ -328,13 +374,21 @@ export default {
       if (this.loggedInUser && this.account !== undefined) {
         return parseFloat(this.account.balance.split(' ')[0])
       } else { return null }
+    },
+    tradeFromWarning: function () {
+      var ti = this.getTokenInfo(this.tradeFrom)
+      if (this.tradeFrom && this.currenciesFull && ti.notifications && ti.notifications.payin) { return ti.notifications.payin } else { return null }
+    },
+    tradeToWarning: function () {
+      var ti = this.getTokenInfo(this.tradeTo)
+      if (this.tradeTo && this.currenciesFull && ti.notifications && ti.notifications.payout) { return ti.notifications.payout } else { return null }
     }
   },
   watch: {
     loggedInUser: function () { if (this.account === undefined && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) } }
   },
   mounted () {
-    this.getCurrencies()
+    // this.getCurrencies()
     this.getCurrenciesFull()
     if (this.exchangeId) { this.getTransaction(this.exchangeId) }
     if (this.tradeFrom && this.tradeTo) { this.updateToken() }
