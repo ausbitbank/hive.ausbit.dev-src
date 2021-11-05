@@ -234,7 +234,7 @@ export default {
     },
     filterTo (val, update) {
       if (val === '') { update(() => { this.optionsTo = this.currenciesFull.filter(v => v.ticker !== this.tradeFrom) }); return }
-      update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currenciesFull.filter(v => v.toLowerCase().indexOf(needle) > -1).filter(v => v.ticker !== this.tradeFrom) })
+      update(() => { var needle = val.toLowerCase(); this.optionsTo = this.currenciesFull.filter(v => v.ticker.toLowerCase().indexOf(needle) > -1).filter(v => v.ticker !== this.tradeFrom) })
     },
     reset () { this.tradeFrom = null; this.tradeTo = null; this.minAmount = null; this.tradeFromAmount = null; this.tradeToAmount = null; this.quote = null; this.termsAndConditions = false },
     getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token.toLowerCase() + '.png' },
