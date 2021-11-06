@@ -8,7 +8,10 @@
         <q-card-section v-if="loggedInUser && !witness">
           The currently logged in user ({{ loggedInUser }}) is not a witness.<br />
           Login to a witness account to update or <br />
-          <q-btn color="primary" icon="refresh" label="Click to refresh witness properties" @click="getAccount(loggedInUser); getWitness(loggedInUser)" />
+          <q-btn color="primary" icon="refresh" label="Click to refresh witness properties" @click="getAccount(loggedInUser); getWitness(loggedInUser)" /><br />
+          <q-btn color="red" icon="warning" label="Register new witness">
+            <q-popup-proxy><q-card flat bordered class="q-pa-md text-center"><div class="text-h5">Are you sure ?</div>You need the public signing key of your witness node, as well as HIVE stakeholder votes in order to be a witness<br /><q-btn label="continue" color="primary" @click="witness = newWitness" /><q-btn label="close" color="orange" v-close-popup /></q-card></q-popup-proxy>
+          </q-btn>
         </q-card-section>
         <q-card-section v-if="loggedInUser && witness">
           <div class="text-center text-title text-h6">Update Witness Properties for {{ loggedInUser }}</div>
@@ -59,7 +62,19 @@ export default {
   components: { witnesses, jsonViewer },
   data () {
     return {
-      witness: null
+      witness: null,
+      newWitness: {
+        owner: this.loggedInUser,
+        url: '',
+        signing_key: 'STM1111111111111111111111111111111114T1Anm',
+        props: {
+          account_creation_fee: '3.000 HIVE',
+          maximum_block_size: 65536,
+          hbd_interest_rate: 10000,
+          account_subsidy_budget: 797,
+          account_subsidy_decay: 347321
+        }
+      }
     }
   },
   computed: {
