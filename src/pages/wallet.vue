@@ -528,8 +528,8 @@
                             <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
                             <q-item-label caption>Liquid</q-item-label>
                           </q-item-section>
-                          <q-item-section>
-                            <q-item-label>{{ tidyNumber(token.stake) }}</q-item-label>
+                          <q-item-section v-if="token.stake > 0 && returnTokenInfo(token.symbol).stakingEnabled === true">
+                            <q-item-label>{{ tidyNumber(token.stake)}}</q-item-label>
                             <q-item-label caption>Staked</q-item-label>
                           </q-item-section>
                           <q-item-section v-if="token.pendingUnstake > 0">
@@ -571,6 +571,10 @@
                                     <q-item clickable @click="stakingDialogTokenName = token.symbol; stakingDialogBalance = parseFloat(token.balance); stakeHiveEngine = true" v-if="parseFloat(token.balance) > 0 && returnTokenInfo(token.symbol).stakingEnabled === true" class="text-green" title="Stake Token">
                                       <q-item-section avatar><q-icon name="lock" /></q-item-section>
                                       <q-item-section>Stake</q-item-section>
+                                    </q-item>
+                                    <q-item clickable @click="unstakingDialogTokenName = token.symbol; unstakingDialogStake = parseFloat(token.stake); unstakingDialogUnstaking = parseFloat(token.pendingUnstake); unstakingDialogCooldown =  returnTokenInfo(token.symbol).unstakingCooldown; unstakingDialogTransactions = returnTokenInfo(token.symbol).numberTransactions; unstakeHiveEngine = true;" v-if="parseFloat(token.stake) > 0 && returnTokenInfo(token.symbol).stakingEnabled === true" class="text-red" title="Unstake Token">
+                                      <q-item-section avatar><q-icon name="lock_open" /></q-item-section>
+                                      <q-item-section>Unstake</q-item-section>
                                     </q-item>
                                     <q-item clickable @click="$router.push(getTokenLink(token.symbol))" title="Trade" class="text-deep-orange" v-if="token.symbol !== 'SWAP.HIVE'">
                                       <q-item-section avatar><q-icon name="store" /></q-item-section>
@@ -801,6 +805,7 @@
                     </div>
                     <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
                     <q-dialog v-model="stakeHiveEngine"><staking-dialog :tokenName="stakingDialogTokenName" network="hiveEngine" :balance="stakingDialogBalance" :username="username" /></q-dialog>
+                    <q-dialog v-model="unstakeHiveEngine"><unstaking-dialog :tokenName="unstakingDialogTokenName" network="hiveEngine" :stake="unstakingDialogStake" :transactions="unstakingDialogTransactions" :cooldown="unstakingDialogCooldown" :unstaking="unstakingDialogUnstaking" :username="username" /></q-dialog>
                 </q-tab-panel>
             </q-tab-panels>
           </q-card>
@@ -855,6 +860,12 @@ export default {
       stakeHiveEngine: false,
       stakingDialogTokenName: '',
       stakingDialogBalance: null,
+      unstakeHiveEngine: false,
+      unstakingDialogTokenName: '',
+      unstakingDialogStake: null,
+      unstakingDialogTransactions: null,
+      unstakingDialogCooldown: null,
+      unstakingDialogUnstaking: null,
       stakeHive: false,
       unstakeHive: false,
       savings: false,
