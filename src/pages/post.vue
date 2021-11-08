@@ -200,8 +200,8 @@
                 <q-item-section>
                   <q-btn label="Full Post Metadata" rounded flat>
                   <q-popup-proxy>
-                    <q-card style="margin:auto">
-                      <json-viewer :data="JSON.parse(JSON.stringify(post))" :deep="1" title="Post json_metadata" />
+                    <q-card dense flat bordered>
+                      <json-viewer :data="post" :deep="1" title="Post json_metadata" />
                     </q-card>
                   </q-popup-proxy>
                   </q-btn>
