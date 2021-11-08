@@ -16,7 +16,7 @@
         <q-list separator>
             <q-item class="q-mb-md">
                 <q-item-section>
-                    <q-select label="I have" :options="optionsFrom" v-model="tradeFrom" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterFrom" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeFrom)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options>
+                    <q-select label="I have" :options="optionsFrom" v-model="tradeFrom" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterFrom" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeFrom)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options :display-value="tradeFrom">
                       <template v-slot:prepend v-if="tradeFrom"><q-avatar><q-img :src="getTokenImage(tradeFrom)" :title="tradeFrom"/></q-avatar></template>
                       <template v-slot:after v-if="tradeFrom && tradeTo"><q-input class="q-pt-md" label="Amount" v-model.number="tradeFromAmount" type="number" :rules="[ val => val > minAmount || 'Minimum trade is ' + minAmount + ' ' + tradeFrom, error !== null || error, ]" :loading="loading.minAmount" :debounce="2000" :readonly="loading.minAmount" @input="updateTradeFromAmount()" /></template>
                       <template v-slot:option="scope">
@@ -39,12 +39,12 @@
               <q-btn no-caps flat icon="swap_vert" size="md" color="primary" @click="swapTokens()" label="Swap positions" v-if="tradeFrom || tradeTo" />
               <q-btn no-caps flat icon="trending_up" label="Buy Hive" @click="tradeTo = 'hive'; tradeFrom = null" color="green" v-if="tradeTo !== 'hive'" />
               <q-btn no-caps flat icon="trending_down" label="Sell Hive" @click="tradeFrom = 'hive'; tradeTo = null" color="red" v-if="tradeFrom !== 'hive'" />
-              <q-btn no-caps flat @click="tradeFromAmount = hiveBalance" color="orange" v-if="loggedInUser && tradeFrom === 'hive'"><template v-slot:default><q-avatar size="md" class="q-mr-sm"><img :src="getHiveAvatarUrl(loggedInUser)" /></q-avatar> {{ hiveBalance }} HIVE</template></q-btn>
+              <q-btn no-caps flat @click="tradeFromAmount = hiveBalance; if (tradeTo && tradeFrom) {updateTradeFromAmount()}" color="orange" v-if="loggedInUser && tradeFrom === 'hive'"><template v-slot:default><q-avatar size="md" class="q-mr-sm"><img :src="getHiveAvatarUrl(loggedInUser)" /></q-avatar> {{ hiveBalance }} HIVE</template></q-btn>
               <q-separator />
             </q-item>
             <q-item>
                 <q-item-section>
-                    <q-select label="I want" :options="optionsTo" v-model="tradeTo" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterTo" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeTo)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options>
+                    <q-select label="I want" :options="optionsTo" v-model="tradeTo" clearable options-selected-class="text-primary" use-input input-debounce="0" @filter="filterTo" @input="updateToken" :loading="loading.currencies" :hint="getTokenChainHint(tradeTo)" transition-show="scale" transition-hide="scale" :option-value="opt => Object(opt) === opt && 'ticker' in opt ? opt.ticker : null" :option-label="opt => Object(opt) === opt && 'fullName' in opt ? opt.fullName : null" :option-disable="opt => opt.enabled ? false : true" emit-value map-options :display-value="tradeTo">
                       <template v-slot:prepend v-if="tradeTo"><q-avatar><q-img :src="getTokenImage(tradeTo)" :title="tradeTo" /></q-avatar></template>
                       <template v-slot:after v-if="tradeFrom && tradeTo"><q-input class="q-pt-md" label="Amount" v-model.number="tradeToAmount" readonly type="number" @input="updateTradeToAmount()" /></template>
                       <template v-slot:option="scope">
@@ -66,20 +66,20 @@
     </q-card-section>
     <q-card-section v-if="this.for && userMetaTokens !== []" class="q-ma-sm">
       <div class="text-title text-bold"><router-link :to="getUserLink(this.for)"><q-avatar size="sm"><img :src="getHiveAvatarUrl(this.for)" /></q-avatar> {{ this.for }}</router-link>'s token addresses</div>
-      <q-card flat>
-      <q-list dense separator>
-        <q-list v-for="token in Object.keys(userMetaTokens)" :key="token.index" dense>
-          <q-item>
-            <q-list dense separator bordered>
-              <q-item v-for="address in userMetaTokens[token]" :key="address.index" class="text-center text-weight-light" clickable @click="tradeTo = token; tradeToAddress = address; copy(address); updateToken()">
-                <q-item-section avatar><q-avatar size="sm"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar></q-item-section>
-                <q-item-section>{{ address }}</q-item-section>
+        <q-card flat>
+          <q-list dense separator>
+            <q-list v-for="token in Object.keys(userMetaTokens)" :key="token.index" dense>
+              <q-item>
+                <q-list dense separator bordered>
+                  <q-item v-for="address in userMetaTokens[token]" :key="address.index" class="text-center text-weight-light" clickable @click="tradeTo = token; tradeToAddress = address; copy(address); updateToken()">
+                    <q-item-section avatar><q-avatar size="sm"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar></q-item-section>
+                    <q-item-section>{{ address }}</q-item-section>
+                  </q-item>
+                </q-list>
               </q-item>
             </q-list>
-          </q-item>
-        </q-list>
-      </q-list>
-      </q-card>
+          </q-list>
+        </q-card>
     </q-card-section>
     <q-card-section v-if="!error && tradeFromAmount >= minAmount && tradeToAmount && tradeFrom && tradeTo">
         <div class="text-center text-title text-h5">
@@ -196,10 +196,12 @@ export default {
         transaction: false
       },
       transaction: null,
+      lastStatus: null,
       // transaction: { id: 'jua50lg8jbw4x8fo', apiExtraFee: '0', changellyFee: '0.4', payinExtraId: null, payoutExtraId: 'via ausbit.dev', amountExpectedFrom: 0.003, status: 'new', currencyFrom: 'btc', currencyTo: 'hive', amountTo: 0.000, amountExpectedTo: 223.875, payinAddress: '3GtFp5e7Bw3fhkywsh1Mtoaf76fUps7Xqx', payoutAddress: 'ausbitbank', createdAt: '2021-10-31T16:41:20.000Z', redirect: null, kycRequired: false, signature: null, binaryPayload: null },
       error: null,
       exchangeId: this.$route.query.id || null,
-      disableTransferButton: false
+      disableTransferButton: false,
+      completedTradeSound: 'https://files.ausbit.dev/zoot.mp3'
     }
   },
   components: {
@@ -226,7 +228,7 @@ export default {
       this.loading.minAmount = true
       this.tradeToAmount = null
       this.$axios.post(this.api + '/getMinAmount', { from: from, to: to })
-        .then((res) => { this.minAmount = res.data.result; this.tradeFromAmount = this.minAmount * 2; this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount); this.loading.minAmount = false })
+        .then((res) => { this.minAmount = res.data.result; if (this.tradeFromAmount < this.minAmount) { this.tradeFromAmount = this.minAmount }; this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount); this.loading.minAmount = false })
     },
     filterFrom (val, update) {
       if (val === '') { update(() => { this.optionsFrom = this.currenciesFull.filter(v => v.ticker !== this.tradeTo) }); return }
@@ -270,7 +272,8 @@ export default {
         .then((res) => {
           if (res.data.error) { this.error = res.data.error.message } else {
             this.transaction.status = res.data.result
-            if (this.transaction.status === 'finished') { this.confetti() }
+            if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
+            // if (this.transaction.status === 'finished') { this.confetti() }
           }
         })
     },
@@ -279,7 +282,8 @@ export default {
         .then((res) => {
           if (res.data.error) { this.error = res.data.error.message } else {
             this.transaction = res.data.result[0]
-            if (this.transaction.status === 'finished') { this.confetti() }
+            if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
+            if (this.transaction.status === 'finished') { this.confetti(); this.playSound() }
           }
         })
     },
@@ -287,10 +291,11 @@ export default {
       this.error = null
       this.tradeToAmount = null
       if (this.tradeFrom && this.tradeTo && this.tradeFrom !== this.tradeTo) {
-        this.tradeFromAmount = 0
+        // this.tradeFromAmount = 0
         this.minAmount = null
         this.getMinAmount(this.tradeFrom, this.tradeTo)
       }
+      if (this.tradeFrom === this.tradeTo) { this.tradeTo = null }
     },
     updateTradeFromAmount () {
       this.error = null
@@ -345,12 +350,22 @@ export default {
           spread: 55,
           origin: { x: 1 }
         })
-
         // keep going until we are out of time
         if (Date.now() < end) {
           requestAnimationFrame(frame)
         }
       }())
+    },
+    playSound () {
+      var sound = new Audio(this.completedTradeSound)
+      sound.play()
+    },
+    delay (ms) {
+      return new Promise(resolve => setTimeout(resolve, ms))
+    },
+    async pollStatus () {
+      await this.delay(30000)
+      await this.getStatus(this.exchangeId)
     }
   },
   computed: {
