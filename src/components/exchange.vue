@@ -392,18 +392,17 @@ export default {
     },
     tradeFromWarning: function () {
       var ti = this.getTokenInfo(this.tradeFrom)
-      if (this.tradeFrom && this.currenciesFull && ti.notifications && ti.notifications.payin) { return ti.notifications.payin } else { return null }
+      if (this.tradeFrom && this.currenciesFull && this.ti && ti.notifications && ti.notifications.payin) { return ti.notifications.payin } else { return null }
     },
     tradeToWarning: function () {
       var ti = this.getTokenInfo(this.tradeTo)
-      if (this.tradeTo && this.currenciesFull && ti.notifications && ti.notifications.payout) { return ti.notifications.payout } else { return null }
+      if (this.tradeTo && this.currenciesFull && this.ti && ti.notifications && ti.notifications.payout) { return ti.notifications.payout } else { return null }
     }
   },
   watch: {
     loggedInUser: function () { if (this.account === undefined && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) } }
   },
   mounted () {
-    // this.getCurrencies()
     this.getCurrenciesFull()
     if (this.exchangeId) { this.getTransaction(this.exchangeId) }
     if (this.tradeFrom && this.tradeTo) { this.updateToken() }
