@@ -10,7 +10,7 @@
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-              <div><q-badge color="primary">{{ this.blockOpsReal.length }}</q-badge> transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
+              <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ this.blockOpsReal.length }}</q-badge> transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
               <span v-for="op in this.blockOpsReal" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
@@ -198,7 +198,7 @@
           <div class="text-grey cursor-pointer text-center" @click="getRawBlock(blockNumber); showRawBlock = !showRawBlock">Show Raw Block Data</div>
           <q-card v-if="showRawBlock">
             <div class="text-h6 text-center">Raw Block Data</div>
-            <json-viewer :data="block" :deep="1" :showLength="true" />
+            <json-viewer v-if="block" :data="block" :deep="1" :showLength="true" />
           </q-card>
         </q-card-section>
         <q-card-section class="text-body text-center" v-if="!loading">
@@ -330,6 +330,14 @@ export default {
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
       return parts.join('.')
     },
+    getByteSize (thing) { return Buffer.from(JSON.stringify(thing)).length },
+    getBlockSize () {
+      var h = this.getByteSize(this.blockHeader)
+      var o = this.getByteSize(this.blockOps)
+      var t = (h + o) / 1024
+      return t
+    },
+    getBlockSizeText () { return this.getBlockSize + ' kB' },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blocknum) { return '/b/' + blocknum },
