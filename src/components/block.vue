@@ -10,7 +10,7 @@
             <span v-if="this.blockHeader" style="text-caption text-center">
               Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
               <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-              <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ this.blockOpsReal.length }}</q-badge> transaction<span v-if="this.blockOpsReal.length >= 2">s</span></div>
+              <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ blockOpsRealCount }}</q-badge> transaction<span v-if="blockOpsRealCount >= 2">s</span></div>
               <span v-for="op in this.blockOpsReal" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
@@ -37,7 +37,7 @@
         </q-card-section>
         <div class="text-center" v-if="filterOps.length > 0">Showing only: {{ filterOps.join(",") }} <q-btn dense flat no-caps icon="cancel" color="red" title="Remove filter" @click="filterOps = []" /></div>
         <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
-            <div class="text-h6 text-center">{{ this.blockOpsReal.length }} Transactions in this block</div>
+            <div class="text-h6 text-center">{{ blockOpsRealCount }} Transactions in this block</div>
             <q-list bordered separator dense>
             <q-item v-for="tx in this.blockOpsReal.filter(filterOpsType)" :key="tx.index">
                 <q-item-section v-if="tx.op[0] === 'vote'">
@@ -274,6 +274,15 @@ export default {
         var r = this.blockOps.filter(this.filterOpsReal)
         // if (this.filterOps.length > 0) { r = r.filter(this.filterOpsType) }
         return r
+      } else {
+        return []
+      }
+    },
+    blockOpsRealCount: function () {
+      if (this.blockOpsReal.length > 0) {
+        console.log(this.blockOpsReal)
+        var r = this.blockOpsReal.filter(o => o.op[0] !== 'effective_comment_vote')
+        return r.length
       } else {
         return []
       }
