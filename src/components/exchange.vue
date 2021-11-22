@@ -117,14 +117,14 @@
             </q-input>
             <div v-if="transaction.payinExtraId">
               <q-input readonly v-model="transaction.payinExtraId" label="Payment Address Extra ID / MEMO">
-                <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
+                <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.payinExtraId)" /></template>
               </q-input>
             </div>
         </q-card-section>
         <q-separator />
         <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
           <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
-          <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" :disable="['waiting','new'].includes(transaction.status) || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) < transaction.amountExpectedFrom || disableTransferButton" v-if="!['finished','sending'].includes(transaction.status)">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
+          <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" :disable="['waiting','new'].includes(transaction.status) || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) <= transaction.amountExpectedFrom || disableTransferButton" v-if="!['finished','sending'].includes(transaction.status)">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
@@ -303,7 +303,7 @@ export default {
         this.getExchangeAmount(this.tradeFrom, this.tradeTo, this.tradeFromAmount)
       }
     },
-    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
+    tidyNumber (x) { if (x !== null) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     swapTokens () { var x = this.tradeFrom; this.tradeFrom = this.tradeTo; this.tradeTo = x; this.updateToken() },
     copy (what) { copyToClipboard(what); this.$q.notify('Copied to clipboard: ' + what) },
     getExchangeIdUrl (id) { return 'https://hive.ausbit.dev/exchange?id=' + id },
