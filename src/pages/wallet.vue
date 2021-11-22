@@ -524,7 +524,7 @@
                             </q-btn>
                             </q-item-label>
                           </q-item-section>
-                          <q-item-section>
+                          <q-item-section v-if="token.balance > 0">
                             <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
                             <q-item-label caption>Liquid</q-item-label>
                           </q-item-section>
@@ -927,25 +927,27 @@ export default {
     },
     loggedInUser: function () { return this.$store.state.hive.user.username },
     hivePowerAPR: function () { // orig-src https://gitlab.syncad.com/hive/wallet/-/blob/develop/src/app/components/modules/UserWallet.jsx#L105
-      // The inflation was set to 9.5% at block 7m
-      const initialInflationRate = 9.5
-      const initialBlock = 7000000
-      // It decreases by 0.01% every 250k blocks
-      const decreaseRate = 250000
-      const decreasePercentPerIncrement = 0.01
-      // How many increments have happened since block 7m?
-      const headBlock = this.globalProps.head_block_number
-      const deltaBlocks = headBlock - initialBlock
-      const decreaseIncrements = deltaBlocks / decreaseRate
-      // Current inflation rate
-      let currentInflationRate = initialInflationRate - decreaseIncrements * decreasePercentPerIncrement
-      // Cannot go lower than 0.95%
-      if (currentInflationRate < 0.95) { currentInflationRate = 0.95 }
-      // Now lets calculate the "APR"
-      const vestingRewardPercent = this.globalProps.vesting_reward_percent / 10000
-      const virtualSupply = this.globalProps.virtual_supply.split(' ').shift()
-      const totalVestingFunds = this.globalProps.total_vesting_fund_hive.split(' ').shift()
-      return ((virtualSupply * currentInflationRate * vestingRewardPercent) / totalVestingFunds).toFixed(2)
+      if (this.globalProps) {
+        // The inflation was set to 9.5% at block 7m
+        const initialInflationRate = 9.5
+        const initialBlock = 7000000
+        // It decreases by 0.01% every 250k blocks
+        const decreaseRate = 250000
+        const decreasePercentPerIncrement = 0.01
+        // How many increments have happened since block 7m?
+        const headBlock = this.globalProps.head_block_number
+        const deltaBlocks = headBlock - initialBlock
+        const decreaseIncrements = deltaBlocks / decreaseRate
+        // Current inflation rate
+        let currentInflationRate = initialInflationRate - decreaseIncrements * decreasePercentPerIncrement
+        // Cannot go lower than 0.95%
+        if (currentInflationRate < 0.95) { currentInflationRate = 0.95 }
+        // Now lets calculate the "APR"
+        const vestingRewardPercent = this.globalProps.vesting_reward_percent / 10000
+        const virtualSupply = this.globalProps.virtual_supply.split(' ').shift()
+        const totalVestingFunds = this.globalProps.total_vesting_fund_hive.split(' ').shift()
+        return ((virtualSupply * currentInflationRate * vestingRewardPercent) / totalVestingFunds).toFixed(2)
+      } else { return null }
     },
     filteredTransactionsHive: function () {
       var ft = this.hiveTransactions
@@ -1005,7 +1007,7 @@ export default {
     },
     vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
+    tidyNumber (x) { if (x !== null && x !== undefined) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     async getHiveWalletTransactions (index, done) {
       this.loading = true
       await this.$hive.api.callAsync(
