@@ -124,7 +124,7 @@
         <q-separator />
         <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
           <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
-          <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" :disable="['waiting','new'].includes(transaction.status) || transaction.moneyReceived > 0 || parseFloat(account.balance.split(' ')[0]) <= transaction.amountExpectedFrom || disableTransferButton" v-if="!['finished','sending'].includes(transaction.status)">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
+          <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" v-if="!['finished','sending'].includes(transaction.status) && transaction.moneyReceived === 0 && parseFloat(account.balance.split(' ')[0]) >= transaction.amountExpectedFrom && !disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
