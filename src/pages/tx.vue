@@ -38,7 +38,7 @@ export default {
       blockNum: null,
       blockOps: null,
       api: null,
-      txLookupApiNode: 'https://api.hive.blog'
+      txLookupApiNode: 'https://rpc.ausbit.dev'
     }
   },
   computed: {
@@ -108,7 +108,7 @@ export default {
     returnBlockLink (blockNum) { return '/b/' + blockNum + '#' + this.txId }
   },
   mounted () {
-    this.getTx2(this.$route.params.txId) // Use method 2 only for the most info
+    this.getTx(this.$route.params.txId) // Use method 2 only for the most info
     document.title = 'Transaction ' + this.$route.params.txId
   }
 }
