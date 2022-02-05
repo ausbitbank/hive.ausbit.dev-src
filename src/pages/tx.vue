@@ -38,7 +38,7 @@ export default {
       blockNum: null,
       blockOps: null,
       api: null,
-      txLookupApiNode: 'https://rpc.ausbit.dev'
+      txLookupApiNode: 'https://api.hive.blog'
     }
   },
   computed: {
