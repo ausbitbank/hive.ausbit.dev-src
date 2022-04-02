@@ -111,6 +111,7 @@
               <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.amountExpectedFrom)" /></template>
               <template v-slot:after><q-avatar><q-img :src="getTokenImage(transaction.currencyFrom)" /></q-avatar> {{ transaction.currencyFrom }}</template>
             </q-input>
+            <div class="text-center"><q-icon name="info" color="blue" /> {{ getTokenChainHint(transaction.currencyFrom) }}</div>
             To this {{ transaction.currencyFrom }} address:
             <q-input readonly v-model="transaction.payinAddress">
               <template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.payinAddress)" /></template>
