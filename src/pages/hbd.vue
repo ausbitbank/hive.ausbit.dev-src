@@ -23,6 +23,7 @@
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
         <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
         <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
+        <div v-if="internalMarketLatest">Internal market Hive price is {{ internalMarketLatest }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
@@ -55,6 +56,19 @@
         <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
         <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
       </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <div class="text-h6"><q-icon name="shopping_cart" color="blue" />&nbsp; How can I get HBD ?</div>
+        <div class="text-subtitle">1) Earn HBD by posting popular original content on HIVE</div>
+        <div class="text-subtitle">2) Purchase HBD on external exchanges like <a href="https://blocktrades.us/en/?affiliate_id=24923543-4939-4ab2-b0d5-d190f4fb82dc" target="blank">BlockTrades</a>, <a href="https://global.bittrex.com/Account/Register?referralCode=PPA-HMA-3VD" target="_blank">Bittrex</a> or <a href="https://sg.upbit.com" target="_blank">Upbit</a></div>
+        <div class="text-subtitle">3) Exchange HIVE for HBD using the <a href="https://wallet.hive.blog/market">internal market</a>, or convert them in your wallet.</div>
+      </q-card-section>
+      <q-separator />
+      <q-card-section>
+        <div class="text-h6"><q-icon name="quiz" color="pink" />&nbsp; Why should I get HBD ?</div>
+        <div class="text-subtitle">1) Protect your holdings from downside risk with a decentralised, USD-pegged algorithmic stablecoin.</div>
+        <div class="text-subtitle" v-if="hbdApr && hbdApr > 0">2) Grow your holdings by staking for an industry leading APR of {{ hbdApr }}%</div>
+      </q-card-section>
     </q-card>
     <coingecko :coins="['hive_dollar']" />
   </q-page>
@@ -72,7 +86,9 @@ export default {
   data () {
     return {
       medianPrice: null,
-      daoHbdBalance: 6177747 // hive.fund HBD balance as of Thu 23 Sep 2021 08:12:40 AM CEST
+      // daoHbdBalance: 6177747 // hive.fund HBD balance as of Thu 23 Sep 2021 08:12:40 AM CEST
+      daoHbdBalance: 13598565, // hive.fund HBD balance as of Wed 3rd March 2022 04:22:00 PM AEST
+      internalMarketLatest: null
     }
   },
   components: { coingecko },
@@ -151,12 +167,17 @@ export default {
           this.daoHbdBalance = response[0].hbd_balance.split(' ')[0]
         })
         .catch(() => console.log('Failed to load @hive.fund profile'))
+    },
+    getTicker () {
+      this.$hive.api.getTickerAsync()
+        .then(res => { this.internalMarketLatest = parseFloat(res.latest).toFixed(2) })
     }
   },
   mounted () {
     document.title = 'Hive Dollar Monitor'
     this.getDaoBalance()
     this.getMedianPrice()
+    this.getTicker()
   },
   created () {
     this.$store.dispatch('hive/getGlobalProps')
