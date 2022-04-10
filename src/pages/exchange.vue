@@ -1,5 +1,5 @@
 <template>
-  <q-page class="flex q-pa-md flex-center">
+  <q-page class="flex q-pa-none flex-center">
     <exchange />
   </q-page>
 </template>
@@ -30,6 +30,7 @@ export default {
   methods: {
   },
   mounted () {
+    document.title = 'Exchange tokens'
   }
 }
 </script>
