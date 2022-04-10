@@ -65,9 +65,9 @@
       </q-card-section>
       <q-separator />
       <q-card-section>
-        <div class="text-h6"><q-icon name="quiz" color="pink" />&nbsp; Why should I get HBD ?</div>
-        <div class="text-subtitle">1) Protect your holdings from downside risk with a decentralised, USD-pegged algorithmic stablecoin.</div>
-        <div class="text-subtitle" v-if="hbdApr && hbdApr > 0">2) Grow your holdings by staking for an industry leading APR of {{ hbdApr }}%</div>
+        <div class="text-h6"><q-icon name="quiz" color="pink" />&nbsp; Why HBD ?</div>
+        <div class="text-subtitle">1) A fully decentralized stable coin pegged to USD.</div>
+        <div class="text-subtitle" v-if="hbdApr && hbdApr > 0">2) Industry leading APR of {{ hbdApr }}%</div>
       </q-card-section>
     </q-card>
     <coingecko :coins="['hive_dollar']" />
