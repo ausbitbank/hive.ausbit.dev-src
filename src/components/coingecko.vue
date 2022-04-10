@@ -3,7 +3,7 @@
     <span v-if="coinGecko">
     <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
-            <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }}</div>
+            <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" title="View coin on coingecko"><q-icon name="open_in_new" /></a></div>
                 <sparkline width="250" height="60" v-if="coin.sparkline_in_7d">
                     <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
                 </sparkline>
@@ -12,8 +12,8 @@
             <div><span class="text-bold">Total Volume: </span> ${{ tidyNumber(coin.total_volume) }}</div>
             <div><span class="text-bold">24hr Range: </span> <span>${{ tidyNumber(coin.low_24h.toFixed(3)) }} - ${{ tidyNumber(coin.high_24h.toFixed(3)) }}</span></div>
             <div><span class="text-bold">24Hr Change: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.price_change_24h.toFixed(3)) }} ({{ coin.price_change_percentage_24h.toFixed(3) }}%)</span></div>
-            <div><span class="text-bold">All Time High: </span> $ <span>{{ tidyNumber(coin.ath.toFixed(3)) }}</span>  <span class="text-red">({{ coin.ath_change_percentage.toFixed(3) }} %)</span></div>
-            <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green">({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
+            <div><span class="text-bold">All Time High: </span> $ <span>{{ tidyNumber(coin.ath.toFixed(3)) }}</span>  <span class="text-red"> ({{ coin.ath_change_percentage.toFixed(3) }} %)</span></div>
+            <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green"> ({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
         </q-card-section>
     </q-card>
     <div class="text-center">
@@ -95,6 +95,9 @@ export default {
       this.$axios.get(this.apiUrl)
         .then((response) => { this.coinGecko = response.data })
         .catch(() => { console.log('Failed to load data from coingecko api') })
+    },
+    getCoinGeckoLink (coin) {
+      return 'https://coingecko.com/en/coins/' + coin.id
     },
     tidyNumber (x) {
       var parts = x.toString().split('.')
