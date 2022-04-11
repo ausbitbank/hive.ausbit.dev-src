@@ -220,6 +220,18 @@
                             <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
                           </q-item-section>
                         </q-item>
+                        <q-item v-if="account.savings_hbd_seconds > 0">
+                          <q-item-section avatar>
+                            <q-icon name="trending_up" color="green" />
+                          </q-item-section>
+                          <q-item-section>
+                          Pending interest of {{ pendingHbdInterest }} HBD<br />
+                          <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Last interest payout was {{ timeDelta(account.savings_hbd_last_interest_payment) }}</div>
+                          </q-item-section>
+                          <q-item-section>
+                            <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" v-if="loggedInUser === username" />
+                          </q-item-section>
+                        </q-item>
                     </q-list>
                     <div id="scrollTargetRef">
                       <div class="text-h6 text-center">Transaction History</div>
@@ -966,6 +978,26 @@ export default {
       if (this.hiveEngineBalances !== null) {
         if (this.hiveEngineBalancesFilterSmall) { return this.hiveEngineBalances.filter(t => (this.returnTokenPriceUsd(t.symbol) * (parseFloat(t.balance) + parseFloat(t.stake)) >= this.hiveEngineBalancesFilterUsdAmount)) } else { return this.hiveEngineBalances }
       } else { return null }
+    },
+    pendingHbdInterest: function () {
+      if (this.globalProps && this.account && this.account.savings_hbd_seconds > 0) {
+        var secondsInYear = 60 * 60 * 24 * 365
+        var secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
+        var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * secondsSinceUpdate
+        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) + pendingSeconds
+        var estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
+        estimatedPayout = (estimatedPayout / 1000).toFixed(3)
+        return estimatedPayout
+      } else {
+        return 0
+      }
+    },
+    pendingHbdClaim: function () {
+      if (this.globalProps && this.account && this.account.savings_hbd_seconds > 0 && moment.utc().diff(moment.utc(this.account.savings_hbd_last_interest_payment), 'days') >= 30) {
+        return true
+      } else {
+        return false
+      }
     }
     // (returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake)))
   },
@@ -1126,6 +1158,9 @@ export default {
       } else {
         return 'https://tribaldex.com/trade/' + symbol
       }
+    },
+    claimHbdInterest () {
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer', { to: this.username, from: this.username, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
     },
     timeDelta (timestamp) {
       var now = moment.utc()

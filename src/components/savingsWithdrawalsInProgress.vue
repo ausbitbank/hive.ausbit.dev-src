@@ -4,7 +4,7 @@
       <q-icon name="warning" color="orange" />
     </q-item-section>
     <q-item-section>
-      <div class="text-bold">Withdrawals are pending from your savings account</div>
+      <div class="text-bold">Withdrawal pending from savings account</div>
       <div v-for="request in withdrawsFrom" :key="request.id">
       <b>{{ request.amount }}</b>
       <span v-if="request.from === username && request.from === request.to">
@@ -15,8 +15,10 @@
       <span v-else>from {{ request.from }} to {{ request.to }}</span>
       <span v-if="request.memo">with memo: <b>{{ request.memo }}</b></span>
       due {{ timeDelta(request.complete) }}<br />
-      <q-btn dense flat icon="cancel" color="red" label="Cancel" title="Cancel withdrawal request" @click="cancelTransferFromSavings(request.request_id)" v-if="loggedInUser === username" />
       </div>
+    </q-item-section>
+    <q-item-section>
+      <q-btn dense flat icon="cancel" color="red" label="Cancel" title="Cancel withdrawal request" @click="cancelTransferFromSavings(request.request_id)" v-if="loggedInUser === username" />
     </q-item-section>
   </q-item>
 </template>

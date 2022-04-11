@@ -23,7 +23,7 @@
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
         <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
         <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
-        <div v-if="internalMarketLatest">Internal market Hive price is {{ internalMarketLatest }}</div>
+        <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">{{ internalMarketLatest }}</q-badge></div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
