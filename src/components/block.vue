@@ -280,7 +280,7 @@ export default {
     },
     blockOpsRealCount: function () {
       if (this.blockOpsReal.length > 0) {
-        console.log(this.blockOpsReal)
+        // console.log(this.blockOpsReal)
         var r = this.blockOpsReal.filter(o => o.op[0] !== 'effective_comment_vote')
         return r.length
       } else {
