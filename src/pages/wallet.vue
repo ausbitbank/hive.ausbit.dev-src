@@ -228,8 +228,8 @@
                           Pending interest of {{ pendingHbdInterest }} HBD<br />
                           <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Last interest payout was {{ timeDelta(account.savings_hbd_last_interest_payment) }}</div>
                           </q-item-section>
-                          <q-item-section>
-                            <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" v-if="loggedInUser === username" />
+                          <q-item-section v-if="pendingHbdClaim && loggedInUser === username">
+                            <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" />
                           </q-item-section>
                         </q-item>
                     </q-list>
