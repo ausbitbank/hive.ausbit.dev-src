@@ -39,7 +39,7 @@
                                 <q-badge align="top" class="text-black text-bold" color="green" :title="hivePowerAPR">{{ hivePowerAPR }}% APR</q-badge>
                               </q-item-label>
                             </q-item-section>
-                            <q-item-section>
+                            <q-item-section v-if="account.savings_balance !== '0.000 HIVE'">
                               <q-item-label>
                                 {{ tidyNumber(account.savings_balance.split(' ')[0]) }}
                               </q-item-label>
@@ -116,18 +116,6 @@
                                 </q-btn>
                             </q-item-section>
                         </q-item>
-                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
-                            <q-item-section>
-                              <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
-                              <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
-                            </q-item-section>
-                            <q-item-section>
-                                <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
-                            </q-item-section>
-                            <q-item-section top side v-if="this.loggedInUser === this.username">
-                                <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
-                            </q-item-section>
-                        </q-item>
                         <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
@@ -202,24 +190,23 @@
                                 </q-btn>
                             </q-item-section>
                         </q-item>
-                        <q-item>
+                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
+                          <q-item-section avatar>
+                            <q-icon name="lock_open" color="red" />
+                          </q-item-section>
                           <q-item-section>
-                            <delegations :username="username" />
-                            <convertRequests :username="username" />
+                            <div class="text-bold">Hive unstaking in progress</div>
+                            <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
+                            <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
+                          </q-item-section>
+                          <q-item-section>
+                              <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
+                          </q-item-section>
+                          <q-item-section side v-if="this.loggedInUser === this.username">
+                              <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
                           </q-item-section>
                         </q-item>
                         <savingsWithdrawalsInProgress :username="username" />
-                        <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
-                          <q-item-section v-if="account.name === loggedInUser">
-                            <claim-rewards :A="account"/>
-                          </q-item-section>
-                          <q-item-section>
-                            <div>Outstanding Rewards:</div>
-                            <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
-                            <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
-                            <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
-                          </q-item-section>
-                        </q-item>
                         <q-item v-if="account.savings_hbd_seconds > 0">
                           <q-item-section avatar>
                             <q-icon name="trending_up" color="green" />
@@ -230,6 +217,26 @@
                           </q-item-section>
                           <q-item-section v-if="pendingHbdClaim && loggedInUser === username">
                             <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" />
+                          </q-item-section>
+                        </q-item>
+                        <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
+                          <q-item-section avatar>
+                            <q-icon name="stars" color="gold" />
+                          </q-item-section>
+                          <q-item-section>
+                            <div>Pending Rewards:</div>
+                            <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
+                            <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
+                            <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
+                          </q-item-section>
+                          <q-item-section v-if="account.name === loggedInUser">
+                            <claim-rewards :A="account"/>
+                          </q-item-section>
+                        </q-item>
+                        <q-item>
+                          <q-item-section>
+                            <delegations :username="username" />
+                            <convertRequests :username="username" />
                           </q-item-section>
                         </q-item>
                     </q-list>
@@ -983,9 +990,11 @@ export default {
       if (this.globalProps && this.account && this.account.savings_hbd_seconds > 0) {
         var secondsInYear = 60 * 60 * 24 * 365
         var secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
-        var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * secondsSinceUpdate
-        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) + pendingSeconds
+        console.info(secondsSinceUpdate)
+        var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * parseFloat(secondsSinceUpdate)
+        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) + parseFloat(pendingSeconds)
         var estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
+        // console.info(estimatedPayout)
         estimatedPayout = (estimatedPayout / 1000).toFixed(3)
         return estimatedPayout
       } else {
