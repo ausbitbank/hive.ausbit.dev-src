@@ -6,19 +6,28 @@
     <q-item-section>
       <div class="text-bold">Withdrawal pending from savings account</div>
       <div v-for="request in withdrawsFrom" :key="request.id">
-      <b>{{ request.amount }}</b>
-      <span v-if="request.from === username && request.from === request.to">
-      </span>
-      <span v-else-if="request.to !== username">
-        from {{ request.from }} to <b class="text-red">{{ request.to }}</b>
-      </span>
-      <span v-else>from {{ request.from }} to {{ request.to }}</span>
-      <span v-if="request.memo">with memo: <b>{{ request.memo }}</b></span>
-      due {{ timeDelta(request.complete) }}<br />
+        <b>{{ request.amount }}</b>
+        <span v-if="request.from === username && request.from === request.to">
+        </span>
+        <span v-else-if="request.to !== username">
+          from {{ request.from }} to <b class="text-red">{{ request.to }}</b>
+        </span>
+        <span v-else>from {{ request.from }} to {{ request.to }}</span>
+        <span v-if="request.memo">with memo: <b>{{ request.memo }}</b></span>
+        due {{ timeDelta(request.complete) }}
+        <q-btn dense flat icon="cancel" color="red" title="Cancel withdrawal request" v-if="loggedInUser === username">
+          <q-popup-proxy>
+            <q-card flat bordered class="text-center">
+              <q-card-header class="text-h5">Cancel withdrawal request ?</q-card-header>
+              <q-card-section>Id {{ request.request_id }} : {{ request.amount }} from {{ request.from }} to {{ request.to }}</q-card-section>
+              <q-card-actions>
+                <q-btn label="Yes, cancel withdrawal request" color="green" @click="cancelTransferFromSavings(request.request_id)" />
+                <q-btn label="No, don't cancel" color="red" v-close-popup />
+              </q-card-actions>
+            </q-card>
+          </q-popup-proxy>
+        </q-btn>
       </div>
-    </q-item-section>
-    <q-item-section>
-      <q-btn dense flat icon="cancel" color="red" label="Cancel" title="Cancel withdrawal request" @click="cancelTransferFromSavings(request.request_id)" v-if="loggedInUser === username" />
     </q-item-section>
   </q-item>
 </template>
