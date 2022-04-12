@@ -1,12 +1,12 @@
 <template>
   <q-item v-if="withdrawsFrom !== null">
     <q-item-section avatar>
-      <q-icon name="warning" color="orange" />
+      <q-icon name="savings" color="red" />
     </q-item-section>
     <q-item-section>
       <div class="text-bold">Withdrawal<span v-if="withdrawsFrom.length > 1">s</span> pending from savings account</div>
       <div v-for="request in withdrawsFrom" :key="request.id">
-        <b>{{ tidyNumber(request.amount.split(' ')[0]) }} {{ request.amount.split(' ')[1] }}</b>
+        <b>{{ tidyNumber(request.amount.split(' ')[0]) }}</b> {{ request.amount.split(' ')[1] }}
         <span v-if="request.from === username && request.from === request.to">
         </span>
         <span v-else-if="request.to !== username">
