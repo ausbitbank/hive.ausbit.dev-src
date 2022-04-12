@@ -1,5 +1,5 @@
 <template>
-  <q-btn flat label="Claim Rewards" icon="redeem" color="primary" @click="dialog = true; claimRewards()">
+  <q-btn push label="Claim" color="primary" @click="dialog = true; claimRewards()">
     <q-dialog v-model="dialog">
       <q-card class="justify">
         Claiming Rewards
