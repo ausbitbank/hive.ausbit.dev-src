@@ -45,6 +45,10 @@ export async function removeFromQueue (state, itemToRemove) {
   state.queue = state.queue.filter(a => a !== itemToRemove)
 }
 
+export async function clearQueue (state) {
+  state.queue = []
+}
+
 export async function updateFollowCount (state, followCount) {
   var a = followCount.account
   delete followCount.account

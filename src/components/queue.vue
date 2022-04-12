@@ -3,14 +3,15 @@
   <q-btn flat icon="schedule" title="Queued actions">
     <q-badge color="orange" floating>{{ queue.length }}</q-badge>
     <q-popup-proxy>
-      <q-card flat bordered class="q-pa-none q-ma-none">
+      <q-card flat bordered class="q-pa-sm q-ma-none">
         <q-card-section horizontal class="text-title text-bold flex-center text-center">
-          Queued Actions
+          {{ queue.length }} Queued Actions
           <q-btn dense flat icon="play_circle" color="green" v-if="timerEnabled" @click="toggleTimer()" title="Queue is running, click to pause" />
-          <q-btn dense flat icon="pause_circle" color="red" v-if="!timerEnabled" @click="toggleTimer()" title="Queue is paused, click to continue" />
+          <q-btn dense flat icon="pause_circle" color="orange" v-if="!timerEnabled" @click="toggleTimer()" title="Queue is paused, click to continue" />
+          <q-btn dense flat icon="cancel" color="red" title="Cancel queued actions" @click="$store.commit('hive/clearQueue')" v-if="queue.length > 0"/>
         </q-card-section>
-        <q-separator />
-        <q-card-section class="q-ma-none q-pa-none">
+        <q-separator v-if="this.queue.length > 0" />
+        <q-card-section class="q-ma-none q-pa-none" v-if="this.queue.length > 0">
           <q-list separator dense>
             <q-item v-for="(a, index) in this.queue" :key="index" clickable dense>
               <q-item-section avatar>
@@ -24,7 +25,7 @@
               <q-item-section side>
                 <q-spinner-clock v-if="index === 0 && timerEnabled" color="grey" size="md" />
                 <q-btn title="Remove from queue" icon="cancel" color="red" @click="$store.commit('hive/removeFromQueue', a)" dense flat/>
-                <q-btn title="push queue item" icon="check" color="orange" @click="broadcast(a)" dense flat/>
+                <q-btn title="Broadcast" icon="send" color="orange" @click="broadcast(a)" dense flat/>
               </q-item-section>
             </q-item>
           </q-list>
@@ -99,6 +100,11 @@ export default {
       }
       if (this.loginType === 'hivesigner_popup') {
         this.broadcastHivesignerPopup(action)
+      }
+      if (this.loginType === 'has') {
+        // this.broadcastHas(action)
+        console.log('Broadcast with HAS')
+        console.log(action)
       }
     },
     broadcastHivesignerPopup (action) {
