@@ -6,7 +6,7 @@
     <q-item-section>
       <div class="text-bold">Withdrawal<span v-if="withdrawsFrom.length > 1">s</span> pending from savings account</div>
       <div v-for="request in withdrawsFrom" :key="request.id">
-        <b>{{ request.amount }}</b>
+        <b>{{ tidyNumber(request.amount.split(' ')[0]) }} {{ request.amount.split(' ')[1] }}</b>
         <span v-if="request.from === username && request.from === request.to">
         </span>
         <span v-else-if="request.to !== username">
@@ -19,10 +19,10 @@
           <q-popup-proxy>
             <q-card flat bordered class="text-center">
               <q-card-header class="text-h5">Cancel withdrawal request ?</q-card-header>
-              <q-card-section>Id {{ request.request_id }} : {{ request.amount }} from {{ request.from }} to {{ request.to }}</q-card-section>
+              <q-card-section>Id {{ request.request_id }} : {{ tidyNumber(request.amount.split(' ')[0]) }} {{ request.amount.split(' ')[1] }} <span v-if="request.from !== request.to">from {{ request.from }} </span>to {{ request.to }}</q-card-section>
               <q-card-actions>
-                <q-btn label="Yes, cancel withdrawal request" color="green" @click="cancelTransferFromSavings(request.request_id)" />
-                <q-btn label="No, don't cancel" color="red" v-close-popup />
+                <q-btn icon="check" label="Yes, cancel withdrawal request" color="green" @click="cancelTransferFromSavings(request.request_id)" />
+                <q-btn icon="cancel" label="No, don't cancel" color="red" v-close-popup />
               </q-card-actions>
             </q-card>
           </q-popup-proxy>
