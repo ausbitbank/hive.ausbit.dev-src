@@ -25,11 +25,9 @@
           </div>
         </q-card-section>
         <q-card-section>
-        <q-list bordered separator>
-        <q-item v-for="proposal in filteredProposals" :key="proposal.index">
+        <q-card bordered flat v-for="proposal in filteredProposals" :key="proposal.index">
           <proposal :p="proposal" :returnProposalVotes="returnProposalVotes" />
-        </q-item>
-        </q-list>
+        </q-card>
         <q-btn class="q-ma-md" @click="listProposals()" label="Load more proposals" push color="primary" icon="sync" v-if="false" />
         </q-card-section>
       </q-card>
