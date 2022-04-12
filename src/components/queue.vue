@@ -74,7 +74,7 @@ export default {
         })
       }
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
-      if (['claim_reward_balance', 'account_update', 'account_update2'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].account) }
+      if (['claim_reward_balance', 'account_update', 'account_update2', 'withdraw_vesting'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].account) }
       if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].from) }
       if (['convert', 'collateralized_convert'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].owner) }
     },
