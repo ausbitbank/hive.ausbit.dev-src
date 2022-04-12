@@ -21,8 +21,8 @@
               <q-card-header class="text-h5">Cancel withdrawal request ?</q-card-header>
               <q-card-section>Id {{ request.request_id }} : {{ tidyNumber(request.amount.split(' ')[0]) }} {{ request.amount.split(' ')[1] }} <span v-if="request.from !== request.to">from {{ request.from }} </span>to {{ request.to }}</q-card-section>
               <q-card-actions>
-                <q-btn icon="check" label="Yes, cancel withdrawal request" color="green" @click="cancelTransferFromSavings(request.request_id)" />
-                <q-btn icon="cancel" label="No, don't cancel" color="red" v-close-popup />
+                <q-btn icon="check" label="Yes" color="green" @click="cancelTransferFromSavings(request.request_id)" />
+                <q-btn icon="cancel" label="No" color="red" v-close-popup />
               </q-card-actions>
             </q-card>
           </q-popup-proxy>
