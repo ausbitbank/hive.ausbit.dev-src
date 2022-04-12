@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="rounded-corners">
+  <q-card flat bordered class="rounded-corners q-pa-sm">
     <div class="text-h5 text-center">Settings</div>
       <q-list>
         <q-item>
