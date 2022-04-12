@@ -4,7 +4,7 @@
       <q-icon name="warning" color="orange" />
     </q-item-section>
     <q-item-section>
-      <div class="text-bold">Withdrawal pending from savings account</div>
+      <div class="text-bold">Withdrawal<span v-if="withdrawsFrom.length > 1">s</span> pending from savings account</div>
       <div v-for="request in withdrawsFrom" :key="request.id">
         <b>{{ request.amount }}</b>
         <span v-if="request.from === username && request.from === request.to">
