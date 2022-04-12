@@ -1,15 +1,15 @@
 <template>
-  <q-list dense>
+  <q-list dense style="min-width: 100px">
     <q-item class="text-h6">
       <router-link :to="returnPostLink(p.creator, p.permlink)">{{ p.subject }}</router-link> <span class="text-grey text-caption">{{ p.id }}</span>
     </q-item>
-    <q-item>
+    <q-item dense>
       <q-item-section avatar>
         <q-avatar size="sm">
           <q-img :src="getHiveAvatarUrl(p.creator)" />
         </q-avatar>
       </q-item-section>
-      <q-item-section class="q-ma-sm">
+      <q-item-section>
         Creator: <router-link :to="returnUserLink(p.creator)">{{ p.creator }}</router-link>
       </q-item-section>
       <q-item-section avatar v-if="p.creator !== p.receiver">
@@ -21,12 +21,15 @@
         Receiver: <router-link :to="returnUserLink(p.receiver)">{{ p.receiver }}</router-link>
       </q-item-section>
     </q-item>
-    <q-item>
+    <q-item dense>
       <q-item-section avatar>
         <q-icon name="date_range" color="grey" />
       </q-item-section>
       <q-item-section>
         {{ returnNiceDate(p.start_date) }} - {{ returnNiceDate(p.end_date) }}
+        <span v-if="p.status === 'active'">(Expires {{ timeDelta(p.end_date) }})</span>
+        <span v-else-if="p.status === 'expired'">(Expired {{ timeDelta(p.end_date) }})</span>
+        <span v-else-if="p.status === 'inactive'">(Starts {{ timeDelta(p.start_date) }})</span>
       </q-item-section>
     </q-item>
     <q-item>
@@ -70,12 +73,20 @@
         Voted by {{ loggedInUser }} <a :href="returnHiveSignerDeny(p.id)" target="blank">Unvote</a>
       </q-item-section>
     </q-item>
-    <q-item v-else>
+    <q-item v-else-if="p.status === 'active'">
       <q-item-section avatar>
         <q-icon name="check_box_outline_blank" />
       </q-item-section>
       <q-item-section>
         <a :href="returnHiveSignerApprove(p.id)" target="_blank">Vote for proposal</a>
+      </q-item-section>
+    </q-item>
+    <q-item>
+      <q-item-section avatar>
+        <q-icon name="open_in_new" />
+      </q-item-section>
+      <q-item-section>
+        <a :href="returnPeakdProposalLink(p.id)" target="_blank">View proposal in PeakD</a>
       </q-item-section>
     </q-item>
   </q-list>
@@ -105,6 +116,7 @@ export default {
     returnNiceDate (timestamp) { return moment(timestamp).format('Do MMMM YYYY') },
     returnHiveSignerApprove (id) { return 'https://hivesigner.com/sign/update-proposal-votes?proposal_ids=%5B' + id + '%5D&approve=true' },
     returnHiveSignerDeny (id) { return 'https://hivesigner.com/sign/update-proposal-votes?proposal_ids=%5B' + id + '%5D&approve=false' },
+    returnPeakdProposalLink (id) { return 'https://peakd.com/me/proposals/' + id },
     vestToHive (vests) {
       if (this.globalProps) {
         return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive)
@@ -120,6 +132,12 @@ export default {
       } else {
         return null
       }
+    },
+    timeDelta (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
     }
   },
   mounted () {

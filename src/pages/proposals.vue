@@ -4,26 +4,16 @@
         <q-card-section class="text-h5 text-center">
           Decentralized Hive Fund
         </q-card-section>
-        <q-card-section>
-          <q-list v-if="daoAccount !== undefined">
-            <q-item>
-              <q-item-section>
-                Maximum Daily Budget <q-badge color="primary">{{ tidyNumber(parseInt(daoAccount.hbd_balance.split(' ')[0]) / 10) }} HBD</q-badge>
-              </q-item-section>
-              <q-item-section>
-                Total Budget <q-badge color="primary">{{ tidyNumber(daoAccount.hbd_balance) }}</q-badge>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
         <q-card-section class="text-center">
           <q-checkbox v-model="filterExpired" label="Hide Expired" />
           <q-checkbox v-model="filterFunded" label="Hide Funded" />
           <q-checkbox v-model="filterUnfunded" label="Hide Unfunded" />
           <q-checkbox v-model="filterActive" label="Hide Active" /><br />
           <q-checkbox v-model="filterVoted" label="Hide Already Voted" v-if="loggedInUser" /><br />
+          <div class="text-center" v-if="daoAccount !== undefined">Maximum Daily Budget : {{ tidyNumber(parseInt(daoAccount.hbd_balance.split(' ')[0]) / 10) }} HBD</div>
+          <div class="text-center" v-if="daoAccount !== undefined">Total Budget : {{ tidyNumber(daoAccount.hbd_balance) }}</div>
           <div class="text-center">{{ filteredProposals.length }} proposals displayed, {{ proposals.length }} loaded</div>
-          <div class="text-center">Votes needed for funding: ~{{ tidyNumber((vestToHive(returnProposalVotes) / 1000000).toFixed()) }} HP</div>
+          <div class="text-center">Minimum stake approval required: ~{{ tidyNumber((vestToHive(returnProposalVotes) / 1000000).toFixed()) }} HP</div>
         </q-card-section>
         <q-card-section class="text-center q-gutter-y-md">
           <div style="text-align: center">
