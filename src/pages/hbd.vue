@@ -15,6 +15,18 @@
         This page helps track relevant info about HBD
       </q-card-section>
       <q-separator />
+      <q-card-section v-if="percentCap < 10">
+        <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
+        <div class="text-subtitle">Redeem each HBD for $1 of HIVE at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
+      </q-card-section>
+      <q-card-section v-if="percentCap > 10 && medianPrice !== null">
+        <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
+        <div>Formula for redemption price during a haircut :</div>
+        <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (10 x TOTAL ISSUED HBD)</code></div>
+        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
+        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
+      </q-card-section>
+      <q-separator />
       <q-card-section>
         <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below 10% of HIVE marketcap</div>
         <div class="text-subtitle2">(The Debt Limit)</div>
@@ -23,7 +35,7 @@
         <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
         <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
         <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
-        <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">{{ internalMarketLatest }}</q-badge></div>
+        <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">${{ internalMarketLatest }}</q-badge></div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
@@ -45,18 +57,6 @@
         <p><router-link to="@arcange/understanding-the-hive-debt-ratio"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Print Rate here</router-link></p>
       </q-card-section>
       <q-separator v-if="globalProps.hbd_print_rate !== 10000" />
-      <q-card-section v-if="percentCap < 10">
-        <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
-        <div class="text-subtitle">Redeem each HBD for $1 of HIVE at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
-      </q-card-section>
-      <q-card-section v-if="percentCap > 10 && medianPrice !== null">
-        <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
-        <div>Formula for redemption price during a haircut :</div>
-        <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (10 x TOTAL ISSUED HBD)</code></div>
-        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
-        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
-      </q-card-section>
-      <q-separator />
       <q-card-section>
         <div class="text-h6"><q-icon name="shopping_cart" color="blue" />&nbsp; How can I get HBD ?</div>
         <div class="text-subtitle">1) Earn HBD by posting popular original content on HIVE</div>
