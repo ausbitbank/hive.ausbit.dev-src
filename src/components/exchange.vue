@@ -130,7 +130,7 @@
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
           <q-input readonly outlined label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
-          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction(transaction.id)"/></template><template v-slot:append v-else><q-btn flat no-caps title="More Confetti" color="primary" icon="celebration" @click="confetti()"/></template></q-input>
+          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction()"/></template><template v-slot:append v-else><q-btn flat no-caps title="More Confetti" color="primary" icon="celebration" @click="confetti()"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
           <q-card flat v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
           <q-card flat v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
@@ -170,6 +170,7 @@
 <script>
 import { copyToClipboard } from 'quasar'
 import confetti from 'canvas-confetti'
+import { mixin as VueTimers } from 'vue-timers'
 export default {
   name: 'exchange',
   data () {
@@ -204,6 +205,10 @@ export default {
       disableTransferButton: false,
       completedTradeSound: 'https://files.ausbit.dev/zoot.mp3'
     }
+  },
+  mixins: [VueTimers],
+  timers: {
+    getStatus: { time: 15000, autostart: false, repeat: false, immediate: false, isSwitchTab: true }
   },
   components: {
     jsonViewer: () => import('components/jsonViewer.vue')
@@ -264,29 +269,46 @@ export default {
           } else {
             this.transaction = res.data.result
             this.$router.replace('/exchange?id=' + this.transaction.id)
+            this.getStatus()
           }
           this.loading.transaction = false
         })
     },
-    getStatus (id) {
-      this.$axios.post(this.api + '/getStatus', { id: id })
-        .then((res) => {
-          if (res.data.error) { this.error = res.data.error.message } else {
-            this.transaction.status = res.data.result
-            if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
-            // if (this.transaction.status === 'finished') { this.confetti() }
-          }
-        })
+    getStatus () {
+      if (this.exchangeId) {
+        console.log('Get exchange status for id ' + this.exchangeId)
+        this.$axios.post(this.api + '/getStatus', { id: this.exchangeId })
+          .then((res) => {
+            if (res.data.error) { this.error = res.data.error.message } else {
+              this.transaction.status = res.data.result
+              if (this.lastStatus !== this.transaction.status) {
+                this.lastStatus = this.transaction.status; this.getTransaction()
+              } else {
+                console.log('Still \'' + this.transaction.status + '\'')
+                this.$timer.start('getStatus')
+              }
+            }
+          })
+      }
     },
-    getTransaction (id) {
-      this.$axios.post(this.api + '/getTransaction', { id: id })
-        .then((res) => {
-          if (res.data.error) { this.error = res.data.error.message } else {
-            this.transaction = res.data.result[0]
-            if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
-            if (this.transaction.status === 'finished') { this.confetti(); this.playSound() }
-          }
-        })
+    getTransaction () {
+      var id = this.exchangeId
+      if (this.exchangeId) {
+        console.log('get transaction ' + id)
+        this.$axios.post(this.api + '/getTransaction', { id: id })
+          .then((res) => {
+            if (res.data.error) { this.error = res.data.error.message } else {
+              this.transaction = res.data.result[0]
+              if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
+              if (this.transaction.status === 'finished') {
+                this.confetti()
+                this.playSound()
+              } else if (!['overdue', 'expired', 'error'].includes(this.transaction.status)) {
+                this.$timer.start('getStatus')
+              }
+            }
+          })
+      }
     },
     updateToken () {
       this.error = null
@@ -405,7 +427,7 @@ export default {
   },
   mounted () {
     this.getCurrenciesFull()
-    if (this.exchangeId) { this.getTransaction(this.exchangeId) }
+    if (this.exchangeId) { this.getTransaction() }
     if (this.tradeFrom && this.tradeTo) { this.updateToken() }
     if (this.account === undefined && this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
     if (this.for) { this.$store.dispatch('hive/getAccount', this.for) }
