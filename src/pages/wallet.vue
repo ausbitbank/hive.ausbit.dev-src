@@ -212,7 +212,7 @@
                             <q-icon name="trending_up" color="green" />
                           </q-item-section>
                           <q-item-section>
-                          Pending interest of {{ pendingHbdInterest }} HBD<br />
+                          Estimated pending interest of {{ pendingHbdInterest }} HBD<br />
                           <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Last interest payout was {{ timeDelta(account.savings_hbd_last_interest_payment) }}</div>
                           </q-item-section>
                           <q-item-section v-if="pendingHbdClaim && loggedInUser === username">
