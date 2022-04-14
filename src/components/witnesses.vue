@@ -1,6 +1,6 @@
 <template>
     <span>
-    <q-card flat bordered v-if="witnesses !== null">
+    <q-card flat bordered v-if="witnesses !== null" class="q-pa-none">
         <q-card-section class="text-center">
             <div class="text-h5">
                 <q-icon name="emoji_people" color="teal" /> Witnesses
@@ -49,7 +49,7 @@
                         <q-card-section header class="text-center">
                           <div class="text-h5"><router-link :to="linkAccount(witness.owner)" class="text-primary"><q-avatar class="q-mr-sm"><q-img :src="getHiveAvatarUrl(witness.owner)" /></q-avatar>{{ witness.owner }}</router-link></div>
                           <div>Currently in rank <b>#{{ rank + 1 }}</b> with <b>{{ tidyNumber((witness.votes / 1000000000000).toFixed(0)) }}</b> MVests of approval</div>
-                          <div>Last pricefeed update was <b>{{ timeDelta(witness.last_hbd_exchange_update) }}</b></div>
+                          <div>Last pricefeed update: {{ witness.hbd_exchange_rate.base }} per {{ witness.hbd_exchange_rate.quote }} <b>{{ timeDelta(witness.last_hbd_exchange_update) }}</b></div>
                           <div v-if="witness.created !== '1970-01-01T00:00:00'">{{ witness.owner }} first registered their witness <b>{{ timeDelta(witness.created) }}</b></div>
                           <div v-else>{{ witness.owner }} has been a witness for <b>at least 5 years.</b></div>
                           <div v-if="loggedInUser === witness.owner"><q-btn flat icon="edit" color="orange" @click="$router.push('/witness')" label="Edit witness properties" /></div>
