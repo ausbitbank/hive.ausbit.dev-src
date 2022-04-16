@@ -283,6 +283,7 @@
                                 <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
                                 <q-icon name="fact_check" color="orange-8" v-else-if="(tx[1].op[0] === 'escrow_release')" />
                                 <q-icon name="swap_horizontal_circle" color="orange-7" v-else-if="(tx[1].op[0] === 'collateralized_convert')" />
+                                <q-icon name="swap_horizontal_circle" color="orange-8" v-else-if="(tx[1].op[0] === 'convert')" />
                               </q-item-label>
                             </q-item-section>
                             <q-item-section>
@@ -302,6 +303,7 @@
                                 <span v-else-if="tx[1].op[0] === 'fill_transfer_from_savings'">Complete Transfer from Savings</span>
                                 <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'">Cancel Transfer from Savings</span>
                                 <span v-else-if="tx[1].op[0] === 'collateralized_convert'">Collateralized Convert Started</span>
+                                <span v-else-if="tx[1].op[0] === 'convert'">Conversion Started</span>
                               </q-item-label>
                               <q-item-label caption v-if="['fill_convert_request','fill_vesting_withdraw', 'fill_transfer_from_savings'].includes(tx[1].op[0])">
                                 <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
@@ -432,6 +434,11 @@
                                 {{ tidyNumber(tx[1].op[1].amount.split(' ')[0]) }} {{ tx[1].op[1].amount.split(' ')[1] }}
                               </q-item-label>
                             </q-item-section>
+                            <q-item-section side top v-if="tx[1].op[0] === 'convert'">
+                              <q-item-label class="text-bold text-orange">
+                                {{ tidyNumber(tx[1].op[1].amount.split(' ')[0]) }} {{ tx[1].op[1].amount.split(' ')[1] }}
+                              </q-item-label>
+                            </q-item-section>
                             <q-item-section side top v-if="tx[1].op[0] === 'interest'" class="text-green-9">
                               <q-item-label class="text-bold">
                                 + {{ tx[1].op[1].interest }}
@@ -487,7 +494,7 @@
                               </q-item-label>
                             </q-item-section>
                           </q-item>
-                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings', 'collateralized_convert'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
+                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings', 'collateralized_convert', 'convert'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
                         </q-list>
                         <template v-slot:loading>
                           <div class="row justify-center q-my-md">
