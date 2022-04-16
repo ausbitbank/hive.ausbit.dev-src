@@ -130,7 +130,7 @@
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
           <q-input readonly outlined label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
-          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" label="Refresh Status" color="primary" @click="getTransaction()"/></template><template v-slot:append v-else><q-btn flat no-caps title="More Confetti" color="primary" icon="celebration" @click="confetti()"/></template></q-input>
+          <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" title="Refresh transaction status" color="primary" @click="getStatus()"/></template><template v-slot:append v-else><q-btn flat no-caps title="More Confetti" color="primary" icon="celebration" @click="confetti()"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
           <q-card flat v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
           <q-card flat v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
