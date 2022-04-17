@@ -100,10 +100,10 @@
         <q-list>
           <q-item v-for="order in openOrders" :key="order.index">
             <q-item-section>
-              Trade {{ order.sell_price.base }} for {{ order.sell_price.quote }} ({{ order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0] }})
+              Trade {{ order.sell_price.base }} for {{ order.sell_price.quote }} ({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})
             </q-item-section>
             <q-item-section>
-              <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense glossy flat label="cancel" title="Cancel order" />
+              <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat label="cancel" title="Cancel order" />
             </q-item-section>
           </q-item>
         </q-list>
