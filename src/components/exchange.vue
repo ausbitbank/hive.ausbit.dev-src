@@ -123,7 +123,7 @@
             </div>
         </q-card-section>
         <q-separator />
-        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
+        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && detectedPayment !== false && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
           <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
           <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" v-if="!['finished','sending'].includes(transaction.status) && transaction.moneyReceived === 0 && parseFloat(account.balance.split(' ')[0]) >= transaction.amountExpectedFrom && !disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
@@ -161,7 +161,7 @@
             </q-expansion-item>
         </q-card-section>
         <q-card-actions align="around">
-            <q-btn flat no-caps label="Close" :color="transaction.status === 'finished' ? 'primary' : 'red'" icon="logout" @click="transaction = null" />
+            <q-btn flat no-caps label="Close" :color="transaction.status === 'finished' ? 'primary' : 'red'" icon="logout" @click="transaction = null" to="/exchange" />
         </q-card-actions>
     </q-card>
   </div>
@@ -171,6 +171,9 @@
 import { copyToClipboard } from 'quasar'
 import confetti from 'canvas-confetti'
 import { mixin as VueTimers } from 'vue-timers'
+import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+const op = ChainTypes.operations
+const walletBitmask = makeBitMaskFilter([op.transfer])
 export default {
   name: 'exchange',
   data () {
@@ -203,7 +206,10 @@ export default {
       error: null,
       exchangeId: this.$route.query.id || null,
       disableTransferButton: false,
-      completedTradeSound: 'https://files.ausbit.dev/zoot.mp3'
+      completedTradeSound: 'https://files.ausbit.dev/zoot.mp3',
+      bitmask: walletBitmask,
+      hiveTransactions: [],
+      detectedPayment: false
     }
   },
   mixins: [VueTimers],
@@ -303,6 +309,7 @@ export default {
             if (res.data.error) { this.error = res.data.error.message } else {
               this.transaction = res.data.result[0]
               if (this.lastStatus !== this.transaction.status) { this.lastStatus = this.transaction.status }
+              if (this.transaction.status === 'waiting' && this.transaction.currencyFrom === 'hive' && this.loggedInUser && this.detectedPayment === false) { this.getHiveWalletTransactions() }
               if (this.transaction.status === 'finished') {
                 this.confetti()
                 this.playSound()
@@ -386,12 +393,24 @@ export default {
       var sound = new Audio(this.completedTradeSound)
       sound.play()
     },
-    delay (ms) {
-      return new Promise(resolve => setTimeout(resolve, ms))
-    },
-    async pollStatus () {
-      await this.delay(30000)
-      await this.getStatus(this.exchangeId)
+    async getHiveWalletTransactions () {
+      await this.$hive.api.callAsync(
+        'call',
+        ['database_api',
+          'get_account_history',
+          [this.loggedInUser,
+            -1,
+            1000,
+            ...this.bitmask
+          ]
+        ]
+      )
+        .then(res => {
+          if (this.hiveTransactions.length === 0) { this.hiveTransactions = res.reverse() } else { this.hiveTransactions = this.hiveTransactions.concat(res.reverse()) }
+          var payment = this.hiveTransactions.find(t => { if (t[1].op[0] === 'transfer' && t[1].op[1].to === this.transaction.payinAddress && t[1].op[1].memo === this.transaction.payinExtraId) { return true } else { return false } })
+          if (payment !== undefined && payment.length > 0) { this.detectedPayment = true; console.log('hive payment found') } else { this.detectedPayment = false; console.log('hive payment not found') }
+        })
+        .catch(err => { console.log(err) })
     }
   },
   computed: {
