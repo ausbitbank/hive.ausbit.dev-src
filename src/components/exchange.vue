@@ -269,6 +269,7 @@ export default {
           } else {
             this.transaction = res.data.result
             this.$router.replace('/exchange?id=' + this.transaction.id)
+            this.exchangeId = this.transaction.id
             this.getStatus()
           }
           this.loading.transaction = false
@@ -289,6 +290,8 @@ export default {
               }
             }
           })
+      } else {
+        console.log('no exchange id')
       }
     },
     getTransaction () {
