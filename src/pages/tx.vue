@@ -38,7 +38,7 @@ export default {
       blockNum: null,
       blockOps: null,
       api: null,
-      txLookupApiNode: 'https://api.hive.blog'
+      txLookupApiNode: this.$store.state.hive.ahNode || 'https://api.hive.blog'
     }
   },
   computed: {
@@ -65,6 +65,7 @@ export default {
       this.$hive.api.getTransactionAsync(txId)
         .then(tx => this.setTx(tx))
         .catch(error => console.log(error))
+      this.$hive.api.setOptions({ url: this.api })
     },
     getTx (txId) {
       var params = { transaction_id: txId }

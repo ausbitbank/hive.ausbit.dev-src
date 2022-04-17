@@ -1,7 +1,7 @@
 <template>
   <q-card flat bordered class="rounded-corners q-pa-sm">
     <div class="text-h5 text-center">Settings</div>
-      <q-list>
+      <q-list dense>
         <q-item>
           <q-item-label header>
             Background Style
@@ -61,6 +61,12 @@
         </q-item>
         <q-item>
           <q-item-label header>
+            Hive Account History Node
+          </q-item-label>
+          <q-input label='Hive Account History Node' v-model="ahNode" />
+        </q-item>
+        <q-item>
+          <q-item-label header>
             Hive-Engine Api Node
           </q-item-label>
           <q-input label='Hive-Engine Api Node' v-model="heApiNode" />
@@ -83,7 +89,8 @@ export default {
       newBeneAccount: '',
       newBeneWeight: 1000,
       apiNode: this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev',
-      heApiNode: this.$store.state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
+      heApiNode: this.$store.state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc',
+      ahNode: this.$store.state.hive.user.settings.ahNode || 'https://api.hive.blog'
     }
   },
   computed: {
