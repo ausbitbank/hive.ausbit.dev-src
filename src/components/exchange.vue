@@ -123,9 +123,12 @@
             </div>
         </q-card-section>
         <q-separator />
-        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && detectedPayment !== false && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
-          <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ account.balance.split(' ')[0] }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
+        <q-card-section v-if="loggedInUser && transaction.currencyFrom === 'hive' && detectedPayment === false && !['finished','sending'].includes(transaction.status)" class="text-center text-bold">
+          <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ tidyNumber(account.balance.split(' ')[0]) }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
           <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" v-if="!['finished','sending'].includes(transaction.status) && transaction.moneyReceived === 0 && parseFloat(account.balance.split(' ')[0]) >= transaction.amountExpectedFrom && !disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
+        </q-card-section>
+        <q-card-section v-if="detectedPayment && transaction.currencyFrom === 'hive'" class="text-center text-bold">
+          Verified correct payment sent on Hive chain
         </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
@@ -408,7 +411,7 @@ export default {
         .then(res => {
           if (this.hiveTransactions.length === 0) { this.hiveTransactions = res.reverse() } else { this.hiveTransactions = this.hiveTransactions.concat(res.reverse()) }
           var payment = this.hiveTransactions.find(t => { if (t[1].op[0] === 'transfer' && t[1].op[1].to === this.transaction.payinAddress && t[1].op[1].memo === this.transaction.payinExtraId) { return true } else { return false } })
-          if (payment !== undefined && payment.length > 0) { this.detectedPayment = true; console.log('hive payment found') } else { this.detectedPayment = false; console.log('hive payment not found') }
+          if (payment !== undefined && payment.length > 0) { this.detectedPayment = payment[1].trx_id; console.log('hive payment txid ' + this.detectedPayment); console.log(payment[1].trx_id) } else { this.detectedPayment = false; console.log('hive payment not found') }
         })
         .catch(err => { console.log(err) })
     }
