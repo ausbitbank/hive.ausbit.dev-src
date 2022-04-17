@@ -235,7 +235,7 @@
                             <q-icon name="stars" color="amber" />
                           </q-item-section>
                           <q-item-section>
-                            <div>Pending Rewards from posts & curation:</div>
+                            <div>Pending Rewards from posts & curation</div>
                             <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
                             <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
                             <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
