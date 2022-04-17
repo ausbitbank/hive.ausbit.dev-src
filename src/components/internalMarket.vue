@@ -30,18 +30,18 @@
     </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
-    <q-item dense v-for="amt in [10000, 5000, 1000, 100, 10, 1]" :key="amt.index">
+    <q-item dense v-for="amt in [50000, 10000, 5000, 1000, 100, 10]" :key="amt.index">
     <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [1, 10, 100, 1000, 5000, 10000]" :key="amt.index">
+    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000]" :key="amt.index">
     <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
-    <q-scroll-area dark class="bg-dark text-white" style="height: 300px; width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
+    <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
     <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
     <q-item-section v-if="getTradeLine(trade).action === 'buy'">
         <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sold</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
@@ -78,8 +78,9 @@
         <q-input v-model="buyPrice" label="Price HBD/HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyAmount" label="Amount HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyTotal" label="Total HBD ($)" @input="buyAmount = (buyTotal / buyPrice).toFixed(3)" />
-        <div>Available:<q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal * buyPrice).toFixed(3)" /> HBD</div>
-        <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal * buyPrice).toFixed(3)"/></div>
+        <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
+        <div>Available:<q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)" /> HBD</div>
+        <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(buyTotal + ' HBD', buyAmount + ' HIVE')" />
       </q-form>
     </q-tab-panel>
@@ -88,6 +89,7 @@
         <q-input v-model="sellPrice" label="Price HBD/HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellAmount" label="Amount HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellTotal" label="Total HBD ($)" @input="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
+        <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
         <div>Available:<q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
         <div>Highest Bid:<q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(sellAmount + ' HIVE', sellTotal + ' HBD')" />
@@ -98,7 +100,7 @@
         <q-list>
           <q-item v-for="order in openOrders" :key="order.index">
             <q-item-section>
-              Selling {{ order.sell_price.base }} for {{ order.sell_price.quote }} ({{ order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0] }})
+              Trade {{ order.sell_price.base }} for {{ order.sell_price.quote }} ({{ order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0] }})
             </q-item-section>
             <q-item-section>
               <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense glossy flat label="cancel" title="Cancel order" />
@@ -124,6 +126,7 @@ export default {
       showTrades: true,
       showTicker: true,
       showArb: true,
+      fillOrKill: false,
       prices: {},
       internalMarket: {
         bids: {},
@@ -197,7 +200,7 @@ export default {
     submitOrder (amountToSell, minToReceive) {
       var orderid = Math.floor(Date.now() / 1000)
       var expiry = new Date(Math.floor(Date.now() / 1000 + 60 * 60 * 24 * 27) * 1000).toISOString().split('.')[0]
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['limit_order_create', { owner: this.loggedInUser, orderid: orderid, amount_to_sell: amountToSell, min_to_receive: minToReceive, fill_or_kill: false, expiration: expiry }]])
+      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['limit_order_create', { owner: this.loggedInUser, orderid: orderid, amount_to_sell: amountToSell, min_to_receive: minToReceive, fill_or_kill: this.fillOrKill, expiration: expiry }]])
     },
     cancelOrder (orderid) {
       this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['limit_order_cancel', { owner: this.loggedInUser, orderid: orderid }]])
