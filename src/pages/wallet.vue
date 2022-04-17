@@ -76,7 +76,7 @@
                                         <q-item-section>Transfer</q-item-section>
                                       </q-item>
                                       <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
-                                        <q-item-section avatar><q-icon name="transform" color="orange" /></q-item-section>
+                                        <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
                                         <q-item-section>Market</q-item-section>
                                       </q-item>
                                       <q-item clickable @click="stakeHive = true" class="text-green" title="Stake">
@@ -170,7 +170,7 @@
                                         <q-item-section>Transfer</q-item-section>
                                       </q-item>
                                       <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
-                                        <q-item-section avatar><q-icon name="transform" color="orange" /></q-item-section>
+                                        <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
                                         <q-item-section>Market</q-item-section>
                                       </q-item>
                                       <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'" class="text-green" title="Deposit Savings">
@@ -207,6 +207,17 @@
                           </q-item-section>
                         </q-item>
                         <savingsWithdrawalsInProgress :username="username" />
+                        <q-item v-if="hiveInternalMarketOrders.length > 0">
+                          <q-item-section avatar>
+                            <q-icon name="store" color="orange" />
+                          </q-item-section>
+                          <q-item-section>
+                          <div class="text-bold">Open orders on the <router-link to="/market">internal market</router-link></div>
+                          <div v-for="order in hiveInternalMarketOrders" :key="order.index">
+                            {{ order.sell_price.base }} for {{ order.sell_price.quote }}
+                          </div>
+                          </q-item-section>
+                        </q-item>
                         <q-item v-if="account.savings_hbd_seconds > 0">
                           <q-item-section avatar>
                             <q-icon name="trending_up" color="green" />
@@ -221,10 +232,10 @@
                         </q-item>
                         <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
                           <q-item-section avatar>
-                            <q-icon name="stars" color="gold" />
+                            <q-icon name="stars" color="amber" />
                           </q-item-section>
                           <q-item-section>
-                            <div>Pending Rewards:</div>
+                            <div>Pending Rewards from posts & curation:</div>
                             <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
                             <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
                             <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
@@ -901,6 +912,7 @@ export default {
       convertDialogVisible: false,
       convertTokenName: 'HIVE',
       hiveTransactions: [],
+      hiveInternalMarketOrders: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
       bitmask: walletBitmask,
@@ -1053,6 +1065,12 @@ export default {
       this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=true')
         .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hivePriceUsdChange = response.data.hive.usd_24h_change; this.hbdPriceUsd = response.data.hive_dollar.usd; this.hbdPriceUsdChange = response.data.hive_dollar.usd_24h_change })
     },
+    getOpenOrders () {
+      this.$hive.api.getOpenOrdersAsync(this.username)
+        .then(res => {
+          this.hiveInternalMarketOrders = res
+        })
+    },
     vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     tidyNumber (x) { if (x !== null && x !== undefined) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
@@ -1192,6 +1210,7 @@ export default {
       // this.getHiveWalletTransactions()
       this.getPricesCoingecko()
       this.initHiveEngine()
+      this.getOpenOrders()
     },
     initHiveEngine () {
       this.getHiveEngineBalances(this.username)
