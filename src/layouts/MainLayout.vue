@@ -10,6 +10,7 @@
         <queue v-if="loggedInUser !== null && queue.length > 0" />
         <notifications v-if="loggedInUser !== null" />
         <user-login />
+        <q-btn dense flat icon="settings" title="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
         <span v-if="$q.platform.is.electron">
         <q-btn dense flat icon="cached" title="refresh" @click="refresh" />
         <q-btn dense flat icon="minimize" title="minimize" @click="minimize" />
@@ -55,6 +56,7 @@ import userLogin from 'components/userLogin.vue'
 import Notifications from 'components/notifications.vue'
 import searchbox from 'components/searchbox.vue'
 import queue from 'components/queue.vue'
+import settings from 'components/settings.vue'
 export default {
   name: 'MainLayout',
   components: {
@@ -62,7 +64,8 @@ export default {
     userLogin,
     Notifications,
     searchbox,
-    queue
+    queue,
+    settings
   },
   methods: {
     minimize () {
