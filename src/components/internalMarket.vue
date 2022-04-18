@@ -39,24 +39,27 @@
     </q-expansion-item>
     <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000]" :key="amt.index">
+    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000, 50000]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
-    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
-    <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
-    <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
-    <q-item-section v-if="getTradeLine(trade).action === 'buy'">
-        <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sold</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
-    </q-item-section>
-    <q-item-section v-else>
-        <div>{{ getTradeLine(trade).taker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-green"> bought</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
-    </q-item-section>
-    <q-item-section side>
-        <span class="text-caption text-grey"> {{ timeDelta(trade.date) }}</span>
-    </q-item-section>
-    </q-item>
-    </q-scroll-area>
+    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-opened>
+      <sparkline width="250" height="60" v-if="sparkline">
+        <sparklineCurve :data="sparkline" :limit="sparkline.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
+      </sparkline>
+      <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
+      <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
+      <q-item-section v-if="getTradeLine(trade).action === 'buy'">
+          <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sell</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
+      </q-item-section>
+      <q-item-section v-else>
+          <div>{{ getTradeLine(trade).taker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-green"> buy</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
+      </q-item-section>
+      <q-item-section side>
+          <span class="text-caption text-grey"> {{ timeDelta(trade.date) }}</span>
+      </q-item-section>
+      </q-item>
+      </q-scroll-area>
     </q-expansion-item>
 </q-list>
 </q-card-section>
@@ -117,6 +120,8 @@
 </template>
 <script>
 import moment from 'moment'
+import { mixin as VueTimers } from 'vue-timers'
+import sparkline from 'vue-sparklines'
 export default {
   name: 'internalMarket',
   data () {
@@ -142,7 +147,12 @@ export default {
       sellTotal: 0.000,
       internalMarketEnabled: this.$router.currentRoute.query.internalMarketEnabled || true,
       internalMarketDepth: this.$router.currentRoute.query.internalMarketDepth || 150,
-      openOrders: []
+      openOrders: [],
+      sparklineIndicatorStyle: false,
+      sparklineStyle: { stroke: '#54a5ff' },
+      spotStyle: { fill: '#54a5ff' },
+      spotProps: { size: 2 },
+      sparklineEnabled: 'true'
     }
   },
   props: {
@@ -193,7 +203,20 @@ export default {
       } else {
         return null
       }
+    },
+    sparkline: function () {
+      if (this.internalMarket.trades.length > 0) {
+        return this.internalMarket.trades.map(trade => this.getTradeLine(trade).price)
+      } else {
+        return []
+      }
     }
+  },
+  mixins: [VueTimers],
+  components: { sparkline },
+  timers: {
+    refreshMarket: { time: 15000, autostart: true, repeat: true, immediate: true, isSwitchTab: false },
+    refreshMarketExternal: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
   },
   methods: {
     submitOrder (amountToSell, minToReceive) {
@@ -249,7 +272,6 @@ export default {
       this.$hive.api.getOpenOrdersAsync(this.loggedInUser)
         .then(res => {
           this.openOrders = res
-          console.log(res)
         })
     },
     addMarketDepth () {
@@ -287,18 +309,19 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     refreshMarket () {
-      this.getCoingeckoPrices()
       if (this.internalMarketEnabled) {
-        this.internalMarket.bids = {}
-        this.internalMarket.asks = {}
-        this.internalMarket.trades = []
-        this.internalMarket.ticker = {}
+        // this.internalMarket.bids = {}
+        // this.internalMarket.asks = {}
+        // this.internalMarket.trades = []
+        // this.internalMarket.ticker = {}
         this.getTicker()
         this.getMarketInfo(this.internalMarketDepth)
         this.getRecentTrades(100)
-        this.getOpenOrders()
-        if (this.loggedInUser) { this.getAccount(this.loggedInUser) }
+        if (this.loggedInUser) { this.getAccount(this.loggedInUser); this.getOpenOrders() }
       }
+    },
+    refreshMarketExternal () {
+      this.getCoingeckoPrices()
     },
     tidyNumber (x) {
       var parts = x.toString().split('.')
@@ -307,7 +330,6 @@ export default {
     }
   },
   mounted () {
-    this.refreshMarket()
   }
 }
 </script>
