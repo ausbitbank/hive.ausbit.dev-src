@@ -81,7 +81,7 @@
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
         <div>Available:<q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)" /> HBD</div>
         <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"/></div>
-        <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(buyTotal + ' HBD', buyAmount + ' HIVE')" />
+        <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(parseFloat(buyTotal).toFixed(3) + ' HBD', parseFloat(buyAmount).toFixed(3) + ' HIVE')" />
       </q-form>
     </q-tab-panel>
     <q-tab-panel name="sell" label="Sell">
@@ -92,7 +92,7 @@
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
         <div>Available:<q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
         <div>Highest Bid:<q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
-        <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(sellAmount + ' HIVE', sellTotal + ' HBD')" />
+        <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(parseFloat(sellAmount).toFixed(3) + ' HIVE', parseFloat(sellTotal).toFixed(3) + ' HBD')" />
       </q-form>
     </q-tab-panel>
     <q-tab-panel name="orders" label="Orders">
