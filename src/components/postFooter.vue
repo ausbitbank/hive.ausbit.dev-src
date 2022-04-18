@@ -6,7 +6,7 @@
   <q-chip color="blue-grey-10" dense v-if="post.author_role">{{ post.author_role }}</q-chip>
   <span v-if="post.author_title" class="text-caption">{{ post.author_title }}</span>
   <span class="text-caption text-center text-grey">  {{ timeDelta(post.created) }}</span>
-  <q-btn dense icon="comment" flat color="blue-grey" :label="post.children">
+  <q-btn dense icon="comment" flat color="teal" :label="post.children">
     <q-popup-proxy>
       <commentBox :parent_author="post.author" :parent_permlink="post.permlink" />
     </q-popup-proxy>
