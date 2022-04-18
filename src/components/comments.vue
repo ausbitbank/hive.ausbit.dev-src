@@ -1,27 +1,46 @@
 <template>
   <span>
     <span v-if="!viewComments" class="text-center">
-      <q-btn @click="viewComments = !viewComments" icon="forum" color="blue-grey-6" dense push label="View replies" />
+      <q-btn @click="viewComments = !viewComments" icon="forum" color="blue-grey-6" dense flat label="View replies" />
     </span>
     <span v-if="viewComments">
+    <span v-if="loading">
+    <div><q-skeleton text /><q-skeleton button /><q-skeleton button /></div>
+    <q-card dense flat bordered v-for="i in 5" :key="i.index" style="width:400px">
+      <q-card-section avatar>
+        <q-skeleton circle width="40" height="40" />
+      </q-card-section>
+      <q-card-section>
+        <q-skeleton text width="100%" height="20" />
+      </q-card-section>
+      <q-card-section>
+        <q-skeleton text />
+        <q-skeleton button />
+        <q-skeleton button />
+      </q-card-section>
+    </q-card>
+    </span>
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
-          {{ Object.keys(this.comments).length - 1 }} Replies
           <div>
-            <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense glossy rounded push>
+            {{ Object.keys(this.comments).length - 1 }} Replies
+            <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense flat>
               <q-popup-proxy>
-                <q-card class="q-pa-md shadow-4" bordered>
+                <q-card class="q-pa-md shadow-4" dense bordered>
                   <span class="text-caption">Gray <q-checkbox v-model="filter.gray" /> Hidden <q-checkbox v-model="filter.hide" /></span>
                   <q-select v-model="commentSortMethod" :options="commentSortMethods" label="Sort" dense />
                   <q-select v-model="commentSortDirection" :options="commentSortDirections" label="Direction" dense />
               </q-card>
               </q-popup-proxy>
             </q-btn>
+            <q-btn icon="close" color="red" title="Hide comments" @click="viewComments = !viewComments" dense flat class="hvr" />
           </div>
       </q-card-section>
-      <q-card flat v-for="comment in comments" :key="comment.url" class="text-justify">
-        <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" v-if="comment.parent_permlink === permlink && returnFilterStatus(comment)" />
-      </q-card>
+      <span v-for="comment in comments" :key="comment.id">
+        <q-card flat bordered v-if="comment.parent_permlink === permlink && returnFilterStatus(comment)">
+          <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" />
+        </q-card>
+      </span>
     </q-card>
     </span>
   </span>
@@ -75,7 +94,7 @@ export default {
   methods: {
     resortComments () {
       var c = this.comments
-      this.comments = null
+      // this.comments = null
       this.comments = this.sortData(this.commentSortMethod.value, c, this.commentSortDirection.value)
     },
     returnFilterStatus (comment) {
