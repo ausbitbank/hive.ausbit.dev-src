@@ -20,7 +20,7 @@
       <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
       <q-btn push icon="settings" title="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
       <q-dialog v-model="settingsDialog">
-          <q-card>
+          <q-card flat bordered>
               <q-card-section>
                   <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
                   <q-input v-model="currency" label="Currency" />
