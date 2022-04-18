@@ -18,8 +18,14 @@
               <span v-for="op in this.blockOpsVirtual" :key="op.index">
                 <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
               </span>
-              <div><q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" /></div>
             </span>
+            <span v-else>
+              <q-skeleton type="rect" height="50px" />
+            </span>
+            <div>
+              <q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" :title="viewType === 'simple' ? 'Expand to full block view':'Shrink to simple block view'"/>
+              <q-btn v-if="false" flat :title="liveRefresh ? 'Stop loading new blocks':'Load a new block every 3 seconds'" :icon="liveRefresh ? 'stop':'fast_forward'" :color="liveRefresh ? 'red':'blue'" @click="liveRefresh = !liveRefresh"/>
+            </div>
         </q-card-section>
     </q-card>
     <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="viewType === 'full'">
@@ -225,11 +231,10 @@ export default {
     {
       name: 'blockTimer',
       time: 3000,
-      repeat: false,
+      repeat: true,
       autostart: false,
       isSwitchTab: false,
       callback: function () {
-        var d = new Date(); var n = d.getTime(); console.log('timer triggered at ' + n)
         this.updateBlock(this.blockNumber + 1)
       }
     }
