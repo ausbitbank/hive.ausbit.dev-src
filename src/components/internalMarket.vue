@@ -1,43 +1,46 @@
 <template>
 <div>
-<q-card bordered dense class="q-ml-md q-pa-none text-center" v-if="this.internalMarket.bids.length > 0">
+<q-card bordered dense class="q-ml-md q-pa-none text-center">
 <q-card-section>
 <q-list separator dense class="q-pa-none q-ma-none">
-    <q-item-label class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market</q-item-label>
-    <q-expansion-item dense expand-separator label="Ticker" icon="analytics" header-class="text-orange" default-opened>
-    <q-item dense v-for="(stat, index) in internalMarket.ticker" :key="index">
-      <q-item-section>
-        {{ index.replace('_',' ') }}
-      </q-item-section>
-      <q-item-section v-if="['latest', 'lowest_ask', 'highest_bid', 'percent_change'].includes(index)"><b>{{ parseFloat(stat).toFixed(3) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="['latest', 'lowest_ask', 'highest_bid'].includes(index)" /><span v-if="index === 'percent_change'">%</span></b></q-item-section>
-      <q-item-section v-else><b>{{ tidyNumber(stat.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
-    </q-item>
-    <q-item dense v-if="hiveUsd" title="Hive external market prices from coingecko api">
-      <q-item-section>
-        hive usd
-      </q-item-section>
-      <q-item-section>
-        $ {{ hiveUsd }}
-      </q-item-section>
-    </q-item>
-    <q-item dense v-if="hbdUsd" title="HBD external market prices from coingecko api">
-      <q-item-section>
-        hbd usd
-      </q-item-section>
-      <q-item-section>
-        $ {{ hbdUsd }}
-      </q-item-section>
-    </q-item>
+    <q-item-label class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market
+      <q-btn flat round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" />
+      <q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
+    </q-item-label>
+    <q-expansion-item dense expand-separator label="Ticker" icon="analytics" header-class="text-orange" default-opened v-if="internalMarket.ticker">
+      <q-item dense v-for="(stat, index) in internalMarket.ticker" :key="index">
+        <q-item-section>
+          {{ index.replace('_',' ') }}
+        </q-item-section>
+        <q-item-section v-if="['latest', 'lowest_ask', 'highest_bid', 'percent_change'].includes(index)"><b>{{ parseFloat(stat).toFixed(3) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="['latest', 'lowest_ask', 'highest_bid'].includes(index)" /><span v-if="index === 'percent_change'">%</span></b></q-item-section>
+        <q-item-section v-else><b>{{ tidyNumber(stat.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
+      </q-item>
+      <q-item dense v-if="hiveUsd" title="Hive external market prices from coingecko api">
+        <q-item-section>
+          hive usd
+        </q-item-section>
+        <q-item-section>
+          $ {{ hiveUsd }}
+        </q-item-section>
+      </q-item>
+      <q-item dense v-if="hbdUsd" title="HBD external market prices from coingecko api">
+        <q-item-section>
+          hbd usd
+        </q-item-section>
+        <q-item-section>
+          $ {{ hbdUsd }}
+        </q-item-section>
+      </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
     <q-item dense v-for="amt in [50000, 10000, 5000, 1000, 100, 10]" :key="amt.index">
-    <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
+    <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
     <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000]" :key="amt.index">
-    <div style="margin:auto">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
+    <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
@@ -60,10 +63,6 @@
 <q-card-section v-if="!loggedInUser" class="text-bold">
   <q-icon name="info" color="primary" /> Login to trade on the internal market
 </q-card-section>
-<q-card-actions v-if="true">
-<q-btn flat glossy round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" /><br />
-<q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
-</q-card-actions>
 </q-card>
 <q-card bordered dense class="q-ml-md q-pa-none text-center" v-if="loggedInUser">
   <q-tabs v-model="tab" dense align="justify" narrow-indicator indicator-color="primary">
@@ -182,14 +181,14 @@ export default {
       }
     },
     hiveUsd: function () {
-      if (this.prices) {
+      if (this.prices && this.prices.hive) {
         return this.prices.hive.usd.toFixed(2)
       } else {
         return null
       }
     },
     hbdUsd: function () {
-      if (this.prices) {
+      if (this.prices && this.prices.hive_dollar) {
         return this.prices.hive_dollar.usd.toFixed(2)
       } else {
         return null
