@@ -4,7 +4,7 @@
 <q-card-section>
 <q-list separator dense class="q-pa-none q-ma-none">
     <q-item-label class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market
-      <q-btn flat round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" />
+      <q-btn flat round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" v-if="false" />
       <q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
     </q-item-label>
     <q-expansion-item dense expand-separator label="Ticker" icon="analytics" header-class="text-orange" default-opened v-if="internalMarket.ticker">
@@ -33,13 +33,13 @@
       </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
-    <q-item dense v-for="amt in [10000, 5000, 1000, 100, 10]" :key="amt.index">
+    <q-item dense v-for="amt in [15000, 10000, 5000, 1000, 100, 10]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000]" :key="amt.index">
+    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000, 15000]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
@@ -81,7 +81,7 @@
         <q-input v-model="buyAmount" label="Amount HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyTotal" label="Total HBD ($)" @input="buyAmount = (buyTotal / buyPrice).toFixed(3)" />
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat :label="balanceHbd" @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)" /> HBD</div>
+        <div>Available:<q-btn flat :label="tidyNumber(balanceHbd)" @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)" /> HBD</div>
         <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(parseFloat(buyTotal).toFixed(3) + ' HBD', parseFloat(buyAmount).toFixed(3) + ' HIVE')" />
       </q-form>
@@ -92,7 +92,7 @@
         <q-input v-model="sellAmount" label="Amount HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellTotal" label="Total HBD ($)" @input="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat :label="balanceHive" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
+        <div>Available:<q-btn flat :label="tidyNumber(balanceHive)" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
         <div>Highest Bid:<q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
         <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(parseFloat(sellAmount).toFixed(3) + ' HIVE', parseFloat(sellTotal).toFixed(3) + ' HBD')" />
       </q-form>
@@ -149,9 +149,9 @@ export default {
       internalMarketDepth: this.$router.currentRoute.query.internalMarketDepth || 150,
       openOrders: [],
       sparklineIndicatorStyle: false,
-      sparklineStyle: { stroke: '#54a5ff' },
-      spotStyle: { fill: '#54a5ff' },
-      spotProps: { size: 2 },
+      sparklineStyle: { stroke: '#ffffff', fill: '#aaaaaa' },
+      spotStyle: { fill: '#000000' },
+      spotProps: { size: 3 },
       sparklineEnabled: 'true'
     }
   },
@@ -278,20 +278,21 @@ export default {
       var hiveDepth = 0
       var hbdDepth = 0
       this.internalMarket.bids.forEach(b => {
-        hiveDepth = hiveDepth + (b.hive / 100)
-        hbdDepth = hbdDepth + (b.hbd / 100)
+        hiveDepth = hiveDepth + (b.hive / 1000)
+        hbdDepth = hbdDepth + (b.hbd / 1000)
         b.hiveDepth = hiveDepth
         b.hbdDepth = hbdDepth
       })
       hiveDepth = 0
       hbdDepth = 0
       this.internalMarket.asks.forEach(b => {
-        hiveDepth = hiveDepth + (b.hive / 100)
-        hbdDepth = hbdDepth + (b.hbd / 100)
+        hiveDepth = hiveDepth + (b.hive / 1000)
+        hbdDepth = hbdDepth + (b.hbd / 1000)
         b.hiveDepth = hiveDepth
         b.hbdDepth = hbdDepth
       })
       this.internalMarket.asks = this.internalMarket.asks.reverse()
+      console.log(this.internalMarket.bids)
     },
     getTicker () {
       this.$hive.api.getTickerAsync()
