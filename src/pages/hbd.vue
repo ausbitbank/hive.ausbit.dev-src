@@ -30,12 +30,17 @@
       <q-card-section>
         <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below 10% of HIVE marketcap</div>
         <div class="text-subtitle2">(The Debt Limit)</div>
-        <div>HBD Marketcap = <b>${{ tidyNumber(hbdCap) }}</b></div>
-        <div>HIVE Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
-        <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
-        <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
-        <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
-        <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">${{ internalMarketLatest }}</q-badge></div>
+        <div v-if="hiveCap && hbdCap">
+          <div>HBD Marketcap = <b>${{ tidyNumber(hbdCap) }}</b></div>
+          <div>HIVE Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
+          <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
+          <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
+          <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
+          <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">${{ internalMarketLatest }}</q-badge></div>
+        </div>
+        <div v-else>
+          <q-skeleton type="rect" height="50" />
+        </div>
       </q-card-section>
       <q-separator />
       <q-card-section class="text-center" v-if="hbdApr > 0">
@@ -87,8 +92,7 @@ export default {
   data () {
     return {
       medianPrice: null,
-      // daoHbdBalance: 6177747 // hive.fund HBD balance as of Thu 23 Sep 2021 08:12:40 AM CEST
-      daoHbdBalance: 13598565, // hive.fund HBD balance as of Wed 3rd March 2022 04:22:00 PM AEST
+      daoHbdBalance: 15476679, // hive.fund HBD balance as of Wed 18th April 2022 05:30:00 PM AEST
       internalMarketLatest: null
     }
   },
