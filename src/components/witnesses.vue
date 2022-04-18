@@ -1,5 +1,29 @@
 <template>
     <span>
+    <q-card style="max-width: 300px" v-if="witnesses === null">
+      <q-card-section class="text-center">
+        <div class="text-h5">
+          <q-icon name="emoji_people" color="teal" /> Witnesses
+        </div>
+      </q-card-section>
+      <q-item v-for="i in limit" :key="i.index">
+        <q-item-section avatar>
+          <q-skeleton type="QAvatar" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>
+            <q-skeleton type="text" />
+          </q-item-label>
+          <q-item-label caption>
+            <q-skeleton type="text" />
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+      <q-card-actions align="right" class="q-gutter-md">
+        <q-skeleton type="QBtn" />
+        <q-skeleton type="QBtn" />
+      </q-card-actions>
+    </q-card>
     <q-card flat bordered v-if="witnesses !== null" class="q-pa-none">
         <q-card-section class="text-center">
             <div class="text-h5">
