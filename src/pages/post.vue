@@ -11,8 +11,8 @@
         </q-card-section>
       </q-card>
     </div>
-    <div v-if="post !== null" class="row items-start content-start justify-center" style="margin:auto; max-width:1000px">
-      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start">
+    <div class="row items-start content-start justify-center" style="margin:auto; max-width:1000px">
+      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start" v-if="post">
         <q-card flat bordered class="q-pa-xs" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
             {{ Sanitize(post.title) }}
@@ -25,7 +25,13 @@
             <render :input="post.body" class="postbody" />
             </transition>
           </q-card-section>
+          <q-card-section v-else>
+            <q-skeleton type="rect" height="200px" width="200" />
+          </q-card-section>
         </q-card>
+      </div>
+      <div v-else>
+        <q-skeleton type="text" height="100" />
       </div>
       <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center items-start">
         <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px; position:relative; top:0" v-if="post">
@@ -216,10 +222,13 @@
             View on <a :href="linkHiveBlogPost(author, permlink)">Hive.blog</a>, <a :href="linkPeakdPost(author, permlink)">Peakd</a>, <a :href="linkEcencyPost(author, permlink)">Ecency</a>
           </q-card-section>
         </q-card>
+        <q-card v-else>
+          <q-skeleton type="rect" height="200" width="200" />
+        </q-card>
       </div>
-      <div class="q-md-md" style="margin: auto"><comments :author="post.author" :permlink="post.permlink" v-if="post.children > 0" /></div>
-      <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown">
-          <recent-posts-carousel :account="author" :autoplay=true />
+      <comments :author="post.author" :permlink="post.permlink" v-if="post && post.children > 0" />
+      <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown" v-if="false">
+          <recent-posts-carousel v-if="post" :account="author" :autoplay=true />
       </transition>
     </div>
   </q-page>
