@@ -33,13 +33,13 @@
       </q-item>
     </q-expansion-item>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
-    <q-item dense v-for="amt in [50000, 10000, 5000, 1000, 100, 10]" :key="amt.index">
+    <q-item dense v-for="amt in [10000, 5000, 1000, 100, 10]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
     </q-item>
     </q-expansion-item>
     <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000, 50000]" :key="amt.index">
+    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
