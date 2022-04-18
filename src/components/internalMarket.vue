@@ -155,7 +155,7 @@ export default {
       sellAmount: 0.000,
       sellTotal: 0.000,
       internalMarketEnabled: this.$router.currentRoute.query.internalMarketEnabled || true,
-      internalMarketDepth: this.$router.currentRoute.query.internalMarketDepth || 150,
+      internalMarketDepth: this.$router.currentRoute.query.internalMarketDepth || 200,
       openOrders: [],
       sparklineIndicatorStyle: false,
       sparklineStyle: { stroke: '#ffffff', fill: '#aaaaaa' },
@@ -265,10 +265,10 @@ export default {
       var volume = trade.open_pays.split(' ')[0] === 'HBD' ? (parseFloat(trade.open_pays.split(' ')[0])).toFixed(3) : (parseFloat(trade.current_pays.split(' ')[0])).toFixed(3)
       if (maker.split(' ')[1] === 'HBD') {
         price = (maker.split(' ')[0] / taker.split(' ')[0]).toFixed(3)
-        return { taker: taker, maker: maker, price: price, action: 'sell', volume: volume }
+        return { taker: taker, maker: maker, price: price, action: 'buy', volume: volume }
       } else {
         price = (taker.split(' ')[0] / maker.split(' ')[0]).toFixed(3)
-        return { taker: taker, maker: maker, price: price, action: 'buy', volume: volume }
+        return { taker: taker, maker: maker, price: price, action: 'sell', volume: volume }
       }
     },
     getMarketInfo (depth) {
