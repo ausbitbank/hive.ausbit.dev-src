@@ -36,7 +36,7 @@
               <q-btn flat dense title="Click for full node report data">
                 <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
                 <q-popup-proxy>
-                  <json-viewer :data="node" />
+                  <q-card flat bordered><json-viewer :data="node" /></q-card>
                 </q-popup-proxy>
               </q-btn>
             </div>
