@@ -12,7 +12,7 @@
               <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" @click="postOverlay = true" />
             <!-- </router-link> -->
         </q-card-section>
-        <q-separator vertical v-if="postImage" />
+        <!-- <q-separator vertical v-if="postImage" /> -->
         <q-item>
             <q-item-section>
                 <q-item-label>
