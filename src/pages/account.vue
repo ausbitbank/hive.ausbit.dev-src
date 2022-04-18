@@ -478,7 +478,7 @@ export default {
           .catch(err => { console.error(err) })
       } else {
         await this.$hive.api.callAsync('call', ['database_api', 'get_account_history', [this.username, -1, 1]])
-          .then(res => { if (res.length === 0) { this.errorMessage = 'Account ' + this.username + ' not found'; this.error = true } else { this.accountOperationsMarker = res[0][0] } if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
+          .then(res => { if (res.length === 0) { this.errorMessage = 'Account ' + this.username + ' not found'; this.error = true } else { this.error = false; this.errorMessage = ''; this.accountOperationsMarker = res[0][0] } if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       }
     },
