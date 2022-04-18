@@ -1,6 +1,30 @@
 <template>
   <span>
-    <q-card flat bordered v-if="fullNodeUpdate !== null">
+    <q-card flat bordered style="max-width: 300px" v-if="fullNodeUpdate === null">
+      <q-card-section class="text-center">
+        <div class="text-h5">
+          <q-icon name="dns" color="blue-grey" /> Api Nodes
+        </div>
+      </q-card-section>
+      <q-item v-for="i in 5" :key="i.index">
+        <q-item-section avatar>
+          <q-skeleton type="QAvatar" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>
+            <q-skeleton type="text" />
+          </q-item-label>
+          <q-item-label caption>
+            <q-skeleton type="text" />
+          </q-item-label>
+        </q-item-section>
+      </q-item>
+      <q-card-actions align="right" class="q-gutter-md">
+        <q-skeleton type="QBtn" />
+        <q-skeleton type="QBtn" />
+      </q-card-actions>
+    </q-card>
+    <q-card flat bordered v-else>
       <q-card-section class="text-center">
         <div class="text-h5">
           <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 65 minutes" name="warning" color="orange" />
