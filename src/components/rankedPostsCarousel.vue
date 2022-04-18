@@ -6,7 +6,7 @@
         <router-link to="/trending" v-if="this.sortMethod === 'trending'"><q-icon name="trending_up" color="green" /> Trending</router-link>
         <router-link to="/hot" v-if="this.sortMethod === 'hot'"><q-icon name="whatshot" v-if="this.sortMethod === 'hot'" color="red" /> Hot</router-link>
         <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
-      <q-skeleton height="250px" width="400" class="bg-primary" animation="fade" rect v-if="loading" />
+      <q-skeleton height="250px" width="400" animation="fade" rect v-if="loading" />
       <q-carousel
         v-if="posts.length > 0"
         v-model="slide"
