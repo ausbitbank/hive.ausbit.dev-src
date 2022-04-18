@@ -48,7 +48,7 @@ export default {
     return {
       coinGecko: null,
       sparklineIndicatorStyle: false,
-      sparklineStyle: { stroke: '#54a5ff' },
+      sparklineStyle: { stroke: '#54a5ff', fill: '#aaaaaa' },
       spotStyle: { fill: '#54a5ff' },
       spotProps: { size: 2 },
       sparklineEnabled: 'true',
