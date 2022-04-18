@@ -128,7 +128,7 @@
           <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" v-if="!['finished','sending'].includes(transaction.status) && transaction.moneyReceived === 0 && parseFloat(account.balance.split(' ')[0]) >= transaction.amountExpectedFrom && !disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
         <q-card-section v-if="detectedPayment && transaction.currencyFrom === 'hive'" class="text-center text-bold">
-          Verified correct payment sent on Hive chain
+          <q-icon name="check" color="green" /> Verified correct payment sent on Hive chain
         </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
@@ -164,7 +164,7 @@
             </q-expansion-item>
         </q-card-section>
         <q-card-actions align="around">
-            <q-btn flat no-caps label="Close" :color="transaction.status === 'finished' ? 'primary' : 'red'" icon="logout" @click="transaction = null" to="/exchange" />
+            <q-btn flat no-caps label="Close" :color="transaction.status === 'finished' ? 'primary' : 'red'" icon="logout" @click="transaction = null; exchangeId = null" to="/exchange" />
         </q-card-actions>
     </q-card>
   </div>
