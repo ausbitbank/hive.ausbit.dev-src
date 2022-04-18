@@ -20,7 +20,7 @@
               </span>
             </span>
             <span v-else>
-              <q-skeleton type="rect" height="50px" />
+              <q-skeleton type="rect" height="80px" />
             </span>
             <div>
               <q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" :title="viewType === 'simple' ? 'Expand to full block view':'Shrink to simple block view'"/>
