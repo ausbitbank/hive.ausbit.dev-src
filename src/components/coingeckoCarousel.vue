@@ -1,10 +1,10 @@
 <template>
-    <span v-if="coinGecko !== null">
+    <span>
     <q-card bordered>
       <div class="text-h6 text-center">
         <router-link to="markets" class="text-primary"><q-icon name="monetization_on" color="green" />&nbsp; Coin Prices</router-link>
       </div>
-      <q-spinner-puff color="primary" size="lg" v-if="coinGecko === null" />
+      <q-skeleton height="250px" width="400" rect v-if="coinGecko === null" />
       <q-carousel
         v-if="coinGecko !== null"
         v-model="slide"
@@ -35,8 +35,8 @@
             <div><span class="text-bold">Total Volume: </span> ${{ tidyNumber(coin.total_volume) }}</div>
             <div v-if="coin.low_24h && coin.high_24h"><span class="text-bold">24hr Range: </span> <span>${{ tidyNumber(coin.low_24h.toFixed(3)) }} - ${{ tidyNumber(coin.high_24h.toFixed(3)) }}</span></div>
             <div v-if="coin.price_change_24h && coin.price_change_percentage_24h"><span class="text-bold">24Hr Change: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.price_change_24h.toFixed(3)) }} ({{ coin.price_change_percentage_24h.toFixed(3) }}%)</span></div>
-            <div><span class="text-bold">All Time High: </span> $ <span>{{ tidyNumber(coin.ath.toFixed(3)) }}</span>  <span class="text-red">({{ coin.ath_change_percentage.toFixed(3) }} %)</span></div>
-            <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green">({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
+            <div><span class="text-bold">All Time High: </span> $ <span>{{ tidyNumber(coin.ath.toFixed(3)) }}</span>  <span class="text-red"> ({{ coin.ath_change_percentage.toFixed(3) }} %)</span></div>
+            <div><span class="text-bold">All Time Low: </span> $ <span>{{ tidyNumber(coin.atl.toFixed(3)) }}</span>  <span class="text-green"> ({{ coin.atl_change_percentage.toFixed(3) }} %)</span></div>
           </div>
         </q-carousel-slide>
       </q-carousel>
@@ -44,7 +44,7 @@
       <div class="text-caption">Priced in <span class="text-bold text-primary" @click="settingsDialog = true">{{ currency }}</span> via <router-link to="/@coingecko">coingecko</router-link></div>
       <q-btn push icon="settings" title="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
       <q-dialog v-model="settingsDialog">
-          <q-card>
+          <q-card flat bordered>
               <q-card-section>
                   <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
                   <q-input v-model="currency" label="Currency" />
@@ -119,7 +119,7 @@ export default {
     getCoinGecko () {
       this.coinGecko = null
       this.$axios.get(this.apiUrl)
-        .then((response) => { this.coinGecko = response.data; this.slide = response.data[0].id })
+        .then((response) => { this.slide = response.data[0].id; this.coinGecko = response.data })
         .catch(() => { console.log('Failed to load data from coingecko api') })
     },
     tidyNumber (x) {
