@@ -11,8 +11,8 @@
           <q-checkbox label="Allow Votes" v-model="allow_votes" :disable="true" />
           <q-checkbox label="Allow Curation Rewards" v-model="allow_curation_rewards" :disable="true" />
         </q-expansion-item>
-        <q-btn v-close-popup icon="comment" @click="comment()" push color="primary" style="margin:auto">Reply to {{ parent_author }}</q-btn>
-        <q-btn v-close-popup icon="close" label="Cancel" color="red" />
+        <q-btn v-close-popup icon="comment" @click="comment()" flat color="primary" style="margin:auto">Reply to {{ parent_author }}</q-btn>
+        <q-btn v-close-popup icon="close" label="Cancel" flat color="red" />
         </q-card>
     </div>
 </template>
@@ -31,7 +31,7 @@ export default {
       commentSent: false,
       title: '',
       advanced: false,
-      defaultMeta: '{ "app": "ausbit/2021.06.07", "format": "markdown" }',
+      defaultMeta: '{ "app": "ausbit/2022.04.18", "format": "markdown" }',
       max_accepted_payout: '100000.000 HBD',
       percent_hbd: 10000,
       allow_votes: true,
