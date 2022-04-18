@@ -1,37 +1,37 @@
 <template>
-  <q-card-section v-if="this.comment.permlink !== this.parentPermlink">
-  <q-list bordered separator>
-    <q-item>
-      <q-item-section avatar>
-        <center>
+  <span>
+  <q-item flat bordered v-if="this.comment.permlink !== this.parentPermlink">
+    <q-item-section avatar class="text-center">
+      <q-item-label>
           <router-link :to="linkAccount(this.comment.author)">
-            <q-avatar>
-              <q-img :src="GetHiveAvatarUrl(this.comment.author)" />
-            </q-avatar>
-            <div class="text-bold">
-              {{ this.comment.author }}
-            </div>
-          </router-link>
-        </center>
-      </q-item-section>
-      <q-item-section>
+          <q-avatar>
+            <q-img :src="GetHiveAvatarUrl(this.comment.author)" />
+          </q-avatar>
+          <div class="text-bold">
+            {{ this.comment.author }}
+          </div>
+        </router-link>
+      </q-item-label>
+    </q-item-section>
+    <q-item-section>
+      <q-item-label>
         <render :input="this.comment.body" />
-      </q-item-section>
-      <q-item-section side class="text-grey text-center text-subtitle">
-        <router-link :to="returnLink(this.comment.author, this.comment.permlink)">{{ timeDelta(this.comment.created) }}</router-link>
-        <q-btn icon="comment" dense flat v-if="this.loggedInUser">
+      </q-item-label>
+      <q-item-label>
+        <router-link :to="returnLink(this.comment.author, this.comment.permlink)"><q-icon name="schedule" color="grey" />&nbsp; {{ timeDelta(this.comment.created) }}</router-link>
+        <vote :votes="comment.active_votes" :author="comment.author" :permlink="comment.permlink" />
+        <q-btn icon="comment" color="teal" dense flat v-if="this.loggedInUser">
           <q-popup-proxy persistent>
             <commentBox :parent_author="this.comment.author" :parent_permlink="this.comment.permlink" />
           </q-popup-proxy>
         </q-btn>
-        <vote :votes="comment.active_votes" :author="comment.author" :permlink="comment.permlink" />
-      </q-item-section>
-    </q-item>
-  </q-list>
-  <span v-for="authperm in comment.replies" :key="authperm.index">
+      </q-item-label>
+    </q-item-section>
+  </q-item>
+  <q-item v-for="authperm in comment.replies" :key="authperm.index">
     <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
+  </q-item>
   </span>
-  </q-card-section>
 </template>
 <script>
 // import commentBody from 'components/commentBody.vue'
