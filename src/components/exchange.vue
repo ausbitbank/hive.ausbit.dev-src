@@ -127,19 +127,17 @@
           <div>{{ loggedInUser }}'s balance <q-badge color="primary">{{ tidyNumber(account.balance.split(' ')[0]) }}</q-badge> <q-avatar size="sm"><q-img src="/statics/hive.svg" title="HIVE" /></q-avatar></div>
           <q-btn @click="transferNeededHive()" push icon="send" dense no-caps color="primary" v-if="!['finished','sending'].includes(transaction.status) && transaction.moneyReceived === 0 && parseFloat(account.balance.split(' ')[0]) >= transaction.amountExpectedFrom && !disableTransferButton">Transfer {{ transaction.amountExpectedFrom }} HIVE to {{ transaction.payinAddress }} with memo {{ transaction.payinExtraId }}</q-btn>
         </q-card-section>
-        <q-card-section v-if="detectedPayment && transaction.currencyFrom === 'hive'" class="text-center text-bold">
-          <q-icon name="check" color="green" /> Verified correct payment sent on Hive chain
-        </q-card-section>
         <q-separator v-if="loggedInUser && tradeFrom === 'hive'" />
         <q-card-section>
           <q-input readonly outlined label="Exchange Id (For support purposes)" v-model="transaction.id"><template v-slot:append><q-btn flat icon="content_copy" @click="copy(transaction.id)" /><q-btn flat icon="open_in_new" @click="openNewWindow(getExchangeIdUrl(transaction.id))" title="Open exchange status in new window"/></template></q-input>
           <q-input readonly outlined label="Exchange Status" v-model="transaction.status" color="green"><template v-slot:append v-if="transaction.status !== 'finished'"><q-btn flat icon="refresh" title="Refresh transaction status" color="primary" @click="getStatus()"/></template><template v-slot:append v-else><q-btn flat no-caps title="More Confetti" color="primary" icon="celebration" @click="confetti()"/></template></q-input>
           <span class="q-ma-sm text-bold text-title text-center">
-          <q-card flat v-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
+          <q-card flat v-if="transaction.status === 'waiting' && this.transaction.currencyFrom === 'hive' && this.detectedPayment === true"><q-icon name="check" color="green" /> Incoming Hive transaction detected by app, still waiting for Binance update.</q-card>
+          <q-card flat v-else-if="transaction.status === 'waiting'">Transaction is waiting for an incoming payment.</q-card>
           <q-card flat v-if="transaction.status === 'confirming'">We have received payin and are waiting for certain amount of confirmations depending of incoming currency.</q-card>
           <q-card flat v-if="transaction.status === 'exchanging'">Payment was confirmed and is being exchanged.</q-card>
-          <q-card flat v-if="transaction.status === 'sending'">Coins are being sent to the recipient address.</q-card>
-          <q-card flat v-if="transaction.status === 'finished'">Coins were successfully sent to the recipient address</q-card>
+          <q-card flat v-if="transaction.status === 'sending'">Coins are being sent to the address below</q-card>
+          <q-card flat v-if="transaction.status === 'finished'">Coins were successfully sent to the address below</q-card>
           <q-card flat v-if="transaction.status === 'failed'">Transaction has failed. In most cases, the amount was less than the minimum. Please contact support and provide a transaction id. <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
           <q-card flat v-if="transaction.status === 'refunded'">Exchange failed and coins were refunded to your wallet.</q-card>
           <q-card flat v-if="transaction.status === 'hold'">Due to AML/KYC procedure, exchange may be delayed. Contact support <a href="https://support.changelly.com" target="_blank">support.changechangelly.com</a></q-card>
@@ -148,7 +146,7 @@
         <q-card-section>
           <q-input label="Payout Address" v-model="transaction.payoutAddress" readonly outlined>
             <template v-slot:append>
-              <q-btn dense v-if="getAddressUrl(transaction.currencyTo)" title="Open address in block explorer" icon="open_in_new" @click="openNewWindow(getAddressUrl(transaction.currencyTo, transaction.payoutAddress))"/> {{ transaction.currencyTo }} <q-avatar><q-img :src="getTokenImage(transaction.currencyTo)" :title="transaction.currencyTo"/></q-avatar>
+              <q-btn flat dense v-if="getAddressUrl(transaction.currencyTo)" color="blue" title="Open address in block explorer" icon="open_in_new" @click="openNewWindow(getAddressUrl(transaction.currencyTo, transaction.payoutAddress))"/> {{ transaction.currencyTo }} <q-avatar><q-img :src="getTokenImage(transaction.currencyTo)" :title="transaction.currencyTo"/></q-avatar>
             </template>
           </q-input>
           <q-input label="Finished Transaction Hash" v-model="transaction.payoutHash" readonly outlined v-if="transaction.payoutHash">
@@ -295,6 +293,7 @@ export default {
                 this.lastStatus = this.transaction.status; this.getTransaction()
               } else {
                 console.log('Still \'' + this.transaction.status + '\'')
+                if (this.transaction.status === 'waiting' && this.transaction.currencyFrom === 'hive' && this.detectedPayment === false) { this.getHiveWalletTransactions() }
                 this.$timer.start('getStatus')
               }
             }
