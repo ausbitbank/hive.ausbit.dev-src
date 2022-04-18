@@ -108,13 +108,20 @@
     </q-tab-panel>
     <q-tab-panel name="orders" label="Orders">
       <div v-if="openOrders.length > 0">
-        <q-list>
+        <q-list dense separator>
           <q-item v-for="order in openOrders" :key="order.index">
             <q-item-section>
-              Trade {{ order.sell_price.base }} for {{ order.sell_price.quote }} ({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})
-            </q-item-section>
-            <q-item-section>
-              <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat label="cancel" title="Cancel order" />
+              <q-item-label>
+                {{ tidyNumber(parseFloat(order.sell_price.base.split(' ')[0])) }}
+                <q-icon :name="order.sell_price.base.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" />
+                for
+                {{ tidyNumber(parseFloat(order.sell_price.quote.split(' ')[0])) }}
+                <q-icon :name="order.sell_price.quote.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" /><br />
+                ({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})
+              </q-item-label>
+              <q-item-label>
+                <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat title="Cancel order" />
+              </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -157,10 +164,6 @@ export default {
       internalMarketEnabled: this.$router.currentRoute.query.internalMarketEnabled || true,
       internalMarketDepth: this.$router.currentRoute.query.internalMarketDepth || 200,
       openOrders: [],
-      sparklineIndicatorStyle: false,
-      sparklineStyle: { stroke: '#ffffff', fill: '#aaaaaa' },
-      spotStyle: { fill: '#000000' },
-      spotProps: { size: 3 },
       sparklineEnabled: 'true'
     }
   },
