@@ -66,7 +66,7 @@
         <div class="text-h6"><q-icon name="shopping_cart" color="blue" />&nbsp; How can I get HBD ?</div>
         <div class="text-subtitle">1) Earn HBD by posting popular original content on HIVE</div>
         <div class="text-subtitle">2) Purchase HBD on external exchanges like <a href="https://blocktrades.us/en/?affiliate_id=24923543-4939-4ab2-b0d5-d190f4fb82dc" target="blank">BlockTrades</a>, <a href="https://global.bittrex.com/Account/Register?referralCode=PPA-HMA-3VD" target="_blank">Bittrex</a> or <a href="https://sg.upbit.com" target="_blank">Upbit</a></div>
-        <div class="text-subtitle">3) Exchange HIVE for HBD using the <a href="https://wallet.hive.blog/market">internal market</a>, or convert them in your wallet.</div>
+        <div class="text-subtitle">3) Exchange HIVE for HBD using the <router-link to="/market">internal market</router-link>, or convert them in your wallet.</div>
       </q-card-section>
       <q-separator />
       <q-card-section>
