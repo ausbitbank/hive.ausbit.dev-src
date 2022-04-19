@@ -1,31 +1,11 @@
 <template>
   <span>
-  <q-item flat bordered v-if="this.comment.permlink !== this.parentPermlink">
-    <q-item-section avatar class="text-center">
-      <q-item-label>
-          <router-link :to="linkAccount(this.comment.author)">
-          <q-avatar>
-            <q-img :src="GetHiveAvatarUrl(this.comment.author)" />
-          </q-avatar>
-          <div class="text-bold">
-            {{ this.comment.author }}
-          </div>
-        </router-link>
-      </q-item-label>
-    </q-item-section>
+  <q-item flat separator bordered v-if="this.comment.permlink !== this.parentPermlink">
     <q-item-section>
       <q-item-label>
         <render :input="this.comment.body" />
       </q-item-label>
-      <q-item-label>
-        <router-link :to="returnLink(this.comment.author, this.comment.permlink)"><q-icon name="schedule" color="grey" />&nbsp; {{ timeDelta(this.comment.created) }}</router-link>
-        <vote :votes="comment.active_votes" :author="comment.author" :permlink="comment.permlink" />
-        <q-btn icon="comment" color="teal" dense flat v-if="this.loggedInUser">
-          <q-popup-proxy persistent>
-            <commentBox :parent_author="this.comment.author" :parent_permlink="this.comment.permlink" />
-          </q-popup-proxy>
-        </q-btn>
-      </q-item-label>
+      <q-item-label><postFooter :post="this.comment" /></q-item-label>
     </q-item-section>
   </q-item>
   <q-item v-for="authperm in comment.replies" :key="authperm.index">
@@ -37,8 +17,6 @@
 // import commentBody from 'components/commentBody.vue'
 import render from 'components/render.vue'
 import comment from 'components/comment.vue'
-import commentBox from 'components/commentBox.vue'
-import vote from 'components/vote.vue'
 import moment from 'moment'
 export default {
   name: 'comment',
@@ -47,7 +25,7 @@ export default {
     }
   },
   props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { render, comment, commentBox, vote },
+  components: { render, comment, postFooter: () => import('components/postFooter.vue') },
   computed: {
     loggedInUser: {
       get () { return this.$store.state.hive.user.username }
