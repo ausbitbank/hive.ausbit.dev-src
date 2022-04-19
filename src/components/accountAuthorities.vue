@@ -47,7 +47,7 @@
                 {{ auth[1] }}
             </q-item-section>
             <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove owner authority" dense round glossy @click="removeAuth('owner', 'account', account.name, auth[0])" />
+                <q-btn icon="delete" color="red" title="Remove owner authority" dense flat  @click="removeAuth('owner', 'account', account.name, auth[0])" />
             </q-item-section>
         </q-item>
         <q-item v-if="loggedInUser === account.name && editorEnabled">
@@ -62,7 +62,7 @@
                             <q-input label="weight" v-model="newOwnerAuthWeight" />
                         </q-card-section>
                         <q-card-actions>
-                            <q-btn label="Add owner authority" icon="warning" color="orange" @click="addAuth('owner', 'account', account.name, newOwnerAuthAccount, newOwnerAuthWeight)" />
+                            <q-btn flat label="Add owner authority" icon="warning" color="orange" @click="addAuth('owner', 'account', account.name, newOwnerAuthAccount, newOwnerAuthWeight)" />
                         </q-card-actions>
                     </q-card>
                 </q-popup-proxy>
@@ -96,11 +96,11 @@
                 {{ auth[1] }}
             </q-item-section>
             <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove active authority" dense round glossy @click="removeAuth('active', 'account', account.name, auth[0])" />
+                <q-btn icon="delete" color="red" title="Remove active authority" dense flat @click="removeAuth('active', 'account', account.name, auth[0])" />
             </q-item-section>
         </q-item>
         <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn style="margin: auto" title="Add active authority" icon="person_add" color="green" dense round glossy>
+            <q-btn style="margin: auto" title="Add active authority" icon="person_add" color="green" dense flat>
                 <q-popup-proxy>
                     <q-card class="q-pa-md">
                         <q-card-section>
@@ -145,11 +145,11 @@
                 {{ auth[1] }}
             </q-item-section>
             <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove posting authority" dense round glossy @click="removeAuth('posting', 'account', account.name, auth[0])" />
+                <q-btn icon="delete" color="red" title="Remove posting authority" dense flat @click="removeAuth('posting', 'account', account.name, auth[0])" />
             </q-item-section>
         </q-item>
         <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn style="margin: auto" title="Add posting authority" icon="person_add" color="green" dense round glossy>
+            <q-btn style="margin: auto" title="Add posting authority" icon="person_add" color="green" dense flat>
                 <q-popup-proxy>
                     <q-card class="q-pa-md">
                         <q-card-section>
