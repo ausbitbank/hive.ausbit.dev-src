@@ -10,17 +10,17 @@
       <div class="row">
       <q-card class="col" flat bordered v-if="dao">
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hive.fund">hive.fund</router-link></div>
-      <div class="text-subtitle">{{ tidyNumber(dao.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
-      {{ tidyNumber(dao.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
-      {{ vestToHive(parseFloat(dao.vesting_shares.split(' ')[0])) }} HP <br />
-      ~$ {{ tidyNumber(((hivePrice * parseFloat(dao.balance.split(' ')[0])) + parseFloat(dao.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      <div class="text-subtitle"><animInt :value="dao.balance.split(' ')[0]" class="q-mr-sm" /> <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      <animInt :value="dao.hbd_balance.split(' ')[0]" class="q-mr-sm" /><q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      <animInt :value="vestToHive(parseFloat(dao.vesting_shares.split(' ')[0]))" /> HP <br />
+      ~$ <animInt :value="((hivePrice * parseFloat(dao.balance.split(' ')[0])) + parseFloat(dao.hbd_balance.split(' ')[0])).toFixed(2)" /></div>
       </q-card>
       <q-card class="col" flat bordered v-if="hbdStabilizer">
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbdstabilizer">hbdstabilizer</router-link></div>
-      <div class="text-subtitle">{{ tidyNumber(hbdStabilizer.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
-      {{ tidyNumber(hbdStabilizer.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
-      {{ vestToHive(parseFloat(hbdStabilizer.vesting_shares.split(' ')[0])) }} HP <br />
-      ~$ {{ tidyNumber(((hivePrice * (parseFloat(hbdStabilizer.balance.split(' ')[0]) + vestToHive(parseFloat(hbdStabilizer.vesting_shares.split(' ')[0])))) + parseFloat(hbdStabilizer.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      <div class="text-subtitle"><animInt :value="hbdStabilizer.balance.split(' ')[0]" class="q-mr-sm" /> <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      <animInt :value="hbdStabilizer.hbd_balance.split(' ')[0]" class="q-mr-sm" /><q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      <animInt :value="vestToHive(parseFloat(hbdStabilizer.vesting_shares.split(' ')[0]))" /> HP <br />
+      ~$ <animInt :value="((hivePrice * parseFloat(hbdStabilizer.balance.split(' ')[0])) + parseFloat(hbdStabilizer.hbd_balance.split(' ')[0])).toFixed(2)" /></div>
       <div v-if="parseInt(hbdStabilizer.vesting_withdraw_rate.split(' ')[0]) !== 0">
           <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(hbdStabilizer.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
           <div class="text-caption color-grey">{{ timeDelta(hbdStabilizer.next_vesting_withdrawal) }}</div>
@@ -28,12 +28,12 @@
       </q-card>
       <q-card class="col" flat bordered v-if="hbdFunder">
       <div class="text-h6"><q-icon name="account_balance_wallet" color="blue-grey" />&nbsp; <router-link to="@hbd.funder">hbd.funder</router-link></div>
-      <div class="text-subtitle">{{ tidyNumber(hbdFunder.balance.split(' ')[0]) }} <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
-      {{ tidyNumber(hbdFunder.hbd_balance.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" /><br />
-      {{ vestToHive(parseFloat(hbdFunder.vesting_shares.split(' ')[0])) }} HP <br />
-      ~$ {{ tidyNumber(((hivePrice * (parseFloat(hbdFunder.balance.split(' ')[0]) + vestToHive(parseFloat(hbdFunder.vesting_shares.split(' ')[0])))) + parseFloat(hbdFunder.hbd_balance.split(' ')[0])).toFixed(2)) }}</div>
+      <div class="text-subtitle"><animInt :value="hbdFunder.balance.split(' ')[0]" class="q-mr-sm" /> <q-icon name="img:statics/hive.svg" title="HIVE" /><br />
+      <animInt :value="hbdFunder.hbd_balance.split(' ')[0]" class="q-mr-sm" /><q-icon name="img:statics/hbd.svg" title="HBD" /><br />
+      <animInt :value="vestToHive(parseFloat(hbdFunder.vesting_shares.split(' ')[0]))" /> HP <br />
+      ~$ <animInt :value="((hivePrice * parseFloat(hbdFunder.balance.split(' ')[0])) + parseFloat(hbdFunder.hbd_balance.split(' ')[0])).toFixed(2)" /></div>
       <div v-if="parseInt(hbdFunder.vesting_withdraw_rate.split(' ')[0]) !== 0">
-          <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(hbdFunder.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
+          <div>Unstaking: {{ tidyNumber(vestToHive(parseInt(hbdFunder.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
           <div class="text-caption color-grey">{{ timeDelta(hbdFunder.next_vesting_withdrawal) }}</div>
       </div>
       </q-card>
@@ -78,6 +78,8 @@ a:visited { color: #1d8ce0; }
 <script>
 import { debounce } from 'quasar'
 import moment from 'moment'
+import animInt from 'components/animInt.vue'
+import { mixin as VueTimers } from 'vue-timers'
 import accountOperations from 'components/accountOperations.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
@@ -108,7 +110,11 @@ export default {
       proposals: []
     }
   },
-  components: { accountOperations },
+  components: { accountOperations, animInt },
+  mixins: [VueTimers],
+  timers: {
+    refresh: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
+  },
   computed: {
     globalProps: {
       get () {
@@ -183,6 +189,11 @@ export default {
     returnPostLink (author, permlink) {
       return '@' + author + '/' + permlink
     },
+    refresh () {
+      this.getAccounts()
+      this.getOpenOrders()
+      this.getHiveWalletTransactions()
+    },
     async getHiveWalletTransactions () {
       await this.$hive.api.callAsync(
         'call',
@@ -214,10 +225,7 @@ export default {
   },
   mounted () {
     document.title = 'HBDStabilizer Monitor'
-    this.getAccounts()
     this.getMedianPrice()
-    this.getOpenOrders()
-    this.getHiveWalletTransactions()
     this.findProposals([158, 159, 166, 169, 191, 213])
   },
   created () {
