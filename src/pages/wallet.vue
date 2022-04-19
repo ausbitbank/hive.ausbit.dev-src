@@ -1220,7 +1220,7 @@ export default {
       this.getOpenOrders()
     },
     refresh () {
-      this.getAccount(this.username)
+      this.$store.dispatch('hive/getAccount', this.username)
     },
     initHiveEngine () {
       this.getHiveEngineBalances(this.username)
