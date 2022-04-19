@@ -48,7 +48,7 @@
                 </q-item-section>
                 <q-item-section>
                   <div>Posted by <router-link :to="linkAccount(author)">{{ author }}</router-link></div>
-                  <div v-if="postMeta.author && (postMeta.author !== author) ">Authored by <router-link :to="linkAccount(postMeta.author)">{{ postMeta.author }}</router-link></div>
+                  <div v-if="postMeta.author && (postMeta.author.toLowerCase() !== author.toLowerCase()) ">Authored by <router-link :to="linkAccount(postMeta.author)">{{ postMeta.author }}</router-link></div>
                 </q-item-section>
               </q-item>
               <q-item v-if="postDescription">
