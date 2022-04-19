@@ -1,12 +1,8 @@
 <template>
 <div>
-<q-card bordered dense class="q-ml-md q-pa-none text-center">
-<q-card-section>
+<q-card bordered dense class="q-ml-md q-ma-sm q-pa-none text-center">
+  <div class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market</div>
 <q-list separator dense class="q-pa-none q-ma-none">
-    <q-item-label header class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market
-      <q-btn flat round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" v-if="false" />
-      <q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
-    </q-item-label>
     <q-card flat class="q-mb-sm">
       <div class="text-subtitle" title="Lowest Ask">
         <q-icon name="arrow_upward" color="green" class="q-pr-sm" /><animInt :value="parseFloat(internalMarket.ticker.lowest_ask).toFixed(6)" />
@@ -47,6 +43,7 @@
       <sparklineBar :data="internalMarket.trades.map(trade => getTradeLine(trade).volume).reverse()" :limit="internalMarket.trades.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
       <sparklineCurve :data="internalMarket.trades.map(trade => getTradeLine(trade).price).reverse()" :limit="internalMarket.trades.length.length" :styles="{ stroke: 'white', fill: 'white' }" refLineType=false :refLineStyles="{}" :tooltipProps='tooltipProps1'/>
     </sparkline>
+    <q-skeleton rect width="260" height="100" v-else />
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
       <q-item dense v-for="amt in [10000, 5000, 1000, 100]" :key="amt.index">
         <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
@@ -56,6 +53,7 @@
       <sparklineCurve :data="internalMarket.asks.map(ask => parseFloat(ask.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" />
       <sparklineCurve :data="internalMarket.asks.map(ask => parseFloat(ask.hbdDepth).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'red', fill: 'red' }" :refLineType=false :refLineStyles="{}" />
     </sparkline>
+    <q-skeleton rect width="260" height="100" v-else />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
     <q-item dense v-for="amt in [100, 1000, 5000, 10000]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
@@ -65,13 +63,12 @@
       <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" />
       <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.hbdDepth).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'green', fill: 'green' }" :refLineType=false :refLineStyles="{}" />
     </sparkline>
+    <q-skeleton rect width="260" height="100" v-else />
   </q-list>
-</q-card-section>
 <q-card-section v-if="!loggedInUser" class="text-bold">
   <q-icon name="info" color="primary" /> Login to trade on the internal market
 </q-card-section>
-</q-card>
-<q-card bordered dense class="q-ml-md q-pa-none text-center" v-if="loggedInUser">
+<q-expansion-item v-if="loggedInUser" dense expand-separator label="Trade" icon="store" header-class="text-orange" default-opened>
   <q-tabs v-model="tab" dense align="justify" narrow-indicator indicator-color="primary">
     <q-tab name="buy" label="Buy" class="text-green" />
     <q-tab name="sell" label="Sell" class="text-red" />
@@ -127,6 +124,7 @@
       </div>
     </q-tab-panel>
   </q-tab-panels>
+</q-expansion-item>
 </q-card>
 </div>
 </template>
