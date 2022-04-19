@@ -1,6 +1,6 @@
 <template>
     <div class="col-12 text-center full-width" :style='coverImageStyle' v-if="account !== undefined && globalProps !== undefined">
-        <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances">
+        <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances && account !== undefined">
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
