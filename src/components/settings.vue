@@ -32,26 +32,26 @@
           </q-item-label>
           <div v-for="bene in beneficiaries" :key="bene.index">
             {{ bene.weight / 100 }} % to {{ bene.account }}
-            <q-btn title="Edit" icon="edit" color="orange" dense>
+            <q-btn title="Edit" icon="edit" color="orange" dense flat>
               <q-popup-proxy>
                 <q-card class="q-pa-md">
                 {{ bene.account }} : <q-input label="Weight (0-10000)" v-model.number="bene.weight" />
-                <q-btn icon="save" color="primary" dense @click="editBene(bene.account, bene.weight)" v-close-popup />
+                <q-btn icon="save" color="primary" dense flat @click="editBene(bene.account, bene.weight)" v-close-popup />
                 </q-card>
               </q-popup-proxy>
             </q-btn>
-            <q-btn title="Remove" icon="delete" color="red" dense @click="removeBene(bene.account)"/>
+            <q-btn title="Remove" icon="delete" color="red" dense flat @click="removeBene(bene.account)"/>
+            <q-btn color="green" icon="person_add" dense flat>
+              <q-popup-proxy>
+                <q-card class="q-pa-md" flat bordered>
+                  Add new beneficiary<br />
+                  <q-input v-model="newBeneAccount" label="Account" />
+                  <q-input v-model.number="newBeneWeight" label="Weight (0-10000)" />
+                  <q-btn icon="save" color="primary" dense flat @click="addBene(newBeneAccount, newBeneWeight)" />
+                </q-card>
+              </q-popup-proxy>
+            </q-btn>
           </div>
-          <q-btn color="green" icon="person_add" dense>
-            <q-popup-proxy>
-              <q-card class="q-pa-md">
-                Add new beneficiary<br />
-                <q-input v-model="newBeneAccount" label="Account" />
-                <q-input v-model.number="newBeneWeight" label="Weight (0-10000)" />
-                <q-btn icon="save" color="primary" dense @click="addBene(newBeneAccount, newBeneWeight)" />
-              </q-card>
-            </q-popup-proxy>
-          </q-btn>
         </q-item>
         <q-item>
           <q-item-label header>
@@ -72,7 +72,7 @@
           <q-input label='Hive-Engine Api Node' v-model="heApiNode" />
         </q-item>
         <q-item>
-            <q-btn label="Save Settings" color="primary" rounded push @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
+            <q-btn label="Save" color="primary" flat icon="save" @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
         </q-item>
       </q-list>
   </q-card>
