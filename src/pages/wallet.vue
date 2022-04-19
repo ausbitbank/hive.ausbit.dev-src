@@ -24,7 +24,7 @@
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                {{ tidyNumber(account.balance.split(' ')[0]) }}
+                                  <animInt :value="account.balance.split(' ')[0]" />
                                 </q-item-label>
                                 <q-item-label caption>
                                   Liquid
@@ -32,7 +32,7 @@
                             </q-item-section>
                             <q-item-section>
                               <q-item-label>
-                                {{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}
+                                <animInt :value="vestToHive(parseInt(account.vesting_shares.split(' ')[0]))" />
                               </q-item-label>
                               <q-item-label caption>
                                 Staked<br />
@@ -41,7 +41,7 @@
                             </q-item-section>
                             <q-item-section v-if="account.savings_balance !== '0.000 HIVE'">
                               <q-item-label>
-                                {{ tidyNumber(account.savings_balance.split(' ')[0]) }}
+                                <animInt :value="account.savings_balance.split(' ')[0]" />
                               </q-item-label>
                               <q-item-label caption>
                                 Savings
@@ -49,7 +49,7 @@
                             </q-item-section>
                             <q-item-section class="gt-xs">
                               <q-item-label>
-                                {{ tidyNumber(((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)) }}
+                                <animInt :value="((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)" />
                               </q-item-label>
                               <q-item-label caption v-if="hivePriceUsdChange !== null">
                                 <q-icon name="arrow_upward" color="green" v-if="hivePriceUsdChange > 0" />
@@ -129,7 +129,7 @@
                             </q-item-section>
                             <q-item-section>
                                 <q-item-label class="text-weight-medium">
-                                  {{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD
+                                  <animInt :value="account.hbd_balance.split(' ')[0]" /> HBD
                                 </q-item-label>
                                 <q-item-label caption>
                                   Liquid
@@ -137,7 +137,7 @@
                             </q-item-section>
                             <q-item-section>
                               <q-item-label>
-                                {{ tidyNumber(account.savings_hbd_balance.split(' ')[0]) }}
+                                <animInt :value="account.savings_hbd_balance.split(' ')[0]" />
                               </q-item-label>
                               <q-item-label caption>
                                 Savings<br />
@@ -148,12 +148,12 @@
                             </q-item-section>
                             <q-item-section class="gt-xs">
                               <q-item-label>
-                                $ {{ tidyNumber(((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2))}}
+                                $ <animInt :value="((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2)" />
                               </q-item-label>
                               <q-item-label caption v-if="hbdPriceUsdChange !== null">
                                 <q-icon name="arrow_upward" color="green" v-if="hbdPriceUsdChange > 0" />
                                 <q-icon name="arrow_downward" color="red" v-else />
-                                {{ hbdPriceUsdChange.toFixed(2) }} %
+                                <animInt :value="hbdPriceUsdChange.toFixed(2)" /> %
                               </q-item-label>
                               <q-item-label caption>
                                 Value (USD)
@@ -863,6 +863,7 @@ const hiveEngine = new SSC(heApiNode)
 import { debounce, openURL } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import moment from 'moment'
+import { mixin as VueTimers } from 'vue-timers'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
@@ -943,6 +944,10 @@ export default {
       // showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'fill_vesting_withdraw', 'interest', 'liquidity_reward', 'transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
     }
   },
+  mixins: [VueTimers],
+  timers: {
+    refresh: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
+  },
   components: {
     delegationDialog: () => import('components/delegationDialog.vue'),
     accountHeader: () => import('components/accountHeader.vue'),
@@ -954,7 +959,8 @@ export default {
     convertRequests: () => import('components/convertRequests.vue'),
     claimRewards: () => import('components/claimRewards.vue'),
     delegations: () => import('components/delegations.vue'),
-    savingsWithdrawalsInProgress: () => import('components/savingsWithdrawalsInProgress.vue')
+    savingsWithdrawalsInProgress: () => import('components/savingsWithdrawalsInProgress.vue'),
+    animInt: () => import('components/animInt.vue')
   },
   computed: {
     globalProps: function () { return this.$store.state.hive.globalProps },
@@ -1212,6 +1218,9 @@ export default {
       this.getPricesCoingecko()
       this.initHiveEngine()
       this.getOpenOrders()
+    },
+    refresh () {
+      this.getAccount(this.username)
     },
     initHiveEngine () {
       this.getHiveEngineBalances(this.username)
