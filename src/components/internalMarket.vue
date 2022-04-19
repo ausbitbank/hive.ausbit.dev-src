@@ -3,7 +3,7 @@
 <q-card bordered dense class="q-ml-md q-pa-none text-center">
 <q-card-section>
 <q-list separator dense class="q-pa-none q-ma-none">
-    <q-item-label class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market
+    <q-item-label header class="text-h5"><q-icon name="img:statics/hive.svg" title="Hive" /> Internal Market
       <q-btn flat round @click="refreshMarket()" icon="refresh" color="primary" style="margin: auto" v-if="false" />
       <q-btn flat glossy round type="a" to="/market" v-if="this.$route.path !== '/market'" icon="link" style="margin: auto" />
     </q-item-label>
@@ -12,65 +12,64 @@
         <q-item-section>
           {{ index.replace('_',' ') }}
         </q-item-section>
-        <q-item-section v-if="['latest', 'lowest_ask', 'highest_bid', 'percent_change'].includes(index)"><b>{{ parseFloat(stat).toFixed(3) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="['latest', 'lowest_ask', 'highest_bid'].includes(index)" /><span v-if="index === 'percent_change'">%</span></b></q-item-section>
-        <q-item-section v-else><b>{{ tidyNumber(stat.split(' ')[0]) }} <q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
+        <q-item-section v-if="['latest', 'lowest_ask', 'highest_bid', 'percent_change'].includes(index)"><b><animInt :value="(parseFloat(stat).toFixed(3))" /><q-icon name="img:statics/hbd.svg" title="HBD" v-if="['latest', 'lowest_ask', 'highest_bid'].includes(index)" /><span v-if="index === 'percent_change'">%</span></b></q-item-section>
+        <q-item-section v-else><b><animInt :value="parseFloat(stat.split(' ')[0])" /><q-icon name="img:statics/hbd.svg" title="HBD" v-if="stat.split(' ')[1] === 'HBD'"/><q-icon name="img:statics/hive.svg" title="HIVE" v-if="stat.split(' ')[1] === 'HIVE'"/></b></q-item-section>
       </q-item>
       <q-item dense v-if="hiveUsd" title="Hive external market prices from coingecko api">
         <q-item-section>
           hive usd
         </q-item-section>
-        <q-item-section>
-          $ {{ hiveUsd }}
+        <q-item-section class="text-bold">
+          <animInt :value="hiveUsd" />
         </q-item-section>
       </q-item>
       <q-item dense v-if="hbdUsd" title="HBD external market prices from coingecko api">
         <q-item-section>
           hbd usd
         </q-item-section>
-        <q-item-section>
-          $ {{ hbdUsd }}
+        <q-item-section class="text-bold">
+          <animInt :value="hbdUsd" />
         </q-item-section>
       </q-item>
     </q-expansion-item>
+      <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
+        <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
+          <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
+            <q-item-section v-if="getTradeLine(trade).action === 'buy'">
+                <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sell</span> @ <b>{{ getTradeLine(trade).price }}</b> {{ trade.volume }}</div>
+            </q-item-section>
+            <q-item-section v-else>
+                <div>{{ getTradeLine(trade).taker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-green"> buy</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
+            </q-item-section>
+            <q-item-section side>
+                <span class="text-caption text-grey"> {{ timeDelta(trade.date) }}</span>
+            </q-item-section>
+          </q-item>
+        </q-scroll-area>
+      </q-expansion-item>
+    <sparkline width="260" height="100" v-if="sparkline && internalMarket.trades.length > 0">
+      <sparklineBar :data="internalMarket.trades.map(trade => getTradeLine(trade).volume)" :limit="internalMarket.trades.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
+      <sparklineCurve :data="sparkline" :limit="sparkline.length" :styles="{ stroke: 'white', fill: 'white' }" refLineType=false :refLineStyles="{}" />
+    </sparkline>
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
-    <q-item dense v-for="amt in [15000, 10000, 5000, 1000, 100, 10]" :key="amt.index">
-    <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
-    </q-item>
+      <q-item dense v-for="amt in [10000, 5000, 1000, 100]" :key="amt.index">
+        <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
+      </q-item>
     </q-expansion-item>
-    <sparkline width="250" height="60" v-if="sparkline && internalMarket.asks.length > 0">
-      <sparklineCurve :data="internalMarket.asks.map(ask => parseFloat(ask.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'green', fill: 'green' }" :refLineType=false :refLineStyles="{}" />
+    <sparkline width="260" height="100" v-if="sparkline && internalMarket.asks.length > 0">
+      <sparklineCurve :data="internalMarket.asks.map(ask => parseFloat(ask.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" />
       <sparklineCurve :data="internalMarket.asks.map(ask => parseFloat(ask.hbdDepth).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'red', fill: 'red' }" :refLineType=false :refLineStyles="{}" />
     </sparkline>
-    <q-separator />
     <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [10, 100, 1000, 5000, 10000, 15000]" :key="amt.index">
+    <q-item dense v-for="amt in [100, 1000, 5000, 10000]" :key="amt.index">
     <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:statics/hbd.svg" title="HBD" /> of <q-icon name="img:statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
     </q-item>
     </q-expansion-item>
-    <sparkline width="250" height="60" v-if="sparkline && internalMarket.bids.length > 0">
-      <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'green', fill: 'green' }" :refLineType=false :refLineStyles="{}" />
-      <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.hbdDepth).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'red', fill: 'red' }" :refLineType=false :refLineStyles="{}" />
+    <sparkline width="260" height="100" v-if="sparkline && internalMarket.bids.length > 0">
+      <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.real_price).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" />
+      <sparklineCurve :data="internalMarket.bids.map(bid => parseFloat(bid.hbdDepth).toFixed(3))" :limit="internalMarket.bids.length" :styles="{ stroke: 'green', fill: 'green' }" :refLineType=false :refLineStyles="{}" />
     </sparkline>
-    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
-      <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
-      <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
-      <q-item-section v-if="getTradeLine(trade).action === 'buy'">
-          <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sell</span> @ <b>{{ getTradeLine(trade).price }}</b> {{ trade.volume }}</div>
-      </q-item-section>
-      <q-item-section v-else>
-          <div>{{ getTradeLine(trade).taker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-green"> buy</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
-      </q-item-section>
-      <q-item-section side>
-          <span class="text-caption text-grey"> {{ timeDelta(trade.date) }}</span>
-      </q-item-section>
-      </q-item>
-      </q-scroll-area>
-    </q-expansion-item>
-    <sparkline width="250" height="60" v-if="sparkline && internalMarket.trades.length > 0">
-      <sparklineBar :data="internalMarket.trades.map(trade => getTradeLine(trade).volume)" :limit="internalMarket.trades.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
-      <sparklineCurve :data="sparkline" :limit="sparkline.length" :styles="{ stroke: 'green', fill: 'green' }" refLineType=false :refLineStyles="{}" />
-    </sparkline>
-</q-list>
+  </q-list>
 </q-card-section>
 <q-card-section v-if="!loggedInUser" class="text-bold">
   <q-icon name="info" color="primary" /> Login to trade on the internal market
@@ -90,8 +89,8 @@
         <q-input v-model="buyAmount" label="Amount HIVE" @input="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
         <q-input v-model="buyTotal" label="Total HBD ($)" @input="buyAmount = (buyTotal / buyPrice).toFixed(3)" />
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat :label="tidyNumber(balanceHbd)" @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)" /> HBD</div>
-        <div>Lowest Ask:<q-btn flat :label="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"/></div>
+        <div>Available:<q-btn flat @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)"><animInt :value="balanceHbd" />&nbsp;<q-icon name="img:statics/hbd.svg" title="HBD" /></q-btn></div>
+        <div>Lowest Ask:<q-btn flat @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"><animInt :value="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" /></q-btn></div>
         <q-btn glossy flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(parseFloat(buyTotal).toFixed(3) + ' HBD', parseFloat(buyAmount).toFixed(3) + ' HIVE')" />
       </q-form>
     </q-tab-panel>
@@ -101,8 +100,8 @@
         <q-input v-model="sellAmount" label="Amount HIVE" @input="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
         <q-input v-model="sellTotal" label="Total HBD ($)" @input="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
         <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat :label="tidyNumber(balanceHive)" @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)" /> HIVE</div>
-        <div>Highest Bid:<q-btn flat :label="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)"/></div>
+        <div>Available:<q-btn flat @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)"><animInt :value="balanceHive" />&nbsp;<q-icon name="img:statics/hive.svg" title="Hive" /></q-btn></div>
+        <div>Highest Bid:<q-btn flat @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)" ><animInt :value="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" /></q-btn></div>
         <q-btn glossy flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(parseFloat(sellAmount).toFixed(3) + ' HIVE', parseFloat(sellTotal).toFixed(3) + ' HBD')" />
       </q-form>
     </q-tab-panel>
@@ -117,7 +116,8 @@
                 for
                 {{ tidyNumber(parseFloat(order.sell_price.quote.split(' ')[0])) }}
                 <q-icon :name="order.sell_price.quote.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" /><br />
-                ({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})
+                <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
+                <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
               </q-item-label>
               <q-item-label>
                 <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat title="Cancel order" />
@@ -138,6 +138,7 @@
 import moment from 'moment'
 import { mixin as VueTimers } from 'vue-timers'
 import sparkline from 'vue-sparklines'
+import animInt from 'components/animInt.vue'
 export default {
   name: 'internalMarket',
   data () {
@@ -175,9 +176,7 @@ export default {
     }
   },
   computed: {
-    loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
-    },
+    loggedInUser: { get () { return this.$store.state.hive.user.username } },
     account: {
       cache: false,
       get () {
@@ -232,7 +231,7 @@ export default {
     }
   },
   mixins: [VueTimers],
-  components: { sparkline },
+  components: { sparkline, animInt },
   timers: {
     refreshMarket: { time: 15000, autostart: true, repeat: true, immediate: true, isSwitchTab: false },
     refreshMarketExternal: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
