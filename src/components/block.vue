@@ -2,30 +2,36 @@
     <span>
     <q-card dense flat bordered style="max-width: 100%; max-width:400px; overflow-wrap: break-word" v-if="viewType === 'simple'">
         <q-card-section class="text-center q-pa-md">
-            <div class="text-h5">
-                <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" class="hvr"/></a>
-                <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
-                <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" class="hvr" /></a>
-            </div>
-            <span v-if="this.blockHeader" style="text-caption text-center">
-              Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
-              <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-              <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ blockOpsRealCount }}</q-badge> transaction<span v-if="blockOpsRealCount >= 2">s</span></div>
-              <span v-for="op in this.blockOpsReal" :key="op.index">
-                <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
-              </span>
-              <div><q-badge color="primary">{{ this.blockOpsVirtual.length }}</q-badge> virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
-              <span v-for="op in this.blockOpsVirtual" :key="op.index">
-                <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
-              </span>
+          <div class="text-h5">
+              <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" class="hvr"/></a>
+              <span>Block <router-link :to="returnBlockLink(this.blockNumber)"><animInt :value="this.blockNumber" /></router-link></span>
+              <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" class="hvr" /></a>
+          </div>
+          <span v-if="this.blockHeader" style="text-caption text-center">
+            Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
+            <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
+            <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ blockOpsRealCount }}</q-badge> transaction<span v-if="blockOpsRealCount >= 2">s</span></div>
+            <span v-for="op in this.blockOpsReal" :key="op.index">
+              <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
             </span>
-            <span v-else>
-              <q-skeleton type="rect" height="80px" />
+            <div><q-badge color="primary">{{ this.blockOpsVirtual.length }}</q-badge> virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
+            <span v-for="op in this.blockOpsVirtual" :key="op.index">
+              <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
             </span>
-            <div>
-              <q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" :title="viewType === 'simple' ? 'Expand to full block view':'Shrink to simple block view'"/>
-              <q-btn v-if="false" flat :title="liveRefresh ? 'Stop loading new blocks':'Load a new block every 3 seconds'" :icon="liveRefresh ? 'stop':'fast_forward'" :color="liveRefresh ? 'red':'blue'" @click="liveRefresh = !liveRefresh"/>
-            </div>
+          </span>
+          <q-item v-if="this.blockHeader === null" style="min-width: 300px;">
+            <q-item-section>
+              <q-skeleton type="text" />
+              <q-skeleton type="text" />
+              <q-skeleton type="text" />
+              <q-skeleton type="rect" height="50" />
+              <q-skeleton type="text" />
+            </q-item-section>
+          </q-item>
+          <div>
+            <q-btn flat color="primary" v-if="viewType !== 'full'" @click="viewType = 'full'" icon="unfold_more" :title="viewType === 'simple' ? 'Expand to full block view':'Shrink to simple block view'"/>
+            <q-btn v-if="false" flat :title="liveRefresh ? 'Stop loading new blocks':'Load a new block every 3 seconds'" :icon="liveRefresh ? 'stop':'fast_forward'" :color="liveRefresh ? 'red':'blue'" @click="liveRefresh = !liveRefresh"/>
+          </div>
         </q-card-section>
     </q-card>
     <q-card flat bordered style="max-width: 100%; max-width:1000px; overflow-wrap: break-word" v-if="viewType === 'full'">
@@ -224,6 +230,7 @@ a:visited { color: #3E92CC; }
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
 import { mixin as VueTimers } from 'vue-timers'
+import animInt from 'components/animInt.vue'
 export default {
   name: 'blockView',
   mixins: [VueTimers],
@@ -240,7 +247,8 @@ export default {
     }
   ],
   components: {
-    jsonViewer
+    jsonViewer,
+    animInt
   },
   props: {
     blockNum: Number,
