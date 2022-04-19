@@ -213,8 +213,9 @@
           <q-btn icon="refresh" color="primary" flat dense @click="getHiveEngineTradeHistory()"/>
         </div>
         <div class="text-center" v-if="sparkline.length > 3">
-          <sparkline width="250" height="60">
-              <sparklineCurve :data="sparkline" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" :limit="sparkline.length" refLineType='avg' />
+          <sparkline width="260" height="100">
+              <sparklineBar :data="th.map(t => t.volume)" :limit="th.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
+              <sparklineCurve :data="sparkline" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" :limit="sparkline.length" />
           </sparkline>
         </div>
         <q-list dense separator>
