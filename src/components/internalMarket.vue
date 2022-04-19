@@ -26,7 +26,7 @@
     </q-card>
     <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
       <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
-        <q-item dense v-for="trade in internalMarket.trades" :key="trade.index">
+        <q-item dense v-for="trade in [...internalMarket.trades].reverse()" :key="trade.index">
           <q-item-section v-if="getTradeLine(trade).action === 'buy'">
               <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:statics/hive.svg" title="Hive" /> <span class="text-red"> sell</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
           </q-item-section>
@@ -40,8 +40,8 @@
       </q-scroll-area>
     </q-expansion-item>
     <sparkline width="260" height="100" v-if="internalMarket.trades.length > 0">
-      <sparklineBar :data="internalMarket.trades.map(trade => getTradeLine(trade).volume).reverse()" :limit="internalMarket.trades.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
-      <sparklineCurve :data="internalMarket.trades.map(trade => getTradeLine(trade).price).reverse()" :limit="internalMarket.trades.length.length" :styles="{ stroke: 'white', fill: 'white' }" refLineType=false :refLineStyles="{}" :tooltipProps='tooltipProps1'/>
+      <sparklineBar :data="internalMarket.trades.map(trade => getTradeLine(trade).volume)" :limit="internalMarket.trades.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
+      <sparklineCurve :data="internalMarket.trades.map(trade => getTradeLine(trade).price)" :limit="internalMarket.trades.length" :styles="{ stroke: 'white', fill: 'white' }" refLineType=false :refLineStyles="{}" :tooltipProps='tooltipProps1'/>
     </sparkline>
     <q-skeleton rect width="260" height="100" v-else />
     <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
@@ -276,7 +276,7 @@ export default {
     getRecentTrades (limit) {
       this.$hive.api.getRecentTradesAsync(limit)
         .then(res => {
-          this.internalMarket.trades = res
+          this.internalMarket.trades = [...res].reverse()
         })
     },
     getOpenOrders () {
@@ -302,7 +302,7 @@ export default {
         b.hiveDepth = hiveDepth
         b.hbdDepth = hbdDepth
       })
-      this.internalMarket.asks = this.internalMarket.asks.reverse()
+      this.internalMarket.asks = [...this.internalMarket.asks].reverse()
       // console.log(this.internalMarket.bids)
     },
     getTicker () {
