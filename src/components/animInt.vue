@@ -8,7 +8,19 @@ export default {
   props: ['value'],
   components: {},
   watch: {
-    value () { gsap.to(this, { tweenValue: this.value, ease: 'elastic', onUpdate: () => { this.displayValue = this.tweenValue } }) }
+    value () {
+      gsap.to(this, {
+        tweenValue: this.value,
+        ease: 'elastic',
+        onUpdate: () => {
+          if (Number.isInteger(this.value)) {
+            this.displayValue = Math.ceil(this.tweenValue)
+          } else {
+            this.displayValue = this.tweenValue
+          }
+        }
+      })
+    }
   },
   methods: {
     tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } }
