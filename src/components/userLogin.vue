@@ -42,6 +42,10 @@
             <q-item-section avatar><q-icon name="swap_vertical_circle" color="orange" /></q-item-section>
             <q-item-section class="text-orange">Exchange</q-item-section>
           </q-item>
+          <q-item to="/market">
+            <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
+            <q-item-section class="text-orange">Market</q-item-section>
+          </q-item>
           <q-item to="/witness" v-if="account !== undefined && account.witness_votes.includes(loggedInUser)">
             <q-item-section avatar><q-icon name="admin_panel_settings" color="deep-orange-6" /></q-item-section>
             <q-item-section class="text-deep-orange-6">Witness</q-item-section>
@@ -72,10 +76,10 @@
           <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" />
         </q-item>
         <q-item dense v-if="username !== ''">
-          <q-btn-group rounded>
-          <q-btn rounded label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
-          <q-btn v-if="false" rounded label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
-          <q-btn rounded label="SmartLock" icon="lock">
+          <q-btn label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
+          <q-btn v-if="false" label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
+          <q-btn label="HAS" title="Hive Authentication Services" icon="img:statics/hive.svg" @click="loginType = 'HAS'; checkLoginHAS(username)" v-if="false"/>
+          <q-btn label="SmartLock" icon="lock">
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders">
                 <q-input v-model="username" label="Username" />
@@ -87,11 +91,11 @@
               </q-card>
             </q-popup-proxy>
           </q-btn>
-          </q-btn-group>
+          <HASWait v-if="HASWaitInfo.wait" :params="HASWaitInfo" />
         </q-item>
         <q-item>
           <q-item-section>
-            <q-btn icon="img:statics/member.png" flat  label="'Member ?" title="Save your username to the local browser storage for faster future logins" @click="rememberLogin = !rememberLogin">
+            <q-btn icon="img:statics/member.png" flat label="'Member ?" title="Save your username to the local browser storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
           </q-item-section>
@@ -132,10 +136,14 @@ import smartlock from 'components/smartlock/index.js'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
+import HASWait from 'components/HASWait.vue'
+import { HasClient } from 'hive-auth-client'
+const HAS = new HasClient('hive-auth.arcange.eu', '', true)
+import { PublicKey, Signature, hash } from '@hiveio/hive-js/lib/auth/ecc' // for HAS verification
 export default {
   name: 'userLogin',
   props: [],
-  components: { settings, userSearchBox },
+  components: { settings, userSearchBox, HASWait },
   data () {
     return {
       username: '',
@@ -146,7 +154,25 @@ export default {
       postkey: '',
       activekey: '',
       memokey: '',
-      password: ''
+      password: '',
+      HASMeta: {
+        name: 'hive.ausbit.dev',
+        description: 'A hive block explorer and toolkit - hive.ausbit.dev',
+        icon: 'https://hive.ausbit.dev/favicon.ico'
+      },
+      HASAuth: {
+        username: undefined,
+        token: undefined,
+        expire: undefined,
+        key: undefined
+      },
+      HASChallenge: undefined,
+      HASChallengeData: undefined,
+      HASWaitInfo: {
+        wait: false,
+        link: 'has://auth_req/',
+        timeout: 0 // ((this.HASAauth.expire - Date.now()) / 1000) | 0
+      }
     }
   },
   computed: {
@@ -212,7 +238,6 @@ export default {
       this.$q.localStorage.set('savedUsers', this.savedUsers)
     },
     checkLoginSmartLock (user) {
-      // smartlock.unlockAccount(user, password, keepUnlocked)
       if (smartlock.isAccountUnlocked(user)) {
         this.loggedInUser = user
         this.$q.sessionStorage.set('loggedInUser', user)
@@ -265,6 +290,33 @@ export default {
         }
       }
     },
+    checkLoginHAS (user) {
+      // console.log(HAS)
+      if (this.loggedInUser === user && this.HASAauth.token && this.HASAuth.expire > Date.now()) {
+        console.log('already logged in with HAS')
+        this.loginType = 'HAS'
+        this.loggedInUser = user
+      } else {
+        const HASAuth = {
+          username: user,
+          token: undefined,
+          expire: undefined,
+          key: undefined
+        }
+        var HASChallenge = JSON.stringify({ login: HASAuth.username, ts: Date.now() })
+        this.HASChallenge = HASChallenge
+        this.HASChallengeData = { key_type: 'posting', HASChallenge }
+        console.log(this.HASChallengeData)
+        this.HASWaitInfo.wait = true
+        console.log(JSON.stringify(this.HASAuth))
+        this.HASWaitInfo.link = `has://auth_req/${Buffer.from(JSON.stringify(this.HASAuth)).toString('base64')}`
+      }
+    },
+    verifyChallengeHAS (challenge, data) {
+      var sig = Signature.fromHex(data.challenge)
+      var buf = hash.sha256(challenge, null, 0)
+      return sig.verifyHash(buf, PublicKey.fromString(data.pubkey))
+    },
     linkBlog (username) { return '/@' + username + '/blog' },
     linkPosts (username) { return '/@' + username + '/posts' },
     linkComments (username) { return '/@' + username + '/comments' },
@@ -286,6 +338,43 @@ export default {
     if (this.$q.sessionStorage.getItem('loggedInUser')) {
       this.login(this.$q.sessionStorage.getItem('loggedInUser'))
     }
+    // console.log(HAS)
+    HAS.addEventHandler('AuthPending', (message) => {
+      const { account, expire, key, uuid } = message
+      const now = new Date().getTime()
+      if (now < expire) {
+        const authPayload = { uuid, account, key, host: 'wss://hive-auth.arcange.eu' }
+        this.HASAuth.key = key
+        var authUri = `has://auth_req/${btoa(JSON.stringify(authPayload))}`
+        console.log(authUri)
+        // display qr code
+      } else {
+        // handle expiry
+      }
+    })
+    HAS.addEventHandler('AuthSuccess', (message) => {
+      const { data, uuid, authData } = message
+      const { expire, token, challenge: challengeResponse } = data
+      console.log(uuid, expire, token)
+      this.$HAS_AUTH.token = authData.token
+      this.$HAS_AUTH.key = authData.key
+      this.$HAS_AUTH.expire = authData.expire
+      const verified = this.verifyChallengeHAS(this.HASChallenge, challengeResponse)
+      if (verified) {
+        console.log('success')
+      } else {
+        console.log('fail')
+      }
+    })
+    HAS.addEventHandler('AuthFailure', (message) => {
+    /* Handle failure */
+    })
+    HAS.addEventHandler('RequestExpired', (message) => {
+    /* Handle expiry */
+    })
+    HAS.addEventHandler('AttachFailure', (message) => {
+    /* Handle failure */
+    })
   }
 }
 </script>
