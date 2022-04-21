@@ -105,10 +105,10 @@
             <q-item-section>
               <q-item-label>
                 {{ tidyNumber(parseFloat(order.sell_price.base.split(' ')[0])) }}
-                <q-icon :name="order.sell_price.base.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" class="q-mr-sm"/>
+                <q-icon :name="order.sell_price.base.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" class="q-mr-xs"/>
                 for
                 {{ tidyNumber(parseFloat(order.sell_price.quote.split(' ')[0])) }}
-                <q-icon :name="order.sell_price.quote.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" class="q-mr-sm"/>
+                <q-icon :name="order.sell_price.quote.split(' ')[1] === 'HBD' ? 'img:statics/hbd.svg' : 'img:statics/hive.svg'" class="q-mr-xs"/>
                 <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
                 <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
                 <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat title="Cancel order" />
@@ -125,12 +125,17 @@
     </q-tab-panel>
   </q-tab-panels>
 </q-expansion-item>
-<q-expansion-item dense expand-separator label="Info" icon="info" header-class="text-blue" default-opened>
+<q-expansion-item dense expand-separator label="Info" icon="info" header-class="text-blue" default-closed>
   <div style="max-width: 260px" class="text-center">
     <p>The Hive internal market is a native decentralized exchange with no fees, no KYC and no intermediaries.</p>
     <p>The order books often look thin, but hive users are able to fill large orders by arbitraging external exchanges if you're willing to trade 1-2% above/below market price.</p>
     <p>The <router-link to="/hbdstabilizer">hbdstabilizer</router-link> project is also able to supply ~150k HBD liquidity per day.</p>
     <p>The original internal market interface can be found at <a href="https://wallet.hive.blog/market" target="_blank">wallet.hive.blog/market</a></p>
+    <p>See also:
+      <router-link v-if="this.$route.path !== '/markets'" to="/markets">/markets</router-link>
+      <router-link v-else-if="this.$route.path !== '/market'" to="/market">/market</router-link>
+      ,<router-link to="/exchange">/exchange</router-link>
+    </p>
     <!-- <p><q-input label="Internal refresh in seconds" v-model="timerInternal"><q-btn title="update" color="blue" icon="refresh" dense flat @click="timers.refreshMarket.time = timerInternal * 1000" /></q-input></p>
     <p><q-input label="External refresh in seconds" v-model="timerExternal"><q-btn title="update" color="blue" icon="refresh" dense flat @click="timers.refreshMarketExternal.time = timerExternal * 1000" /></q-input></p> -->
   </div>
