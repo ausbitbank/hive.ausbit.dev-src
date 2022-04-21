@@ -46,7 +46,8 @@ export default {
   data () {
     return {
       timerStart: 600,
-      timerEnabled: true
+      timerEnabled: true,
+      pastQueue: []
     }
   },
   components: { jsonViewer },
@@ -63,6 +64,8 @@ export default {
     },
     successfullBroadcast (action, notify = true) {
       this.$store.commit('hive/removeFromQueue', action)
+      this.pastQueue.push(action)
+      console.log(this.pastQueue)
       if (notify) {
         this.$q.notify({
           message: 'Sent ' + action[2][0],
@@ -76,7 +79,7 @@ export default {
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
       if (['claim_reward_balance', 'account_update', 'account_update2', 'withdraw_vesting'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].account) }
       if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].from) }
-      if (['convert', 'collateralized_convert'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].owner) }
+      if (['convert', 'collateralized_convert', 'limit_order_cancel', 'limit_order_create'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].owner) }
     },
     broadcastNext () { if (this.queue.length > 0) { this.broadcast(this.queue[0]) } },
     broadcast (action) {
