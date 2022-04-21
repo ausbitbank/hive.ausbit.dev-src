@@ -214,7 +214,9 @@
                           <q-item-section>
                           <div class="text-bold">Open orders on the <router-link to="/market">internal market</router-link></div>
                           <div v-for="order in hiveInternalMarketOrders" :key="order.index">
-                            {{ tidyNumber(order.sell_price.base.split(' ')[0]) }} {{ order.sell_price.base.split(' ')[1] }} for {{ tidyNumber(order.sell_price.quote.split(' ')[0]) }} {{ order.sell_price.quote.split(' ')[1] }} ({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(2) }})
+                            {{ tidyNumber(order.sell_price.base.split(' ')[0]) }} {{ order.sell_price.base.split(' ')[1] }} for {{ tidyNumber(order.sell_price.quote.split(' ')[0]) }} {{ order.sell_price.quote.split(' ')[1] }}
+                            <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
+                            <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
                             <q-btn dense flat icon="cancel" color="red" v-if="loggedInUser === username" @click="$store.commit('hive/addToQueue', [loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
                           </div>
                           </q-item-section>
