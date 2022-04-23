@@ -1,4 +1,5 @@
 <template>
+  <span>
   <q-btn flat dense round no-caps aria-label="Login" class="q-ml-md text-capitalize">
     <q-avatar>
       <q-img :src="userAvatar" v-if="loggedInUser !== '' && loggedInUser !== null" />
@@ -75,11 +76,24 @@
         <q-item>
           <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" />
         </q-item>
-        <q-item dense v-if="username !== ''">
-          <q-btn label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" v-if="!$q.platform.is.electron"/>
+        <q-item dense v-if="username !== '' && username !== null && !$q.platform.is.electron">
+          <q-btn flat label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" />
+        </q-item>
+        <q-item dense v-if="username !== '' && username !== null && (username === 'ausbitbank' || username === 'disregardfiat')">
           <q-btn v-if="false" label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
-          <q-btn label="HAS" title="Hive Authentication Services" icon="img:statics/hive.svg" @click="loginType = 'HAS'; checkLoginHAS(username)" v-if="false"/>
-          <q-btn label="SmartLock" icon="lock">
+          <q-btn flat label="HAS" title="Hive Authentication Services" icon="img:statics/hive.svg" @click="loginType = 'HAS'; hasLogin(username)">
+            <q-popup-proxy>
+              <q-card flat bordered>
+                <p v-if="has.qrcode_url !== null">
+                  Waiting for authorisation - scan this QR code
+                  <q-img width="100%" height="100%" :src="has.qrcode_url"/>
+                </p>
+              </q-card>
+            </q-popup-proxy>
+          </q-btn>
+        </q-item>
+        <q-item dense v-if="username !== '' && username !== null">
+          <q-btn flat label="SmartLock" icon="lock">
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders">
                 <q-input v-model="username" label="Username" />
@@ -91,9 +105,8 @@
               </q-card>
             </q-popup-proxy>
           </q-btn>
-          <HASWait v-if="HASWaitInfo.wait" :params="HASWaitInfo" />
         </q-item>
-        <q-item>
+        <q-item v-if="username !== '' && username !== null">
           <q-item-section>
             <q-btn icon="img:statics/member.png" flat label="'Member ?" title="Save your username to the local browser storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
@@ -125,6 +138,8 @@
       <settings />
     </q-dialog>
   </q-btn>
+  <has />
+  </span>
 </template>
 <style>
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
@@ -132,18 +147,17 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 // import { keychain, isKeychainInstalled, hasKeychainBeenUsed } from '@hiveio/keychain'
+import { uid } from 'quasar'
 import smartlock from 'components/smartlock/index.js'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
-import HASWait from 'components/HASWait.vue'
-import { HasClient } from 'hive-auth-client'
-const HAS = new HasClient('hive-auth.arcange.eu', '', true)
-import { PublicKey, Signature, hash } from '@hiveio/hive-js/lib/auth/ecc' // for HAS verification
+// import has from 'components/has.vue'
+var CryptoJS = require('crypto-js')
 export default {
   name: 'userLogin',
   props: [],
-  components: { settings, userSearchBox, HASWait },
+  components: { settings, userSearchBox },
   data () {
     return {
       username: '',
@@ -155,23 +169,23 @@ export default {
       activekey: '',
       memokey: '',
       password: '',
-      HASMeta: {
-        name: 'hive.ausbit.dev',
-        description: 'A hive block explorer and toolkit - hive.ausbit.dev',
-        icon: 'https://hive.ausbit.dev/favicon.ico'
-      },
-      HASAuth: {
-        username: undefined,
-        token: undefined,
-        expire: undefined,
-        key: undefined
-      },
-      HASChallenge: undefined,
-      HASChallengeData: undefined,
-      HASWaitInfo: {
-        wait: false,
-        link: 'has://auth_req/',
-        timeout: 0 // ((this.HASAauth.expire - Date.now()) / 1000) | 0
+      has: {
+        server: 'wss://hive-auth.arcange.eu',
+        appData: {
+          name: 'hive.ausbit.dev',
+          description: 'A Hive block explorer and toolkit',
+          icon: 'https://hive.ausbit.dev/statics/hive.svg'
+        },
+        appKey: '',
+        token: '',
+        expire: '',
+        authKey: '',
+        ws: null,
+        wsa: true,
+        ws_status: '',
+        wsconn: false,
+        qrcode_url: '',
+        uri: ''
       }
     }
   },
@@ -290,32 +304,108 @@ export default {
         }
       }
     },
-    checkLoginHAS (user) {
-      // console.log(HAS)
-      if (this.loggedInUser === user && this.HASAauth.token && this.HASAuth.expire > Date.now()) {
-        console.log('already logged in with HAS')
-        this.loginType = 'HAS'
-        this.loggedInUser = user
-      } else {
-        const HASAuth = {
-          username: user,
-          token: undefined,
-          expire: undefined,
-          key: undefined
-        }
-        var HASChallenge = JSON.stringify({ login: HASAuth.username, ts: Date.now() })
-        this.HASChallenge = HASChallenge
-        this.HASChallengeData = { key_type: 'posting', HASChallenge }
-        console.log(this.HASChallengeData)
-        this.HASWaitInfo.wait = true
-        console.log(JSON.stringify(this.HASAuth))
-        this.HASWaitInfo.link = `has://auth_req/${Buffer.from(JSON.stringify(this.HASAuth)).toString('base64')}`
+    hasLogin (username) {
+      const authData = {
+        app: {
+          name: 'hive.ausbit.dev',
+          description: 'A Hive block explorer and toolkit',
+          icon: 'https://hive.ausbit.dev/statics/hive.svg'
+        },
+        token: undefined,
+        challenge: undefined
       }
+      var authKey = uid()
+      var data = CryptoJS.AES.encrypt(JSON.stringify(authData), authKey).toString()
+      var payload = { cmd: 'auth_req', account: username, data: data }
+      if (this.has.ws) { this.has.ws.send(JSON.stringify(payload)) } else { this.hasSetup() }
     },
-    verifyChallengeHAS (challenge, data) {
-      var sig = Signature.fromHex(data.challenge)
-      var buf = hash.sha256(challenge, null, 0)
-      return sig.verifyHash(buf, PublicKey.fromString(data.pubkey))
+    hasSetup () {
+      if ('WebSocket' in window) {
+        this.has.ws = new WebSocket(this.has.server)
+        this.has.ws.onopen = function () {
+          console.info('ws open')
+          this.has.wsconn = true
+          const session = this.$q.localStorage.getItem(this.username + 'HAS')
+          const now = new Date().getTime()
+          console.info(session)
+          if (session && now < session.split(',')[1]) {
+            this.has.token = session.split(',')[0]
+            this.has.expire = session.split(',')[1]
+            this.has.authKey = session.split(',')[2]
+          } else if (session) {
+            this.$q.localStorage.removeItem(this.username + 'HAS')
+            this.hasLogin()
+          } else {
+            this.hasLogin()
+          }
+        }.bind(this)
+        this.has.ws.onmessage = function (event) {
+          console.log(event.data)
+          const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
+          if (message.cmd) {
+            switch (message.cmd) {
+              case 'auth_wait':
+                this.has.ws.status = 'waiting'
+                var json = JSON.stringify({
+                  account: this.username,
+                  uuid: message.uuid,
+                  key: this.has.authKey,
+                  host: this.has.server
+                })
+                this.has.uri = `has://auth_req/${btoa(json)}`
+                this.has.qrcode_url = 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=' + this.has.uri
+                setTimeout(
+                  function () {
+                    this.has.ws_status = 'login failed'
+                  }.bind(this),
+                  60000
+                )
+                break
+              case 'auth_ack':
+                this.has.ws_status = 'decrypting'
+                try {
+                  message.data = JSON.parse(
+                    CryptoJS.AES.decrypt(
+                      message.data,
+                      this.has.authKey
+                    ).toString(CryptoJS.enc.Utf8)
+                  )
+                  this.has.ws_status = ''
+                  this.has.token = message.data.token
+                  this.has.expire = message.data.expire
+                  this.$q.locaStorage.setItem(
+                    this.username + 'HAS',
+                    `${message.data.token},${message.data.expire},${this.has.authKey}`
+                  )
+                } catch (e) {
+                  this.has.ws_status = 'login failed'
+                  this.hasLogout()
+                }
+                break
+              case 'auth_nack':
+                this.has.ws_status = 'login failed'
+                this.hasLogout()
+                break
+              case 'sign_wait':
+                this.has.ws_status = `transaction ${message.uuid} is waiting for approval`
+                break
+              case 'sign_ack':
+                this.has.ws_status = `transaction ${message.uuid} is approved`
+                break
+              case 'sign_nack':
+                this.has.ws_status = `transaction ${message.uuid} is rejected`
+                break
+              case 'sign_err':
+                this.has.ws_status = `transaction ${message.uuid} failed with error: ${message.error}`
+                break
+            }
+          }
+        }.bind(this)
+        this.has.ws.onclose = function () {
+          this.has.wsa = false
+          this.has.ws_status = 'This browser does not support HAS (WebSocket)'
+        }
+      }
     },
     linkBlog (username) { return '/@' + username + '/blog' },
     linkPosts (username) { return '/@' + username + '/posts' },
@@ -335,46 +425,10 @@ export default {
     }
   },
   mounted () {
+    if ('WebSocket' in window) { this.has.wsa = true } else { this.has.wsa = false }
     if (this.$q.sessionStorage.getItem('loggedInUser')) {
       this.login(this.$q.sessionStorage.getItem('loggedInUser'))
     }
-    // console.log(HAS)
-    HAS.addEventHandler('AuthPending', (message) => {
-      const { account, expire, key, uuid } = message
-      const now = new Date().getTime()
-      if (now < expire) {
-        const authPayload = { uuid, account, key, host: 'wss://hive-auth.arcange.eu' }
-        this.HASAuth.key = key
-        var authUri = `has://auth_req/${btoa(JSON.stringify(authPayload))}`
-        console.log(authUri)
-        // display qr code
-      } else {
-        // handle expiry
-      }
-    })
-    HAS.addEventHandler('AuthSuccess', (message) => {
-      const { data, uuid, authData } = message
-      const { expire, token, challenge: challengeResponse } = data
-      console.log(uuid, expire, token)
-      this.$HAS_AUTH.token = authData.token
-      this.$HAS_AUTH.key = authData.key
-      this.$HAS_AUTH.expire = authData.expire
-      const verified = this.verifyChallengeHAS(this.HASChallenge, challengeResponse)
-      if (verified) {
-        console.log('success')
-      } else {
-        console.log('fail')
-      }
-    })
-    HAS.addEventHandler('AuthFailure', (message) => {
-    /* Handle failure */
-    })
-    HAS.addEventHandler('RequestExpired', (message) => {
-    /* Handle expiry */
-    })
-    HAS.addEventHandler('AttachFailure', (message) => {
-    /* Handle failure */
-    })
   }
 }
 </script>
