@@ -126,7 +126,7 @@
   </q-tab-panels>
 </q-expansion-item>
 <q-expansion-item dense expand-separator label="Info" icon="info" header-class="text-blue" default-closed>
-  <div style="max-width: 260px" class="text-center">
+  <div style="max-width: 250px" class="text-center">
     <p>The Hive internal market is a native decentralized exchange with no fees, no KYC and no intermediaries.</p>
     <p>The order books often look thin, but hive users are able to fill large orders by arbitraging external exchanges if you're willing to trade 1-2% above/below market price.</p>
     <p>The <router-link to="/hbdstabilizer">hbdstabilizer</router-link> project is also able to supply ~150k HBD liquidity per day.</p>
