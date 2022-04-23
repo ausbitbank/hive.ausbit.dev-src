@@ -227,7 +227,7 @@
                           </q-item-section>
                           <q-item-section>
                           Estimated pending interest of {{ pendingHbdInterest }} HBD<br />
-                          <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Last interest payout was {{ timeDelta(account.savings_hbd_last_interest_payment) }}</div>
+                          <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Next interest payout due {{ timeTillHbdInterestPayout(account.savings_hbd_last_interest_payment) }}</div>
                           </q-item-section>
                           <q-item-section v-if="pendingHbdClaim && loggedInUser === username">
                             <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" />
@@ -1208,6 +1208,12 @@ export default {
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)
+      var diff = stamp.diff(now, 'minutes')
+      return moment.duration(diff, 'minutes').humanize(true)
+    },
+    timeTillHbdInterestPayout (timestamp) {
+      var now = moment.utc()
+      var stamp = moment.utc(timestamp).add('30', 'days')
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
