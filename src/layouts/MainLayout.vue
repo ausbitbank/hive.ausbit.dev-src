@@ -193,6 +193,12 @@ export default {
           link: 'https://simpleswap.io/?ref=95c23a08220b'
         },
         {
+          title: 'Trade HIVE on SwapZone',
+          caption: 'SwapZone.io affiliate link',
+          icon: 'monetization_on',
+          link: 'https://swapzone.io/?refId=HQhLzavlXg'
+        },
+        {
           title: 'Trade HIVE on Mandala (NO KYC)',
           caption: 'Mandala.exchange affiliate link',
           icon: 'monetization_on',
