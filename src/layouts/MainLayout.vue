@@ -187,6 +187,12 @@ export default {
           link: 'https://bittrex.com/Account/Register?referralCode=PPA-HMA-3VD'
         },
         {
+          title: 'Trade HIVE on SimpleSwap',
+          caption: 'SimpleSwap.io affiliate link',
+          icon: 'monetization_on',
+          link: 'https://simpleswap.io/?ref=95c23a08220b'
+        },
+        {
           title: 'Trade HIVE on Mandala (NO KYC)',
           caption: 'Mandala.exchange affiliate link',
           icon: 'monetization_on',
