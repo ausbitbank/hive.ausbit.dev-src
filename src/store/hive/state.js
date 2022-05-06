@@ -1,4 +1,5 @@
 import { SessionStorage, LocalStorage } from 'quasar'
+import { v4 as uuidv4 } from 'uuid'
 export default function () {
   return {
     user: {
@@ -16,7 +17,7 @@ export default function () {
         voteWeightPost: 100,
         voteWeightComment: 100,
         beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
-        apiNode: 'https://rpc.ausbit.dev',
+        apiNode: 'https://api.hive.blog',
         ahNode: 'https://api.hive.blog',
         heApiNode: 'https://api.hive-engine.com/rpc'
       }
@@ -28,6 +29,20 @@ export default function () {
     communityInfo: {},
     globalProps: {
       empty: true
+    },
+    has: {
+      meta: {
+        name: 'hive.ausbit.dev',
+        description: 'A Hive block explorer and toolkit',
+        icon: 'https://hive.ausbit.dev/statics/hive.svg'
+      },
+      auth: {
+        username: '',
+        token: undefined,
+        expire: undefined,
+        key: undefined
+      },
+      uid: uuidv4()
     }
   }
 }
