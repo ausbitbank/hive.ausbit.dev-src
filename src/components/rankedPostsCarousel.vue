@@ -61,7 +61,7 @@ export default {
   data () {
     return {
       posts: [],
-      api: 'https://api.hive.blog',
+      api: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog',
       slide: null,
       autoplay: true,
       settings: false,
