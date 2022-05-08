@@ -61,7 +61,7 @@ export default {
   data () {
     return {
       posts: [],
-      api: 'https://rpc.ausbit.dev',
+      api: 'https://api.hive.blog',
       slide: null,
       autoplay: true,
       settings: false,
