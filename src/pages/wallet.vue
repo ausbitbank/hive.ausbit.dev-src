@@ -221,7 +221,7 @@
                           </div>
                           </q-item-section>
                         </q-item>
-                        <q-item v-if="account.savings_hbd_seconds > 0">
+                        <q-item v-if="pendingHbdInterest > 0.01">
                           <q-item-section avatar>
                             <q-icon name="trending_up" color="green" />
                           </q-item-section>
@@ -1015,16 +1015,13 @@ export default {
       } else { return null }
     },
     pendingHbdInterest: function () {
-      if (this.globalProps && this.account && this.account.savings_hbd_seconds > 0) {
+      if (this.globalProps && this.account) {
         var secondsInYear = 60 * 60 * 24 * 365
         var secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
-        console.info(secondsSinceUpdate)
         var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * parseFloat(secondsSinceUpdate)
         var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) / 1000 + parseFloat(pendingSeconds)
         var estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
-        // console.info(estimatedPayout)
-        estimatedPayout = estimatedPayout.toFixed(3)
-        return estimatedPayout
+        return estimatedPayout.toFixed(3)
       } else {
         return 0
       }
