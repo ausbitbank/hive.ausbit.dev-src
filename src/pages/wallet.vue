@@ -1020,10 +1020,10 @@ export default {
         var secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
         console.info(secondsSinceUpdate)
         var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * parseFloat(secondsSinceUpdate)
-        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) + parseFloat(pendingSeconds)
+        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) / 1000 + parseFloat(pendingSeconds)
         var estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
         // console.info(estimatedPayout)
-        estimatedPayout = (estimatedPayout / 1000).toFixed(3)
+        estimatedPayout = estimatedPayout.toFixed(3)
         return estimatedPayout
       } else {
         return 0
