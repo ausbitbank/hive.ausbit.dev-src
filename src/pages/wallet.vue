@@ -1200,7 +1200,8 @@ export default {
       }
     },
     claimHbdInterest () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_savings', { to: this.username, from: this.username, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.to, request_id: 69420, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
+      this.$store.commit('hive/addToQueue', [this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 69420 }]])
     },
     timeDelta (timestamp) {
       var now = moment.utc()
