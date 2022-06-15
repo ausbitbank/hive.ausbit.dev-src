@@ -17,7 +17,7 @@ export default function () {
         voteWeightPost: 100,
         voteWeightComment: 100,
         beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
-        apiNode: 'https://api.hive.blog',
+        apiNode: 'https://rpc.ausbit.dev',
         ahNode: 'https://api.hive.blog',
         heApiNode: 'https://api.hive-engine.com/rpc'
       }
