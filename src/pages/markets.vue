@@ -13,11 +13,11 @@ export default {
   data () {
     return {
       tvOptions: {
-        symbol: 'BINANCE:HIVEUSDT',
+        symbol: this.$route.params.ticker || 'BINANCE:HIVEUSDT',
         interval: '240',
         isTransparent: false,
         width: 1000,
-        height: 970,
+        height: 1000,
         autosize: false,
         showIntervalTabs: true,
         locale: 'en',
