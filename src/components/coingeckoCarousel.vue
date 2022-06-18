@@ -75,7 +75,7 @@ export default {
       sparklineStyle: { stroke: '#54a5ff', fill: '#aaaaaa' },
       spotStyle: { fill: '#54a5ff' },
       spotProps: { size: 2 },
-      sparklineEnabled: 'true',
+      sparklineEnabled: true,
       coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'link', 'litecoin', 'eos', 'monero', 'dash', 'cub-finance', 'wrapped-leo', 'uniswap', 'yearn.finance', 'dogecoin', 'steem', 'steem_dollar', 'tron'],
       currency: 'usd',
       sortOrder: 'market_cap_asc',
