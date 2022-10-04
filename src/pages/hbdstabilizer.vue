@@ -197,7 +197,7 @@ export default {
     async getHiveWalletTransactions () {
       await this.$hive.api.callAsync(
         'call',
-        ['database_api',
+        ['condenser_api',
           'get_account_history',
           ['hbdstabilizer',
             this.accountHistoryPointer,
