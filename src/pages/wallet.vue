@@ -1084,7 +1084,7 @@ export default {
       this.loading = true
       await this.$hive.api.callAsync(
         'call',
-        ['database_api',
+        ['condenser_api',
           'get_account_history',
           [this.username,
             this.accountHistoryPointer,
