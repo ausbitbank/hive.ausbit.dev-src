@@ -9,7 +9,7 @@
 
 <script>
 import steem from 'steem'
-steem.api.setOptions({ url: 'https://rpc.ausbit.dev' })
+steem.api.setOptions({ url: 'https://api.hive.blog' })
 export default {
   name: 'HiveQuery',
   data () {

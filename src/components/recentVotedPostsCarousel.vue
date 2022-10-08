@@ -63,7 +63,7 @@ export default {
     return {
       posts: [],
       showResteems: true,
-      api: 'https://rpc.ausbit.dev',
+      api: 'https://api.hive.blog',
       slide: null,
       autoplay: true,
       limit: 10,

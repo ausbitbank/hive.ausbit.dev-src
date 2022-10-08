@@ -80,7 +80,7 @@ export default {
       fullNodeUpdate: null,
       fullNodeUpdateTime: null,
       showVersion: this.$route.query.version || 'all',
-      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev'
+      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog'
     }
   },
   computed: {

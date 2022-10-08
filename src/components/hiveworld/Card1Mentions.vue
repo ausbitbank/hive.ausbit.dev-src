@@ -33,7 +33,7 @@ export default {
   props: ['username'],
   data () {
     return {
-      api: 'https://rpc.ausbit.dev',
+      api: 'https://api.hive.blog',
       notifications: null,
       loading: {
         notifications: false

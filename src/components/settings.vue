@@ -88,7 +88,7 @@ export default {
       beneficiaries: this.$store.state.hive.user.settings.beneficiary,
       newBeneAccount: '',
       newBeneWeight: 1000,
-      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev',
+      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog',
       heApiNode: this.$store.state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc',
       ahNode: this.$store.state.hive.user.settings.ahNode || 'https://api.hive.blog'
     }
