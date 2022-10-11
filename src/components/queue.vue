@@ -45,7 +45,7 @@ export default {
   name: 'queue',
   data () {
     return {
-      timerStart: 4000,
+      timerStart: 500,
       timerEnabled: true,
       pastQueue: []
     }

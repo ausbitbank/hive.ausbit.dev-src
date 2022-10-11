@@ -15,25 +15,25 @@
         This page helps track relevant info about HBD
       </q-card-section>
       <q-separator />
-      <q-card-section v-if="percentCap < 10">
+      <q-card-section v-if="percentCap < hbdCapRatio">
         <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
         <div class="text-subtitle">Redeem each HBD for $1 of HIVE at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
       </q-card-section>
-      <q-card-section v-if="percentCap > 10 && medianPrice !== null">
+      <q-card-section v-if="percentCap > hbdCapRatio && medianPrice !== null">
         <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
         <div>Formula for redemption price during a haircut :</div>
-        <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (10 x TOTAL ISSUED HBD)</code></div>
-        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / (10 x {{ globalProps.current_hbd_supply }})</code></div>
-        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (10 * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
+        <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (hbdCapRatio x TOTAL ISSUED HBD)</code></div>
+        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / ({{hbdCapRatio}} x {{ globalProps.current_hbd_supply }})</code></div>
+        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (hbdCapRatio * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section>
-        <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below 10% of HIVE marketcap</div>
+        <div class="text-h6"><q-icon name="price_change" color="grey" />&nbsp; HBD Marketcap must be below {{hbdCapRatio}}% of HIVE marketcap</div>
         <div class="text-subtitle2">(The Debt Limit)</div>
         <div v-if="hiveCap && hbdCap">
           <div>HBD Marketcap = <b>${{ tidyNumber(hbdCap) }}</b></div>
           <div>HIVE Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
-          <div><q-linear-progress stripe size="10px" :value="percentCap / 10" :color="percentColor" /></div>
+          <div><q-linear-progress stripe size="10px" :value="percentCap / hbdCapRatio" :color="percentColor" /></div>
           <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
           <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
           <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">${{ internalMarketLatest }}</q-badge></div>
@@ -93,7 +93,8 @@ export default {
     return {
       medianPrice: null,
       daoHbdBalance: 15476679, // hive.fund HBD balance as of Wed 18th April 2022 05:30:00 PM AEST
-      internalMarketLatest: null
+      internalMarketLatest: null,
+      hbdCapRatio: 30
     }
   },
   components: { coingecko },
@@ -104,9 +105,9 @@ export default {
       }
     },
     percentColor: function () {
-      if ((this.percentCap) >= 9) {
+      if ((this.percentCap) >= 25) {
         return 'red'
-      } else if ((this.percentCap) >= 8) {
+      } else if ((this.percentCap) >= 20) {
         return 'orange'
       } else {
         return 'green'
@@ -146,7 +147,9 @@ export default {
       return parseFloat((this.hbdCap / this.hiveCap) * 100).toFixed(3)
     },
     haircutPrice: function () {
-      return parseFloat((this.hbdCap * 10) / parseFloat(this.globalProps.virtual_supply.split(' ')[0])).toFixed(4)
+      // return parseFloat((this.hbdCap * 3) / parseFloat(this.globalProps.virtual_supply.split(' ')[0])).toFixed(4) // (hbd marketcap x 10) / hive supply
+      // return parseFloat((this.hbdCap) / (parseFloat(this.globalProps.virtual_supply.split(' ')[0])) * this.hbdCapRatio).toFixed(4) // (hbd marketcap x 10) / hive supply
+      return parseFloat((this.hbdCap * 10) / (3 * parseFloat(this.globalProps.virtual_supply.split(' ')[0]))).toFixed(4)
     }
   },
   methods: {
