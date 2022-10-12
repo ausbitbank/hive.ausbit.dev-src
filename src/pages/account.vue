@@ -434,7 +434,8 @@ export default {
         if (page === null || page === 1) { pageReq = -1 } // Get most recent activities on page 1
         console.log('page: ' + page + ' , accountOpsMarker: ' + this.accountOperationsMarker, ' pagReq: ' + pageReq + ' limit: ' + this.accountOperationsLimit)
         this.loading = true
-        await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask]])
+        // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask]])
+        await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask])
           .then(res => {
             this.accountHistoryPointer = parseInt(res[0][0]) - 1
             if (this.accountOperations.length === 0) { this.accountOperations = res.reverse() } else { this.accountOperations = this.accountOperations.concat(res.reverse()) }
@@ -473,11 +474,13 @@ export default {
         var filter = this.$route.query.filter.split(',')
         filter.forEach(element => this.filteredOperationsArray.push(op[element]))
         this.operationsBitmask = makeBitMaskFilter(this.filteredOperationsArray)
-        await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
+        // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
+        await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1000, ...this.operationsBitmask])
           .then(res => { this.accountOperationsMarker = res[0][0]; if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       } else {
-        await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1]])
+        // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1]])
+        await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1])
           .then(res => { if (res.length === 0) { this.errorMessage = 'Account ' + this.username + ' not found'; this.error = true } else { this.error = false; this.errorMessage = ''; this.accountOperationsMarker = res[0][0] } if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
           .catch(err => { console.error(err) })
       }
