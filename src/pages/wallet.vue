@@ -1082,17 +1082,7 @@ export default {
     tidyNumber (x) { if (x !== null && x !== undefined) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     async getHiveWalletTransactions (index, done) {
       this.loading = true
-      await this.$hive.api.callAsync(
-        'call',
-        ['condenser_api',
-          'get_account_history',
-          [this.username,
-            this.accountHistoryPointer,
-            this.accountHistoryLimit,
-            ...this.bitmask
-          ]
-        ]
-      )
+      await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, this.accountHistoryPointer, this.accountHistoryLimit, ...this.bitmask])
         .then(res => {
           this.accountHistoryPointer = parseInt(res[0][0]) - 1
           if (this.hiveTransactions.length === 0) {
