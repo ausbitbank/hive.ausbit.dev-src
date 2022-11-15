@@ -7,7 +7,7 @@
         <ranked-posts-carousel sortMethod="trending" style="width:400px" />
         <coingeckoCarousel />
       </div>
-        <nodes />
+        <!--<nodes />-->
         <witnesses />
     </div>
   </q-page>
@@ -18,7 +18,7 @@ a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import nodes from 'components/nodes.vue'
+// import nodes from 'components/nodes.vue'
 import witnesses from 'components/witnesses.vue'
 // import coingecko from 'components/coingecko.vue'
 import coingeckoCarousel from 'components/coingeckoCarousel.vue'
@@ -33,7 +33,7 @@ export default {
     }
   },
   components: {
-    nodes,
+    // nodes,
     witnesses,
     // coingecko,
     coingeckoCarousel,
