@@ -199,18 +199,6 @@ export default {
           link: 'https://swapzone.io/?refId=HQhLzavlXg'
         },
         {
-          title: 'Trade HIVE on Mandala (NO KYC)',
-          caption: 'Mandala.exchange affiliate link',
-          icon: 'monetization_on',
-          link: 'https://trade.mandala.exchange/account/signup?ref=58LK6651'
-        },
-        {
-          title: 'Trade HIVE on Ionomy (NO KYC)',
-          caption: 'Ionomy.com affiliate link',
-          icon: 'monetization_on',
-          link: 'https://ionomy.com/en/aff/c91aa3ae712e0ab1d5eb1cd8c007bc70'
-        },
-        {
           title: 'Anonymous Servers for Crypto',
           caption: 'Privex.io affiliate link',
           icon: 'monetization_on',
