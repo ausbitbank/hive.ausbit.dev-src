@@ -21,10 +21,10 @@
       </q-card-section>
       <q-card-section v-if="percentCap > hbdCapRatio && medianPrice !== null">
         <div class="text-bold"><q-icon name="warning" color="red" />&nbsp; Haircut Conditions Apply:</div>
-        <div>Formula for redemption price during a haircut :</div>
-        <div><code>(TOTAL ISSUED HIVE x INTERNAL MARKET PRICE) /  (hbdCapRatio x TOTAL ISSUED HBD)</code></div>
-        <div><code>({{ parseFloat(globalProps.current_supply.split(' ')[0]) }} * {{ parseFloat(medianPrice.base.split(' ')[0]) / parseFloat(medianPrice.quote.split(' ')[0]) }}) / ({{hbdCapRatio}} x {{ globalProps.current_hbd_supply }})</code></div>
-        <div>Redemption price during haircut : {{ (parseFloat(globalProps.current_supply.split(' ')[0]) * (parseFloat(medianPrice.base.split(' ')[0])) / parseFloat(medianPrice.quote.split(' ')[0])) / (hbdCapRatio * parseFloat(globalProps.current_hbd_supply.split(' ')[0])) }}</div>
+        <div>Formula for redemption price during a haircut:</div>
+        <div><code>(HBD_supply x Median_Price) / (HIVE_supply x {{hbdCapRatio}}/100)</code></div>
+        <div v-if="haircutPriceDisplay"><code>({{ haircutPriceDisplay.hbdSupply }} x {{ haircutPriceDisplay.medianPrice }}) / ({{ haircutPriceDisplay.hiveSupply }} x {{hbdCapRatio}}/100)</code></div>
+        <div v-if="haircutPriceDisplay">Redemption price: {{ haircutPriceDisplay.result.toFixed(4) }}</div>
       </q-card-section>
       <q-separator />
       <q-card-section>
@@ -92,7 +92,7 @@ export default {
   data () {
     return {
       medianPrice: null,
-      daoHbdBalance: 15476679, // hive.fund HBD balance as of Wed 18th April 2022 05:30:00 PM AEST
+      daoHbdBalance: 23436695, // hive.fund HBD balance (updated Feb 2025)
       internalMarketLatest: null,
       hbdCapRatio: 30
     }
@@ -129,27 +129,89 @@ export default {
         return null
       }
     },
-    hiveCap: function () {
-      if (this.globalProps !== undefined && this.medianPrice !== null) {
-        return parseFloat(parseFloat(this.globalProps.virtual_supply.split(' ')[0]) * (parseFloat(this.medianPrice.base.split(' ')[0])).toFixed(3) / parseFloat(this.medianPrice.quote.split(' ')[0])).toFixed(3)
+    // Median price in HIVE per HBD (e.g., 0.072 = 0.072 HIVE for 1 HBD)
+    medianPriceHIVE: function () {
+      if (this.medianPrice !== null) {
+        return parseFloat(this.medianPrice.base.split(' ')[0]) / parseFloat(this.medianPrice.quote.split(' ')[0])
       } else {
         return null
       }
     },
+    // Current HIVE supply converted to HBD value
+    hiveSupplyAsHBD: function () {
+      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+        return parseFloat(this.globalProps.current_supply.split(' ')[0]) * this.medianPriceHIVE
+      } else {
+        return null
+      }
+    },
+    // Total HBD supply (incl treasury) converted to HBD value
+    totalHBDAsHBD: function () {
+      if (this.globalProps !== undefined) {
+        return parseFloat(this.globalProps.current_hbd_supply.split(' ')[0])
+      } else {
+        return null
+      }
+    },
+    // HBD excluding treasury (as HBD value)
     hbdCap: function () {
-      if (this.globalProps.current_hbd_supply !== undefined) {
-        return (parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) - parseFloat(this.daoHbdBalance)).toFixed(3) // HF24 Ignores DAO HBD in debt calculations
+      if (this.totalHBDAsHBD !== null) {
+        return (this.totalHBDAsHBD - this.daoHbdBalance).toFixed(3) // HF24: Treasury HBD excluded from debt calculations
       } else {
         return null
       }
     },
-    percentCap: function () {
-      return parseFloat((this.hbdCap / this.hiveCap) * 100).toFixed(3)
+    // Total for debt ratio = HBD_excl + HIVE_supply_as_HBD
+    totalForDebtRatio: function () {
+      return parseFloat(this.hbdCap) + this.hiveSupplyAsHBD
     },
+    // Debt ratio per dalz's formula: HBD_excl / (HBD_excl + HIVE_supply_as_HBD)
+    percentCap: function () {
+      if (this.hbdCap !== null && this.totalForDebtRatio !== null) {
+        return parseFloat((parseFloat(this.hbdCap) / this.totalForDebtRatio) * 100).toFixed(3)
+      } else {
+        return null
+      }
+    },
+    // HIVE Market Cap = Current Supply * Median Price (in USD)
+    hiveCap: function () {
+      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+        return (parseFloat(this.globalProps.current_supply.split(' ')[0]) * this.medianPriceHIVE).toFixed(3)
+      } else {
+        return null
+      }
+    },
+    // Haircut price threshold: median price at which debt would reach 30%
+    // debt_ratio = HBD_excl / (HBD_excl + HIVE_supply * price)
+    // At 30%: 0.30 = HBD_excl / (HBD_excl + HIVE_supply * price)
+    // 0.30 * (HBD_excl + HIVE_supply * price) = HBD_excl
+    // 0.30 * HBD_excl + 0.30 * HIVE_supply * price = HBD_excl
+    // 0.30 * HIVE_supply * price = HBD_excl * (1 - 0.30)
+    // price = (HBD_excl * 0.70) / (0.30 * HIVE_supply)
     haircutPrice: function () {
-      // return parseFloat((this.hbdCap * 3) / parseFloat(this.globalProps.virtual_supply.split(' ')[0])).toFixed(4) // (hbd marketcap x 10) / hive supply
-      // return parseFloat((this.hbdCap) / (parseFloat(this.globalProps.virtual_supply.split(' ')[0])) * this.hbdCapRatio).toFixed(4) // (hbd marketcap x 10) / hive supply
-      return parseFloat((this.hbdCap * 10) / (3 * parseFloat(this.globalProps.virtual_supply.split(' ')[0]))).toFixed(4)
+      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+        const hiveSupply = parseFloat(this.globalProps.current_supply.split(' ')[0])
+        const hbdExcl = parseFloat(this.hbdCap)
+        // At 30% debt ratio: price = (HBD_excl * 0.7) / (0.3 * HIVE_supply)
+        return ((hbdExcl * 0.7) / (0.3 * hiveSupply)).toFixed(4)
+      } else {
+        return null
+      }
+    },
+    haircutPriceDisplay: function () {
+      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+        const hiveSupply = parseFloat(this.globalProps.current_supply.split(' ')[0]) / 1000
+        const hbdSupply = parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) / 1000
+        const median = this.medianPriceHIVE
+        return {
+          hbdSupply: hbdSupply.toFixed(0),
+          medianPrice: median.toFixed(4),
+          hiveSupply: hiveSupply.toFixed(0),
+          result: (hbdSupply * median) / (hiveSupply * this.hbdCapRatio / 100)
+        }
+      } else {
+        return null
+      }
     }
   },
   methods: {
