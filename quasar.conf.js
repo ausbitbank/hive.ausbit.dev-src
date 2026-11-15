@@ -59,7 +59,21 @@ module.exports = function (ctx) {
 
     // Full list of options: https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      vueRouterMode: 'history',
+
+      sassLoaderOptions: {
+        sassOptions: {
+          outputStyle: 'expanded'
+        }
+      },
+
+      // Only htmlparser2 itself needs transpiling (its ESM build uses
+      // `export * as`). Do NOT widen this: it would also match
+      // htmlparser2/node_modules/entities, and Babel's core-js imports
+      // turn those CommonJS files into broken ESM modules at runtime.
+      transpileDependencies: [
+        /node_modules[\\/]htmlparser2[\\/]lib[\\/]/
+      ],
 
       // rtl: false, // https://quasar.dev/options/rtl-support
       // showProgress: false,

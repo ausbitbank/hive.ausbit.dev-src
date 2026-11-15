@@ -8,10 +8,14 @@
   "author": "ausbitbank <ausbitbank@gmail.com>",
   "private": true,
   "scripts": {
+    "dev": "node --openssl-legacy-provider ./node_modules/@quasar/app/bin/quasar dev",
+    "build": "node --openssl-legacy-provider ./node_modules/@quasar/app/bin/quasar build -m spa",
     "lint": "eslint --ext .js,.vue src",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
+    "@babel/plugin-proposal-export-default-from": "^7.27.1",
+    "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@ecency/render-helper": "^2.1.24",
     "@hiveio/hive-js": "^2.0.0",
     "@hiveio/hivescript": "^1.2.4",
@@ -19,6 +23,7 @@
     "@quasar/extras": "^1.10.7",
     "axios": ">=0.21.2",
     "canvas-confetti": "^1.4.0",
+    "codemirror": "5.65.2",
     "crypto-js": "^4.1.1",
     "dompurify": "^2.2.0",
     "gsap": "^3.10.3",
@@ -29,7 +34,8 @@
     "qr-code-styling": "^1.6.0-rc.1",
     "qrcode.vue": "^1.7.0",
     "quasar": "^1.15.20",
-    "sanitize-html": "^2.3.0",
+    "sanitize-html": "^2.17.0",
+    "sass": "^1.80.5",
     "sjcl": "^1.0.8",
     "sscjs": "^0.0.8",
     "uuid": "^8.3.2",
@@ -65,6 +71,7 @@
     "last 1 version, not dead, ie >= 11"
   ],
   "resolutions": {
-    "@babel/parser": "7.7.5"
+    "@babel/parser": "7.7.5",
+    "node-sass": "npm:sass@1.77.8"
   }
 }
