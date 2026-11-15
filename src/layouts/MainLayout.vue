@@ -22,7 +22,20 @@
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
       <q-list>
         <q-item-label header>
-          <!-- <q-icon name="img:statics/badge_powered-by-hive_dark.svg" size="lg" /> -->
+          <a
+            href="https://hive.io"
+            target="_blank"
+            rel="noopener"
+            title="Powered by Hive"
+            aria-label="Powered by Hive"
+            class="inline-block"
+          >
+            <img
+              src="statics/badge_powered-by-hive_dark.svg"
+              alt="Powered by Hive"
+              style="height: 36px; width: auto"
+            />
+          </a>
         </q-item-label>
         <EssentialLink
           v-for="link in essentialLinks"
