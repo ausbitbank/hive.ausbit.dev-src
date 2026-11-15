@@ -15,7 +15,7 @@
         This page helps track relevant info about HBD
       </q-card-section>
       <q-separator />
-      <q-card-section v-if="percentCap < hbdCapRatio">
+      <q-card-section v-if="percentCap !== null && percentCap < hbdCapRatio && medianPrice !== null">
         <div class="text-h6"><q-icon name="check" color="green" />&nbsp; Normal Conditions Apply:</div>
         <div class="text-subtitle">Redeem each HBD for $1 of HIVE at 3.5 day avg market price <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge></div>
       </q-card-section>
@@ -56,12 +56,12 @@
         <p><router-link to="hbdstabilizer"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Stabilizer over here</router-link></p>
       </q-card-section>
       <q-separator />
-      <q-card-section v-if="globalProps.hbd_print_rate !== 10000">
+      <q-card-section v-if="propsLoaded && globalProps.hbd_print_rate !== 10000">
         <div class="text-h6"><q-icon name="warning" color="orange" />&nbsp; HBD creation reduced</div>
         <div class="text-subtitle">The HBD "Print Rate" has been reduced to <q-badge :color="percentColor">{{ globalProps.hbd_print_rate / 100 }} %</q-badge></div>
         <p><router-link to="@arcange/understanding-the-hive-debt-ratio"><q-icon name="info" color="blue" />&nbsp; Learn more about the HBD Print Rate here</router-link></p>
       </q-card-section>
-      <q-separator v-if="globalProps.hbd_print_rate !== 10000" />
+      <q-separator v-if="propsLoaded && globalProps.hbd_print_rate !== 10000" />
       <q-card-section>
         <div class="text-h6"><q-icon name="shopping_cart" color="blue" />&nbsp; How can I get HBD ?</div>
         <div class="text-subtitle">1) Earn HBD by posting popular original content on HIVE</div>
@@ -104,6 +104,16 @@ export default {
         return this.$store.state.hive.globalProps
       }
     },
+    // The store seeds globalProps with `{ empty: true }` until the API call
+    // resolves, so every field must be checked before it is used.
+    propsLoaded: function () {
+      const g = this.globalProps
+      return g !== undefined &&
+        g !== null &&
+        g.current_supply !== undefined &&
+        g.current_hbd_supply !== undefined &&
+        g.hbd_interest_rate !== undefined
+    },
     percentColor: function () {
       if ((this.percentCap) >= 25) {
         return 'red'
@@ -123,7 +133,7 @@ export default {
       }
     },
     hbdApr: function () {
-      if (this.globalProps !== undefined) {
+      if (this.propsLoaded) {
         return this.globalProps.hbd_interest_rate / 100
       } else {
         return null
@@ -139,7 +149,7 @@ export default {
     },
     // Current HIVE supply converted to HBD value
     hiveSupplyAsHBD: function () {
-      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+      if (this.propsLoaded && this.medianPriceHIVE !== null) {
         return parseFloat(this.globalProps.current_supply.split(' ')[0]) * this.medianPriceHIVE
       } else {
         return null
@@ -147,7 +157,7 @@ export default {
     },
     // Total HBD supply (incl treasury) converted to HBD value
     totalHBDAsHBD: function () {
-      if (this.globalProps !== undefined) {
+      if (this.propsLoaded) {
         return parseFloat(this.globalProps.current_hbd_supply.split(' ')[0])
       } else {
         return null
@@ -163,7 +173,11 @@ export default {
     },
     // Total for debt ratio = HBD_excl + HIVE_supply_as_HBD
     totalForDebtRatio: function () {
-      return parseFloat(this.hbdCap) + this.hiveSupplyAsHBD
+      if (this.hbdCap === null || this.hiveSupplyAsHBD === null) {
+        return null
+      }
+      const total = parseFloat(this.hbdCap) + this.hiveSupplyAsHBD
+      return total > 0 ? total : null
     },
     // Debt ratio per dalz's formula: HBD_excl / (HBD_excl + HIVE_supply_as_HBD)
     percentCap: function () {
@@ -175,7 +189,7 @@ export default {
     },
     // HIVE Market Cap = Current Supply * Median Price (in USD)
     hiveCap: function () {
-      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+      if (this.propsLoaded && this.medianPriceHIVE !== null) {
         return (parseFloat(this.globalProps.current_supply.split(' ')[0]) * this.medianPriceHIVE).toFixed(3)
       } else {
         return null
@@ -189,7 +203,7 @@ export default {
     // 0.30 * HIVE_supply * price = HBD_excl * (1 - 0.30)
     // price = (HBD_excl * 0.70) / (0.30 * HIVE_supply)
     haircutPrice: function () {
-      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+      if (this.propsLoaded && this.medianPriceHIVE !== null && this.hbdCap !== null) {
         const hiveSupply = parseFloat(this.globalProps.current_supply.split(' ')[0])
         const hbdExcl = parseFloat(this.hbdCap)
         // At 30% debt ratio: price = (HBD_excl * 0.7) / (0.3 * HIVE_supply)
@@ -199,7 +213,7 @@ export default {
       }
     },
     haircutPriceDisplay: function () {
-      if (this.globalProps !== undefined && this.medianPriceHIVE !== null) {
+      if (this.propsLoaded && this.medianPriceHIVE !== null) {
         const hiveSupply = parseFloat(this.globalProps.current_supply.split(' ')[0]) / 1000
         const hbdSupply = parseFloat(this.globalProps.current_hbd_supply.split(' ')[0]) / 1000
         const median = this.medianPriceHIVE
