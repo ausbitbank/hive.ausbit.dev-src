@@ -21,3 +21,6 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+
+# Vitest generated output
+.vitest/
