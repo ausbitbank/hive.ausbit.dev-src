@@ -259,6 +259,7 @@ import moment from 'moment'
 import { getHiveEngine } from 'src/services/hiveEngine'
 import { getHivePrices } from 'src/services/prices'
 import { safeExternalUrl } from 'src/utils/safeUrl'
+import { setPageMeta } from 'src/utils/pageMeta'
 
 export default {
   name: 'token',
@@ -460,6 +461,11 @@ export default {
     }
   },
   mounted () {
+    setPageMeta({
+      title: this.token + ' — Hive-Engine token market',
+      description: 'Trade ' + this.token + ' on Hive-Engine: price, order book, market history and balances at hive.ausbit.dev.',
+      url: this.$route.path
+    })
     this.init()
   },
   created () {}

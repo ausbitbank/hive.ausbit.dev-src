@@ -25,6 +25,7 @@ a:visited { color: #884488; }
 <script>
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 // import accountOperations from 'components/accountOperations.vue'
 export default {
   name: 'blockView',
@@ -114,7 +115,11 @@ export default {
   },
   mounted () {
     this.getTx(this.$route.params.txId) // Use method 2 only for the most info
-    document.title = 'Transaction ' + this.$route.params.txId
+    setPageMeta({
+      title: 'Hive transaction ' + this.$route.params.txId,
+      description: 'Hive transaction ' + this.$route.params.txId + ' — operations, block inclusion and signatures on the Hive blockchain.',
+      url: '/tx/' + this.$route.params.txId
+    })
   }
 }
 </script>

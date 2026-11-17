@@ -86,6 +86,7 @@ a:visited { color: #1d8ce0; }
 </style>
 <script>
 import coingecko from 'components/coingecko.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'hbd',
   data () {
@@ -257,7 +258,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Hive Dollar Monitor'
+    setPageMeta({
+      title: 'Hive Backed Dollars (HBD) — debt ratio, APR and price',
+      description: 'Track Hive Backed Dollars: the HBD debt ratio, print rate, savings interest, haircut price and internal market price.',
+      url: '/hbd'
+    })
     this.getDaoBalance()
     this.getMedianPrice()
     this.getTicker()

@@ -10,6 +10,7 @@ a:visited { color: #884488; }
 </style>
 <script>
 import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'trailViewPage',
   components: {
@@ -25,7 +26,11 @@ export default {
   methods: {
   },
   mounted () {
-    document.title = 'Recent votes by ' + this.account
+    setPageMeta({
+      title: 'Recent votes by @' + this.account + ' — Hive',
+      description: 'Recent Hive votes and curation activity by @' + this.account + ' on hive.ausbit.dev.',
+      url: this.$route.path
+    })
   }
 }
 </script>

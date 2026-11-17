@@ -256,6 +256,7 @@ import shareButtons from 'components/shareButtons.vue'
 import sanitize from 'sanitize-html'
 import reblog from 'components/reblog.vue'
 import votesDialog from 'components/votesDialog.vue'
+import { setPageMeta, stripHtml, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 export default {
   name: 'postView',
   components: { render, recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog, votesDialog },
@@ -313,8 +314,51 @@ export default {
     },
     setPost (post) {
       this.post = post
-      document.title = post.title
+      this.updatePageMeta(post)
       if (post.description) { this.postDescription = this.Sanitize(post.description) }
+    },
+    getPostMeta (post) {
+      if (!post || !post.json_metadata) return {}
+      try {
+        const metadata = JSON.parse(post.json_metadata)
+        return metadata && typeof metadata === 'object' ? metadata : {}
+      } catch {
+        return {}
+      }
+    },
+    updatePageMeta (post) {
+      const author = (post && post.author) || this.author
+      const permlink = (post && post.permlink) || this.permlink
+      const metadata = this.getPostMeta(post)
+      const title = post && post.title ? stripHtml(post.title, 120) : ''
+      const pageTitle = title || ('Hive post by @' + author)
+      const body = post && post.body ? stripHtml(post.body.slice(0, 4000), 160) : ''
+      const description = body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at hive.ausbit.dev.")
+      const image = Array.isArray(metadata.image) ? metadata.image[0] : metadata.image
+      const pageUrl = BASE_URL + '/@' + author + '/' + permlink
+      const jsonLd = post
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: title || pageTitle,
+            description,
+            ...(typeof image === 'string' && image ? { image: [image] } : {}),
+            datePublished: post.created || undefined,
+            dateModified: post.last_update || post.created || undefined,
+            author: { '@type': 'Person', name: '@' + author, url: BASE_URL + '/@' + author },
+            publisher: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+            url: pageUrl
+          }
+        : null
+      setPageMeta({
+        title: pageTitle,
+        description,
+        image: typeof image === 'string' ? image : undefined,
+        url: '/@' + author + '/' + permlink,
+        type: 'article',
+        jsonLd
+      })
     },
     linkHiveBlogPost (author, permlink) {
       return 'https://hive.blog/@' + author + '/' + permlink
@@ -357,6 +401,7 @@ export default {
       this.post = null
       this.author = this.$route.params.author
       this.permlink = this.$route.params.permlink
+      this.updatePageMeta(null)
       if (this.author) this.$hiveStore.getAccount(this.author)
       this.getPost(this.author, this.permlink)
     },

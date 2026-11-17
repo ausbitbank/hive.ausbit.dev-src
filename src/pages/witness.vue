@@ -57,6 +57,7 @@
 import witnesses from 'components/witnesses.vue'
 import { copyToClipboard } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'witness',
   components: { witnesses, jsonViewer },
@@ -142,7 +143,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Witness Tools'
+    setPageMeta({
+      title: 'Hive witness tools — update witness properties',
+      description: 'Update Hive witness properties, signing keys and vote settings, and broadcast a witness update from your account.',
+      url: '/witness'
+    })
     if (this.loggedInUser) {
       this.init()
     }

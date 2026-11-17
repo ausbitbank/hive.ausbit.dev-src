@@ -8,11 +8,16 @@
 </template>
 <script>
 import witnesses from 'components/witnesses.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'witnessPage',
   components: { witnesses },
   mounted () {
-    document.title = 'Witnesses'
+    setPageMeta({
+      title: 'Hive witnesses — ranks, votes and missed blocks',
+      description: 'Hive witness rankings, vote counts, missed blocks and version information on hive.ausbit.dev.',
+      url: '/witnesses'
+    })
   }
 }
 </script>

@@ -56,6 +56,7 @@
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard, exportFile } from 'quasar'
 import { keychain } from '@hiveio/keychain'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'createAccountPage',
   components: {
@@ -175,7 +176,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Create new Hive account'
+    setPageMeta({
+      title: 'Create a Hive account — keys, fees and onboarding',
+      description: 'Create a new Hive account: check username availability, generate keys and claim an account with HIVE or account creation tokens.',
+      url: '/create'
+    })
     this.getChainProperties()
   }
 }

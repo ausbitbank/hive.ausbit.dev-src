@@ -25,6 +25,7 @@ import witnesses from 'components/witnesses.vue'
 import nodes from 'components/nodes.vue'
 import jsonViewer from 'components/jsonViewer.vue'
 import block from 'components/block.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'health',
   components: {
@@ -59,7 +60,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Hive Network Health'
+    setPageMeta({
+      title: 'Hive network health — witnesses, participation and nodes',
+      description: 'Hive network health: witness participation, global properties, account count, API node status and the latest irreversible blocks.',
+      url: '/health'
+    })
     this.$hiveStore.getGlobalProps()
     this.$hive.api.getAccountCountAsync()
       .then(res => { if (res) { this.accountCount = res } })

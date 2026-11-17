@@ -44,6 +44,7 @@
 import { exportFile } from 'quasar'
 import Moment from 'moment'
 import accountOperations from 'components/accountOperations.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
@@ -267,7 +268,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Tax export view '
+    setPageMeta({
+      title: 'Hive tax export — wallet transaction history',
+      description: 'Export Hive wallet transaction history as CSV for accounting and tax reporting, including transfers, rewards and conversions.',
+      url: this.$route.path
+    })
     this.$hiveStore.getGlobalProps()
     if (this.username) { this.getHiveWalletTransactions() }
   }

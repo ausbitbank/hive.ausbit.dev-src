@@ -193,6 +193,7 @@ import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializ
 const op = ChainTypes.operations
 import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
+import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 export default {
   name: 'accountPage',
   components: {
@@ -245,6 +246,9 @@ export default {
     },
     $route: function () {
       this.init()
+    },
+    account: function () {
+      this.updatePageMeta()
     }
   },
   computed: {
@@ -394,6 +398,46 @@ export default {
     }
   },
   methods: {
+    getProfileMeta () {
+      if (!this.account || !this.account.posting_json_metadata) return null
+      try {
+        const metadata = JSON.parse(this.account.posting_json_metadata)
+        return metadata && metadata.profile ? metadata.profile : null
+      } catch {
+        return null
+      }
+    },
+    updatePageMeta () {
+      const name = this.username
+      const profile = this.getProfileMeta() || {}
+      const displayName = stripHtml(profile.name, 80)
+      const about = stripHtml(profile.about, 200)
+      const pageUrl = BASE_URL + '/@' + name
+      const avatar = 'https://images.hive.blog/u/' + name + '/avatar'
+      const image = [profile.profile_image, profile.cover_image]
+        .find(value => typeof value === 'string' && /^(https?:\/\/|\/)/.test(value)) || avatar
+      const description = about || ('Hive account @' + name + ' — profile, wallet balances, reputation, witness votes and recent activity on the Hive blockchain.')
+      setPageMeta({
+        title: displayName ? displayName + ' (@' + name + ') — Hive account' : '@' + name + ' — Hive account',
+        description,
+        image,
+        url: '/@' + name,
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'ProfilePage',
+          url: pageUrl,
+          mainEntity: {
+            '@type': 'Person',
+            identifier: '@' + name,
+            name: displayName || name,
+            alternateName: '@' + name,
+            description,
+            image,
+            url: pageUrl
+          }
+        }
+      })
+    },
     autoRefreshToggle () {
       if (this.autorefresh === true) {
         this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
@@ -559,7 +603,7 @@ export default {
       // this.getRewardFundPost()
       this.page = this.$route.query.page || 1
       this.username = this.$route.params.username
-      document.title = this.username
+      this.updatePageMeta()
       if (this.account === undefined || this.account.name !== this.username) {
         this.getAccount(this.username)
         this.getWitness(this.username)

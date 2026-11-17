@@ -77,6 +77,7 @@
 
 <script>
 import moment from 'moment'
+import { setPageMeta } from 'src/utils/pageMeta'
 
 const BLOCK_COUNT = 10
 const REFRESH_INTERVAL_MS = 8000
@@ -177,7 +178,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Latest Hive Blocks'
+    setPageMeta({
+      title: 'Latest Hive blocks',
+      description: 'Live list of the newest Hive blocks with witness, timestamp and transaction counts, refreshed automatically.',
+      url: '/blocks'
+    })
     this.loadBlocks({ initial: true })
     this.startAutoRefresh()
   },

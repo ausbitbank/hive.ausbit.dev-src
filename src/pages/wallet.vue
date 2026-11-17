@@ -877,6 +877,7 @@ import { keychain } from '@hiveio/keychain'
 import moment from 'moment'
 import VueTimers from 'src/mixins/timers.js'
 import DOMPurify from 'dompurify'
+import { setPageMeta } from 'src/utils/pageMeta'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
@@ -1238,7 +1239,11 @@ export default {
     init () {
       if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
-      document.title = this.username + '\'s wallet'
+      setPageMeta({
+        title: this.username + "'s Hive wallet",
+        description: 'Hive wallet for @' + this.username + ' — HIVE, HBD, Hive Power, savings, delegations and Hive-Engine token balances.',
+        url: '/@' + this.username + '/wallet'
+      })
       if (this.account === undefined) { this.getAccount(this.username) }
       // this.getHiveWalletTransactions()
       this.getPricesCoingecko()

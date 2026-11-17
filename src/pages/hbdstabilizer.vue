@@ -71,6 +71,7 @@ import moment from 'moment'
 import animInt from 'components/animInt.vue'
 import VueTimers from 'src/mixins/timers.js'
 import accountOperations from 'components/accountOperations.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
@@ -197,7 +198,11 @@ export default {
     }
   },
   mounted () {
-    document.title = 'HBDStabilizer Monitor'
+    setPageMeta({
+      title: 'HBD Stabilizer monitor — Hive DAO conversions',
+      description: 'Track the HBD Stabilizer: DAO and stabilizer balances, open market orders and conversion transactions on the Hive blockchain.',
+      url: '/hbdstabilizer'
+    })
     this.getMedianPrice()
   },
   created () {

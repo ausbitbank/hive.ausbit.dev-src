@@ -8,6 +8,7 @@
 <script>
 import TradingViewWidget from 'components/TradingViewWidget.vue'
 import internalMarket from 'components/internalMarket.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'markets',
   data () {
@@ -43,7 +44,11 @@ export default {
   },
   components: { TradingViewWidget, internalMarket },
   mounted () {
-    document.title = 'Markets'
+    setPageMeta({
+      title: 'Hive markets — HIVE price charts and internal market',
+      description: 'HIVE price charts, trading pairs and the Hive internal market for HIVE and HBD on hive.ausbit.dev.',
+      url: '/markets'
+    })
   }
 }
 </script>

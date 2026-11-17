@@ -47,6 +47,7 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'Proposals',
   components: {
@@ -151,7 +152,12 @@ export default {
     }
   },
   mounted () {
-    document.title = 'Hive Proposal System'
+    const proposal = this.$route.params.proposal
+    setPageMeta({
+      title: proposal ? 'Hive proposal ' + proposal + ' — Decentralized Hive Fund' : 'Hive proposals — Decentralized Hive Fund',
+      description: 'Browse Decentralized Hive Fund (DHF) proposals: subjects, requested funding, votes, status and the daily budget on the Hive blockchain.',
+      url: proposal ? '/proposals/' + proposal : '/proposals'
+    })
     if (this.daoAccount === undefined) this.getAccount('hive.fund')
     this.listProposals()
     if (this.globalProps.empty) {

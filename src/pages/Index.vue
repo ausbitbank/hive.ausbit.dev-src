@@ -31,6 +31,7 @@ import coingeckoCarousel from 'components/coingeckoCarousel.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import rankedPostsCarousel from 'components/rankedPostsCarousel.vue'
 import block from 'components/block.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 
 export default {
   name: 'Home',
@@ -52,7 +53,11 @@ export default {
   methods: {
   },
   mounted () {
-    document.title = 'hive.ausbit.dev'
+    setPageMeta({
+      title: 'hive.ausbit.dev — Hive block explorer',
+      description: 'Explore the Hive blockchain: live blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.',
+      url: '/'
+    })
   }
 }
 </script>

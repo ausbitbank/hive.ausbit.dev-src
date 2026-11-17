@@ -11,6 +11,7 @@ a:visited { color: #884488; }
 </style>
 <script>
 import block from 'components/block.vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'blockViewPage',
   components: {
@@ -31,7 +32,11 @@ export default {
   methods: {
   },
   mounted () {
-    document.title = 'Block ' + this.blockNum
+    setPageMeta({
+      title: 'Hive block ' + this.blockNum,
+      description: 'Hive block ' + this.blockNum + ' — transactions, operations, witness and timestamp on the Hive blockchain.',
+      url: '/block/' + this.blockNum
+    })
   }
 }
 </script>
