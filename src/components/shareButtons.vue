@@ -1,7 +1,7 @@
 <template>
   <span>
-    <q-btn v-for="service in services" :key="service.index" dense push size="md" class="hvr" @click="share(service)" :icon="returnServiceIcon(service)" :label="service" />
-    <q-btn size="md" class="hvr" :@click="copy()" dense push icon="content_copy" label="Copy URL" />
+    <q-btn v-for="service in services" :key="service" dense push no-caps size="md" class="hvr" @click="share(service)" :icon="returnServiceIcon(service)" :label="service" />
+    <q-btn size="md" class="hvr" no-caps @click="copy()" dense push icon="content_copy" label="Copy URL" />
   </span>
 </template>
 <script>
@@ -32,7 +32,7 @@ export default {
       }
     },
     share (service) {
-      window.open(this.returnServiceUrl(service), '_blank')
+      window.open(this.returnServiceUrl(service), '_blank', 'noopener,noreferrer')
     }
   }
 }

@@ -27,6 +27,16 @@ function installPurifyHooks () {
   if (hooksInstalled) return
   hooksInstalled = true
   DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+    // render-helper decorates @mentions with a full-size author avatar image.
+    // Keep the mention link and text, but drop the image (PeakD does the same).
+    if (data.tagName === 'img') {
+      const className = node.getAttribute('class') || ''
+      if (className.split(/\s+/).includes('er-author-link-image')) {
+        node.remove()
+      }
+      return
+    }
+
     if (data.tagName === 'iframe') {
       const src = node.getAttribute('src') || ''
       try {

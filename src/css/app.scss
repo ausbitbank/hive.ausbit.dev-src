@@ -145,6 +145,11 @@ a {
 }
 
 /* White on the primary blue is ~3:1; use a dark ink for small status badges. */
+/* The brand primary is a light blue; white text is only ~3.4:1. Use ink. */
+.q-btn.bg-primary.text-white {
+  color: #0b1d2a !important;
+}
+
 .q-badge.bg-primary,
 .q-badge.bg-green,
 .q-badge.bg-grey,
@@ -289,8 +294,39 @@ body {
 }
 
 .postbody {
-  font-size: 1.02rem;
-  line-height: var(--line-body);
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+/* render-helper sometimes decorates mentions with an author avatar image.
+   The renderer removes it, and this is a belt-and-braces fallback. */
+.postbody .er-author-link-image {
+  display: none !important;
+}
+
+.postbody a {
+  color: #4fc3f7;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+}
+
+.postbody a:visited {
+  color: #ce93d8;
+}
+
+.postbody a:hover {
+  color: #81d4fa;
+}
+
+.postbody h1,
+.postbody h2,
+.postbody h3,
+.postbody h4,
+.postbody h5,
+.postbody h6 {
+  scroll-margin-top: 84px;
 }
 
 .postbody p {
@@ -351,6 +387,22 @@ body {
   display: block;
   margin: 1em auto;
   border-radius: var(--radius-sm);
+}
+
+.postbody figure {
+  max-width: 100%;
+  margin: 1.2em 0;
+}
+
+.postbody figcaption {
+  margin-top: 0.4em;
+  color: #90a4ae;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.postbody p:last-child {
+  margin-bottom: 0;
 }
 
 .postbody table {

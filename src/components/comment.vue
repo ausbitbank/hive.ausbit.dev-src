@@ -1,88 +1,159 @@
 <template>
-  <span>
-  <q-item class="comment-item" flat separator bordered v-if="comment.permlink !== parentPermlink">
-    <q-item-section>
-      <q-item-label>
-        <render :input="comment.body" />
-      </q-item-label>
-      <q-item-label><postFooter :post="comment" /></q-item-label>
-    </q-item-section>
-  </q-item>
-  <q-item class="comment-replies" v-for="authperm in comment.replies" :key="authperm.index">
-    <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
-  </q-item>
-  </span>
+  <article
+    class="comment"
+    :class="{ 'comment--nested': depth > 1, 'comment--root': depth === 1 }"
+    :style="{ '--indent': indentLevel }"
+  >
+    <header class="comment__header">
+      <router-link :to="linkAccount(comment.author)" class="comment__avatar" :aria-label="'View @' + comment.author + ' profile'">
+        <q-avatar size="26px">
+          <q-img :src="getHiveAvatarUrl(comment.author)" :alt="'Avatar of @' + comment.author" />
+        </q-avatar>
+      </router-link>
+      <router-link :to="linkAccount(comment.author)" class="comment__author">@{{ comment.author }}</router-link>
+      <span class="comment__rep" :title="'Reputation ' + reputation">{{ reputation }}</span>
+      <span class="comment__dot">·</span>
+      <time class="comment__time" :datetime="comment.created" :title="comment.created">{{ timeDelta(comment.created) }}</time>
+      <span v-if="comment.children" class="comment__reply-count">
+        {{ comment.children }} {{ comment.children === 1 ? 'reply' : 'replies' }}
+      </span>
+      <q-badge v-if="comment.stats && comment.stats.hide" color="grey-9" class="comment__flag">hidden</q-badge>
+      <q-badge v-else-if="comment.stats && comment.stats.gray" color="grey-9" class="comment__flag">gray</q-badge>
+    </header>
+
+    <render :input="comment.body" class="postbody comment__body" />
+
+    <post-footer :post="comment" compact class="comment__footer" />
+  </article>
 </template>
-<style scoped>
-.comment-item {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  align-items: flex-start;
-}
-.comment-item :deep(.postbody) {
-  font-size: 0.95rem;
-  line-height: 1.55;
-}
-.comment-replies {
-  display: block;
-  padding-left: 0.75rem;
-  border-left: 2px solid rgba(255, 255, 255, 0.08);
-  margin-left: 0.75rem;
-}
-@media (max-width: 599px) {
-  .comment-replies {
-    padding-left: 0.35rem;
-    margin-left: 0.35rem;
-  }
-}
-</style>
+
 <script>
 import { defineAsyncComponent } from 'vue'
 import render from 'components/render.vue'
 import moment from 'src/utils/time'
+import { formatReputation } from 'src/services/comments'
+
 export default {
   name: 'comment',
-  data () {
-    return {
-    }
+  components: {
+    render,
+    postFooter: defineAsyncComponent(() => import('components/postFooter.vue'))
   },
-  props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { render, postFooter: defineAsyncComponent(() => import('components/postFooter.vue')) },
+  props: {
+    comment: { type: Object, required: true },
+    depth: { type: Number, default: 1 }
+  },
   computed: {
-    loggedInUser: {
-      get () { return this.$hiveStore.user.username }
+    reputation () {
+      return formatReputation(this.comment.author_reputation)
     },
-    defaultVoteWeight: {
-      get () { return this.$hiveStore.user.settings.voteWeightComment }
-    },
-    myVote: function () {
-      return this.comment.active_votes.filter(this.filterMyVote)[0]
-    },
-    voteIcon: function () {
-      if (this.myVote !== undefined) {
-        if (Math.sign(this.myVote.rshares) === 1) {
-          return 'favorite'
-        } else {
-          return 'favorite_border'
-        }
-      } else {
-        return 'favorite_border'
-      }
+    indentLevel () {
+      return Math.min(Math.max((this.depth || 1) - 1, 0), 4)
     }
   },
   methods: {
-    returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     linkAccount (author) { return '/@' + author },
-    filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } },
-    GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
+      const now = moment.utc()
+      const stamp = moment.utc(timestamp)
+      return moment.duration(stamp.diff(now, 'minutes'), 'minutes').humanize(true)
     }
-  },
-  mounted () {
   }
 }
 </script>
+
+<style scoped>
+.comment {
+  padding: 0.85rem 0;
+}
+
+.comment--root + .comment--root {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.comment--nested {
+  margin-left: calc(var(--indent) * 16px);
+  padding-left: 12px;
+  border-left: 2px solid rgba(62, 146, 204, 0.28);
+}
+
+.comment__header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: #90a4ae;
+}
+
+.comment__avatar {
+  display: inline-flex;
+  flex: none;
+}
+
+.comment__author {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #e4eaed;
+}
+
+.comment__rep {
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #b0bec5;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.comment__dot {
+  color: #607d8b;
+}
+
+.comment__reply-count {
+  color: #78909c;
+  font-size: 0.75rem;
+}
+
+.comment__flag {
+  font-size: 0.62rem;
+}
+
+.comment__body {
+  margin: 0.4rem 0 0.1rem 2.15rem;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: #dbe3e8;
+}
+
+.comment__body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.comment__body :deep(img) {
+  margin: 0.7em auto;
+}
+
+.comment__footer {
+  margin-left: 2.15rem;
+}
+
+@media (max-width: 599px) {
+  .comment {
+    padding: 0.7rem 0;
+  }
+
+  .comment--nested {
+    margin-left: calc(var(--indent) * 9px);
+    padding-left: 8px;
+  }
+
+  .comment__body,
+  .comment__footer {
+    margin-left: 0;
+    font-size: 0.9rem;
+  }
+}
+</style>

@@ -1,156 +1,386 @@
 <template>
-  <span>
-    <span v-if="!viewComments" class="text-center">
-      <q-btn @click="viewComments = !viewComments" icon="forum" color="blue-grey-6" dense flat label="View replies" />
-    </span>
-    <span v-if="viewComments">
-    <span v-if="loading">
-    <div><q-skeleton text /><q-skeleton button /><q-skeleton button /></div>
-    <q-card dense flat bordered v-for="i in 5" :key="i.index" style="width: 100%; max-width: 400px">
-      <q-card-section avatar>
-        <q-skeleton circle width="40" height="40" />
-      </q-card-section>
-      <q-card-section>
-        <q-skeleton text width="100%" height="20" />
-      </q-card-section>
-      <q-card-section>
-        <q-skeleton text />
-        <q-skeleton button />
-        <q-skeleton button />
-      </q-card-section>
-    </q-card>
-    </span>
-    <q-card dense flat bordered class="comments-card" v-if="!loading">
-      <q-card-section class="text-h6 text-center section-title">
-          <div>
-            {{ Object.keys(comments).length - 1 }} Replies
-            <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense flat>
-              <q-popup-proxy>
-                <q-card class="q-pa-md shadow-4" dense bordered>
-                  <span class="text-caption">Gray <q-checkbox v-model="filter.gray" /> Hidden <q-checkbox v-model="filter.hide" /></span>
-                  <q-select v-model="commentSortMethod" :options="commentSortMethods" label="Sort" dense />
-                  <q-select v-model="commentSortDirection" :options="commentSortDirections" label="Direction" dense />
-              </q-card>
-              </q-popup-proxy>
-            </q-btn>
-            <q-btn icon="close" color="red" title="Hide comments" @click="viewComments = !viewComments" dense flat class="hvr" />
-          </div>
-      </q-card-section>
-      <span v-for="comment in comments" :key="comment.id">
-        <q-card flat bordered v-if="comment.parent_permlink === permlink && returnFilterStatus(comment)">
-          <comment :comment="comment" :comments="comments" :parentAuthor="author" :parentPermlink="permlink" :parentDepth="comment.depth" />
-        </q-card>
-      </span>
-    </q-card>
-    </span>
-  </span>
+  <section id="comments" class="comments" aria-labelledby="comments-heading">
+    <header class="comments__header">
+      <div class="comments__heading">
+        <h2 id="comments-heading" class="comments__title">Comments</h2>
+        <span class="comments__count">{{ count }}</span>
+      </div>
+
+      <div v-if="started && !loading && !error" class="comments__controls">
+        <q-select
+          v-model="sort"
+          :options="sortOptions"
+          dense
+          options-dense
+          borderless
+          emit-value
+          map-options
+          class="comments__sort"
+          aria-label="Sort comments"
+        />
+        <q-btn flat dense round icon="tune" aria-label="Comment filters" title="Comment filters">
+          <q-popup-proxy>
+            <q-card class="comments__filter-card">
+              <q-card-section>
+                <div class="comments__filter-title">Comment filters</div>
+                <q-checkbox v-model="showFiltered" label="Show hidden or flagged comments" dense />
+              </q-card-section>
+            </q-card>
+          </q-popup-proxy>
+        </q-btn>
+      </div>
+    </header>
+
+    <div v-if="!started" class="comments__intro">
+      <q-icon name="forum" size="28px" class="comments__intro-icon" aria-hidden="true" />
+      <p class="comments__intro-text">
+        {{ count > 0 ? count + ' replies so far. Join the conversation.' : 'No comments yet. Start the conversation.' }}
+      </p>
+      <div class="comments__intro-actions">
+        <q-btn
+          v-if="count > 0"
+          unelevated
+          no-caps
+          color="primary"
+          icon="forum"
+          label="Load comments"
+          @click="start"
+        />
+        <q-btn
+          v-if="loggedInUser"
+          outline
+          no-caps
+          color="primary"
+          icon="edit"
+          :label="count > 0 ? 'Write a comment' : 'Write the first comment'"
+          @click="showComposer = true"
+        />
+        <span v-else class="comments__login-hint">Log in to join the conversation.</span>
+      </div>
+    </div>
+
+    <div v-else-if="loading" class="comments__loading" aria-label="Loading comments">
+      <div v-for="i in 3" :key="i" class="comments__skeleton">
+        <q-skeleton type="circle" size="26px" />
+        <div class="comments__skeleton-lines">
+          <q-skeleton type="text" width="28%" />
+          <q-skeleton type="text" />
+          <q-skeleton type="text" width="72%" />
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="error" class="comments__state comments__state--error">
+      <q-icon name="error_outline" size="28px" color="orange" aria-hidden="true" />
+      <p>{{ error }}</p>
+      <q-btn outline no-caps color="primary" icon="refresh" label="Try again" @click="fetchComments" />
+    </div>
+
+    <template v-else>
+      <div v-if="visibleComments.length === 0" class="comments__state">
+        <p>{{ count > 0 ? 'No comments match the current filters.' : 'No comments yet.' }}</p>
+      </div>
+
+      <div v-else class="comments__list">
+        <comment
+          v-for="item in visibleComments"
+          :key="item.key"
+          :comment="item.comment"
+          :depth="item.depth"
+        />
+      </div>
+
+      <div class="comments__footer">
+        <span class="comments__progress">
+          Showing {{ visibleComments.length }} of {{ totalComments }} comments
+        </span>
+        <q-btn
+          v-if="hasMore"
+          outline
+          no-caps
+          color="primary"
+          icon="expand_more"
+          label="Load more comments"
+          @click="loadMore"
+        />
+        <q-btn
+          v-else-if="totalComments > pageSize"
+          flat
+          no-caps
+          color="primary"
+          icon="vertical_align_top"
+          label="Back to post"
+          @click="backToPost"
+        />
+      </div>
+    </template>
+
+    <q-dialog v-model="showComposer">
+      <q-card class="comments__composer">
+        <comment-box :parent_author="author" :parent_permlink="permlink" />
+      </q-card>
+    </q-dialog>
+  </section>
 </template>
-<style scoped>
-.comments-card {
-  margin-top: 0.5rem;
-  overflow: hidden;
-}
-.comments-card :deep(.q-card-section.section-title) {
-  padding-top: 0.9rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-}
-.comments-card :deep(.q-card) {
-  margin: 0.5rem;
-  border-radius: var(--radius-sm, 6px);
-}
-</style>
+
 <script>
+import { defineAsyncComponent } from 'vue'
 import comment from 'components/comment.vue'
+import {
+  COMMENT_SORT_OPTIONS,
+  countDiscussion,
+  flattenDiscussion
+} from 'src/services/comments'
+
+const PAGE_SIZE = 30
+
 export default {
   name: 'comments',
+  components: {
+    comment,
+    commentBox: defineAsyncComponent(() => import('components/commentBox.vue'))
+  },
+  props: {
+    author: { type: String, required: true },
+    permlink: { type: String, required: true },
+    commentCount: { type: Number, default: 0 }
+  },
   data () {
     return {
-      comments: [],
-      viewComments: true,
+      discussion: null,
+      started: false,
       loading: false,
-      filter: {
-        gray: true,
-        hide: true
-      },
-      commentSortMethod: { label: 'Votes (rshares)', value: 'net_rshares' },
-      commentSortMethods: [
-        { label: 'Votes (rshares)', value: 'net_rshares' },
-        { label: 'Age', value: 'post_id' },
-        { label: 'Author Reputation', value: 'author_reputation' },
-        { label: 'Replies', value: 'children' }
-      ],
-      commentSortDirection: { label: 'Descending', value: 'desc' },
-      commentSortDirections: [
-        { label: 'Ascending', value: 'asc' },
-        { label: 'Descending', value: 'desc' }
-      ]
+      error: '',
+      sort: 'best',
+      showFiltered: false,
+      visibleCount: PAGE_SIZE,
+      pageSize: PAGE_SIZE,
+      showComposer: false,
+      sortOptions: COMMENT_SORT_OPTIONS
+    }
+  },
+  computed: {
+    rootKey () {
+      return this.author + '/' + this.permlink
+    },
+    loggedInUser () {
+      return this.$hiveStore.user.username || null
+    },
+    totalComments () {
+      return countDiscussion(this.discussion, this.rootKey)
+    },
+    count () {
+      if (this.started && this.discussion) return this.totalComments
+      return Number(this.commentCount) || 0
+    },
+    flatComments () {
+      if (!this.discussion) return []
+      return flattenDiscussion(this.discussion, this.rootKey, {
+        sort: this.sort,
+        showFiltered: this.showFiltered
+      })
+    },
+    visibleComments () {
+      return this.flatComments.slice(0, this.visibleCount)
+    },
+    hasMore () {
+      return this.visibleCount < this.flatComments.length
     }
   },
   watch: {
-    viewComments: function () {
-      if (this.viewComments) {
-        this.getReplies()
-      }
+    sort () {
+      this.visibleCount = PAGE_SIZE
     },
-    commentSortMethod: {
-      deep: true,
-      handler: 'resortComments'
-    },
-    commentSortDirection: {
-      deep: true,
-      handler: 'resortComments'
-    }
-  },
-  props: ['author', 'permlink'],
-  components: { comment },
-  computed: {
-    loggedInUser () { return this.$hiveStore.user.username || null }
-  },
-  methods: {
-    resortComments () {
-      var c = this.comments
-      // this.comments = null
-      this.comments = this.sortData(this.commentSortMethod.value, c, this.commentSortDirection.value)
-    },
-    returnFilterStatus (comment) {
-      if (this.filter.gray && comment.stats.gray) { return false }
-      if (this.filter.hide && comment.stats.hide) { return false }
-      return true
-    },
-    async getReplies () {
-      this.loading = true
-      var params = { author: this.author, permlink: this.permlink }
-      if (this.loggedInUser) { params.observer = this.loggedInUser }
-      this.$hive.api.callAsync('bridge.get_discussion', params)
-        .then(response => {
-          this.loading = false
-          this.comments = response
-          this.resortComments()
-        })
-        .catch((err) => {
-          this.loading = false
-          console.error(err)
-        })
-    },
-    sortData (key, data, type) {
-      const ordered = {}
-      let compareFunction = function (a, b) {
-        return data[b][key] - data[a][key]
-      }
-      if (type === 'asc') {
-        compareFunction = function (a, b) {
-          return data[a][key] - data[b][key]
-        }
-      }
-      Object.keys(data).sort(compareFunction).forEach(function (key) {
-        ordered[key] = data[key]
-      })
-      return ordered
+    showFiltered () {
+      this.visibleCount = PAGE_SIZE
     }
   },
   mounted () {
-    this.getReplies()
+    if (window.location.hash === '#comments') this.start()
+  },
+  methods: {
+    start () {
+      if (this.started) return
+      this.started = true
+      this.fetchComments()
+    },
+    async fetchComments () {
+      this.loading = true
+      this.error = ''
+      const params = { author: this.author, permlink: this.permlink }
+      if (this.loggedInUser) params.observer = this.loggedInUser
+
+      try {
+        this.discussion = await this.$hive.api.callAsync('bridge.get_discussion', params)
+        this.visibleCount = PAGE_SIZE
+      } catch (error) {
+        console.error('Failed to load comments', error)
+        this.error = 'Could not load comments. The API node may be busy.'
+      } finally {
+        this.loading = false
+      }
+    },
+    loadMore () {
+      this.visibleCount += PAGE_SIZE
+    },
+    backToPost () {
+      const post = document.querySelector('.post-article')
+      post?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 }
 </script>
+
+<style scoped>
+.comments {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.comments__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.comments__heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.comments__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.comments__count {
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.07);
+  color: #b0bec5;
+  font-size: 0.78rem;
+}
+
+.comments__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.comments__sort {
+  width: 140px;
+  font-size: 0.82rem;
+}
+
+.comments__filter-card {
+  min-width: 250px;
+}
+
+.comments__filter-title {
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.comments__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-2);
+  text-align: center;
+}
+
+.comments__intro-icon {
+  color: #78909c;
+}
+
+.comments__intro-text {
+  margin: 0;
+  color: #b0bec5;
+}
+
+.comments__intro-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.comments__login-hint {
+  color: #90a4ae;
+  font-size: 0.85rem;
+}
+
+.comments__loading {
+  padding-top: var(--space-3);
+}
+
+.comments__skeleton {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.comments__skeleton-lines {
+  flex: 1;
+  min-width: 0;
+}
+
+.comments__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-2);
+  text-align: center;
+  color: #b0bec5;
+}
+
+.comments__list {
+  padding-top: var(--space-1);
+}
+
+.comments__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.comments__progress {
+  color: #90a4ae;
+  font-size: 0.78rem;
+}
+
+.comments__composer {
+  width: min(680px, 92vw);
+}
+
+@media (max-width: 599px) {
+  .comments {
+    padding: var(--space-3);
+  }
+
+  .comments__sort {
+    width: 120px;
+  }
+
+  .comments__footer {
+    justify-content: center;
+  }
+}
+</style>
