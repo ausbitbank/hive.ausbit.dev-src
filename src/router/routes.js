@@ -23,6 +23,7 @@ const routes = [
       { path: ':tag/@:author/:permlink', name: 'post-tagged', component: () => import('pages/post.vue') },
       { path: 'block/:blockNum', name: 'block', component: () => import('pages/block.vue') },
       { path: 'b/:blockNum', name: 'block-short', component: () => import('pages/block.vue') },
+      { path: 'blocks', name: 'blocks', component: () => import('pages/blocks.vue') },
       { path: 'tx/:txId', name: 'tx', component: () => import('pages/tx.vue') },
       { path: 'nodes', name: 'nodes', component: () => import('pages/nodes.vue') },
       { path: 'witnesses', name: 'witnesses', component: () => import('pages/witnesses.vue') },

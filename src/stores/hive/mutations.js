@@ -1,4 +1,5 @@
 import { LocalStorage, SessionStorage } from 'quasar'
+import { persistQueue } from './state'
 
 export function updateLoggedInUser (username) {
   this.user.username = username
@@ -44,14 +45,22 @@ export function updateSettings (settings) {
 
 export function addToQueue (newItem) {
   this.queue.push(newItem)
+  persistQueue(this.queue)
 }
 
 export function removeFromQueue (itemToRemove) {
   this.queue = this.queue.filter(a => a !== itemToRemove)
+  persistQueue(this.queue)
 }
 
 export function clearQueue () {
   this.queue = []
+  persistQueue(this.queue)
+}
+
+export function acknowledgeQueueRestored () {
+  this.queueRestored = false
+  this.restoredQueueCount = 0
 }
 
 export function updateFollowCount (followCount) {

@@ -39,14 +39,14 @@
           <q-btn dense color="primary" icon="content_copy" label="Copy" @click="copy(JSON.stringify(keys))" />
           <q-btn dense color="primary" icon="save" label="Save" @click="saveKeys()" />
           <q-btn dense color="red" icon="person_add" label="Create with token" @click="claimAccountWithToken()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || account.pending_claimed_accounts === 0 || !confirmedSaved" v-if="account.pending_claimed_accounts > 0" />
-          <q-btn dense color="red" icon="person_add" label="Create for 3 HIVE" @click="claimAccountWithHive()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || !confirmedSaved" v-if="parseFloat(account.balance.split(' ')[0]) > 3"/>
+          <q-btn dense color="red" icon="person_add" :label="'Create for ' + accountCreationFeeAmount + ' HIVE'" @click="claimAccountWithHive()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || !confirmedSaved" v-if="liquidHiveBalance > accountCreationFeeAmount"/>
           <q-btn dense label="Import keys to keychain" color="primary" icon="img:/statics/hive-keychain.svg" @click="importToKeychain()" />
         </q-card-actions>
       </q-card>
       </q-card-section>
       <q-card-section v-if="loggedInUser && account">
         {{ loggedInUser }} has <q-badge :color="account.pending_claimed_accounts > 0 ? 'primary' : 'red'">{{ account.pending_claimed_accounts }}</q-badge> account creation tokens available<br />
-        And enough liquid HIVE to purchase <q-badge :color="parseFloat(account.balance.split(' ')[0]) > 3 ? 'primary' : 'red'">{{ (parseFloat(account.balance.split(' ')[0]) / 3).toFixed(0) }}</q-badge> accounts (at 3 HIVE each)
+        And enough liquid HIVE to purchase <q-badge :color="liquidHiveBalance > accountCreationFeeAmount ? 'primary' : 'red'">{{ (liquidHiveBalance / accountCreationFeeAmount).toFixed(0) }}</q-badge> accounts (at {{ accountCreationFee }} each)
         <rc :username="loggedInUser" :showAccountClaimsOnly="true" />
       </q-card-section>
     </q-card>
@@ -68,7 +68,8 @@ export default {
       availableUsername: null,
       keys: null,
       roles: ['active', 'owner', 'posting', 'memo'],
-      confirmedSaved: false
+      confirmedSaved: false,
+      chainProperties: null
     }
   },
   watch: {
@@ -78,7 +79,20 @@ export default {
   computed: {
     globalProps: function () { return this.$hiveStore.globalProps },
     loggedInUser: function () { return this.$hiveStore.user.username },
-    account: function () { return this.$hiveStore.accounts[this.loggedInUser] || null }
+    account: function () { return this.$hiveStore.accounts[this.loggedInUser] || null },
+    liquidHiveBalance: function () {
+      const balance = this.account?.balance
+      if (typeof balance !== 'string') return 0
+      const amount = parseFloat(balance.split(' ')[0])
+      return Number.isFinite(amount) ? amount : 0
+    },
+    accountCreationFee: function () {
+      return this.formatAccountCreationFee(this.chainProperties?.account_creation_fee)
+    },
+    accountCreationFeeAmount: function () {
+      const amount = parseFloat(this.accountCreationFee.split(' ')[0])
+      return Number.isFinite(amount) && amount > 0 ? amount : 3
+    }
   },
   methods: {
     checkUsernameAvailable (username) {
@@ -97,6 +111,25 @@ export default {
     },
     copy (i) { copyToClipboard(i); this.$q.notify('Copied keys to clipboard') },
     linkAccount (account) { return '/@' + account },
+    // condenser_api returns the fee as an "x.xxx HIVE" string on Hive, but
+    // accept the asset object form too so a node/RPC change cannot break this.
+    formatAccountCreationFee (fee) {
+      if (typeof fee === 'string') {
+        const trimmed = fee.trim()
+        if (/^\d+(\.\d+)?\s+HIVE$/.test(trimmed)) return trimmed
+      }
+      if (fee && typeof fee === 'object' && fee.amount !== undefined) {
+        const precision = Number.isInteger(fee.precision) ? fee.precision : 3
+        const amount = Number(fee.amount) / Math.pow(10, precision)
+        if (Number.isFinite(amount) && amount >= 0) return amount.toFixed(precision) + ' HIVE'
+      }
+      return '3.000 HIVE'
+    },
+    getChainProperties () {
+      this.$hive.api.callAsync('condenser_api.get_chain_properties', [])
+        .then(props => { if (props) this.chainProperties = props })
+        .catch(err => { console.error('Failed to load chain properties', err?.cause?.data || err) })
+    },
     claimAccountWithToken () {
       var op = {
         creator: this.loggedInUser,
@@ -113,7 +146,7 @@ export default {
     },
     claimAccountWithHive () {
       var op = {
-        fee: '3.000 HIVE',
+        fee: this.accountCreationFee,
         creator: this.loggedInUser,
         new_account_name: this.newUsername,
         owner: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.owner), 1]] },
@@ -143,6 +176,7 @@ export default {
   },
   mounted () {
     document.title = 'Create new Hive account'
+    this.getChainProperties()
   }
 }
 </script>

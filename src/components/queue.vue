@@ -183,6 +183,17 @@ export default {
     }
   },
   mounted () {
+    if (this.$hiveStore.queueRestored) {
+      const count = this.$hiveStore.restoredQueueCount || this.queue.length
+      this.$q.notify({
+        message: 'Restored ' + count + ' queued action' + (count === 1 ? '' : 's'),
+        color: 'orange',
+        icon: 'restore',
+        position: 'top',
+        timeout: 4000
+      })
+      this.$hiveStore.acknowledgeQueueRestored()
+    }
     if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
   }

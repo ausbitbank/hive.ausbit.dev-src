@@ -13,6 +13,7 @@
         <div><q-badge color="primary">{{ resourceBudgetTransfers }}</q-badge> transfers</div>
         </span>
         <div><q-badge :color="resourceBudgetClaimAccounts > 0 ? 'primary' : 'red'">{{ resourceBudgetClaimAccounts }}</q-badge> account claims</div>
+        <div class="text-caption text-grey q-mt-xs">Protocol approximations based on typical operation sizes; actual costs vary with chain state.</div>
     </q-card-section>
     <q-card-section v-if="showAccountClaimsOnly">
       <q-btn dense color="primary" icon="generating_tokens" label="Claim account creation token" @click="claimAccount()" v-if="loggedInUser" :disable="resourceBudgetClaimAccounts < 1" />
@@ -29,6 +30,18 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
+
+// Protocol approximations, not live chain quotes. Hive does not expose a stable
+// per-operation RC price through rc_api, and the real cost depends on the
+// current resource pool and transaction size. These constants are typical
+// values observed on mainnet and are presented as estimates.
+const RC_COST_APPROXIMATIONS = {
+  comment: 1175937456,
+  vote: 109514642,
+  transfer: 487237759,
+  claimAccount: 8541343515163
+}
+
 // Calculate Resource Credits availability, present as a progress bar
 export default {
   name: 'rc',
@@ -56,7 +69,7 @@ export default {
     },
     resourceBudgetComments: function () {
       if (this.RC.rc_manabar !== undefined) {
-        const cost = 1175937456
+        const cost = RC_COST_APPROXIMATIONS.comment
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -69,7 +82,7 @@ export default {
     },
     resourceBudgetVotes: function () {
       if (this.RC.rc_manabar !== undefined) {
-        const cost = 109514642
+        const cost = RC_COST_APPROXIMATIONS.vote
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -82,7 +95,7 @@ export default {
     },
     resourceBudgetTransfers: function () {
       if (this.RC.rc_manabar !== undefined) {
-        const cost = 487237759
+        const cost = RC_COST_APPROXIMATIONS.transfer
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -95,7 +108,7 @@ export default {
     },
     resourceBudgetClaimAccounts: function () {
       if (this.RC.rc_manabar !== undefined) {
-        const cost = 8541343515163
+        const cost = RC_COST_APPROXIMATIONS.claimAccount
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'

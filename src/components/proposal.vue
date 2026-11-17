@@ -70,7 +70,8 @@
         <q-icon name="check" color="green" />
       </q-item-section>
       <q-item-section>
-        Voted by {{ loggedInUser }} <a :href="returnHiveSignerDeny(p.id)" target="blank" rel="noopener noreferrer">Unvote</a>
+        Voted by {{ loggedInUser }}
+        <q-btn dense flat color="red" icon="thumb_down_off_alt" label="Unvote" @click="voteProposal(false)" />
       </q-item-section>
     </q-item>
     <q-item v-else-if="p.status === 'active'">
@@ -78,7 +79,7 @@
         <q-icon name="check_box_outline_blank" />
       </q-item-section>
       <q-item-section>
-        <a :href="returnHiveSignerApprove(p.id)" target="_blank" rel="noopener noreferrer">Vote for proposal</a>
+        <q-btn dense flat color="green" icon="thumb_up_alt" label="Vote for proposal" @click="voteProposal(true)" />
       </q-item-section>
     </q-item>
     <q-item>
@@ -114,9 +115,35 @@ export default {
     returnUserLink (user) { return '/@' + user },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     returnNiceDate (timestamp) { return moment(timestamp).format('Do MMMM YYYY') },
-    returnHiveSignerApprove (id) { return 'https://hivesigner.com/sign/update-proposal-votes?proposal_ids=%5B' + id + '%5D&approve=true' },
-    returnHiveSignerDeny (id) { return 'https://hivesigner.com/sign/update-proposal-votes?proposal_ids=%5B' + id + '%5D&approve=false' },
     returnPeakdProposalLink (id) { return 'https://peakd.com/me/proposals/' + id },
+    voteProposal (approve) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'warning', message: 'Login to vote' })
+        return
+      }
+      const proposalId = Number(this.p.id)
+      if (!Number.isInteger(proposalId)) {
+        this.$q.notify({ type: 'negative', message: 'Invalid proposal id' })
+        return
+      }
+      this.$hiveStore.addToQueue([
+        this.loggedInUser,
+        'posting',
+        ['update_proposal_votes', {
+          voter: this.loggedInUser,
+          proposal_ids: [proposalId],
+          approve: approve
+        }]
+      ])
+      // The proposal objects are owned by pages/proposals.vue and are updated
+      // in place there too, so reflect the queued vote optimistically.
+      // eslint-disable-next-line vue/no-mutating-props
+      this.p.voted = approve
+      this.$q.notify({
+        type: approve ? 'positive' : 'info',
+        message: (approve ? 'Vote' : 'Unvote') + ' queued for proposal ' + proposalId
+      })
+    },
     vestToHive (vests) {
       if (this.globalProps) {
         return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive)
