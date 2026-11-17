@@ -16,6 +16,12 @@ Status: complete (pending coordinator integration/verification).
   - Encrypted-at-rest format (`encryptKey`/`decryptKey`, SJCL + base58 in
     `ausbitdev_peaklock_v2`) is unchanged.
   - Dropped the now-unused `base58` import from the store.
+  - Added `purgeLegacyUnlockedKeyCache()`: scans `localStorage` inside a
+    try/catch and removes leftovers from older builds under
+    `ausbitdev_peaklock_cache_v2_*` and `lscache-ausbitdev_peaklock_cache_v2_*`.
+    Returns the number of entries removed (0 on failure or non-browser
+    contexts). This closes the gap where old plaintext unlocked keys could
+    still be recovered by an XSS.
 - `src/components/smartlock/utils.js`
   - New encryptions use `sjcl.encrypt(password, key, { iter: 100000 })`.
     Existing ciphertext embeds its own KDF params and still decrypts.
@@ -24,6 +30,9 @@ Status: complete (pending coordinator integration/verification).
     (`importAccount`).
   - `unlockAccount` accepts any non-empty password so existing accounts with
     shorter passwords keep working.
+  - Calls `purgeLegacyUnlockedKeyCache()` once at module load (browser-safe;
+    the helper itself returns 0 rather than throwing in jsdom/private-mode
+    contexts).
 - `src/components/userLogin.vue`
   - Unlock prompt calls `unlockAccount(user, data, false)`.
   - Dialog copy explains unlocked keys are memory-only and the password is
@@ -95,6 +104,10 @@ with `target="_blank"` (or `target="blank"`):
   carries it on the following line).
 - `bunx eslint <all changed files>` → clean.
 - `bun run lint` (`eslint .`) → passes with no errors or warnings.
+- Manual `purgeLegacyUnlockedKeyCache()` check: removed 2 legacy keys
+  (`ausbitdev_peaklock_cache_v2_*` and `lscache-ausbitdev_peaklock_cache_v2_*`),
+  left the encrypted locker and unrelated keys, returned 0 on a second run and 0
+  with no `localStorage`.
 - Did not run `bun run build` or `bun install` (per workstream rules).
 
 ## Open issues / coordinator actions
@@ -109,9 +122,9 @@ with `target="_blank"` (or `target="blank"`):
 - W6 tests should target `getHiveEngine().find()` (fetch mock) and the new
   `safeUrl`/`safeHtml` helpers; the old `sscjs`-shaped client no longer exists.
 - Users who previously used "keep unlocked" will now be asked for their password
-  after reload by design. Old `ausbitdev_peaklock_cache_v2` entries may remain in
-  browser storage from earlier visits; the app no longer reads or writes them.
-  A one-time cleanup could be added later, but was intentionally not done here.
+  after reload by design. Legacy plaintext `ausbitdev_peaklock_cache_v2_*`
+  entries are purged once on SmartLock module load; if a user has not loaded the
+  app since the purge shipped, the entries remain until the next visit.
 - CSP in `docs/SECURITY.md` still needs `'unsafe-inline'` for script/style until
   the build emits nonces/hashes. Do not enable HSTS preload until every
   subdomain is HTTPS-only.

@@ -1,8 +1,11 @@
 // Code kindly provided by Asgarth of peakd.com and probably butchered by ausbit
 
 import hive from '@hiveio/hive-js'
-import { getPosting, unlock, lock, save, remove, allUsers } from './store'
+import { getPosting, unlock, lock, save, remove, allUsers, purgeLegacyUnlockedKeyCache } from './store'
 import api from './api'
+
+// Remove plaintext unlocked keys left behind by older SmartLock versions.
+purgeLegacyUnlockedKeyCache()
 
 // Minimum length for NEW imports only. Existing accounts with shorter
 // passwords can still be unlocked (see unlockAccount below).

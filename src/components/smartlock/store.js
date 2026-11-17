@@ -2,6 +2,12 @@ import { encryptKey, decryptKey } from './utils'
 
 export const LOCKER_LOCALSTORAGE_KEY = 'ausbitdev_peaklock_v2'
 
+// Older SmartLock versions wrote unlocked posting keys to lscache in plaintext.
+// The app no longer reads or writes these entries; purge them so a later XSS
+// cannot recover them.
+const LEGACY_UNLOCKED_CACHE_PREFIX = 'ausbitdev_peaklock_cache_v2_'
+const LEGACY_LSCACHE_PREFIX = `lscache-${LEGACY_UNLOCKED_CACHE_PREFIX}`
+
 // Unlocked posting keys live in memory only. They are never written to
 // localStorage/sessionStorage, so a reload always requires the password again.
 const unlocked = {}
@@ -23,6 +29,30 @@ function getLocker () {
 function getUser (username) {
   const locker = getLocker()
   return locker[username]
+}
+
+// One-time migration: remove plaintext unlocked-key entries written by older
+// SmartLock builds. Safe to call in browsers, jsdom and private-mode contexts.
+export function purgeLegacyUnlockedKeyCache () {
+  try {
+    if (typeof localStorage === 'undefined' || !localStorage) {
+      return 0
+    }
+
+    const legacyKeys = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.startsWith(LEGACY_UNLOCKED_CACHE_PREFIX) || key.startsWith(LEGACY_LSCACHE_PREFIX))) {
+        legacyKeys.push(key)
+      }
+    }
+
+    legacyKeys.forEach(key => localStorage.removeItem(key))
+    return legacyKeys.length
+  } catch (error) {
+    console.warn('Could not purge legacy SmartLock cache', error)
+    return 0
+  }
 }
 
 function getAccountKey (username, role = 'posting', password) {
