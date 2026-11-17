@@ -127,9 +127,34 @@ and safer to extend.
   expected posting key.
 - Export/import drafts as JSON for backup.
 
-## Track 4 — Search and discovery
+## Track 4 — UI polish and visual consistency
 
-### W27 — Unified search and discovery
+This is a continuous layer applied during every workstream, with a dedicated
+audit pass below. It is not just cosmetic: spacing, alignment and density affect
+scanability and perceived reliability.
+
+### W27 — UI polish and visual consistency audit
+
+- **Header lockup:** fix the `src/layouts/MainLayout.vue` hive icon and title
+  gap, optical alignment, icon sizing and responsive hiding. Audit the search,
+  queue, notifications, account and settings action group spacing.
+- **Post sidebar:** rebuild the spacing rhythm in `src/pages/post.vue` around the
+  author card, post-details card and tip/metadata actions. Align card headers,
+  labels and values; reduce sparse/dead space; make action buttons and dividers
+  visually consistent; verify sticky and mobile behaviour.
+- **Card and list rhythm:** audit padding, 4/8px spacing, icon-text gaps, button
+  heights, focus rings, separators and empty-state balance across account,
+  wallet, witness, market and post cards.
+- **Navigation and drawers:** align sidebar sections, section headers, icon
+  columns and footer content; check mobile drawer density.
+- **Typography:** consistent eyebrow/title/body/meta scale and truncation
+  behaviour; avoid one-character label wraps.
+- **Visual regression evidence:** before/after screenshots at 1440px and 390px;
+  axe zero; no overflow; no layout shift during load.
+
+## Track 5 — Search and discovery
+
+### W28 — Unified search and discovery
 
 - One search surface for accounts, posts, tags, communities, blocks,
   transactions, proposals and witnesses.
@@ -149,11 +174,13 @@ and safer to extend.
 | 2 | W24 | Stable startup, updates and offline behaviour |
 | 3 | W25 | Deep governance and community intelligence |
 | 4 | W26 | Creator workflow on top of the reliable platform |
-| 5 | W27 | Search and discovery, last by request |
+| 5 | W27 | UI polish and visual consistency audit |
+| 6 | W28 | Search and discovery, last by request |
 
 Tracks may overlap only when they share a dependency. Performance and reliability
 land before feature work that would otherwise make the bundle or network layer
-harder to reason about.
+harder to reason about. UI polish is applied continuously; W27 is the formal
+audit and cleanup pass.
 
 ## Definition of done
 
