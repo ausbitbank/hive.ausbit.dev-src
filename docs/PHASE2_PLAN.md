@@ -29,9 +29,10 @@ functionality → performance/aesthetics**, without regressing the revamp.
 |----|------|--------|-------|-------|
 | W1 | Security hardening | done | security agent | smartlock, communityHeader, safe URL helper, target=_blank, security docs |
 | W2 | Mobile/UX/accessibility | done | ux agent | MainLayout, header/search, accountHeader, carousels, browse toolbar, a11y |
-| W3 | SEO/meta/sitemap | in_progress | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
+| W3 | SEO/meta/sitemap | done | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
 | W4 | Functionality | done | feature agent | blocks page, proposal votes, queue persistence, node selection, RC/account fee |
-| W5 | Performance/aesthetics | pending | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
+| W5a | Performance | in_progress | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
+| W5b | Visual/theme polish | pending | design agent |
 | W6 | Tests/CI | done | test agent | vitest, unit tests, CI workflow, package scripts |
 
 ## Integration order
@@ -40,7 +41,7 @@ functionality → performance/aesthetics**, without regressing the revamp.
    coordinator after W1).
 2. W2 + W4 (disjoint file sets; verify no overlap).
 3. W3 (depends on W2/W4 page structure).
-4. W5 (last; broad mechanical sweeps).
+4. W5a (performance sweeps), then W5b (visual/theme polish).
 5. Final verification, merge to `master`, push, deploy.
 
 ## W1 — Security hardening
@@ -173,3 +174,7 @@ Use `./scripts/deploy.sh`. The pre-phase-2 live build is backed up on
 - Batch 2 (W2/W4/W6 follow-ups) is committed through `6e2cf91`. Mobile smoke at
   390px shows no horizontal overflow; axe has zero violations on home, wallet
   and account.
+
+- Batch 3 (W3 SEO/meta) is committed in `59aeaef`. Per-page meta, OG/Twitter,
+  canonical, JSON-LD and sitemap verified in the browser.
+- W5 is split: W5a performance/dependency sweeps, W5b visual/theme polish.
