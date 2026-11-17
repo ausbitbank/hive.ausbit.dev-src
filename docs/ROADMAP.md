@@ -7,10 +7,11 @@ It records what is done, what remains, and the design standards already in use.
 
 ## Current state
 
-Current verified baseline: **`404d0a7` on `master`**, pushed to `origin/master`.
+Current verified baseline: **`05e28c2` on `master`**, pushed to `origin/master`.
 Production `hive.ausbit.dev` is deployed from this build. W16 (wallet), W17
-(witnesses, health, nodes), W18 (markets, HBD tools, internal market) and W19
-(queue, notifications, SmartLock, login) are complete.
+(witnesses, health, nodes), W18 (markets, HBD tools, internal market), W19
+(queue, notifications, SmartLock, login) and W20 (data layer, shared UI,
+legacy page consistency) are complete.
 
 Recent completed workstreams:
 
@@ -45,6 +46,11 @@ Recent completed workstreams:
   retry failures and clear completed; paginated/filterable notification inbox
   with live unread badge and queued mark-all-read; SmartLock lock controls,
   inactivity timeout and clearer posting/active key guidance (W19).
+- Data layer and consistency: central JSON-RPC read client with timeouts,
+  retries, failover and cancellation; TTL/stale-while-revalidate caches for
+  accounts, global props, witnesses and posts; visibility-aware polling;
+  shared page/stat/empty/skeleton/table/filter components; rebuilt HBD,
+  stabilizer and tax pages (W20).
 
 Relevant docs:
 
@@ -61,6 +67,7 @@ Relevant docs:
 - `docs/workstreams/W17-witnesses-health.md`
 - `docs/workstreams/W18-markets.md`
 - `docs/workstreams/W19-queue-login.md`
+- `docs/workstreams/W20-data-layer.md`
 
 ## Priority 1 — wallet page rebuild (complete)
 
@@ -154,16 +161,30 @@ Checks: lint clean, 27 test files / 226 tests passing, build succeeded, zero axe
 violations at 1440px and 390px with the login, settings, SmartLock, queue and
 notification surfaces open, deploy and live smoke completed.
 
-## Priority 5 — data layer and consistency
+## Priority 5 — data layer and consistency (complete)
 
-- Central API client: timeout, retries, node failover, cancellation.
-- TTL cache / stale-while-revalidate for global props, accounts, posts and
-  witnesses.
-- Pause polling when the tab is hidden.
+Completed 2026-11-18. See `docs/workstreams/W20-data-layer.md`.
+
+- Central JSON-RPC read client with timeout, retry, node failover, cancellation
+  and `HiveApiError` metadata. Node selection now keeps hive-js and the central
+  client on the same endpoint.
+- Bounded TTL cache with stale-while-revalidate, in-flight de-duplication and
+  prefix invalidation. Cached reads cover global props, accounts, witnesses,
+  posts, follow counts, median/ticker and open orders.
+- Store actions, witness/health surfaces, home/browse posts, block head reads,
+  HBD and stabilizer now use the cached read layer; mutation paths force fresh
+  account reads.
+- `VueTimers` and a shared polling helper pause while the tab is hidden and
+  refresh once when it returns; account auto-refresh and notifications follow
+  the same visibility rule.
 - Shared `PageHeader`, `StatCard`, `EmptyState`, `Skeleton`, `DataTable` and
-  `FilterBar` components.
-- Move remaining legacy pages onto the current card/typography system.
-- Consistent loading, empty, error and stale-data states.
+  `FilterBar` components under `src/components/ui/`.
+- `/hbd`, `/hbdstabilizer` and `/tax` moved onto the shared card/typography
+  system with consistent loading, empty, error and stale/error-with-data states.
+
+Checks: lint clean, 31 test files / 245 tests passing, build succeeded, zero axe
+violations at 1440px and 390px on the migrated pages, deploy and live smoke
+completed.
 
 ## Priority 6 — quick wins and hardening
 
@@ -199,28 +220,28 @@ notification surfaces open, deploy and live smoke completed.
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The current verified baseline is commit
-> `404d0a7` on `master`, pushed to `origin/master`; W16 (wallet), W17
-> (witnesses, health, nodes), W18 (markets, HBD tools, internal market) and W19
-> (queue, notifications, SmartLock, login) are complete, with 27 test files /
-> 226 tests passing, a green build, and production deployed from the same
-> commit.
+> `05e28c2` on `master`, pushed to `origin/master`; W16 (wallet), W17
+> (witnesses, health, nodes), W18 (markets, HBD tools, internal market), W19
+> (queue, notifications, SmartLock, login) and W20 (data layer, shared UI,
+> legacy page consistency) are complete, with 31 test files / 245 tests
+> passing, a green build, and production deployed from the same commit.
 >
-> Continue with **Priority 5 — data layer and consistency**. Review the current
-> API, polling, cache and page-state patterns before changing them:
-> `src/services/`, `src/stores/hive/`, `src/boot/`, `src/pages/` and the shared
-> components under `src/components/`.
+> Continue with **Priority 6 — quick wins and hardening**.
 >
 > Deliver:
 >
-> 1. A central API client with timeout, retries, node failover and cancellation.
-> 2. TTL cache / stale-while-revalidate for global props, accounts, posts and
->    witnesses.
-> 3. Pause polling when the tab is hidden.
-> 4. Shared `PageHeader`, `StatCard`, `EmptyState`, `Skeleton`, `DataTable` and
->    `FilterBar` components.
-> 5. Move remaining legacy pages onto the current card/typography system with
->    consistent loading, empty, error and stale-data states.
-> 6. A new `docs/workstreams/W20-data-layer.md` workstream record.
+> 1. Playwright E2E coverage for login simulation, comment posting, proposal
+>    voting, wallet actions, browse filters and queue broadcasting.
+> 2. Axe checks in CI for key routes.
+> 3. PWA/offline shell and queue persistence hardening.
+> 4. SEO: prerender key routes, post/account structured data and RSS feeds.
+> 5. Keyboard shortcuts and focus traps in dialogs.
+> 6. “Back to top” for long pages, a better 404 with search suggestions, and
+>    copy/share actions for blocks, transactions, accounts and proposals.
+> 7. README revamp: project overview, feature/route tour, screenshots, stack and
+>    architecture, local setup, commands, deploy/rollback, API/data sources,
+>    key-authority guidance, and links to `ROADMAP.md` and workstream docs.
+> 8. A new `docs/workstreams/W21-hardening.md` workstream record.
 >
 > Follow the existing standards: use the design tokens and card patterns, keep
 > one page-level `h1`, preserve correct posting/active queue authorities, sanitize
@@ -232,5 +253,4 @@ notification surfaces open, deploy and live smoke completed.
 > and `ROADMAP.md`, report the test count, build/deploy status and backup path,
 > then commit and push the verified work and confirm the working tree is clean.
 >
-> Do not redo W16–W19 except for integration fixes. The README revamp is tracked
-> in Priority 6 and is not part of this session.
+> Do not redo W16–W20 except for integration fixes.
