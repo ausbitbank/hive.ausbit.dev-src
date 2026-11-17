@@ -2,6 +2,61 @@
   <q-page class="wallet-page flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
+        <div class="wallet-content">
+          <q-card flat bordered class="wallet-summary">
+            <q-card-section class="wallet-summary__head">
+              <div>
+                <div class="wallet-summary__eyebrow">Portfolio</div>
+                <div class="wallet-summary__total">
+                  <template v-if="walletSummary.pricesReady">${{ formatUsd(walletSummary.totalUsd) }}</template>
+                  <template v-else>—</template>
+                </div>
+                <div class="wallet-summary__sub">HIVE and HBD holdings · @{{ account.name }}</div>
+              </div>
+              <div class="wallet-summary__actions">
+                <q-btn flat dense round icon="refresh" aria-label="Refresh wallet summary" title="Refresh wallet summary" @click="refreshWalletSummary" />
+                <q-btn outline no-caps color="primary" icon="account_balance_wallet" label="Manage balances" @click="scrollToBalances" />
+              </div>
+            </q-card-section>
+            <div class="wallet-summary__grid">
+              <div class="wallet-summary-stat">
+                <span>Liquid HIVE</span>
+                <strong>{{ tidyNumber(walletSummary.liquidHive.toFixed(3)) }}</strong>
+                <small>${{ formatUsd(walletSummary.liquidHiveUsd) }}</small>
+              </div>
+              <div class="wallet-summary-stat">
+                <span>Staked HP</span>
+                <strong>{{ tidyNumber(walletSummary.stakedHive.toFixed(3)) }}</strong>
+                <small>${{ formatUsd(walletSummary.stakedHiveUsd) }}</small>
+              </div>
+              <div class="wallet-summary-stat">
+                <span>Liquid HBD</span>
+                <strong>{{ tidyNumber(walletSummary.liquidHbd.toFixed(3)) }}</strong>
+                <small>${{ formatUsd(walletSummary.liquidHbdUsd) }}</small>
+              </div>
+              <div class="wallet-summary-stat">
+                <span>Savings</span>
+                <strong>{{ tidyNumber(walletSummary.savingsHive.toFixed(3)) }} HIVE</strong>
+                <small>{{ tidyNumber(walletSummary.savingsHbd.toFixed(3)) }} HBD</small>
+              </div>
+              <div class="wallet-summary-stat">
+                <span>Pending rewards</span>
+                <strong>${{ formatUsd(walletSummary.pendingValueUsd) }}</strong>
+                <small>{{ walletSummary.pendingHive.toFixed(3) }} HIVE · {{ walletSummary.pendingHbd.toFixed(3) }} HBD</small>
+              </div>
+              <div class="wallet-summary-stat">
+                <span>Yield</span>
+                <strong>{{ hivePowerAPR || '—' }}% HP</strong>
+                <small>{{ walletSummary.hbdApr }}% HBD savings</small>
+              </div>
+            </div>
+            <q-card-section class="wallet-summary__footer">
+              <span>Balances in HIVE and HBD only</span>
+              <span v-if="walletSummary.powerdown">Powering down {{ walletSummary.powerdown }}</span>
+              <span v-if="pendingHbdInterest > 0.01">+{{ pendingHbdInterest }} HBD pending interest</span>
+            </q-card-section>
+          </q-card>
+
           <q-card dense flat bordered class="wallet-shell q-ma-none q-pt-sm">
             <div class="text-h6 text-center text-green wallet-section-title"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
@@ -860,6 +915,7 @@
                 </q-tab-panel>
             </q-tab-panels>
           </q-card>
+        </div>
       </div>
     </q-page>
 </template>
@@ -867,6 +923,105 @@
 .wrap { overflow:auto; overflow-wrap: break-word; }
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #1d8ce0; }
+.wallet-content {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 0.75rem 1.5rem;
+}
+
+.wallet-summary {
+  overflow: hidden;
+  border-radius: var(--radius-card, 10px);
+}
+
+.wallet-summary__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 1rem 1.1rem 0.8rem;
+}
+
+.wallet-summary__eyebrow {
+  color: #78909c;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.wallet-summary__total {
+  margin-top: 0.15rem;
+  color: #e4eaed;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.wallet-summary__sub {
+  margin-top: 0.2rem;
+  color: #90a4ae;
+  font-size: 0.8rem;
+}
+
+.wallet-summary__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.wallet-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0 1.1rem 1rem;
+}
+
+.wallet-summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.wallet-summary-stat span {
+  color: #90a4ae;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wallet-summary-stat strong {
+  color: #e4eaed;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.wallet-summary-stat small {
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
+.wallet-summary__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 1.1rem 0.7rem;
+  border-top: 1px solid var(--border-subtle);
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
 .wallet-shell {
   width: 100%;
   max-width: 1000px;
@@ -906,6 +1061,23 @@ a:visited { color: #1d8ce0; }
   font-size: 0.72rem;
 }
 @media (max-width: 599px) {
+  .wallet-content {
+    padding: 0 0.5rem 1.25rem;
+  }
+
+  .wallet-summary__head {
+    padding: 0.85rem 0.8rem 0.7rem;
+  }
+
+  .wallet-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0 0.8rem 0.8rem;
+  }
+
+  .wallet-summary__footer {
+    padding: 0.5rem 0.8rem 0.65rem;
+  }
+
   .wallet-tx :deep(.q-item) {
     padding: 8px 6px;
   }
@@ -1040,6 +1212,55 @@ export default {
       }
     },
     loggedInUser: function () { return this.$hiveStore.user.username },
+    walletSummary: function () {
+      const account = this.account || {}
+      const number = value => {
+        const parsed = parseFloat(value)
+        return Number.isFinite(parsed) ? parsed : 0
+      }
+      const liquidHive = number(account.balance)
+      const stakedHive = number(this.vestToHive(number(account.vesting_shares)))
+      const liquidHbd = number(account.hbd_balance)
+      const savingsHive = number(account.savings_balance)
+      const savingsHbd = number(account.savings_hbd_balance)
+      const pendingHive = number(account.reward_hive_balance)
+      const pendingHbd = number(account.reward_hbd_balance)
+      const pendingHp = number(this.vestToHive(number(account.reward_vesting_balance)))
+      const hivePrice = Number(this.hivePriceUsd) || 0
+      const hbdPrice = Number(this.hbdPriceUsd) || 0
+      const pricesReady = hivePrice > 0 || hbdPrice > 0
+      const liquidHiveUsd = liquidHive * hivePrice
+      const stakedHiveUsd = stakedHive * hivePrice
+      const liquidHbdUsd = liquidHbd * hbdPrice
+      const savingsUsd = savingsHive * hivePrice + savingsHbd * hbdPrice
+      const pendingValueUsd = pendingHive * hivePrice + pendingHbd * hbdPrice + pendingHp * hivePrice
+      const hbdApr = this.globalProps && this.globalProps.hbd_interest_rate
+        ? (Number(this.globalProps.hbd_interest_rate) / 100).toFixed(2)
+        : '0.00'
+      const withdrawRate = number(account.vesting_withdraw_rate)
+      const powerdown = withdrawRate > 0
+        ? this.tidyNumber(this.vestToHive(withdrawRate)) + ' HIVE/week'
+        : ''
+
+      return {
+        liquidHive,
+        stakedHive,
+        liquidHbd,
+        savingsHive,
+        savingsHbd,
+        pendingHive,
+        pendingHbd,
+        liquidHiveUsd,
+        stakedHiveUsd,
+        liquidHbdUsd,
+        savingsUsd,
+        pendingValueUsd,
+        pricesReady,
+        totalUsd: liquidHiveUsd + stakedHiveUsd + liquidHbdUsd + savingsUsd + pendingValueUsd,
+        hbdApr,
+        powerdown
+      }
+    },
     hivePowerAPR: function () { // orig-src https://gitlab.syncad.com/hive/wallet/-/blob/develop/src/app/components/modules/UserWallet.jsx#L105
       if (this.globalProps && !this.globalProps.empty && this.globalProps.head_block_number) {
         // The inflation was set to 9.5% at block 7m
@@ -1150,6 +1371,21 @@ export default {
     vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     tidyNumber (x) { if (x !== null && x !== undefined) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
+    formatUsd (value) {
+      const number = Number(value)
+      if (!Number.isFinite(number)) return '—'
+      return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    },
+    async refreshWalletSummary () {
+      this.$hiveStore.getAccount(this.username)
+      await this.getPricesCoingecko().catch(() => {})
+    },
+    scrollToBalances () {
+      this.tab = 'hive'
+      this.$nextTick(() => {
+        document.querySelector('.wallet-shell')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    },
     async getHiveWalletTransactions (index, done) {
       this.loading = true
       await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, this.accountHistoryPointer, this.accountHistoryLimit, ...this.bitmask])

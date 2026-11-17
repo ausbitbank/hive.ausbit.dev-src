@@ -1,11 +1,11 @@
 <template>
-  <div v-if="RC.rc_manabar !== undefined">
-    <q-linear-progress dark stripe rounded size="20px" :value="rcPercent" color="green" class="q-mt-sm" aria-label="Resource credits available" v-if="!showAccountClaimsOnly">
+  <div v-if="RC.rc_manabar !== undefined" :class="{ 'rc--compact': compact }">
+    <q-linear-progress dark stripe rounded :size="compact ? '10px' : '20px'" :value="rcPercent" color="green" :class="compact ? 'q-mt-xs' : 'q-mt-sm'" aria-label="Resource credits available" v-if="!showAccountClaimsOnly">
       <div class="absolute-full flex flex-center">
           <q-badge color="black" text-color="primary" >{{ (rcPercent * 100).toFixed(2) }} %</q-badge>
       </div>
     </q-linear-progress>
-    <q-card-section class="text-center">
+    <q-card-section class="text-center" v-if="!compact">
         <div class="text-bold">Enough Resource Credits for approximately <q-icon name="info" color="blue" title="Click for more RC info" @click="showAll = !showAll" /></div>
         <span v-if="!showAccountClaimsOnly">
         <div><q-badge color="primary">{{ resourceBudgetComments }}</q-badge> comments</div>
@@ -15,7 +15,7 @@
         <div><q-badge :color="resourceBudgetClaimAccounts > 0 ? 'primary' : 'red'">{{ resourceBudgetClaimAccounts }}</q-badge> account claims</div>
         <div class="text-caption text-grey q-mt-xs">Protocol approximations based on typical operation sizes; actual costs vary with chain state.</div>
     </q-card-section>
-    <q-card-section v-if="showAccountClaimsOnly">
+    <q-card-section v-if="showAccountClaimsOnly && !compact">
       <q-btn dense color="primary" icon="generating_tokens" label="Claim account creation token" @click="claimAccount()" v-if="loggedInUser" :disable="resourceBudgetClaimAccounts < 1" />
       <q-btn dense flat color="primary" icon="refresh" @click="init()" />
     </q-card-section>
@@ -45,7 +45,12 @@ const RC_COST_APPROXIMATIONS = {
 // Calculate Resource Credits availability, present as a progress bar
 export default {
   name: 'rc',
-  props: ['username', 'display', 'showAccountClaimsOnly'],
+  props: {
+    username: { type: String, required: true },
+    display: { type: Boolean, default: false },
+    showAccountClaimsOnly: { type: Boolean, default: false },
+    compact: { type: Boolean, default: false }
+  },
   data () {
     return {
       loading: false,

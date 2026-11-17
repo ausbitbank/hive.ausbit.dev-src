@@ -1,189 +1,495 @@
 <template>
-  <q-page class="flex">
-    <q-card flat bordered v-if="error" class="q-ma-lg q-pa-lg" style="margin:auto">
-      <q-list>
-        <q-item>
-          <q-item-section avatar>
-            <q-icon size="lg" name="error" color="orange" />
-          </q-item-section>
-          <q-item-section>
-            {{ errorMessage }}
-          </q-item-section>
-        </q-item>
-      </q-list>
+  <q-page class="account-page">
+    <q-card v-if="error" flat bordered class="account-state">
+      <q-icon name="error_outline" size="2.2em" color="orange" aria-hidden="true" />
+      <h1 class="account-state__title">Account not found</h1>
+      <p>{{ errorMessage || 'This account could not be loaded.' }}</p>
+      <q-btn outline no-caps color="primary" icon="arrow_back" label="Back to browse" to="/browse" />
     </q-card>
-    <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null && !error">
-      <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-        <div class="col-xs-12 col-sm-12 col-md-4" style="max-width: 500px">
-          <q-card flat bordered class="text-center q-pa-sm q-ma-md">
-            <q-card-section>
-                <div class="text-subtitle">Vote Weight</div>
-                <div class="text-h6">{{ effectiveHPTidy }} HP</div>
-                <div class="text-caption text-grey">
-                    <span title="Vested Hive">{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}</span> + <span title="Incoming delegations">{{ tidyNumber(vestToHive(parseInt(account.received_vesting_shares.split(' ')[0]))) }}</span> - <span title="Outgoing delegations">{{ tidyNumber(vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0]))) }}</span>
-                </div>
-                <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
-                    <div>Next powerdown: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE</div>
-                    <div class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</div>
-                </div>
-                <!-- <div class="text-bold" v-if="rewardFundPost !== null">
-                    Current vote value: {{ voteValue }}
-                </div> -->
-                <div class="text-bold">
-                    Voting Power
-                </div>
-                <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="votePower / 100" color="blue" class="q-mt-sm" aria-label="Voting power">
-                      <div class="absolute-full flex flex-center">
-                          <q-badge color="black" text-color="primary" :label="votePower" />
-                      </div>
-                    </q-linear-progress>
-                </div>
-                <div class="text-bold">
-                    Downvote Power
-                </div>
-                <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="downvotePowerPct / 100" color="red" class="q-mt-sm" aria-label="Downvote power">
-                      <div class="absolute-full flex flex-center">
-                          <q-badge color="black" text-color="primary" :label="downvotePowerPct" />
-                      </div>
-                    </q-linear-progress>
-                </div>
-                <div class="text-bold">
-                    Resource Credits
-                </div>
-                <div>
-                    <rc :username="account.name" />
-                </div>
-            </q-card-section>
-            <q-card-section>
-                <div class="row">
-                  <div class="col" v-if="account.reputation">
-                      <div>
-                          Reputation
-                      </div>
-                      <div class="text-h5">
-                          {{ getReputation(account.reputation) }}
-                      </div>
-                      <div class="text-caption text-grey">
-                          {{ tidyNumber(account.post_count) }} posts
-                      </div>
-                  </div>
-                  <div class="col">
-                      <div>
-                          Created
-                      </div>
-                      <div class="text-h5">
-                          {{ accountAge }}
-                      </div>
-                      <div class="text-caption text-grey">
-                          {{ accountAgeShort }}
-                      </div>
-                  </div>
-                </div>
-                <div>
-                  View <router-link :to="linkBlog(username)">Blog</router-link> , <router-link :to="linkPosts(username)">Posts</router-link>, <router-link :to="linkComments(username)">Comments</router-link>, <router-link :to="linkReplies(username)">Replies</router-link>
-                </div>
-                <div>
-                  View in : <a :href="linkHiveBlog(username)">hive.blog</a>, <a :href="linkPeakd(username)">peakd</a>, <a :href="linkEcency(username)">ecency</a>
-                </div>
-            </q-card-section>
+
+    <template v-else-if="account !== null && account !== undefined && globalProps !== null">
+      <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
+
+      <div class="account-shell">
+        <q-card flat bordered class="account-card account-overview">
+          <q-card-section>
+            <div class="account-card__head">
+              <div>
+                <div class="account-card__eyebrow">Account overview</div>
+                <h2 class="account-card__title">@{{ account.name }}</h2>
+              </div>
+              <nav class="account-quick-links" aria-label="Account quick links">
+                <router-link :to="linkWallet(username)">Wallet</router-link>
+                <router-link :to="linkBlog(username)">Blog</router-link>
+                <router-link :to="linkPosts(username)">Posts</router-link>
+                <router-link :to="linkComments(username)">Comments</router-link>
+                <router-link :to="'/@' + username + '/followers'">Followers</router-link>
+                <router-link :to="'/@' + username + '/following'">Following</router-link>
+              </nav>
+            </div>
+
+            <div class="account-stat-grid">
+              <div class="account-stat">
+                <span class="account-stat__label">Effective HP</span>
+                <strong class="account-stat__value">{{ effectiveHPTidy }}</strong>
+                <small class="account-stat__hint">
+                  {{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}
+                  + {{ tidyNumber(vestToHive(parseInt(account.received_vesting_shares.split(' ')[0]))) }}
+                  - {{ tidyNumber(vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0]))) }}
+                  <template v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
+                    - {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }}
+                  </template>
+                </small>
+              </div>
+
+              <div class="account-stat">
+                <span class="account-stat__label">Reputation</span>
+                <strong class="account-stat__value">{{ displayReputation }}</strong>
+                <small class="account-stat__hint">{{ tidyNumber(account.post_count) }} posts</small>
+              </div>
+
+              <div class="account-stat">
+                <span class="account-stat__label">Account age</span>
+                <strong class="account-stat__value">{{ accountAge }}</strong>
+                <small class="account-stat__hint">{{ accountAgeShort }}</small>
+              </div>
+
+              <div class="account-stat">
+                <span class="account-stat__label">Voting power</span>
+                <strong class="account-stat__value">{{ votePower }}%</strong>
+                <q-linear-progress dark rounded size="8px" :value="votePower / 100" color="primary" class="account-stat__bar" aria-label="Voting power" />
+              </div>
+
+              <div class="account-stat">
+                <span class="account-stat__label">Downvote power</span>
+                <strong class="account-stat__value">{{ downvotePowerPct }}%</strong>
+                <q-linear-progress dark rounded size="8px" :value="downvotePowerPct / 100" color="red" class="account-stat__bar" aria-label="Downvote power" />
+              </div>
+
+              <div class="account-stat account-stat--rc">
+                <span class="account-stat__label">Resource credits</span>
+                <rc :username="account.name" compact />
+              </div>
+            </div>
+
+            <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0" class="account-powerdown">
+              <q-icon name="lock_open" color="orange" aria-hidden="true" />
+              <span>Powering down {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE next</span>
+              <span class="account-powerdown__time">{{ timeDelta(account.next_vesting_withdrawal) }}</span>
+            </div>
+
+            <div class="account-external">
+              View on
+              <a :href="linkHiveBlog(username)">Hive.blog</a>,
+              <a :href="linkPeakd(username)">PeakD</a>,
+              <a :href="linkEcency(username)">Ecency</a>
+            </div>
+          </q-card-section>
         </q-card>
-        <recent-posts-carousel :account="username" v-if="account.post_count > 0" type="blog" />
-        <!-- <recent-voted-posts-carousel :account="username" v-if="account.last_vote_time !== '1970-01-01T00:00:00'" /> -->
-        <q-card flat bordered class="q-pa-sm q-ma-md">
-            <q-card-section>
-                <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']"/>
-            </q-card-section>
-        </q-card>
-        <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
-          <div class="text-h6 text-center">Withdraw Routes</div>
-          <withdrawRoutes :username="username" />
-        </q-card>
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account">
-            <q-card-section>
-                <div class="text-h6 text-center">JSON Metadata <q-btn flat icon="edit" title="Edit JSON Metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser"/></div>
+
+        <div class="account-grid">
+          <main class="account-main">
+            <q-card flat bordered class="account-card account-activity">
+              <q-card-section class="account-card__head">
+                <div>
+                  <div class="account-card__eyebrow">Activity</div>
+                  <h2 class="account-card__title">Recent operations</h2>
+                </div>
+                <div class="account-activity__actions">
+                  <q-btn title="Check for new transactions" aria-label="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
+                  <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @update:model-value="autoRefreshToggle()" />
+                  <q-btn title="Filter operations" aria-label="Filter operations" icon="sort" dense size="sm" round color="blue-grey">
+                    <q-popup-proxy>
+                      <q-card class="account-filter-card">
+                        <div class="account-filter-card__title">Filter operations</div>
+                        <q-input v-model="filter" label="Operations separated by commas" dense outlined />
+                        <q-btn label="Apply filter" color="primary" dense icon="save" size="sm" @click="$router.push({ query: { filter: filter } }); getAccountHistoryMarker()" />
+                        <q-btn flat dense no-caps color="grey" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
+                      </q-card>
+                    </q-popup-proxy>
+                  </q-btn>
+                </div>
+              </q-card-section>
+
+              <div v-if="$route.query.filter" class="account-filter-note">
+                Only showing: <q-badge v-for="i in $route.query.filter.split(',')" :key="i" color="blue-grey-9">{{ i }}</q-badge>
+                <q-btn flat dense no-caps color="primary" icon="close" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
+              </div>
+
+              <q-card-section class="account-activity__body">
+                <account-operations :accountOperations="accountOperations" />
+              </q-card-section>
+
+              <q-card-section class="account-activity__pager">
+                <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2" />
+                <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1" />
+                <span class="account-activity__page">Page {{ page }}</span>
+                <q-spinner-puff size="1.6em" color="primary" v-if="accountOperations.length < 1" />
+                <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
+                <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
+              </q-card-section>
+            </q-card>
+          </main>
+
+          <aside class="account-sidebar">
+            <home-recent-posts :account="username" />
+
+            <q-card flat bordered class="account-card">
+              <q-card-section>
+                <h2 class="account-card__title account-card__title--small">Account details</h2>
+                <props-list :obj="account" :ignoreKeys="['owner', 'active', 'posting', 'memo_key', 'json_metadata', 'posting_json_metadata', 'voting_manabar', 'downvote_manabar', 'witness_votes']" />
+              </q-card-section>
+            </q-card>
+
+            <q-card flat bordered class="account-card">
+              <q-card-section>
+                <h2 class="account-card__title account-card__title--small">Withdraw routes</h2>
+                <withdrawRoutes :username="username" />
+              </q-card-section>
+            </q-card>
+
+            <q-card flat bordered class="account-card" v-if="account">
+              <q-card-section>
+                <div class="account-card__head">
+                  <h2 class="account-card__title account-card__title--small">JSON metadata</h2>
+                  <q-btn flat dense round icon="edit" title="Edit JSON metadata" aria-label="Edit JSON metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser" />
+                </div>
                 <json-viewer v-if="account.json_metadata" :data="JSON.parse(account.json_metadata)" />
-                <span v-else>JSON Metadata is currently empty</span>
+                <span v-else class="account-muted">JSON metadata is currently empty.</span>
                 <props-editor v-if="editJsonMeta" :json="account.json_metadata" :username="username" :account="account" type="jsonMeta" @editedProps="refreshAccount()" />
-            </q-card-section>
-        </q-card>
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account.posting_json_metadata">
-            <q-card-section>
-                <div id="posting_meta" class="text-h6 text-center">Posting JSON Metadata <q-btn flat icon="edit" title="Edit Posting JSON Metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser"/></div>
-                <json-viewer v-if="account.posting_json_metadata && editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
-                <span v-else>Posting JSON Metadata is currently empty</span>
-                <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
-            </q-card-section>
-        </q-card>
-        <account-authorities :account="account" :witness="witness" v-on:authEdited="$hiveStore.getAccount(username)" />
-        <q-card flat bordered class="q-pa-sm q-ma-md" v-if="witness">
-            <q-card-section>
-                <div class="text-h6 text-center">
-                    Witness Properties<q-btn flat icon="edit" color="orange" title="Edit witness properties" @click="$router.push('/witness')" v-if="loggedInUser === username" />
+              </q-card-section>
+            </q-card>
+
+            <q-card flat bordered class="account-card" v-if="account.posting_json_metadata">
+              <q-card-section>
+                <div class="account-card__head">
+                  <h2 class="account-card__title account-card__title--small">Posting metadata</h2>
+                  <q-btn flat dense round icon="edit" title="Edit posting JSON metadata" aria-label="Edit posting JSON metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser" />
                 </div>
-                <props-list :obj="witness" :ignoreKeys="[]"/>
-            </q-card-section>
-        </q-card>
-        <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
-            <q-card-section>
-              <div class="text-h6">Witness Votes <q-btn flat dense icon="edit" color="orange" title="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser"/></div>
-              <div class="text-caption" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">Expiring: {{ timeDelta(account.governance_vote_expiration_ts) }}</div>
-                <ol>
-                  <li v-for="witness in account.witness_votes" :key="witness.index"><router-link :to="accountLink(witness)">{{ witness }}</router-link></li>
+                <json-viewer v-if="account.posting_json_metadata && editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
+                <span v-else class="account-muted">Posting JSON metadata is currently empty.</span>
+                <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
+              </q-card-section>
+            </q-card>
+
+            <account-authorities :account="account" :witness="witness" class="account-card" v-on:authEdited="$hiveStore.getAccount(username)" />
+
+            <q-card flat bordered class="account-card" v-if="witness">
+              <q-card-section>
+                <div class="account-card__head">
+                  <h2 class="account-card__title account-card__title--small">Witness properties</h2>
+                  <q-btn flat dense round icon="edit" color="orange" title="Edit witness properties" aria-label="Edit witness properties" @click="$router.push('/witness')" v-if="loggedInUser === username" />
+                </div>
+                <props-list :obj="witness" :ignoreKeys="[]" />
+              </q-card-section>
+            </q-card>
+
+            <q-card flat bordered class="account-card">
+              <q-card-section>
+                <div class="account-card__head">
+                  <h2 class="account-card__title account-card__title--small">Witness votes</h2>
+                  <q-btn flat dense round icon="edit" color="orange" title="Edit witness votes" aria-label="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser" />
+                </div>
+                <div class="account-muted" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">Expiring {{ timeDelta(account.governance_vote_expiration_ts) }}</div>
+                <ol class="account-witness-votes" v-if="account.witness_votes.length">
+                  <li v-for="w in account.witness_votes" :key="w"><router-link :to="accountLink(w)">{{ w }}</router-link></li>
                 </ol>
-                <div v-if="account.proxy !== ''">
+                <div v-if="account.proxy !== ''" class="account-muted">
                   Voting proxy set to <router-link :to="accountLink(account.proxy)">{{ account.proxy }}</router-link>
                 </div>
-                <div v-else-if="account.witness_votes.length === 0">
+                <div v-else-if="account.witness_votes.length === 0" class="account-muted">
                   No witness votes or voting proxy have been set.
-                  <span v-if="loggedInUser && username === loggedInUser">
-                    <div class="text-bold">Like this site ? <router-link to="/witnesses">Vote for ausbitbank</router-link>!</div>
-                    <q-btn flat dense icon="edit" color="primary" title="Edit witness votes" @click="$router.push('/witnesses')" label="Vote for some witnesses" />
-                  </span>
+                  <template v-if="loggedInUser && username === loggedInUser">
+                    <div class="text-bold">Like this site? <router-link to="/witnesses">Vote for ausbitbank</router-link>!</div>
+                    <q-btn flat dense icon="edit" color="primary" title="Edit witness votes" @click="$router.push('/witnesses')" label="Vote for witnesses" />
+                  </template>
                 </div>
-            </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
-        <q-toolbar rounded flat class="text-center">
-          <q-space />
-          <q-btn title="Check for new transactions" aria-label="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
-          <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @update:model-value="autoRefreshToggle()"  /><span v-if="autorefresh" class="q-ml-md">&nbsp; every <q-input v-model.number="autorefreshMinutes" type="number" dense standout style="max-width: 80px" :rules="[ val => val > 0.5 || 'Too fast!']" /> minutes</span>
-          <q-btn title="Filter Operations" aria-label="Filter operations" icon="sort" dense size="sm" round color="blue-grey" class="q-ml-sm hvr">
-            <q-popup-proxy>
-              <q-card class="q-ma-md" rounded>
-                <p>What hive operations do you want to see ?</p>
-                <q-input v-model="filter" label="Operations seperated by commas" />
-                <q-btn label="Set" color="primary" dense icon="save" size="sm" @click="$router.push({ query:{ filter: filter } }); getAccountHistoryMarker()" />
-              </q-card>
-            </q-popup-proxy>
-          </q-btn>
-          <q-space />
-        </q-toolbar>
-        <div v-if="$route.query.filter" class="text-center">
-            Only showing: <span v-for="i in $route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" aria-label="Clear operation filter" title="Clear operation filter" disable /></span>
+              </q-card-section>
+            </q-card>
+          </aside>
         </div>
-        <account-operations :accountOperations="accountOperations" />
-        <q-card class="text-center">
-            <q-card-section>
-                <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2"/>
-                <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1"/>
-                Page {{ page }} <q-spinner-puff size="2em" color="primary" v-if="accountOperations.length < 1" />
-                <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
-                <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
-            </q-card-section>
-        </q-card>
       </div>
+    </template>
+
+    <div v-else class="account-loading" aria-label="Loading account">
+      <q-skeleton type="rect" height="180px" />
+      <q-skeleton type="rect" height="120px" class="q-mt-md" />
+      <q-skeleton type="rect" height="320px" class="q-mt-md" />
     </div>
   </q-page>
 </template>
-<style>
+<style scoped>
+.account-page {
+  min-width: 0;
+  padding-bottom: var(--space-6);
+}
+
+.account-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.account-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+
+.account-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.account-card__eyebrow {
+  color: #78909c;
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.account-card__title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.account-card__title--small {
+  font-size: 0.9rem;
+}
+
+.account-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+}
+
+.account-quick-links a {
+  color: #4fc3f7;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.account-quick-links a:hover {
+  text-decoration: underline;
+}
+
+.account-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.account-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.account-stat__label {
+  color: #90a4ae;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.account-stat__value {
+  color: #e4eaed;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.account-stat__hint {
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.account-stat__bar {
+  margin-top: 0.2rem;
+}
+
+.account-powerdown {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(255, 183, 77, 0.25);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 183, 77, 0.07);
+  color: #ffb74d;
+  font-size: 0.78rem;
+}
+
+.account-powerdown__time {
+  color: #b0bec5;
+  font-size: 0.72rem;
+}
+
+.account-external {
+  margin-top: 0.75rem;
+  color: #78909c;
+  font-size: 0.72rem;
+}
+
+.account-external a {
+  color: #4fc3f7;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.account-main,
+.account-sidebar {
+  min-width: 0;
+}
+
+.account-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.account-activity__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.account-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(360px, 92vw);
+  padding: 0.8rem;
+}
+
+.account-filter-card__title {
+  font-weight: 600;
+}
+
+.account-filter-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: #90a4ae;
+  font-size: 0.75rem;
+}
+
+.account-activity__body {
+  padding: 0.25rem 0;
+}
+
+.account-activity__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.6rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.account-activity__page {
+  color: #90a4ae;
+  font-size: 0.8rem;
+}
+
+.account-muted {
+  color: #90a4ae;
+  font-size: 0.8rem;
+}
+
+.account-witness-votes {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+  color: #b0bec5;
+  font-size: 0.8rem;
+}
+
+.account-witness-votes li {
+  margin: 0.1rem 0;
+}
+
+.account-witness-votes a {
+  color: #4fc3f7;
+}
+
+.account-state,
+.account-loading {
+  width: 100%;
+  max-width: 1280px;
+  margin: 2rem auto;
+  padding: var(--space-6);
+}
+
+.account-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 620px;
+  text-align: center;
+}
+
+.account-state__title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.account-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (max-width: 1023px) {
+  .account-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .account-shell {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .account-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 </style>
 <script>
 import moment from 'src/utils/time'
 import jsonViewer from 'components/jsonViewer.vue'
-import recentPostsCarousel from 'components/recentPostsCarousel.vue'
+import HomeRecentPosts from 'components/HomeRecentPosts.vue'
 import propsList from 'components/propsList.vue'
 import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
@@ -198,7 +504,7 @@ export default {
   name: 'accountPage',
   components: {
     jsonViewer,
-    recentPostsCarousel,
+    HomeRecentPosts,
     propsList,
     propsEditor,
     accountOperations,
@@ -218,7 +524,7 @@ export default {
       RC: { max: null, current: null, percent: null },
       witness: null,
       accountOperations: [],
-      accountOperationsLimit: 100,
+      accountOperationsLimit: 50,
       accountOperationsMarker: null,
       page: this.$route.query.page || 1,
       editPostingJson: false,
@@ -236,7 +542,8 @@ export default {
       autorefreshMinutes: 2,
       autorefreshTimer: null,
       rewardFundPost: null,
-      medianPrice: null
+      medianPrice: null,
+      profileReputation: null
     }
   },
   watch: {
@@ -271,6 +578,15 @@ export default {
     },
     accountAgeShort: function () {
       return moment(this.account.created).format('MMMM YYYY')
+    },
+    displayReputation: function () {
+      if (this.profileReputation !== null && this.profileReputation !== undefined) {
+        const value = Number(this.profileReputation)
+        return Number.isFinite(value) ? value.toFixed(1) : '—'
+      }
+      const raw = Number(this.account && this.account.reputation)
+      if (!raw) return '—'
+      return this.getReputation(raw)
     },
     votePower: function () {
       var secondsago = (new Date() - new Date(this.account.last_vote_time + 'Z')) / 1000
@@ -534,6 +850,7 @@ export default {
     accountLink (username) {
       return '/@' + username
     },
+    linkWallet (username) { return '/@' + username + '/wallet' },
     linkBlog (username) { return '/@' + username + '/blog' },
     linkPosts (username) { return '/@' + username + '/posts' },
     linkComments (username) { return '/@' + username + '/comments' },
@@ -554,9 +871,29 @@ export default {
     getReputation (rep) {
       return this.$hive.formatter.reputation(rep)
     },
-    getAccount (username) {
-      if (this.$hiveStore.accounts[username] === undefined) {
-        this.$hiveStore.getAccount(this.username)
+    async loadAccount () {
+      try {
+        const response = await this.$hive.api.getAccountsAsync([this.username])
+        const account = response && response[0]
+        if (!account || !account.name) {
+          this.error = true
+          this.errorMessage = 'Account @' + this.username + ' was not found.'
+          return
+        }
+        this.$hiveStore.updateAccountData(account)
+        this.getWitness(this.username)
+        this.fetchProfileReputation()
+      } catch {
+        this.error = true
+        this.errorMessage = 'Could not load @' + this.username + '.'
+      }
+    },
+    async fetchProfileReputation () {
+      try {
+        const profile = await this.$hive.api.callAsync('bridge.get_profile', { account: this.username })
+        this.profileReputation = profile && profile.reputation !== undefined ? Number(profile.reputation) : null
+      } catch {
+        this.profileReputation = null
       }
     },
     getWitness (username) {
@@ -597,18 +934,18 @@ export default {
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
     refreshAccount () { this.$hiveStore.getAccount(this.username) },
-    init () {
+    async init () {
+      this.error = false
+      this.errorMessage = ''
+      this.profileReputation = null
       this.getGlobalProps()
       // this.getMedianPrice()
       // this.getRewardFundPost()
       this.page = this.$route.query.page || 1
       this.username = this.$route.params.username
       this.updatePageMeta()
-      if (this.account === undefined || this.account.name !== this.username) {
-        this.getAccount(this.username)
-        this.getWitness(this.username)
-      }
-      this.getAccountHistoryMarker()
+      await this.loadAccount()
+      if (!this.error) this.getAccountHistoryMarker()
       if (this.autorefresh === true) { setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000) }
     }
   },
