@@ -160,3 +160,12 @@ Use `./scripts/deploy.sh`. The pre-phase-2 live build is backed up on
 - 2026-11-17: Phase 2 starts from `master` revamp; no dhive migration in this
   program (large, separate risk). Security, mobile UX and a11y take priority
   over new features.
+
+## Current checkpoint
+
+- Batch 1 (W1 security + W6 tests/CI) committed in `573a276`; verified with
+  `bun run lint`, `bun run test` (18 passing), and `bun run build`.
+- Batch 2 in progress: W2 mobile/UX/a11y and W4 functionality run in parallel
+  with disjoint files. W6 is adding deferred safeUrl/safeHtml/hiveEngine tests.
+- Do not commit/stage partial agent work. Integrate after both agents report,
+  then run lint/test/build.
