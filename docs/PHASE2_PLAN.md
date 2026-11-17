@@ -31,8 +31,8 @@ functionality → performance/aesthetics**, without regressing the revamp.
 | W2 | Mobile/UX/accessibility | done | ux agent | MainLayout, header/search, accountHeader, carousels, browse toolbar, a11y |
 | W3 | SEO/meta/sitemap | done | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
 | W4 | Functionality | done | feature agent | blocks page, proposal votes, queue persistence, node selection, RC/account fee |
-| W5a | Performance | in_progress | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
-| W5b | Visual/theme polish | pending | design agent |
+| W5a | Performance | done | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
+| W5b | Visual/theme polish | in_progress | design agent |
 | W6 | Tests/CI | done | test agent | vitest, unit tests, CI workflow, package scripts |
 
 ## Integration order
@@ -178,3 +178,8 @@ Use `./scripts/deploy.sh`. The pre-phase-2 live build is backed up on
 - Batch 3 (W3 SEO/meta) is committed in `59aeaef`. Per-page meta, OG/Twitter,
   canonical, JSON-LD and sitemap verified in the browser.
 - W5 is split: W5a performance/dependency sweeps, W5b visual/theme polish.
+
+- Batch 4 (W5a) is committed in `71db73e`: moment/sanitize-html removed,
+  bundle JS 3415→3182 KB, CSS 255→238 KB; dayjs wrapper verified in browser.
+- W5b is the final implementation batch (visual polish; the app intentionally
+  stays dark-themed because several surfaces use explicit dark backgrounds).
