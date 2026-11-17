@@ -71,7 +71,7 @@
           <span v-else>{{ col.value }}</span>
         </q-td>
       </q-tr>
-      <q-tr v-show="props.expand" :props="props">
+      <q-tr v-if="props.expand" :props="props">
         <q-td colspan="100%">
           <post-dialog :post="props.row" style="white-space: normal" />
         </q-td>

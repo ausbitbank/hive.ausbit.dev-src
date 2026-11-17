@@ -80,7 +80,7 @@ Status: complete
 
 - Compact table header with column selector and CSV export.
 - Useful default columns: Author, Title, Created, Comments, Pending Payout.
-- Clickable post titles and expandable rows.
+- Clickable post titles and expandable rows (row contents render on demand).
 - Safe handling of missing `json_metadata`, `stats` and payout values.
 
 ## Helpers and tests
