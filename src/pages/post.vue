@@ -112,7 +112,7 @@
             </q-card>
           </article>
 
-          <comments :author="author" :permlink="permlink" :comment-count="commentCount" />
+          <comments :author="author" :permlink="permlink" :comment-count="commentCount" :refresh-token="commentRefreshToken" />
         </main>
 
           <aside class="post-sidebar" aria-label="Post information">
@@ -218,11 +218,16 @@
     </q-dialog>
 
     <q-dialog v-model="showReply">
-      <q-card class="post-dialog-card">
-        <comment-box
+      <q-card class="post-dialog-card post-comment-card">
+        <comment-form
           v-if="post"
-          :parent_author="post.author"
-          :parent_permlink="post.permlink"
+          heading="Reply to post"
+          :context="'Replying to @' + author"
+          submit-label="Reply"
+          :parent-author="post.author"
+          :parent-permlink="post.permlink"
+          @cancel="showReply = false"
+          @posted="onCommentPosted"
         />
       </q-card>
     </q-dialog>
@@ -541,6 +546,11 @@
   width: min(720px, 94vw);
 }
 
+.post-comment-card {
+  max-height: 90vh;
+  overflow: auto;
+}
+
 .post-share-card {
   width: min(540px, 94vw);
 }
@@ -594,7 +604,7 @@
 <script>
 import render from 'components/render.vue'
 import comments from 'components/comments.vue'
-import commentBox from 'components/commentBox.vue'
+import CommentForm from 'components/CommentForm.vue'
 import moment from 'src/utils/time'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
@@ -614,7 +624,7 @@ export default {
     vote,
     jsonViewer,
     tipButton,
-    commentBox,
+    CommentForm,
     shareButtons,
     reblog,
     votesDialog
@@ -627,6 +637,7 @@ export default {
       showVotes: false,
       showShareDialog: false,
       showReply: false,
+      commentRefreshToken: 0,
       error: null
     }
   },
@@ -819,6 +830,11 @@ export default {
     },
     refreshPost () {
       this.getPost(this.author, this.permlink)
+    },
+    onCommentPosted () {
+      this.showReply = false
+      this.commentRefreshToken += 1
+      if (this.post) this.post.children = (Number(this.post.children) || 0) + 1
     },
     init () {
       this.post = null

@@ -23,7 +23,7 @@
 
     <render :input="comment.body" class="postbody comment__body" />
 
-    <post-footer :post="comment" compact class="comment__footer" />
+    <post-footer :post="comment" compact class="comment__footer" @posted="$emit('posted')" />
   </article>
 </template>
 
@@ -35,6 +35,7 @@ import { formatReputation } from 'src/services/comments'
 
 export default {
   name: 'comment',
+  emits: ['posted'],
   components: {
     render,
     postFooter: defineAsyncComponent(() => import('components/postFooter.vue'))

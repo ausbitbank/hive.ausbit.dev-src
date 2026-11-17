@@ -10,17 +10,14 @@
     </template>
     <q-btn
       dense
-      icon="comment"
+      :icon="compact ? 'reply' : 'comment'"
       flat
       color="teal"
-      :label="post.children"
+      :label="compact ? 'Reply' : post.children"
       :aria-label="'Reply to this ' + (compact ? 'comment' : 'post')"
       title="Reply"
-    >
-      <q-popup-proxy>
-        <commentBox :parent_author="post.author" :parent_permlink="post.permlink" />
-      </q-popup-proxy>
-    </q-btn>
+      @click="replyOpen = true"
+    />
     <q-btn flat dense :aria-label="'View payouts for this ' + (compact ? 'comment' : 'post')" title="Payout">
       <q-icon name="img:/statics/hive.svg" color="secondary" class="q-mr-sm" v-if="!post.token" />
       <span title="Hive Rewards" v-if="!post.is_paidout && post.pending_payout_value">{{ post.pending_payout_value.split(' ')[0] }}</span>
@@ -56,6 +53,19 @@
     <q-dialog v-model="postDialogVisible">
       <postDialog :post="post" />
     </q-dialog>
+    <q-dialog v-model="replyOpen">
+      <q-card class="post-footer__composer">
+        <comment-form
+          heading="Reply"
+          :context="'Replying to @' + post.author"
+          submit-label="Reply"
+          :parent-author="post.author"
+          :parent-permlink="post.permlink"
+          @cancel="replyOpen = false"
+          @posted="onCommentPosted"
+        />
+      </q-card>
+    </q-dialog>
   </q-card-section>
 </template>
 <script>
@@ -67,17 +77,19 @@ export default {
     post: { type: Object, required: true },
     compact: { type: Boolean, default: false }
   },
+  emits: ['posted'],
   data () {
     return {
       votedWeight: null,
-      postDialogVisible: false
+      postDialogVisible: false,
+      replyOpen: false
     }
   },
   components: {
     reblog: defineAsyncComponent(() => import('components/reblog.vue')),
     vote: defineAsyncComponent(() => import('components/vote.vue')),
     postDialog: defineAsyncComponent(() => import('components/postDialog.vue')),
-    commentBox: defineAsyncComponent(() => import('components/commentBox.vue')),
+    commentForm: defineAsyncComponent(() => import('components/CommentForm.vue')),
     votesDialog: defineAsyncComponent(() => import('components/votesDialog.vue'))
   },
   computed: {
@@ -130,6 +142,10 @@ export default {
     },
     showVoteEarly (weight) {
       this.votedWeight = weight
+    },
+    onCommentPosted () {
+      this.replyOpen = false
+      this.$emit('posted')
     }
   }
 }
@@ -143,5 +159,11 @@ export default {
 
 .post-footer--compact .q-btn {
   margin-left: 0;
+}
+
+.post-footer__composer {
+  width: min(720px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
 }
 </style>

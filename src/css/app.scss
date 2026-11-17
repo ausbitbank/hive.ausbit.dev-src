@@ -150,6 +150,41 @@ a {
   color: #0b1d2a !important;
 }
 
+/* Quasar notifications use bright semantic backgrounds with white text by
+   default; use the same dark ink for readable status toasts. */
+.q-notification.bg-positive,
+.q-notification.bg-negative,
+.q-notification.bg-warning,
+.q-notification.bg-info,
+.q-notification.bg-primary,
+.q-notification.bg-green,
+.q-notification.bg-red,
+.q-notification.bg-orange,
+.q-notification.bg-teal,
+.q-notification.bg-cyan,
+.q-notification.bg-positive .q-notification__message,
+.q-notification.bg-negative .q-notification__message,
+.q-notification.bg-warning .q-notification__message,
+.q-notification.bg-info .q-notification__message,
+.q-notification.bg-primary .q-notification__message,
+.q-notification.bg-green .q-notification__message,
+.q-notification.bg-red .q-notification__message,
+.q-notification.bg-orange .q-notification__message,
+.q-notification.bg-teal .q-notification__message,
+.q-notification.bg-cyan .q-notification__message,
+.q-notification.bg-positive .q-notification__caption,
+.q-notification.bg-negative .q-notification__caption,
+.q-notification.bg-warning .q-notification__caption,
+.q-notification.bg-info .q-notification__caption,
+.q-notification.bg-primary .q-notification__caption,
+.q-notification.bg-green .q-notification__caption,
+.q-notification.bg-red .q-notification__caption,
+.q-notification.bg-orange .q-notification__caption,
+.q-notification.bg-teal .q-notification__caption,
+.q-notification.bg-cyan .q-notification__caption {
+  color: #0b1d2a !important;
+}
+
 .q-badge.bg-primary,
 .q-badge.bg-green,
 .q-badge.bg-grey,

@@ -7,6 +7,17 @@
       </div>
 
       <div v-if="started && !loading && !error" class="comments__controls">
+        <q-btn
+          v-if="loggedInUser"
+          flat
+          dense
+          no-caps
+          icon="edit"
+          :label="$q.screen.gt.xs ? 'Write a comment' : ''"
+          aria-label="Write a comment"
+          @click="composerOpen = true"
+        />
+        <q-btn flat dense round icon="refresh" aria-label="Refresh comments" title="Refresh comments" :loading="refreshing" @click="fetchComments" />
         <q-select
           v-model="sort"
           :options="sortOptions"
@@ -53,7 +64,7 @@
           color="primary"
           icon="edit"
           :label="count > 0 ? 'Write a comment' : 'Write the first comment'"
-          @click="showComposer = true"
+          @click="composerOpen = true"
         />
         <span v-else class="comments__login-hint">Log in to join the conversation.</span>
       </div>
@@ -87,6 +98,7 @@
           :key="item.key"
           :comment="item.comment"
           :depth="item.depth"
+          @posted="onCommentPosted"
         />
       </div>
 
@@ -115,9 +127,17 @@
       </div>
     </template>
 
-    <q-dialog v-model="showComposer">
+    <q-dialog v-model="composerOpen">
       <q-card class="comments__composer">
-        <comment-box :parent_author="author" :parent_permlink="permlink" />
+        <comment-form
+          heading="Write a comment"
+          :context="'Commenting on @' + author"
+          submit-label="Comment"
+          :parent-author="author"
+          :parent-permlink="permlink"
+          @cancel="composerOpen = false"
+          @posted="onCommentPosted"
+        />
       </q-card>
     </q-dialog>
   </section>
@@ -138,12 +158,13 @@ export default {
   name: 'comments',
   components: {
     comment,
-    commentBox: defineAsyncComponent(() => import('components/commentBox.vue'))
+    commentForm: defineAsyncComponent(() => import('components/CommentForm.vue'))
   },
   props: {
     author: { type: String, required: true },
     permlink: { type: String, required: true },
-    commentCount: { type: Number, default: 0 }
+    commentCount: { type: Number, default: 0 },
+    refreshToken: { type: Number, default: 0 }
   },
   data () {
     return {
@@ -155,7 +176,9 @@ export default {
       showFiltered: false,
       visibleCount: PAGE_SIZE,
       pageSize: PAGE_SIZE,
-      showComposer: false,
+      composerOpen: false,
+      refreshing: false,
+      refreshTimer: null,
       sortOptions: COMMENT_SORT_OPTIONS
     }
   },
@@ -193,10 +216,17 @@ export default {
     },
     showFiltered () {
       this.visibleCount = PAGE_SIZE
+    },
+    refreshToken () {
+      this.started = true
+      this.fetchComments()
     }
   },
   mounted () {
     if (window.location.hash === '#comments') this.start()
+  },
+  beforeUnmount () {
+    clearTimeout(this.refreshTimer)
   },
   methods: {
     start () {
@@ -205,20 +235,42 @@ export default {
       this.fetchComments()
     },
     async fetchComments () {
-      this.loading = true
+      const hasDiscussion = Boolean(this.discussion)
       this.error = ''
+      if (hasDiscussion) {
+        this.refreshing = true
+      } else {
+        this.loading = true
+      }
+
       const params = { author: this.author, permlink: this.permlink }
       if (this.loggedInUser) params.observer = this.loggedInUser
 
       try {
         this.discussion = await this.$hive.api.callAsync('bridge.get_discussion', params)
-        this.visibleCount = PAGE_SIZE
+        if (!hasDiscussion) this.visibleCount = PAGE_SIZE
       } catch (error) {
         console.error('Failed to load comments', error)
-        this.error = 'Could not load comments. The API node may be busy.'
+        if (hasDiscussion) {
+          this.$q.notify({ type: 'negative', message: 'Could not refresh comments' })
+        } else {
+          this.error = 'Could not load comments. The API node may be busy.'
+        }
       } finally {
         this.loading = false
+        this.refreshing = false
       }
+    },
+    onCommentPosted () {
+      this.composerOpen = false
+      this.scheduleRefresh()
+    },
+    scheduleRefresh () {
+      clearTimeout(this.refreshTimer)
+      this.refreshTimer = setTimeout(() => {
+        this.started = true
+        this.fetchComments()
+      }, 4500)
     },
     loadMore () {
       this.visibleCount += PAGE_SIZE
@@ -367,7 +419,9 @@ export default {
 }
 
 .comments__composer {
-  width: min(680px, 92vw);
+  width: min(720px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
 }
 
 @media (max-width: 599px) {

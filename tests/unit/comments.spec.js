@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   COMMENT_SORT_OPTIONS,
+  commentQueueItem,
   countDiscussion,
   flattenDiscussion,
   formatReputation
@@ -98,5 +99,51 @@ describe('comment helpers', () => {
     expect(formatReputation(0)).toBe('25')
     expect(formatReputation(undefined)).toBe('25')
     expect(COMMENT_SORT_OPTIONS.map(option => option.value)).toEqual(['best', 'new', 'old', 'replies'])
+  })
+})
+
+describe('comment queue item', () => {
+  it('builds a posting-key comment operation for a reply', () => {
+    const item = commentQueueItem({
+      username: 'alice',
+      parentAuthor: 'bob',
+      parentPermlink: 'parent-comment',
+      body: 'Hello **world**',
+      permlink: 're-bob-parent-comment-20261117t120000000z'
+    })
+
+    expect(item[0]).toBe('alice')
+    expect(item[1]).toBe('posting')
+    expect(item[2][0]).toBe('comment')
+    expect(item[2][1]).toMatchObject({
+      parent_author: 'bob',
+      parent_permlink: 'parent-comment',
+      author: 'alice',
+      permlink: 're-bob-parent-comment-20261117t120000000z',
+      title: '',
+      body: 'Hello **world**'
+    })
+    expect(JSON.parse(item[2][1].json_metadata)).toEqual({ app: 'hive.ausbit.dev', format: 'markdown' })
+    expect(item[2][1].comment_options).toMatchObject({
+      author: 'alice',
+      permlink: 're-bob-parent-comment-20261117t120000000z',
+      max_accepted_payout: '100000.000 HBD',
+      percent_hbd: 10000,
+      allow_votes: true,
+      allow_curation_rewards: true
+    })
+    expect(item[2][1].comment_options.extensions).toBeUndefined()
+  })
+
+  it('includes valid beneficiaries', () => {
+    const item = commentQueueItem({
+      username: 'alice',
+      parentAuthor: 'bob',
+      parentPermlink: 'post',
+      body: 'Reply',
+      permlink: 're-bob-post-1',
+      beneficiaries: [{ account: 'ausbitbank', weight: 1000 }, { account: '', weight: 100 }]
+    })
+    expect(item[2][1].comment_options.extensions).toEqual([[0, { beneficiaries: [{ account: 'ausbitbank', weight: 1000 }] }]])
   })
 })

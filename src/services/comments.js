@@ -101,3 +101,49 @@ export function formatReputation (raw) {
   if (value < 0) return String(-Math.max(1, Math.abs(rounded)))
   return String(Math.max(25, rounded))
 }
+
+/**
+ * Build the queue item for a comment or reply. The queue's Keychain/SmartLock
+ * paths expect `comment_options` inside the comment operation; they split it
+ * into the separate on-chain `comment_options` operation at broadcast time.
+ */
+export function commentQueueItem ({
+  username,
+  parentAuthor,
+  parentPermlink,
+  body,
+  permlink,
+  beneficiaries = []
+}) {
+  const commentOptions = {
+    author: username,
+    permlink,
+    max_accepted_payout: '100000.000 HBD',
+    percent_hbd: 10000,
+    allow_votes: true,
+    allow_curation_rewards: true
+  }
+
+  const list = Array.isArray(beneficiaries)
+    ? beneficiaries
+        .map(item => ({ account: item.account, weight: Number(item.weight) }))
+        .filter(item => item.account && Number.isFinite(item.weight) && item.weight > 0)
+    : []
+
+  if (list.length) commentOptions.extensions = [[0, { beneficiaries: list }]]
+
+  return [
+    username,
+    'posting',
+    ['comment', {
+      parent_author: parentAuthor,
+      parent_permlink: parentPermlink,
+      author: username,
+      permlink,
+      title: '',
+      body,
+      json_metadata: JSON.stringify({ app: 'hive.ausbit.dev', format: 'markdown' }),
+      comment_options: commentOptions
+    }]
+  ]
+}

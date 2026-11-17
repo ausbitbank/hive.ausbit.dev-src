@@ -83,7 +83,7 @@ export default {
     broadcast (action) {
       var user = action[0]
       var keytype = action[1]
-      var operation = [action[2]]
+      var operation = [JSON.parse(JSON.stringify(action[2]))]
       if (this.loginType === 'smartlock') {
         if (smartlock.isAccountUnlocked(user)) {
           console.log('hive-js broadcast')
@@ -103,7 +103,7 @@ export default {
     async broadcastKeychain (action) {
       var user = action[0]
       var keytype = action[1]
-      var op = action[2]
+      var op = JSON.parse(JSON.stringify(action[2]))
       var ops = [op]
       if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
