@@ -1,8 +1,8 @@
 # W6 — Tests / CI
 
 Status: **implemented and verified locally**. `bun run test` passes
-65 tests across 8 files (Vitest 5.1.0); `bun run lint` passes with 0 errors
-(3 pre-existing warnings in `src/components/searchbox.vue`).
+98 tests across 12 files (Vitest 5.1.0); `bun run lint` exits 0 with no errors
+or warnings.
 
 ## Files created
 
@@ -59,6 +59,30 @@ Status: **implemented and verified locally**. `bun run test` passes
     drops/removes expired ones, rejects owner mismatches, filters corrupt items,
     handles malformed payloads, missing storage and storage that throws;
   - TTL is driven by `vi.setSystemTime` under fake timers.
+- `tests/unit/text-helpers.spec.js` — `safeHtml` text helpers:
+  - `stripHtml` removes tags, decodes entities, spaces block elements,
+    collapses whitespace, drops script/style/noscript content, and returns `''`
+    for null/non-string input;
+  - `safeJsonParse` parses objects, falls back for invalid JSON, null/undefined,
+    non-strings and primitive JSON, and defaults the fallback to `{}`.
+- `tests/unit/page-meta.spec.js` — jsdom metadata tests with `document.head`
+  reset per test:
+  - asserts title, description, canonical, OG, Twitter and default values;
+  - normalises relative URLs to absolute `BASE_URL` URLs and keeps absolute
+    cross-origin URLs;
+  - consecutive calls replace tags instead of duplicating them;
+  - long/HTML descriptions are stripped and truncated with `…`;
+  - JSON-LD is added, replaced in place, and removed by `setJsonLd(null)` or a
+    `setPageMeta` call without `jsonLd`;
+  - exercises the exported `pageMeta.stripHtml(value, maxLength)` helper.
+- `tests/unit/time.spec.js` — dayjs compatibility wrapper under fake system
+  time: `moment.utc().format`, `moment.unix().format/.utc`, `fromNow`,
+  `moment.duration().humanize(true)`, add/subtract chains, isBefore/isAfter and
+  `Date` input.
+- `tests/unit/smartlock-cache.spec.js` — stubs the global `localStorage` with an
+  in-memory map: purges only the two legacy plaintext cache prefixes, preserves
+  the locker and unrelated keys, returns the removed count, returns 0 on a
+  second call, and returns 0 when storage is missing or throws.
 - `.github/workflows/ci.yml` — push + pull_request, `ubuntu-latest`,
   `actions/checkout`, `oven-sh/setup-bun` (`bun-version: latest`),
   `bun install --frozen-lockfile`, `bun run lint`, `bun run test`,
@@ -68,31 +92,23 @@ Status: **implemented and verified locally**. `bun run test` passes
 
 ## Test results
 
-Run on 2026-11-17 after W4 integration:
+Run on 2026-11-17 after the final helper integration:
 
 ```
 > vitest run
 
- Test Files  8 passed (8)
-      Tests  65 passed (65)
-   Start at  18:10:19
-   Duration  2.47s (environment 92%, transform 3%, import 2%, worker 1%, tests 1%)
+ Test Files  12 passed (12)
+      Tests  98 passed (98)
+   Start at  18:46:39
+   Duration  4.39s (environment 94%, transform 2%, import 1%, tests 1%, worker 1%)
 ```
 
-The 21 new tests are split 9 (`hive-node-selection`) and 12
-(`queue-persistence`). The previous W1 batch added 26 tests (15 `safe-url`,
-7 `safe-html`, 4 `hive-engine`); the original W6 batch had 18 tests.
+The 33 new tests are split 11 (`text-helpers`), 11 (`page-meta`), 7 (`time`)
+and 4 (`smartlock-cache`). Earlier batches: 21 (`hive-node-selection` +
+`queue-persistence`), 26 (`safe-url` + `safe-html` + `hive-engine`) and the
+original 18 W6 tests.
 
-`bun run lint` exits 0 with 0 errors and 3 warnings:
-
-```
-/mnt/arty/coding/ausbit.dev/hive/src/components/searchbox.vue
-  116:16  warning  'e' is defined but never used  no-unused-vars
-  175:16  warning  'e' is defined but never used  no-unused-vars
-  188:16  warning  'e' is defined but never used  no-unused-vars
-
-✖ 3 problems (0 errors, 3 warnings)
-```
+`bun run lint` exits 0 with no output (0 errors, 0 warnings).
 
 ## Not created (intentional)
 
@@ -101,8 +117,6 @@ The 21 new tests are split 9 (`hive-node-selection`) and 12
 
 ## Deferred coverage (for later workstreams)
 
-- `src/utils/pageMeta.js` — W3 file; test title/description/canonical/OG/
-  Twitter updates against a jsdom document.
 - Hive store **Pinia actions** — need Pinia plus `@hiveio/hive-js` mocks;
   mutations and queue helpers are covered now, so action tests can follow
   without blocking this batch.
@@ -133,6 +147,13 @@ The 21 new tests are split 9 (`hive-node-selection`) and 12
   launch assertion relies on `probeHiveNode` calling `fetch` synchronously.
 - Queue persistence stores `queue[0][0]` as the owner and expires entries after
   24 hours; the tests pin the exact TTL boundary with fake system time.
+- `pageMeta` tests reset `document.head` per test and assert relative URLs
+  against the exported `BASE_URL`; jsdom supplies `DOMParser` and
+  `HTMLScriptElement`.
+- Time tests pin the fake clock to 2026-11-17T12:00:00Z; the relative-time
+  assertions use dayjs's wording (for example `an hour ago`).
+- The SmartLock test stubs the global `localStorage`; the module's encryption
+  utilities are imported but not exercised by the purge helper.
 - `ubuntu-latest` provides Node 20+, which the Quasar CLI needs even though Bun
   installs and runs the scripts.
 
@@ -140,8 +161,6 @@ The 21 new tests are split 9 (`hive-node-selection`) and 12
 
 - `bun run build` was not re-run in this follow-up; `bun run test` and
   `bun run lint` both pass.
-- Lint has 3 pre-existing `no-unused-vars` warnings in
-  `src/components/searchbox.vue` (not W6-owned). They do not fail CI.
 - Prices test asserts the `AbortSignal` passed to `fetch`; if the jsdom/Node
   `AbortSignal` identity differs in a future Vitest version, relax it to
   `expect.anything()`.
@@ -149,6 +168,8 @@ The 21 new tests are split 9 (`hive-node-selection`) and 12
   `FALLBACK_HOSTS` changes.
 - The node-selection tests assert the mocked fallback list and parallel launch
   order; update the `hiveNodes` mock if `HIVE_API_NODES` changes.
+- Relative-time tests pin dayjs output strings; update them if the dayjs
+  relativeTime wording or thresholds change.
 - `@vue/test-utils` is declared but unused until component tests are added.
 
 ## Playwright follow-up (documented, not added)
