@@ -1,132 +1,211 @@
 <template>
   <q-page class="home-page">
-    <header class="home-hero">
-      <h1 class="home-hero__title page-title">Hive block explorer &amp; toolkit</h1>
-      <p class="home-hero__tagline page-intro">
-        Live blocks, posts, accounts, governance and markets — read straight from the Hive blockchain.
-      </p>
-      <nav class="home-hero__links" aria-label="Quick links">
-        <router-link class="home-chip" to="/browse">
-          <q-icon name="explore" aria-hidden="true" /> Browse posts
-        </router-link>
-        <router-link class="home-chip" to="/blocks">
-          <q-icon name="view_agenda" aria-hidden="true" /> Latest blocks
-        </router-link>
-        <router-link class="home-chip" to="/nodes">
-          <q-icon name="dns" aria-hidden="true" /> Nodes
-        </router-link>
-        <router-link class="home-chip" to="/witnesses">
-          <q-icon name="how_to_vote" aria-hidden="true" /> Witnesses
-        </router-link>
-      </nav>
-    </header>
-    <div class="row items-start q-gutter-md content-start content-stretch col-grow justify-center home-dashboard">
-      <div class="home-column">
-        <block :blockNum="0" view="simple" class="q-mb-lg" />
-        <recent-posts-carousel account="ausbitbank" type="blog" />
-        <ranked-posts-carousel sortMethod="trending" />
-        <coingeckoCarousel />
+    <div class="home-shell">
+      <header class="home-head">
+        <div class="home-head__text">
+          <div class="home-head__eyebrow">
+            <span class="home-live-dot is-live" aria-hidden="true"></span>
+            Hive network dashboard
+          </div>
+          <h1 class="home-head__title">Hive at a glance</h1>
+          <p class="home-head__tagline">
+            Live blocks, markets, governance and community posts — read straight from the Hive blockchain.
+          </p>
+        </div>
+
+        <nav class="home-links" aria-label="Quick links">
+          <router-link class="home-link" to="/browse">
+            <q-icon name="explore" size="16px" aria-hidden="true" /> Browse posts
+          </router-link>
+          <router-link class="home-link" to="/blocks">
+            <q-icon name="view_agenda" size="16px" aria-hidden="true" /> Blocks
+          </router-link>
+          <router-link class="home-link" to="/witnesses">
+            <q-icon name="how_to_vote" size="16px" aria-hidden="true" /> Witnesses
+          </router-link>
+          <router-link class="home-link" to="/markets">
+            <q-icon name="show_chart" size="16px" aria-hidden="true" /> Markets
+          </router-link>
+          <router-link class="home-link" to="/proposals">
+            <q-icon name="account_balance" size="16px" aria-hidden="true" /> Proposals
+          </router-link>
+        </nav>
+      </header>
+
+      <div class="home-layout">
+        <div class="home-main">
+          <div class="home-top">
+            <home-block-card />
+            <home-market-card />
+          </div>
+          <home-trending-posts />
+        </div>
+
+        <aside class="home-side">
+          <home-witness-card />
+          <home-recent-posts account="ausbitbank" />
+        </aside>
       </div>
-        <!--<nodes />-->
-        <witnesses />
     </div>
   </q-page>
 </template>
+
 <style scoped>
-a {text-decoration: none; color: #3344dd }
-a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
 .home-page {
-  padding-bottom: 1.5rem;
+  padding-bottom: var(--space-6);
 }
-.home-hero {
-  max-width: 1040px;
-  margin: 1rem auto 0.25rem;
-  padding: 1.25rem 1rem;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-card, 10px);
-  background: var(--surface-glass, rgba(8, 13, 17, 0.72));
+
+.home-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
 }
-.home-hero__title {
-  margin: 0 0 0.4rem;
-}
-.home-hero__tagline {
-  margin: 0 auto 1rem;
-}
-.home-hero__links {
+
+.home-head {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
+  margin-bottom: var(--space-4);
 }
-.home-chip {
-  display: inline-flex;
+
+.home-head__text {
+  min-width: 0;
+}
+
+.home-head__eyebrow {
+  display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.05);
-  color: #e3f2fd;
-  font-size: 0.85rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.home-head__title {
+  margin: 0.25rem 0 0.3rem;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
   font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
-.home-chip:link,
-.home-chip:visited {
-  color: #e3f2fd;
+
+.home-head__tagline {
+  max-width: 680px;
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
-.home-chip:hover {
-  border-color: rgba(62, 146, 204, 0.65);
-  background: rgba(62, 146, 204, 0.22);
+
+.home-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  padding-bottom: 0.2rem;
+}
+
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #b0bec5;
+  font-size: 0.8rem;
   text-decoration: none;
 }
-.home-chip .q-icon {
-  font-size: 1.05rem;
+
+.home-link:hover {
+  color: #81d4fa;
 }
-.home-dashboard {
-  padding-top: 0.25rem;
+
+.home-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: var(--space-4);
 }
-@media (max-width: 599px) {
-  .home-hero {
-    margin: 0.5rem 0.5rem 0.25rem;
-    padding: 1rem 0.85rem;
+
+.home-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.home-top {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.home-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .home-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-.home-column {
-  flex: 1 1 100%;
-  min-width: 0;
-  max-width: 450px;
+
+@media (max-width: 799px) {
+  .home-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .home-shell {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .home-head {
+    margin-bottom: var(--space-3);
+  }
+
+  .home-head__title {
+    font-size: 1.5rem;
+  }
+
+  .home-links {
+    gap: 0.35rem 0.7rem;
+  }
 }
 </style>
+
 <script>
-// import nodes from 'components/nodes.vue'
-import witnesses from 'components/witnesses.vue'
-// import coingecko from 'components/coingecko.vue'
-import coingeckoCarousel from 'components/coingeckoCarousel.vue'
-import recentPostsCarousel from 'components/recentPostsCarousel.vue'
-import rankedPostsCarousel from 'components/rankedPostsCarousel.vue'
-import block from 'components/block.vue'
+import HomeBlockCard from 'components/HomeBlockCard.vue'
+import HomeMarketCard from 'components/HomeMarketCard.vue'
+import HomeWitnessCard from 'components/HomeWitnessCard.vue'
+import HomeTrendingPosts from 'components/HomeTrendingPosts.vue'
+import HomeRecentPosts from 'components/HomeRecentPosts.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 export default {
   name: 'Home',
-  data () {
-    return {
-    }
-  },
   components: {
-    // nodes,
-    witnesses,
-    // coingecko,
-    coingeckoCarousel,
-    recentPostsCarousel,
-    rankedPostsCarousel,
-    block
-  },
-  computed: {
-  },
-  methods: {
+    HomeBlockCard,
+    HomeMarketCard,
+    HomeWitnessCard,
+    HomeTrendingPosts,
+    HomeRecentPosts
   },
   mounted () {
     setPageMeta({

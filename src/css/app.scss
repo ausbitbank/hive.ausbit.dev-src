@@ -459,6 +459,132 @@ body {
   margin: 1.6em 0;
 }
 
+/* --- Home dashboard ----------------------------------------------------- */
+.home-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.home-panel .home-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.home-panel__title {
+  margin: 0.12rem 0 0;
+  color: #e4eaed;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.home-panel__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-panel__title a:hover {
+  color: #81d4fa;
+}
+
+.home-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #78909c;
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.home-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.home-panel__link {
+  color: #4fc3f7;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.home-panel__link:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.home-panel .home-panel__body {
+  padding: 0.35rem 1rem 0.55rem;
+}
+
+.home-panel .home-panel__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 1.4rem 1rem;
+  color: #90a4ae;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.home-panel .home-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 1rem 0.65rem;
+  border-top: 1px solid var(--border-subtle);
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
+.home-panel__footer a {
+  color: #4fc3f7;
+  text-decoration: none;
+}
+
+.home-panel__footer a:hover {
+  text-decoration: underline;
+}
+
+.home-live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #78909c;
+}
+
+.home-live-dot.is-live {
+  background: #26a69a;
+  box-shadow: 0 0 0 0 rgba(38, 166, 154, 0.6);
+  animation: home-pulse 2s infinite;
+}
+
+@keyframes home-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(38, 166, 154, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-live-dot.is-live {
+    animation: none;
+  }
+}
+
 /* --- Carousels ---------------------------------------------------------- */
 .hive-carousel {
   border-radius: var(--radius-card);
