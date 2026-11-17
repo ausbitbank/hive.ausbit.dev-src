@@ -8,7 +8,9 @@ export default defineRouter(function () {
     : createWebHistory
 
   return createRouter({
-    scrollBehavior: () => ({ left: 0, top: 0 }),
+    scrollBehavior: (to) => to.hash
+      ? { el: to.hash, top: 84, behavior: 'smooth' }
+      : { left: 0, top: 0 },
     routes,
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })

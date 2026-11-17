@@ -771,6 +771,115 @@ body {
   word-break: break-word;
 }
 
+/* --- Market pages ------------------------------------------------------- */
+.market-page {
+  min-width: 0;
+  padding-bottom: var(--space-6);
+}
+
+.market-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+.market-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.market-head__text {
+  min-width: 0;
+}
+
+.market-head__title {
+  margin: 0.25rem 0 0.3rem;
+  font-size: clamp(1.55rem, 3vw, 2.05rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.market-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.market-intro {
+  max-width: 720px;
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.market-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.market-section {
+  min-width: 0;
+  margin-top: var(--space-5);
+  scroll-margin-top: 84px;
+}
+
+.market-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.market-section__title {
+  margin: 0;
+  color: #e4eaed;
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.market-section__hint {
+  color: #78909c;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 599px) {
+  .market-shell {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .market-head {
+    margin-bottom: var(--space-3);
+  }
+
+  .market-head__title {
+    font-size: 1.5rem;
+  }
+
+  .market-section {
+    margin-top: var(--space-4);
+  }
+
+  .market-section__hint {
+    display: none;
+  }
+}
+
 /* --- Network and governance pages -------------------------------------- */
 .net-page {
   min-width: 0;

@@ -1,376 +1,580 @@
 <template>
-<div>
-<q-card bordered dense class="q-ml-md q-ma-sm q-pa-none text-center">
-  <div class="text-h5"><q-icon name="img:/statics/hive.svg" title="Hive" /> Internal Market</div>
-<q-list separator dense class="q-pa-none q-ma-none">
-    <q-card flat class="q-mb-sm">
-      <div class="text-subtitle" title="Lowest Ask">
-        <q-icon name="arrow_upward" color="green" class="q-pr-sm" /><animInt :value="parseFloat(internalMarket.ticker.lowest_ask).toFixed(6)" />
+  <div class="internal-market">
+    <q-card flat bordered class="home-card market-ticker">
+      <div class="market-ticker__main">
+        <div class="market-ticker__pair">
+          <div class="home-eyebrow">
+            <span class="home-live-dot" :class="{ 'is-live': !loading && hasData }" aria-hidden="true"></span>
+            Internal market
+          </div>
+          <div class="market-ticker__pair-name">
+            <q-icon name="img:/statics/hive.svg" size="20px" aria-hidden="true" />
+            <span>HIVE / HBD</span>
+          </div>
+          <span class="market-ticker__pair-note">HBD per HIVE</span>
+        </div>
+
+        <div class="market-ticker__stat">
+          <span class="market-ticker__label">Last price</span>
+          <span class="market-ticker__value">{{ formatPrice(stats.latest) }}</span>
+          <span class="market-ticker__sub" :class="changeClass">{{ changeLabel }}</span>
+        </div>
+
+        <div class="market-ticker__stat">
+          <span class="market-ticker__label">Best bid / ask</span>
+          <span class="market-ticker__value market-ticker__value--small">
+            {{ formatPrice(stats.bestBid) }} / {{ formatPrice(stats.bestAsk) }}
+          </span>
+          <span class="market-ticker__sub">Spread {{ spreadLabel }}</span>
+        </div>
+
+        <div class="market-ticker__stat">
+          <span class="market-ticker__label">24h volume</span>
+          <span class="market-ticker__value market-ticker__value--small">{{ formatVolume(stats.hiveVolume) }} HIVE</span>
+          <span class="market-ticker__sub">{{ formatVolume(stats.hbdVolume) }} HBD</span>
+        </div>
       </div>
-      <div class="text-h4" v-if="internalMarket.trades.length > 0" title="Most recent trade price">
-        $ <animInt :value="getTradeLine(internalMarket.trades[0]).price" />
-      </div>
-      <div class="text-subtitle" title="Highest Bid">
-        <q-icon name="arrow_downward" color="red" class="q-pr-sm" /><animInt :value="parseFloat(internalMarket.ticker.highest_bid).toFixed(6)" />
+
+      <div class="market-ticker__meta">
+        <span>
+          <q-icon name="schedule" size="13px" aria-hidden="true" />
+          {{ updatedLabel }}
+        </span>
+        <q-btn
+          flat
+          dense
+          round
+          icon="refresh"
+          aria-label="Refresh internal market data"
+          title="Refresh internal market data"
+          :loading="loading || refreshing"
+          @click="loadMarketData()"
+        />
       </div>
     </q-card>
-    <q-card flat class="q-mb-sm" v-if="internalMarket.ticker.hive_volume && internalMarket.ticker.hbd_volume">
-      <div class="text-bold">24hr Volume</div>
-      <div><q-icon name="img:/statics/hive.svg" title="Hive" class="q-pr-sm"/><animInt :value="parseFloat(internalMarket.ticker.hive_volume.split(' ')[0])" /></div>
-      <div><q-icon name="img:/statics/hbd.svg" title="HBD" class="q-pr-sm"/><animInt :value="parseFloat(internalMarket.ticker.hbd_volume.split(' ')[0])" /></div>
+
+    <div v-if="loadError && hasData" class="market-warning" role="status">
+      <q-icon name="warning" size="15px" aria-hidden="true" />
+      {{ loadError }}
+      <q-btn flat dense no-caps color="primary" label="Retry" @click="loadMarketData()" />
+    </div>
+
+    <q-card v-if="loadError && !hasData" flat bordered class="net-state net-state--error">
+      <q-icon name="error_outline" size="2em" aria-hidden="true" />
+      <div>{{ loadError }}</div>
+      <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="loadMarketData()" />
     </q-card>
-    <q-card flat title="External prices from coingecko api">
-      <div class="text-bold">External Prices</div>
-      <div><q-icon name="img:/statics/hive.svg" title="Hive" class="q-pr-sm"/><animInt :value="hiveUsd" /></div>
-      <div><q-icon name="img:/statics/hbd.svg" title="HBD" class="q-pr-sm"/><animInt :value="hbdUsd" /></div>
-    </q-card>
-    <q-expansion-item dense expand-separator label="Last 100 Trades" icon="receipt" header-class="text-grey" default-closed>
-      <q-scroll-area dark class="bg-dark text-white" style="height: 300px; min-width: 300px" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.2, backgroundColor: '#3e92cc' }">
-        <q-item dense v-for="trade in [...internalMarket.trades].reverse()" :key="trade.index">
-          <q-item-section v-if="getTradeLine(trade).action === 'buy'">
-              <div>{{ getTradeLine(trade).maker.split(' ')[0] }} <q-icon name="img:/statics/hive.svg" title="Hive" /> <span class="text-red"> sell</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
-          </q-item-section>
-          <q-item-section v-else>
-              <div>{{ getTradeLine(trade).taker.split(' ')[0] }} <q-icon name="img:/statics/hive.svg" title="Hive" /> <span class="text-green"> buy</span> @ <b>{{ getTradeLine(trade).price }}</b></div>
-          </q-item-section>
-          <q-item-section side>
-              <span class="text-caption text-grey"> {{ timeDelta(trade.date) }}</span>
-          </q-item-section>
-        </q-item>
-      </q-scroll-area>
-    </q-expansion-item>
-    <sparkline
-      :series="[
-        { data: internalMarket.trades.map(trade => getTradeLine(trade).volume), stroke: 'red' },
-        { data: internalMarket.trades.map(trade => getTradeLine(trade).price), stroke: 'white', fill: 'white' }
-      ]"
-      :width="260"
-      :height="100"
-      v-if="internalMarket.trades.length > 0"
-    />
-    <q-skeleton rect width="260" height="100" v-else />
-    <q-expansion-item dense expand-separator label="Offers to sell" icon="trending_up" header-class="text-green" default-closed>
-      <q-item dense v-for="amt in [10000, 5000, 1000, 500, 100, 10, 1]" :key="amt.index">
-        <div style="margin:auto" v-if="internalMarket.asks.length > 0">{{tidyNumber(amt)}} <q-icon name="img:/statics/hbd.svg" title="HBD" /> of <q-icon name="img:/statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'buy'; buyPrice = getPrice(getMarketOrderAtDepth(internalMarket.asks, amt)); buyTotal = (buyPrice * buyAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.asks, amt))" /></div>
-      </q-item>
-    </q-expansion-item>
-    <sparkline
-      :series="[
-        { data: internalMarket.asks.map(ask => parseFloat(ask.real_price).toFixed(3)), stroke: 'white', fill: 'white' },
-        { data: internalMarket.asks.map(ask => parseFloat(ask.hbdDepth).toFixed(3)), stroke: 'red', fill: 'red' }
-      ]"
-      :width="260"
-      :height="100"
-      v-if="internalMarket.asks.length > 0"
-    />
-    <q-skeleton rect width="260" height="100" v-else />
-    <q-expansion-item dense expand-separator label="Offers to buy" icon="trending_down" header-class="text-red" default-closed>
-    <q-item dense v-for="amt in [1, 10, 100, 500, 1000, 5000, 10000]" :key="amt.index">
-    <div style="margin:auto" v-if="internalMarket.bids.length > 0">{{tidyNumber(amt)}} <q-icon name="img:/statics/hbd.svg" title="HBD" /> of <q-icon name="img:/statics/hive.svg" title="Hive" /> @ <q-btn dense flat @click="tab = 'sell'; sellPrice = getPrice(getMarketOrderAtDepth(internalMarket.bids, amt)); sellTotal = (sellPrice * sellAmount).toFixed(3)" :label="getPrice(getMarketOrderAtDepth(internalMarket.bids, amt))" /></div>
-    </q-item>
-    </q-expansion-item>
-    <sparkline
-      :series="[
-        { data: internalMarket.bids.map(bid => parseFloat(bid.real_price).toFixed(3)), stroke: 'white', fill: 'white' },
-        { data: internalMarket.bids.map(bid => parseFloat(bid.hbdDepth).toFixed(3)), stroke: 'green', fill: 'green' }
-      ]"
-      :width="260"
-      :height="100"
-      v-if="internalMarket.bids.length > 0"
-    />
-    <q-skeleton rect width="260" height="100" v-else />
-  </q-list>
-<q-card-section v-if="!loggedInUser" class="text-bold">
-  <q-icon name="info" color="primary" /> Login to trade on the internal market
-</q-card-section>
-<q-expansion-item v-if="loggedInUser" dense expand-separator label="Trade" icon="store" header-class="text-orange" default-opened>
-  <q-tabs v-model="tab" dense align="justify" narrow-indicator indicator-color="primary">
-    <q-tab name="buy" label="Buy" class="text-green" />
-    <q-tab name="sell" label="Sell" class="text-red" />
-    <q-tab name="orders" class="text-orange" v-if="openOrders.length > 0">Orders  <q-badge color="red" transparent>{{ openOrders.length }}</q-badge></q-tab>
-  </q-tabs>
-  <q-separator />
-  <q-tab-panels v-model="tab" animated>
-    <q-tab-panel name="buy" label="Buy">
-      <q-form>
-        <q-input v-model="buyPrice" label="Price HBD/HIVE" @update:model-value="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
-        <q-input v-model="buyAmount" label="Amount HIVE" @update:model-value="buyTotal = (buyPrice * buyAmount).toFixed(3)" />
-        <q-input v-model="buyTotal" label="Total HBD ($)" @update:model-value="buyAmount = (buyTotal / buyPrice).toFixed(3)" />
-        <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat @click="buyTotal = balanceHbd; buyAmount = (buyTotal / buyPrice).toFixed(3)"><animInt :value="balanceHbd" />&nbsp;<q-icon name="img:/statics/hbd.svg" title="HBD" /></q-btn></div>
-        <div>Lowest Ask:<q-btn flat @click="buyPrice = parseFloat(internalMarket.ticker.lowest_ask).toFixed(3); buyAmount = (buyTotal / buyPrice).toFixed(3)"><animInt :value="parseFloat(internalMarket.ticker.lowest_ask).toFixed(3)" /></q-btn></div>
-        <q-btn flat color="green" icon="trending_up" label="Buy Hive" @click="submitOrder(parseFloat(buyTotal).toFixed(3) + ' HBD', parseFloat(buyAmount).toFixed(3) + ' HIVE')" />
-      </q-form>
-    </q-tab-panel>
-    <q-tab-panel name="sell" label="Sell">
-      <q-form>
-        <q-input v-model="sellPrice" label="Price HBD/HIVE" @update:model-value="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
-        <q-input v-model="sellAmount" label="Amount HIVE" @update:model-value="sellTotal = (sellPrice * sellAmount).toFixed(3)"/>
-        <q-input v-model="sellTotal" label="Total HBD ($)" @update:model-value="sellAmount = (sellTotal / sellPrice).toFixed(3)" />
-        <q-checkbox v-model="fillOrKill" label="Fill or Kill" title="An order must be completely filled, or else cancelled. No partial trades" v-if="false" />
-        <div>Available:<q-btn flat @click="sellAmount = balanceHive; sellTotal = (sellAmount * sellPrice).toFixed(3)"><animInt :value="balanceHive" />&nbsp;<q-icon name="img:/statics/hive.svg" title="Hive" /></q-btn></div>
-        <div>Highest Bid:<q-btn flat @click="sellPrice = parseFloat(internalMarket.ticker.highest_bid).toFixed(3); sellTotal = (sellAmount * sellPrice).toFixed(3)" ><animInt :value="parseFloat(internalMarket.ticker.highest_bid).toFixed(3)" /></q-btn></div>
-        <q-btn flat color="red" icon="trending_down" label="Sell Hive" @click="submitOrder(parseFloat(sellAmount).toFixed(3) + ' HIVE', parseFloat(sellTotal).toFixed(3) + ' HBD')" />
-      </q-form>
-    </q-tab-panel>
-    <q-tab-panel name="orders" label="Orders">
-      <div v-if="openOrders.length > 0">
-        <q-list dense separator>
-          <q-item v-for="order in openOrders" :key="order.index">
-            <q-item-section>
-              <q-item-label>
-                {{ tidyNumber(parseFloat(order.sell_price.base.split(' ')[0])) }}
-                <q-icon :name="order.sell_price.base.split(' ')[1] === 'HBD' ? 'img:/statics/hbd.svg' : 'img:/statics/hive.svg'" class="q-mr-xs"/>
-                for
-                {{ tidyNumber(parseFloat(order.sell_price.quote.split(' ')[0])) }}
-                <q-icon :name="order.sell_price.quote.split(' ')[1] === 'HBD' ? 'img:/statics/hbd.svg' : 'img:/statics/hive.svg'" class="q-mr-xs"/>
-                <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
-                <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
-                <q-btn @click="cancelOrder(order.orderid)" icon="cancel" color="red" dense flat title="Cancel order" />
-              </q-item-label>
-              <q-item-label>
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-list>
+
+    <div v-else class="market-layout">
+      <div class="market-main">
+        <div class="market-data-grid">
+          <market-order-book
+            :asks="book.asks"
+            :bids="book.bids"
+            :spread="stats.spread"
+            :spread-percent="stats.spreadPercent"
+            :loading="loading"
+            @select="onBookSelect"
+          />
+          <market-trades :trades="trades" :loading="loading" />
+        </div>
+
+        <market-open-orders
+          :orders="openOrders"
+          :loading="loading"
+          :logged-in="Boolean(loggedInUser)"
+          :cancelling-id="cancellingId"
+          @cancel="cancelOrder"
+        />
+
+        <q-card flat bordered class="home-card home-panel market-info">
+          <q-card-section class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">About</div>
+              <h2 class="home-panel__title">How the internal market works</h2>
+            </div>
+          </q-card-section>
+          <div class="market-info__body">
+            <ul class="market-info__list">
+              <li>The Hive internal market is a native on-chain exchange for HIVE and HBD. There is no trading fee, no deposit step and no intermediary.</li>
+              <li>Orders are limit orders. They stay open until filled or cancelled and expire after 27 days.</li>
+              <li>The book can be thin. Larger orders may fill by arbitrage against external exchanges rather than against resting orders.</li>
+              <li>Creating or cancelling an order uses the active key. Queue actions are reviewed before broadcast.</li>
+            </ul>
+            <p class="market-info__links">
+              <router-link to="/markets">Price charts and HBD tools</router-link>
+              <router-link to="/hbdstabilizer">HBD stabilizer</router-link>
+              <a href="https://wallet.hive.blog/market" target="_blank" rel="noopener noreferrer">Original market interface</a>
+            </p>
+          </div>
+        </q-card>
       </div>
-      <div v-else>
-        No open orders
-      </div>
-    </q-tab-panel>
-  </q-tab-panels>
-</q-expansion-item>
-<q-expansion-item dense expand-separator label="Info" icon="info" header-class="text-blue" default-closed>
-  <div style="max-width: 250px" class="text-center">
-    <p>The Hive internal market is a native decentralized exchange with no fees, no KYC and no intermediaries.</p>
-    <p>The order books often look thin, but hive users are able to fill large orders by arbitraging external exchanges if you're willing to trade 1-2% above/below market price.</p>
-    <p>The <router-link to="/hbdstabilizer">hbdstabilizer</router-link> project is also able to supply ~150k HBD liquidity per day.</p>
-    <p>The original internal market interface can be found at <a href="https://wallet.hive.blog/market" target="_blank" rel="noopener noreferrer">wallet.hive.blog/market</a></p>
-    <p>See also:
-      <router-link v-if="$route.path !== '/markets'" to="/markets">/markets</router-link>
-      <router-link v-else-if="$route.path !== '/market'" to="/market">/market</router-link>
-    </p>
-    <!-- <p><q-input label="Internal refresh in seconds" v-model="timerInternal"><q-btn title="update" color="blue" icon="refresh" dense flat @click="timers.refreshMarket.time = timerInternal * 1000" /></q-input></p>
-    <p><q-input label="External refresh in seconds" v-model="timerExternal"><q-btn title="update" color="blue" icon="refresh" dense flat @click="timers.refreshMarketExternal.time = timerExternal * 1000" /></q-input></p> -->
+
+      <aside class="market-side" aria-label="Order form and balances">
+        <market-trade-panel
+          ref="tradePanel"
+          :logged-in="Boolean(loggedInUser)"
+          :account="account"
+          :stats="stats"
+          :loading="loading"
+          @submit="queueOrder"
+          @refresh="refreshAccount"
+        />
+      </aside>
+    </div>
   </div>
-</q-expansion-item>
-</q-card>
-</div>
 </template>
+
 <script>
 import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
-import { getHivePrices } from 'src/services/prices'
-import Sparkline from 'components/Sparkline.vue'
-import animInt from 'components/animInt.vue'
+import MarketOrderBook from 'components/market/MarketOrderBook.vue'
+import MarketTrades from 'components/market/MarketTrades.vue'
+import MarketOpenOrders from 'components/market/MarketOpenOrders.vue'
+import MarketTradePanel from 'components/market/MarketTradePanel.vue'
+import {
+  buildCancelOrder,
+  buildLimitOrder,
+  formatPrice,
+  formatSignedPercent,
+  formatVolume,
+  marketStats,
+  normalizeOpenOrders,
+  normalizeOrderBook,
+  normalizeTrades,
+  validateOrder
+} from 'src/services/market'
+
+const EMPTY_BOOK = { asks: [], bids: [] }
+
 export default {
   name: 'internalMarket',
-  data () {
-    return {
-      showDepth: true,
-      showTrades: true,
-      showTicker: true,
-      showArb: true,
-      fillOrKill: false,
-      prices: {},
-      internalMarket: {
-        bids: [],
-        asks: [],
-        trades: [],
-        ticker: {}
-      },
-      tab: 'buy',
-      buyPrice: 0.000,
-      buyAmount: 0.000,
-      buyTotal: 0.000,
-      sellPrice: 0.000,
-      sellAmount: 0.000,
-      sellTotal: 0.000,
-      internalMarketEnabled: this.$route.query.internalMarketEnabled || true,
-      internalMarketDepth: this.$route.query.internalMarketDepth || 200,
-      openOrders: [],
-      sparklineEnabled: 'true',
-      timerInternal: 15,
-      timerExternal: 30,
-      tooltipProps1: {
-        formatter (val) {
-          return `Price ：<label style="color:${val.color};font-weight:bold;">${val.value}</label>`
-        }
-      }
-    }
-  },
-  props: {
-    tradeEnabled: {
-      type: Boolean,
-      required: false,
-      default: true
-    }
-  },
-  computed: {
-    loggedInUser: { get () { return this.$hiveStore.user.username } },
-    account: {
-      cache: false,
-      get () {
-        if (this.loggedInUser) {
-          return this.$hiveStore.accounts[this.loggedInUser]
-        } else {
-          return null
-        }
-      }
-    },
-    balanceHbd: function () {
-      if (this.account) {
-        return parseFloat(this.account.hbd_balance.split(' ')[0]).toFixed(3)
-      } else {
-        return null
-      }
-    },
-    balanceHive: function () {
-      if (this.account) {
-        return parseFloat(this.account.balance.split(' ')[0]).toFixed(3)
-      } else {
-        return null
-      }
-    },
-    hiveUsd: function () {
-      if (this.prices && this.prices.hive) {
-        return this.prices.hive.usd.toFixed(6)
-      } else {
-        return null
-      }
-    },
-    hbdUsd: function () {
-      if (this.prices && this.prices.hive_dollar) {
-        return this.prices.hive_dollar.usd.toFixed(6)
-      } else {
-        return null
-      }
-    },
-    sparklineBids: function () {
-      if (this.internalMarket.bids.length > 0) {
-        return this.internalMarket.bids.map(bid => bid.hbdDepth)
-      } else {
-        return []
-      }
-    }
+  components: {
+    MarketOrderBook,
+    MarketTrades,
+    MarketOpenOrders,
+    MarketTradePanel
   },
   mixins: [VueTimers],
-  components: { Sparkline, animInt },
-  timers: {
-    refreshMarket: { time: 15000, autostart: true, repeat: true, immediate: true, isSwitchTab: false },
-    refreshMarketExternal: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
+  props: {
+    tradeEnabled: { type: Boolean, default: true }
   },
-  methods: {
-    submitOrder (amountToSell, minToReceive) {
-      var orderid = Math.floor(Date.now() / 1000)
-      var expiry = new Date(Math.floor(Date.now() / 1000 + 60 * 60 * 24 * 27) * 1000).toISOString().split('.')[0]
-      this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['limit_order_create', { owner: this.loggedInUser, orderid: orderid, amount_to_sell: amountToSell, min_to_receive: minToReceive, fill_or_kill: this.fillOrKill, expiration: expiry }]])
-    },
-    cancelOrder (orderid) {
-      this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['limit_order_cancel', { owner: this.loggedInUser, orderid: orderid }]])
-    },
-    getMarketOrderAtDepth (orderArray, hbdDeep) {
-      var arr = orderArray.filter(a => (a.hbdDepth >= hbdDeep))
-      if (orderArray === this.internalMarket.asks) {
-        return arr[arr.length - 1]
-      } else {
-        return arr[0]
-      }
-    },
-    getPrice (order) {
-      if (order === undefined) { return null }
-      return parseFloat(order.real_price).toFixed(3)// + ' ($' + order.hbdDepth.toFixed(0) + ')'
-    },
-    getAccount (username) {
-      this.$hiveStore.getAccount(username)
-    },
-    getTradeLine (trade) {
-      let price
-      var maker = trade.open_pays
-      var taker = trade.current_pays
-      var volume = trade.open_pays.split(' ')[0] === 'HBD' ? (parseFloat(trade.open_pays.split(' ')[0])).toFixed(3) : (parseFloat(trade.current_pays.split(' ')[0])).toFixed(3)
-      if (maker.split(' ')[1] === 'HBD') {
-        price = (maker.split(' ')[0] / taker.split(' ')[0]).toFixed(5)
-        return { taker: taker, maker: maker, price: price, action: 'buy', volume: volume }
-      } else {
-        price = (taker.split(' ')[0] / maker.split(' ')[0]).toFixed(5)
-        return { taker: taker, maker: maker, price: price, action: 'sell', volume: volume }
-      }
-    },
-    getMarketInfo (depth) {
-      this.$hive.api.getMarketOrderBookAsync(depth)
-        .then(result => {
-          this.internalMarket.bids = result.bids
-          this.internalMarket.asks = result.asks
-          this.addMarketDepth()
-        })
-    },
-    getRecentTrades (limit) {
-      this.$hive.api.getRecentTradesAsync(limit)
-        .then(res => {
-          this.internalMarket.trades = [...res].reverse()
-        })
-    },
-    getOpenOrders () {
-      this.$hive.api.getOpenOrdersAsync(this.loggedInUser)
-        .then(res => {
-          this.openOrders = res
-        })
-    },
-    addMarketDepth () {
-      var hiveDepth = 0
-      var hbdDepth = 0
-      this.internalMarket.bids.forEach(b => {
-        hiveDepth = hiveDepth + (b.hive / 1000)
-        hbdDepth = hbdDepth + (b.hbd / 1000)
-        b.hiveDepth = hiveDepth
-        b.hbdDepth = hbdDepth
-      })
-      hiveDepth = 0
-      hbdDepth = 0
-      this.internalMarket.asks.forEach(b => {
-        hiveDepth = hiveDepth + (b.hive / 1000)
-        hbdDepth = hbdDepth + (b.hbd / 1000)
-        b.hiveDepth = hiveDepth
-        b.hbdDepth = hbdDepth
-      })
-      this.internalMarket.asks = [...this.internalMarket.asks].reverse()
-      // console.log(this.internalMarket.bids)
-    },
-    getTicker () {
-      this.$hive.api.getTickerAsync()
-        .then(res => { this.internalMarket.ticker = res })
-    },
-    async getCoingeckoPrices () {
-      this.prices = await getHivePrices()
-    },
-    timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
-    },
-    refreshMarket () {
-      if (this.internalMarketEnabled) {
-        // this.internalMarket.bids = {}
-        // this.internalMarket.asks = {}
-        // this.internalMarket.trades = []
-        // this.internalMarket.ticker = {}
-        this.getTicker()
-        this.getMarketInfo(this.internalMarketDepth)
-        this.getRecentTrades(100)
-        if (this.loggedInUser) { this.getAccount(this.loggedInUser); this.getOpenOrders() }
-      }
-    },
-    refreshMarketExternal () {
-      this.getCoingeckoPrices()
-    },
-    tidyNumber (x) {
-      if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null }
+  data () {
+    return {
+      ticker: {},
+      book: { ...EMPTY_BOOK },
+      trades: [],
+      openOrders: [],
+      loading: true,
+      refreshing: false,
+      loadError: '',
+      lastUpdated: null,
+      cancellingId: null
     }
   },
-  mounted () {
-    if (this.loggedInUser) { this.getAccount(this.loggedInUser); this.getOpenOrders() }
+  timers: {
+    refreshMarket: { time: 15000, autostart: true, repeat: true, immediate: true }
+  },
+  computed: {
+    loggedInUser () {
+      return this.$hiveStore.user.username
+    },
+    account () {
+      return this.loggedInUser ? this.$hiveStore.accounts[this.loggedInUser] : null
+    },
+    stats () {
+      return marketStats(this.ticker, this.book)
+    },
+    hasData () {
+      return Boolean(this.stats.latest) || this.book.asks.length > 0 || this.book.bids.length > 0 || this.trades.length > 0
+    },
+    changeLabel () {
+      return this.stats.change === null ? '—' : formatSignedPercent(this.stats.change)
+    },
+    changeClass () {
+      if (this.stats.change === null) return 'is-flat'
+      return this.stats.change > 0 ? 'is-up' : this.stats.change < 0 ? 'is-down' : 'is-flat'
+    },
+    spreadLabel () {
+      if (this.stats.spread === null) return '—'
+      if (this.stats.spreadPercent === null) return formatPrice(this.stats.spread)
+      return formatPrice(this.stats.spread) + ' · ' + this.stats.spreadPercent.toFixed(2) + '%'
+    },
+    updatedLabel () {
+      return this.lastUpdated ? moment.utc(this.lastUpdated).fromNow() : 'Not updated yet'
+    }
+  },
+  watch: {
+    loggedInUser (value, previous) {
+      if (value !== previous) this.refreshAccount()
+      if (!value) this.openOrders = []
+    }
+  },
+  methods: {
+    formatPrice,
+    formatVolume,
+    async loadMarketData ({ quiet = false } = {}) {
+      if (quiet) this.refreshing = true
+      else this.loading = true
+      this.loadError = ''
+
+      const calls = [
+        this.$hive.api.getTickerAsync(),
+        this.$hive.api.getOrderBookAsync(200),
+        this.$hive.api.getRecentTradesAsync(100)
+      ]
+      const [tickerResult, bookResult, tradesResult] = await Promise.allSettled(calls)
+      let failed = false
+
+      if (tickerResult.status === 'fulfilled') {
+        this.ticker = tickerResult.value || {}
+      } else {
+        failed = true
+      }
+      if (bookResult.status === 'fulfilled') {
+        this.book = normalizeOrderBook(bookResult.value)
+      } else {
+        failed = true
+      }
+      if (tradesResult.status === 'fulfilled') {
+        this.trades = normalizeTrades(tradesResult.value)
+          .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+      } else {
+        failed = true
+      }
+
+      if (this.loggedInUser && !this.account) {
+        await this.$hiveStore.getAccount(this.loggedInUser)
+      }
+      await this.loadOpenOrders()
+
+      if (failed) {
+        this.loadError = 'Some internal market data could not be loaded. Showing the latest available values.'
+      } else {
+        this.lastUpdated = Date.now()
+      }
+
+      this.loading = false
+      this.refreshing = false
+    },
+    async refreshMarket () {
+      await this.loadMarketData({ quiet: true })
+    },
+    async refreshAccount () {
+      if (!this.loggedInUser) return
+      await this.$hiveStore.getAccount(this.loggedInUser)
+      await this.loadOpenOrders()
+    },
+    async loadOpenOrders () {
+      if (!this.loggedInUser) {
+        this.openOrders = []
+        return
+      }
+      try {
+        this.openOrders = normalizeOpenOrders(await this.$hive.api.getOpenOrdersAsync(this.loggedInUser))
+      } catch {
+        this.openOrders = []
+      }
+    },
+    onBookSelect ({ price, side }) {
+      this.$refs.tradePanel?.applyBookPrice({ price, side })
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        this.$refs.tradePanel?.$el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+    queueOrder (order) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ message: 'Log in to place an order.', color: 'orange', icon: 'lock' })
+        return
+      }
+
+      const account = this.account || {}
+      const validation = validateOrder({
+        side: order.side,
+        price: order.price,
+        amount: order.amount,
+        total: order.total,
+        balanceHive: parseFloat(account.balance || 0),
+        balanceHbd: parseFloat(account.hbd_balance || 0),
+        loggedIn: true
+      })
+
+      if (!validation.valid) {
+        this.$q.notify({
+          message: validation.errors[0] || 'Check the order details.',
+          color: 'orange',
+          icon: 'warning'
+        })
+        return
+      }
+
+      const queued = buildLimitOrder({
+        owner: this.loggedInUser,
+        side: order.side,
+        price: order.price,
+        amount: order.amount,
+        total: order.total,
+        fillOrKill: order.fillOrKill
+      })
+      this.$hiveStore.addToQueue(queued)
+      this.$refs.tradePanel?.resetAmount()
+      this.$q.notify({
+        message: (order.side === 'buy' ? 'Buy' : 'Sell') + ' order queued. Review and broadcast it with your active key.',
+        color: 'orange',
+        icon: 'schedule',
+        position: 'top'
+      })
+    },
+    cancelOrder (orderid) {
+      if (!this.loggedInUser) return
+      this.cancellingId = orderid
+      this.$hiveStore.addToQueue(buildCancelOrder(this.loggedInUser, orderid))
+      this.$q.notify({
+        message: 'Cancel queued. Review and broadcast it with your active key.',
+        color: 'orange',
+        icon: 'schedule',
+        position: 'top'
+      })
+      setTimeout(() => { this.cancellingId = null }, 800)
+    }
   }
 }
 </script>
+
+<style scoped>
+.internal-market {
+  min-width: 0;
+}
+
+.market-ticker {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 0.8rem 1rem;
+}
+
+.market-ticker__main {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.market-ticker__pair {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 145px;
+}
+
+.market-ticker__pair-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #e4eaed;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.market-ticker__pair-note {
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.market-ticker__stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.05rem;
+  min-width: 120px;
+}
+
+.market-ticker__label {
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.market-ticker__value {
+  color: #e4eaed;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-ticker__value--small {
+  font-size: 0.85rem;
+}
+
+.market-ticker__sub {
+  color: #90a4ae;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-ticker__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
+.market-ticker__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.market-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  padding: 0.4rem 0.7rem;
+  border: 1px solid rgba(255, 183, 77, 0.35);
+  border-radius: var(--radius-sm);
+  color: #ffb74d;
+  font-size: 0.75rem;
+}
+
+.market-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.market-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.market-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.market-side {
+  min-width: 0;
+}
+
+.market-info__body {
+  padding: 0.75rem 1rem 0.8rem;
+}
+
+.market-info__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #90a4ae;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.market-info__list li + li {
+  margin-top: 0.4rem;
+}
+
+.market-info__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin: 0.8rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.market-info__links a {
+  color: #4fc3f7;
+  text-decoration: none;
+}
+
+.market-info__links a:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.is-up {
+  color: #66bb6a;
+}
+
+.is-down {
+  color: #ef5350;
+}
+
+.is-flat {
+  color: #90a4ae;
+}
+
+@media (max-width: 1199px) {
+  .market-ticker__main {
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 1023px) {
+  .market-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .market-side {
+    order: -1;
+    width: 100%;
+  }
+
+  .market-main {
+    width: 100%;
+  }
+}
+
+@media (max-width: 799px) {
+  .market-data-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .market-ticker {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .market-ticker__main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    width: 100%;
+  }
+
+  .market-ticker__pair {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .market-ticker__stat {
+    min-width: 0;
+  }
+
+  .market-ticker__meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>

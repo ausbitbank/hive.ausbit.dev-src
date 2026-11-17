@@ -30,12 +30,11 @@
 
     <template v-else>
       <div class="home-market-list">
-        <a
+        <component
+          :is="coin.to ? 'router-link' : 'a'"
           v-for="coin in rows"
           :key="coin.id"
-          :href="coin.href"
-          target="_blank"
-          rel="noopener noreferrer"
+          v-bind="coin.linkProps"
           class="home-market-row"
           :class="{ 'home-market-row--hive': coin.isHive }"
           :title="coin.title"
@@ -61,8 +60,13 @@
             <span class="home-market-row__price">{{ coin.price }}</span>
             <span class="home-market-row__change" :class="coin.changeClass">{{ coin.change }}</span>
           </div>
-          <q-icon name="open_in_new" size="14px" class="home-market-row__external" aria-hidden="true" />
-        </a>
+          <q-icon
+            :name="coin.to ? 'chevron_right' : 'open_in_new'"
+            size="14px"
+            class="home-market-row__external"
+            aria-hidden="true"
+          />
+        </component>
       </div>
 
       <div v-if="error" class="home-market__error">
@@ -71,8 +75,12 @@
         <q-btn flat dense no-caps color="primary" label="Retry" @click="loadPrices" />
       </div>
 
-      <q-card-section class="home-panel__footer">
-        <span>24h change · priced in USD</span>
+      <q-card-section class="home-panel__footer home-market__footer">
+        <span class="home-market__footer-links">
+          <router-link to="/market">Internal market</router-link>
+          <router-link to="/markets#hbd-tools">HBD peg</router-link>
+          <span>24h change · USD</span>
+        </span>
         <span>via CoinGecko<span v-if="updatedLabel"> · {{ updatedLabel }}</span></span>
       </q-card-section>
     </template>
@@ -93,6 +101,10 @@
   border-top: 1px solid var(--border-subtle);
   color: inherit;
   text-decoration: none;
+}
+
+.home-market-row:visited {
+  color: inherit;
 }
 
 .home-market-row:first-child {
@@ -169,6 +181,13 @@
   font-size: 0.72rem;
 }
 
+.home-market__footer-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem 0.8rem;
+  flex-wrap: wrap;
+}
+
 .home-market-skeleton {
   display: flex;
   align-items: center;
@@ -215,6 +234,16 @@ import {
 
 const API_URL = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive,hive_dollar,bitcoin,ethereum&order=market_cap_desc&per_page=4&page=1&sparkline=true&price_change_percentage=24h'
 const COIN_ORDER = ['hive', 'hive_dollar', 'bitcoin', 'ethereum']
+const MARKET_LINKS = {
+  hive: {
+    to: '/markets?pair=BINANCE:HIVEUSDT',
+    title: 'Open the HIVE price chart, HBD peg and HIVE/HBD converter'
+  },
+  hive_dollar: {
+    to: '/markets#hbd-tools',
+    title: 'Open HBD peg, savings APR and the HIVE/HBD converter'
+  }
+}
 
 export default {
   name: 'homeMarketCard',
@@ -232,20 +261,32 @@ export default {
     rows () {
       return sortMarketCoins(this.coins, COIN_ORDER).map(coin => {
         const change = Number(coin.price_change_percentage_24h)
+        const marketLink = MARKET_LINKS[coin.id]
+        const priceLabel = formatUsd(coin.current_price)
+        const changeLabel = formatPercent(change)
+        const baseAria = coin.name + ' price ' + priceLabel + ', 24 hour change ' + changeLabel
+
         return {
           id: coin.id,
           symbol: String(coin.symbol || '').toUpperCase(),
           name: coin.name,
           image: coin.image,
           isHive: coin.id === 'hive' || coin.id === 'hive_dollar',
-          price: formatUsd(coin.current_price),
-          change: formatPercent(change),
+          price: priceLabel,
+          change: changeLabel,
           changeClass: changeClass(change),
           sparkline: coin.sparkline_in_7d && coin.sparkline_in_7d.price,
           stroke: change < 0 ? '#ef5350' : '#66bb6a',
-          href: 'https://www.coingecko.com/en/coins/' + coin.id,
-          title: coin.name + ' · market cap $' + Number(coin.market_cap || 0).toLocaleString('en-US') + ' · 24h volume $' + Number(coin.total_volume || 0).toLocaleString('en-US'),
-          ariaLabel: coin.name + ' price ' + formatUsd(coin.current_price) + ', 24 hour change ' + formatPercent(change)
+          to: marketLink?.to || '',
+          linkProps: marketLink?.to
+            ? { to: marketLink.to }
+            : {
+                href: 'https://www.coingecko.com/en/coins/' + coin.id,
+                target: '_blank',
+                rel: 'noopener noreferrer'
+              },
+          title: marketLink?.title || coin.name + ' · market cap $' + Number(coin.market_cap || 0).toLocaleString('en-US') + ' · 24h volume $' + Number(coin.total_volume || 0).toLocaleString('en-US'),
+          ariaLabel: marketLink?.to ? baseAria + '. ' + marketLink.title : baseAria
         }
       })
     },
