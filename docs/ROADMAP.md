@@ -7,9 +7,10 @@ It records what is done, what remains, and the design standards already in use.
 
 ## Current state
 
-Current verified baseline: **`fe89078` on `master`**, pushed to `origin/master`.
-Production `hive.ausbit.dev` is deployed from this build. W16 (wallet) and W17
-(witnesses, health, nodes) are complete.
+Current verified baseline: **`cccde83` on `master`**, pushed to `origin/master`.
+Production `hive.ausbit.dev` is deployed from this build. W16 (wallet), W17
+(witnesses, health, nodes) and W18 (markets, HBD tools, internal market) are
+complete.
 
 Recent completed workstreams:
 
@@ -36,6 +37,10 @@ Recent completed workstreams:
 - W17 follow-up: labelled saved public signing keys with one-click switching on
   `/witness`, and corrected relative-time rendering so price-feed ages read
   “40 minutes ago” rather than “in 40 minutes”.
+- Markets: responsive TradingView chart with pair/interval URL state, HBD peg
+  and savings APR cards, conversion calculator, rebuilt internal market with
+  order book, trades, open orders, balances and fees, and deeper home-market
+  links (W18).
 
 Relevant docs:
 
@@ -50,6 +55,7 @@ Relevant docs:
 - `docs/workstreams/W15-command-palette.md`
 - `docs/workstreams/W16-wallet-rebuild.md`
 - `docs/workstreams/W17-witnesses-health.md`
+- `docs/workstreams/W18-markets.md`
 
 ## Priority 1 — wallet page rebuild (complete)
 
@@ -101,17 +107,24 @@ Checks: lint clean, 23 test files / 188 tests passing, build succeeded, zero
 axe violations at 1440px and 390px on all four routes, browser smoke completed,
 deploy and live smoke completed.
 
-## Priority 3 — markets
+## Priority 3 — markets (complete)
 
-- Make the TradingView chart responsive; it is currently fixed at 1000×1000.
-- Improve pair selection and chart page layout.
-- Internal market: order book, recent trades, open orders, balances and fees.
-- HBD peg/premium, savings APR and a HIVE/HBD conversion calculator.
-- Link the home market card deeper into the market experience.
-- Review the current market surfaces before rebuilding: `src/pages/market.vue`,
-  `src/pages/markets.vue`, `src/components/internalMarket.vue`,
-  `src/components/TradingViewWidget.vue`, `src/components/HomeMarketCard.vue`
-  and `src/services/prices.js`.
+Completed 2026-11-18. See `docs/workstreams/W18-markets.md`.
+
+- `/markets` is now a market chart and HBD tools page: responsive TradingView
+  chart, pair/interval selection with URL state, HIVE/HBD snapshot, HBD peg
+  premium/discount, HBD savings APR and a HIVE ↔ HBD conversion calculator.
+- `/market` is the rebuilt internal market: ticker strip, order book with
+  cumulative depth and click-to-prefill, recent trades, open orders, balances,
+  zero-fee disclosure and a validated buy/sell form.
+- Order creation and cancellation queue with active authority; the existing
+  queue refreshes the account after a broadcast.
+- Home market card rows link HIVE to the chart and HBD to the peg/converter
+  section; BTC/ETH remain external CoinGecko links with `noopener noreferrer`.
+- Hash navigation now scrolls to anchored sections with a header offset.
+
+Checks: lint clean, 24 test files / 199 tests passing, build succeeded, zero axe
+violations at 1440px and 390px on both routes, deploy and live smoke completed.
 
 ## Priority 4 — queue, login, notifications
 
@@ -166,23 +179,24 @@ deploy and live smoke completed.
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The current verified baseline is commit
-> `fe89078` on `master`, pushed to `origin/master`; W16 (wallet) and W17
-> (witnesses, health, nodes) are complete, with 23 test files / 188 tests
-> passing, a green build, and production deployed from the same commit.
+> `cccde83` on `master`, pushed to `origin/master`; W16 (wallet), W17
+> (witnesses, health, nodes) and W18 (markets, HBD tools, internal market) are
+> complete, with 24 test files / 199 tests passing, a green build, and
+> production deployed from the same commit.
 >
-> Continue with **Priority 3 — markets**. Inspect the current market surfaces
-> before changing them: `src/pages/market.vue`, `src/pages/markets.vue`,
-> `src/components/internalMarket.vue`, `src/components/TradingViewWidget.vue`,
-> `src/components/HomeMarketCard.vue` and `src/services/prices.js`.
+> Continue with **Priority 4 — queue, login, notifications**. Review the current
+> surfaces before changing them: `src/components/queue.vue`,
+> `src/components/smartlock/`, `src/components/notifications.vue`,
+> `src/components/userLogin.vue` and `src/stores/hive/`.
 >
 > Deliver:
 >
-> 1. A responsive TradingView chart instead of the fixed 1000×1000 widget.
-> 2. Better pair selection and chart page layout.
-> 3. Internal market: order book, recent trades, open orders, balances and fees.
-> 4. HBD peg/premium, savings APR and a HIVE/HBD conversion calculator.
-> 5. Deeper links from the home market card into the market experience.
-> 6. A new `docs/workstreams/W18-markets.md` workstream record.
+> 1. Queue controls: send all, retry failures, clear completed, per-item status
+>    and clearer posting/active key requirements.
+> 2. SmartLock: lock button, session timeout and clearer key-type explanation.
+> 3. Notifications: load more, filtering, reliable mark-all-read and a live badge.
+> 4. Clearer login/onboarding copy around posting versus active keys.
+> 5. A new `docs/workstreams/W19-queue-login.md` workstream record.
 >
 > Follow the existing standards: use the design tokens and card patterns, keep
 > one page-level `h1`, preserve correct posting/active queue authorities, sanitize
@@ -194,5 +208,5 @@ deploy and live smoke completed.
 > and `ROADMAP.md`, report the test count, build/deploy status and backup path,
 > then commit and push the verified work and confirm the working tree is clean.
 >
-> Do not redo W16/W17 except for integration fixes. The README revamp is tracked
+> Do not redo W16–W18 except for integration fixes. The README revamp is tracked
 > in Priority 6 and is not part of this session.
