@@ -1,6 +1,6 @@
 # hive.ausbit.dev roadmap and session handoff
 
-Last updated: 2026-11-17
+Last updated: 2026-11-18
 
 This file is the persistent handoff for future agent sessions. Read it first.
 It records what is done, what remains, and the design standards already in use.
@@ -19,7 +19,10 @@ Recent completed workstreams:
   profile compact headers.
 - Front page dashboard: live block card, market list, top witnesses, trending
   posts, recent author posts.
-- Account overview and wallet portfolio summary (phase 1).
+- Account overview (W14).
+- Wallet page full rebuild: portfolio header, asset cards, pending strip and
+  panel, date-grouped filtered activity, extracted Hive-Engine tokens, removed
+  duplicated balances (W16).
 - Command palette and navigation: Ctrl/Cmd+K, direct route parsing, recents,
   header/mobile/drawer triggers.
 
@@ -34,96 +37,31 @@ Relevant docs:
 - `docs/workstreams/W13-home-dashboard.md`
 - `docs/workstreams/W14-wallet-account.md`
 - `docs/workstreams/W15-command-palette.md`
+- `docs/workstreams/W16-wallet-rebuild.md`
 
-## Priority 1 — rebuild the wallet page properly
+## Priority 1 — wallet page rebuild (complete)
 
-**User feedback:** the current wallet work only added a portfolio summary at the
-top; the rest of the page is still the old layout, and the summary duplicates
-information below it. This needs a full rebuild, not another summary card.
+Completed 2026-11-18. See `docs/workstreams/W16-wallet-rebuild.md`.
 
-Current file: `src/pages/wallet.vue` (~1,335 lines). It still contains:
+`src/pages/wallet.vue` was rebuilt from ~1,571 lines to ~700 lines and split
+into focused components under `src/components/wallet/`:
 
-- Old Hive / Hive Engine tabs.
-- A long balance list and transaction history.
-- Many inline dialogs and actions.
-- The new portfolio summary above the old page.
+- Portfolio header: total holdings, weighted 24h change, HP/HBD APR and
+  logged-in primary actions.
+- Overview: liquid HIVE, staked HP, liquid HBD, HIVE savings and HBD savings
+  cards, each with USD value, status, contextual actions and authority labels.
+- Pending strip and panel: power-down progress/cancel, savings withdrawals,
+  conversions, open orders, rewards, HBD interest and delegations.
+- Recent activity plus full activity with date grouping, type/direction/search
+  filters, raw JSON, tx/block links and on-demand pagination (50 at a time).
+- Hive-Engine tokens with balances, details, transfer/stake/unstake, market
+  links and token history.
 
-### Goal
+The old Hive/Hive-Engine tabs and duplicated balance list were removed. All
+wallet actions, memo decryption, claiming and the tax export link are preserved.
 
-A single coherent wallet experience, not a new card layered on top of the old
-page. Remove duplicated balance data once the new layout covers it.
-
-### Proposed information architecture
-
-1. **Wallet header**
-   - Compact identity/portfolio header.
-   - Total HIVE/HBD value, 24h change if available, HP and HBD APR.
-   - Logged-in-only primary actions.
-
-2. **Overview**
-   - Asset cards: liquid HIVE, staked HP, liquid HBD, HIVE savings, HBD savings.
-   - Each card: balance, USD value, APR/status and contextual actions.
-   - Pending/attention strip: power-down, withdrawals, conversions, open orders,
-     pending rewards, HBD interest.
-   - Recent 5 activity items.
-
-3. **Activity**
-   - Full transaction history with date grouping.
-   - Filters by operation type, direction and search.
-   - Friendly operation summaries, expandable JSON and tx/block links.
-   - Infinite or paginated loading, with a compact mobile layout.
-
-4. **Pending**
-   - Power-down progress and cancel.
-   - Savings withdrawals and cancellations.
-   - Conversions and collateralized conversions.
-   - Internal-market open orders and cancellation.
-   - Pending rewards and HBD interest claim.
-   - Delegations in/out.
-
-5. **Tokens**
-   - Hive Engine balances, transfers, staking and unstaking.
-   - Remove the old Hive/Hive-Engine tab split in favour of the sections above.
-
-### Components to extract
-
-Split the monolith into focused components, for example:
-
-- `WalletPortfolioHeader.vue`
-- `WalletAssetCard.vue`
-- `WalletPendingPanel.vue`
-- `WalletActivity.vue`
-- `WalletOperationRow.vue`
-- `HiveEngineTokens.vue`
-
-Reuse existing dialogs (`transferDialog`, `stakingDialog`,
-`unstakingDialog`, `savingsDialog`, `delegationDialog`, `convertDialog`,
-`claimRewards`, etc.) rather than rewriting transaction flows unnecessarily.
-
-### Preserve functionality
-
-- Transfer HIVE/HBD
-- Power up/down and cancel power-down
-- Savings deposit/withdraw and cancellation
-- Delegations in/out
-- HBD/HIVE conversions and collateralized conversions
-- Internal market orders and cancellation
-- Claim rewards and HBD interest
-- Hive Engine transfer/stake/unstake
-- Memo decryption
-- Tax export link
-- Posting vs active key clarity for every action
-
-### Acceptance criteria
-
-- No duplicated summary/balance information.
-- The page looks like one modern product, not two generations layered together.
-- Desktop and 390px layouts have no overflow.
-- All existing wallet actions still work.
-- Queue items use the correct authority (`posting` vs `active`).
-- `bun run lint`, `bun run test`, `bun run build`.
-- Axe WCAG A/AA clean.
-- Live smoke test before deploy.
+Checks: lint clean, 19 test files / 142 tests passing, build succeeded, zero axe
+violations at 1440px and 390px, deploy and live smoke completed.
 
 ## Priority 2 — witnesses and network health
 
@@ -189,8 +127,9 @@ Reuse existing dialogs (`transferDialog`, `stakingDialog`,
 
 ## Suggested new-session prompt
 
-> Read `docs/ROADMAP.md` first. Continue with Priority 1: a full wallet page
-> rebuild, not another summary card. Replace the old wallet layout, extract
-> focused wallet components, remove duplicated balance information and preserve
-> all existing wallet actions. Run lint/test/build, axe, desktop and 390px smoke
-> tests, then deploy and live-smoke.
+> Read `docs/ROADMAP.md` first. Continue with Priority 2: witnesses and network
+> health. Build the modern `/witnesses` directory with search, sort, my votes,
+> proxy, vote/unvote, vote-weight calculator and health warnings; rebuild
+> `/witness` editing; then improve `/health` and `/nodes` using the existing
+> design tokens and card patterns. Run lint/test/build, axe, desktop and 390px
+> smoke tests, then deploy and live-smoke.

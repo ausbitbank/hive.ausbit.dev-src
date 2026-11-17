@@ -1,1111 +1,336 @@
 <template>
-  <q-page class="wallet-page flex">
-      <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
-          <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-        <div class="wallet-content">
-          <q-card flat bordered class="wallet-summary">
-            <q-card-section class="wallet-summary__head">
-              <div>
-                <div class="wallet-summary__eyebrow">Portfolio</div>
-                <div class="wallet-summary__total">
-                  <template v-if="walletSummary.pricesReady">${{ formatUsd(walletSummary.totalUsd) }}</template>
-                  <template v-else>—</template>
-                </div>
-                <div class="wallet-summary__sub">HIVE and HBD holdings · @{{ account.name }}</div>
-              </div>
-              <div class="wallet-summary__actions">
-                <q-btn flat dense round icon="refresh" aria-label="Refresh wallet summary" title="Refresh wallet summary" @click="refreshWalletSummary" />
-                <q-btn outline no-caps color="primary" icon="account_balance_wallet" label="Manage balances" @click="scrollToBalances" />
-              </div>
-            </q-card-section>
-            <div class="wallet-summary__grid">
-              <div class="wallet-summary-stat">
-                <span>Liquid HIVE</span>
-                <strong>{{ tidyNumber(walletSummary.liquidHive.toFixed(3)) }}</strong>
-                <small>${{ formatUsd(walletSummary.liquidHiveUsd) }}</small>
-              </div>
-              <div class="wallet-summary-stat">
-                <span>Staked HP</span>
-                <strong>{{ tidyNumber(walletSummary.stakedHive.toFixed(3)) }}</strong>
-                <small>${{ formatUsd(walletSummary.stakedHiveUsd) }}</small>
-              </div>
-              <div class="wallet-summary-stat">
-                <span>Liquid HBD</span>
-                <strong>{{ tidyNumber(walletSummary.liquidHbd.toFixed(3)) }}</strong>
-                <small>${{ formatUsd(walletSummary.liquidHbdUsd) }}</small>
-              </div>
-              <div class="wallet-summary-stat">
-                <span>Savings</span>
-                <strong>{{ tidyNumber(walletSummary.savingsHive.toFixed(3)) }} HIVE</strong>
-                <small>{{ tidyNumber(walletSummary.savingsHbd.toFixed(3)) }} HBD</small>
-              </div>
-              <div class="wallet-summary-stat">
-                <span>Pending rewards</span>
-                <strong>${{ formatUsd(walletSummary.pendingValueUsd) }}</strong>
-                <small>{{ walletSummary.pendingHive.toFixed(3) }} HIVE · {{ walletSummary.pendingHbd.toFixed(3) }} HBD</small>
-              </div>
-              <div class="wallet-summary-stat">
-                <span>Yield</span>
-                <strong>{{ hivePowerAPR || '—' }}% HP</strong>
-                <small>{{ walletSummary.hbdApr }}% HBD savings</small>
-              </div>
-            </div>
-            <q-card-section class="wallet-summary__footer">
-              <span>Balances in HIVE and HBD only</span>
-              <span v-if="walletSummary.powerdown">Powering down {{ walletSummary.powerdown }}</span>
-              <span v-if="pendingHbdInterest > 0.01">+{{ pendingHbdInterest }} HBD pending interest</span>
-            </q-card-section>
-          </q-card>
+  <q-page class="wallet-page">
+    <template v-if="account && globalProps">
+      <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
 
-          <q-card dense flat bordered class="wallet-shell q-ma-none q-pt-sm">
-            <div class="text-h6 text-center text-green wallet-section-title"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
-            <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
-                <q-tab name="hive"><q-icon name="img:/statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
-                <q-tab name="hive-engine"><q-icon name="img:/statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
-            </q-tabs>
-            <q-tab-panels v-model="tab" animated>
-                <q-tab-panel name="hive">
-                    <q-list bordered separator class="rounded-borders wallet-balances">
-                        <q-item>
-                            <q-item-section avatar class="gt-xs">
-                              <q-avatar size="sm">
-                                <img src="/statics/hive.svg" alt="Hive logo"/>
-                              </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>
-                                    Hive
-                                </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-weight-medium">
-                                  <animInt :value="account.balance.split(' ')[0]" />
-                                </q-item-label>
-                                <q-item-label caption>
-                                  Liquid
-                                </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label>
-                                <animInt :value="vestToHive(parseInt(account.vesting_shares.split(' ')[0]))" />
-                              </q-item-label>
-                              <q-item-label caption>
-                                Staked<br />
-                                <q-badge align="top" class="text-black text-bold" color="green" :title="hivePowerAPR">{{ hivePowerAPR }}% APR</q-badge>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section v-if="account.savings_balance !== '0.000 HIVE'">
-                              <q-item-label>
-                                <animInt :value="account.savings_balance.split(' ')[0]" />
-                              </q-item-label>
-                              <q-item-label caption>
-                                Savings
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section class="gt-xs">
-                              <q-item-label>
-                                <animInt :value="((parseFloat(account.balance.split(' ')[0]) + parseFloat(vestToHive(parseFloat(account.vesting_shares.split(' ')[0]))) + parseFloat(account.savings_balance.split(' ')[0])) * hivePriceUsd).toFixed(2)" />
-                              </q-item-label>
-                              <q-item-label caption v-if="hivePriceUsdChange !== null">
-                                <q-icon name="arrow_upward" color="green" v-if="hivePriceUsdChange > 0" />
-                                <q-icon name="arrow_downward" color="red" v-else />
-                                {{ hivePriceUsdChange.toFixed(2) }} %
-                              </q-item-label>
-                              <q-item-label caption>
-                                Value (USD)
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" aria-label="Transfer Hive" @click="transferHive = true" class="gt-xs"/>
-                                <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-dialog v-model="savings"><savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" /></q-dialog>
-                                <q-dialog v-model="delegationDialogVisible"><delegationDialog :username="username" tokenName="HIVE" :amountVestsSuggest="0" /></q-dialog>
-                                <q-dialog v-model="convertDialogVisible"><convertDialog :username="username" :tokenName="convertTokenName" /></q-dialog>
-                                <q-btn dense flat icon="more_horiz" title="More Hive actions" aria-label="More Hive actions">
-                                  <q-menu>
-                                    <q-list bordered separator>
-                                      <q-item clickable @click="transferHive = true" class="text-primary">
-                                        <q-item-section avatar><q-icon name="send" color="primary" title="transfer" /></q-item-section>
-                                        <q-item-section>Transfer</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
-                                        <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
-                                        <q-item-section>Market</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="stakeHive = true" class="text-green" title="Stake">
-                                        <q-item-section avatar><q-icon name="lock" /> </q-item-section>
-                                        <q-item-section>Stake</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="unstakeHive = true" class="text-red" title="Unstake">
-                                        <q-item-section avatar><q-icon name="lock_open" /></q-item-section>
-                                        <q-item-section>Unstake</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'" class="text-green" title="Deposit Savings">
-                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
-                                        <q-item-section>Deposit</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HIVE'" v-if="account.savings_balance.split(' ')[0] !== '0.000'" class="text-red" title="Withdraw Savings">
-                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
-                                        <q-item-section>Withdraw</q-item-section>
-                                      </q-item>
-                                      <q-item clickable class="text-primary" title="Delegate Hive Power" @click="delegationDialogVisible = true" v-if="account.vesting_shares.split(' ')[0] !== '0.000000'">
-                                        <q-item-section avatar><q-icon name="redeem" /></q-item-section>
-                                        <q-item-section>Delegate</q-item-section>
-                                      </q-item>
-                                      <q-item clickable class="text-green" title="Convert Hive to HBD" @click="convertDialogVisible = true; convertTokenName = 'HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'">
-                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg" alt="HBD logo"/></q-avatar></q-item-section>
-                                        <q-item-section>Convert</q-item-section>
-                                      </q-item>
-                                      <q-item clickable class="text-green" title="Create New Account" @click="$router.push('/create')">
-                                        <q-item-section avatar><q-avatar size="sm"><q-icon name="person_add" size="sm" color="green" /></q-avatar></q-item-section>
-                                        <q-item-section>New Account</q-item-section>
-                                      </q-item>
-                                    </q-list>
-                                  </q-menu>
-                                </q-btn>
-                            </q-item-section>
-                        </q-item>
-                        <q-item>
-                            <q-item-section avatar class="gt-xs">
-                              <q-avatar size="sm">
-                                <img src="/statics/hbd.svg" alt="HBD logo"/>
-                              </q-avatar>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label>
-                                    Hive Dollars
-                                </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                                <q-item-label class="text-weight-medium">
-                                  <animInt :value="account.hbd_balance.split(' ')[0]" /> HBD
-                                </q-item-label>
-                                <q-item-label caption>
-                                  Liquid
-                                </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label>
-                                <animInt :value="account.savings_hbd_balance.split(' ')[0]" />
-                              </q-item-label>
-                              <q-item-label caption>
-                                Savings<br />
-                                <router-link to="/hbd" v-if="globalProps.hbd_interest_rate !== 0">
-                                  <q-badge align="top" class="text-black text-bold" color="green" title="HBD interest rates are controlled through witness voting and can change at any time. Interest is paid once per month to balances held in savings">{{ globalProps.hbd_interest_rate / 100 }}% APR</q-badge>
-                                </router-link>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section class="gt-xs">
-                              <q-item-label>
-                                $ <animInt :value="((parseFloat(account.savings_hbd_balance.split(' ')[0]) + parseFloat(account.hbd_balance.split(' ')[0])) * hbdPriceUsd).toFixed(2)" />
-                              </q-item-label>
-                              <q-item-label caption v-if="hbdPriceUsdChange !== null">
-                                <q-icon name="arrow_upward" color="green" v-if="hbdPriceUsdChange > 0" />
-                                <q-icon name="arrow_downward" color="red" v-else />
-                                <animInt :value="hbdPriceUsdChange.toFixed(2)" /> %
-                              </q-item-label>
-                              <q-item-label caption>
-                                Value (USD)
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section top side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" aria-label="Transfer HBD" @click="transferHbd = true" class="gt-xs"/>
-                                <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-btn dense flat icon="more_horiz" title="More HBD actions" aria-label="More HBD actions">
-                                  <q-menu>
-                                    <q-list bordered separator>
-                                      <q-item clickable @click="transferHbd = true" class="text-primary" title="Transfer HBD">
-                                        <q-item-section avatar><q-icon name="send" /></q-item-section>
-                                        <q-item-section>Transfer</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="$router.push('/market')" class="text-orange" title="Trade Hive/HBD on internal market">
-                                        <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
-                                        <q-item-section>Market</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'deposit'; savingsTokenName='HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'" class="text-green" title="Deposit Savings">
-                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
-                                        <q-item-section>Deposit</q-item-section>
-                                      </q-item>
-                                      <q-item clickable @click="savings = true; savingsType = 'withdraw'; savingsTokenName='HBD'" v-if="account.savings_hbd_balance.split(' ')[0] !== '0.000'" class="text-red" title="Withdraw Savings">
-                                        <q-item-section avatar><q-icon name="savings" /></q-item-section>
-                                        <q-item-section>Withdraw</q-item-section>
-                                      </q-item>
-                                      <q-item clickable class="text-secondary" title="Convert HBD to Hive" @click="convertDialogVisible = true; convertTokenName = 'HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'">
-                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hive.svg" alt="Hive logo"/></q-avatar></q-item-section>
-                                        <q-item-section>Convert</q-item-section>
-                                      </q-item>
-                                    </q-list>
-                                  </q-menu>
-                                </q-btn>
-                            </q-item-section>
-                        </q-item>
-                        <q-item v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
-                          <q-item-section avatar>
-                            <q-icon name="lock_open" color="red" />
-                          </q-item-section>
-                          <q-item-section>
-                            <div class="text-bold">Hive unstaking in progress</div>
-                            <div>Unstaking total: {{ tidyNumber(vestToHive(parseInt(account.to_withdraw / 1000000))) }} Hive</div>
-                            <div>Unstaked so far: {{ tidyNumber(vestToHive(parseInt(account.withdrawn / 1000000))) }} Hive</div>
-                          </q-item-section>
-                          <q-item-section>
-                              <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
-                          </q-item-section>
-                          <q-item-section side v-if="loggedInUser === username">
-                              <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" aria-label="Cancel powerdown" @click="unstakeHive = true" />
-                          </q-item-section>
-                        </q-item>
-                        <savingsWithdrawalsInProgress :username="username" />
-                        <q-item v-if="hiveInternalMarketOrders.length > 0">
-                          <q-item-section avatar>
-                            <q-icon name="store" color="orange" />
-                          </q-item-section>
-                          <q-item-section>
-                          <div class="text-bold">Open orders on the <router-link to="/market">internal market</router-link></div>
-                          <div v-for="order in hiveInternalMarketOrders" :key="order.index">
-                            {{ tidyNumber(order.sell_price.base.split(' ')[0]) }} {{ order.sell_price.base.split(' ')[1] }} for {{ tidyNumber(order.sell_price.quote.split(' ')[0]) }} {{ order.sell_price.quote.split(' ')[1] }}
-                            <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
-                            <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
-                            <q-btn dense flat icon="cancel" color="red" title="Cancel order" aria-label="Cancel order" v-if="loggedInUser === username" @click="$hiveStore.addToQueue([loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
-                          </div>
-                          </q-item-section>
-                        </q-item>
-                        <q-item v-if="pendingHbdInterest > 0.01">
-                          <q-item-section avatar>
-                            <q-icon name="trending_up" color="green" />
-                          </q-item-section>
-                          <q-item-section>
-                          Estimated pending interest of {{ pendingHbdInterest }} HBD<br />
-                          <div class="text-subtitle"><q-icon name="timer" color="grey" /> &nbsp; Next interest payout due {{ timeTillHbdInterestPayout(account.savings_hbd_last_interest_payment) }}</div>
-                          </q-item-section>
-                          <q-item-section v-if="pendingHbdClaim && loggedInUser === username">
-                            <q-btn dense flat icon="redeem" color="primary" label="Claim" @click="claimHbdInterest()" :disable="!pendingHbdClaim" :title="!pendingHbdClaim ? 'Cannot claim yet (30 day minimum)': 'Claim your interest'" />
-                          </q-item-section>
-                        </q-item>
-                        <q-item v-if="account.reward_vesting_balance !== '0.000000 VESTS'||account.reward_hbd_balance !== '0.000 HBD'||account.reward_hive_balance !== '0.000 HIVE'">
-                          <q-item-section avatar>
-                            <q-icon name="stars" color="amber" />
-                          </q-item-section>
-                          <q-item-section>
-                            <div>Pending Rewards from posts & curation</div>
-                            <div v-if="account.reward_vesting_balance !== '0.000000 VESTS'">{{ account.reward_vesting_hive.split(' ')[0] }} Staked Hive</div>
-                            <div v-if="account.reward_hbd_balance !== '0.000 HBD'">{{ account.reward_hbd_balance }}</div>
-                            <div v-if="account.reward_hive_balance !== '0.000 HIVE'">{{ account.reward_hive_balance }}</div>
-                          </q-item-section>
-                          <q-item-section v-if="account.name === loggedInUser">
-                            <claim-rewards :A="account"/>
-                          </q-item-section>
-                        </q-item>
-                        <q-item>
-                          <q-item-section>
-                            <delegations :username="username" />
-                            <convertRequests :username="username" />
-                          </q-item-section>
-                        </q-item>
-                    </q-list>
-                    <div id="scrollTargetRef">
-                      <div class="text-h6 text-center wallet-section-title">Transaction History</div>
-                      <div class="text-center">
-                        <q-btn no-caps dense glossy label="Filter" icon="filter_alt">
-                          <q-popup-proxy>
-                            <q-card flat bordered class="q-pa-sm">
-                              <div class="text-h6">Show transaction types</div>
-                              <q-toggle v-model="filter.showClaimedRewards" label="Claimed Rewards" /><br />
-                              <!-- <q-toggle v-model="filter.showDust" label="Show Dust Transfers (0.001)" /><br /> -->
-                              <q-toggle v-model="filter.showTransfersIn" label="Transfers In" /><br />
-                              <q-toggle v-model="filter.showTransfersOut" label="Transfers Out" /><br />
-                              <q-toggle v-model="filter.showMarketOrders" label="Market Orders" /><br />
-                              <q-toggle v-model="filter.showStaking" label="Staking" /><br />
-                              <q-toggle v-model="filter.showUnStaking" label="Un-Staking" /><br />
-                              <q-toggle v-model="filter.showSavings" label="Savings" /><br />
-                              <q-input v-model="filter.search" label="Contains" clearable @clear="filter.search = ''" /><br />
-                              {{ hiveTransactions.length }} tx loaded, {{ filteredTransactionsHive.length }} visible after filtering
-                            </q-card>
-                          </q-popup-proxy>
-                        </q-btn>
-                      </div>
-                      <q-scroll-area style="height: 500px;" ref="infiniteScroll">
-                      <q-infinite-scroll @load="getHiveWalletTransactions" :offset="150" scroll-target="body">
-                        <q-list dense bordered class="wallet-tx" v-for="tx in filteredTransactionsHive" :key="tx.index">
-                          <q-item>
-                            <q-item-section avatar class="gt-xs">
-                              <q-item-label>
-                                <q-icon name="add_circle" color="green" v-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer')" />
-                                <q-icon name="add_circle" color="green-10" v-else-if="(tx[1].op[0] === 'claim_reward_balance')" />
-                                <q-icon name="add_circle" color="green-9" v-else-if="(tx[1].op[0] === 'interest')" />
-                                <q-icon name="remove_circle" color="red" v-else-if="(tx[1].op[1].from === username && tx[1].op[0] === 'transfer')" />
-                                <q-icon name="cached" color="blue" v-else-if="(tx[1].op[0] === 'fill_convert_request')" />
-                                <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer_to_vesting')" />
-                                <q-icon name="arrow_circle_up" color="red-8" v-else-if="(tx[1].op[1].to !== username && tx[1].op[0] === 'transfer_to_vesting')" />
-                                <q-icon name="arrow_circle_down" color="blue-8" v-else-if="(tx[1].op[0] === 'withdraw_vesting')" />
-                                <q-icon name="arrow_circle_down" color="red-8" v-else-if="(tx[1].op[0] === 'fill_vesting_withdraw')" />
-                                <q-icon name="arrow_circle_up" color="orange-6" v-else-if="(tx[1].op[0] === 'transfer_to_savings')" />
-                                <q-icon name="arrow_circle_down" color="red-6" v-else-if="(tx[1].op[0] === 'transfer_from_savings')" />
-                                <q-icon name="arrow_circle_down" color="red-7" v-else-if="(tx[1].op[0] === 'cancel_transfer_from_savings')" />
-                                <q-icon name="arrow_circle_down" color="red-8" v-else-if="(tx[1].op[0] === 'fill_transfer_from_savings')" />
-                                <q-icon name="cached" color="blue-5" v-else-if="(tx[1].op[0] === 'fill_order')" />
-                                <q-icon name="fact_check" color="orange-8" v-else-if="(tx[1].op[0] === 'escrow_release')" />
-                                <q-icon name="swap_horizontal_circle" color="orange-7" v-else-if="(tx[1].op[0] === 'collateralized_convert')" />
-                                <q-icon name="swap_horizontal_circle" color="orange-8" v-else-if="(tx[1].op[0] === 'convert')" />
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label>
-                                <span v-if="(tx[1].op[1].from === username && tx[1].op[0] === 'transfer')">Sent </span>
-                                <span v-else-if="(tx[1].op[1].to === username && tx[1].op[0] === 'transfer')">Received </span>
-                                <span v-else-if="tx[1].op[0] === 'claim_reward_balance'">Claimed Rewards</span>
-                                <span v-else-if="tx[1].op[0] === 'fill_convert_request'">Conversion Completed</span>
-                                <span v-else-if="tx[1].op[0] === 'transfer_to_vesting'">Staked</span>
-                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting' && tx[1].op[1].vesting_shares === '0.000000 VESTS'">Cancelled Unstake</span>
-                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting'">Unstaked</span>
-                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'">Unstake Received</span>
-                                <span v-else-if="tx[1].op[0] === 'fill_order'">Fill Order</span>
-                                <span v-else-if="tx[1].op[0] === 'interest'">Interest</span>
-                                <span v-else-if="tx[1].op[0] === 'transfer_to_savings'">Transfer to Savings</span>
-                                <span v-else-if="tx[1].op[0] === 'transfer_from_savings'">Begin Transfer from Savings</span>
-                                <span v-else-if="tx[1].op[0] === 'fill_transfer_from_savings'">Complete Transfer from Savings</span>
-                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'">Cancel Transfer from Savings</span>
-                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'">Collateralized Convert Started</span>
-                                <span v-else-if="tx[1].op[0] === 'convert'">Conversion Started</span>
-                              </q-item-label>
-                              <q-item-label caption v-if="['fill_convert_request','fill_vesting_withdraw', 'fill_transfer_from_savings'].includes(tx[1].op[0])">
-                                <router-link :to="getVirtualTxLink(tx)">{{ tx[1].block }}</router-link>
-                              </q-item-label>
-                              <q-item-label caption v-else>
-                                <router-link :to="getTxLink(tx[1].trx_id)">{{ tx[1].trx_id.substr(0,8) }}</router-link>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section>
-                              <q-item-label>
-                                <span v-if="tx[1].op[1].from === username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
-                                <span v-else-if="tx[1].op[1].from !== username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
-                                <span v-else-if="tx[1].op[1].account === username && tx[1].op[0] === 'claim_reward_balance'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_convert_request'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                                <span v-else-if="['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'transfer_to_vesting'].includes(tx[1].op[0])"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'"> <router-link :to="getAccountLink(tx[1].op[1].from_account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from_account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from_account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section :title="tx[1].timestamp" class="gt-xs">
-                              <q-item-label>
-                                {{ getDateString(tx[1].timestamp) }}
-                              </q-item-label>
-                              <q-item-label caption>
-                                {{ getTimeString(tx[1].timestamp) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_vesting' && tx[1].op[1].to === username">
-                              <q-item-label class="text-bold">
-                                + {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_vesting' && tx[1].op[1].to !== username">
-                              <q-item-label class="text-bold">
-                                - {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_to_savings' && tx[1].op[1].to === username">
-                              <q-item-label class="text-bold">
-                                + {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                              <q-item-label v-if="tx[1].op[1].memo !== ''">
-                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
-                                <span class="text-caption" style="word-wrap:break-word">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
-                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
-                                  {{ sanitize(tx[1].op[1].memo) }}
-                                </q-tooltip>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_transfer_from_savings'">
-                              <q-item-label class="text-bold">
-                                + {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer_from_savings'">
-                              <q-item-label class="text-bold">
-                                ({{ tidyNumber(tx[1].op[1].amount) }})
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner === username">
-                              <q-item-label class="text-bold text-red-5">
-                                - {{ tidyNumber(tx[1].op[1].open_pays) }}
-                              </q-item-label>
-                              <q-item-label class="text-bold text-green-5">
-                                + {{ tidyNumber(tx[1].op[1].current_pays) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_order' && tx[1].op[1].open_owner !== username">
-                              <q-item-label class="text-bold text-red-5">
-                                - {{ tidyNumber(tx[1].op[1].current_pays) }}
-                              </q-item-label>
-                              <q-item-label class="text-bold text-green-5">
-                                + {{ tidyNumber(tx[1].op[1].open_pays) }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to === username">
-                              <q-item-label class="text-bold text-green-9">
-                                + {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(4)) }})
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(4)) }})
-                              </q-item-label>
-                              <q-item-label v-if="tx[1].op[1].memo !== ''">
-                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
-                                <span class="text-caption" style="word-wrap:break-word">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
-                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
-                                  {{ sanitize(tx[1].op[1].memo) }}
-                                </q-tooltip>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].to !== username">
-                              <q-item-label class="text-bold text-red">
-                                - {{ tidyNumber(tx[1].op[1].amount) }}
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HIVE'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hivePriceUsd).toFixed(2)) }})
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].amount.split(' ')[1] === 'HBD'">
-                                (${{ tidyNumber((tx[1].op[1].amount.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
-                              </q-item-label>
-                              <q-item-label v-if="tx[1].op[1].memo !== ''">
-                                <q-btn dense push rounded color="primary" icon="lock" v-if="(loggedInUser === tx[1].op[1].to || loggedInUser === tx[1].op[1].from) && tx[1].op[1].memo.startsWith('#')" label="Decrypt" @click="decodeMemo(tx[1].op[1].memo, tx)" />
-                                <span class="text-caption" style="word-wrap:break-word;">{{ sanitize(tx[1].op[1].memo).substr(0,50) }}</span>
-                                <q-tooltip content-class="bg-dark color-white q-pa-md text-h6">
-                                  {{ sanitize(tx[1].op[1].memo) }}
-                                </q-tooltip>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'withdraw_vesting'">
-                              <q-item-label class="text-bold">
-                                {{ vestToHive(tx[1].op[1].vesting_shares) }} HIVE
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_vesting_withdraw'">
-                              <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].deposited }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'collateralized_convert'">
-                              <q-item-label class="text-bold text-orange">
-                                {{ tidyNumber(tx[1].op[1].amount.split(' ')[0]) }} {{ tx[1].op[1].amount.split(' ')[1] }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'convert'">
-                              <q-item-label class="text-bold text-orange">
-                                {{ tidyNumber(tx[1].op[1].amount.split(' ')[0]) }} {{ tx[1].op[1].amount.split(' ')[1] }}
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'interest'" class="text-green-9">
-                              <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].interest }}
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[0] === 'interest'">
-                                (${{ tidyNumber((tx[1].op[1].interest.split(' ')[0] * hbdPriceUsd).toFixed(2)) }})
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'claim_reward_balance'" class="text-green-10">
-                              <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
-                                + {{ tidyNumber(tx[1].op[1].reward_hive) }}
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].reward_hive !== '0.000 HIVE'">
-                                + ${{ tidyNumber(parseFloat(tx[1].op[1].reward_hive.split(' ')[0]) * hivePriceUsd) }}
-                              </q-item-label>
-                              <q-item-label class="text-bold" v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
-                                + {{ tidyNumber(tx[1].op[1].reward_hbd) }}
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].reward_hbd !== '0.000 HBD'">
-                                (${{ tidyNumber((parseFloat(tx[1].op[1].reward_hbd.split(' ')[0]) * hbdPriceUsd).toFixed(2)) }})
-                              </q-item-label>
-                              <q-item-label class="text-bold" v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
-                                + {{ tidyNumber(vestToHive(tx[1].op[1].reward_vests)) }} HP
-                              </q-item-label>
-                              <q-item-label caption v-if="tx[1].op[1].reward_vests !== '0.000000 VESTS'">
-                                (${{ tidyNumber((parseFloat(vestToHive(tx[1].op[1].reward_vests.split(' ')[0])) * hivePriceUsd).toFixed(2)) }})
-                              </q-item-label>
-                              <q-item-label>
-                                <div v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].memo !== ''" class="wrap text-center">
-                                  <q-icon name="comment" title="" />
-                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,10) }}</code>..
-                                  <q-tooltip content-class="bg-primary">
-                                    <div class="text-h6">{{ sanitize(tx[1].op[1].memo) }}</div>
-                                  </q-tooltip>
-                                </div>
-                              </q-item-label>
-                            </q-item-section>
-                            <q-item-section side top v-if="tx[1].op[0] === 'fill_convert_request'">
-                              <q-item-label class="text-bold">
-                                - {{ tx[1].op[1].amount_in }}
-                              </q-item-label>
-                              <q-item-label class="text-bold">
-                                + {{ tx[1].op[1].amount_out }}
-                              </q-item-label>
-                              <q-item-label>
-                                <div v-if="tx[1].op[0] === 'transfer' && tx[1].op[1].memo !== ''" class="wrap text-center">
-                                  <q-icon name="comment" title="" />
-                                  <code>{{ sanitize(tx[1].op[1].memo).substr(0,10) }}</code>..
-                                  <q-tooltip content-class="bg-primary">
-                                    <div class="text-h6">{{ sanitize(tx[1].op[1].memo) }}</div>
-                                  </q-tooltip>
-                                </div>
-                              </q-item-label>
-                            </q-item-section>
-                          </q-item>
-                          <div v-if="!['transfer', 'fill_vesting_withdraw', 'claim_reward_balance', 'fill_convert_request', 'transfer_to_vesting', 'withdraw_vesting', 'fill_order', 'interest', 'transfer_to_savings', 'transfer_from_savings', 'cancel_transfer_from_savings', 'fill_transfer_from_savings', 'collateralized_convert', 'convert'].includes(tx[1].op[0])">{{ tx[1].op[0] }} {{ tx[1].op[1] }}</div>
-                        </q-list>
-                        <template v-slot:loading>
-                          <div class="row justify-center q-my-md">
-                            <q-spinner-dots color="primary" size="40px" />
-                          </div>
-                        </template>
-                      </q-infinite-scroll>
-                      </q-scroll-area>
-                      <!-- <div class="text-center text-h6 q-pa-sm">
-                        <q-spinner-puff size="2em" color="primary" v-if="loading" />
-                        <q-btn @click="getHiveWalletTransactions()" class="cursor-pointer text-bold" icon="update" color="primary" dense flat bordered v-if="!loading"> Load More Transactions</q-btn>
-                      </div> -->
-                    </div>
-                </q-tab-panel>
-                <q-tab-panel name="hive-engine">
-                  <q-banner v-if="hiveEngineError" class="bg-orange-10 text-white q-ma-md" rounded>
-                    <template v-slot:avatar><q-icon name="cloud_off" /></template>
-                    {{ hiveEngineError }}
-                    <template v-slot:action><q-btn flat color="white" label="Retry" @click="initHiveEngine()" /></template>
-                  </q-banner>
-                  <div v-else-if="hiveEngineBalances === null || hiveEngineTokenInfo === null" class="text-center q-pa-lg">
-                    <q-spinner-puff color="primary" size="2em" aria-label="Loading Hive-Engine balances" />
-                    <div class="text-caption q-mt-sm">Loading Hive-Engine balances…</div>
-                  </div>
-                  <div v-else>
-                  <q-banner v-if="hiveEngineBalances.length === 0" class="bg-grey-9 text-white q-ma-md" rounded>
-                    <template v-slot:avatar><q-icon name="inbox" /></template>
-                    No Hive-Engine token balances were found for this account.
-                  </q-banner>
-                  <div style="margin: auto;" class="text-center">
-                    <q-checkbox v-model="hiveEngineBalancesFilterSmall">Filter under ${{ hiveEngineBalancesFilterUsdAmount }} USD value</q-checkbox>
-                    <q-btn dense flat title="Change filter amount" aria-label="Change Hive-Engine value filter" icon="settings">
-                      <q-popup-proxy>
-                        <q-card flat bordered class="q-pa-md text-center">
-                          Filter below USD amount
-                          <q-input type="number" v-model.number="hiveEngineBalancesFilterUsdAmount" style="max-width:70px" />
-                        </q-card>
-                      </q-popup-proxy>
-                    </q-btn>
-                    <q-btn icon="refresh" color="green" dense flat @click="initHiveEngine()" title="Refresh Hive-Engine data" aria-label="Refresh Hive-Engine data" />
-                  </div>
-                    <q-list bordered separator class="rounded-borders wallet-tokens">
-                        <q-item v-for="token in hiveEngineBalancesFiltered" :key="token.index">
-                          <q-item-section dense avatar class="gt-xs">
-                            <q-avatar size="md">
-                              <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc" :alt="token.symbol + ' token logo'"/>
-                            </q-avatar>
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label v-if="hiveEngineTokenInfo">
-                              <q-btn dense flat :label="token.symbol" title="Click for more info about this token">
-                                <q-popup-proxy>
-                                  <q-card dense flat bordered style="max-width: 400px">
-                                    <q-card-section header class="text-caption text-center">
-                                      <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc" :alt="token.symbol + ' token logo'"/></q-avatar>{{ token.symbol }}<br />
-                                      {{ returnTokenInfoMeta(token.symbol).desc }}
-                                    </q-card-section>
-                                    <q-card-section caption class="text-caption">
-                                      Issued by <router-link :to="getAccountLink(returnTokenInfo(token.symbol).issuer)">{{ returnTokenInfo(token.symbol).issuer }}</router-link><br />
-                                      Supply: {{ tidyNumber(returnTokenInfo(token.symbol).supply) }}<br />
-                                      Max Supply: {{ tidyNumber(returnTokenInfo(token.symbol).maxSupply) }}<br />
-                                      Circulating Supply: {{ tidyNumber(returnTokenInfo(token.symbol).circulatingSupply) }}<br />
-                                      Total Staked: {{ tidyNumber(returnTokenInfo(token.symbol).totalStaked) }}<br />
-                                    </q-card-section>
-                                  </q-card>
-                                </q-popup-proxy>
-                            </q-btn>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.balance > 0">
-                            <q-item-label>{{ tidyNumber(token.balance) }}</q-item-label>
-                            <q-item-label caption>Liquid</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.stake > 0 && returnTokenInfo(token.symbol).stakingEnabled === true">
-                            <q-item-label>{{ tidyNumber(token.stake)}}</q-item-label>
-                            <q-item-label caption>Staked</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.pendingUnstake > 0">
-                            <q-item-label>{{ tidyNumber(token.pendingUnstake) }}</q-item-label>
-                            <q-item-label caption>Unstaking</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.delegationsIn > 0">
-                            <q-item-label>{{ tidyNumber(token.delegationsIn) }}</q-item-label>
-                            <q-item-label caption>Delegated In</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.delegationsOut > 0">
-                            <q-item-label>{{ tidyNumber(token.delegationsOut) }}</q-item-label>
-                            <q-item-label caption>Delegated out</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="token.pendingUndelegations > 0">
-                            <q-item-label>{{ tidyNumber(token.pendingUndelegations) }}</q-item-label>
-                            <q-item-label caption>Undelegating</q-item-label>
-                          </q-item-section>
-                          <q-item-section v-if="hiveEngineMarketInfo" class="gt-xs">
-                            <q-item-label>
-                              ${{ tidyNumber((returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake))).toFixed(2)) }}
-                            </q-item-label>
-                            <q-item-label caption v-if="token.symbol !== 'SWAP.HIVE' && returnTokenPriceChange(token.symbol) !== 0">
-                              <q-icon v-if="returnTokenPriceChange(token.symbol) > 0" name="arrow_upward" color="green" />
-                              <q-icon v-else name="arrow_downward" color="red" />
-                              {{ returnTokenPriceChange(token.symbol) }} %
-                            </q-item-label>
-                            <q-item-label caption>Value (USD)</q-item-label>
-                          </q-item-section>
-                          <q-item-section side v-if="loggedInUser === username">
-                          <q-btn v-if="parseFloat(token.balance) > 0" dense flat icon="send" color="primary" title="Transfer Token" aria-label="Transfer token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
-                              <q-btn dense flat icon="more_horiz" title="More token actions" aria-label="More token actions">
-                                <q-menu>
-                                  <q-list style="min-width: 100px" bordered separator>
-                                    <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance); transferHiveEngine = true" v-if="parseFloat(token.balance) > 0" class="text-primary" title="Transfer Token">
-                                      <q-item-section avatar><q-icon name="send" /></q-item-section>
-                                      <q-item-section>Transfer</q-item-section>
-                                    </q-item>
-                                    <q-item clickable @click="stakingDialogTokenName = token.symbol; stakingDialogBalance = parseFloat(token.balance); stakeHiveEngine = true" v-if="parseFloat(token.balance) > 0 && returnTokenInfo(token.symbol).stakingEnabled === true" class="text-green" title="Stake Token">
-                                      <q-item-section avatar><q-icon name="lock" /></q-item-section>
-                                      <q-item-section>Stake</q-item-section>
-                                    </q-item>
-                                    <q-item clickable @click="unstakingDialogTokenName = token.symbol; unstakingDialogStake = parseFloat(token.stake); unstakingDialogUnstaking = parseFloat(token.pendingUnstake); unstakingDialogCooldown =  returnTokenInfo(token.symbol).unstakingCooldown; unstakingDialogTransactions = returnTokenInfo(token.symbol).numberTransactions; unstakeHiveEngine = true;" v-if="parseFloat(token.stake) > 0 && returnTokenInfo(token.symbol).stakingEnabled === true" class="text-red" title="Unstake Token">
-                                      <q-item-section avatar><q-icon name="lock_open" /></q-item-section>
-                                      <q-item-section>Unstake</q-item-section>
-                                    </q-item>
-                                    <q-item clickable @click="$router.push(getTokenLink(token.symbol))" title="Trade" class="text-deep-orange" v-if="token.symbol !== 'SWAP.HIVE'">
-                                      <q-item-section avatar><q-icon name="store" /></q-item-section>
-                                      <q-item-section>Market</q-item-section>
-                                    </q-item>
-                                    <q-item clickable @click="openExternal(returnMarketLink('tribaldex', token.symbol))" title="Trade on TribalDex.com" class="text-orange"  v-if="token.symbol !== 'SWAP.HIVE'">
-                                      <q-item-section avatar><q-icon name="open_in_new" /></q-item-section>
-                                      <q-item-section>TribalDex.com</q-item-section>
-                                    </q-item>
-                                    <q-item v-if="false">
-                                      <q-btn dense flat icon="arrow_upward" color="primary" title="Power Up" label="Power Up" />
-                                    </q-item>
-                                  </q-list>
-                                </q-menu>
-                              </q-btn>
-                          </q-item-section>
-                        </q-item>
-                    </q-list>
-                    <div v-if="hiveEngineTransactionHistory">
-                      <div class="text-h6 text-center">Transaction History</div>
-                      <q-scroll-area style="height: 500px">
-                      <q-list bordered class="wallet-tx" v-for="tx in hiveEngineTransactionHistory" :key="tx.index">
-                        <q-item>
-                          <q-item-section avatar class="gt-xs">
-                            <q-item-label>
-                              <q-icon name="add_circle" color="green" v-if="(tx.to === username && tx.operation === 'tokens_transfer')" />
-                              <q-icon name="remove_circle" color="red" v-else-if="(tx.from === username && tx.operation === 'tokens_transfer')" />
-                              <q-icon name="arrow_circle_up" color="green-8" v-else-if="(tx.to === username && tx.operation === 'tokens_stake')" />
-                              <q-icon name="arrow_circle_up" color="red-8" v-else-if="(tx.to !== username && tx.operation === 'tokens_stake')" />
-                              <q-icon name="arrow_circle_up" color="red-10" v-else-if="(tx.operation === 'tokens_unstake')" />
-                              <q-icon name="arrow_circle_up" color="green-6" v-else-if="(tx.to === username && tx.operation === 'tokens_issue')" />
-                              <q-icon name="remove_circle" color="red-2" v-else-if="(tx.from === username && tx.operation === 'tokens_issue')" />
-                              <q-icon name="arrow_circle_up" color="green-4" v-else-if="(tx.operation === 'mining_lottery')" />
-                              <q-icon name="gavel" color="orange-10" v-else-if="(tx.operation === 'market_placeOrder')" />
-                              <q-icon name="gavel" color="orange-9" v-else-if="(tx.operation === 'market_expire')" />
-                              <q-icon name="gavel" color="orange-8" v-else-if="(tx.operation === 'market_closeOrder')" />
-                              <q-icon name="gavel" color="orange-7" v-else-if="(tx.operation === 'market_cancel')" />
-                              <q-icon name="gavel" color="orange-6" v-else-if="(tx.operation === 'market_buy')" />
-                              <q-icon name="gavel" color="orange-4" v-else-if="(tx.operation === 'market_sell')" />
-                              <q-icon name="gavel" color="green-2" v-else-if="(tx.operation === 'hivepegged_buy')" />
-                              <q-icon name="gavel" color="red-6" v-else-if="(tx.operation === 'hivepegged_withdraw')" />
-                              <q-icon name="arrow_circle_up" color="green-2" v-else-if="(tx.operation === 'witnesses_proposeRound')" />
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              <span v-if="(tx.operation === 'witnesses_proposeRound')">Witness Round</span>
-                              <span v-if="(tx.from === username && tx.operation === 'tokens_transfer')">Sent </span>
-                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_transfer')">Received </span>
-                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_stake')">Staked </span>
-                              <span v-else-if="(tx.from === username && tx.operation === 'tokens_stake')">Staked </span>
-                              <span v-else-if="(tx.operation === 'tokens_unstake')">Unstaked </span>
-                              <span v-else-if="(tx.to === username && tx.operation === 'tokens_issue')">Issued </span>
-                              <span v-else-if="(tx.operation === 'mining_lottery')">Mined </span>
-                              <span v-else-if="(tx.operation === 'market_placeOrder')">Market {{ tx.orderType }} order</span>
-                              <span v-else-if="(tx.operation === 'market_closeOrder')">Cancel {{ tx.orderType }} order</span>
-                              <span v-else-if="(tx.operation === 'market_expire')">Expired {{ tx.orderType }} order</span>
-                              <span v-else-if="(tx.operation === 'market_cancel')">Cancel Market {{ tx.orderType }} order</span>
-                              <span v-else-if="(tx.operation === 'market_buy')">Market buy</span>
-                              <span v-else-if="(tx.operation === 'market_sell')">Market sell</span>
-                              <span v-else-if="(tx.operation === 'hivepegged_buy')">Deposit Hive</span>
-                              <span v-else-if="(tx.operation === 'hivepegged_withdraw')">Withdraw Hive</span>
-                            </q-item-label>
-                            <q-item-label caption>
-                              <router-link :to="getTxLink(tx.transactionId.split('-')[0])">{{ tx.transactionId.substr(0,8) }}</router-link>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section>
-                            <q-item-label>
-                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.to === username && tx.operation === 'tokens_issue'"> {{ tx.from }}</span>
-                              <span v-else-if="tx.from === username && tx.operation === 'tokens_issue'"> {{ tx.to }}</span>
-                              <span v-else-if="tx.operation === 'mining_lottery'"> {{ tx.poolId }}</span>
-                              <span v-else-if="tx.account === username && tx.operation === 'market_placeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_closeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_cancel'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_expire'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_sell'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'hivepegged_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'hivepegged_withdraw'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'witnesses_proposeRound'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section :title="tx.timestamp">
-                            <q-item-label>
-                              {{ getDateStringHiveEngine(tx.timestamp) }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              {{ getTimeStringHiveEngine(tx.timestamp) }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_transfer' && tx.to === username">
-                            <q-item-label class="text-bold text-green">
-                              + {{ tx.quantity }} {{ tx.symbol }}<br />
-                            </q-item-label>
-                            <q-item-label caption>
-                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
-                            </q-item-label>
-                            <q-item-label v-if="tx.memo !== null">
-                              <div class="wrap text-center">
-                                <q-icon name="comment" title="" />
-                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
-                                <q-tooltip content-class="bg-primary">
-                                  {{ sanitize(tx.memo) }}
-                                </q-tooltip>
-                              </div>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_transfer' && tx.to !== username">
-                            <q-item-label class="text-bold">
-                              - {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
-                            </q-item-label>
-                            <q-item-label>
-                              <div v-if="tx.memo !== ''" class="wrap text-center">
-                                <q-icon name="comment" title="" />
-                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
-                                <q-tooltip content-class="bg-primary">
-                                  {{ sanitize(tx.memo) }}
-                                </q-tooltip>
-                              </div>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_stake' && tx.to === username">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_stake' && tx.to !== username">
-                            <q-item-label class="text-bold">
-                              - {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_unstake'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'tokens_issue' && tx.to === username">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label>
-                              <div v-if="tx.memo !== null" class="wrap text-center">
-                                <q-icon name="comment" title="" />
-                                <code>{{ sanitize(tx.memo).substr(0,10) }}</code>..
-                                <q-tooltip content-class="bg-primary">
-                                  {{ sanitize(tx.memo) }}
-                                </q-tooltip>
-                              </div>
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'mining_lottery'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              $ {{ (returnTokenPriceUsd(tx.symbol) * tx.quantity).toFixed(returnDecimalsBeforeNonZero(returnTokenPriceUsd(tx.symbol))) }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'market_placeOrder' && tx.orderType === 'sell'">
-                            <q-item-label class="text-bold">
-                              - {{ tx.quantityLocked }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              {{ tx.price }} Hive each
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'market_placeOrder' && tx.orderType === 'buy'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantityLocked }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              {{ tx.price }} Hive each
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'market_expire'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantityUnlocked }} {{ tx.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'market_buy'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantityTokens }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              {{ (tx.quantitySteem / tx.quantityTokens).toFixed(3) }} Hive each
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'market_sell'">
-                            <q-item-label class="text-bold">
-                              - {{ tx.quantityTokens }} {{ tx.symbol }}
-                            </q-item-label>
-                            <q-item-label caption>
-                              {{ (tx.quantitySteem / tx.quantityTokens).toFixed(3) }} Hive each
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'hivepegged_buy'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'hivepegged_withdraw'">
-                            <q-item-label class="text-bold">
-                              - {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                          <q-item-section side top v-if="tx.operation === 'witnesses_proposeRound'">
-                            <q-item-label class="text-bold">
-                              + {{ tx.quantity }} {{ tx.symbol }}
-                            </q-item-label>
-                          </q-item-section>
-                        </q-item>
-                      </q-list>
-                      </q-scroll-area>
-                    </div>
-                    <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
-                    <q-dialog v-model="stakeHiveEngine"><staking-dialog :tokenName="stakingDialogTokenName" network="hiveEngine" :balance="stakingDialogBalance" :username="username" /></q-dialog>
-                    <q-dialog v-model="unstakeHiveEngine"><unstaking-dialog :tokenName="unstakingDialogTokenName" network="hiveEngine" :stake="unstakingDialogStake" :transactions="unstakingDialogTransactions" :cooldown="unstakingDialogCooldown" :unstaking="unstakingDialogUnstaking" :username="username" /></q-dialog>
-                  </div>
-                </q-tab-panel>
-            </q-tab-panels>
-          </q-card>
-        </div>
+      <div class="wallet-shell">
+        <wallet-portfolio-header
+          :account-name="username"
+          :total-usd="portfolio.totalUsd"
+          :prices-ready="portfolio.pricesReady"
+          :change-percent="portfolio.changePercent"
+          :hive-apr="portfolio.hiveApr"
+          :hbd-apr="portfolio.hbdApr"
+          :logged-in="isOwner"
+          :refreshing="refreshing"
+          @refresh="refreshAll"
+          @send-hive="transferHive = true"
+          @send-hbd="transferHbd = true"
+          @power-up="stakeHive = true"
+          @navigate="scrollTo"
+        />
+
+        <section id="overview" class="wallet-section" aria-labelledby="wallet-assets-title">
+          <div class="wallet-section__head">
+            <div>
+              <div class="wallet-eyebrow">Overview</div>
+              <h2 id="wallet-assets-title" class="wallet-section__title">Assets</h2>
+            </div>
+            <span class="wallet-section__hint">Liquid, staked and saved balances</span>
+          </div>
+
+          <div class="wallet-asset-grid">
+            <wallet-asset-card
+              label="Liquid HIVE"
+              symbol="HIVE"
+              :balance="portfolio.liquidHive"
+              :usd="portfolio.liquidHiveUsd"
+              :prices-ready="portfolio.pricesReady"
+              badge="Spendable"
+              badge-color="blue-grey-8"
+              hint="Available for transfers, power-ups, savings deposits and conversions."
+              logoSrc="/statics/hive.svg"
+              :logged-in="isOwner"
+              :actions="assetActions.hive"
+              @action="onAssetAction('hive', $event)"
+            />
+            <wallet-asset-card
+              label="Staked HP"
+              symbol="HP"
+              :balance="portfolio.stakedHive"
+              :usd="portfolio.stakedHiveUsd"
+              :prices-ready="portfolio.pricesReady"
+              :badge="portfolio.hiveApr !== null ? portfolio.hiveApr.toFixed(2) + '% APR' : 'Hive Power'"
+              badge-color="green-9"
+              :hint="'Voting power and HP rewards. Effective HP ' + tidyNumber(portfolio.effectiveHp) + '.'"
+              icon="bolt"
+              :logged-in="isOwner"
+              :actions="assetActions.hp"
+              @action="onAssetAction('hp', $event)"
+            />
+            <wallet-asset-card
+              label="Liquid HBD"
+              symbol="HBD"
+              :balance="portfolio.liquidHbd"
+              :usd="portfolio.liquidHbdUsd"
+              :prices-ready="portfolio.pricesReady"
+              badge="Spendable"
+              badge-color="blue-grey-8"
+              hint="Dollar-pegged HBD available for transfers, savings and conversions."
+              logoSrc="/statics/hbd.svg"
+              :logged-in="isOwner"
+              :actions="assetActions.hbd"
+              @action="onAssetAction('hbd', $event)"
+            />
+            <wallet-asset-card
+              label="HIVE savings"
+              symbol="HIVE"
+              :balance="portfolio.savingsHive"
+              :usd="portfolio.savingsHiveUsd"
+              :prices-ready="portfolio.pricesReady"
+              badge="3-day withdrawal"
+              badge-color="blue-grey-8"
+              hint="Held in savings. Withdrawals complete after three days."
+              logoSrc="/statics/hive.svg"
+              :logged-in="isOwner"
+              :actions="assetActions.hiveSavings"
+              @action="onAssetAction('hiveSavings', $event)"
+            />
+            <wallet-asset-card
+              label="HBD savings"
+              symbol="HBD"
+              :balance="portfolio.savingsHbd"
+              :usd="portfolio.savingsHbdUsd"
+              :prices-ready="portfolio.pricesReady"
+              :badge="portfolio.hbdApr ? portfolio.hbdApr.toFixed(2) + '% APR' : 'Savings'"
+              badge-color="green-9"
+              hint="Earns interest paid monthly. Withdrawals complete after three days."
+              logoSrc="/statics/hbd.svg"
+              :logged-in="isOwner"
+              :actions="assetActions.hbdSavings"
+              @action="onAssetAction('hbdSavings', $event)"
+            />
+          </div>
+
+          <wallet-pending-strip
+            :powerdown-hp="portfolio.powerdownHp"
+            :savings-count="savingsWithdrawals.length"
+            :conversion-count="conversionCount"
+            :order-count="hiveInternalMarketOrders.length"
+            :rewards-usd="portfolio.pendingUsd"
+            :pending-interest="pendingHbdInterest"
+            :claimable="pendingHbdClaim"
+            @navigate="scrollTo('pending')"
+          />
+        </section>
+
+        <section class="wallet-section" aria-labelledby="wallet-recent-title">
+          <wallet-activity
+            heading-id="wallet-recent-title"
+            title="Recent activity"
+            eyebrow="Latest"
+            :entries="hiveTransactions"
+            :username="username"
+            :logged-in="isOwner"
+            :global-props="globalProps"
+            :hive-price-usd="hivePriceUsd"
+            :hbd-price-usd="hbdPriceUsd"
+            :decrypted-memos="decryptedMemos"
+            :limit="5"
+            :loading="historyLoading"
+            @decrypt="decodeMemo"
+            @navigate="scrollTo"
+          />
+        </section>
+
+        <section id="activity" class="wallet-section" aria-labelledby="wallet-activity-title">
+          <wallet-activity
+            heading-id="wallet-activity-title"
+            title="Activity"
+            eyebrow="History"
+            :entries="hiveTransactions"
+            :username="username"
+            :logged-in="isOwner"
+            :global-props="globalProps"
+            :hive-price-usd="hivePriceUsd"
+            :hbd-price-usd="hbdPriceUsd"
+            :decrypted-memos="decryptedMemos"
+            filterable
+            :loading="historyLoading"
+            :has-more="!historyDone"
+            @load="getHiveWalletTransactions"
+            @decrypt="decodeMemo"
+          />
+        </section>
+
+        <section id="pending" class="wallet-section" aria-labelledby="wallet-pending-title">
+          <wallet-pending-panel
+            heading-id="wallet-pending-title"
+            :account="account"
+            :username="username"
+            :logged-in="isOwner"
+            :global-props="globalProps"
+            :hive-price-usd="hivePriceUsd"
+            :hbd-price-usd="hbdPriceUsd"
+            :orders="hiveInternalMarketOrders"
+            :savings-withdrawals="savingsWithdrawals"
+            :conversions="conversions"
+            :collateralized-conversions="collateralizedConversions"
+            :pending-interest="pendingHbdInterest"
+            :claimable="pendingHbdClaim"
+            @cancel-powerdown="unstakeHive = true"
+            @cancel-savings-withdrawal="cancelSavingsWithdrawal"
+            @cancel-order="cancelOrder"
+            @claim-interest="claimHbdInterest"
+            @refresh="refreshPending"
+          />
+        </section>
+
+        <section id="tokens" class="wallet-section" aria-labelledby="wallet-tokens-title">
+          <hive-engine-tokens
+            heading-id="wallet-tokens-title"
+            :username="username"
+            :logged-in="isOwner"
+            :hive-price-usd="hivePriceUsd"
+          />
+        </section>
       </div>
-    </q-page>
+
+      <q-dialog v-model="transferHive">
+        <transfer-dialog tokenName="HIVE" network="hive" :balance="portfolio.liquidHive" :username="username" />
+      </q-dialog>
+      <q-dialog v-model="transferHbd">
+        <transfer-dialog tokenName="HBD" network="hive" :balance="portfolio.liquidHbd" :username="username" />
+      </q-dialog>
+      <q-dialog v-model="stakeHive">
+        <staking-dialog tokenName="HIVE" network="hive" :balance="portfolio.liquidHive" :username="username" />
+      </q-dialog>
+      <q-dialog v-model="unstakeHive">
+        <unstaking-dialog tokenName="HIVE" network="hive" :username="username" />
+      </q-dialog>
+      <q-dialog v-model="savingsVisible">
+        <savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" />
+      </q-dialog>
+      <q-dialog v-model="delegationDialogVisible">
+        <delegation-dialog :username="username" tokenName="HIVE" :amountVestsSuggest="0" />
+      </q-dialog>
+      <q-dialog v-model="convertDialogVisible">
+        <convert-dialog :username="username" :tokenName="convertTokenName" />
+      </q-dialog>
+    </template>
+
+    <div v-else class="wallet-loading" aria-label="Loading wallet">
+      <q-skeleton type="rect" height="150px" />
+      <q-skeleton type="rect" height="120px" class="q-mt-md" />
+      <q-skeleton type="rect" height="320px" class="q-mt-md" />
+    </div>
+  </q-page>
 </template>
+
 <style scoped>
-.wrap { overflow:auto; overflow-wrap: break-word; }
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #1d8ce0; }
-.wallet-content {
+.wallet-page {
+  min-width: 0;
+  padding-bottom: var(--space-6);
+}
+
+.wallet-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   width: 100%;
-  max-width: 1000px;
+  max-width: 1280px;
   margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.wallet-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: 0 0.75rem 1.5rem;
+  min-width: 0;
+  scroll-margin-top: 84px;
 }
 
-.wallet-summary {
-  overflow: hidden;
-  border-radius: var(--radius-card, 10px);
-}
-
-.wallet-summary__head {
+.wallet-section__head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2);
   flex-wrap: wrap;
-  padding: 1rem 1.1rem 0.8rem;
 }
 
-.wallet-summary__eyebrow {
+.wallet-section__title {
+  margin: 0.12rem 0 0;
+  color: #e4eaed;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.wallet-section__hint {
   color: #78909c;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
+}
+
+.wallet-eyebrow {
+  color: #78909c;
+  font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.wallet-summary__total {
-  margin-top: 0.15rem;
-  color: #e4eaed;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.wallet-summary__sub {
-  margin-top: 0.2rem;
-  color: #90a4ae;
-  font-size: 0.8rem;
-}
-
-.wallet-summary__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
-.wallet-summary__grid {
+.wallet-asset-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0 1.1rem 1rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0.55rem;
 }
 
-.wallet-summary-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.wallet-summary-stat span {
-  color: #90a4ae;
-  font-size: 0.65rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.wallet-summary-stat strong {
-  color: #e4eaed;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.wallet-summary-stat small {
-  color: #78909c;
-  font-size: 0.7rem;
-}
-
-.wallet-summary__footer {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem 0.9rem;
-  flex-wrap: wrap;
-  padding: 0.55rem 1.1rem 0.7rem;
-  border-top: 1px solid var(--border-subtle);
-  color: #78909c;
-  font-size: 0.7rem;
-}
-
-.wallet-shell {
+.wallet-loading {
   width: 100%;
-  max-width: 1000px;
-  min-width: 0;
-  border-radius: var(--radius-card, 10px);
-  overflow: hidden;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-4);
 }
-.wallet-section-title {
-  margin: 0;
-  padding: 0.5rem 0.25rem 0.25rem;
-}
-.wallet-page :deep(.q-scroll-area) {
-  max-width: 100%;
-}
-.wallet-balances :deep(.q-item),
-.wallet-tokens :deep(.q-item) {
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-.wallet-balances :deep(.q-item__label),
-.wallet-tokens :deep(.q-item__label) {
-  line-height: 1.35;
-}
-.wallet-tx :deep(.q-item) {
-  padding: 9px 12px;
-}
-.wallet-tx :deep(.q-item__label.text-bold) {
-  font-size: 0.96rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-}
-.wallet-tx :deep(.q-item__section--side) {
-  padding-left: 10px;
-}
-.wallet-tx :deep(.q-item__label--caption) {
-  color: #b0bec5;
-  font-size: 0.72rem;
-}
-@media (max-width: 599px) {
-  .wallet-content {
-    padding: 0 0.5rem 1.25rem;
-  }
 
-  .wallet-summary__head {
-    padding: 0.85rem 0.8rem 0.7rem;
+@media (max-width: 1099px) {
+  .wallet-asset-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
 
-  .wallet-summary__grid {
+@media (max-width: 699px) {
+  .wallet-asset-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 0 0.8rem 0.8rem;
+  }
+}
+
+@media (max-width: 599px) {
+  .wallet-shell {
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2) var(--space-5);
   }
 
-  .wallet-summary__footer {
-    padding: 0.5rem 0.8rem 0.65rem;
+  .wallet-asset-grid {
+    gap: 0.45rem;
   }
 
-  .wallet-tx :deep(.q-item) {
-    padding: 8px 6px;
+  .wallet-asset-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
-  .wallet-tx :deep(.q-item__label.text-bold) {
-    font-size: 0.86rem;
-  }
-  .wallet-tx :deep(.q-item__section--side) {
-    max-width: 45%;
-    text-align: right;
-  }
-  .wallet-balances :deep(.q-item),
-  .wallet-tokens :deep(.q-item) {
-    padding-left: 4px;
-    padding-right: 4px;
+
+  .wallet-section__hint {
+    display: none;
   }
 }
 </style>
+
 <script>
 import { defineAsyncComponent } from 'vue'
-import { openURL } from 'quasar'
-import { getHiveEngine } from 'src/services/hiveEngine'
-import { getHivePrices } from 'src/services/prices'
 import { keychain } from '@hiveio/keychain'
+import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
-import DOMPurify from 'dompurify'
+import { getHivePrices } from 'src/services/prices'
+import { buildPortfolio, tidyNumber } from 'src/services/wallet'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+import WalletPortfolioHeader from 'components/wallet/WalletPortfolioHeader.vue'
+import WalletAssetCard from 'components/wallet/WalletAssetCard.vue'
+import WalletPendingStrip from 'components/wallet/WalletPendingStrip.vue'
+import WalletPendingPanel from 'components/wallet/WalletPendingPanel.vue'
+import WalletActivity from 'components/wallet/WalletActivity.vue'
+import HiveEngineTokens from 'components/wallet/HiveEngineTokens.vue'
+
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
   op.transfer,
@@ -1124,448 +349,354 @@ const walletBitmask = makeBitMaskFilter([
   op.collateralized_convert,
   op.fill_vesting_withdraw
 ])
+
 export default {
   name: 'wallet',
-  data () {
-    return {
-      username: this.$route.params.username,
-      tab: 'hive',
-      transferHive: false,
-      transferHbd: false,
-      transferHiveEngine: false,
-      transferDialogTokenName: '',
-      transferDialogNetwork: 'hive',
-      transferDialogBalance: null,
-      stakeHiveEngine: false,
-      stakingDialogTokenName: '',
-      stakingDialogBalance: null,
-      unstakeHiveEngine: false,
-      unstakingDialogTokenName: '',
-      unstakingDialogStake: null,
-      unstakingDialogTransactions: null,
-      unstakingDialogCooldown: null,
-      unstakingDialogUnstaking: null,
-      stakeHive: false,
-      unstakeHive: false,
-      savings: false,
-      savingsType: 'deposit',
-      savingsTokenName: 'HIVE',
-      delegationDialogVisible: false,
-      convertDialogVisible: false,
-      convertTokenName: 'HIVE',
-      hiveTransactions: [],
-      hiveInternalMarketOrders: [],
-      accountHistoryPointer: -1,
-      accountHistoryLimit: 1000,
-      bitmask: walletBitmask,
-      loading: false,
-      hiveEngineBalances: null,
-      hiveEngineError: null,
-      hiveEngineBalancesFilterSmall: true,
-      hiveEngineBalancesFilterUsdAmount: 1,
-      hiveEngineMarketInfo: null,
-      hiveEngineTokenInfo: null,
-      hiveEngineTransactionHistory: null,
-      hivePriceUsd: null,
-      hivePriceUsdChange: null,
-      hbdPriceUsd: null,
-      hbdPriceUsdChange: null,
-      decodedMemo: null,
-      filter: {
-        showClaimedRewards: true,
-        showDust: true,
-        showTransfersIn: true,
-        showTransfersOut: true,
-        showMarketOrders: true,
-        showStaking: true,
-        showUnStaking: true,
-        showSavings: true,
-        search: ''
-      }
-      // showTxTypes: ['transfer', 'transfer_to_vesting', 'withdraw_vesting', 'fill_vesting_withdraw', 'interest', 'liquidity_reward', 'transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings', 'escrow_transfer', 'escrow_dispute', 'escrow_release', 'fill_convert_request', 'fill_order', 'claim_reward_balance']
-    }
-  },
-  mixins: [VueTimers],
-  timers: {
-    refresh: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
-  },
   components: {
-    delegationDialog: defineAsyncComponent(() => import('components/delegationDialog.vue')),
     accountHeader: defineAsyncComponent(() => import('components/accountHeader.vue')),
     transferDialog: defineAsyncComponent(() => import('components/transferDialog.vue')),
     stakingDialog: defineAsyncComponent(() => import('components/stakingDialog.vue')),
     unstakingDialog: defineAsyncComponent(() => import('components/unstakingDialog.vue')),
     savingsDialog: defineAsyncComponent(() => import('components/savingsDialog.vue')),
+    delegationDialog: defineAsyncComponent(() => import('components/delegationDialog.vue')),
     convertDialog: defineAsyncComponent(() => import('components/convertDialog.vue')),
-    convertRequests: defineAsyncComponent(() => import('components/convertRequests.vue')),
-    claimRewards: defineAsyncComponent(() => import('components/claimRewards.vue')),
-    delegations: defineAsyncComponent(() => import('components/delegations.vue')),
-    savingsWithdrawalsInProgress: defineAsyncComponent(() => import('components/savingsWithdrawalsInProgress.vue')),
-    animInt: defineAsyncComponent(() => import('components/animInt.vue'))
+    WalletPortfolioHeader,
+    WalletAssetCard,
+    WalletPendingStrip,
+    WalletPendingPanel,
+    WalletActivity,
+    HiveEngineTokens
+  },
+  mixins: [VueTimers],
+  timers: {
+    refresh: { time: 60000, autostart: true, repeat: true, immediate: false, isSwitchTab: false }
+  },
+  data () {
+    return {
+      username: this.$route.params.username,
+      transferHive: false,
+      transferHbd: false,
+      stakeHive: false,
+      unstakeHive: false,
+      savingsVisible: false,
+      savingsType: 'deposit',
+      savingsTokenName: 'HIVE',
+      delegationDialogVisible: false,
+      convertDialogVisible: false,
+      convertTokenName: 'HIVE',
+      hivePriceUsd: 0,
+      hbdPriceUsd: 0,
+      hivePriceUsdChange: null,
+      hbdPriceUsdChange: null,
+      refreshing: false,
+      hiveTransactions: [],
+      hiveInternalMarketOrders: [],
+      savingsWithdrawals: [],
+      conversions: [],
+      collateralizedConversions: [],
+      decryptedMemos: {},
+      accountHistoryPointer: -1,
+      accountHistoryLimit: 50,
+      historyLoading: false,
+      historyDone: false,
+      bitmask: walletBitmask
+    }
   },
   computed: {
-    globalProps: function () { return this.$hiveStore.globalProps },
-    account: {
-      cache: false,
-      get () {
-        return this.$hiveStore.accounts[this.username]
-      }
+    globalProps () {
+      return this.$hiveStore.globalProps
     },
-    loggedInUser: function () { return this.$hiveStore.user.username },
-    walletSummary: function () {
-      const account = this.account || {}
-      const number = value => {
-        const parsed = parseFloat(value)
-        return Number.isFinite(parsed) ? parsed : 0
-      }
-      const liquidHive = number(account.balance)
-      const stakedHive = number(this.vestToHive(number(account.vesting_shares)))
-      const liquidHbd = number(account.hbd_balance)
-      const savingsHive = number(account.savings_balance)
-      const savingsHbd = number(account.savings_hbd_balance)
-      const pendingHive = number(account.reward_hive_balance)
-      const pendingHbd = number(account.reward_hbd_balance)
-      const pendingHp = number(this.vestToHive(number(account.reward_vesting_balance)))
-      const hivePrice = Number(this.hivePriceUsd) || 0
-      const hbdPrice = Number(this.hbdPriceUsd) || 0
-      const pricesReady = hivePrice > 0 || hbdPrice > 0
-      const liquidHiveUsd = liquidHive * hivePrice
-      const stakedHiveUsd = stakedHive * hivePrice
-      const liquidHbdUsd = liquidHbd * hbdPrice
-      const savingsUsd = savingsHive * hivePrice + savingsHbd * hbdPrice
-      const pendingValueUsd = pendingHive * hivePrice + pendingHbd * hbdPrice + pendingHp * hivePrice
-      const hbdApr = this.globalProps && this.globalProps.hbd_interest_rate
-        ? (Number(this.globalProps.hbd_interest_rate) / 100).toFixed(2)
-        : '0.00'
-      const withdrawRate = number(account.vesting_withdraw_rate)
-      const powerdown = withdrawRate > 0
-        ? this.tidyNumber(this.vestToHive(withdrawRate)) + ' HIVE/week'
-        : ''
-
-      return {
-        liquidHive,
-        stakedHive,
-        liquidHbd,
-        savingsHive,
-        savingsHbd,
-        pendingHive,
-        pendingHbd,
-        liquidHiveUsd,
-        stakedHiveUsd,
-        liquidHbdUsd,
-        savingsUsd,
-        pendingValueUsd,
-        pricesReady,
-        totalUsd: liquidHiveUsd + stakedHiveUsd + liquidHbdUsd + savingsUsd + pendingValueUsd,
-        hbdApr,
-        powerdown
-      }
+    account () {
+      return this.$hiveStore.accounts[this.username]
     },
-    hivePowerAPR: function () { // orig-src https://gitlab.syncad.com/hive/wallet/-/blob/develop/src/app/components/modules/UserWallet.jsx#L105
-      if (this.globalProps && !this.globalProps.empty && this.globalProps.head_block_number) {
-        // The inflation was set to 9.5% at block 7m
-        const initialInflationRate = 9.5
-        const initialBlock = 7000000
-        // It decreases by 0.01% every 250k blocks
-        const decreaseRate = 250000
-        const decreasePercentPerIncrement = 0.01
-        // How many increments have happened since block 7m?
-        const headBlock = this.globalProps.head_block_number
-        const deltaBlocks = headBlock - initialBlock
-        const decreaseIncrements = deltaBlocks / decreaseRate
-        // Current inflation rate
-        let currentInflationRate = initialInflationRate - decreaseIncrements * decreasePercentPerIncrement
-        // Cannot go lower than 0.95%
-        if (currentInflationRate < 0.95) { currentInflationRate = 0.95 }
-        // Now lets calculate the "APR"
-        const vestingRewardPercent = this.globalProps.vesting_reward_percent / 10000
-        const virtualSupply = this.globalProps.virtual_supply.split(' ').shift()
-        const totalVestingFunds = this.globalProps.total_vesting_fund_hive.split(' ').shift()
-        return ((virtualSupply * currentInflationRate * vestingRewardPercent) / totalVestingFunds).toFixed(2)
-      } else { return null }
+    loggedInUser () {
+      return this.$hiveStore.user.username
     },
-    filteredTransactionsHive: function () {
-      var ft = this.hiveTransactions
-      // ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
-      if (!this.filter.showClaimedRewards) { ft = ft.filter(t => t[1].op[0] !== 'claim_reward_balance') }
-      if (!this.filter.showTransfersIn) { ft = ft.filter(t => !(t[1].op[0] === 'transfer' && t[1].op[1].to === this.username)) }
-      if (!this.filter.showTransfersOut) { ft = ft.filter(t => !(t[1].op[0] === 'transfer' && t[1].op[1].from === this.username)) }
-      if (!this.filter.showMarketOrders) { ft = ft.filter(t => t[1].op[0] !== 'fill_order') }
-      if (!this.filter.showStaking) { ft = ft.filter(t => t[1].op[0] !== 'transfer_to_vesting') }
-      if (!this.filter.showUnStaking) { ft = ft.filter(t => ['withdraw_vesting', 'fill_vesting_withdraw'].includes(t[1].op[0]) === false) }
-      if (!this.filter.showSavings) { ft = ft.filter(t => ['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'cancel_transfer_from_savings'].includes(t[1].op[0]) === false) }
-      if (this.filter.search !== '') { ft = ft.filter(t => JSON.stringify(t[1].op[1]).indexOf(this.filter.search) !== -1) }
-      return ft
+    isOwner () {
+      return Boolean(this.loggedInUser && this.loggedInUser === this.username)
     },
-    hiveEngineBalancesFiltered: function () {
-      if (this.hiveEngineBalances !== null) {
-        if (this.hiveEngineBalancesFilterSmall) { return this.hiveEngineBalances.filter(t => (this.returnTokenPriceUsd(t.symbol) * (parseFloat(t.balance) + parseFloat(t.stake)) >= this.hiveEngineBalancesFilterUsdAmount)) } else { return this.hiveEngineBalances }
-      } else { return null }
-    },
-    pendingHbdInterest: function () {
-      if (this.globalProps && this.account) {
-        var secondsInYear = 60 * 60 * 24 * 365
-        var secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
-        var pendingSeconds = parseFloat(this.account.savings_hbd_balance.split(' ')[0]) * parseFloat(secondsSinceUpdate)
-        var secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) / 1000 + parseFloat(pendingSeconds)
-        var estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
-        return estimatedPayout.toFixed(3)
-      } else {
-        return 0
-      }
-    },
-    pendingHbdClaim: function () {
-      if (this.globalProps && this.account && this.account.savings_hbd_seconds > 0 && moment.utc().diff(moment.utc(this.account.savings_hbd_last_interest_payment), 'days') >= 30) {
-        return true
-      } else {
-        return false
-      }
-    }
-    // (returnTokenPriceUsd(token.symbol) * (parseFloat(token.balance) + parseFloat(token.stake)))
-  },
-  watch: {
-    account: function () { this.init() },
-    '$route.params.username': {
-      handler: function () { this.init() },
-      deep: true,
-      immediate: true
-    },
-    username: function () { this.init() }
-  },
-  methods: {
-    async decodeMemo (message, tx) {
-      this.decodedMemo = 'Decrypting Memo ...'
-      const { success, msg } = await keychain(window, 'requestVerifyKey', this.loggedInUser, message, 'Memo')
-      if (success) {
-        this.decodedMemo = msg
-        var txToReplace = tx
-        txToReplace[1].op[1].memo = msg.slice(1)
-        this.hiveTransactions[this.hiveTransactions.indexOf(tx)] = txToReplace
-      }
-    },
-    sanitize (x) { return DOMPurify.sanitize(x) },
-    openExternal (url) { openURL(url, null, { noopener: true, menubar: true, toolbar: true, noreferrer: true }) },
-    getDateString (timestamp) { return moment(timestamp).format('MMM D[,] YYYY') },
-    getTimeString (timestamp) { return moment(timestamp).format('h:mm a') },
-    getDateStringHiveEngine (timestamp) { return moment.unix(timestamp).format('MMM D[,] YYYY') },
-    getTimeStringHiveEngine (timestamp) { return moment.unix(timestamp).format('h:mm a') },
-    getAccountLink (account) { return '/@' + account },
-    getTxLink (txid) { return '/tx/' + txid },
-    getVirtualTxLink (tx) { return '/b/' + tx[1].block + '#' + tx[1].virtual_op },
-    getTokenLink (token) { return '/@' + this.username + '/wallet/' + token },
-    getAccount (username) { if (this.$hiveStore.accounts[username] === undefined) { this.$hiveStore.getAccount(username) } },
-    getGlobalProps () { if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() } },
-    async getPricesCoingecko () {
-      const prices = await getHivePrices()
-      this.hivePriceUsd = prices.hive.usd
-      this.hivePriceUsdChange = prices.hive.usd_24h_change
-      this.hbdPriceUsd = prices.hive_dollar.usd
-      this.hbdPriceUsdChange = prices.hive_dollar.usd_24h_change
-    },
-    getOpenOrders () {
-      this.$hive.api.getOpenOrdersAsync(this.username)
-        .then(res => {
-          this.hiveInternalMarketOrders = res
-        })
-    },
-    vestToHive (vests) { if (!this.globalProps.empty) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    tidyNumber (x) { if (x !== null && x !== undefined) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
-    formatUsd (value) {
-      const number = Number(value)
-      if (!Number.isFinite(number)) return '—'
-      return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    },
-    async refreshWalletSummary () {
-      this.$hiveStore.getAccount(this.username)
-      await this.getPricesCoingecko().catch(() => {})
-    },
-    scrollToBalances () {
-      this.tab = 'hive'
-      this.$nextTick(() => {
-        document.querySelector('.wallet-shell')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    portfolio () {
+      return buildPortfolio({
+        account: this.account,
+        globalProps: this.globalProps,
+        hivePriceUsd: this.hivePriceUsd,
+        hbdPriceUsd: this.hbdPriceUsd,
+        hiveChange: this.hivePriceUsdChange,
+        hbdChange: this.hbdPriceUsdChange
       })
     },
-    async getHiveWalletTransactions (index, done) {
-      this.loading = true
-      await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, this.accountHistoryPointer, this.accountHistoryLimit, ...this.bitmask])
-        .then(res => {
-          this.accountHistoryPointer = parseInt(res[0][0]) - 1
-          if (this.hiveTransactions.length === 0) {
-            this.hiveTransactions = res.reverse()
-          } else {
-            this.hiveTransactions = this.hiveTransactions.concat(res.reverse())
-          }
-          if (res.length === 0) { this.$refs.infiniteScroll.stop() }
-          this.loading = false
-          done()
-        })
-        .catch(err => {
-          this.loading = false
-          const sequence = err?.data?.stack?.[0]?.data?.sequence
-          const message = err?.cause?.message || err?.message || ''
-          if (sequence && message.includes('Could not find filtered operation in')) {
-            this.accountHistoryPointer = sequence
-            setTimeout(() => this.getHiveWalletTransactions(0, done || (() => {})), 1000)
-          } else {
-            done && done()
-          }
-        })
+    conversionCount () {
+      return this.conversions.length + this.collateralizedConversions.length
     },
-    getHiveEngineBalances (username) {
-      this.hiveEngineError = null
-      this.hiveEngineBalances = null
-      getHiveEngine().find('tokens', 'balances', { account: username }, 1000, 0, [])
-        .then((response) => {
-          this.hiveEngineBalances = response
-          var preferredTokens = ['SWAP.HIVE', 'PAL', 'PALMM', 'LEO', 'LEOMM', 'CCC', 'STEM'].reverse()
-          preferredTokens.forEach(function (t) {
-            var currentIndex = this.hiveEngineBalances.findIndex(token => token.symbol === t)
-            if (currentIndex !== -1) {
-              this.hiveEngineBalances.splice(this.hiveEngineBalances.length - 1, 1, ...this.hiveEngineBalances.splice(currentIndex, 1))
-            }
-          }.bind(this))
-          this.hiveEngineBalances.reverse()
-          this.getHiveEngineMarketInfo()
-          this.getHiveEngineTokenInfo()
-        })
-        .catch(() => {
-          this.hiveEngineError = 'Hive-Engine balances are unavailable right now.'
-        })
+    pendingHbdInterest () {
+      if (!this.globalProps || !this.account) return 0
+      const secondsInYear = 60 * 60 * 24 * 365
+      const secondsSinceUpdate = moment.utc().diff(moment.utc(this.account.savings_hbd_seconds_last_update), 'seconds')
+      const pendingSeconds = parseFloat(this.account.savings_hbd_balance) * parseFloat(secondsSinceUpdate)
+      const secondsToPayFor = parseFloat(this.account.savings_hbd_seconds) / 1000 + pendingSeconds
+      const estimatedPayout = (secondsToPayFor / secondsInYear) * (parseFloat(this.globalProps.hbd_interest_rate) / 10000)
+      return Number.isFinite(estimatedPayout) ? Number(estimatedPayout.toFixed(3)) : 0
     },
-    getHiveEngineTokenInfo () {
-      var tokens = this.returnTokenArray()
-      if (tokens && tokens.length > 0) {
-        getHiveEngine().find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
-          .then((response) => { this.hiveEngineTokenInfo = response })
-          .catch(() => {
-            this.hiveEngineTokenInfo = null
-            this.hiveEngineError = 'Hive-Engine token details are unavailable right now.'
-          })
-      } else {
-        this.hiveEngineTokenInfo = []
+    pendingHbdClaim () {
+      if (!this.globalProps || !this.account) return false
+      return parseFloat(this.account.savings_hbd_seconds) > 0 &&
+        moment.utc().diff(moment.utc(this.account.savings_hbd_last_interest_payment), 'days') >= 30
+    },
+    assetActions () {
+      if (!this.isOwner) {
+        return { hive: [], hp: [], hbd: [], hiveSavings: [], hbdSavings: [] }
       }
-    },
-    getHiveEngineMarketInfo () {
-      var tokens = this.returnTokenArray()
-      if (tokens && tokens.length > 0) {
-        getHiveEngine().find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
-          .then((response) => { this.hiveEngineMarketInfo = response })
-          .catch(() => { console.error('Error connecting to Hive-Engine api') })
-      } else {
-        this.hiveEngineMarketInfo = []
+      const portfolio = this.portfolio
+      const hive = [
+        { id: 'transfer', label: 'Transfer HIVE', icon: 'send', authority: 'active' },
+        { id: 'power-up', label: 'Power up', icon: 'arrow_upward', authority: 'active' }
+      ]
+      if (portfolio.liquidHive > 0) {
+        hive.push(
+          { id: 'deposit-savings', label: 'Deposit to savings', icon: 'savings', authority: 'active' },
+          { id: 'convert-hive', label: 'Convert to HBD', icon: 'cached', authority: 'active' }
+        )
       }
-    },
-    getHiveEngineTransactionHistory () {
-      this.$axios.get('https://history.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
-        .then((response) => { this.hiveEngineTransactionHistory = response.data })
-        .catch(err => { console.error(err) })
-    },
-    returnTokenArray () {
-      var tokens = []
-      if (this.hiveEngineBalances) {
-        this.hiveEngineBalances.forEach(function (token) { tokens.push(token.symbol) })
-        return tokens
-      } else {
-        return null
+      hive.push(
+        { id: 'market', label: 'Open market', icon: 'store', authority: 'active' },
+        { id: 'create-account', label: 'Create account', icon: 'person_add', authority: 'active' }
+      )
+
+      const hbd = [
+        { id: 'transfer', label: 'Transfer HBD', icon: 'send', authority: 'active' }
+      ]
+      if (portfolio.liquidHbd > 0) {
+        hbd.push(
+          { id: 'deposit-savings', label: 'Deposit to savings', icon: 'savings', authority: 'active' },
+          { id: 'convert-hbd', label: 'Convert to HIVE', icon: 'cached', authority: 'active' }
+        )
       }
-    },
-    returnTokenPriceHive (symbol) {
-      if (this.hiveEngineMarketInfo !== null) {
-        if (symbol === 'SWAP.HIVE') {
-          return 1.000
-        } else {
-          var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
-          if (t) { return t.lastPrice } else { return null }
-        }
-      } else {
-        return null
-      }
-    },
-    returnTokenPriceChange (symbol) {
-      if (this.hiveEngineMarketInfo !== null) {
-        if (symbol === 'SWAP.HIVE') {
-          return 0
-        } else {
-          var t = this.hiveEngineMarketInfo.find(obj => obj.symbol === symbol)
-          if (t) { return parseFloat(t.priceChangePercent) } else { return null }
-        }
-      } else {
-        return null
-      }
-    },
-    returnTokenPriceUsd (symbol) { if (this.hivePriceUsd) { return (this.returnTokenPriceHive(symbol) * this.hivePriceUsd) } else { return null } },
-    returnTokenInfo (symbol) {
-      if (this.getHiveEngineTokenInfo !== null) {
-        var t = this.hiveEngineTokenInfo.find(obj => obj.symbol === symbol)
-        if (t) { return t } else { return null }
-      } else {
-        return ''
-      }
-    },
-    returnTokenInfoMeta (symbol) { return JSON.parse(this.returnTokenInfo(symbol).metadata) },
-    returnMarketLink (market, symbol) {
-      if (market === 'hiveengine') {
-        return 'https://hive-engine.com/?p=market&t=' + symbol
-      } else {
-        return 'https://tribaldex.com/trade/' + symbol
-      }
-    },
-    claimHbdInterest () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: 42069420, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
-      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 42069420 }]])
-    },
-    timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
-    },
-    timeTillHbdInterestPayout (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp).add('30', 'days')
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
-    },
+      hbd.push({ id: 'market', label: 'Open market', icon: 'store', authority: 'active' })
+
+      const hp = [
+        { id: 'power-down', label: 'Power down', icon: 'arrow_downward', authority: 'active' },
+        { id: 'delegate', label: 'Delegate HP', icon: 'redeem', authority: 'active' }
+      ]
+
+      const hiveSavings = []
+      if (portfolio.savingsHive > 0) hiveSavings.push({ id: 'withdraw-savings', label: 'Withdraw HIVE', icon: 'savings', authority: 'active' })
+      if (portfolio.liquidHive > 0) hiveSavings.push({ id: 'deposit-savings', label: 'Deposit HIVE', icon: 'savings', authority: 'active' })
+
+      const hbdSavings = []
+      if (portfolio.savingsHbd > 0) hbdSavings.push({ id: 'withdraw-savings', label: 'Withdraw HBD', icon: 'savings', authority: 'active' })
+      if (portfolio.liquidHbd > 0) hbdSavings.push({ id: 'deposit-savings', label: 'Deposit HBD', icon: 'savings', authority: 'active' })
+      if (this.pendingHbdInterest > 0.01) hbdSavings.push({ id: 'claim-interest', label: 'Claim HBD interest', icon: 'redeem', authority: 'active' })
+
+      return { hive, hp, hbd, hiveSavings, hbdSavings }
+    }
+  },
+  watch: {
+    '$route.params.username' (value) {
+      if (value !== this.username) this.init()
+    }
+  },
+  methods: {
+    tidyNumber,
     init () {
-      if (this.globalProps.empty) { this.getGlobalProps() }
       this.username = this.$route.params.username
       setPageMeta({
         title: this.username + "'s Hive wallet",
         description: 'Hive wallet for @' + this.username + ' — HIVE, HBD, Hive Power, savings, delegations and Hive-Engine token balances.',
         url: '/@' + this.username + '/wallet'
       })
-      if (this.account === undefined) { this.getAccount(this.username) }
-      // this.getHiveWalletTransactions()
-      this.getPricesCoingecko()
-      this.initHiveEngine()
+      if (this.globalProps.empty) this.$hiveStore.getGlobalProps()
+      if (this.account === undefined) this.$hiveStore.getAccount(this.username)
+      this.hiveTransactions = []
+      this.decryptedMemos = {}
+      this.accountHistoryPointer = -1
+      this.historyDone = false
+      this.historyLoading = false
+      this.getPrices()
       this.getOpenOrders()
+      this.getPendingExtras()
+      this.getHiveWalletTransactions()
     },
     refresh () {
       this.$hiveStore.getAccount(this.username)
+      this.getPrices()
     },
-    initHiveEngine () {
-      this.getHiveEngineBalances(this.username)
-      this.getHiveEngineTransactionHistory()
-    },
-    returnDecimalsBeforeNonZero (x) {
-      if (x >= 1) {
-        return 2
-      } else { // https://stackoverflow.com/questions/23887400/how-to-get-first-2-non-zero-digits-after-decimal-in-javascript
-        const y = x.toFixed(1 - Math.floor(Math.log(x) / Math.log(10))).toString().length - 1
-        if (y > 2) {
-          return y
-        } else {
-          return 2
-        }
+    async refreshAll () {
+      this.refreshing = true
+      try {
+        await Promise.all([
+          this.$hiveStore.getAccount(this.username),
+          this.getPrices(),
+          this.getOpenOrders(),
+          this.getPendingExtras()
+        ])
+      } finally {
+        this.refreshing = false
       }
+    },
+    refreshPending () {
+      this.getOpenOrders()
+      this.getPendingExtras()
+    },
+    async getPrices () {
+      try {
+        const prices = await getHivePrices()
+        this.hivePriceUsd = Number(prices?.hive?.usd) || 0
+        this.hivePriceUsdChange = prices?.hive?.usd_24h_change ?? null
+        this.hbdPriceUsd = Number(prices?.hive_dollar?.usd) || 0
+        this.hbdPriceUsdChange = prices?.hive_dollar?.usd_24h_change ?? null
+      } catch {
+        // Keep the previous values; the price service already falls back to the
+        // Hive median price when CoinGecko is unavailable.
+      }
+    },
+    async getOpenOrders () {
+      try {
+        const orders = await this.$hive.api.getOpenOrdersAsync(this.username)
+        this.hiveInternalMarketOrders = Array.isArray(orders) ? orders : []
+      } catch {
+        this.hiveInternalMarketOrders = []
+      }
+    },
+    async getPendingExtras () {
+      const [withdrawals, conversions, collateralized] = await Promise.allSettled([
+        this.$hive.api.getSavingsWithdrawFromAsync(this.username),
+        this.$hive.api.getConversionRequestsAsync(this.username),
+        this.$hive.api.callAsync('condenser_api.get_collateralized_conversion_requests', [this.username])
+      ])
+      this.savingsWithdrawals = withdrawals.status === 'fulfilled' && Array.isArray(withdrawals.value) ? withdrawals.value : []
+      this.conversions = conversions.status === 'fulfilled' && Array.isArray(conversions.value) ? conversions.value : []
+      this.collateralizedConversions = collateralized.status === 'fulfilled' && Array.isArray(collateralized.value) ? collateralized.value : []
+    },
+    async getHiveWalletTransactions (index, done) {
+      const finish = () => {
+        if (typeof done === 'function') done()
+      }
+      if (this.historyLoading || this.historyDone) {
+        finish()
+        return
+      }
+
+      this.historyLoading = true
+      const requestedUser = this.username
+      let retry = false
+      try {
+        const response = await this.$hive.api.callAsync('condenser_api.get_account_history', [
+          this.username,
+          this.accountHistoryPointer,
+          this.accountHistoryLimit,
+          ...this.bitmask
+        ])
+        if (this.username !== requestedUser) return
+        const rows = Array.isArray(response) ? response : []
+        if (rows.length === 0) {
+          this.historyDone = true
+        } else {
+          this.accountHistoryPointer = parseInt(rows[0][0], 10) - 1
+          const seen = new Set(this.hiveTransactions.map(entry => entry[0]))
+          const batch = rows.slice().reverse().filter(entry => !seen.has(entry[0]))
+          this.hiveTransactions = this.hiveTransactions.concat(batch)
+          if (rows.length < this.accountHistoryLimit) this.historyDone = true
+        }
+      } catch (err) {
+        const sequence = err?.data?.stack?.[0]?.data?.sequence
+        const message = err?.cause?.message || err?.message || ''
+        if (sequence && message.includes('Could not find filtered operation in')) {
+          this.accountHistoryPointer = sequence
+          retry = true
+        } else {
+          this.historyDone = true
+        }
+      } finally {
+        if (this.username === requestedUser) this.historyLoading = false
+      }
+
+      if (this.username !== requestedUser) return
+      if (retry) {
+        setTimeout(() => this.getHiveWalletTransactions(0, done), 1000)
+      } else {
+        finish()
+      }
+    },
+    async decodeMemo ({ memo, entry }) {
+      try {
+        const { success, msg } = await keychain(window, 'requestVerifyKey', this.loggedInUser, memo, 'Memo')
+        if (!success || !msg) return
+        const text = msg.startsWith('#') ? msg.slice(1) : msg
+        const key = Array.isArray(entry) ? entry[0] : entry?.index ?? entry?.[1]?.trx_id
+        this.decryptedMemos = { ...this.decryptedMemos, [key]: text }
+      } catch {
+        // Keychain may be unavailable or the user may cancel; the encrypted
+        // memo simply stays visible.
+      }
+    },
+    onAssetAction (asset, action) {
+      if (action === 'transfer') {
+        if (asset === 'hbd') this.transferHbd = true
+        else this.transferHive = true
+        return
+      }
+      if (action === 'power-up') {
+        this.stakeHive = true
+        return
+      }
+      if (action === 'power-down') {
+        this.unstakeHive = true
+        return
+      }
+      if (action === 'delegate') {
+        this.delegationDialogVisible = true
+        return
+      }
+      if (action === 'deposit-savings' || action === 'withdraw-savings') {
+        this.savingsTokenName = asset === 'hbd' || asset === 'hbdSavings' ? 'HBD' : 'HIVE'
+        this.savingsType = action === 'deposit-savings' ? 'deposit' : 'withdraw'
+        this.savingsVisible = true
+        return
+      }
+      if (action === 'convert-hive') {
+        this.convertTokenName = 'HIVE'
+        this.convertDialogVisible = true
+        return
+      }
+      if (action === 'convert-hbd') {
+        this.convertTokenName = 'HBD'
+        this.convertDialogVisible = true
+        return
+      }
+      if (action === 'market') {
+        this.$router.push('/market')
+        return
+      }
+      if (action === 'create-account') {
+        this.$router.push('/create')
+        return
+      }
+      if (action === 'claim-interest') {
+        this.claimHbdInterest()
+      }
+    },
+    claimHbdInterest () {
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: 42069420, amount: '0.001 HBD', memo: 'Claiming HBD interest' }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 42069420 }]])
+      this.$q.notify({ message: 'HBD interest claim queued', color: 'green', icon: 'redeem', position: 'top' })
+    },
+    cancelOrder (order) {
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['limit_order_cancel', { owner: this.loggedInUser, orderid: order.orderid }]])
+      this.$q.notify({ message: 'Order cancellation queued', color: 'green', icon: 'cancel', position: 'top' })
+    },
+    cancelSavingsWithdrawal (requestId) {
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['cancel_transfer_from_savings', { from: this.loggedInUser, request_id: requestId }]])
+      this.$q.notify({ message: 'Savings withdrawal cancellation queued', color: 'green', icon: 'cancel', position: 'top' })
+    },
+    scrollTo (id) {
+      this.$nextTick(() => {
+        const target = document.getElementById(id)
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
     }
   },
   mounted () {
     this.init()
-  },
-  created () {
-    // this.getHiveEngineBalances = debounce(this.getHiveEngineBalances, 500)
   }
 }
 </script>
