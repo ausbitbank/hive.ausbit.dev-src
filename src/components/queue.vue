@@ -186,12 +186,14 @@ export default {
     if (this.$hiveStore.queueRestored) {
       const count = this.$hiveStore.restoredQueueCount || this.queue.length
       this.$q.notify({
-        message: 'Restored ' + count + ' queued action' + (count === 1 ? '' : 's'),
+        message: 'Restored ' + count + ' queued action' + (count === 1 ? '' : 's') + '. Press play to resume broadcasting.',
         color: 'orange',
         icon: 'restore',
         position: 'top',
-        timeout: 4000
+        timeout: 6000
       })
+      // Never auto-broadcast operations restored from a previous session.
+      this.timerEnabled = false
       this.$hiveStore.acknowledgeQueueRestored()
     }
     if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }

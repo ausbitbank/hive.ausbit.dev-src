@@ -146,3 +146,12 @@ Status: complete (pending coordinator integration/verification).
   logged in and the timer is enabled.
 - PeakD proposal links remain external; the plan only required removing the
   HiveSigner vote/unvote paths.
+
+## Coordinator integration follow-up
+
+- Restored queues are now **paused** (`timerEnabled = false`) and the notice
+  tells the user to press play. This avoids broadcasting operations restored
+  from a previous session without explicit confirmation.
+- `selectHiveNode` now probes the configured node and all known nodes in
+  parallel, so a fully dead network delays startup by at most one ~2s probe
+  instead of configured-then-fallback serial probes.

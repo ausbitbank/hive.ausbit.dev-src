@@ -61,21 +61,19 @@ export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS
 /**
  * Pick a usable API node at startup.
  *
- * The configured node wins when it is healthy. Otherwise all known nodes are
- * probed in parallel (each capped at ~2s) and the fastest responder is used.
- * If nothing responds the configured URL is returned so the app still starts;
- * hive-js will retry against its alternative endpoints.
+ * The configured node wins when it is healthy; otherwise the fastest healthy
+ * known node is used. All candidates are probed in parallel so a dead network
+ * delays startup by at most one probe timeout (~2s). If nothing responds the
+ * configured URL is returned so the app still starts.
  */
 export async function selectHiveNode (configuredUrl) {
   const configured = configuredUrl || DEFAULT_HIVE_NODE
-
-  const configuredProbe = await probeHiveNode(configured)
-  if (configuredProbe.ok) return configured
-
-  const candidates = [...new Set(HIVE_API_NODES)].filter(url => url !== configured)
-  if (candidates.length === 0) return configured
-
+  const candidates = [...new Set([configured, ...HIVE_API_NODES])]
   const probes = await Promise.all(candidates.map(url => probeHiveNode(url)))
+
+  const configuredProbe = probes.find(probe => probe.url === configured)
+  if (configuredProbe?.ok) return configured
+
   const healthy = probes
     .filter(probe => probe.ok)
     .sort((a, b) => a.latency - b.latency)
