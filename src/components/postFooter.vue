@@ -31,7 +31,7 @@
     <q-btn dense icon="more_horiz" flat color="grey" aria-label="More post actions" title="More post actions">
       <q-popup-proxy>
         <q-list>
-          <q-item clickable @click="postDialogVisible = true">
+          <q-item v-if="!compact" clickable @click="postDialogVisible = true">
             <q-item-section avatar>
               <q-icon name="visibility" color="primary" />
             </q-item-section>
@@ -50,7 +50,7 @@
         </q-list>
       </q-popup-proxy>
     </q-btn>
-    <q-dialog v-model="postDialogVisible">
+    <q-dialog v-if="!compact" v-model="postDialogVisible">
       <postDialog :post="post" />
     </q-dialog>
     <q-dialog v-model="replyOpen">

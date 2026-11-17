@@ -13,7 +13,14 @@
       <router-link :to="linkAccount(comment.author)" class="comment__author">@{{ comment.author }}</router-link>
       <span class="comment__rep" :title="'Reputation ' + reputation">{{ reputation }}</span>
       <span class="comment__dot">·</span>
-      <time class="comment__time" :datetime="comment.created" :title="comment.created">{{ timeDelta(comment.created) }}</time>
+      <router-link
+        :to="linkPost(comment.author, comment.permlink)"
+        class="comment__time-link"
+        :title="'View this comment - ' + comment.created"
+        :aria-label="'View comment by @' + comment.author"
+      >
+        <time class="comment__time" :datetime="comment.created">{{ timeDelta(comment.created) }}</time>
+      </router-link>
       <span v-if="comment.children" class="comment__reply-count">
         {{ comment.children }} {{ comment.children === 1 ? 'reply' : 'replies' }}
       </span>
@@ -54,6 +61,7 @@ export default {
   },
   methods: {
     linkAccount (author) { return '/@' + author },
+    linkPost (author, permlink) { return '/@' + author + '/' + permlink },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     timeDelta (timestamp) {
       const now = moment.utc()
@@ -111,6 +119,17 @@ export default {
 
 .comment__dot {
   color: #607d8b;
+}
+
+.comment__time-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.comment__time-link:hover .comment__time {
+  color: #e4eaed;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
 }
 
 .comment__reply-count {
