@@ -1,19 +1,18 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
-    <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut"><div><tradingView class="q-ml-md" :options="tvOptions" /></div></transition>
+    <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut"><div><trading-view-widget class="q-ml-md" :options="tvOptions" /></div></transition>
     <internalMarket />
   </q-page>
 </template>
 <script>
-import tradingView from 'vue-trading-view'
-// import coingeckoCarousel from 'components/coingeckoCarousel.vue'
+import TradingViewWidget from 'components/TradingViewWidget.vue'
 import internalMarket from 'components/internalMarket.vue'
 export default {
   name: 'markets',
   data () {
     return {
       tvOptions: {
-        symbol: this.$route.params.ticker || 'BINANCE:HIVEUSDT',
+        symbol: this.$route.query.ticker || 'BINANCE:HIVEUSDT',
         interval: '240',
         isTransparent: false,
         width: 1000,
@@ -30,25 +29,18 @@ export default {
         toolbar_bg: '#1d1d1d',
         watchlist: [
           'BINANCE:HIVEUSDT',
-          'BITTREX:HIVEUSD',
-          'BITTREX:HIVEUSDT',
-          'HUOBI:HIVEUSDT',
           'BINANCE:HIVEBTC',
-          'BITTREX:HIVEBTC',
-          'HUOBI:HIVEBTC',
           'BITHUMB:HIVEKRW',
-          'BITTREX:HBDBTC',
-          'BITTREX:HBDUSD',
+          'UPBIT:HIVEBTC',
           'CRYPTOCAP:BTC.D',
-          'BITSTAMP:BTCUSD',
-          'BINANCE:HIVEBTC*BINANCE:BTCAUD'
+          'BITSTAMP:BTCUSD'
         ]
       }
     }
   },
   computed: {
   },
-  components: { tradingView, internalMarket },
+  components: { TradingViewWidget, internalMarket },
   mounted () {
     document.title = 'Markets'
   }

@@ -1,10 +1,11 @@
 <template>
-  <q-select clearable new-value-mode="add" filled :value="input" use-input hide-selected fill-input input-debounce="100" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="max-width: 200px;" @input="$emit('selectUsername', input)" />
+  <q-select clearable new-value-mode="add-unique" filled use-input hide-selected fill-input input-debounce="100" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="max-width: 200px;" @update:model-value="onUpdate" />
 </template>
 <script>
 import badActorList from '@hiveio/hivescript/bad-actors.json'
 export default {
   name: 'userSearchBox',
+  emits: ['selectUsername'],
   data () {
     return {
       input: this.username,
@@ -19,7 +20,7 @@ export default {
     }
   },
   methods: {
-    filterFn (val, update, abort) {
+    filterFn (val, update, _abort) {
       update(() => {
         this.searchHiveUsernames(val)
       })
@@ -34,9 +35,9 @@ export default {
       this.$hive.api.lookupAccountsAsync(partialusername, 20)
         .then(data => { this.usernameSuggestions = data.filter(el => { return this.badActors.indexOf(el) === -1 }) })
     },
-    setModel (val) {
+    onUpdate (val) {
       this.input = val
-      console.log('model set ' + val)
+      this.$emit('selectUsername', val)
     }
   }
 }

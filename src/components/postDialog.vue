@@ -7,6 +7,7 @@
   </q-card>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'postDialog',
   props: ['post'],
@@ -15,8 +16,8 @@ export default {
     }
   },
   components: {
-    postFooter: () => import('components/postFooter.vue'),
-    render: () => import('components/render.vue')
+    postFooter: defineAsyncComponent(() => import('components/postFooter.vue')),
+    render: defineAsyncComponent(() => import('components/render.vue'))
   },
   methods: {
     returnPostPath (author, permlink) { return '/@' + author + '/' + permlink }

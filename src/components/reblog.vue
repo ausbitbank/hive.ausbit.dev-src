@@ -25,18 +25,18 @@ export default {
   props: ['author', 'permlink'],
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     }
   },
   methods: {
     undoReblog (author, permlink) {
       // a normal reblog, but with delete: delete in the params
       var json = '["reblog",{"account":"' + this.loggedInUser + '","author":"' + author + '","permlink":"' + permlink + '", "delete":"delete"}]'
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     async reblog (author, permlink) {
       var json = '["reblog",{"account":"' + this.loggedInUser + '","author":"' + author + '","permlink":"' + permlink + '"}]'
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
       /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestCustomJson', this.loggedInUser, 'follow', 'Posting', json, 'Reblog post ' + permlink + ' by ' + author)
       if (success) {
         this.$q.notify('Reblogged post ' + permlink + ' by ' + author + ' as ' + this.loggedInUser)

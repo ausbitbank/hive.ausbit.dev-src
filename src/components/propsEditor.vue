@@ -73,7 +73,7 @@ export default {
   methods: {
     submitChanges () {
       if (this.type === 'postingMeta') {
-        this.$store.commit('hive/addToQueue', [this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson }]])
+        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson }]])
         this.$emit('editedProps')
       }
       if (this.type === 'jsonMeta') {
@@ -84,7 +84,7 @@ export default {
             memo_key: this.account.memo_key,
             json_metadata: this.newjson
           }
-          this.$store.commit('hive/addToQueue', [this.username, 'active', ['account_update', p]])
+          this.$hiveStore.addToQueue([this.username, 'active', ['account_update', p]])
           this.$emit('editedProps')
         } else {
           console.log('missing required info to update json meta')

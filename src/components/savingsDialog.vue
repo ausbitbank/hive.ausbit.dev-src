@@ -6,7 +6,7 @@
     </q-card-section>
     <q-card-section class="text-center">
       <div style="max-width: 350px;margin:auto">
-        <q-input label="From" :disable="true" v-model="username" />
+        <q-input label="From" :disable="true" :model-value="username" />
         <q-input label="To" v-model="to" />
         <q-input label="Amount" v-model.number="amount" />
         <div v-if="type === 'deposit'"> Available Balance: <b class="text-primary cursor-pointer" @click="amount = availableBalance">{{ availableBalance }}</b> {{ tokenName }} </div>
@@ -16,7 +16,7 @@
         <q-input label="Memo" caption="A message included with the transfer" v-model="memo" />
       </div>
       <div class="text-center q-ma-md">
-        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
+        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn flat :label="buttonLabel" icon="savings" :color="buttonColor" @click="doTheThing()" v-close-popup />
         <q-btn flat label="Cancel and Close" icon="cancel" color="primary" v-close-popup />
       </div>
@@ -83,9 +83,9 @@ export default {
     },
     buttonLabel: function () { if (this.type === 'deposit') { return 'Deposit to savings' } else { return 'Withdraw from savings' } },
     buttonColor: function () { if (this.type === 'deposit') { return 'green' } else { return 'red' } },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    globalProps: function () { return this.$store.state.hive.globalProps }
+    account: function () { return this.$hiveStore.accounts[this.username] },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    globalProps: function () { return this.$hiveStore.globalProps }
   },
   methods: {
     doTheThing () { if (this.type === 'deposit') { this.deposit() } else { this.withdraw() } },
@@ -96,16 +96,16 @@ export default {
       return parts.join('.')
     },
     deposit () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_savings', { from: this.username, to: this.to, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_savings', { from: this.username, to: this.to, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
     },
     withdraw () {
       var requestId = Math.floor((Math.random() * 10000) + 1)
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.to, request_id: requestId, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.to, request_id: requestId, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
-    if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+    if (this.$hiveStore.accounts[this.username] === undefined) { this.$hiveStore.getAccount(this.username) }
   }
 }
 </script>

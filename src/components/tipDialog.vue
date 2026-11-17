@@ -2,7 +2,7 @@
   <q-list bordered separator class="bg-dark">
     <q-item clickable>
       <q-item-section avatar>
-        <q-avatar><q-icon name="img:statics/hive.svg" title="Hive" /></q-avatar>
+        <q-avatar><q-icon name="img:/statics/hive.svg" title="Hive" /></q-avatar>
       </q-item-section>
       <q-item-section>
         <q-item-label>
@@ -13,18 +13,18 @@
         </q-item-label>
       </q-item-section>
       <q-item-section side>
-        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivetransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr"/>
+        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivetransfer = true" :disabled="!$hiveStore.user.username" class="hvr"/>
       </q-item-section>
       <q-item-section side>
         <q-btn dense round icon="content_copy" title="Copy address to clipboard" color="blue-grey" @click="copy(account)" class="hvr"/>
       </q-item-section>
       <q-dialog v-model="hivetransfer">
-        <transfer-dialog tokenName="HIVE" network="hive" :to="account" :username="this.$store.state.hive.user.username" />
+        <transfer-dialog tokenName="HIVE" network="hive" :to="account" :username="$hiveStore.user.username" />
       </q-dialog>
     </q-item>
     <q-item clickable>
       <q-item-section avatar>
-        <q-avatar><q-icon name="img:statics/hbd.svg" title="Hive Dollars" /></q-avatar>
+        <q-avatar><q-icon name="img:/statics/hbd.svg" title="Hive Dollars" /></q-avatar>
       </q-item-section>
       <q-item-section>
         <q-item-label>
@@ -35,13 +35,13 @@
         </q-item-label>
       </q-item-section>
       <q-item-section side>
-        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivedollartransfer = true" :disabled="!this.$store.state.hive.user.username" class="hvr" />
+        <q-btn dense round icon="send" title="Login (top right) to enable transfers" color="primary" @click="hivedollartransfer = true" :disabled="!$hiveStore.user.username" class="hvr" />
       </q-item-section>
       <q-item-section side>
         <q-btn dense round icon="content_copy" color="blue-grey" title="Copy address to clipboard" @click="copy(account)" class="hvr"/>
       </q-item-section>
       <q-dialog v-model="hivedollartransfer">
-        <transfer-dialog tokenName="HBD" network="hive" :to="account" :username="this.$store.state.hive.user.username" />
+        <transfer-dialog tokenName="HBD" network="hive" :to="account" :username="$hiveStore.user.username" />
       </q-dialog>
     </q-item>
     <q-item v-if="!accountData">
@@ -63,22 +63,6 @@
         <q-btn dense round icon="content_copy" color="blue-grey" title="Copy address to clipboard" @click="copy(accountMeta.profile[coin])" class="hvr"/>
       </q-item-section>
     </q-item>
-    <q-item clickable v-for="token in tokens" :key="token.index">
-      <q-item-section avatar>
-        <q-avatar size="lg"><q-img :src="getTokenImage(token)" :title="token" /></q-avatar>
-      </q-item-section>
-      <q-item-section>
-        <q-item-label>
-          {{ token }}
-        </q-item-label>
-      </q-item-section>
-      <q-item-section side>
-        <q-btn dense round type="a" :href="getExchangeLink(account, token, accountMeta.profile.tokens[token])" icon="swap_vertical_circle" title="Exchange" color="orange" class="hvr" />
-      </q-item-section>
-      <q-item-section side>
-        <q-btn dense round icon="content_copy" color="blue-grey" title="Copy address to clipboard" @click="copy(accountMeta.profile.tokens[token])" class="hvr"/>
-      </q-item-section>
-    </q-item>
   </q-list>
 </template>
 <style>
@@ -92,7 +76,6 @@ export default {
   data () {
     return {
       supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin', 'lightning'],
-      supportedTokens: [],
       hivetransfer: false,
       hivedollartransfer: false,
       ethFromAddress: null
@@ -101,8 +84,8 @@ export default {
   props: ['account'],
   computed: {
     accountData: function () {
-      if (this.$store.state.hive.accounts[this.account] !== undefined) {
-        return this.$store.state.hive.accounts[this.account]
+      if (this.$hiveStore.accounts[this.account] !== undefined) {
+        return this.$hiveStore.accounts[this.account]
       } else {
         return null
       }
@@ -130,24 +113,11 @@ export default {
       } else {
         return []
       }
-    },
-    tokens: function () {
-      var userTokens = []
-      if (this.accountMeta) {
-        if ('profile' in this.accountMeta) {
-          if ('tokens' in this.accountMeta.profile) { Object.keys(this.accountMeta.profile.tokens).forEach(e => this.supportedTokens.includes(e) ? userTokens.push(e) : this.noop()) }
-          return userTokens
-        } else {
-          return []
-        }
-      } else {
-        return []
-      }
     }
   },
   methods: {
     returnCoinSvg (coin) {
-      if (coin === 'lightning') { return 'img:statics/' + coin + '.png' } else { return 'img:statics/' + coin + '.svg' }
+      if (coin === 'lightning') { return 'img:/statics/' + coin + '.png' } else { return 'img:/statics/' + coin + '.svg' }
     },
     returnCoinLink (coin) {
       return coin + ':' + this.accountMeta.profile[coin]
@@ -156,20 +126,12 @@ export default {
       copyToClipboard(input)
       this.$q.notify('Copied to clipboard: ' + input)
     },
-    getTokens () {
-      this.$axios.get('https://exchange-api.ausbit.dev/getCurrencies')
-        .then((res) => { this.supportedTokens = res.data.result.sort() })
-    },
-    getTokenImage (token) { return 'https://web-api.changelly.com/api/coins/' + token.toLowerCase() + '.png' },
-    getExchangeLink (username, token, address) { return 'https://hive.ausbit.dev/exchange?for=' + username + '&to=' + token + '&address=' + address },
     noop () {}
   },
   mounted () {
-    if (this.$store.state.hive.accounts[this.account] === undefined) {
-      console.log('dispatch sent to get account info for ' + this.account)
-      this.$store.dispatch('hive/getAccount', this.account)
+    if (this.$hiveStore.accounts[this.account] === undefined) {
+      this.$hiveStore.getAccount(this.account)
     }
-    if (this.accountMeta.profile && this.accountMeta.profile.tokens) { this.getTokens() }
   }
 }
 </script>

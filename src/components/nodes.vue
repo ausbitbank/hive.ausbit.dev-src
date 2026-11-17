@@ -1,278 +1,127 @@
 <template>
-  <span>
-    <q-card flat bordered style="max-width: 300px" v-if="fullNodeUpdate === null">
-      <q-card-section class="text-center">
-        <div class="text-h5">
-          <q-icon name="dns" color="blue-grey" /> Api Nodes
-        </div>
-      </q-card-section>
-      <q-item v-for="i in 5" :key="i.index">
+  <q-card flat bordered style="max-width: 560px" class="q-ma-sm">
+    <q-card-section class="text-center">
+      <div class="text-h5"><q-icon name="dns" color="blue-grey" /> Hive API Nodes</div>
+      <div class="text-caption">Live health check from this browser. Click a node to use it.</div>
+    </q-card-section>
+
+    <q-list separator dense>
+      <q-item v-for="node in sortedNodes" :key="node.url" clickable @click="useNode(node)">
         <q-item-section avatar>
-          <q-skeleton type="QAvatar" />
+          <q-icon :name="node.ok ? 'check_circle' : 'error'" :color="node.ok ? 'green' : 'red'" />
         </q-item-section>
         <q-item-section>
           <q-item-label>
-            <q-skeleton type="text" />
+            {{ prettyUrl(node.url) }}
+            <q-icon name="star" color="orange" v-if="node.url === activeNode" title="Active API node" />
           </q-item-label>
           <q-item-label caption>
-            <q-skeleton type="text" />
+            <template v-if="node.ok">
+              {{ node.latency }} ms · head {{ tidyNumber(node.head) }}
+              <span v-if="node.lag > 0" class="text-orange"> · {{ node.lag }} behind</span>
+              <span v-if="node.version"> · v{{ node.version }}</span>
+            </template>
+            <span v-else class="text-red">{{ node.error }}</span>
           </q-item-label>
         </q-item-section>
+        <q-item-section side>
+          <q-btn dense flat round icon="refresh" :loading="loading" @click.stop="checkAll" title="Re-check all nodes" />
+        </q-item-section>
       </q-item>
-      <q-card-actions align="right" class="q-gutter-md">
-        <q-skeleton type="QBtn" />
-        <q-skeleton type="QBtn" />
-      </q-card-actions>
-    </q-card>
-    <q-card flat bordered v-else>
-      <q-card-section class="text-center">
-        <div class="text-h5">
-          <q-icon name="dns" color="blue-grey" /> Api Nodes <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 65 minutes" name="warning" color="orange" />
-        </div>
-        <div v-for="node in fullNodeUpdateHiveFiltered" :key="node.node" class="text-center">
-          <span class="text-bold">{{ node.node.replace('https://','').replace('rpc.esteem.app','rpc.ecency.com') }} <q-icon name="star" color="orange" v-if="apiNode === node.node" title="This is the current active rpc node" /></span>
-          <div>
-            <div>
-              <q-btn flat dense title="Click for full node report data">
-                <q-badge outline :color="getNodeStatusColor(node)">v{{ node.version }}</q-badge>
-                <q-popup-proxy>
-                  <q-card flat bordered><json-viewer :data="node" /></q-card>
-                </q-popup-proxy>
-              </q-btn>
-            </div>
-            <span v-for="rank in getNodeRanks(node)" :key="rank.id">
-              <q-chip dense :color="getNodeRankColor(rank)" class="text-black text-bold">
-                {{ rank }}
-              </q-chip>
-            </span>
-          </div>
-        </div>
-      </q-card-section>
-      <q-card-section class="text-center">
-        <q-btn-toggle dense push glossy toggle-color="primary" :options="nodeVersionsLabelled" v-model="showVersion" title="Filter results by reported node version"/><br />
-        <router-link to="/@fullnodeupdate/posts"><q-btn dense flat icon="info" color="primary" label="Tests by @fullnodeupdate" /></router-link>
-        <div v-if="fullNodeUpdateTime" class="text-subtitle">
-          <q-icon name="access_time" /> tested {{ timeDelta(fullNodeUpdateTime) }}
-          <q-icon v-if="fullNodeUpdateAgeWarning" title="@FullNodeUpdate hasn't updated account metadata for > 35 minutes" name="warning" color="orange" />
-        </div>
-        <div class="text-caption">
-          Alternative: <a href="https://beacon.peakd.com/">peakd beacon</a>
-        </div>
-        <div class="text-center" v-if="this.$route.path !== '/nodes'"><router-link to="nodes"><q-btn dense flat icon="link" /></router-link></div>
-      </q-card-section>
-    </q-card>
-    </span>
+    </q-list>
+
+    <q-card-actions align="around">
+      <q-btn flat dense icon="refresh" label="Re-check" color="primary" :loading="loading" @click="checkAll" />
+      <q-btn flat dense icon="settings" label="Settings" color="grey" @click="settingsDialog = true" />
+    </q-card-actions>
+
+    <q-dialog v-model="settingsDialog">
+      <settings />
+    </q-dialog>
+  </q-card>
 </template>
-<style scoped>
-a {text-decoration: none; color: #3344dd }
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
-</style>
+
 <script>
-import moment from 'moment'
-import jsonViewer from 'components/jsonViewer.vue'
+import { HIVE_API_NODES } from 'src/services/hiveNodes'
+import { setHiveNode } from 'src/services/hive'
+import settings from 'components/settings.vue'
+
 export default {
   name: 'nodes',
-  props: [],
-  components: { jsonViewer },
+  components: { settings },
   data () {
     return {
-      fullNodeUpdate: null,
-      fullNodeUpdateTime: null,
-      showVersion: this.$route.query.version || 'all',
-      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog'
+      loading: false,
+      nodes: [],
+      activeNode: this.$hiveStore.user.settings.apiNode || HIVE_API_NODES[0],
+      settingsDialog: false
     }
   },
   computed: {
-    fullNodeUpdateHive: function () {
-      if (this.fullNodeUpdate === null) {
-        return null
-      } else {
-        var results = JSON.parse(this.fullNodeUpdate).report
-        var filteredResult = results.filter(result => result.hive === true).filter(result => result.node.startsWith('https'))
-        var sortedResult = filteredResult.sort((a, b) => {
-          return this.getNodeScore(a) - this.getNodeScore(b)
-        })
-        return sortedResult
-      }
-    },
-    fullNodeUpdateHiveFiltered: function () {
-      if (this.fullNodeUpdateHive === null) {
-        return null
-      } else {
-        if (this.showVersion === 'all') {
-          return this.fullNodeUpdateHive
-        } else {
-          var filteredResult = this.fullNodeUpdateHive.filter(r => r.version === this.showVersion)
-          return filteredResult
-        }
-      }
-    },
-    nodeVersions: function () {
-      if (this.fullNodeUpdateHive === null) {
-        return null
-      } else {
-        var results = []
-        // console.log(this.fullNodeUpdateHive)
-        this.fullNodeUpdateHive.forEach(n => {
-          if (!results.includes(n.version)) {
-            results.push(n.version)
-          }
-        })
-        return results
-      }
-    },
-    nodeVersionsLabelled: function () {
-      if (this.nodeVersions === null) {
-        return null
-      } else {
-        var results = [{ label: 'All', value: 'all' }]
-        this.nodeVersions.forEach(n => {
-          results.push({ label: n, value: n })
-        })
-        return results
-      }
-    },
-    fullNodeUpdateAgeWarning: function () {
-      if (this.fullNodeUpdateTime) {
-        if (this.timeDeltaMinutes(this.fullNodeUpdateTime) > 65) {
-          return true
-        } else {
-          return false
-        }
-      } else {
-        return false
-      }
+    sortedNodes () {
+      return [...this.nodes].sort((a, b) => {
+        if (a.ok !== b.ok) return a.ok ? -1 : 1
+        return a.latency - b.latency
+      })
     }
   },
   methods: {
-    timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
-    },
-    timeDeltaMinutes (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      console.log(now.diff(stamp, 'minutes'))
-      return now.diff(stamp, 'minutes')
+    prettyUrl (url) {
+      return url.replace(/^https?:\/\//, '').replace(/\/+$/, '')
     },
     tidyNumber (x) {
-      var parts = x.toString().split('.')
-      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-      return parts.join('.')
+      if (x === null || x === undefined) return '?'
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     },
-    getFullNodeUpdate () {
-      this.$hive.api.getAccountsAsync(['fullnodeupdate'])
-        .then((response) => {
-          this.fullNodeUpdate = response[0].json_metadata
-          this.fullNodeUpdateTime = response[0].last_account_update
+    async probe (url) {
+      const started = performance.now()
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'condenser_api.get_dynamic_global_properties',
+            params: []
+          })
         })
-        .catch(() => console.log('Failed to load @fullnodeupdate profile'))
-    },
-    getNodeStatusColor (node) {
-      if (node.block.ok && node.history.ok && node.apicall.ok && node.block_diff.ok) {
-        return 'green'
-      } else {
-        return 'orange'
-      }
-    },
-    getNodeRanks (node) {
-      var ranks = [
-        node.block.rank,
-        node.history.rank,
-        node.apicall.rank,
-        node.config.rank,
-        node.block_diff.rank
-      ]
-      return ranks
-    },
-    getNodeRankColor (rank) {
-      var color = ''
-      switch (rank) {
-        case 1:
-          color = 'light-green-14'
-          break
-        case 2:
-          color = 'green-13'
-          break
-        case 3:
-          color = 'green-14'
-          break
-        case 4:
-          color = 'green-9'
-          break
-        case 5:
-          color = 'green-8'
-          break
-        case 6:
-          color = 'green-7'
-          break
-        case 7:
-          color = 'amber-8'
-          break
-        case 8:
-          color = 'amber-9'
-          break
-        case 9:
-          color = 'orange-7'
-          break
-        case 10:
-          color = 'orange-8'
-          break
-        case 11:
-          color = 'orange-9'
-          break
-        case 12:
-          color = 'orange-10'
-          break
-        case -1:
-          color = 'red-14'
-          break
-        default:
-          color = 'deep-orange'
-      }
-      return color
-    },
-    getNodeRankInfo (node, index) {
-      var info = {}
-      switch (index) {
-        case 0:
-          info = node.block
-          break
-        case 1:
-          info = node.history
-          break
-        case 2:
-          info = node.apicall
-          break
-        case 3:
-          info = node.config
-          break
-        case 4:
-          info = node.block_diff
-          break
-        default:
-          info = node
-      }
-      return info
-    },
-    getNodeScore (node) {
-      var ranks = this.getNodeRanks(node)
-      var score = 0
-      for (const i of ranks) {
-        if (i === -1) {
-          score = score + 100
-        } else {
-          score = score + i
+        if (!res.ok) throw new Error('HTTP ' + res.status)
+        const data = await res.json()
+        if (!data.result) throw new Error(data.error?.message || 'Invalid response')
+        return {
+          url,
+          ok: true,
+          latency: Math.round(performance.now() - started),
+          head: data.result.head_block_number,
+          version: data.result.hive_version || null
         }
+      } catch (error) {
+        return { url, ok: false, latency: Infinity, error: error.message || 'Unreachable' }
       }
-      return score
+    },
+    async checkAll () {
+      this.loading = true
+      const urls = [...new Set([this.activeNode, ...HIVE_API_NODES].filter(Boolean))]
+      const results = await Promise.all(urls.map(url => this.probe(url)))
+      const best = Math.max(...results.filter(n => n.ok).map(n => n.head || 0), 0)
+      this.nodes = results.map(node => ({
+        ...node,
+        lag: node.ok && best ? Math.max(0, best - (node.head || 0)) : 0
+      }))
+      this.loading = false
+    },
+    useNode (node) {
+      if (!node.ok) return
+      this.activeNode = node.url
+      this.$hiveStore.updateSettings({ ...this.$hiveStore.user.settings, apiNode: node.url })
+      setHiveNode(node.url)
+      this.$q.notify({ type: 'positive', message: 'Using ' + this.prettyUrl(node.url) })
     }
   },
   mounted () {
-    this.getFullNodeUpdate()
+    document.title = 'Hive API Nodes'
+    this.checkAll()
   }
 }
 </script>

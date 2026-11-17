@@ -33,6 +33,7 @@
 </q-expansion-item>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
 export default {
   name: 'delegations',
@@ -49,12 +50,12 @@ export default {
     }
   },
   components: {
-    delegationDialog: () => import('components/delegationDialog.vue')
+    delegationDialog: defineAsyncComponent(() => import('components/delegationDialog.vue'))
   },
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
+    globalProps: function () { return this.$hiveStore.globalProps },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    account: function () { return this.$hiveStore.accounts[this.username] },
     heading: function () {
       var incomingMsg = ''
       if (this.account.received_vesting_shares.split(' ')[0] !== '0.000000') { incomingMsg = ', ' + this.tidyNumber(this.vestToHive(this.account.received_vesting_shares.split(' ')[0])) + ' HP of incoming delegations' }
@@ -97,7 +98,7 @@ export default {
     returnAccountLink (account) { return '/@' + account }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     this.getDelegations()
   }
 }

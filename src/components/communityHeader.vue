@@ -19,7 +19,7 @@
           <q-btn flat icon="military_tech" title="Pending Payouts"> {{ tidyNumber(communityInfo.sum_pending) }}</q-btn>
         </span>
       </div>
-      <div v-if="this.loggedInUser !== ''">
+      <div v-if="loggedInUser !== ''">
         <q-btn v-if="userSubscribed === false" color="primary" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'subscribe')"><q-icon name="person_add" class="q-mr-sm" /> Subscribe to <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
         <q-btn v-else-if="userSubscribed === true" color="red" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'unsubscribe')"><q-icon name="person_remove" class="q-mr-sm" /> Unsubscribe from <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
       </div>
@@ -98,8 +98,8 @@
         <q-card dense flat bordered>
           <q-card-section>
           <q-spinner-pie color="primary" size="md" v-if="loadingActivities" />
-          <q-list separator dense v-if="this.activities !== null">
-          <q-item v-for="n in this.activities" :key="n.index" clickable dense>
+          <q-list separator dense v-if="activities !== null">
+          <q-item v-for="n in activities" :key="n.index" clickable dense>
             <q-item-section avatar>
               <router-link :to="n.url">
                 <q-avatar size="lg">
@@ -148,7 +148,7 @@ export default {
     }
   },
   watch: {
-    account: function (newData, oldData) {
+    account: function () {
       this.getCommunity()
       this.getCommunitySubscribers()
     }
@@ -215,7 +215,7 @@ export default {
     },
     manageCommunity (communityAccount, action) {
       var json = '["' + action + '",{"community":"' + communityAccount + '"}]'
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'community', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'community', json: json }]])
       /* window.hive_keychain.requestCustomJson(this.loggedInUser, 'community', 'Posting', json, action + ' community ' + communityAccount, function (response) {
         if (response.success === true) {
           console.log(response.message)
@@ -228,10 +228,10 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     communityInfo: function () {
-      return this.$store.state.hive.communityInfo[this.account.name]
+      return this.$hiveStore.communityInfo[this.account.name]
     },
     communityDescription: function () {
       if (this.communityInfo) {
@@ -301,7 +301,7 @@ export default {
   mounted () {
     // this.getCommunity()
     if (this.communityInfo === undefined) {
-      this.$store.dispatch('hive/getCommunityInfo', this.account.name)
+      this.$hiveStore.getCommunityInfo(this.account.name)
     }
     this.getCommunitySubscribers()
     this.getCommunityActivities()

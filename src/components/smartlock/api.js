@@ -1,10 +1,7 @@
-import hive from '@hiveio/hive-js'
 import signature from '@hiveio/hive-js/lib/auth/ecc'
 import { getPosting, getActive, getMemo } from './store'
 import { Notify } from 'quasar'
-import store from '../../store'
-
-if (store().state.hive.user.settings.apiNode !== undefined) { hive.api.setOptions({ url: store().state.hive.user.settings.apiNode }) } else { hive.api.setOptions({ url: 'https://api.hive.blog' }) }
+import { hive } from 'src/services/hive'
 
 const signBuffer = (username, data) => {
   // try to parse Buffer
@@ -12,23 +9,25 @@ const signBuffer = (username, data) => {
   try {
     const o = JSON.parse(buf, (k, v) => {
       if (v !== null && typeof v === 'object' && 'type' in v && v.type === 'Buffer' && 'data' in v && Array.isArray(v.data)) {
-        return new Buffer(v.data) // eslint-disable-line node/no-deprecated-api
+        return Buffer.from(v.data)
       }
       return v
     })
     if (Buffer.isBuffer(o)) {
       buf = o
     }
-  } catch (e) {}
+  } catch {}
 
   return signature.Signature.signBuffer(buf, getPosting(username)).toHex()
 }
 
 const broadcastAsync = async (username, operations, role = 'posting', password) => {
   if (operations[0][0] === 'comment' && operations[0][1].comment_options) {
-    var commentOptions = operations[0][1].comment_options
+    // `comment_options` is a separate operation, not a field of `comment`.
+    // Preserve the beneficiary settings chosen by the user.
+    const commentOptions = operations[0][1].comment_options
     delete operations[0][1].comment_options
-    operations.push(['comment_options', { author: commentOptions.author, permlink: commentOptions.permlink, max_accepted_payout: commentOptions.max_accepted_payout, percent_hbd: commentOptions.percent_hbd, allow_votes: commentOptions.allow_votes, allow_curation_rewards: commentOptions.allow_curation_rewards, extensions: [[0, { beneficiaries: [{ account: 'ausbit.dev', weight: 1000 }] }]] }])
+    operations.push(['comment_options', commentOptions])
   }
   if (operations[0][0] === 'transfer' && password) {
     var memo = operations[0][1].memo

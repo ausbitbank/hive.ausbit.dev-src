@@ -1,4 +1,8 @@
-import Vue from 'vue'
+import { defineBoot } from '#q-app'
 import axios from 'axios'
 
-Vue.prototype.$axios = axios
+export default defineBoot(({ app }) => {
+  app.config.globalProperties.$axios = axios
+})
+
+export { axios }

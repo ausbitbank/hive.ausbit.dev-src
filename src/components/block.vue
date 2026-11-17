@@ -4,22 +4,22 @@
         <q-card-section class="text-center q-pa-md">
           <div class="text-h5">
               <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" class="hvr"/></a>
-              <span>Block <router-link :to="returnBlockLink(this.blockNumber)"><animInt :value="this.blockNumber" /></router-link></span>
+              <span>Block <router-link :to="returnBlockLink(blockNumber)"><animInt :value="blockNumber" /></router-link></span>
               <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" class="hvr" /></a>
           </div>
-          <span v-if="this.blockHeader" style="text-caption text-center">
-            Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
-            <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ this.blockHeader.timestamp }}</span></div>
-            <div :alt="getByteSize(this.blockOpsReal) / 1024"><q-badge color="primary">{{ blockOpsRealCount }}</q-badge> transaction<span v-if="blockOpsRealCount >= 2">s</span></div>
-            <span v-for="op in this.blockOpsReal" :key="op.index">
+          <span v-if="blockHeader" style="text-caption text-center">
+            Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(blockHeader.witness)">{{ blockHeader.witness }}</router-link>
+            <div><q-icon name="history" /><span :title="blockHeader.timestamp" class="text-grey text-subtitle">{{ blockHeader.timestamp }}</span></div>
+            <div :alt="getByteSize(blockOpsReal) / 1024"><q-badge color="primary">{{ blockOpsRealCount }}</q-badge> transaction<span v-if="blockOpsRealCount >= 2">s</span></div>
+            <span v-for="op in blockOpsReal" :key="op.index">
               <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
             </span>
-            <div><q-badge color="primary">{{ this.blockOpsVirtual.length }}</q-badge> virtual transaction<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
-            <span v-for="op in this.blockOpsVirtual" :key="op.index">
+            <div><q-badge color="primary">{{ blockOpsVirtual.length }}</q-badge> virtual transaction<span v-if="blockOpsVirtual.length >= 2">s</span></div>
+            <span v-for="op in blockOpsVirtual" :key="op.index">
               <span :class="returnOpColor(op)" :title="op.op[0]">{{ op.op[0].substr(0,1) }}</span>
             </span>
           </span>
-          <q-item v-if="this.blockHeader === null" style="min-width: 300px;">
+          <q-item v-if="blockHeader === null" style="min-width: 300px;">
             <q-item-section>
               <q-skeleton type="text" />
               <q-skeleton type="text" />
@@ -38,20 +38,20 @@
         <q-card-section class="text-center q-pa-md">
             <div class="text-h5">
                 <a @click="updateBlock(blockNumber - 1)"><q-icon color="primary" name="navigate_before" /></a>
-                <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
+                <span>Block <router-link :to="returnBlockLink(blockNumber)">{{ tidyNumber(blockNumber) }}</router-link></span>
                 <a @click="updateBlock(blockNumber + 1)"><q-icon color="primary" name="navigate_next" /></a>
             </div>
-            <span v-if="this.blockHeader" style="text-caption text-center">
-              Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(this.blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(this.blockHeader.witness)">{{ this.blockHeader.witness }}</router-link>
-              <div><q-icon name="history" /><span :title="this.blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(this.blockHeader.timestamp) }}</span></div>
+            <span v-if="blockHeader" style="text-caption text-center">
+              Witnessed by <q-avatar size="sm"><q-img :src="getHiveAvatarUrl(blockHeader.witness)" /></q-avatar><router-link :to="returnAccountLink(blockHeader.witness)">{{ blockHeader.witness }}</router-link>
+              <div><q-icon name="history" /><span :title="blockHeader.timestamp" class="text-grey text-subtitle">{{ timeDelta(blockHeader.timestamp) }}</span></div>
               <div><q-btn flat color="primary" v-if="viewType !== 'simple'" @click="viewType = 'simple'" icon="unfold_less" /></div>
             </span>
         </q-card-section>
         <div class="text-center" v-if="filterOps.length > 0">Showing only: {{ filterOps.join(",") }} <q-btn dense flat no-caps icon="cancel" color="red" title="Remove filter" @click="filterOps = []" /></div>
-        <q-card-section v-if="this.blockOpsReal.length > 0 || this.blockOpsVirtual.length > 0">
+        <q-card-section v-if="blockOpsReal.length > 0 || blockOpsVirtual.length > 0">
             <div class="text-h6 text-center">{{ blockOpsRealCount }} Transactions in this block</div>
             <q-list bordered separator dense>
-            <q-item v-for="tx in this.blockOpsReal.filter(filterOpsType)" :key="tx.index">
+            <q-item v-for="tx in blockOpsReal.filter(filterOpsType)" :key="tx.index">
                 <q-item-section v-if="tx.op[0] === 'vote'">
                 <q-item-label>
                     <q-avatar size="md"><q-img :src="getHiveAvatarUrl(tx.op[1].voter)" /></q-avatar>
@@ -192,9 +192,9 @@
                 </q-item-section>
             </q-item>
             </q-list>
-            <div class="text-h6 text-center">{{ this.blockOpsVirtual.length }} Virtual Operation<span v-if="this.blockOpsVirtual.length >= 2">s</span></div>
+            <div class="text-h6 text-center">{{ blockOpsVirtual.length }} Virtual Operation<span v-if="blockOpsVirtual.length >= 2">s</span></div>
             <q-list bordered separator dense>
-            <q-item v-for="tx in this.blockOpsVirtual.filter(filterOpsType)" :key="tx.index">
+            <q-item v-for="tx in blockOpsVirtual.filter(filterOpsType)" :key="tx.index">
             <q-item-section>
                 <q-chip dense class="text-bold">{{ tx.op[0] }}</q-chip>
                 <json-viewer :data="tx.op[1]" />
@@ -215,7 +215,7 @@
         </q-card-section>
         <q-card-section class="text-body text-center" v-if="!loading">
             <a @click="updateBlock(blockNumber - 1)"><q-icon color="white" name="navigate_before" /></a>
-            <span>Block <router-link :to="returnBlockLink(this.blockNumber)">{{ this.tidyNumber(this.blockNumber) }}</router-link></span>
+            <span>Block <router-link :to="returnBlockLink(blockNumber)">{{ tidyNumber(blockNumber) }}</router-link></span>
             <a @click="updateBlock(blockNumber + 1)"><q-icon color="white" name="navigate_next" /></a>
         </q-card-section>
     </q-card>
@@ -229,7 +229,7 @@ a:visited { color: #3E92CC; }
 <script>
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
-import { mixin as VueTimers } from 'vue-timers'
+import VueTimers from 'src/mixins/timers.js'
 import animInt from 'components/animInt.vue'
 export default {
   name: 'blockView',
@@ -272,11 +272,11 @@ export default {
     }
   },
   watch: {
-    liveRefresh: function (newState, oldState) {
+    liveRefresh: function (newState, _oldState) {
       if (newState === true) {
-        this.$timer.start('blockTimer')
+        this.timers.blockTimer.start()
       } else {
-        this.$timer.stop('blockTimer')
+        this.timers.blockTimer.stop()
       }
       console.log('blockTimer ' + this.timers.blockTimer.isRunning)
     }

@@ -103,7 +103,7 @@ export function lock (username) {
 
 export function save (username, password, keys) {
   // prepare user
-  let storedUser = {} // eslint-disable-line prefer-const
+  const storedUser = {}
 
   if (keys.posting) {
     storedUser.posting = encryptKey(keys.posting, password)

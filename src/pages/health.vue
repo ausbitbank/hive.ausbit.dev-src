@@ -43,7 +43,7 @@ export default {
   computed: {
     globalProps: {
       get () {
-        return this.$store.state.hive.globalProps
+        return this.$hiveStore.globalProps
       }
     }
   },
@@ -60,7 +60,7 @@ export default {
   },
   mounted () {
     document.title = 'Hive Network Health'
-    this.$store.dispatch('hive/getGlobalProps')
+    this.$hiveStore.getGlobalProps()
     this.$hive.api.getAccountCountAsync()
       .then(res => { if (res) { this.accountCount = res } })
   }

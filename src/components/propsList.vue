@@ -1,6 +1,6 @@
 <template>
     <span>
-    <span v-for="prop in Object.entries(this.obj)" :key="prop.index">
+    <span v-for="prop in Object.entries(obj)" :key="prop.index">
     <q-list bordered separator dense v-if="!ignoreKeys.includes(prop[0])">
         <q-item>
             <q-item-section side class="text-bold text-grey">

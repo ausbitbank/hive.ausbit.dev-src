@@ -10,7 +10,7 @@
       <user-services :username="username" />
     </div>
     <div class="text-center">
-        <span v-if="account && roundedHPTidy !== '0' && roundedHPTidy !== null" title="Hive Power (rounded)" class="q-mr-md"><q-icon name="img:statics/hive.svg" /> {{ roundedHPTidy }}</span>
+        <span v-if="account && roundedHPTidy !== '0' && roundedHPTidy !== null" title="Hive Power (rounded)" class="q-mr-md"><q-icon name="img:/statics/hive.svg" /> {{ roundedHPTidy }}</span>
         <span class="q-mr-md text-caption" v-if="account && account.last_post !== '1970-01-01T00:00:00'">Posted: <router-link :to="linkPosts(account.name)"><span :title="account.last_post">{{ timeDelta(account.last_post) }}</span></router-link></span>
         <span v-if="account && account.last_vote_time !== '1970-01-01T00:00:00'" class="text-caption">Voted: {{ timeDelta(account.last_vote_time) }}</span>
         <q-fab flat dense v-if="loggedInUser && username !== loggedInUser" color="primary" icon="settings" direction="left" :persistent="false" size="xs" @click="getRelationship(username)">
@@ -27,6 +27,7 @@
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
 export default {
   name: 'userCard',
@@ -37,7 +38,7 @@ export default {
     }
   },
   components: {
-    userServices: () => import('components/userServices.vue')
+    userServices: defineAsyncComponent(() => import('components/userServices.vue'))
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
@@ -58,17 +59,17 @@ export default {
     followUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
       this.relationship.follows = true
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unfollowUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
       this.relationship.follows = false
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     ignoreUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
       this.relationship.ignores = true
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unignoreUser (who) {
       this.relationship.ignores = false
@@ -77,8 +78,8 @@ export default {
   },
   mounted () {},
   computed: {
-    account: function () { return this.$store.state.hive.accounts[this.username] },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
+    account: function () { return this.$hiveStore.accounts[this.username] },
+    loggedInUser: function () { return this.$hiveStore.user.username },
     meta: function () {
       if (this.account !== undefined) {
         if (this.account.posting_json_metadata) {
@@ -130,7 +131,7 @@ export default {
         return null
       }
     },
-    globalProps: function () { return this.$store.state.hive.globalProps }
+    globalProps: function () { return this.$hiveStore.globalProps }
   }
 }
 </script>

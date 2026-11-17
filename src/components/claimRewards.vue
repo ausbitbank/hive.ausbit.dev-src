@@ -23,7 +23,7 @@ export default {
   methods: {
     claimRewards () {
       var claimjson = { account: this.username, reward_hive: this.A.reward_hive_balance, reward_hbd: this.A.reward_hbd_balance, reward_vests: this.A.reward_vesting_balance }
-      this.$store.commit('hive/addToQueue', [this.username, 'posting', ['claim_reward_balance', claimjson]])
+      this.$hiveStore.addToQueue([this.username, 'posting', ['claim_reward_balance', claimjson]])
       this.loading = false
       this.dialog = false
     }

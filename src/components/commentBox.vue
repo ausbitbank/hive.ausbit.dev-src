@@ -1,8 +1,8 @@
 <template>
-    <div flat bordered v-if="this.loggedInUser && !commentSent">
+    <div v-if="loggedInUser && !commentSent">
         <q-card flat bordered class="q-ma-none q-pa-sm rounded-borders">
         <div class="text-center">Reply to <router-link :to="returnUserLink(parent_author)">{{ parent_author }}</router-link> / <router-link :to="returnPostLink(parent_author, parent_permlink)">{{ parent_permlink.substr(0, 20) }}...</router-link></div>
-        <vue-simplemde v-model="commentText" ref="markdownEditor" :configs="editorConfig" class="q-pa-sm" />
+        <markdown-editor v-model="commentText" :configs="editorConfig" class="q-pa-sm" />
         <q-expansion-item v-model="advanced" label="Advanced Options" icon="settings" color="grey">
           <q-input label="Post Title (optional for comments)" v-model="title" />
           <q-input label="JSON Metadata" v-model="defaultMeta" />
@@ -16,15 +16,12 @@
         </q-card>
     </div>
 </template>
-<style>
-  @import '../statics/simplemde-theme-dark.min.css';
-</style>
 <script>
-import VueSimplemde from 'vue-simplemde'
+import MarkdownEditor from 'components/MarkdownEditor.vue'
 export default {
   name: 'commentBox',
   props: ['parent_author', 'parent_permlink', 'tags'],
-  components: { VueSimplemde },
+  components: { MarkdownEditor },
   data () {
     return {
       commentText: '',
@@ -50,18 +47,16 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
-    loginType: { get () { return this.$store.state.hive.user.loginType } }
+    loginType: { get () { return this.$hiveStore.user.loginType } }
   },
   methods: {
     async comment () {
       var newpermlink = this.$hive.formatter.commentPermlink(this.parent_author, this.parent_permlink)
-      var commentOptions = []
-      if (this.$store.state.hive.user.settings.beneficiary.length !== 0) {
-        commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: this.max_accepted_payout, percent_hbd: this.percent_hbd, allow_votes: this.allow_votes, allow_curation_rewards: this.allow_curation_rewards, extensions: [[0, { beneficiaries: this.$store.state.hive.user.settings.beneficiary }]] }
-      } else {
-        commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: this.max_accepted_payout, percent_hbd: this.percent_hbd, allow_votes: this.allow_votes, allow_curation_rewards: this.allow_curation_rewards }
+      const commentOptions = { author: this.loggedInUser, permlink: newpermlink, max_accepted_payout: this.max_accepted_payout, percent_hbd: this.percent_hbd, allow_votes: this.allow_votes, allow_curation_rewards: this.allow_curation_rewards }
+      if (this.$hiveStore.user.settings.beneficiary.length !== 0) {
+        commentOptions.extensions = [[0, { beneficiaries: this.$hiveStore.user.settings.beneficiary }]]
       }
       var op = ['comment', {
         parent_author: this.parent_author,
@@ -73,7 +68,9 @@ export default {
         json_metadata: this.defaultMeta,
         comment_options: commentOptions
       }]
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', op])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', op])
+      this.commentSent = true
+      this.$q.notify({ type: 'positive', message: 'Reply queued for broadcast' })
     },
     returnUserLink (user) { return '/@' + user },
     returnPostLink (author, permlink) { return '/@' + author + '/' + permlink }

@@ -8,12 +8,12 @@
           {{ queue.length }} Queued Actions
           <q-btn dense flat icon="play_circle" color="green" v-if="timerEnabled" @click="toggleTimer()" title="Queue is running, click to pause" />
           <q-btn dense flat icon="pause_circle" color="orange" v-if="!timerEnabled" @click="toggleTimer()" title="Queue is paused, click to continue" />
-          <q-btn dense flat icon="cancel" color="red" title="Cancel queued actions" @click="$store.commit('hive/clearQueue')" v-if="queue.length > 0"/>
+          <q-btn dense flat icon="cancel" color="red" title="Cancel queued actions" @click="$hiveStore.clearQueue()" v-if="queue.length > 0"/>
         </q-card-section>
-        <q-separator v-if="this.queue.length > 0" />
-        <q-card-section class="q-ma-none q-pa-none" v-if="this.queue.length > 0">
+        <q-separator v-if="queue.length > 0" />
+        <q-card-section class="q-ma-none q-pa-none" v-if="queue.length > 0">
           <q-list separator dense>
-            <q-item v-for="(a, index) in this.queue" :key="index" clickable dense>
+            <q-item v-for="(a, index) in queue" :key="index" clickable dense>
               <q-item-section avatar>
                 <q-avatar><q-img :src="getHiveAvatarUrl(a[0])" /></q-avatar>
                 <q-avatar v-if="a[1] === 'posting'"><q-icon name="lock" title="Posting key" color="green"/></q-avatar>
@@ -24,7 +24,7 @@
               </q-item-section>
               <q-item-section side>
                 <q-spinner-clock v-if="index === 0 && timerEnabled" color="grey" size="md" />
-                <q-btn title="Remove from queue" icon="cancel" color="red" @click="$store.commit('hive/removeFromQueue', a)" dense flat/>
+                <q-btn title="Remove from queue" icon="cancel" color="red" @click="$hiveStore.removeFromQueue(a)" dense flat/>
                 <q-btn title="Broadcast" icon="send" color="orange" @click="broadcast(a)" dense flat/>
               </q-item-section>
             </q-item>
@@ -37,10 +37,8 @@
 </template>
 <script>
 import { keychain } from '@hiveio/keychain'
-import smartlock from 'components/smartlock'
+import smartlock from 'components/smartlock/index.js'
 import jsonViewer from 'components/jsonViewer.vue'
-import { openURL } from 'quasar'
-// if (store().state.hive.user.settings.apiNode !== undefined) { hive.api.setOptions({ url: store().state.hive.user.settings.apiNode }) } else { hive.api.setOptions({ url: 'https://rpc.ausbit.dev' }) }
 export default {
   name: 'queue',
   data () {
@@ -52,10 +50,10 @@ export default {
   },
   components: { jsonViewer },
   computed: {
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    loginType: function () { return this.$store.state.hive.user.loginType },
-    queue: function () { return this.$store.state.hive.queue },
-    globalProps: function () { return this.$store.state.hive.globalProps }
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    loginType: function () { return this.$hiveStore.user.loginType },
+    queue: function () { return this.$hiveStore.queue },
+    globalProps: function () { return this.$hiveStore.globalProps }
   },
   methods: {
     toggleTimer () {
@@ -63,7 +61,7 @@ export default {
       if (this.timerEnabled) { setTimeout(this.broadcastNext, this.timerStart) }
     },
     successfullBroadcast (action, notify = true) {
-      this.$store.commit('hive/removeFromQueue', action)
+      this.$hiveStore.removeFromQueue(action)
       this.pastQueue.push(action)
       console.log(this.pastQueue)
       if (notify) {
@@ -77,9 +75,9 @@ export default {
         })
       }
       if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
-      if (['claim_reward_balance', 'account_update', 'account_update2', 'withdraw_vesting'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].account) }
-      if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].from) }
-      if (['convert', 'collateralized_convert', 'limit_order_cancel', 'limit_order_create'].includes(action[2][0])) { this.$store.dispatch('hive/getAccount', action[2][1].owner) }
+      if (['claim_reward_balance', 'account_update', 'account_update2', 'withdraw_vesting'].includes(action[2][0])) { this.$hiveStore.getAccount(action[2][1].account) }
+      if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(action[2][0])) { this.$hiveStore.getAccount(action[2][1].from) }
+      if (['convert', 'collateralized_convert', 'limit_order_cancel', 'limit_order_create'].includes(action[2][0])) { this.$hiveStore.getAccount(action[2][1].owner) }
     },
     broadcastNext () { if (this.queue.length > 0) { this.broadcast(this.queue[0]) } },
     broadcast (action) {
@@ -101,31 +99,13 @@ export default {
       if (this.loginType === 'keychain') {
         this.broadcastKeychain(action)
       }
-      if (this.loginType === 'hivesigner_popup') {
-        this.broadcastHivesignerPopup(action)
-      }
-      if (this.loginType === 'has') {
-        // this.broadcastHas(action)
-        console.log('Broadcast with HAS')
-        console.log(action)
-      }
-    },
-    broadcastHivesignerPopup (action) {
-      console.log(action)
-      var url = 'https://www.hivesigner.com/sign/' + action[2][0] + '?'
-      var params = action[2][1]
-      var qs = new URLSearchParams(params)
-      url = url + qs.toString()
-      openURL(url)
-      this.$q.notify('Opened hivesigner popup: ' + url)
-      this.successfullBroadcast(action, false)
     },
     async broadcastKeychain (action) {
       var user = action[0]
       var keytype = action[1]
       var op = action[2]
       var ops = [op]
-      // var rpc = this.$store.state.hive.user.settings.apiNode || 'https://rpc.ausbit.dev'
+      // var rpc = this.$hiveStore.user.settings.apiNode || 'https://rpc.ausbit.dev'
       if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }
@@ -204,7 +184,7 @@ export default {
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     if (this.timerEnabled && this.queue.length > 0) { setTimeout(this.broadcastNext, this.timerStart) }
   }
 }

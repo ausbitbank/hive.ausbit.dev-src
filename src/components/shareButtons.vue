@@ -15,8 +15,8 @@ export default {
   },
   props: ['title'],
   methods: {
-    returnServiceIcon (service) { return 'img:statics/' + service + '.svg' },
-    returnCurrentUrl () { return 'https://hive.ausbit.dev' + this.$router.currentRoute.path },
+    returnServiceIcon (service) { return 'img:/statics/' + service + '.svg' },
+    returnCurrentUrl () { return 'https://hive.ausbit.dev' + this.$route.path },
     copy () { var i = this.returnCurrentUrl(); copyToClipboard(i); this.$q.notify('Copied to clipboard: ' + i) },
     returnServiceUrl (service) {
       var url = this.returnCurrentUrl()

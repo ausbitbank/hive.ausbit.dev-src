@@ -30,9 +30,9 @@ export default {
   },
   components: {},
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
+    globalProps: function () { return this.$hiveStore.globalProps },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    account: function () { return this.$hiveStore.accounts[this.username] },
     headingLabel: function () { return (this.conversions.length + this.collateralized_conversions.length) + ' pending conversions requests' }
   },
   methods: {

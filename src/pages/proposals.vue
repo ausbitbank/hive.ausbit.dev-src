@@ -28,17 +28,16 @@
         <q-card bordered flat v-for="proposal in filteredProposals" :key="proposal.index">
           <proposal :p="proposal" :returnProposalVotes="returnProposalVotes" />
         </q-card>
-        <q-btn class="q-ma-md" @click="listProposals()" label="Load more proposals" push color="primary" icon="sync" v-if="false" />
         </q-card-section>
       </q-card>
     </q-page>
 </template>
 <script>
-import moment from 'moment'
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'Proposals',
   components: {
-    proposal: () => import('components/proposal.vue')
+    proposal: defineAsyncComponent(() => import('components/proposal.vue'))
   },
   data () {
     return {
@@ -54,25 +53,18 @@ export default {
   },
   methods: {
     getAccount (username) {
-      if (this.$store.state.hive.accounts[username] === undefined) {
-        this.$store.dispatch('hive/getAccount', username)
+      if (this.$hiveStore.accounts[username] === undefined) {
+        this.$hiveStore.getAccount(username)
       }
     },
     listProposals () {
-      var start = [-1]
-      if (this.proposals.length > 0) { start = [this.proposals[this.proposals.length - 10].proposal_id] }
-      var params = { limit: 200, order: 'by_total_votes', order_direction: 'descending', start: start }
+      const params = { limit: 200, order: 'by_total_votes', order_direction: 'descending', start: ['-1'] }
       this.$hive.api.callAsync('database_api.list_proposals', params)
         .then(response => {
-          if (this.proposals.length > 0) {
-            this.proposals.concat(response.proposals)
-          } else {
-            this.proposals = response.proposals
-          }
-          if (this.loggedInUser) {
-            this.getUserVotes()
-          }
+          this.proposals = response.proposals
+          if (this.loggedInUser) this.getUserVotes()
         })
+        .catch(() => this.$q.notify({ type: 'negative', message: 'Failed to load proposals' }))
     },
     tidyNumber (x) {
       if (x) {
@@ -82,12 +74,6 @@ export default {
       } else {
         return null
       }
-    },
-    timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
     },
     vestToHive (vests) {
       if (this.globalProps) {
@@ -112,15 +98,15 @@ export default {
   },
   computed: {
     loggedInUser: function () {
-      return this.$store.state.hive.user.username
+      return this.$hiveStore.user.username
     },
     globalProps: function () {
-      return this.$store.state.hive.globalProps
+      return this.$hiveStore.globalProps
     },
     daoAccount: {
       cache: false,
       get () {
-        return this.$store.state.hive.accounts['hive.fund']
+        return this.$hiveStore.accounts['hive.fund']
       }
     },
     filteredProposals: function () {
@@ -144,12 +130,10 @@ export default {
   },
   mounted () {
     document.title = 'Hive Proposal System'
-    if (this.daoAccount === undefined || this.daoAccount.name !== this.username) {
-      this.getAccount('hive.fund')
-    }
+    if (this.daoAccount === undefined) this.getAccount('hive.fund')
     this.listProposals()
     if (this.globalProps.empty) {
-      this.$store.dispatch('hive/getGlobalProps')
+      this.$hiveStore.getGlobalProps()
     }
   }
 }

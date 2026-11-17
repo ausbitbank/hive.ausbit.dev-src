@@ -43,9 +43,9 @@
                     Downvote Power
                 </div>
                 <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="this.downvotePowerPct / 100" color="red" class="q-mt-sm">
+                    <q-linear-progress dark stripe rounded size="20px" :value="downvotePowerPct / 100" color="red" class="q-mt-sm">
                       <div class="absolute-full flex flex-center">
-                          <q-badge color="black" text-color="primary" :label="this.downvotePowerPct" />
+                          <q-badge color="black" text-color="primary" :label="downvotePowerPct" />
                       </div>
                     </q-linear-progress>
                 </div>
@@ -98,7 +98,7 @@
         </q-card>
         <q-card flat bordered class="q-pa-none q-ml-md q-mr-md q-mb-none text-center">
           <div class="text-h6 text-center">Withdraw Routes</div>
-          <withdrawRoutes :username="this.username" />
+          <withdrawRoutes :username="username" />
         </q-card>
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="account">
             <q-card-section>
@@ -116,7 +116,7 @@
                 <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
             </q-card-section>
         </q-card>
-        <account-authorities :account="account" :witness="witness" v-on:authEdited="$store.dispatch('hive/getAccount', username)" />
+        <account-authorities :account="account" :witness="witness" v-on:authEdited="$hiveStore.getAccount(username)" />
         <q-card flat bordered class="q-pa-sm q-ma-md" v-if="witness">
             <q-card-section>
                 <div class="text-h6 text-center">
@@ -149,7 +149,7 @@
         <q-toolbar rounded flat class="text-center">
           <q-space />
           <q-btn title="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
-          <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @input="autoRefreshToggle()"  /><span v-if="autorefresh" class="q-ml-md">&nbsp; every <q-input v-model.number="autorefreshMinutes" type="number" dense standout style="max-width: 80px" :rules="[ val => val > 0.5 || 'Too fast!']" /> minutes</span>
+          <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @update:model-value="autoRefreshToggle()"  /><span v-if="autorefresh" class="q-ml-md">&nbsp; every <q-input v-model.number="autorefreshMinutes" type="number" dense standout style="max-width: 80px" :rules="[ val => val > 0.5 || 'Too fast!']" /> minutes</span>
           <q-btn title="Filter Operations" icon="sort" dense size="sm" round color="blue-grey" class="q-ml-sm hvr">
             <q-popup-proxy>
               <q-card class="q-ma-md" rounded>
@@ -161,15 +161,15 @@
           </q-btn>
           <q-space />
         </q-toolbar>
-        <div v-if="this.$route.query.filter" class="text-center">
-            Only showing: <span v-for="i in this.$route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" disable /></span>
+        <div v-if="$route.query.filter" class="text-center">
+            Only showing: <span v-for="i in $route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" disable /></span>
         </div>
         <account-operations :accountOperations="accountOperations" />
         <q-card class="text-center">
             <q-card-section>
                 <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2"/>
                 <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1"/>
-                Page {{ this.page }} <q-spinner-puff size="2em" color="primary" v-if="accountOperations.length < 1" />
+                Page {{ page }} <q-spinner-puff size="2em" color="primary" v-if="accountOperations.length < 1" />
                 <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
                 <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
             </q-card-section>
@@ -182,7 +182,6 @@
 </style>
 <script>
 import moment from 'moment'
-import { debounce } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import propsList from 'components/propsList.vue'
@@ -220,7 +219,7 @@ export default {
       accountOperations: [],
       accountOperationsLimit: 100,
       accountOperationsMarker: null,
-      page: this.$router.currentRoute.query.page || 1,
+      page: this.$route.query.page || 1,
       editPostingJson: false,
       editJsonMeta: false,
       error: false,
@@ -241,7 +240,8 @@ export default {
   },
   watch: {
     username: function () {
-      debounce(function () { this.accountOperationsMarker = null; this.init() }, 200)
+      this.accountOperationsMarker = null
+    this.init()
     },
     $route: function () {
       this.init()
@@ -249,17 +249,17 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     globalProps: {
       get () {
-        return this.$store.state.hive.globalProps
+        return this.$hiveStore.globalProps
       }
     },
     account: {
       cache: false,
       get () {
-        return this.$store.state.hive.accounts[this.username]
+        return this.$hiveStore.accounts[this.username]
       }
     },
     accountAge: function () {
@@ -427,7 +427,7 @@ export default {
         this.getAccountHistory(this.username)
       } else {
         var limit = this.accountOperationsLimit
-        var page = this.$router.currentRoute.query.page || 1
+        var page = this.$route.query.page || 1
         var pageReq = this.accountOperationsMarker - (limit * page)
         pageReq = pageReq + limit
         if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
@@ -444,12 +444,14 @@ export default {
           .catch(err => {
             this.loading = false
             console.error(err)
-            if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
+            const sequence = err?.data?.stack?.[0]?.data?.sequence
+            const message = err?.cause?.message || err?.message || ''
+            if (sequence && message.includes('Could not find filtered operation in')) {
               this.failCount++
-              console.log('fails: ' + this.failCount)
-              this.accountOperationsMarker = err.data.stack[0].data.sequence
-              console.log('account operations marker: ' + this.accountOperationsMarker)
-              if (this.failCount <= this.failCountMax) { debounce(this.getAccountHistoryFiltered(), 5000) }
+              this.accountOperationsMarker = sequence
+              if (this.failCount <= this.failCountMax) {
+                setTimeout(() => this.getAccountHistoryFiltered(), 5000)
+              }
             }
           })
       }
@@ -457,7 +459,7 @@ export default {
     filterOpsVotes (op) { if (op[1].op[0] === 'vote') { return true } else { return false } },
     getAccountHistory () {
       var limit = this.accountOperationsLimit
-      var page = this.$router.currentRoute.query.page || 1
+      var page = this.$route.query.page || 1
       var pageReq = this.accountOperationsMarker - (limit * page)
       pageReq = pageReq + limit
       if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
@@ -502,9 +504,6 @@ export default {
     linkEcency (username) {
       return 'https://ecency.com/@' + username
     },
-    linkHiveWorld (username) {
-      return '/hiveworld/@' + username
-    },
     linkTx (txid) {
       return '/tx/' + txid
     },
@@ -512,8 +511,8 @@ export default {
       return this.$hive.formatter.reputation(rep)
     },
     getAccount (username) {
-      if (this.$store.state.hive.accounts[username] === undefined) {
-        this.$store.dispatch('hive/getAccount', this.username)
+      if (this.$hiveStore.accounts[username] === undefined) {
+        this.$hiveStore.getAccount(this.username)
       }
     },
     getWitness (username) {
@@ -526,7 +525,7 @@ export default {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getGlobalProps () {
       if (this.globalProps.empty) {
-        this.$store.dispatch('hive/getGlobalProps')
+        this.$hiveStore.getGlobalProps()
       }
     },
     vestToHive (vests) {
@@ -553,12 +552,12 @@ export default {
     },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
-    refreshAccount () { this.$store.dispatch('hive/getAccount', this.username) },
+    refreshAccount () { this.$hiveStore.getAccount(this.username) },
     init () {
       this.getGlobalProps()
       // this.getMedianPrice()
       // this.getRewardFundPost()
-      this.page = this.$router.currentRoute.query.page || 1
+      this.page = this.$route.query.page || 1
       this.username = this.$route.params.username
       document.title = this.username
       if (this.account === undefined || this.account.name !== this.username) {
@@ -566,13 +565,13 @@ export default {
         this.getWitness(this.username)
       }
       this.getAccountHistoryMarker()
-      if (this.autoRefresh === true) { setTimeout(this.autoRefreshTrigger(), this.autorefreshMinutes * 60 * 1000) }
+      if (this.autorefresh === true) { setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000) }
     }
   },
   created () {
     this.init()
   },
-  destroy () {
+  beforeUnmount () {
     clearTimeout(this.autorefreshTimer)
   }
 }

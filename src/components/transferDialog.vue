@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined" class="text-center">
+  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="$hiveStore.accounts[username] !== undefined" class="text-center">
     <q-card-section header>
       <h4 class="text-center text-bold q-ma-none">Transfer {{ tokenName }}</h4>
     </q-card-section>
@@ -10,7 +10,7 @@
         <q-popup-proxy>
           <q-card flat bordered class="text-center">
             <q-card-section header class="text-bold text-center">
-              Known {{ this.tokenName }} exchange accounts
+              Known {{ tokenName }} exchange accounts
             </q-card-section>
             <q-btn flat v-for="ea in exchanges" :key="ea.index" :label="ea" color="primary" @click="setUsername(ea)" v-close-popup />
           </q-card>
@@ -19,7 +19,7 @@
       <div><q-input label="Amount" v-model="amount" style="margin: auto; max-width: 200px" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
-      <q-input label="Memo" autogrow v-model="memo" debounce="400" @input="checkEncryption()" style="margin: auto; max-width: 200px" clearable /><q-checkbox v-model="encrypted" @input="toggleEncryption()" label="Encrypt Memo" />
+      <q-input label="Memo" autogrow v-model="memo" debounce="400" @update:model-value="checkEncryption()" style="margin: auto; max-width: 200px" clearable /><q-checkbox v-model="encrypted" @update:model-value="toggleEncryption()" label="Encrypt Memo" />
       <div v-if="network === 'hive'">
         <q-toggle v-model="recurrent" label="Recurring Payments" />
         <div v-if="recurrent" class="shadow-5 q-pa-sm">
@@ -50,7 +50,7 @@
         Deposits to deepcrypto8 (binance) require a 9 character memo
       </div>
       <div class="text-center q-ma-md">
-        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
+        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn dense label="Send" icon="send" color="primary" @click="doTheThing()" v-if="!sent" v-close-popup :disable="disableSendButton" />
       </div>
     </q-card-section>
@@ -73,10 +73,8 @@ export default {
       recurrentHours: 24,
       recurrentTimes: 30,
       exchangesSupport: [
-        { account: 'bittrex', tokens: ['HIVE', 'HBD'] },
         { account: 'deepcrypto8', tokens: ['HIVE'] },
         { account: 'binance-hot', tokens: [] },
-        { account: 'ionomy', tokens: ['HIVE', 'HBD'] },
         { account: 'huobi-pro', tokens: ['HIVE'] },
         { account: 'huobi-withdrawal', tokens: [] },
         { account: 'blocktrades', tokens: ['HIVE', 'HBD'] },
@@ -139,9 +137,9 @@ export default {
     },
     availableBalance: function () {
       if (this.network === 'hive' && this.tokenName === 'HIVE') {
-        return this.$store.state.hive.accounts[this.username].balance.split(' ')[0]
+        return this.$hiveStore.accounts[this.username].balance.split(' ')[0]
       } else if (this.network === 'hive' && this.tokenName === 'HBD') {
-        return this.$store.state.hive.accounts[this.username].hbd_balance.split(' ')[0]
+        return this.$hiveStore.accounts[this.username].hbd_balance.split(' ')[0]
       } else {
         return null
       }
@@ -178,7 +176,7 @@ export default {
       }
     },
     recurrentTransfer () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes }]])
     },
     transfer () {
       if (this.network === 'hive') {
@@ -188,7 +186,7 @@ export default {
       }
     },
     transferHive () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo }]])
     },
     transferHiveEngine () {
       var j = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
@@ -198,12 +196,12 @@ export default {
         id: 'ssc-mainnet-hive',
         json: j
       }
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
     }
   },
   mounted () {
-    if (this.$store.state.hive.accounts[this.username] === undefined) {
-      this.$store.dispatch('hive/getAccount', this.username)
+    if (this.$hiveStore.accounts[this.username] === undefined) {
+      this.$hiveStore.getAccount(this.username)
     }
   }
 }

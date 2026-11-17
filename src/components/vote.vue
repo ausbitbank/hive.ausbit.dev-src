@@ -14,7 +14,7 @@ export default {
   props: ['votes', 'active_votes', 'author', 'permlink'],
   data () {
     return {
-      weight: this.$store.state.hive.user.settings.voteWeightPost,
+      weight: this.$hiveStore.user.settings.voteWeightPost,
       voteSent: false,
       voteSentWeight: null,
       direction: null
@@ -22,7 +22,7 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     upvotes () {
       if (this.votes) {
@@ -138,7 +138,7 @@ export default {
       } else {
         this.direction = d
         if (d === 'up') {
-          this.weight = this.$store.state.hive.user.settings.voteWeightPost || 100
+          this.weight = this.$hiveStore.user.settings.voteWeightPost || 100
         } else {
           this.weight = -100
         }
@@ -151,7 +151,7 @@ export default {
     async vote (permlink, author, weight) {
       this.voteSent = true
       this.voteSentWeight = weight
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]])
       /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
       if (success) {
         this.$q.notify('Voted ' + weight + '% on @' + author + '/' + permlink)

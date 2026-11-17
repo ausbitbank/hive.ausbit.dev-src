@@ -4,9 +4,7 @@
     <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
             <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" title="View coin on coingecko"><q-icon name="open_in_new" /></a></div>
-                <sparkline width="250" height="60" v-if="coin.sparkline_in_7d">
-                    <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
-                </sparkline>
+                <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
             <div v-if="coin.market_cap !== 0"><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
             <div><span class="text-bold">Total Volume: </span> ${{ tidyNumber(coin.total_volume) }}</div>
@@ -17,12 +15,12 @@
         </q-card-section>
     </q-card>
     <div class="text-center">
-      <div class="text-caption">Priced in <span class="text-bold" @click="this.settingsDialog = true">{{ this.currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
+      <div class="text-caption">Priced in <span class="text-bold" @click="settingsDialog = true">{{ currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
       <q-btn push icon="settings" title="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
       <q-dialog v-model="settingsDialog">
           <q-card flat bordered>
               <q-card-section>
-                  <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
+                  <q-select filled v-model="selectedCoins" multiple :options="coinList" use-chips stack-label label="Coins" />
                   <q-input v-model="currency" label="Currency" />
                   <q-input v-model="sortOrder" label="Sort Order" />
                   <q-toggle left-label v-model="sparklineEnabled" label="Sparkline Chart" />
@@ -30,7 +28,7 @@
               </q-card-section>
           </q-card>
       </q-dialog>
-      <span v-if="this.$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></span>
+      <span v-if="$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></span>
     </div>
     </span>
     </span>
@@ -41,12 +39,13 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import sparkline from 'vue-sparklines'
+import Sparkline from 'components/Sparkline.vue'
 export default {
   name: 'Home',
   data () {
     return {
       coinGecko: null,
+      selectedCoins: [...(this.coins || [])],
       sparklineIndicatorStyle: false,
       sparklineStyle: { stroke: '#54a5ff', fill: '#aaaaaa' },
       spotStyle: { fill: '#54a5ff' },
@@ -60,7 +59,7 @@ export default {
     }
   },
   components: {
-    sparkline
+    Sparkline
   },
   props: {
     coins: {
@@ -74,8 +73,8 @@ export default {
   computed: {
     apiUrl: function () {
       var prefix = 'https://api.coingecko.com/api/v3/coins/markets?'
-      var coinString = this.coins.join('%2C%20')
-      var parameters = 'vs_currency=' + this.currency + '&' + 'ids=' + coinString + '&order=' + this.sortOrder + '&per_page=' + this.coins.length + '&page=1&sparkline=' + this.sparklineEnabled
+      var coinString = this.selectedCoins.join('%2C%20')
+      var parameters = 'vs_currency=' + this.currency + '&' + 'ids=' + coinString + '&order=' + this.sortOrder + '&per_page=' + this.selectedCoins.length + '&page=1&sparkline=' + this.sparklineEnabled
       var url = prefix + parameters
       return url
     }

@@ -1,9 +1,9 @@
 <template>
-    <q-page v-if="this.account !== undefined" class="text-center">
-        <account-header :globalProps="this.globalProps" :account="this.account" :showBalances="false" />
+    <q-page v-if="account !== undefined" class="text-center">
+        <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
         <q-card class="text-center q-ma-lg q-pa-md" padding rounded style="max-width: 400px; margin:auto">
           <community-feed-carousel :account="account.name" />
-            <div v-if="this.$store.state.hive.user.username === account.name"><router-link to='/created/my'>View my community feed</router-link></div>
+            <div v-if="$hiveStore.user.username === account.name"><router-link to='/created/my'>View my community feed</router-link></div>
             {{ account.name }} is subscribed to these communities :
           <q-list bordered separator>
             <q-item v-for="community in subscriptions" :key="community.index">
@@ -32,8 +32,8 @@ export default {
     communityFeedCarousel
   },
   computed: {
-    globalProps: { get () { return this.$store.state.hive.globalProps } },
-    account: { get () { return this.$store.state.hive.accounts[this.username] } }
+    globalProps: { get () { return this.$hiveStore.globalProps } },
+    account: { get () { return this.$hiveStore.accounts[this.username] } }
   },
   data () {
     return {
@@ -56,9 +56,9 @@ export default {
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     if (this.account === undefined) {
-      this.$store.dispatch('hive/getAccount', this.username)
+      this.$hiveStore.getAccount(this.username)
     }
     if (this.subscriptions === null) {
       this.getCommunitySubscriptions()

@@ -3,8 +3,8 @@
     <div>
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <router-link to="/trending" v-if="this.sortMethod === 'trending'"><q-icon name="trending_up" color="green" /> Trending</router-link>
-        <router-link to="/hot" v-if="this.sortMethod === 'hot'"><q-icon name="whatshot" v-if="this.sortMethod === 'hot'" color="red" /> Hot</router-link>
+        <router-link to="/trending" v-if="sortMethod === 'trending'"><q-icon name="trending_up" color="green" /> Trending</router-link>
+        <router-link to="/hot" v-if="sortMethod === 'hot'"><q-icon name="whatshot" v-if="sortMethod === 'hot'" color="red" /> Hot</router-link>
         <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-skeleton height="250px" width="400" animation="fade" rect v-if="loading" />
       <q-carousel
@@ -41,7 +41,7 @@
     <q-dialog v-model="settings">
       <q-card class="q-pa-md q-ma-md">
         <q-input v-model="newSort" label="Sort method" />
-        <q-btn label="update" color="primary" @click="settings = false; sortMethod = newSort; getRankedPosts()" />
+        <q-btn label="update" color="primary" @click="settings = false; currentSort = newSort; getRankedPosts()" />
       </q-card>
     </q-dialog>
   </div>
@@ -61,13 +61,14 @@ export default {
   data () {
     return {
       posts: [],
-      api: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog',
+      api: this.$hiveStore.user.settings.apiNode || 'https://api.hive.blog',
       slide: null,
       autoplay: true,
       settings: false,
       newSort: null,
       autoplaySlides: this.autoplay,
-      loading: false
+      loading: false,
+      currentSort: this.sortMethod
     }
   },
   props: {
@@ -114,7 +115,7 @@ export default {
         params: {
           observer: null,
           limit: 15,
-          sort: this.sortMethod,
+          sort: this.currentSort,
           start_author: null,
           start_permlink: null
         }

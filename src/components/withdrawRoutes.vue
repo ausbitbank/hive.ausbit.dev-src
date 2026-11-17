@@ -41,7 +41,7 @@ export default {
   props: ['username'],
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     }
   },
   methods: {
@@ -50,7 +50,7 @@ export default {
         .then(res => { this.routes = res })
     },
     setWithdrawRoute (fromAccount, toAccount, percent, autoVest) {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['set_withdraw_vesting_route', { from_account: fromAccount, to_account: toAccount, percent: percent, auto_vest: autoVest }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['set_withdraw_vesting_route', { from_account: fromAccount, to_account: toAccount, percent: percent, auto_vest: autoVest }]])
     }
   },
   mounted () {

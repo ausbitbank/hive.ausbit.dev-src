@@ -78,30 +78,26 @@
   </q-card>
 </template>
 <script>
+import { setHiveNode } from 'src/services/hive'
+
 export default {
   name: 'settings',
   data () {
     return {
-      darkBackground: this.$store.state.hive.user.settings.darkBackground,
-      voteWeightPost: this.$store.state.hive.user.settings.voteWeightPost,
-      voteWeightComment: this.$store.state.hive.user.settings.voteWeightComment,
-      beneficiaries: this.$store.state.hive.user.settings.beneficiary,
+      darkBackground: this.$hiveStore.user.settings.darkBackground,
+      voteWeightPost: this.$hiveStore.user.settings.voteWeightPost,
+      voteWeightComment: this.$hiveStore.user.settings.voteWeightComment,
+      beneficiaries: [...(this.$hiveStore.user.settings.beneficiary || [])],
       newBeneAccount: '',
       newBeneWeight: 1000,
-      apiNode: this.$store.state.hive.user.settings.apiNode || 'https://api.hive.blog',
-      heApiNode: this.$store.state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc',
-      ahNode: this.$store.state.hive.user.settings.ahNode || 'https://api.hive.blog'
+      apiNode: this.$hiveStore.user.settings.apiNode || 'https://api.hive.blog',
+      heApiNode: this.$hiveStore.user.settings.heApiNode || 'https://herpc.dtools.dev',
+      ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog'
     }
   },
   computed: {
-    account: {
-      get () {
-        return this.$store.state.hive.accounts[this.author]
-      }
-    },
-    loggedInUser: { get () { return this.$store.state.hive.user.username } },
+    loggedInUser: { get () { return this.$hiveStore.user.username } },
     voteColor: function () { if (Math.sign(this.voteWeightPost) !== -1) { if (Math.sign(this.voteWeightPost) === 0) { return 'grey' } return 'green' } else { return 'red' } }
-    // settings: { get () { return this.$store.state.hive.user.settings } }
   },
   methods: {
     addBene (account, weight) {
@@ -112,28 +108,22 @@ export default {
       this.addBene(account, weight)
     },
     removeBene (account) {
-      this.beneficiaries.splice(this.beneficiaries.findIndex(b => b.account === account), 1)
-    },
-    checkBene () {
+      const index = this.beneficiaries.findIndex(b => b.account === account)
+      if (index !== -1) this.beneficiaries.splice(index, 1)
     },
     saveSettings () {
-      var s = {
+      const settings = {
         darkBackground: this.darkBackground,
         voteWeightPost: this.voteWeightPost,
         voteWeightComment: this.voteWeightComment,
         beneficiary: this.beneficiaries,
         apiNode: this.apiNode,
+        ahNode: this.ahNode,
         heApiNode: this.heApiNode
       }
-      this.$store.commit('hive/updateSettings', s)
+      this.$hiveStore.updateSettings(settings)
+      setHiveNode(settings.apiNode)
       this.$emit('hide')
-    },
-    getBackgroundStyle () {
-      if (this.darkBackgroundToggle) {
-        return null
-      } else {
-        return 'gradientBg'
-      }
     },
     getBackgroundLabel () {
       if (this.darkBackground) {

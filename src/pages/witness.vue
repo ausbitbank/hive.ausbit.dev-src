@@ -64,7 +64,7 @@ export default {
     return {
       witness: null,
       newWitness: {
-        owner: this.loggedInUser,
+        owner: this.$hiveStore.user.username,
         url: '',
         signing_key: 'STM1111111111111111111111111111111114T1Anm',
         props: {
@@ -79,13 +79,13 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     account: {
       cache: false,
       get () {
         if (this.loggedInUser) {
-          return this.$store.state.hive.accounts[this.loggedInUser]
+          return this.$hiveStore.accounts[this.loggedInUser]
         } else {
           return null
         }
@@ -118,8 +118,8 @@ export default {
   },
   methods: {
     getAccount (username) {
-      if (this.$store.state.hive.accounts[username] === undefined) {
-        this.$store.dispatch('hive/getAccount', this.username)
+      if (username && this.$hiveStore.accounts[username] === undefined) {
+        this.$hiveStore.getAccount(username)
       }
     },
     getWitness (username) {
@@ -134,7 +134,7 @@ export default {
       this.$q.notify('Copied to clipboard: ' + input)
     },
     witnessUpdate () {
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['witness_update', this.witnessUpdateJson]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['witness_update', this.witnessUpdateJson]])
     },
     init () {
       this.getAccount(this.loggedInUser)

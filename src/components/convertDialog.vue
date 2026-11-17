@@ -22,7 +22,7 @@
         Available Balance: <b class="text-primary cursor-pointer" @click="amount = availableBalance">{{ availableBalance }}</b> {{ tokenName }}
       </div>
       <div class="text-center q-ma-md">
-        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
+        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn flat :label="buttonLabel" icon="warning" color="red" @click="doTheThing()" v-close-popup />
         <q-btn flat label="Cancel and Close" icon="cancel" color="primary" v-close-popup />
       </div>
@@ -69,9 +69,9 @@ export default {
       }
     },
     buttonLabel: function () { if (this.tokenName === 'HIVE') { return 'Convert HIVE to HBD' } else { return 'Convert HBD to HIVE' } },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    globalProps: function () { return this.$store.state.hive.globalProps }
+    account: function () { return this.$hiveStore.accounts[this.username] },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    globalProps: function () { return this.$hiveStore.globalProps }
   },
   methods: {
     doTheThing () { if (this.tokenName === 'HIVE') { this.convertHiveToHbd() } else { this.convertHbdToHive() } },
@@ -83,17 +83,17 @@ export default {
     },
     convertHiveToHbd () {
       var requestid = Math.floor((Math.random() * 10000) + 1)
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['collateralized_convert', { owner: this.username, requestid: requestid, amount: parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['collateralized_convert', { owner: this.username, requestid: requestid, amount: parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName }]])
     },
     convertHbdToHive () {
       var requestid = Math.floor((Math.random() * 10000) + 1)
       var a = parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['convert', { owner: this.username, requestid: requestid, amount: a }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['convert', { owner: this.username, requestid: requestid, amount: a }]])
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
-    if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+    if (this.$hiveStore.accounts[this.username] === undefined) { this.$hiveStore.getAccount(this.username) }
   }
 }
 </script>

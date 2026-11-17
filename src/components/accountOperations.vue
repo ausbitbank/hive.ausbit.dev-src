@@ -40,7 +40,7 @@
                       <div class="text-bold">{{ op[1].op[0] }}</div>
                       <json-viewer :data="op[1].op[1]" />
                       <q-item-label caption class="text-center text-caption">
-                        <span v-if="op[1].trx_id === '0000000000000000000000000000000000000000'">vtx {{ op[1].virtual_op }}</span>
+                        <span v-if="op[1].trx_id === '0000000000000000000000000000000000000000'" title="Virtual transaction">vtx</span>
                         <span v-else>tx <router-link :to="linkTx(op[1].trx_id)">{{ op[1].trx_id.substr(0,8) }}</router-link></span>
                         <span v-if="op[1].trx_id === '0000000000000000000000000000000000000000'"> in block <router-link :to="returnBlockLink(op[1].block,op[1].virtual_op)">{{ tidyNumber(op[1].block) }}</router-link></span>
                         <span v-else> in block <router-link :to="returnBlockLink(op[1].block, op[1].trx_id)">{{ op[1].block }}</router-link></span>

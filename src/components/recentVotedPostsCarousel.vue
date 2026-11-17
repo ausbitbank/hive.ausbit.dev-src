@@ -10,7 +10,7 @@
     <q-spinner-puff size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
-      <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently voted by {{ this.account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently voted by {{ account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -51,7 +51,6 @@ a:visited { color: #884488; }
 </style>
 <script>
 import moment from 'moment'
-import { debounce } from 'quasar'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const voteBitmask = makeBitMaskFilter([
@@ -124,7 +123,7 @@ export default {
           if (err.data && err.cause) {
             if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
               this.accountHistoryPointer = err.data.stack[0].data.sequence
-              debounce(this.getRecentVotes(username), 100)
+              setTimeout(() => this.getRecentVotes(username), 1000)
             }
           }
         })

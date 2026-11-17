@@ -1,14 +1,24 @@
-# hive.ausbit.dev source
+# hive.ausbit.dev
 
-This is the main source repository for hive.ausbit.dev
+An open-source block explorer and toolkit for the [Hive](https://hive.io) blockchain.
 
-You can find the project announcement post here
-https://hive.ausbit.dev/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more
+Browse blocks, transactions, accounts, wallets, posts, proposals, witnesses and the
+internal market. Signing is done with Hive Keychain or the built-in encrypted
+SmartLock.
+
+## Stack
+
+- Vue 3 (Options API)
+- Quasar 2 + Quasar CLI (Vite)
+- Pinia
+- Vue Router 5
+- `@hiveio/hive-js` for chain reads and transaction construction
+- Hive-Engine (via `sscjs`) and CoinGecko for token/market data
 
 ## Requirements
 
-- [Bun](https://bun.sh) (the repo ships a `bun.lockb` lockfile)
-- Node.js 18 or newer (tested on Node 26)
+- [Bun](https://bun.sh) 1.2+ (the repo ships a Bun lockfile)
+- Node.js 20 or newer
 
 ## Development
 
@@ -23,9 +33,12 @@ bun run dev     # dev server on http://localhost:8080
 bun run build   # static site in dist/spa
 ```
 
-The `dev` and `build` scripts run Quasar with `--openssl-legacy-provider`
-because the Quasar 1.x / webpack 4 toolchain relies on MD4 hashing, which
-modern Node.js disables by default.
+## Lint
+
+```bash
+bun run lint
+bun run lint:fix
+```
 
 ## Deployment
 
@@ -36,4 +49,10 @@ The site is served by nginx from `/var/www/hive.ausbit.dev` on `hurgenburgen`
 rsync -avz --delete dist/spa/ hurgenburgen:/var/www/hive.ausbit.dev/
 ```
 
-Pull requests, feedback and issues are welcomed
+## Branch history
+
+The `revamp/vue3-quasar2` branch modernizes the abandoned Quasar 1 / Vue 2 /
+webpack codebase. See [`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) for the
+audit, the removed features and the migration notes.
+
+Pull requests, feedback and issues are welcome.

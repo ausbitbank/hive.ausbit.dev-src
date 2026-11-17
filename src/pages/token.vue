@@ -22,7 +22,7 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  {{ mi.lastPrice }} <q-icon name="img:statics/hive.svg" alt="Hive" />
+                  {{ mi.lastPrice }} <q-icon name="img:/statics/hive.svg" alt="Hive" />
                 </q-item-label>
               </q-item-section>
               <q-item-section>
@@ -44,7 +44,7 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  <q-icon :name="parseFloat(mi.priceChangePercent.split(' ')[0]) > 0 ? 'arrow_upward' : 'arrow_downward'" :color="parseFloat(mi.priceChangePercent.split(' ')[0]) > 0 ? 'green' : 'red'" />{{ parseFloat(mi.priceChangeHive).toFixed(3) }} <q-icon name="img:statics/hive.svg" alt="Hive" />
+                  <q-icon :name="parseFloat(mi.priceChangePercent.split(' ')[0]) > 0 ? 'arrow_upward' : 'arrow_downward'" :color="parseFloat(mi.priceChangePercent.split(' ')[0]) > 0 ? 'green' : 'red'" />{{ parseFloat(mi.priceChangeHive).toFixed(3) }} <q-icon name="img:/statics/hive.svg" alt="Hive" />
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -56,12 +56,12 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  {{ mi.highestBid }} <q-icon name="img:statics/hive.svg" alt="Hive" />
+                  {{ mi.highestBid }} <q-icon name="img:/statics/hive.svg" alt="Hive" />
                 </q-item-label>
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  $ {{ (this.hivePriceUsd * mi.highestBid).toFixed(3) }}
+                  $ {{ (hivePriceUsd * mi.highestBid).toFixed(3) }}
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -73,12 +73,12 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  {{ mi.lowestAsk }} <q-icon name="img:statics/hive.svg" alt="Hive" />
+                  {{ mi.lowestAsk }} <q-icon name="img:/statics/hive.svg" alt="Hive" />
                 </q-item-label>
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  $ {{ (this.hivePriceUsd * mi.lowestAsk).toFixed(3) }}
+                  $ {{ (hivePriceUsd * mi.lowestAsk).toFixed(3) }}
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -90,12 +90,12 @@
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  {{ tidyNumber(parseFloat(mi.volume).toFixed(3)) }} <q-icon name="img:statics/hive.svg" alt="Hive" />
+                  {{ tidyNumber(parseFloat(mi.volume).toFixed(3)) }} <q-icon name="img:/statics/hive.svg" alt="Hive" />
                 </q-item-label>
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  $ {{ tidyNumber((this.hivePriceUsd * mi.volume).toFixed(3)) }}
+                  $ {{ tidyNumber((hivePriceUsd * mi.volume).toFixed(3)) }}
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -144,7 +144,7 @@
             <a href="https://tribaldex.com/" target="_blank">Deposit with TribalDex</a>
           </div>
           <div v-if="tokenBalance !== null">{{ token }} <q-btn color="primary" dense flat  @click="tradeTab = 'sell'; tradeForm.sell.quantity = tokenBalance.balance; if (tradeForm.sell.price === 0) { tradeForm.sell.price = mi.highestBid }">{{ tidyNumber(tokenBalance.balance) }}</q-btn></div>
-          <div v-if="swapHiveBalance !== null"><q-icon name="img:statics/hive.svg" title="Hive" /> <q-btn color="primary" dense flat @click="tradeTab = 'buy'; if (tradeForm.buy.price === 0) { tradeForm.buy.price = mi.lowestAsk }; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ tidyNumber(swapHiveBalance.balance) }}</q-btn></div>
+          <div v-if="swapHiveBalance !== null"><q-icon name="img:/statics/hive.svg" title="Hive" /> <q-btn color="primary" dense flat @click="tradeTab = 'buy'; if (tradeForm.buy.price === 0) { tradeForm.buy.price = mi.lowestAsk }; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ tidyNumber(swapHiveBalance.balance) }}</q-btn></div>
         </div>
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="buyBook && !error" style="max-width: 400px">
@@ -171,7 +171,7 @@
           </q-item-section>
         </q-item>
         </q-list>
-        <q-table dense :data="buyBook" :columns="buyOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible">
+        <q-table dense :rows="buyBook" :columns="buyOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible">
         </q-table>
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="sellBook && !error">
@@ -198,7 +198,7 @@
           </q-item-section>
         </q-item>
         </q-list>
-        <q-table dense :data="sellBook" :columns="sellOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
+        <q-table dense :rows="sellBook" :columns="sellOrderColumns" :pagination="{ rowsPerPage: 25 }" row-key="_id" :visible-columns="orderColumnsVisible" />
       </q-card>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm" v-if="th && !error">
         <div class="text-h5 text-center">
@@ -213,10 +213,14 @@
           <q-btn icon="refresh" color="primary" flat dense @click="getHiveEngineTradeHistory()"/>
         </div>
         <div class="text-center" v-if="sparkline.length > 3">
-          <sparkline width="260" height="100">
-              <sparklineBar :data="th.map(t => t.volume)" :limit="th.length" :styles="{ stroke: 'red' }" :refLineType=false :refLineStyles="{}" />
-              <sparklineCurve :data="sparkline" :styles="{ stroke: 'white', fill: 'white' }" :refLineType=false :refLineStyles="{}" :limit="sparkline.length" />
-          </sparkline>
+          <sparkline
+            :series="[
+              { data: th.map(t => t.volume), stroke: 'red' },
+              { data: sparkline, stroke: 'white', fill: 'white' }
+            ]"
+            :width="260"
+            :height="100"
+          />
         </div>
         <q-list dense separator>
         <q-item v-for="t in th" :key="t.index" clickable>
@@ -224,13 +228,13 @@
             <q-item-label>
             <router-link :to="getAccountLink(t.buyer)">{{ t.buyer }}</router-link>
              swapped <q-badge dense color="primary">{{ t.quantity }}</q-badge> {{ t.symbol }}
-              for <q-badge dense color="primary">{{ parseFloat(t.volume).toFixed(5) }}</q-badge> <q-icon name="img:statics/hive.svg" alt="Hive" />
+              for <q-badge dense color="primary">{{ parseFloat(t.volume).toFixed(5) }}</q-badge> <q-icon name="img:/statics/hive.svg" alt="Hive" />
               from <router-link :to="getAccountLink(t.seller)">{{ t.seller }}</router-link>
             </q-item-label>
           <q-item-label caption>
             <q-icon name="arrow_downward" color="red" v-if="t.type === 'sell'" />
             <q-icon name="arrow_upward" color="green" v-else />
-            {{ t.price }} <q-icon name="img:statics/hive.svg" alt="Hive" /> per {{ t.symbol }}
+            {{ t.price }} <q-icon name="img:/statics/hive.svg" alt="Hive" /> per {{ t.symbol }}
             <q-icon name="schedule" color="grey" /> {{ timeDelta(t.timestamp) }}
           </q-item-label>
           <q-item-label caption v-if="false">
@@ -250,17 +254,16 @@
   </q-page>
 </template>
 <script>
-const SSC = require('sscjs')
+import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
-import store from '../store'
-var heApiNode = store().state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
-const hiveEngine = new SSC(heApiNode)
+import { getHiveEngine } from 'src/services/hiveEngine'
+import { getHivePrices } from 'src/services/prices'
 
 export default {
   name: 'token',
   data () {
     return {
-      username: this.$route.params.username || this.loggedInUser,
+      username: this.$route.params.username || this.$hiveStore.user.username,
       token: this.$route.params.token.toUpperCase(),
       ti: null,
       mi: null,
@@ -313,17 +316,17 @@ export default {
     }
   },
   components: {
-    accountHeader: () => import('components/accountHeader.vue'),
-    jsonViewer: () => import('components/jsonViewer.vue'),
-    sparkline: () => import('vue-sparklines')
+    accountHeader: defineAsyncComponent(() => import('components/accountHeader.vue')),
+    jsonViewer: defineAsyncComponent(() => import('components/jsonViewer.vue')),
+    Sparkline: defineAsyncComponent(() => import('components/Sparkline.vue'))
   },
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
+    globalProps: function () { return this.$hiveStore.globalProps },
     account: {
       cache: false,
-      get () { return this.$store.state.hive.accounts[this.username] }
+      get () { return this.$hiveStore.accounts[this.username] }
     },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
+    loggedInUser: function () { return this.$hiveStore.user.username },
     swapHiveBalance: function () { if (this.bi === null) { return null } else { var b = this.bi.filter(t => t.symbol === 'SWAP.HIVE')[0]; if (b !== undefined) { return b } else { return null } } },
     tokenBalance: function () { if (this.bi === null) { return null } else { var b = this.bi.filter(t => t.symbol === this.token)[0]; if (b !== undefined) { return b } else { return null } } },
     myTrades: function () { return this.th.filter() },
@@ -353,7 +356,7 @@ export default {
     getHiveEngineTokenInfo () {
       var tokens = [this.token]
       if (tokens.length > 0) {
-        hiveEngine.find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
+        getHiveEngine().find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => {
             if (response.length === 0) {
               this.error = true
@@ -368,48 +371,48 @@ export default {
     },
     getHiveEngineMarketInfo () {
       var tokens = [this.token]
-      hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
+      getHiveEngine().find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
         .then((response) => { this.mi = response[0] })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineBalanceInfo () {
       if (this.username) {
         var tokens = [this.token, 'SWAP.HIVE']
-        hiveEngine.find('tokens', 'balances', { account: this.username, symbol: { $in: tokens } }, 1000, 0, [])
+        getHiveEngine().find('tokens', 'balances', { account: this.username, symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => { this.bi = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
       }
     },
     getHiveEngineTradeHistory () {
-      hiveEngine.find('market', 'tradesHistory', { symbol: this.token }, this.thLimit, 0, [{ descending: true, index: '_id' }])
+      getHiveEngine().find('market', 'tradesHistory', { symbol: this.token }, this.thLimit, 0, [{ descending: true, index: '_id' }])
         .then((response) => { this.th = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineOrderBookBuy () {
-      hiveEngine.find('market', 'buyBook', { symbol: this.token }, this.buyBookLimit, 0, [{ descending: true, index: 'priceDec' }])
+      getHiveEngine().find('market', 'buyBook', { symbol: this.token }, this.buyBookLimit, 0, [{ descending: true, index: 'priceDec' }])
         .then((response) => { this.buyBook = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getHiveEngineOrderBookSell () {
-      hiveEngine.find('market', 'sellBook', { symbol: this.token }, this.sellBookLimit, 0, [{ descending: false, index: 'priceDec' }])
+      getHiveEngine().find('market', 'sellBook', { symbol: this.token }, this.sellBookLimit, 0, [{ descending: false, index: 'priceDec' }])
         .then((response) => { this.sellBook = response })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
     getMyHiveEngineOrders () {
       if (this.username) {
-        hiveEngine.find('market', 'buyBook', { symbol: this.token, account: this.username }, 25, 0, [{ descending: true, index: '_id' }])
+        getHiveEngine().find('market', 'buyBook', { symbol: this.token, account: this.username }, 25, 0, [{ descending: true, index: '_id' }])
           .then((response) => { this.myOrders.buy = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
-        hiveEngine.find('market', 'sellBook', { symbol: this.token, account: this.username }, 25, 0, [{ descending: true, index: '_id' }])
+        getHiveEngine().find('market', 'sellBook', { symbol: this.token, account: this.username }, 25, 0, [{ descending: true, index: '_id' }])
           .then((response) => { this.myOrders.sell = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
       }
     },
     getAccountLink (account) { return '/@' + account },
     getTxLink (txid) { return '/tx/' + txid },
-    getPricesCoingecko () {
-      this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive&vs_currencies=usd&include_24hr_change=true')
-        .then((response) => { this.hivePriceUsd = response.data.hive.usd })
+    async getPricesCoingecko () {
+      const prices = await getHivePrices()
+      this.hivePriceUsd = prices.hive.usd
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -425,7 +428,7 @@ export default {
         id: 'ssc-mainnet-hive',
         json: j
       }
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
     },
     cancelOrder (type, id) {
       var j = '{ "contractName": "market", "contractAction": "cancel", "contractPayload": { "type": "' + type + '", "id": "' + id + '" } }'
@@ -435,7 +438,7 @@ export default {
         id: 'ssc-mainnet-hive',
         json: j
       }
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
     },
     tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     init () {
@@ -448,7 +451,7 @@ export default {
       this.getHiveEngineOrderBookSell()
       this.getMyHiveEngineOrders()
       if (!this.username && this.loggedInUser) { this.username = this.loggedInUser }
-      if (this.username && this.account === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+      if (this.username && this.account === undefined) { this.$hiveStore.getAccount(this.username) }
     }
   },
   mounted () {

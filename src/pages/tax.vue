@@ -7,7 +7,7 @@
         <q-btn label="Analyse" color="primary" no-caps dense glossy @click="init()"/>
       </q-card-section>
       <q-card-section>
-        <q-table dense title="Account change by day" :data="hiveTransactionsByDayTotal" :columns="columns" separator="cell" row-key="date" :loading="loading">
+        <q-table dense title="Account change by day" :rows="hiveTransactionsByDayTotal" :columns="columns" separator="cell" row-key="date" :loading="loading">
           <template v-slot:loading>
             <q-inner-loading showing color="secondary" />
           </template>
@@ -41,7 +41,7 @@
 <style>
 </style>
 <script>
-import { debounce, exportFile } from 'quasar'
+import { exportFile } from 'quasar'
 import Moment from 'moment'
 import accountOperations from 'components/accountOperations.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
@@ -81,7 +81,7 @@ export default {
   },
   data () {
     return {
-      username: this.$router.currentRoute.query.user || null,
+      username: this.$route.query.user || null,
       hiveTransactions: [],
       bitmask: walletBitmask,
       accountHistoryPointer: -1,
@@ -114,7 +114,7 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     hiveTransactionsByDay: function () {
       if (this.hiveTransactions.length > 0) {
@@ -147,7 +147,7 @@ export default {
           day.transactions.forEach(tx => { // Loop through transactions within a day
             var t = tx[1]
             switch (tx[0]) {
-              case 'claim_rewards_balance':
+              case 'claim_reward_balance':
                 if (t.account === this.username) {
                   if (t.reward_hive !== '0.000 HIVE') { totalHive = totalHive + parseFloat(t.reward_hive.split(' ')[0]) }
                   if (t.reward_hbd !== '0.000 HBD') { totalHbd = totalHbd + parseFloat(t.reward_hbd.split(' ')[0]) }
@@ -218,8 +218,8 @@ export default {
       if (status !== true) { this.$q.notify({ message: 'Browser denied file download...', color: 'negative', icon: 'warning' }) }
     },
     getAccount (username) {
-      if (this.$store.state.hive.accounts[username] === undefined) {
-        this.$store.dispatch('hive/getAccount', username)
+      if (this.$hiveStore.accounts[username] === undefined) {
+        this.$hiveStore.getAccount(username)
       }
     },
     vestToHive (vests) {
@@ -257,17 +257,18 @@ export default {
         })
         .catch(err => {
           this.loading = false
-          console.log(err)
-          if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
-            this.accountHistoryPointer = err.data.stack[0].data.sequence
-            debounce(this.getHiveWalletTransactions(), 100)
+          const sequence = err?.data?.stack?.[0]?.data?.sequence
+          const message = err?.cause?.message || err?.message || ''
+          if (sequence && message.includes('Could not find filtered operation in')) {
+            this.accountHistoryPointer = sequence
+            setTimeout(() => this.getHiveWalletTransactions(), 1000)
           }
         })
     }
   },
   mounted () {
     document.title = 'Tax export view '
-    this.$store.dispatch('hive/getGlobalProps')
+    this.$hiveStore.getGlobalProps()
     if (this.username) { this.getHiveWalletTransactions() }
   }
 }

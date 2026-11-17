@@ -5,8 +5,8 @@
           <q-card dense flat bordered class="q-ma-none q-pt-sm" style="max-width:1000px; max-width:100%; min-width: 50%">
             <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
-                <q-tab name="hive"><q-icon name="img:statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
-                <q-tab name="hive-engine"><q-icon name="img:statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
+                <q-tab name="hive"><q-icon name="img:/statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
+                <q-tab name="hive-engine"><q-icon name="img:/statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
             </q-tabs>
             <q-tab-panels v-model="tab" animated>
                 <q-tab-panel name="hive">
@@ -107,10 +107,6 @@
                                         <q-item-section avatar><q-avatar size="sm"><q-icon name="person_add" size="sm" color="green" /></q-avatar></q-item-section>
                                         <q-item-section>New Account</q-item-section>
                                       </q-item>
-                                      <q-item clickable class="text-orange" title="Exchange" @click="$router.push('/exchange?from=hive&for=' + loggedInUser)">
-                                        <q-item-section avatar><q-avatar size="sm"><q-icon name="swap_vertical_circle" size="sm" color="orange" /></q-avatar></q-item-section>
-                                        <q-item-section>Exchange</q-item-section>
-                                      </q-item>
                                     </q-list>
                                   </q-menu>
                                 </q-btn>
@@ -202,7 +198,7 @@
                           <q-item-section>
                               <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
                           </q-item-section>
-                          <q-item-section side v-if="this.loggedInUser === this.username">
+                          <q-item-section side v-if="loggedInUser === username">
                               <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
                           </q-item-section>
                         </q-item>
@@ -217,7 +213,7 @@
                             {{ tidyNumber(order.sell_price.base.split(' ')[0]) }} {{ order.sell_price.base.split(' ')[1] }} for {{ tidyNumber(order.sell_price.quote.split(' ')[0]) }} {{ order.sell_price.quote.split(' ')[1] }}
                             <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
                             <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
-                            <q-btn dense flat icon="cancel" color="red" v-if="loggedInUser === username" @click="$store.commit('hive/addToQueue', [loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
+                            <q-btn dense flat icon="cancel" color="red" v-if="loggedInUser === username" @click="$hiveStore.addToQueue([loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
                           </div>
                           </q-item-section>
                         </q-item>
@@ -276,8 +272,8 @@
                         </q-btn>
                       </div>
                       <q-scroll-area style="height: 500px;" ref="infiniteScroll">
-                      <q-infinite-scroll @load="getHiveWalletTransactions" :offset="150" scroll-target=“body”>
-                        <q-list dense bordered v-for="tx in this.filteredTransactionsHive" :key="tx.index">
+                      <q-infinite-scroll @load="getHiveWalletTransactions" :offset="150" scroll-target="body">
+                        <q-list dense bordered v-for="tx in filteredTransactionsHive" :key="tx.index">
                           <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-item-label>
@@ -636,7 +632,7 @@
                     <div v-if="hiveEngineTransactionHistory">
                       <div class="text-h6 text-center">Transaction History</div>
                       <q-scroll-area style="height: 500px">
-                      <q-list bordered v-for="tx in this.hiveEngineTransactionHistory" :key="tx.index">
+                      <q-list bordered v-for="tx in hiveEngineTransactionHistory" :key="tx.index">
                         <q-item>
                           <q-item-section avatar class="gt-xs">
                             <q-item-label>
@@ -858,14 +854,13 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
-const SSC = require('sscjs')
-import store from '../store'
-var heApiNode = store().state.hive.user.settings.heApiNode || 'https://api.hive-engine.com/rpc'
-const hiveEngine = new SSC(heApiNode)
-import { debounce, openURL } from 'quasar'
+import { defineAsyncComponent } from 'vue'
+import { openURL } from 'quasar'
+import { getHiveEngine } from 'src/services/hiveEngine'
+import { getHivePrices } from 'src/services/prices'
 import { keychain } from '@hiveio/keychain'
 import moment from 'moment'
-import { mixin as VueTimers } from 'vue-timers'
+import VueTimers from 'src/mixins/timers.js'
 import DOMPurify from 'dompurify'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
@@ -951,30 +946,30 @@ export default {
     refresh: { time: 60000, autostart: true, repeat: true, immediate: true, isSwitchTab: false }
   },
   components: {
-    delegationDialog: () => import('components/delegationDialog.vue'),
-    accountHeader: () => import('components/accountHeader.vue'),
-    transferDialog: () => import('components/transferDialog.vue'),
-    stakingDialog: () => import('components/stakingDialog.vue'),
-    unstakingDialog: () => import('components/unstakingDialog.vue'),
-    savingsDialog: () => import('components/savingsDialog.vue'),
-    convertDialog: () => import('components/convertDialog.vue'),
-    convertRequests: () => import('components/convertRequests.vue'),
-    claimRewards: () => import('components/claimRewards.vue'),
-    delegations: () => import('components/delegations.vue'),
-    savingsWithdrawalsInProgress: () => import('components/savingsWithdrawalsInProgress.vue'),
-    animInt: () => import('components/animInt.vue')
+    delegationDialog: defineAsyncComponent(() => import('components/delegationDialog.vue')),
+    accountHeader: defineAsyncComponent(() => import('components/accountHeader.vue')),
+    transferDialog: defineAsyncComponent(() => import('components/transferDialog.vue')),
+    stakingDialog: defineAsyncComponent(() => import('components/stakingDialog.vue')),
+    unstakingDialog: defineAsyncComponent(() => import('components/unstakingDialog.vue')),
+    savingsDialog: defineAsyncComponent(() => import('components/savingsDialog.vue')),
+    convertDialog: defineAsyncComponent(() => import('components/convertDialog.vue')),
+    convertRequests: defineAsyncComponent(() => import('components/convertRequests.vue')),
+    claimRewards: defineAsyncComponent(() => import('components/claimRewards.vue')),
+    delegations: defineAsyncComponent(() => import('components/delegations.vue')),
+    savingsWithdrawalsInProgress: defineAsyncComponent(() => import('components/savingsWithdrawalsInProgress.vue')),
+    animInt: defineAsyncComponent(() => import('components/animInt.vue'))
   },
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
+    globalProps: function () { return this.$hiveStore.globalProps },
     account: {
       cache: false,
       get () {
-        return this.$store.state.hive.accounts[this.username]
+        return this.$hiveStore.accounts[this.username]
       }
     },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
+    loggedInUser: function () { return this.$hiveStore.user.username },
     hivePowerAPR: function () { // orig-src https://gitlab.syncad.com/hive/wallet/-/blob/develop/src/app/components/modules/UserWallet.jsx#L105
-      if (this.globalProps) {
+      if (this.globalProps && !this.globalProps.empty && this.globalProps.head_block_number) {
         // The inflation was set to 9.5% at block 7m
         const initialInflationRate = 9.5
         const initialBlock = 7000000
@@ -1000,8 +995,8 @@ export default {
       var ft = this.hiveTransactions
       // ft = ft.filter(t => this.showTxTypes.includes(t[1].op[0]))
       if (!this.filter.showClaimedRewards) { ft = ft.filter(t => t[1].op[0] !== 'claim_reward_balance') }
-      if (!this.filter.showTransfersIn) { ft = ft.filter(t => t[1].op[0] === 'transfer' && t[1].op[1].to === this.username) }
-      if (!this.filter.showTransfersOut) { ft = ft.filter(t => t[1].op[0] === 'transfer' && t[1].op[1].from === this.username) }
+      if (!this.filter.showTransfersIn) { ft = ft.filter(t => !(t[1].op[0] === 'transfer' && t[1].op[1].to === this.username)) }
+      if (!this.filter.showTransfersOut) { ft = ft.filter(t => !(t[1].op[0] === 'transfer' && t[1].op[1].from === this.username)) }
       if (!this.filter.showMarketOrders) { ft = ft.filter(t => t[1].op[0] !== 'fill_order') }
       if (!this.filter.showStaking) { ft = ft.filter(t => t[1].op[0] !== 'transfer_to_vesting') }
       if (!this.filter.showUnStaking) { ft = ft.filter(t => ['withdraw_vesting', 'fill_vesting_withdraw'].includes(t[1].op[0]) === false) }
@@ -1065,11 +1060,14 @@ export default {
     getTxLink (txid) { return '/tx/' + txid },
     getVirtualTxLink (tx) { return '/b/' + tx[1].block + '#' + tx[1].virtual_op },
     getTokenLink (token) { return '/@' + this.username + '/wallet/' + token },
-    getAccount (username) { if (this.$store.state.hive.accounts[username] === undefined) { this.$store.dispatch('hive/getAccount', username) } },
-    getGlobalProps () { if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') } },
-    getPricesCoingecko () {
-      this.$axios.get('https://api.coingecko.com/api/v3/simple/price?ids=hive,hive_dollar&vs_currencies=usd&include_24hr_change=true')
-        .then((response) => { this.hivePriceUsd = response.data.hive.usd; this.hivePriceUsdChange = response.data.hive.usd_24h_change; this.hbdPriceUsd = response.data.hive_dollar.usd; this.hbdPriceUsdChange = response.data.hive_dollar.usd_24h_change })
+    getAccount (username) { if (this.$hiveStore.accounts[username] === undefined) { this.$hiveStore.getAccount(username) } },
+    getGlobalProps () { if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() } },
+    async getPricesCoingecko () {
+      const prices = await getHivePrices()
+      this.hivePriceUsd = prices.hive.usd
+      this.hivePriceUsdChange = prices.hive.usd_24h_change
+      this.hbdPriceUsd = prices.hive_dollar.usd
+      this.hbdPriceUsdChange = prices.hive_dollar.usd_24h_change
     },
     getOpenOrders () {
       this.$hive.api.getOpenOrdersAsync(this.username)
@@ -1096,19 +1094,22 @@ export default {
         })
         .catch(err => {
           this.loading = false
-          console.log(err)
-          if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
-            this.accountHistoryPointer = err.data.stack[0].data.sequence
-            debounce(this.getHiveWalletTransactions(), 100)
+          const sequence = err?.data?.stack?.[0]?.data?.sequence
+          const message = err?.cause?.message || err?.message || ''
+          if (sequence && message.includes('Could not find filtered operation in')) {
+            this.accountHistoryPointer = sequence
+            setTimeout(() => this.getHiveWalletTransactions(0, done || (() => {})), 1000)
+          } else {
+            done && done()
           }
         })
     },
     getHiveEngineBalances (username) {
-      hiveEngine.find('tokens', 'balances', { account: username }, 1000, 0, [])
+      getHiveEngine().find('tokens', 'balances', { account: username }, 1000, 0, [])
         .then((response) => {
           this.hiveEngineBalances = response
           var preferredTokens = ['SWAP.HIVE', 'PAL', 'PALMM', 'LEO', 'LEOMM', 'CCC', 'STEM'].reverse()
-          preferredTokens.forEach(function (t, index) {
+          preferredTokens.forEach(function (t) {
             var currentIndex = this.hiveEngineBalances.findIndex(token => token.symbol === t)
             this.hiveEngineBalances.splice(this.hiveEngineBalances.length - 1, 1, ...this.hiveEngineBalances.splice(currentIndex, 1))
           }.bind(this))
@@ -1118,10 +1119,10 @@ export default {
         })
         .catch(() => { console.error('Error connecting to Hive-Engine api') })
     },
-    getHiveEngineTokenInfo (username) {
+    getHiveEngineTokenInfo () {
       var tokens = this.returnTokenArray()
       if (tokens.length > 0) {
-        hiveEngine.find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
+        getHiveEngine().find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => { this.hiveEngineTokenInfo = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
       }
@@ -1129,7 +1130,7 @@ export default {
     getHiveEngineMarketInfo () {
       var tokens = this.returnTokenArray()
       if (tokens.length > 0) {
-        hiveEngine.find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
+        getHiveEngine().find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => { this.hiveEngineMarketInfo = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
       }
@@ -1142,7 +1143,7 @@ export default {
     returnTokenArray () {
       var tokens = []
       if (this.hiveEngineBalances) {
-        this.hiveEngineBalances.forEach(function (token, index) { tokens.push(token.symbol) })
+        this.hiveEngineBalances.forEach(function (token) { tokens.push(token.symbol) })
         return tokens
       } else {
         return null
@@ -1190,8 +1191,8 @@ export default {
       }
     },
     claimHbdInterest () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: 42069420, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 42069420 }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: 42069420, amount: '0.001 HBD', memo: 'Claiming hbd interest' }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 42069420 }]])
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -1216,19 +1217,17 @@ export default {
       this.getOpenOrders()
     },
     refresh () {
-      this.$store.dispatch('hive/getAccount', this.username)
+      this.$hiveStore.getAccount(this.username)
     },
     initHiveEngine () {
       this.getHiveEngineBalances(this.username)
       this.getHiveEngineTransactionHistory()
     },
     returnDecimalsBeforeNonZero (x) {
-      var y = 0
       if (x >= 1) {
         return 2
       } else { // https://stackoverflow.com/questions/23887400/how-to-get-first-2-non-zero-digits-after-decimal-in-javascript
-        y = x.toFixed(1 - Math.floor(Math.log(x) / Math.log(10)))
-        y = y.toString().length - 1
+        const y = x.toFixed(1 - Math.floor(Math.log(x) / Math.log(10))).toString().length - 1
         if (y > 2) {
           return y
         } else {

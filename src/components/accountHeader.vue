@@ -17,7 +17,7 @@
           <span v-if="followCount.following_count > 0"><q-icon name="people" /><router-link :to="linkFollowing"> {{ tidyNumber(followCount.following_count) }} <span class="text-grey">following</span></router-link>&nbsp;</span>
           <span v-if="followCount.follower_count > 0"><q-icon name="people_alt" /><router-link :to="linkFollowers"> {{ tidyNumber(followCount.follower_count) }} <span class="text-grey">followers</span></router-link></span>
         </div>
-        <div v-if="showRelationship && this.relationship && this.account !== undefined">
+        <div v-if="showRelationship && relationship && account !== undefined">
           <q-btn v-if="relationship.follows" no-caps push dense label="Following" color="primary" icon="star" @click="unfollowUser(account.name)" />
           <q-btn v-if="!relationship.follows" no-caps push dense label="Follow" color="grey" icon="person_add" @click="followUser(account.name)" />
           <q-btn v-if="relationship.ignores" no-caps push dense label="Ignored" color="red" @click="unignoreUser(account.name)" />
@@ -28,7 +28,7 @@
         </span>
       </div>
       <q-toolbar :dense="$q.screen.lt.md" class="rounded-borders bg-dark text-white text-center" v-if="showNavBar">
-        <q-tabs v-model="tab" :dense="$q.screen.lt.md" animated shrink inline-label active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
+        <q-tabs :dense="$q.screen.lt.md" shrink inline-label active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
           <q-route-tab name="posts" class="text-deep-purple" label="posts" icon="library_books" :to="'/@' + account.name + '/posts'"/>
           <q-route-tab name="blog" class="text-purple" label="blog" icon="menu_book" :to="'/@' + account.name + '/blog'"/>
           <q-route-tab name="feed" class="text-orange" label="feed" icon="rss_feed" :to="'/@' + account.name + '/feed'"/>
@@ -37,18 +37,18 @@
           <q-route-tab name="communities" class="text-teal" label="communities" icon="forum" :to="'/@' + account.name + '/communities'"/>
           <q-route-tab name="wallet" class="text-green" label="wallet" icon="account_balance" :to="'/@' + account.name + '/wallet'"/>
           <q-route-tab exact name="explorer" class="text-indigo" icon="perm_identity" label="profile" :to="'/@' + account.name"/>
-          <q-route-tab v-if="this.$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
+          <q-route-tab v-if="$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
         </q-tabs>
       </q-toolbar>
     </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import sanitize from 'sanitize-html'
 export default {
   name: 'accountHeader',
   data () {
     return {
-      tab: 'posts',
       relationship: null
     }
   },
@@ -87,7 +87,7 @@ export default {
     }
   },
   components: {
-    userServices: () => import('components/userServices.vue')
+    userServices: defineAsyncComponent(() => import('components/userServices.vue'))
   },
   methods: {
     getUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
@@ -122,22 +122,22 @@ export default {
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getFollowCount (who) {
-      this.$store.dispatch('hive/getFollowCount', who)
+      this.$hiveStore.getFollowCount(who)
     },
     followUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
       this.relationship.follows = true
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unfollowUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
       this.relationship.follows = false
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     ignoreUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
       this.relationship.ignores = true
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unignoreUser (who) {
       this.relationship.ignores = false
@@ -181,19 +181,22 @@ export default {
       }
     },
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username || null }
+      get () { return this.$hiveStore.user.username || null }
     },
     followCount: {
-      get () { return this.$store.state.hive.followCounts[this.account.name] || null }
+      get () { return this.account ? (this.$hiveStore.followCounts[this.account.name] || null) : null }
     },
-    linkFollowers: { get () { return '/@' + this.account.name + '/followers' } },
-    linkFollowing: { get () { return '/@' + this.account.name + '/following' } }
+    linkFollowers: { get () { return this.account ? '/@' + this.account.name + '/followers' : '#' } },
+    linkFollowing: { get () { return this.account ? '/@' + this.account.name + '/following' : '#' } }
   },
   mounted () {
-    if (this.showRelationship && this.loggedInUser !== undefined && this.loggedInUser !== null && this.loggedInUser !== this.account.name && this.relationship === null) {
+    if (!this.account) return
+    if (this.showRelationship && this.loggedInUser && this.loggedInUser !== this.account.name && this.relationship === null) {
       this.getRelationshipBetweenAccounts(this.loggedInUser, this.account.name)
     }
-    if (this.showFollowCount && this.followCount === undefined) { this.getFollowCount(this.account.name) }
+    if (this.showFollowCount) {
+      this.getFollowCount(this.account.name)
+    }
   }
 }
 </script>

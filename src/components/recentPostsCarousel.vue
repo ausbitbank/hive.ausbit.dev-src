@@ -3,7 +3,7 @@
     <div>
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ this.account }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
+        <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ accountInput }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
       <q-skeleton height="250px" width="400" animation="fade" rect v-if="loading" />
       <q-carousel
@@ -36,7 +36,7 @@
       </q-carousel>
       <q-dialog v-model="settings">
         <q-card flat bordered class="q-pa-md text-center">
-          <q-input label="Account to view" v-model="account" @submit="init()"/>
+          <q-input label="Account to view" v-model="accountInput" @submit="init()"/>
           <q-btn-toggle push glossy toggle-color="primary" :options="[{ label: 'Posts', value: 'posts' }, { label: 'Blog', value: 'blog' }]" v-model="postType" />
           <q-btn dense flat icon="refresh" label="update" color="green" @click="settings = false; init()" style="margin:both"/>
         </q-card>
@@ -66,7 +66,8 @@ export default {
       settings: false,
       loading: false,
       autoplaySlides: this.autoplay,
-      postType: this.type
+      postType: this.type,
+      accountInput: this.account
     }
   },
   watch: {
@@ -123,7 +124,7 @@ export default {
     async getRecentPosts () {
       this.loading = true
       this.posts = []
-      var params = { sort: this.postType, account: this.account, limit: this.limit, observer: this.loggedInUser || this.account, start_author: null, start_permlink: null }
+      var params = { sort: this.postType, account: this.accountInput, limit: this.limit, observer: this.loggedInUser || this.accountInput, start_author: null, start_permlink: null }
       this.$hive.api.callAsync('bridge.get_account_posts', params)
         .then(res => {
           this.loading = false

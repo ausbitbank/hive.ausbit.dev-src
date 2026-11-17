@@ -3,14 +3,14 @@
     <q-card-section header class="text-h5 text-center text-bold">
       Unstake {{ tokenName }}
     </q-card-section>
-    <q-card-section v-if="this.network === 'hiveEngine'" class="text-center">
+    <q-card-section v-if="network === 'hiveEngine'" class="text-center">
       <div>Unstaking {{ tokenName }} takes {{ cooldown }} days total, split into {{ transactions }} transactions.</div>
       <div>You have <q-badge clickable color="primary" @click="unstakeAmount = stake">{{ stake }}</q-badge> staked {{ tokenName }}.</div>
       <div v-if="unstaking">You are already unstaking {{ unstaking }} {{ tokenName }}</div>
       <q-input v-model.number="unstakeAmount" outline :label="'Unstake how many ' + tokenName + ' ?'" />
       <q-btn label="Unstake" color="red" icon="lock_open" @click="unstakeHiveEngine()"/>
     </q-card-section>
-    <q-card-section v-if="this.network === 'hive' & this.tokenName === 'HIVE'" class="text-center">
+    <q-card-section v-if="network === 'hive' & tokenName === 'HIVE'" class="text-center">
       <div>The unstaking process will convert your staked {{ tokenName }} (VESTS) into unstaked liquid {{ tokenName }} in 13 weekly payments.</div>
       <div>You currently have <b @click="amountVests = parseFloat(availableStake)" class="text-primary cursor-pointer">{{ tidyNumber(vestToHive(availableStake)) }}</b> {{ tokenName }} available for unstaking.</div>
       <q-card dense flat v-if="account.vesting_withdraw_rate !== '0.000000 VESTS'">
@@ -35,7 +35,7 @@
         </div>
       </div>
       <div class="text-center q-ma-md">
-        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
+        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn flat label="Unstake" icon="lock_open" color="red" @click="unstakeHive()" :disable="disableUnstake" v-if="!sent" />
       </div>
     </q-card-section>
@@ -99,16 +99,16 @@ export default {
   computed: {
     availableStake: function () {
       if (this.network === 'hive' & this.tokenName === 'HIVE') {
-        var vestedShares = parseFloat(this.$store.state.hive.accounts[this.username].vesting_shares.split(' ')[0])
-        var vestsDelegatedOut = parseFloat(this.$store.state.hive.accounts[this.username].delegated_vesting_shares.split(' ')[0])
+        var vestedShares = parseFloat(this.$hiveStore.accounts[this.username].vesting_shares.split(' ')[0])
+        var vestsDelegatedOut = parseFloat(this.$hiveStore.accounts[this.username].delegated_vesting_shares.split(' ')[0])
         return vestedShares - vestsDelegatedOut
       } else {
         return null
       }
     },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    globalProps: function () { return this.$store.state.hive.globalProps },
+    account: function () { return this.$hiveStore.accounts[this.username] },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    globalProps: function () { return this.$hiveStore.globalProps },
     amountHive: function () { return this.vestToHive(this.amountVests) },
     amountHiveWeekly: function () { return (this.amountHive / 13).toFixed(3) },
     disableUnstake: function () {
@@ -134,7 +134,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     cancelPowerdown () { this.unstakeHive('0.000') },
-    unstakeHive () { this.$store.commit('hive/addToQueue', [this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) },
+    unstakeHive () { this.$hiveStore.addToQueue([this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) },
     unstakeHiveEngine () {
       var j = '{ "contractName": "tokens", "contractAction": "unstake", "contractPayload": { "symbol": "' + this.tokenName + '", "quantity": "' + this.unstakeAmount + '" } }'
       var cj = {
@@ -143,12 +143,12 @@ export default {
         id: 'ssc-mainnet-hive',
         json: j
       }
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
-    if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+    if (this.$hiveStore.accounts[this.username] === undefined) { this.$hiveStore.getAccount(this.username) }
   }
 }
 </script>

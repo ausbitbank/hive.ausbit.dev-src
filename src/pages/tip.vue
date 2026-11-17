@@ -1,14 +1,14 @@
 <template>
-    <q-page v-if="this.account !== undefined">
-        <account-header :globalProps="this.globalProps" :account="this.account" :showNavBar="false" :showBalances="false" />
+    <q-page v-if="account !== undefined">
+        <account-header :globalProps="globalProps" :account="account" :showNavBar="false" :showBalances="false" />
         <q-card class="text-center q-ma-md q-pa-md" padding rounded>
           <div class="text-center">
             <transition appear enter-active-class="animated zoomInDown" leave-active-class="animated fadeOut">
-            <q-icon name="img:statics/piggyBank.svg" size="10em" />
+            <q-icon name="img:/statics/piggyBank.svg" size="10em" />
             </transition>
           </div>
           <p class="q-ma-sm">{{ username }} accepts donations in <strong class="color-primary">Hive</strong> - Near instant, secure, free transactions with no middle-man.</p>
-          <tipButton :account="this.account.name" />
+          <tipButton :account="account.name" />
         </q-card>
     </q-page>
 </template>
@@ -23,11 +23,11 @@ export default {
   },
   computed: {
     globalProps: {
-      get () { return this.$store.state.hive.globalProps }
+      get () { return this.$hiveStore.globalProps }
     },
     account: {
       get () {
-        return this.$store.state.hive.accounts[this.username]
+        return this.$hiveStore.accounts[this.username]
       }
     }
   },
@@ -37,9 +37,9 @@ export default {
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     if (this.account === undefined) {
-      this.$store.dispatch('hive/getAccount', this.username)
+      this.$hiveStore.getAccount(this.username)
     }
   }
 }

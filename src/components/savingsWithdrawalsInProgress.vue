@@ -18,7 +18,7 @@
         <q-btn dense flat icon="cancel" color="red" title="Cancel withdrawal request" v-if="loggedInUser === username">
           <q-popup-proxy>
             <q-card flat bordered class="text-center">
-              <q-card-header class="text-h5">Cancel withdrawal request ?</q-card-header>
+              <q-card-section class="text-h5">Cancel withdrawal request ?</q-card-section>
               <q-card-section>Id {{ request.request_id }} : {{ tidyNumber(request.amount.split(' ')[0]) }} {{ request.amount.split(' ')[1] }} <span v-if="request.from !== request.to">from {{ request.from }} </span>to {{ request.to }}</q-card-section>
               <q-card-actions>
                 <q-btn icon="check" label="Yes" color="green" @click="cancelTransferFromSavings(request.request_id)" />
@@ -51,7 +51,7 @@ export default {
   },
   components: {},
   computed: {
-    loggedInUser: function () { return this.$store.state.hive.user.username }
+    loggedInUser: function () { return this.$hiveStore.user.username }
   },
   methods: {
     vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
@@ -71,7 +71,7 @@ export default {
         .then(res => { if (res.length > 0) { this.withdrawsFrom = res } })
     },
     cancelTransferFromSavings (id) {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: id }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: id }]])
     }
   },
   mounted () {

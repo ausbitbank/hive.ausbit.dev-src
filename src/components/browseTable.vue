@@ -1,5 +1,5 @@
 <template>
-  <q-table dense :grid="postTableGridStyle" label="Posts as table view" :data="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" :row-key="row => row.post_id" :pagination="postTablePagination" separator="cell" :loading="loading">
+  <q-table dense :grid="postTableGridStyle" label="Posts as table view" :rows="filteredPosts" :columns="postTableColumns" :visible-columns="postTableColumnsVisible" :row-key="row => row.post_id" :pagination="postTablePagination" separator="cell" :loading="loading">
     <template v-slot:top>
       <q-space />
       <q-checkbox v-model="postTableGridStyle" label="Grid" class="q-mr-xs" />
@@ -31,6 +31,7 @@
   </q-table>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import { exportFile } from 'quasar'
 function wrapCsvValue (val, formatFn) {
   let formatted = formatFn !== undefined
@@ -72,10 +73,10 @@ export default {
         { name: 'author_role', label: 'Author Role', field: 'author_role', required: false, sortable: true, align: 'left' },
         { name: 'author_title', label: 'Author Title', field: 'author_title', required: false, sortable: true, align: 'left' },
         { name: 'tags', label: 'Tags', field: row => row.json_metadata.tags.join(', '), required: false, sortable: false, align: 'left' },
-        { name: 'pending_payout_value', label: 'Pending Payout Value', field: 'pending_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
-        { name: 'author_payout_value', label: 'Author Payout Value', field: 'author_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
-        { name: 'curator_payout_value', label: 'Curator Payout Value', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
-        { name: 'promoted', label: 'Promotion Value', field: 'promoted', required: false, sortable: true, sort: (a, b, rowA, rowB) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' }
+        { name: 'pending_payout_value', label: 'Pending Payout Value', field: 'pending_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
+        { name: 'author_payout_value', label: 'Author Payout Value', field: 'author_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
+        { name: 'curator_payout_value', label: 'Curator Payout Value', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' },
+        { name: 'promoted', label: 'Promotion Value', field: 'promoted', required: false, sortable: true, sort: (a, b) => parseFloat(a.split(' ')[0]) - parseFloat(b.split(' ')[0]), align: 'left' }
       ],
       postTableColumnsVisible: ['author', 'title', 'pending_payout_value'],
       postTableGridStyle: false,
@@ -83,7 +84,7 @@ export default {
     }
   },
   components: {
-    postDialog: () => import('components/postDialog.vue')
+    postDialog: defineAsyncComponent(() => import('components/postDialog.vue'))
   },
   methods: {
     returnPostPath (author, permlink) { return '/@' + author + '/' + permlink },

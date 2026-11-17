@@ -103,10 +103,10 @@ export default {
   props: ['p', 'returnProposalVotes'],
   computed: {
     loggedInUser: function () {
-      return this.$store.state.hive.user.username
+      return this.$hiveStore.user.username
     },
     globalProps: function () {
-      return this.$store.state.hive.globalProps
+      return this.$hiveStore.globalProps
     }
   },
   methods: {

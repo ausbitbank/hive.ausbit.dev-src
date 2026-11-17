@@ -23,13 +23,12 @@
         <div class="text-h5 text-center">Resource Costs</div>
         <div class="text-subtitle">RC for {{ username }}</div>
         <jsonViewer v-if="RC !== {}" :data="RC" />
-        <div class="text-subtitle">Live costs</div>
-        <jsonViewer v-if="costs !== null" :data="costs" />
       </q-card>
     </q-dialog>
   </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 // Calculate Resource Credits availability, present as a progress bar
 export default {
   name: 'rc',
@@ -38,15 +37,14 @@ export default {
     return {
       loading: false,
       RC: {},
-      costs: null,
       showAll: false
     }
   },
   components: {
-    jsonViewer: () => import('components/jsonViewer.vue')
+    jsonViewer: defineAsyncComponent(() => import('components/jsonViewer.vue'))
   },
   computed: {
-    loggedInUser: function () { return this.$store.state.hive.user.username },
+    loggedInUser: function () { return this.$hiveStore.user.username },
     rcPercent: function () {
       if (this.RC.max_rc !== undefined) {
         var max = this.RC.max_rc
@@ -58,8 +56,7 @@ export default {
     },
     resourceBudgetComments: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = 1175937456
-        if (this.costs !== null) { cost = this.costs.comment }
+        const cost = 1175937456
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -72,8 +69,7 @@ export default {
     },
     resourceBudgetVotes: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = 109514642
-        if (this.costs !== null) { cost = this.costs.vote }
+        const cost = 109514642
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -86,8 +82,7 @@ export default {
     },
     resourceBudgetTransfers: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = 487237759
-        if (this.costs !== null) { cost = this.costs.transfer }
+        const cost = 487237759
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -100,8 +95,7 @@ export default {
     },
     resourceBudgetClaimAccounts: function () {
       if (this.RC.rc_manabar !== undefined) {
-        var cost = 8541343515163
-        if (this.costs !== null) { cost = this.costs.claim_account }
+        const cost = 8541343515163
         var available = (this.RC.rc_manabar.current_mana / cost)
         if (available >= 1000000) {
           return '1M+'
@@ -123,10 +117,6 @@ export default {
           this.RC = res.rc_accounts[0]
         })
     },
-    getResourceCosts () {
-      this.$axios.get('https://api.ausbit.dev/rc')
-        .then((res) => { this.costs = res.data })
-    },
     tidyNumber (x) {
       if (x) {
         var parts = x.toString().split('.')
@@ -138,13 +128,12 @@ export default {
     },
     claimAccount () {
       var tx = ['claim_account', { creator: this.loggedInUser, fee: '0.000 HIVE', extensions: [] }]
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', tx])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
       this.init()
     },
     init () {
       this.getRcForAccount(this.username)
-      if (this.costs === null) { this.getResourceCosts() }
-      if (this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+      if (this.loggedInUser) { this.$hiveStore.getAccount(this.loggedInUser) }
     }
   },
   mounted () {

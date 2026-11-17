@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex">
-    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="this.globalProps" :account="this.account" :showBalances="false" :showNavBar="true" class="full-width" style="overflow:hidden" />
+    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="globalProps" :account="account" :showBalances="false" :showNavBar="true" class="full-width" style="overflow:hidden" />
     <div style="margin: auto" v-if="error !== null">
       <q-card class="q-pa-md text-center" bordered>
         <q-icon name="error" size="lg" color="orange" /><br />
@@ -81,7 +81,7 @@
                   <div>You can still vote, but it will not affect rewards.</div>
                 </q-item-section>
                 <q-item-section v-if="loggedInUser">
-                  <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="this.post.active_votes"/>
+                  <vote v-on:Voted="init()" :author='author' :permlink="permlink" :votes="post.active_votes"/>
                 </q-item-section>
                 <q-item-section v-else>
                   Login to vote
@@ -214,7 +214,7 @@
                 </q-item-section>
               </q-item>
               <q-item>
-                <q-btn icon="comment" label="Reply" v-if="this.loggedInUser" push color="blue-grey-10" class="text-center" style="margin: auto"><q-popup-proxy persistent><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
+                <q-btn icon="comment" label="Reply" v-if="loggedInUser" push color="blue-grey-10" class="text-center" style="margin: auto"><q-popup-proxy persistent><commentBox :parent_author="post.author" :parent_permlink="post.permlink" /></q-popup-proxy></q-btn>
               </q-item>
             </q-list>
           </q-card-section>
@@ -253,7 +253,7 @@ import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
 import tipButton from 'components/tipButton.vue'
 import shareButtons from 'components/shareButtons.vue'
-import sanitize from 'sanitize-html' // eslint-disable-line no-unused-vars
+import sanitize from 'sanitize-html'
 import reblog from 'components/reblog.vue'
 import votesDialog from 'components/votesDialog.vue'
 export default {
@@ -262,8 +262,8 @@ export default {
   data () {
     return {
       post: null,
-      author: this.$router.currentRoute.params.author,
-      permlink: this.$router.currentRoute.params.permlink,
+      author: this.$route.params.author,
+      permlink: this.$route.params.permlink,
       showVotes: false,
       showShareDialog: false,
       postBody: null,
@@ -273,20 +273,20 @@ export default {
     }
   },
   watch: {
-    $route (to, from) {
+    $route () {
       this.init()
     }
   },
   computed: {
     errorShown: function () { if (this.error !== null) { return true } else { return false } },
-    globalProps: function () { return this.$store.state.hive.globalProps },
+    globalProps: function () { return this.$hiveStore.globalProps },
     account: {
       get () {
-        return this.$store.state.hive.accounts[this.author]
+        return this.$hiveStore.accounts[this.author]
       }
     },
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     postPastPayout: function () {
       var now = moment.utc()
@@ -355,8 +355,9 @@ export default {
     Sanitize (input) { return sanitize(input) },
     init () {
       this.post = null
-      this.author = this.$router.currentRoute.params.author
-      this.permlink = this.$router.currentRoute.params.permlink
+      this.author = this.$route.params.author
+      this.permlink = this.$route.params.permlink
+      if (this.author) this.$hiveStore.getAccount(this.author)
       this.getPost(this.author, this.permlink)
     },
     delayedInit () {

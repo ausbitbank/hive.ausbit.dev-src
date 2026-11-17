@@ -1,22 +1,16 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
-      <q-toolbar reveal elevated class="bg-dark text-primary q-electron-drag">
+      <q-toolbar class="bg-dark text-primary">
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
-          <router-link to="/" class="q-electron-drag--exception text-primary" style="font-weight: normal"><q-icon name="img:statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
+          <router-link to="/" class="text-primary" style="font-weight: normal"><q-icon name="img:/statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
         </q-toolbar-title>
         <searchbox />
         <queue v-if="loggedInUser !== null && queue.length > 0" />
         <notifications v-if="loggedInUser !== null" />
         <user-login />
         <q-btn dense flat icon="settings" title="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
-        <span v-if="$q.platform.is.electron">
-        <q-btn dense flat icon="cached" title="refresh" @click="refresh" />
-        <q-btn dense flat icon="minimize" title="minimize" @click="minimize" />
-        <q-btn dense flat icon="crop_square" title="maximize" @click="maximize" />
-        <q-btn dense flat icon="close" title="close" @click="closeApp" />
-        </span>
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
@@ -31,7 +25,7 @@
             class="inline-block"
           >
             <img
-              src="statics/badge_powered-by-hive_dark.svg"
+              src="/statics/badge_powered-by-hive_dark.svg"
               alt="Powered by Hive"
               style="height: 36px; width: auto"
             />
@@ -46,7 +40,7 @@
       <div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
     <q-page-container>
-      <router-view :class="backgroundStyle" />
+      <router-view :key="$route.fullPath" :class="backgroundStyle" />
     </q-page-container>
   </q-layout>
 </template>
@@ -64,7 +58,7 @@ animation: gradient 15s ease infinite;
 }
 </style>
 <script>
-import EssentialLink from 'components/EssentialLink'
+import EssentialLink from 'components/EssentialLink.vue'
 import userLogin from 'components/userLogin.vue'
 import Notifications from 'components/notifications.vue'
 import searchbox from 'components/searchbox.vue'
@@ -80,40 +74,15 @@ export default {
     queue,
     settings
   },
-  methods: {
-    minimize () {
-      if (process.env.MODE === 'electron') {
-        this.$q.electron.remote.BrowserWindow.getFocusedWindow().minimize()
-      }
-    },
-    maximize () {
-      if (process.env.MODE === 'electron') {
-        const win = this.$q.electron.remote.BrowserWindow.getFocusedWindow()
-        if (win.isMaximized()) {
-          win.unmaximize()
-        } else {
-          win.maximize()
-        }
-      }
-    },
-    closeApp () {
-      if (process.env.MODE === 'electron') {
-        this.$q.electron.remote.BrowserWindow.getFocusedWindow().close()
-      }
-    },
-    refresh () {
-      window.location.reload()
-    }
-  },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     queue: {
-      get () { return this.$store.state.hive.queue }
+      get () { return this.$hiveStore.queue }
     },
     backgroundStyle: function () {
-      if (this.$store.state.hive.user.settings.darkBackground) {
+      if (this.$hiveStore.user.settings.darkBackground) {
         return ''
       } else {
         return 'gradientBg'
@@ -192,12 +161,6 @@ export default {
           caption: 'Binance.com affiliate link',
           icon: 'monetization_on',
           link: 'https://www.binance.com/en/register?ref=WOL9Y5F6'
-        },
-        {
-          title: 'Trade HIVE on Bittrex',
-          caption: 'Bittrex.com affiliate link',
-          icon: 'monetization_on',
-          link: 'https://bittrex.com/Account/Register?referralCode=PPA-HMA-3VD'
         },
         {
           title: 'Trade HIVE on SimpleSwap',

@@ -12,6 +12,7 @@
     </div>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'connections',
   props: ['type', 'username'],
@@ -24,7 +25,7 @@ export default {
     }
   },
   components: {
-    userCard: () => import('components/userCard.vue')
+    userCard: defineAsyncComponent(() => import('components/userCard.vue'))
   },
   watch: {
     currentPage: function (newState) {
@@ -39,8 +40,8 @@ export default {
       this.loading = true
       var last = ''
       if (this.people.length > 0) { last = this.people[this.people.length - 1] }
-      var params = ['follow_api', 'get_' + this.type, [this.username, last, 'blog', this.limit]]
-      this.$hive.api.callAsync('call', params)
+      var params = [this.username, last, 'blog', this.limit]
+      this.$hive.api.callAsync('condenser_api.get_' + this.type, params)
         .then(response => {
           var newPeople = []
           response.forEach(r => {
@@ -50,46 +51,44 @@ export default {
           this.people.push.apply(this.people, newPeople)
           this.loading = false
         })
+        .catch(() => {
+          this.loading = false
+          this.$q.notify({ type: 'negative', message: 'Failed to load ' + this.type })
+        })
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getAccountLink (user) { return '/@' + user },
     getAccounts (accounts) {
       var newPeopleToCache = []
-      accounts.forEach(p => { if (this.$store.state.hive.accounts[p] === undefined) { newPeopleToCache.push(p) } })
-      if (newPeopleToCache.length > 0) { this.$store.dispatch('hive/getAccounts', newPeopleToCache) }
+      accounts.forEach(p => { if (this.$hiveStore.accounts[p] === undefined) { newPeopleToCache.push(p) } })
+      if (newPeopleToCache.length > 0) { this.$hiveStore.getAccounts(newPeopleToCache) }
     }
   },
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
-    followCount: function () { return this.$store.state.hive.followCounts[this.username] },
+    globalProps: function () { return this.$hiveStore.globalProps },
+    followCount: function () { return this.$hiveStore.followCounts[this.username] },
     loadMoreEnabled: function () {
-      if (this.followCount) {
-        if (this.type === 'following') {
-          if (this.followCount.following_count <= this.people.length) { return true } else { return false }
-        } else {
-          if (this.followCount.follower_count <= this.people.length) { return true } else { return false }
-        }
-      } else {
-        if (this.people.length < this.limit) { return false } else { return true }
-      }
+      const count = this.type === 'following'
+        ? this.followCount?.following_count
+        : this.followCount?.follower_count
+      if (count !== undefined) return count <= this.people.length
+      return this.people.length < this.limit
     },
     currentPage: function () {
       return this.people.slice((this.page * this.limit - this.limit), (this.page * this.limit))
     },
     maxPages: function () {
-      if (this.type === 'following' && this.followCount) {
-        return Math.ceil(this.followCount.following_count / this.limit)
-      } else if (this.type === 'followers' && this.followCount) {
-        return Math.ceil(this.followCount.follower_count / this.limit)
-      } else {
-        return Math.ceil(this.people / this.limit)
-      }
+      const count = this.type === 'following'
+        ? this.followCount?.following_count
+        : this.followCount?.follower_count
+      if (count !== undefined) return Math.ceil(count / this.limit)
+      return Math.ceil(this.people.length / this.limit)
     }
   },
   mounted () {
     this.getConnections()
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
-    if (this.followCount === undefined) { this.$store.dispatch('hive/getFollowCount', this.username) }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+    if (this.followCount === null) { this.$hiveStore.getFollowCount(this.username) }
     this.page = 1
   }
 }

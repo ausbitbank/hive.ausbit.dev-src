@@ -1,16 +1,16 @@
 <template>
   <q-btn v-if="loggedInUser" flat icon="notifications">
-    <q-badge color="primary" v-if="this.$store.state.hive.user.unreadNotificationCount > 0" floating>{{ this.$store.state.hive.user.unreadNotificationCount }}</q-badge>
+    <q-badge color="primary" v-if="$hiveStore.user.unreadNotificationCount > 0" floating>{{ $hiveStore.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
     <q-card dense flat bordered class="text-center q-pa-sm q-ma-none">
       <q-card-section horizontal dense class="text-title flex-center text-center">
-        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="this.$store.state.hive.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
+        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="$hiveStore.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator v-if="notifications !== null" />
-      <q-card-section class="q-ma-none q-pa-none" v-if="this.$store.state.hive.user.unreadNotificationCount > 0">
-      <q-list separator dense v-if="this.notifications !== null" class="q-pa-none q-ma-none">
-      <q-item v-for="n in this.notifications" :key="n.index" clickable @click="$router.push('/' + n.url)" dense>
+      <q-card-section class="q-ma-none q-pa-none" v-if="$hiveStore.user.unreadNotificationCount > 0">
+      <q-list separator dense v-if="notifications !== null" class="q-pa-none q-ma-none">
+      <q-item v-for="n in notifications" :key="n.index" clickable @click="$router.push('/' + n.url)" dense>
         <q-item-section avatar>
           <router-link :to="n.url">
             <q-avatar size="md" v-if="n.msg">
@@ -58,19 +58,19 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     notifications: {
-      get () { return this.$store.state.hive.user.notifications },
-      set (val) { this.$store.commit('hive/updateNotifications', val) }
+      get () { return this.$hiveStore.user.notifications },
+      set (val) { this.$hiveStore.updateNotifications(val) }
     },
     unreadNotificationCount: {
-      get () { return this.$store.state.hive.user.unreadNotificationCount },
-      set (val) { this.$store.commit('hive/updateUnreadNotificationCount', val) }
+      get () { return this.$hiveStore.user.unreadNotificationCount },
+      set (val) { this.$hiveStore.updateUnreadNotificationCount(val) }
     }
   },
   watch: {
-    loggedInUser: function (newState, oldState) {
+    loggedInUser: function (newState, _oldState) {
       if (newState !== '') {
         this.getUnreadNotificationCount()
       }
@@ -101,7 +101,7 @@ export default {
     },
     async markNotificationsRead () {
       var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
     },
     filterMentions (n) {
       if (n.type === 'mention') {

@@ -38,7 +38,7 @@ export default {
       blockNum: null,
       blockOps: null,
       api: null,
-      txLookupApiNode: this.$store.state.hive.ahNode || 'https://api.hive.blog'
+      txLookupApiNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog'
     }
   },
   computed: {
@@ -59,13 +59,18 @@ export default {
     }
   },
   methods: {
-    getTx2 (txId) {
-      this.api = this.$hive.config.get('url')
-      this.$hive.api.setOptions({ url: this.txLookupApiNode })
-      this.$hive.api.getTransactionAsync(txId)
-        .then(tx => this.setTx(tx))
-        .catch(error => console.log(error))
-      this.$hive.api.setOptions({ url: this.api })
+    async getTx2 (txId) {
+      try {
+        const res = await this.$axios.post(this.txLookupApiNode, {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'condenser_api.get_transaction',
+          params: [txId]
+        })
+        if (res.data?.result) this.setTx(res.data.result)
+      } catch (error) {
+        console.error('Failed to load transaction', error)
+      }
     },
     getTx (txId) {
       var params = { transaction_id: txId }
@@ -75,10 +80,10 @@ export default {
             console.log('Tx found in block ' + res.block_num)
             this.getBlockOps(res.block_num)
           } else {
-            console.log('Unable to find tx with transaction status api, attempting getTransaction api')
             this.getTx2(txId)
           }
         })
+        .catch(() => this.getTx2(txId))
     },
     getTxFromBlockOps (blockOps) {
       this.blockOps = blockOps
@@ -90,7 +95,6 @@ export default {
         .catch(error => console.log(error))
     },
     setTx (tx) {
-      if (this.api !== this.$hive.config.get('url') && this.api !== null) { this.$hive.api.setOptions({ url: this.api }) } // If we changed api node to get a tx, change back to the original now
       this.tx = tx
     },
     timeDelta (timestamp) {

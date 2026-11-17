@@ -27,9 +27,7 @@
             <div class="text-bold">
               <q-avatar size="sm"><q-img :src="coin.image" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
             </div>
-            <sparkline width="250" height="60" v-if="coin.sparkline_in_7d">
-                <sparklineCurve :data="coin.sparkline_in_7d.price" :limit="coin.sparkline_in_7d.price.length" :styles="sparklineStyle" :spotStyles="spotStyle" :spotProps="spotProps" refLineType='avg' />
-            </sparkline>
+            <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
             <div v-if="coin.market_cap && coin.market_cap > 0"><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
             <div><span class="text-bold">Total Volume: </span> ${{ tidyNumber(coin.total_volume) }}</div>
@@ -46,7 +44,7 @@
       <q-dialog v-model="settingsDialog">
           <q-card flat bordered>
               <q-card-section>
-                  <q-select filled v-model="coins" multiple :options="coinList" use-chips stack-label label="Coins" />
+                  <q-select filled v-model="selectedCoins" multiple :options="coinList" use-chips stack-label label="Coins" />
                   <q-input v-model="currency" label="Currency" />
                   <q-input v-model="sortOrder" label="Sort Order" />
                   <q-toggle left-label v-model="sparklineEnabled" label="Sparkline Chart" />
@@ -65,12 +63,13 @@ a:visited { color: #884488; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>
 <script>
-import sparkline from 'vue-sparklines'
+import Sparkline from 'components/Sparkline.vue'
 export default {
   name: 'Home',
   data () {
     return {
       coinGecko: null,
+      selectedCoins: [...(this.coins || [])],
       sparklineIndicatorStyle: false,
       sparklineStyle: { stroke: '#54a5ff', fill: '#aaaaaa' },
       spotStyle: { fill: '#54a5ff' },
@@ -86,7 +85,7 @@ export default {
     }
   },
   components: {
-    sparkline
+    Sparkline
   },
   props: {
     coins: {
@@ -100,8 +99,8 @@ export default {
   computed: {
     apiUrl: function () {
       var prefix = 'https://api.coingecko.com/api/v3/coins/markets?'
-      var coinString = this.coins.join('%2C%20')
-      var parameters = 'vs_currency=' + this.currency + '&' + 'ids=' + coinString + '&order=' + this.sortOrder + '&per_page=' + this.coins.length + '&page=1&sparkline=' + this.sparklineEnabled
+      var coinString = this.selectedCoins.join('%2C%20')
+      var parameters = 'vs_currency=' + this.currency + '&' + 'ids=' + coinString + '&order=' + this.sortOrder + '&per_page=' + this.selectedCoins.length + '&page=1&sparkline=' + this.sparklineEnabled
       var url = prefix + parameters
       return url
     }

@@ -3,7 +3,7 @@
     <div v-if="!loading">
       <q-card flat bordered>
       <div class="text-h6 text-center">
-        <q-icon name="forum" color="teal" /> Community Feed for {{ this.account }}
+        <q-icon name="forum" color="teal" /> Community Feed for {{ account }}
       </div>
       <q-carousel
         v-if="posts.length > 0"

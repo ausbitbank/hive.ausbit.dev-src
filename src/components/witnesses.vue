@@ -108,9 +108,9 @@
         </q-card-section>
         <q-separator />
         <q-card-actions align="center">
-          <router-link to="witnesses" v-if="this.$route.path !== '/witnesses'"><q-btn dense flat icon="link" /></router-link>
-          <q-btn dense flat icon="unfold_more" @click="limit = 200; witnesses = null; getWitnessesByVote()" v-if="limit < 200 "/>
-          <q-btn dense flat icon="unfold_less" @click="limit = 25; witnesses = null; getWitnessesByVote()" v-if="limit === 200 "/>
+          <router-link to="witnesses" v-if="$route.path !== '/witnesses'"><q-btn dense flat icon="link" /></router-link>
+          <q-btn dense flat icon="unfold_more" @click="currentLimit = 200; witnesses = null; getWitnessesByVote()" v-if="currentLimit < 200 "/>
+          <q-btn dense flat icon="unfold_less" @click="currentLimit = 25; witnesses = null; getWitnessesByVote()" v-if="currentLimit === 200 "/>
           <q-btn dense flat icon="more_horiz" v-if="loggedInUser">
             <q-menu>
               <q-list bordered separator>
@@ -155,7 +155,6 @@ a:visited { color: #884488; }
 <script>
 import moment from 'moment'
 import jsonViewer from 'components/jsonViewer.vue'
-import { debounce } from 'quasar'
 export default {
   name: 'witnesses',
   props: {
@@ -186,25 +185,24 @@ export default {
       witnesses: null,
       hardforkVersion: null,
       viewAll: true,
+      currentLimit: this.limit,
       proxyDialog: false,
       newProxy: ''
     }
   },
   watch: {
-    loggedInUser: function () { if (this.loggedInUser) { debounce(this.init(), 400) } },
+    loggedInUser: function () { if (this.loggedInUser) this.init() },
     account: function () {
-      if (this.account === undefined && this.loggedInUser) { debounce(this.$store.dispatch('hive/getAccount', this.loggedInUser), 500) }
-      if (this.account !== undefined) {
-        if (this.account.proxy !== '') { debounce(this.$store.dispatch('hive/getAccount', this.account.proxy), 500) }
-      }
+      if (this.account === undefined && this.loggedInUser) this.$hiveStore.getAccount(this.loggedInUser)
+      if (this.account?.proxy) this.$hiveStore.getAccount(this.account.proxy)
     }
   },
   computed: {
-    loggedInUser: { get () { return this.$store.state.hive.user.username } },
+    loggedInUser: { get () { return this.$hiveStore.user.username } },
     account: {
       get () {
         if (this.loggedInUser) {
-          return this.$store.state.hive.accounts[this.loggedInUser]
+          return this.$hiveStore.accounts[this.loggedInUser]
         } else {
           return undefined
         }
@@ -239,7 +237,7 @@ export default {
           if (this.account.proxy === '') {
             return this.account
           } else {
-            return this.$store.state.hive.accounts[this.account.proxy]
+            return this.$hiveStore.accounts[this.account.proxy]
           }
         } else {
           return undefined
@@ -268,7 +266,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     getWitnessesByVote () {
-      this.$hive.api.getWitnessesByVoteAsync('', this.limit)
+      this.$hive.api.getWitnessesByVoteAsync('', this.currentLimit)
         .then((response) => { this.witnesses = response })
     },
     votesToHp (votes) { return ((votes * this.hivePerMvests) / 1000000000000).toFixed(0) },
@@ -281,9 +279,9 @@ export default {
     alertPricefeedAge (age) { if (moment(age).isBefore(moment().subtract(1, 'd'))) { return true } else { return false } },
     alertSigningDisabled (key) { if (key === 'STM1111111111111111111111111111111114T1Anm') { return true } else { return false } },
     alertNewAccount (created) { if (moment(created).isAfter(moment().subtract(6, 'months'))) { return true } else { return false } },
-    voteWitness (witness) { this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['account_witness_vote', { account: this.loggedInUser, witness: witness, approve: 'true' }]]) },
-    unvoteWitness (witness) { this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['account_witness_vote', { account: this.loggedInUser, witness: witness, approve: 'false' }]]) },
-    setProxy (proxy) { this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', ['account_witness_proxy', { account: this.loggedInUser, proxy: proxy }]]) },
+    voteWitness (witness) { this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['account_witness_vote', { account: this.loggedInUser, witness: witness, approve: 'true' }]]) },
+    unvoteWitness (witness) { this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['account_witness_vote', { account: this.loggedInUser, witness: witness, approve: 'false' }]]) },
+    setProxy (proxy) { this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['account_witness_proxy', { account: this.loggedInUser, proxy: proxy }]]) },
     linkAccount (username) { return '/@' + username },
     linkAccountBlog (username) { return '/@' + username + '/blog' },
     linkAccountPosts (username) { return '/@' + username + '/posts' },
@@ -297,10 +295,10 @@ export default {
     init () {
       this.getWitnessesByVote()
       this.getHardforkVersion()
-      if (this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+      if (this.loggedInUser) { this.$hiveStore.getAccount(this.loggedInUser) }
       if (this.account !== undefined) {
         if (this.account.proxy !== '') {
-          this.$store.dispatch('hive/getAccount', this.account.proxy)
+          this.$hiveStore.getAccount(this.account.proxy)
         }
       }
     }

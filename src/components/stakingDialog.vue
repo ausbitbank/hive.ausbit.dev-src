@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="this.$store.state.hive.accounts[this.username] !== undefined">
+  <q-card flat bordered style="min-width: 100px; max-width: 95%" v-if="$hiveStore.accounts[username] !== undefined">
     <q-card-section header class="text-h5 text-center text-bold">
       Stake {{ tokenName }}
     </q-card-section>
@@ -9,7 +9,7 @@
       <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-primary text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
       <div class="text-center q-ma-md">
-        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ this.log }}</div>
+        <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn flat label="Stake" icon="account_balance" color="primary" @click="stake()" v-if="!sent" />
       </div>
     </q-card-section>
@@ -62,9 +62,9 @@ export default {
   computed: {
     availableBalance: function () {
       if (this.network === 'hive' && this.tokenName === 'HIVE') {
-        return this.$store.state.hive.accounts[this.username].balance.split(' ')[0]
+        return this.$hiveStore.accounts[this.username].balance.split(' ')[0]
       } else if (this.network === 'hive' && this.tokenName === 'HBD') {
-        return this.$store.state.hive.accounts[this.username].hbd_balance.split(' ')[0]
+        return this.$hiveStore.accounts[this.username].hbd_balance.split(' ')[0]
       } else {
         return null
       }
@@ -82,7 +82,7 @@ export default {
       }
     },
     stakeHive () {
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName }]])
     },
     stakeHiveEngine () {
       var j = '{ "contractName": "tokens", "contractAction": "stake", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '" } }'
@@ -92,11 +92,11 @@ export default {
         id: 'ssc-mainnet-hive',
         json: j
       }
-      this.$store.commit('hive/addToQueue', [this.username, 'active', ['custom_json', cj]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
     }
   },
   mounted () {
-    if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.$hiveStore.accounts[this.username] === undefined) { this.$hiveStore.getAccount(this.username) }
   }
 }
 </script>

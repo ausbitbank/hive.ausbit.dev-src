@@ -39,10 +39,6 @@
             <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
             <q-item-section class="text-green">Wallet</q-item-section>
           </q-item>
-          <q-item :to="linkExchange(loggedInUser)">
-            <q-item-section avatar><q-icon name="swap_vertical_circle" color="orange" /></q-item-section>
-            <q-item-section class="text-orange">Exchange</q-item-section>
-          </q-item>
           <q-item to="/market">
             <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
             <q-item-section class="text-orange">Market</q-item-section>
@@ -76,21 +72,8 @@
         <q-item>
           <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" />
         </q-item>
-        <q-item dense v-if="username !== '' && username !== null && !$q.platform.is.electron">
-          <q-btn flat label="Hive-Keychain" icon="img:statics/hive-keychain.svg" @click="checkLoginKeychain(username)" />
-        </q-item>
-        <q-item dense v-if="username !== '' && username !== null && (username === 'ausbitbank' || username === 'disregardfiat')">
-          <q-btn v-if="false" label="HiveSigner" icon="img:statics/hivesigner.svg" @click="loginType = 'hivesigner_popup'; login(username)" />
-          <q-btn flat label="HAS" title="Hive Authentication Services" icon="img:statics/hive.svg" @click="loginType = 'HAS'; hasLogin(username)">
-            <q-popup-proxy>
-              <q-card flat bordered>
-                <p v-if="has.qrcode_url !== null">
-                  Waiting for authorisation - scan this QR code
-                  <q-img width="100%" height="100%" :src="has.qrcode_url"/>
-                </p>
-              </q-card>
-            </q-popup-proxy>
-          </q-btn>
+        <q-item dense v-if="username !== '' && username !== null">
+          <q-btn flat label="Hive-Keychain" icon="img:/statics/hive-keychain.svg" @click="checkLoginKeychain(username)" />
         </q-item>
         <q-item dense v-if="username !== '' && username !== null">
           <q-btn flat label="SmartLock" icon="lock">
@@ -108,7 +91,7 @@
         </q-item>
         <q-item v-if="username !== '' && username !== null">
           <q-item-section>
-            <q-btn icon="img:statics/member.png" flat label="'Member ?" title="Save your username to the local browser storage for faster future logins" @click="rememberLogin = !rememberLogin">
+            <q-btn icon="img:/statics/member.png" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
           </q-item-section>
@@ -125,10 +108,6 @@
           <q-item-section>
             <q-chip outline size="md" removable @remove="smartLockRemoveAccount(user)" clickable @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-chip>
           </q-item-section>
-          <q-item-section side v-if="false">
-            <q-btn dense flat glossy v-if="smartLockUnlockStatus(user)" icon="no_encryption" color="green" @click="smartLockLockAccount(user)" />
-            <q-btn dense flat glossy v-else color="red" icon="lock" @click="checkLoginSmartLock(user)" />
-          </q-item-section>
         </q-item>
         </div>
       </q-list>
@@ -138,7 +117,6 @@
       <settings />
     </q-dialog>
   </q-btn>
-  <has />
   </span>
 </template>
 <style>
@@ -146,14 +124,11 @@ a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
-// import { keychain, isKeychainInstalled, hasKeychainBeenUsed } from '@hiveio/keychain'
-import { uid } from 'quasar'
 import smartlock from 'components/smartlock/index.js'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
-// import has from 'components/has.vue'
-var CryptoJS = require('crypto-js')
+
 export default {
   name: 'userLogin',
   props: [],
@@ -168,39 +143,21 @@ export default {
       postkey: '',
       activekey: '',
       memokey: '',
-      password: '',
-      has: {
-        server: 'wss://hive-auth.arcange.eu',
-        appData: {
-          name: 'hive.ausbit.dev',
-          description: 'A Hive block explorer and toolkit',
-          icon: 'https://hive.ausbit.dev/statics/hive.svg'
-        },
-        appKey: '',
-        token: '',
-        expire: '',
-        authKey: '',
-        ws: null,
-        wsa: true,
-        ws_status: '',
-        wsconn: false,
-        qrcode_url: '',
-        uri: ''
-      }
+      password: ''
     }
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username },
+      get () { return this.$hiveStore.user.username },
       set (val) {
-        this.$store.commit('hive/updateLoggedInUser', val)
+        this.$hiveStore.updateLoggedInUser(val)
         if (this.rememberLogin) { this.$q.sessionStorage.set('loggedInUser', val) }
       }
     },
     loginType: {
-      get () { return this.$store.state.hive.user.loginType },
+      get () { return this.$hiveStore.user.loginType },
       set (val) {
-        this.$store.commit('hive/updateLoginType', val)
+        this.$hiveStore.updateLoginType(val)
       }
     },
     userAvatar: function () {
@@ -222,7 +179,7 @@ export default {
     account: {
       cache: false,
       get () {
-        return this.$store.state.hive.accounts[this.loggedInUser]
+        return this.$hiveStore.accounts[this.loggedInUser]
       }
     }
   },
@@ -273,8 +230,8 @@ export default {
         persistent: true
       }).onOk(data => {
         smartlock.unlockAccount(user, data, true)
-          .then(res => this.checkLoginSmartLock(user))
-          .catch(this.checkLoginSmartLock(user))
+          .then(() => this.checkLoginSmartLock(user))
+          .catch(() => this.$q.notify({ type: 'negative', message: 'Could not unlock ' + user }))
       }).onCancel(() => {
         // cancel
       }).onDismiss(() => {
@@ -304,119 +261,15 @@ export default {
         }
       }
     },
-    hasLogin (username) {
-      const authData = {
-        app: {
-          name: 'hive.ausbit.dev',
-          description: 'A Hive block explorer and toolkit',
-          icon: 'https://hive.ausbit.dev/statics/hive.svg'
-        },
-        token: undefined,
-        challenge: undefined
-      }
-      var authKey = uid()
-      var data = CryptoJS.AES.encrypt(JSON.stringify(authData), authKey).toString()
-      var payload = { cmd: 'auth_req', account: username, data: data }
-      if (this.has.ws) { this.has.ws.send(JSON.stringify(payload)) } else { this.hasSetup() }
-    },
-    hasSetup () {
-      if ('WebSocket' in window) {
-        this.has.ws = new WebSocket(this.has.server)
-        this.has.ws.onopen = function () {
-          console.info('ws open')
-          this.has.wsconn = true
-          const session = this.$q.localStorage.getItem(this.username + 'HAS')
-          const now = new Date().getTime()
-          console.info(session)
-          if (session && now < session.split(',')[1]) {
-            this.has.token = session.split(',')[0]
-            this.has.expire = session.split(',')[1]
-            this.has.authKey = session.split(',')[2]
-          } else if (session) {
-            this.$q.localStorage.removeItem(this.username + 'HAS')
-            this.hasLogin()
-          } else {
-            this.hasLogin()
-          }
-        }.bind(this)
-        this.has.ws.onmessage = function (event) {
-          console.log(event.data)
-          const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
-          if (message.cmd) {
-            switch (message.cmd) {
-              case 'auth_wait':
-                this.has.ws.status = 'waiting'
-                var json = JSON.stringify({
-                  account: this.username,
-                  uuid: message.uuid,
-                  key: this.has.authKey,
-                  host: this.has.server
-                })
-                this.has.uri = `has://auth_req/${btoa(json)}`
-                this.has.qrcode_url = 'https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=' + this.has.uri
-                setTimeout(
-                  function () {
-                    this.has.ws_status = 'login failed'
-                  }.bind(this),
-                  60000
-                )
-                break
-              case 'auth_ack':
-                this.has.ws_status = 'decrypting'
-                try {
-                  message.data = JSON.parse(
-                    CryptoJS.AES.decrypt(
-                      message.data,
-                      this.has.authKey
-                    ).toString(CryptoJS.enc.Utf8)
-                  )
-                  this.has.ws_status = ''
-                  this.has.token = message.data.token
-                  this.has.expire = message.data.expire
-                  this.$q.locaStorage.setItem(
-                    this.username + 'HAS',
-                    `${message.data.token},${message.data.expire},${this.has.authKey}`
-                  )
-                } catch (e) {
-                  this.has.ws_status = 'login failed'
-                  this.hasLogout()
-                }
-                break
-              case 'auth_nack':
-                this.has.ws_status = 'login failed'
-                this.hasLogout()
-                break
-              case 'sign_wait':
-                this.has.ws_status = `transaction ${message.uuid} is waiting for approval`
-                break
-              case 'sign_ack':
-                this.has.ws_status = `transaction ${message.uuid} is approved`
-                break
-              case 'sign_nack':
-                this.has.ws_status = `transaction ${message.uuid} is rejected`
-                break
-              case 'sign_err':
-                this.has.ws_status = `transaction ${message.uuid} failed with error: ${message.error}`
-                break
-            }
-          }
-        }.bind(this)
-        this.has.ws.onclose = function () {
-          this.has.wsa = false
-          this.has.ws_status = 'This browser does not support HAS (WebSocket)'
-        }
-      }
-    },
     linkBlog (username) { return '/@' + username + '/blog' },
     linkPosts (username) { return '/@' + username + '/posts' },
     linkComments (username) { return '/@' + username + '/comments' },
     linkReplies (username) { return '/@' + username + '/replies' },
     linkFeed (username) { return '/@' + username + '/feed' },
     linkCommunities (username) { return '/@' + username + '/communities' },
-    linkExchange (username) { return '/exchange?for=' + username },
     login (username) {
       this.loggedInUser = username
-      this.$store.dispatch('hive/getAccount', this.loggedInUser)
+      this.$hiveStore.getAccount(this.loggedInUser)
     },
     logout () {
       this.smartLockLockAccount(this.loggedInUser)
@@ -425,7 +278,6 @@ export default {
     }
   },
   mounted () {
-    if ('WebSocket' in window) { this.has.wsa = true } else { this.has.wsa = false }
     if (this.$q.sessionStorage.getItem('loggedInUser')) {
       this.login(this.$q.sessionStorage.getItem('loggedInUser'))
     }

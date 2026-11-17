@@ -1,36 +1,22 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
     "paths": {
-      "src/*": [
-        "src/*"
-      ],
-      "app/*": [
-        "*"
-      ],
-      "components/*": [
-        "src/components/*"
-      ],
-      "layouts/*": [
-        "src/layouts/*"
-      ],
-      "pages/*": [
-        "src/pages/*"
-      ],
-      "assets/*": [
-        "src/assets/*"
-      ],
-      "boot/*": [
-        "src/boot/*"
-      ],
-      "vue$": [
-        "node_modules/vue/dist/vue.esm.js"
-      ]
+      "src/*": ["src/*"],
+      "assets/*": ["src/assets/*"],
+      "boot/*": ["src/boot/*"],
+      "components/*": ["src/components/*"],
+      "layouts/*": ["src/layouts/*"],
+      "pages/*": ["src/pages/*"],
+      "stores/*": ["src/stores/*"]
     }
   },
-  "exclude": [
-    "dist",
-    ".quasar",
-    "node_modules"
-  ]
+  "include": ["src/**/*", "quasar.config.js", "eslint.config.js"],
+  "exclude": ["node_modules", "dist", ".quasar"]
 }

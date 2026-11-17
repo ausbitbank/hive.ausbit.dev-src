@@ -1,6 +1,6 @@
 <template>
     <div>
-    <div v-if="post.reblogged_by && this.$route.path.endsWith('feed')" class="text-center">
+    <div v-if="post.reblogged_by && $route.path.endsWith('feed')" class="text-center">
       <span class="text-bold">Reblogged By: </span>
       <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
@@ -17,7 +17,7 @@
             <q-item-section>
                 <q-item-label>
                     <div class="text-h6 vertical-top text-center"><router-link :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link></div>
-                    <span v-if="$q.screen.gt.xs"><render :input="this.summary" /></span>
+                    <span v-if="$q.screen.gt.xs"><render :input="summary" /></span>
                     <div style="margin:auto; text-align:center" v-if="$q.screen.lt.md">
                     <router-link :to="returnPostPath(post.author, post.permlink)">
                       <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
@@ -47,7 +47,7 @@
         :autoplay="autoplaySlides"
         @mouseenter="autoplaySlides = false"
         class="rounded-borders"
-        :fullscreen.sync="fullscreen"
+        v-model:fullscreen="fullscreen"
       >
         <q-carousel-slide class="column no-wrap flex-center" v-for="image in postImages" :key="image" :name="image" :img-src="image" />
         <template v-slot:control>
@@ -81,6 +81,7 @@
 .postPreviewCard { word-wrap:break-word; word-break: break-word; width: 100% }
 </style>
 <script>
+import { defineAsyncComponent } from 'vue'
 import sanitize from 'sanitize-html'
 import moment from 'moment'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
@@ -98,9 +99,9 @@ export default {
     }
   },
   components: {
-    render: () => import('components/render.vue'),
-    postFooter: () => import('components/postFooter.vue'),
-    postDialog: () => import('components/postDialog.vue')
+    render: defineAsyncComponent(() => import('components/render.vue')),
+    postFooter: defineAsyncComponent(() => import('components/postFooter.vue')),
+    postDialog: defineAsyncComponent(() => import('components/postDialog.vue'))
   },
   watch: {
     post: {
@@ -112,7 +113,7 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     postMeta: function () {
       if (this.post.json_metadata) {

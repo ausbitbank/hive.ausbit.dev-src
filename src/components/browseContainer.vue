@@ -1,26 +1,23 @@
 <template>
   <div>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-    <q-toolbar class="bg-dark text-white text-center" v-if="showToolbar">
+    <q-toolbar class="bg-dark text-white text-center" v-if="toolbarOpen">
       <q-space />
-      <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts', 'tribes']" label="method" />
+      <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" />
       <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
-      <q-input dense v-model="token" label="token" v-if="method === 'tribes' " />
       <q-select dense v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
       <q-select dense v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
-      <q-select dense v-if="method === 'tribes'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted']" label="Sort Method" />
-      <q-input dense v-model="tag" label="tag" v-if="['bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="tag = ''" style="max-width: 150px"/>
+      <q-input dense v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'" clearable @clear="tag = ''" style="max-width: 150px"/>
       <q-input dense maxlength="3" v-model.number="limit" label="limit" style="max-width: 50px" />
-      <q-input dense v-if="method !== 'tribes'" v-model="observer" label="observer" clearable @clear="observer = ''" style="max-width: 150px" />
-      <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
-      <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts', 'tribes'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
-      <q-btn flat dense v-if="method === 'tribes'" color="primary" label="Browse Tribe" @click="getTribePosts()" />
-      <q-btn flat dense v-else color="primary" icon="search" label="Browse" @click="getPosts()" />
+      <q-input dense v-model="observer" label="observer" clearable @clear="observer = ''" style="max-width: 150px" />
+      <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
+      <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
+      <q-btn flat dense color="primary" icon="search" label="Browse" @click="getPosts()" />
       <q-space />
     </q-toolbar>
     </transition>
     <div class="text-center">
-      <q-btn flat color="grey" @click="showToolbar = !showToolbar" icon="settings" title="Toggle full navigation toolbar" />
+      <q-btn flat color="grey" @click="toolbarOpen = !toolbarOpen" icon="settings" title="Toggle full navigation toolbar" />
       <q-btn flat color="grey" title="Filter posts" icon="filter_alt">
         <q-badge color="primary" floating transparent v-if="(posts.length - filteredPosts.length) > 0">{{ posts.length - filteredPosts.length }}/{{ posts.length }}</q-badge>
         <q-popup-proxy>
@@ -122,8 +119,7 @@
       </div>
     </div>
     <div v-if="posts.length > 0" class="text-center">
-      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getTribePosts()" v-if="this.method === 'tribes'" />
-      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" v-else />
+      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />
     </div>
   </div>
 </template>
@@ -170,6 +166,7 @@
 }
 </style>
 <script>
+import { defineAsyncComponent } from 'vue'
 export default {
   name: 'browseContainer',
   props: {
@@ -179,25 +176,22 @@ export default {
     Pstart_author: String,
     Pstart_permlink: String,
     Ppage: Number,
-    tribeToken: {
-      type: String,
-      required: false
-    },
     showToolbar: Boolean,
     showTag: String,
     showAccount: String
   },
   components: {
-    postPreview: () => import('components/postPreview.vue'),
-    browseTable: () => import('components/browseTable.vue')
+    postPreview: defineAsyncComponent(() => import('components/postPreview.vue')),
+    browseTable: defineAsyncComponent(() => import('components/browseTable.vue'))
   },
   data () {
     return {
       loading: false,
+      toolbarOpen: this.showToolbar,
       styleType: this.$route.query.style || 'preview',
       posts: [],
       method: this.callMethod || 'bridge.get_ranked_posts',
-      observer: this.$route.query.observer || this.$store.state.hive.user.username,
+      observer: this.$route.query.observer || this.$hiveStore.user.username,
       limit: this.$route.query.limit || this.responseLimit || 20,
       sort: this.$route.query.sort || this.sortMethod,
       start_author: this.$route.query.start_author || this.Pstart_author,
@@ -206,7 +200,6 @@ export default {
       account: this.showAccount,
       name: null,
       tag: this.$route.query.tag || this.showTag,
-      token: this.tribeToken || null,
       filteredPosts: [],
       error: null,
       filter: {
@@ -224,14 +217,13 @@ export default {
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     }
   },
   watch: {
-    sortMethod: function (newData, oldData) {
-      console.log('sortmethod changed')
+    sortMethod: function (newData) {
       this.sort = newData
-      if (this.method === 'tribes') { this.getTribePosts() } else { this.getPosts() }
+      this.getPosts()
     },
     posts: {
       deep: true,
@@ -246,11 +238,7 @@ export default {
   },
   methods: {
     get () {
-      if (this.method === 'tribes') {
-        this.getTribePosts()
-      } else {
-        this.getPosts()
-      }
+      this.getPosts()
     },
     async getPosts () {
       this.loading = true
@@ -267,35 +255,24 @@ export default {
           }
           this.loading = false
         })
-        .error(err => {
+        .catch(err => {
           this.loading = false
-          this.error = err.cause.data
-        })
-    },
-    async getTribePosts () {
-      this.posts = []
-      this.loading = true
-      if (!this.sort) { this.sort = 'trending' }
-      var api = 'https://scot-api.hive-engine.com/get_discussions_by_' + this.sort + '?token=' + this.token.toUpperCase() + '&limit=' + this.limit
-      if (this.tag !== undefined && this.tag !== '') { api = api + '&tag=' + this.tag }
-      if (this.start_author && this.start_permlink) { api = api + '&start_author=' + this.start_author + '&start_permlink=' + this.start_permlink }
-      this.$axios.get(api)
-        .then((res) => {
-          this.posts = res.data
-          this.loading = false
+          this.error = err?.cause?.data || err?.message || 'Failed to load posts'
         })
     },
     filterPosts () {
+      if (!Array.isArray(this.posts)) {
+        this.filteredPosts = []
+        return
+      }
       var fp = this.posts
       this.filteredPosts = []
       if (this.filter.hideReblogs) { fp = fp.filter(post => !post.reblogged_by) }
       if (this.filter.hideVoted) { fp = fp.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0) }
       // if (this.filter.hideCrossPost) { fp = fp.filter(post => post.json_metadata.includes('"tags":["cross-post"]')) }
-      if (this.method !== 'tribes') {
-        if (this.filter.hidePinned) { fp = fp.filter(post => !post.stats.is_pinned) }
-        if (this.filter.hideHidden) { fp = fp.filter(post => !post.stats.hidden) }
-        if (this.filter.hideGray) { fp = fp.filter(post => !post.stats.gray) }
-      }
+      if (this.filter.hidePinned) { fp = fp.filter(post => !post.stats?.is_pinned) }
+      if (this.filter.hideHidden) { fp = fp.filter(post => !post.stats?.hidden) }
+      if (this.filter.hideGray) { fp = fp.filter(post => !post.stats?.gray) }
       if (this.filter.hideRewardsFilter) {
         if (this.filter.hideRewardsBelow !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) > this.filter.hideRewardsBelow) || (parseFloat(post.payout) > this.filter.hideRewardsBelow)) }
         if (this.filter.hideRewardsAbove !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) < this.filter.hideRewardsAbove) || (parseFloat(post.payout) < this.filter.hideRewardsAbove)) }
@@ -304,7 +281,7 @@ export default {
     }
   },
   mounted () {
-    if (this.method === 'tribes') { this.getTribePosts() } else { this.getPosts() }
+    this.getPosts()
     document.title = 'Browsing ' + this.sortMethod
     if (this.tag) { document.title = document.title + ' / ' + this.tag }
   }

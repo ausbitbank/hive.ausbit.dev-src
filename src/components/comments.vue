@@ -23,7 +23,7 @@
     <q-card dense flat bordered v-if="!loading">
       <q-card-section class="text-h6 text-center">
           <div>
-            {{ Object.keys(this.comments).length - 1 }} Replies
+            {{ Object.keys(comments).length - 1 }} Replies
             <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense flat>
               <q-popup-proxy>
                 <q-card class="q-pa-md shadow-4" dense bordered>
@@ -58,14 +58,14 @@ export default {
         gray: true,
         hide: true
       },
-      commentSortMethod: 'net_rshares',
+      commentSortMethod: { label: 'Votes (rshares)', value: 'net_rshares' },
       commentSortMethods: [
         { label: 'Votes (rshares)', value: 'net_rshares' },
         { label: 'Age', value: 'post_id' },
         { label: 'Author Reputation', value: 'author_reputation' },
         { label: 'Replies', value: 'children' }
       ],
-      commentSortDirection: 'desc',
+      commentSortDirection: { label: 'Descending', value: 'desc' },
       commentSortDirections: [
         { label: 'Ascending', value: 'asc' },
         { label: 'Descending', value: 'desc' }
@@ -90,6 +90,7 @@ export default {
   props: ['author', 'permlink'],
   components: { comment },
   computed: {
+    loggedInUser () { return this.$hiveStore.user.username || null }
   },
   methods: {
     resortComments () {

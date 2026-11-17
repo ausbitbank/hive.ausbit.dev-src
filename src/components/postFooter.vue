@@ -12,7 +12,7 @@
     </q-popup-proxy>
   </q-btn>
   <q-btn flat dense>
-    <q-icon name="img:statics/hive.svg" color="secondary" class="q-mr-sm" v-if="!post.token" />
+    <q-icon name="img:/statics/hive.svg" color="secondary" class="q-mr-sm" v-if="!post.token" />
     <span title="Hive Rewards" v-if="!post.is_paidout && post.pending_payout_value">{{ post.pending_payout_value.split(' ')[0] }}</span>
     <span title="Token Rewards" v-else-if="!post.is_paidout && post.pending_token && post.precision">{{ post.pending_token / Math.pow(10, post.precision) }} {{ post.token }}</span>
     <span title="Hive Rewards" v-else>{{ post.payout }}</span>
@@ -49,6 +49,7 @@
 </q-card-section>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
 export default {
   name: 'postFooter',
@@ -60,15 +61,15 @@ export default {
     }
   },
   components: {
-    reblog: () => import('components/reblog.vue'),
-    vote: () => import('components/vote.vue'),
-    postDialog: () => import('components/postDialog.vue'),
-    commentBox: () => import('components/commentBox.vue'),
-    votesDialog: () => import('components/votesDialog.vue')
+    reblog: defineAsyncComponent(() => import('components/reblog.vue')),
+    vote: defineAsyncComponent(() => import('components/vote.vue')),
+    postDialog: defineAsyncComponent(() => import('components/postDialog.vue')),
+    commentBox: defineAsyncComponent(() => import('components/commentBox.vue')),
+    votesDialog: defineAsyncComponent(() => import('components/votesDialog.vue'))
   },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     postMeta: function () {
       if (this.post.json_metadata) {

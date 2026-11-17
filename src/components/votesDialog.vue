@@ -7,7 +7,7 @@
           <q-tab name="influencers" icon="analytics" label="Influencers" class="text-primary" />
           <q-tab name="table" icon="table_view" label="Full vote data table" class="text-primary" />
         </q-tabs>
-        <q-table v-if="view === 'table'" :data="votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 25 }" dense bordered separator="cell" />
+        <q-table v-if="view === 'table'" :rows="votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 25 }" dense bordered separator="cell" />
         <q-card-section v-if="view === 'influencers'" class="text-center">
             <div class="text-h5">The {{ biggestUpvotes.length }} largest upvotes came from</div>
             <span v-for="voter in biggestUpvotes" :key="voter.voter" class="q-ma-sm">
@@ -43,7 +43,7 @@ export default {
       viewOptions: ['table', 'influencers'],
       voteColumns: [
         { name: 'voter', label: 'Voter', field: 'voter', sortable: true },
-        { name: 'percent', label: 'Percent', field: 'percent', sortable: true, format: (val, row) => `${val / 100} %` },
+        { name: 'percent', label: 'Percent', field: 'percent', sortable: true, format: (val, _row) => `${val / 100} %` },
         { name: 'rshares', label: 'rshares', field: 'rshares', sortable: true },
         { name: 'weight', label: 'weight', field: 'weight', sortable: true },
         { name: 'reputation', label: 'reputation', field: 'reputation', sortable: true },

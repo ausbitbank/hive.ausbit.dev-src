@@ -1,11 +1,11 @@
 <template>
   <span>
-  <q-item flat separator bordered v-if="this.comment.permlink !== this.parentPermlink">
+  <q-item flat separator bordered v-if="comment.permlink !== parentPermlink">
     <q-item-section>
       <q-item-label>
-        <render :input="this.comment.body" />
+        <render :input="comment.body" />
       </q-item-label>
-      <q-item-label><postFooter :post="this.comment" /></q-item-label>
+      <q-item-label><postFooter :post="comment" /></q-item-label>
     </q-item-section>
   </q-item>
   <q-item v-for="authperm in comment.replies" :key="authperm.index">
@@ -14,7 +14,7 @@
   </span>
 </template>
 <script>
-// import commentBody from 'components/commentBody.vue'
+import { defineAsyncComponent } from 'vue'
 import render from 'components/render.vue'
 import comment from 'components/comment.vue'
 import moment from 'moment'
@@ -25,13 +25,13 @@ export default {
     }
   },
   props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { render, comment, postFooter: () => import('components/postFooter.vue') },
+  components: { render, comment, postFooter: defineAsyncComponent(() => import('components/postFooter.vue')) },
   computed: {
     loggedInUser: {
-      get () { return this.$store.state.hive.user.username }
+      get () { return this.$hiveStore.user.username }
     },
     defaultVoteWeight: {
-      get () { return this.$store.state.hive.user.settings.voteWeightComment }
+      get () { return this.$hiveStore.user.settings.voteWeightComment }
     },
     myVote: function () {
       return this.comment.active_votes.filter(this.filterMyVote)[0]

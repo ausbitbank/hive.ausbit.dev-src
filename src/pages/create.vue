@@ -11,7 +11,7 @@
       <q-card flat bordered>
         <q-card-section>
           <q-form @submit="keys=null;checkUsernameAvailable(newUsername)">
-          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="this.$hive.utils.validateAccountName(this.newUsername)" :error="this.$hive.utils.validateAccountName(this.newUsername) !== null" v-if="availableUsername === false || availableUsername === null" clearable />
+          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="$hive.utils.validateAccountName(newUsername)" :error="$hive.utils.validateAccountName(newUsername) !== null" v-if="availableUsername === false || availableUsername === null" clearable />
           </q-form>
           <div v-if="availableUsername === false" class="text-h5 text-center">
             <q-icon name="error" color="red" size="md" /> Account <router-link :to="linkAccount(newUsername)">{{ newUsername }}</router-link> is already registered</div>
@@ -40,7 +40,7 @@
           <q-btn dense color="primary" icon="save" label="Save" @click="saveKeys()" />
           <q-btn dense color="red" icon="person_add" label="Create with token" @click="claimAccountWithToken()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || account.pending_claimed_accounts === 0 || !confirmedSaved" v-if="account.pending_claimed_accounts > 0" />
           <q-btn dense color="red" icon="person_add" label="Create for 3 HIVE" @click="claimAccountWithHive()" :title="!loggedInUser ? 'You need to login to use this' : 'Broadcast account creation to blockchain'" :disable="!loggedInUser || !confirmedSaved" v-if="parseFloat(account.balance.split(' ')[0]) > 3"/>
-          <q-btn dense label="Import keys to keychain" color="primary" icon="img:statics/hive-keychain.svg" @click="importToKeychain()" />
+          <q-btn dense label="Import keys to keychain" color="primary" icon="img:/statics/hive-keychain.svg" @click="importToKeychain()" />
         </q-card-actions>
       </q-card>
       </q-card-section>
@@ -53,13 +53,14 @@
   </q-page>
 </template>
 <script>
+import { defineAsyncComponent } from 'vue'
 import { copyToClipboard, exportFile } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 export default {
   name: 'createAccountPage',
   components: {
-    jsonViewer: () => import('components/jsonViewer.vue'),
-    rc: () => import('components/rc.vue')
+    jsonViewer: defineAsyncComponent(() => import('components/jsonViewer.vue')),
+    rc: defineAsyncComponent(() => import('components/rc.vue'))
   },
   data () {
     return {
@@ -75,16 +76,16 @@ export default {
     loggedInUser: function () { this.init() }
   },
   computed: {
-    globalProps: function () { return this.$store.state.hive.globalProps },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    account: function () { return this.$store.state.hive.accounts[this.loggedInUser] || null }
+    globalProps: function () { return this.$hiveStore.globalProps },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    account: function () { return this.$hiveStore.accounts[this.loggedInUser] || null }
   },
   methods: {
     checkUsernameAvailable (username) {
       this.availableUsername = null
       this.$hive.api.getAccountsAsync([username])
         .then(response => { if (response.length === 0) { this.availableUsername = true } else { this.availableUsername = false } })
-        .error(err => { this.availableUsername = null; this.console.error(err.cause.data) })
+        .catch(err => { this.availableUsername = null; console.error(err?.cause?.data || err) })
     },
     genKeys () {
       var password = this.$hive.formatter.createSuggestedPassword()
@@ -108,7 +109,7 @@ export default {
         extensions: []
       }
       var tx = ['create_claimed_account', op]
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', tx])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
     },
     claimAccountWithHive () {
       var op = {
@@ -123,7 +124,7 @@ export default {
         extensions: []
       }
       var tx = ['account_create', op]
-      this.$store.commit('hive/addToQueue', [this.loggedInUser, 'active', tx])
+      this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
     },
     async importToKeychain () {
       const { success, msg } = await keychain(window, 'requestAddAccount', this.keys.username, { active: this.keys.active, posting: this.keys.posting, memo: this.keys.memo })
@@ -137,7 +138,7 @@ export default {
       }
     },
     init () {
-      if (this.loggedInUser) { this.$store.dispatch('hive/getAccount', this.loggedInUser) }
+      if (this.loggedInUser) { this.$hiveStore.getAccount(this.loggedInUser) }
     }
   },
   mounted () {

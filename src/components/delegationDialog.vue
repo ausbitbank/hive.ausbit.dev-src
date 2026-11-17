@@ -3,7 +3,7 @@
     <q-card-section header class="text-h5 text-center text-bold">
       Delegate {{ tokenName }}
     </q-card-section>
-    <q-card-section v-if="this.network === 'hive' & this.tokenName === 'HIVE'" class="text-center">
+    <q-card-section v-if="network === 'hive' & tokenName === 'HIVE'" class="text-center">
       <div>You currently have <b @click="amountVests = parseFloat(availableStake)" class="text-primary cursor-pointer">{{ tidyNumber(vestToHive(availableStake)) }}</b> {{ tokenName }} available for delegating.</div>
     </q-card-section>
     <q-card-section>
@@ -91,8 +91,8 @@ export default {
     },
     availableStake: function () {
       if (this.network === 'hive' & this.tokenName === 'HIVE') {
-        var vestedShares = parseFloat(this.$store.state.hive.accounts[this.username].vesting_shares.split(' ')[0])
-        var vestsDelegatedOut = parseFloat(this.$store.state.hive.accounts[this.username].delegated_vesting_shares.split(' ')[0])
+        var vestedShares = parseFloat(this.$hiveStore.accounts[this.username].vesting_shares.split(' ')[0])
+        var vestsDelegatedOut = parseFloat(this.$hiveStore.accounts[this.username].delegated_vesting_shares.split(' ')[0])
         return vestedShares - vestsDelegatedOut
       } else { return null }
     },
@@ -116,16 +116,16 @@ export default {
         return null
       }
     },
-    account: function () { return this.$store.state.hive.accounts[this.username] },
-    loggedInUser: function () { return this.$store.state.hive.user.username },
-    globalProps: function () { return this.$store.state.hive.globalProps },
+    account: function () { return this.$hiveStore.accounts[this.username] },
+    loggedInUser: function () { return this.$hiveStore.user.username },
+    globalProps: function () { return this.$hiveStore.globalProps },
     amountHive: function () { return this.vestToHive(this.amountVests) },
     amountHiveWeekly: function () { return (this.amountHive / 13).toFixed(3) },
     disableUnstake: function () { if (this.account.vesting_withdraw_rate !== '0.000000 VESTS') { return true } else { return false } }
   },
   methods: {
     setUsername (u) { this.toAccount = u },
-    delegateHive () { this.$store.commit('hive/addToQueue', [this.username, 'active', ['delegate_vesting_shares', { delegator: this.username, delegatee: this.to, vesting_shares: parseFloat(this.amountVests).toFixed(6) + ' VESTS' }]]) },
+    delegateHive () { this.$hiveStore.addToQueue([this.username, 'active', ['delegate_vesting_shares', { delegator: this.username, delegatee: this.to, vesting_shares: parseFloat(this.amountVests).toFixed(6) + ' VESTS' }]]) },
     vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
     tidyNumber (x) {
       var parts = x.toString().split('.')
@@ -139,11 +139,11 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     cancelPowerdown () { this.unstakeHive('0.000') },
-    unstakeHive () { this.$store.commit('hive/addToQueue', [this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) }
+    unstakeHive () { this.$hiveStore.addToQueue([this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$store.dispatch('hive/getGlobalProps') }
-    if (this.$store.state.hive.accounts[this.username] === undefined) { this.$store.dispatch('hive/getAccount', this.username) }
+    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+    if (this.$hiveStore.accounts[this.username] === undefined) { this.$hiveStore.getAccount(this.username) }
   }
 }
 </script>
