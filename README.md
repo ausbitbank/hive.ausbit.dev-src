@@ -43,11 +43,26 @@ bun run lint:fix
 ## Deployment
 
 The site is served by nginx from `/var/www/hive.ausbit.dev` on `hurgenburgen`
-(history-mode fallback to `index.html`). After a successful build:
+(history-mode fallback to `index.html`).
+
+Use the deploy script. It lints, builds, creates a timestamped tarball backup of
+the live site, uploads the build to a staging directory, then rsyncs it into
+place:
 
 ```bash
-rsync -avz --delete dist/spa/ hurgenburgen:/var/www/hive.ausbit.dev/
+./scripts/deploy.sh
 ```
+
+Every deploy prints the backup path and the matching rollback command. To revert:
+
+```bash
+./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-<timestamp>.tar.gz
+```
+
+The rollback script first snapshots the current (bad) deployment as
+`hive-backups/pre-rollback-<timestamp>.tar.gz`, so a rollback is itself
+reversible. Override the defaults for another host with `REMOTE` and
+`REMOTE_DIR`.
 
 ## Branch history
 
