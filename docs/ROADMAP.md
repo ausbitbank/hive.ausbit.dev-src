@@ -60,10 +60,16 @@ workflows.
 This track comes first. It unlocks every later feature by making the app faster
 and safer to extend.
 
-### W22 — Performance measurement and delivery
+### W22 — Performance measurement, dashboard and hard-reload startup
 
 - Add repeatable performance baselines: Lighthouse/Playwright runs for home,
   browse, block, post, wallet and market surfaces.
+- Publish a performance dashboard for key routes: CI Lighthouse reports, route
+  chunk sizes, budgets and trend history, linked from the README/docs.
+- Fix the hard-reload flash of unstyled/prerendered content introduced by the
+  crawler snapshots. Choose one: metadata-only prerender, hydration-safe
+  hiding of the prerendered body, or remove body snapshots. Verify on production
+  with Cloudflare Rocket Loader enabled and throttled network profiles.
 - Analyse the current bundle (largest route/vendor chunks, duplicate
   dependencies, heavy libraries).
 - Split route-level code, defer non-critical dialogs/editors and prefetch likely
@@ -108,9 +114,22 @@ and safer to extend.
 - Account authority risk: key age, proxy usage, multisig-style authority
   warnings and readable permission diffs before updates.
 
-## Track 3 — Search and discovery
+## Track 3 — Content creation
 
-### W26 — Unified search and discovery
+### W26 — Drafts and creator workflow
+
+- Local drafts with autosave, restore and explicit discard.
+- Rich markdown editor improvements: tables, image insertion, preview parity,
+  keyboard shortcuts and draft length guidance.
+- Cross-posting and community selection with clear beneficiary/authority
+  preview.
+- Publish checklist: tags, beneficiaries, reward settings, community and
+  expected posting key.
+- Export/import drafts as JSON for backup.
+
+## Track 4 — Search and discovery
+
+### W27 — Unified search and discovery
 
 - One search surface for accounts, posts, tags, communities, blocks,
   transactions, proposals and witnesses.
@@ -122,29 +141,15 @@ and safer to extend.
   chronological option.
 - Keyboard-first result navigation and recent-search management.
 
-## Track 4 — Content creation
-
-### W27 — Drafts, scheduling and creator workflow
-
-- Local drafts with autosave, restore and explicit discard.
-- Schedule posts/comments through the existing queue with posting authority.
-- Rich markdown editor improvements: tables, image insertion, preview parity,
-  keyboard shortcuts and draft length guidance.
-- Cross-posting and community selection with clear beneficiary/authority
-  preview.
-- Publish checklist: tags, beneficiaries, reward settings, community and
-  expected posting key.
-- Export/import drafts as JSON for backup.
-
 ## Sequencing
 
 | Phase | Workstreams | Outcome |
 | --- | --- | --- |
-| 1 | W22, W23 | Measured speed, enforced budgets and resilient reads |
+| 1 | W22, W23 | Measured speed, published budgets/dashboard and resilient reads |
 | 2 | W24 | Stable startup, updates and offline behaviour |
-| 3 | W26 | Fast discovery across the whole chain |
-| 4 | W25 | Deep governance and community intelligence |
-| 5 | W27 | Creator workflow on top of the reliable platform |
+| 3 | W25 | Deep governance and community intelligence |
+| 4 | W26 | Creator workflow on top of the reliable platform |
+| 5 | W27 | Search and discovery, last by request |
 
 Tracks may overlap only when they share a dependency. Performance and reliability
 land before feature work that would otherwise make the bundle or network layer
@@ -182,11 +187,14 @@ Every workstream must include:
 > `7b82f97`; W16–W21 are complete, with 31 unit-test files / 245 tests and 20
 > Playwright E2E tests passing. Production is deployed from the W21 build.
 >
-> Start **Track 1 — W22: Performance measurement and delivery**.
+> Start **Track 1 — W22: Performance measurement, dashboard and hard-reload
+> startup**.
 >
 > Measure the current home, browse, block, post, wallet and market surfaces;
-> analyse bundle size and route chunks; define CI performance budgets; then split
-> and defer code, optimise images/fonts/embeds and record before/after numbers.
+> publish a Lighthouse/CI performance dashboard with route budgets; and fix the
+> hard-reload flash of unstyled/prerendered content caused by the crawler
+> snapshots. Then split and defer code, optimise images/fonts/embeds and record
+> before/after numbers.
 >
 > Follow the standards in this roadmap: design tokens, one page-level `h1`,
 > posting/active authority correctness, sanitized UGC and `noopener noreferrer`.
