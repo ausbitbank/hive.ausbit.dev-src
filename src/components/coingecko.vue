@@ -3,7 +3,7 @@
     <span v-if="coinGecko">
     <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
-            <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" title="View coin on coingecko"><q-icon name="open_in_new" /></a></div>
+            <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" rel="noopener noreferrer" title="View coin on coingecko"><q-icon name="open_in_new" /></a></div>
                 <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
             <div v-if="coin.market_cap !== 0"><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>

@@ -2,8 +2,8 @@ import sjcl from 'sjcl'
 import base58 from 'bs58'
 
 export function encryptKey (key, password) {
-  // encrypt
-  const secured = sjcl.encrypt(password, key)
+  // encrypt with a deliberately expensive KDF for new ciphertexts
+  const secured = sjcl.encrypt(password, key, { iter: 100000 })
 
   // encode
   const bytes = Buffer.from(secured, 'utf8')

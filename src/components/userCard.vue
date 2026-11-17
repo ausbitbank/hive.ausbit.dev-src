@@ -6,7 +6,7 @@
       <div v-if="profile.name" class="text-title text-bold">{{ profile.name }}</div><router-link :to="'/@' + username">@{{username}}</router-link>
       <div v-if="profile.about" class="text-caption">{{ profile.about }}</div>
       <div v-if="profile.location" class="text-subtitle text-grey"><q-icon name="place" class="q-mr-xs" />{{ profile.location }}</div>
-      <div v-if="profile.website" class="text-caption"><q-icon name="open_in_browser" class="q-mr-xs" /><a :href="profile.website" target="_blank" class="text-primary">{{ profile.website.replace('https://','').replace('http://','').replace('www.','') }}</a></div>
+      <div v-if="profile.website" class="text-caption"><q-icon name="open_in_browser" class="q-mr-xs" /><a v-if="safeWebsite" :href="safeWebsite" target="_blank" rel="noopener noreferrer" class="text-primary">{{ profile.website.replace('https://','').replace('http://','').replace('www.','') }}</a><span v-else>{{ profile.website.replace('https://','').replace('http://','').replace('www.','') }}</span></div>
       <user-services :username="username" />
     </div>
     <div class="text-center">
@@ -29,6 +29,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
+import { safeExternalUrl } from 'src/utils/safeUrl'
 export default {
   name: 'userCard',
   props: ['username'],
@@ -95,6 +96,10 @@ export default {
       if (this.account !== undefined && this.meta) {
         if (this.meta.profile) { return this.meta.profile } else { return null }
       } else { return null }
+    },
+    safeWebsite: function () {
+      if (this.profile) { return safeExternalUrl(this.profile.website) }
+      return null
     },
     coverImage: function () {
       // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'

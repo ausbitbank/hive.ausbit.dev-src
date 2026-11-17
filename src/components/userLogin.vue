@@ -83,7 +83,7 @@
                 <q-input v-model="postkey" label="Posting Key" filled type="password" :rules="[val => !!val || 'Field is required']"/>
                 <q-input v-model="activekey" label="Active Key (optional)" filled type="password" />
                 <q-input v-model="memokey" label="Memo Key (optional)" filled type="password" />
-                <q-input v-model="password" label="Unlock Password" filled type="password" :rules="[val => !!val || 'Field is required']"/>
+                <q-input v-model="password" label="Unlock Password" filled type="password" :rules="[val => !!val && val.length >= 8 || 'At least 8 characters']"/>
                 <q-btn flat glossy dense label="Save and login" icon="save" color="primary" @click="smartLockImportAccount()"/>
               </q-card>
             </q-popup-proxy>
@@ -221,7 +221,7 @@ export default {
       this.$q.dialog({
         dark: true,
         title: 'Account ' + user + ' is locked',
-        message: 'Enter your password to unlock account ' + user,
+        message: 'Enter your password to unlock account ' + user + '. Unlocked keys are kept in memory only, so you will need your password again after a page reload.',
         prompt: {
           model: '',
           type: 'password'
@@ -229,7 +229,7 @@ export default {
         cancel: true,
         persistent: true
       }).onOk(data => {
-        smartlock.unlockAccount(user, data, true)
+        smartlock.unlockAccount(user, data, false)
           .then(() => this.checkLoginSmartLock(user))
           .catch(() => this.$q.notify({ type: 'negative', message: 'Could not unlock ' + user }))
       }).onCancel(() => {

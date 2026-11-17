@@ -70,7 +70,7 @@
         <q-icon name="check" color="green" />
       </q-item-section>
       <q-item-section>
-        Voted by {{ loggedInUser }} <a :href="returnHiveSignerDeny(p.id)" target="blank">Unvote</a>
+        Voted by {{ loggedInUser }} <a :href="returnHiveSignerDeny(p.id)" target="blank" rel="noopener noreferrer">Unvote</a>
       </q-item-section>
     </q-item>
     <q-item v-else-if="p.status === 'active'">
@@ -78,7 +78,7 @@
         <q-icon name="check_box_outline_blank" />
       </q-item-section>
       <q-item-section>
-        <a :href="returnHiveSignerApprove(p.id)" target="_blank">Vote for proposal</a>
+        <a :href="returnHiveSignerApprove(p.id)" target="_blank" rel="noopener noreferrer">Vote for proposal</a>
       </q-item-section>
     </q-item>
     <q-item>
@@ -86,7 +86,7 @@
         <q-icon name="open_in_new" />
       </q-item-section>
       <q-item-section>
-        <a :href="returnPeakdProposalLink(p.id)" target="_blank">View proposal in PeakD</a>
+        <a :href="returnPeakdProposalLink(p.id)" target="_blank" rel="noopener noreferrer">View proposal in PeakD</a>
       </q-item-section>
     </q-item>
   </q-list>

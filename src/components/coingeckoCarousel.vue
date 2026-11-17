@@ -25,7 +25,7 @@
         <q-carousel-slide :name="coin.name" class="column no-wrap flex-center" v-for="coin in coinGecko" :key="coin.name" :img-src="coin.image">
           <div class="custom-caption">
             <div class="text-bold">
-              <q-avatar size="sm"><q-img :src="coin.image" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
+              <q-avatar size="sm"><q-img :src="coin.image" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank" rel="noopener noreferrer">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
             </div>
             <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>

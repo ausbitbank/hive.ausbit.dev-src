@@ -27,12 +27,12 @@ functionality → performance/aesthetics**, without regressing the revamp.
 
 | ID | Name | Status | Owner | Files |
 |----|------|--------|-------|-------|
-| W1 | Security hardening | in_progress | security agent | smartlock, communityHeader, safe URL helper, target=_blank, security docs |
+| W1 | Security hardening | done | security agent | smartlock, communityHeader, safe URL helper, target=_blank, security docs |
 | W2 | Mobile/UX/accessibility | pending | ux agent | MainLayout, header/search, accountHeader, carousels, browse toolbar, a11y |
 | W3 | SEO/meta/sitemap | pending | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
 | W4 | Functionality | pending | feature agent | blocks page, proposal votes, queue persistence, node selection, RC/account fee |
 | W5 | Performance/aesthetics | pending | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
-| W6 | Tests/CI | in_progress | test agent | vitest, unit tests, CI workflow, package scripts |
+| W6 | Tests/CI | done | test agent | vitest, unit tests, CI workflow, package scripts |
 
 ## Integration order
 
@@ -45,18 +45,18 @@ functionality → performance/aesthetics**, without regressing the revamp.
 
 ## W1 — Security hardening
 
-- [ ] SmartLock: remove plaintext/key cache from `lscache`; unlock only in memory.
-- [ ] SmartLock: require password after reload; raise new-import password minimum;
+- [x] SmartLock: remove plaintext/key cache from `lscache`; unlock only in memory.
+- [x] SmartLock: require password after reload; raise new-import password minimum;
       increase SJCL KDF iterations for new encryptions.
-- [ ] Replace `sscjs` with a small fetch-based Hive-Engine client (only `find`
+- [x] Replace `sscjs` with a small fetch-based Hive-Engine client (only `find`
       is used: wallet + token, 11 call sites). Coordinator removes the dep.
-- [ ] Sanitize community `description` / `flag_text` with DOMPurify.
-- [ ] Add `src/utils/safeUrl.js`; validate untrusted profile/token URLs in
+- [x] Sanitize community `description` / `flag_text` with DOMPurify.
+- [x] Add `src/utils/safeUrl.js`; validate untrusted profile/token URLs in
       `accountHeader`, `communityHeader`, `userCard`, `token`.
-- [ ] Add `rel="noopener noreferrer"` to all `target="_blank"` anchors.
-- [ ] Add `docs/SECURITY.md` with nginx/Cloudflare CSP/HSTS/nosniff/referrer
+- [x] Add `rel="noopener noreferrer"` to all `target="_blank"` anchors.
+- [x] Add `docs/SECURITY.md` with nginx/Cloudflare CSP/HSTS/nosniff/referrer
       recommendations (no server credentials available from the repo).
-- [ ] Worklog `docs/workstreams/W1-security.md`.
+- [x] Worklog `docs/workstreams/W1-security.md`.
 
 Acceptance: no `lscache`/`sscjs` imports in `src`; no unsanitized `v-html`;
 `bun run lint` and `bun run build` pass.
@@ -131,12 +131,12 @@ regressions on desktop/mobile smoke pages.
 
 ## W6 — Tests/CI
 
-- [ ] Vitest + jsdom config and scripts (`test`, `test:watch`, `test:coverage`).
-- [ ] Unit tests for safe URL, sanitize helpers, page meta, prices fallback,
+- [x] Vitest + jsdom config and scripts (`test`, `test:watch`, `test:coverage`).
+- [x] Unit tests for safe URL, sanitize helpers, page meta, prices fallback,
       Hive-Engine fetch client, and hive store actions.
-- [ ] Playwright smoke config + route test (optional in CI; documented locally).
-- [ ] GitHub Actions: install, lint, test, build on push/PR.
-- [ ] Worklog `docs/workstreams/W6-tests.md`.
+- [x] Playwright smoke config + route test (optional in CI; documented locally).
+- [x] GitHub Actions: install, lint, test, build on push/PR.
+- [x] Worklog `docs/workstreams/W6-tests.md`.
 
 Acceptance: `bun run test` passes locally; CI workflow is present and valid.
 

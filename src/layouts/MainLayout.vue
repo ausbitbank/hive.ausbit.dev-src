@@ -19,7 +19,7 @@
           <a
             href="https://hive.io"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             title="Powered by Hive"
             aria-label="Powered by Hive"
             class="inline-block"

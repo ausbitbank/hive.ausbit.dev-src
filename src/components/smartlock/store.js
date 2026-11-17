@@ -1,11 +1,9 @@
-import lscache from 'lscache'
-import base58 from 'bs58'
 import { encryptKey, decryptKey } from './utils'
 
 export const LOCKER_LOCALSTORAGE_KEY = 'ausbitdev_peaklock_v2'
-export const LOCKER_CACHE_KEY = 'ausbitdev_peaklock_cache_v2'
-export const UNLOCK_POLICY_INTERVAL = 60 * 24 * 7
 
+// Unlocked posting keys live in memory only. They are never written to
+// localStorage/sessionStorage, so a reload always requires the password again.
 const unlocked = {}
 
 function getLocker () {
@@ -57,17 +55,7 @@ export function hasMemo (username) {
 }
 
 export function getPosting (username) {
-  if (unlocked[username]) {
-    return unlocked[username]
-  }
-
-  if (lscache.get(`${LOCKER_CACHE_KEY}_${username}`)) {
-    const bytes = base58.decode(lscache.get(`${LOCKER_CACHE_KEY}_${username}`))
-    unlocked[username] = bytes.toString('utf8')
-    return unlocked[username]
-  }
-
-  return undefined
+  return unlocked[username]
 }
 
 export function getMemo (username, password) {
@@ -78,26 +66,19 @@ export function getActive (username, password) {
   return getAccountKey(username, 'active', password)
 }
 
-export function unlock (username, password, keepUnlocked = false) {
-  // decrypt keys
+export function unlock (username, password, _keepUnlocked = false) {
+  // decrypt key
   const postingKey = getAccountKey(username, 'posting', password)
 
-  // cache posting key
+  // keep it in memory only; never persist unlocked keys
   unlocked[username] = postingKey
-  if (keepUnlocked) {
-    const bytes = Buffer.from(postingKey, 'utf8')
-    const encoded = base58.encode(bytes)
-    lscache.set(`${LOCKER_CACHE_KEY}_${username}`, encoded, UNLOCK_POLICY_INTERVAL)
-  }
 
   return true
 }
 
 export function lock (username) {
-  // clear memory
+  // clear memory only
   delete unlocked[username]
-  // clear cached keys
-  lscache.remove(`${LOCKER_CACHE_KEY}_${username}`)
   return true
 }
 
@@ -120,7 +101,7 @@ export function save (username, password, keys) {
   locker[username] = storedUser
   localStorage.setItem(LOCKER_LOCALSTORAGE_KEY, JSON.stringify(locker))
 
-  // cache posting key
+  // keep the newly imported posting key in memory
   unlocked[username] = keys.posting
 
   return true

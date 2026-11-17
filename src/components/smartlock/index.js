@@ -4,7 +4,9 @@ import hive from '@hiveio/hive-js'
 import { getPosting, unlock, lock, save, remove, allUsers } from './store'
 import api from './api'
 
-export const MIN_PASSWORD_LENGTH = 5
+// Minimum length for NEW imports only. Existing accounts with shorter
+// passwords can still be unlocked (see unlockAccount below).
+export const MIN_PASSWORD_LENGTH = 8
 
 const allAccounts = () => {
   return allUsers()
@@ -19,7 +21,8 @@ const unlockAccount = async (username, password, keepUnlocked = false) => {
   if (!username || typeof username !== 'string' || hive.utils.validateAccountName(username)) {
     throw new Error('Invalid username')
   }
-  if (!password || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
+  // Existing accounts may have shorter passwords; accept any non-empty value.
+  if (!password || typeof password !== 'string' || password.length === 0) {
     throw new Error('Invalid password')
   }
 

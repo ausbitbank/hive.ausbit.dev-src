@@ -65,7 +65,7 @@
       <q-card-section>
         <div class="text-h6"><q-icon name="shopping_cart" color="blue" />&nbsp; How can I get HBD ?</div>
         <div class="text-subtitle">1) Earn HBD by posting popular original content on HIVE</div>
-        <div class="text-subtitle">2) Purchase HBD on external exchanges like <a href="https://blocktrades.us/en/?affiliate_id=24923543-4939-4ab2-b0d5-d190f4fb82dc" target="_blank" rel="noopener">BlockTrades</a> or <a href="https://sg.upbit.com" target="_blank" rel="noopener">Upbit</a></div>
+        <div class="text-subtitle">2) Purchase HBD on external exchanges like <a href="https://blocktrades.us/en/?affiliate_id=24923543-4939-4ab2-b0d5-d190f4fb82dc" target="_blank" rel="noopener noreferrer">BlockTrades</a> or <a href="https://sg.upbit.com" target="_blank" rel="noopener noreferrer">Upbit</a></div>
         <div class="text-subtitle">3) Exchange HIVE for HBD using the <router-link to="/market">internal market</router-link>, or convert them in your wallet.</div>
       </q-card-section>
       <q-separator />
@@ -73,7 +73,7 @@
         <div class="text-h6"><q-icon name="quiz" color="pink" />&nbsp; Why HBD ?</div>
         <div class="text-subtitle">1) A fully decentralized stable coin pegged to USD.</div>
         <div class="text-subtitle" v-if="hbdApr && hbdApr > 0">2) Industry leading APR of <q-badge :color="hbdAprColor">{{ hbdApr }}%</q-badge></div>
-        <div class="text-subtitle">3) Integrated in a large <a href="https://hive.io/eco" target="_blank">ecosystem of Dapps</a>.</div>
+        <div class="text-subtitle">3) Integrated in a large <a href="https://hive.io/eco" target="_blank" rel="noopener noreferrer">ecosystem of Dapps</a>.</div>
       </q-card-section>
     </q-card>
     <coingecko :coins="['hive_dollar']" />

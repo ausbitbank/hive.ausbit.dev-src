@@ -13,7 +13,7 @@ SmartLock.
 - Pinia
 - Vue Router 5
 - `@hiveio/hive-js` for chain reads and transaction construction
-- Hive-Engine (via `sscjs`) and CoinGecko for token/market data
+- A fetch-based Hive-Engine client and CoinGecko for token/market data
 
 ## Requirements
 

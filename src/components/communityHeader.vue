@@ -9,7 +9,7 @@
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
-            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a></div>
+            <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a><span v-else><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</span></div>
             <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><router-link v-if="postingJsonMeta.profile.pinned !== 'none'" :to="returnPostLink(account.name, postingJsonMeta.profile.pinned)"><q-icon name="push_pin" /></router-link></span>
         </span>
         <span>
@@ -132,6 +132,8 @@
 import sanitize from 'sanitize-html'
 import moment from 'moment'
 import { renderPostBody } from '@ecency/render-helper'
+import { sanitizeRichHtml } from 'src/utils/safeHtml'
+import { safeExternalUrl } from 'src/utils/safeUrl'
 // import { mapGetters } from 'vuex'
 export default {
   name: 'accountHeader',
@@ -236,7 +238,7 @@ export default {
     communityDescription: function () {
       if (this.communityInfo) {
         if (this.communityInfo.description) {
-          return renderPostBody(this.communityInfo.description)
+          return sanitizeRichHtml(renderPostBody(this.communityInfo.description))
         } else {
           return null
         }
@@ -246,10 +248,16 @@ export default {
     },
     communityRules: function () {
       if (this.communityInfo.flag_text) {
-        return renderPostBody(this.communityInfo.flag_text)
+        return sanitizeRichHtml(renderPostBody(this.communityInfo.flag_text))
       } else {
         return null
       }
+    },
+    safeWebsite: function () {
+      if (this.postingJsonMeta && this.postingJsonMeta.profile) {
+        return safeExternalUrl(this.postingJsonMeta.profile.website)
+      }
+      return null
     },
     coverImage: function () {
       var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'

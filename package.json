@@ -10,7 +10,10 @@
     "dev": "quasar dev",
     "build": "quasar build",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@ecency/render-helper": "^2.5.47",
@@ -24,13 +27,11 @@
     "dompurify": "^3.4.18",
     "easymde": "^2.21.0",
     "gsap": "^3.15.1",
-    "lscache": "^1.3.0",
     "moment": "^2.30.1",
     "pinia": "^4.1.0",
     "quasar": "^2.35.4",
     "sanitize-html": "^2.17.0",
     "sjcl": "^1.0.9",
-    "sscjs": "^0.0.9",
     "vue": "^3.5.45",
     "vue-json-pretty": "^2.6.0",
     "vue-router": "^5.5.1"
@@ -41,7 +42,12 @@
     "eslint": "^10.15.0",
     "eslint-plugin-vue": "^10.12.1",
     "globals": "^16.0.0",
-    "vite-plugin-node-polyfills": "^0.28.0"
+    "vite-plugin-node-polyfills": "^0.28.0",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vitest/coverage-v8": "^5.1.0",
+    "@vue/test-utils": "^2.6.0",
+    "jsdom": "^31.0.1",
+    "vitest": "^5.1.0"
   },
   "engines": {
     "node": ">= 20",

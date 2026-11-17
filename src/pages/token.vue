@@ -9,7 +9,7 @@
         <div class="text-h5">{{ ti.symbol }}</div>
         <q-card-section>
             <span class="text-caption">{{ ti.metadata.desc}}</span>
-            <div><a :href="ti.metadata.url" target="_blank"><q-icon name="link" /> {{ ti.metadata.url }} </a></div>
+            <div v-if="ti.metadata.url"><a v-if="safeTokenUrl" :href="safeTokenUrl" target="_blank" rel="noopener noreferrer"><q-icon name="link" /> {{ ti.metadata.url }} </a><span v-else><q-icon name="link" /> {{ ti.metadata.url }} </span></div>
             <q-img :src="ti.metadata.icon" style="max-width: 50%" />
         </q-card-section>
         <q-card-section>
@@ -141,7 +141,7 @@
           <div v-if="username === loggedInUser && swapHiveBalance === null" class="text-caption">
             <q-icon name="warning" color="orange" />
             You have no SWAP.HIVE<br />
-            <a href="https://tribaldex.com/" target="_blank">Deposit with TribalDex</a>
+            <a href="https://tribaldex.com/" target="_blank" rel="noopener noreferrer">Deposit with TribalDex</a>
           </div>
           <div v-if="tokenBalance !== null">{{ token }} <q-btn color="primary" dense flat  @click="tradeTab = 'sell'; tradeForm.sell.quantity = tokenBalance.balance; if (tradeForm.sell.price === 0) { tradeForm.sell.price = mi.highestBid }">{{ tidyNumber(tokenBalance.balance) }}</q-btn></div>
           <div v-if="swapHiveBalance !== null"><q-icon name="img:/statics/hive.svg" title="Hive" /> <q-btn color="primary" dense flat @click="tradeTab = 'buy'; if (tradeForm.buy.price === 0) { tradeForm.buy.price = mi.lowestAsk }; tradeForm.buy.quantity = (swapHiveBalance.balance / tradeForm.buy.price).toFixed(ti.precision);">{{ tidyNumber(swapHiveBalance.balance) }}</q-btn></div>
@@ -258,6 +258,7 @@ import { defineAsyncComponent } from 'vue'
 import moment from 'moment'
 import { getHiveEngine } from 'src/services/hiveEngine'
 import { getHivePrices } from 'src/services/prices'
+import { safeExternalUrl } from 'src/utils/safeUrl'
 
 export default {
   name: 'token',
@@ -336,6 +337,10 @@ export default {
       if (this.th) {
         var sl = []; this.th.forEach(t => { sl.push(t.price) }); return sl.reverse()
       } else { return null }
+    },
+    safeTokenUrl: function () {
+      if (this.ti && this.ti.metadata) { return safeExternalUrl(this.ti.metadata.url) }
+      return null
     }
   },
   watch: {

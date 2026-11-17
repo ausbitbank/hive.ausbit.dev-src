@@ -10,6 +10,7 @@ Thumbs.db
 node_modules
 .quasar
 dist
+coverage
 
 # Logs
 npm-debug.log*

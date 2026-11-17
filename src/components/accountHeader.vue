@@ -11,7 +11,7 @@
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ Sanitize(postingJsonMeta.profile.location) }}</div>
-            <div v-if="postingJsonMeta.profile.website" title="Website"><a :href="postingJsonMeta.profile.website"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a></div>
+            <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a><span v-else><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</span></div>
         </span>
         <div v-if="showFollowCount && followCount" class="text-caption">
           <span v-if="followCount.following_count > 0"><q-icon name="people" /><router-link :to="linkFollowing"> {{ tidyNumber(followCount.following_count) }} <span class="text-grey">following</span></router-link>&nbsp;</span>
@@ -45,6 +45,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import sanitize from 'sanitize-html'
+import { safeExternalUrl } from 'src/utils/safeUrl'
 export default {
   name: 'accountHeader',
   data () {
@@ -179,6 +180,12 @@ export default {
       } else {
         return null
       }
+    },
+    safeWebsite: function () {
+      if (this.postingJsonMeta && this.postingJsonMeta.profile) {
+        return safeExternalUrl(this.postingJsonMeta.profile.website)
+      }
+      return null
     },
     loggedInUser: {
       get () { return this.$hiveStore.user.username || null }
