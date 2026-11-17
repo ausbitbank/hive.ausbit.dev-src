@@ -17,7 +17,7 @@
 import { defineAsyncComponent } from 'vue'
 import render from 'components/render.vue'
 import comment from 'components/comment.vue'
-import moment from 'moment'
+import moment from 'src/utils/time'
 export default {
   name: 'comment',
   data () {

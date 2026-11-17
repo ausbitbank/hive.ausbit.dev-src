@@ -17,7 +17,7 @@
   </q-expansion-item>
 </template>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 export default {
   name: 'convertRequests',
   props: ['username'],

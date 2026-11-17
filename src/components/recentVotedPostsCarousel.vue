@@ -52,7 +52,7 @@ a:visited { color: #884488; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 const voteBitmask = makeBitMaskFilter([

@@ -227,7 +227,7 @@ a:visited { color: #3E92CC; }
 :target { background-color: #ffa; }
 </style>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import jsonViewer from 'components/jsonViewer.vue'
 import VueTimers from 'src/mixins/timers.js'
 import animInt from 'components/animInt.vue'

@@ -42,7 +42,7 @@
 </style>
 <script>
 import { exportFile } from 'quasar'
-import Moment from 'moment'
+import Moment from 'src/utils/time'
 import accountOperations from 'components/accountOperations.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'

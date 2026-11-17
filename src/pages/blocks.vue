@@ -76,7 +76,7 @@
 </template>
 
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const BLOCK_COUNT = 10

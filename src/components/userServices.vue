@@ -62,7 +62,7 @@
 }
 </style>
 <script>
-import sanitize from 'sanitize-html'
+import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 export default {
   name: 'userServices',
   props: ['username'],
@@ -73,9 +73,8 @@ export default {
   components: {},
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    Sanitize (input) { return sanitize(input) },
     returnServiceLink (service, data) {
-      var d = sanitize(data)
+      var d = stripHtml(data)
       switch (service) {
         case 'twitter':
           return 'https://twitter.com/' + d
@@ -189,9 +188,9 @@ export default {
     meta: function () {
       if (this.account !== undefined) {
         if (this.account.posting_json_metadata) {
-          return JSON.parse(sanitize(this.account.posting_json_metadata))
+          return safeJsonParse(this.account.posting_json_metadata)
         } else if (this.account.json_metadata) {
-          return JSON.parse(sanitize(this.account.json_metadata))
+          return safeJsonParse(this.account.json_metadata)
         } else {
           return null
         }

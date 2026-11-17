@@ -60,5 +60,16 @@ export default defineConfig(() => ({
     }
   },
 
-  animations: 'all'
+  // Only the Animate.css classes used by <transition> in src are bundled.
+  animations: [
+    'bounceInDown',
+    'bounceInUp',
+    'bounceOutDown',
+    'bounceOutUp',
+    'fadeIn',
+    'fadeInDown',
+    'fadeOut',
+    'fadeOutUp',
+    'zoomInDown'
+  ]
 }))

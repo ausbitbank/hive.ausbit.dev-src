@@ -158,7 +158,7 @@
 </div>
 </template>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
 import { getHivePrices } from 'src/services/prices'
 import Sparkline from 'components/Sparkline.vue'

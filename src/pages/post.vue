@@ -15,7 +15,7 @@
       <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start" style="min-width:0" v-if="post">
         <q-card flat bordered class="q-pa-xs" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
-            <h1 class="text-h5 q-my-none">{{ Sanitize(post.title) }}</h1>
+            <h1 class="text-h5 q-my-none">{{ stripHtml(post.title) }}</h1>
           </q-card-section>
           <q-card-section v-if="post.parent_author !== ''">
             Reply to <router-link :to="linkAccount(post.parent_author)">{{ post.parent_author }}</router-link> / <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
@@ -248,15 +248,15 @@ import accountHeader from 'components/accountHeader.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import comments from 'components/comments.vue'
 import commentBox from 'components/commentBox.vue'
-import moment from 'moment'
+import moment from 'src/utils/time'
 import vote from 'components/vote.vue'
 import jsonViewer from 'components/jsonViewer.vue'
 import tipButton from 'components/tipButton.vue'
 import shareButtons from 'components/shareButtons.vue'
-import sanitize from 'sanitize-html'
+import { stripHtml } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
 import votesDialog from 'components/votesDialog.vue'
-import { setPageMeta, stripHtml, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
+import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 export default {
   name: 'postView',
   components: { render, recentPostsCarousel, comments, vote, jsonViewer, tipButton, accountHeader, commentBox, shareButtons, reblog, votesDialog },
@@ -315,7 +315,7 @@ export default {
     setPost (post) {
       this.post = post
       this.updatePageMeta(post)
-      if (post.description) { this.postDescription = this.Sanitize(post.description) }
+      if (post.description) { this.postDescription = stripHtml(post.description) }
     },
     getPostMeta (post) {
       if (!post || !post.json_metadata) return {}
@@ -330,9 +330,9 @@ export default {
       const author = (post && post.author) || this.author
       const permlink = (post && post.permlink) || this.permlink
       const metadata = this.getPostMeta(post)
-      const title = post && post.title ? stripHtml(post.title, 120) : ''
+      const title = post && post.title ? stripHtmlForMeta(post.title, 120) : ''
       const pageTitle = title || ('Hive post by @' + author)
-      const body = post && post.body ? stripHtml(post.body.slice(0, 4000), 160) : ''
+      const body = post && post.body ? stripHtmlForMeta(post.body.slice(0, 4000), 160) : ''
       const description = body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at hive.ausbit.dev.")
       const image = Array.isArray(metadata.image) ? metadata.image[0] : metadata.image
       const pageUrl = BASE_URL + '/@' + author + '/' + permlink
@@ -395,8 +395,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-
-    Sanitize (input) { return sanitize(input) },
+    stripHtml,
     init () {
       this.post = null
       this.author = this.$route.params.author

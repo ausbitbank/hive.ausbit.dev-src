@@ -23,7 +23,7 @@ a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
 </style>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import jsonViewer from 'components/jsonViewer.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 // import accountOperations from 'components/accountOperations.vue'

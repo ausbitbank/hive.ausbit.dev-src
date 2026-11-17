@@ -67,7 +67,7 @@ a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
 a:visited { color: #1d8ce0; }
 </style>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import animInt from 'components/animInt.vue'
 import VueTimers from 'src/mixins/timers.js'
 import accountOperations from 'components/accountOperations.vue'

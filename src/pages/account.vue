@@ -181,7 +181,7 @@
 <style>
 </style>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 import jsonViewer from 'components/jsonViewer.vue'
 import recentPostsCarousel from 'components/recentPostsCarousel.vue'
 import propsList from 'components/propsList.vue'

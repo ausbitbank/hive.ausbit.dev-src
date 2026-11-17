@@ -45,8 +45,8 @@ a:visited { color: #1d8ce0; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>
 <script>
-import moment from 'moment'
-import sanitize from 'sanitize-html'
+import moment from 'src/utils/time'
+import { stripHtml } from 'src/utils/safeHtml'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'communityFeedCarousel',
@@ -121,8 +121,7 @@ export default {
         })
     },
     s (input) {
-      var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
-      return sanitize(input, options)
+      return stripHtml(input)
     },
     init () {
       this.getCommunityFeed()

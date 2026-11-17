@@ -255,7 +255,7 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
-import moment from 'moment'
+import moment from 'src/utils/time'
 import { getHiveEngine } from 'src/services/hiveEngine'
 import { getHivePrices } from 'src/services/prices'
 import { safeExternalUrl } from 'src/utils/safeUrl'

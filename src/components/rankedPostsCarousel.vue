@@ -55,8 +55,8 @@ a:visited { color: #1d8ce0; }
 .custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
 </style>
 <script>
-import moment from 'moment'
-import sanitize from 'sanitize-html'
+import moment from 'src/utils/time'
+import { stripHtml } from 'src/utils/safeHtml'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'trendingPostsCarousel',
@@ -129,10 +129,8 @@ export default {
         })
     },
     s (input) {
-      // Render markdown to html, strip all tags and attributes, remove URLS
-      var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
-      return sanitize(input, options)
-      // .replace(/\b((?:[a-z][\w-]+:(?:\/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()[\]{};:'".,<>?«»“”‘’]))/g, '')
+      // Strip tags/attributes and collapse whitespace for the caption.
+      return stripHtml(input)
     }
   },
   mounted () {

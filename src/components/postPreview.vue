@@ -83,8 +83,8 @@
 </style>
 <script>
 import { defineAsyncComponent } from 'vue'
-import sanitize from 'sanitize-html'
-import moment from 'moment'
+import { stripHtml } from 'src/utils/safeHtml'
+import moment from 'src/utils/time'
 import { postBodySummary, catchPostImage } from '@ecency/render-helper'
 export default {
   name: 'postPreview',
@@ -168,9 +168,8 @@ export default {
       this.votedWeight = weight
     },
     s (input) {
-      // Render markdown to html, strip all tags and attributes, remove URLS
-      var options = { allowedTags: [], allowedAttributes: [], disallowedTagsMode: 'discard' }
-      return sanitize(input, options)
+      // Strip tags and attributes for plain-text previews.
+      return stripHtml(input)
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink

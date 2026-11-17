@@ -52,6 +52,55 @@ function installIframeGuard () {
   })
 }
 
+// Tags that should read as a word break rather than run words together when
+// their markup is stripped (for example "<p>one</p><p>two</p>").
+const BLOCK_TAG_PATTERN = /<\/?(?:p|div|br|li|ul|ol|h[1-6]|blockquote|pre|tr|td|th|section|article|hr)[^>]*>/gi
+const IGNORED_TEXT_TAGS = 'script, style, noscript, template'
+
+/**
+ * Convert untrusted HTML (or plain text) from chain metadata into plain text.
+ * Entities are decoded by the parser, block tags become spaces and runs of
+ * whitespace are collapsed. Returns '' for null/non-string input.
+ */
+export function stripHtml (value) {
+  if (value === null || value === undefined || typeof value !== 'string') return ''
+
+  const spaced = value.replace(BLOCK_TAG_PATTERN, ' ')
+
+  let text
+  if (typeof DOMParser !== 'undefined') {
+    const parsed = new DOMParser().parseFromString(spaced, 'text/html')
+    if (parsed.body) {
+      // Script/style contents are not visible text; drop them entirely.
+      parsed.body.querySelectorAll(IGNORED_TEXT_TAGS).forEach(node => node.remove())
+      text = parsed.body.textContent || ''
+    } else {
+      text = ''
+    }
+  } else {
+    // Fallback for environments without a DOM.
+    text = spaced.replace(/<[^>]*>/g, ' ')
+  }
+
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Parse JSON metadata that came from the chain (`posting_json_metadata`,
+ * `json_metadata`). Malformed or non-object values use the fallback so callers
+ * can read `.profile`/`.tags` without guarding every access.
+ */
+export function safeJsonParse (value, fallback = {}) {
+  if (typeof value !== 'string') return fallback
+
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' ? parsed : fallback
+  } catch {
+    return fallback
+  }
+}
+
 /**
  * Sanitize HTML that comes from chain metadata (community descriptions and
  * rules) before attaching it with v-html. Allows normal rich-text markup and

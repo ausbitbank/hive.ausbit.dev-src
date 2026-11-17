@@ -60,7 +60,7 @@ a:visited { color: #884488; }
 </style>
 <script>
 import jsonViewer from 'components/jsonViewer.vue'
-import moment from 'moment'
+import moment from 'src/utils/time'
 export default {
   name: 'accountOperations',
   props: ['accountOperations'],

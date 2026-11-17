@@ -44,7 +44,7 @@
   </q-btn>
 </template>
 <script>
-import moment from 'moment'
+import moment from 'src/utils/time'
 // import { keychain } from '@hiveio/keychain'
 export default {
   name: 'notifications',

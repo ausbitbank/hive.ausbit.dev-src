@@ -9,9 +9,9 @@
       <component :is="headingTag" class="text-h4 q-my-none">{{ account.name }}</component>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
-            <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
-            <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ Sanitize(postingJsonMeta.profile.location) }}</div>
-            <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a><span v-else><q-icon name="link" /> {{ Sanitize(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</span></div>
+            <div v-if="postingJsonMeta.profile.about">{{ stripHtml(postingJsonMeta.profile.about) }}</div>
+            <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ stripHtml(postingJsonMeta.profile.location) }}</div>
+            <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ stripHtml(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a><span v-else><q-icon name="link" /> {{ stripHtml(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</span></div>
         </span>
         <div v-if="showFollowCount && followCount" class="text-caption">
           <span v-if="followCount.following_count > 0"><q-icon name="people" /><router-link :to="linkFollowing"> {{ tidyNumber(followCount.following_count) }} <span class="text-grey">following</span></router-link>&nbsp;</span>
@@ -61,7 +61,7 @@
 </style>
 <script>
 import { defineAsyncComponent } from 'vue'
-import sanitize from 'sanitize-html'
+import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 export default {
   name: 'accountHeader',
@@ -131,9 +131,7 @@ export default {
         return null
       }
     },
-    Sanitize (input) {
-      return sanitize(input)
-    },
+    stripHtml,
     getRelationshipBetweenAccounts (account1, account2) {
       var method = 'bridge.get_relationship_between_accounts'
       var params = [account1, account2]
@@ -174,12 +172,9 @@ export default {
         return defaultCover
       } else {
         if (this.account.posting_json_metadata) {
-          if (JSON.parse(this.account.posting_json_metadata).profile) {
-            if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-              return JSON.parse(this.account.posting_json_metadata).profile.cover_image
-            } else {
-              return defaultCover
-            }
+          const meta = safeJsonParse(this.account.posting_json_metadata)
+          if (meta.profile && meta.profile.cover_image) {
+            return meta.profile.cover_image
           } else {
             return defaultCover
           }
@@ -197,7 +192,7 @@ export default {
     },
     postingJsonMeta: function () {
       if (this.account && this.account.posting_json_metadata) {
-        return JSON.parse(sanitize(this.account.posting_json_metadata))
+        return safeJsonParse(this.account.posting_json_metadata)
       } else {
         return null
       }

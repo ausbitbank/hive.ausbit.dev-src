@@ -129,10 +129,9 @@
   </span>
 </template>
 <script>
-import sanitize from 'sanitize-html'
-import moment from 'moment'
+import moment from 'src/utils/time'
 import { renderPostBody } from '@ecency/render-helper'
-import { sanitizeRichHtml } from 'src/utils/safeHtml'
+import { sanitizeRichHtml, safeJsonParse } from 'src/utils/safeHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 // import { mapGetters } from 'vuex'
 export default {
@@ -265,12 +264,9 @@ export default {
         return defaultCover
       } else {
         if (this.account.posting_json_metadata) {
-          if (JSON.parse(this.account.posting_json_metadata).profile) {
-            if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-              return JSON.parse(this.account.posting_json_metadata).profile.cover_image
-            } else {
-              return defaultCover
-            }
+          const meta = safeJsonParse(this.account.posting_json_metadata)
+          if (meta.profile && meta.profile.cover_image) {
+            return meta.profile.cover_image
           } else {
             return defaultCover
           }
@@ -288,7 +284,7 @@ export default {
     },
     postingJsonMeta: function () {
       if (this.account.posting_json_metadata) {
-        return JSON.parse(sanitize(this.account.posting_json_metadata))
+        return safeJsonParse(this.account.posting_json_metadata)
       } else {
         return null
       }

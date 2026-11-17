@@ -34,7 +34,7 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
-import moment from 'moment'
+import moment from 'src/utils/time'
 export default {
   name: 'delegations',
   props: ['username'],
