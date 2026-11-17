@@ -10,28 +10,18 @@
             <span class="gt-xs">hive.ausbit.dev</span>
           </router-link>
         </q-toolbar-title>
-        <div class="gt-xs"><searchbox /></div>
-        <q-btn class="lt-sm" flat dense round icon="search" aria-label="Search" title="Search" @click="mobileSearchOpen = true" />
+        <q-btn class="command-trigger gt-xs" flat no-caps aria-label="Search or jump to a Hive page" title="Search or jump to a Hive page" @click="openCommandPalette">
+          <q-icon name="search" size="18px" aria-hidden="true" />
+          <span class="command-trigger__label">Search or jump to…</span>
+          <kbd class="command-trigger__kbd">Ctrl K</kbd>
+        </q-btn>
+        <q-btn class="lt-sm" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump to" @click="openCommandPalette" />
         <queue v-if="loggedInUser !== null && queue.length > 0" />
         <notifications v-if="loggedInUser !== null" />
         <user-login />
         <q-btn dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
       </q-toolbar>
     </q-header>
-    <q-dialog v-model="mobileSearchOpen" position="top" full-width>
-      <q-card class="mobile-search-card">
-        <div class="mobile-search-header">
-          <div>
-            <div class="mobile-search-title"><q-icon name="search" aria-hidden="true" /> Search Hive</div>
-            <div class="mobile-search-hint">Account, @account/post, #tag, block number or transaction id.</div>
-          </div>
-          <q-btn flat dense round icon="close" aria-label="Close search" title="Close search" v-close-popup />
-        </div>
-        <q-card-section class="q-pt-none">
-          <searchbox autofocus full-width @submitted="mobileSearchOpen = false" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
       <q-list @click="leftDrawerOpen = false">
         <q-item-label header>
@@ -50,6 +40,14 @@
             />
           </a>
         </q-item-label>
+        <q-separator spaced />
+        <q-item clickable @click="openCommandPalette">
+          <q-item-section avatar><q-icon name="manage_search" /></q-item-section>
+          <q-item-section>
+            <q-item-label>Search / jump</q-item-label>
+            <q-item-label caption>Ctrl K</q-item-label>
+          </q-item-section>
+        </q-item>
         <q-separator spaced />
         <q-item-label header class="text-overline text-grey-5 q-py-none">Explore</q-item-label>
         <EssentialLink
@@ -89,9 +87,46 @@
         </div>
       </footer>
     </q-page-container>
+    <command-palette ref="commandPalette" />
   </q-layout>
 </template>
 <style>
+.command-trigger {
+  gap: 0.4rem;
+  min-width: 255px;
+  max-width: 350px;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.035);
+  color: #90a4ae;
+  font-size: 0.8rem;
+  text-transform: none;
+}
+
+.command-trigger:hover {
+  border-color: rgba(79, 195, 247, 0.45);
+  color: #e4eaed;
+}
+
+.command-trigger__label {
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-trigger__kbd {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #78909c;
+  font-family: monospace;
+  font-size: 0.65rem;
+}
+
 .gradientBg {
 background: linear-gradient(-45deg, #9C27B0, #E31337, #3E92CC, #23d5ab); /* -45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab */
 background-size: 400% 400%;
@@ -108,7 +143,7 @@ animation: gradient 15s ease infinite;
 import EssentialLink from 'components/EssentialLink.vue'
 import userLogin from 'components/userLogin.vue'
 import Notifications from 'components/notifications.vue'
-import searchbox from 'components/searchbox.vue'
+import CommandPalette from 'components/CommandPalette.vue'
 import queue from 'components/queue.vue'
 import settings from 'components/settings.vue'
 export default {
@@ -117,9 +152,15 @@ export default {
     EssentialLink,
     userLogin,
     Notifications,
-    searchbox,
+    CommandPalette,
     queue,
     settings
+  },
+  methods: {
+    openCommandPalette () {
+      this.leftDrawerOpen = false
+      this.$refs.commandPalette?.openPalette()
+    }
   },
   computed: {
     loggedInUser: {
@@ -139,13 +180,11 @@ export default {
   watch: {
     $route: function () {
       this.leftDrawerOpen = false
-      this.mobileSearchOpen = false
     }
   },
   data () {
     return {
       leftDrawerOpen: false,
-      mobileSearchOpen: false,
       searchSuggestions: null,
       darkBackgroundToggle: true,
       exploreLinks: [
