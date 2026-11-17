@@ -32,7 +32,7 @@ functionality → performance/aesthetics**, without regressing the revamp.
 | W3 | SEO/meta/sitemap | done | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
 | W4 | Functionality | done | feature agent | blocks page, proposal votes, queue persistence, node selection, RC/account fee |
 | W5a | Performance | done | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
-| W5b | Visual/theme polish | in_progress | design agent |
+| W5b | Visual/theme polish | done | design agent |
 | W6 | Tests/CI | done | test agent | vitest, unit tests, CI workflow, package scripts |
 
 ## Integration order
@@ -183,3 +183,6 @@ Use `./scripts/deploy.sh`. The pre-phase-2 live build is backed up on
   bundle JS 3415→3182 KB, CSS 255→238 KB; dayjs wrapper verified in browser.
 - W5b is the final implementation batch (visual polish; the app intentionally
   stays dark-themed because several surfaces use explicit dark backgrounds).
+
+
+All implementation workstreams are complete. See docs/PHASE2_RESULTS.md.
