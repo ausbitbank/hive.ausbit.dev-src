@@ -34,6 +34,7 @@
             class="browse-table__columns"
             aria-label="Choose table columns"
           />
+          <q-btn flat dense round icon="restart_alt" aria-label="Reset table columns" title="Reset table columns" @click="resetColumns" />
           <q-btn dense outline no-caps color="primary" icon="download" label="Export CSV" @click="exportTable" />
         </div>
       </div>
@@ -133,6 +134,8 @@ function wrapCsvValue (val, formatFn) {
   return `"${formatted}"`
 }
 
+const DEFAULT_VISIBLE_COLUMNS = ['author', 'title', 'pending_payout_value', 'children', 'created']
+
 export default {
   name: 'browseTable',
   props: ['filteredPosts', 'loading'],
@@ -167,15 +170,25 @@ export default {
         { name: 'curator_payout_value', label: 'Curator Payout', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' },
         { name: 'promoted', label: 'Promotion Value', field: 'promoted', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' }
       ],
-      postTableColumnsVisible: ['author', 'title', 'pending_payout_value', 'children', 'created'],
+      postTableColumnsVisible: [...DEFAULT_VISIBLE_COLUMNS],
       postTablePagination: { rowsPerPage: 0 }
     }
   },
   components: {
     postDialog: defineAsyncComponent(() => import('components/postDialog.vue'))
   },
+  watch: {
+    postTableColumnsVisible (value) {
+      if (!Array.isArray(value) || value.length === 0) {
+        this.postTableColumnsVisible = ['author', 'title']
+      }
+    }
+  },
   methods: {
     returnPostPath (author, permlink) { return '/@' + author + '/' + permlink },
+    resetColumns () {
+      this.postTableColumnsVisible = [...DEFAULT_VISIBLE_COLUMNS]
+    },
     exportTable () {
       const content = [this.postTableColumns.map(col => wrapCsvValue(col.label))].concat(
         this.filteredPosts.map(row => this.postTableColumns.map(col => wrapCsvValue(
@@ -190,9 +203,12 @@ export default {
     }
   },
   mounted () {
-    if (this.$route.query.columns) {
-      this.postTableColumnsVisible = this.$route.query.columns.split(',')
-    }
+    const requested = String(this.$route.query.columns || '')
+      .split(',')
+      .map(name => name.trim())
+      .filter(name => this.postTableColumns.some(column => column.name === name))
+
+    if (requested.length) this.postTableColumnsVisible = requested
   }
 }
 </script>

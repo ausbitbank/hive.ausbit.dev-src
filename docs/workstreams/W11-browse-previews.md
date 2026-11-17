@@ -43,8 +43,10 @@ Status: complete
 
 `src/components/browseContainer.vue` was rebuilt:
 
-- Clean toolbar: result count, hidden-by-filter count, refresh, filters and
-  Cards/List/Table layout control.
+- Clean toolbar: “Showing N posts”, the loaded date range, hidden-by-filter
+  count, refresh, filters and Cards/List/Table layout control.
+- Profile subtitles now say “Latest posts/replies/comments from @user” instead
+  of implying the loaded page is a lifetime total.
 - Cards view uses a responsive CSS grid (no masonry).
 - List view uses a fixed thumbnail column and horizontal content.
 - Table view remains available for power users.
@@ -78,7 +80,9 @@ Status: complete
 
 `src/components/browseTable.vue` was polished:
 
-- Compact table header with column selector and CSV export.
+- Compact table header with column selector, reset-columns action and CSV
+  export. Empty or invalid column selections fall back to the default columns
+  so the table can never render a blank body.
 - Useful default columns: Author, Title, Created, Comments, Pending Payout.
 - Clickable post titles and expandable rows (row contents render on demand).
 - Safe handling of missing `json_metadata`, `stats` and payout values.

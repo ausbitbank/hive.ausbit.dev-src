@@ -159,11 +159,11 @@ const SORT_LABELS = {
 }
 
 const PROFILE_SUBTITLES = {
-  posts: 'Everything @{account} has published.',
-  blog: 'Posts @{account} wrote or reblogged.',
-  feed: 'Posts from accounts @{account} follows.',
-  replies: 'Replies @{account} has written.',
-  comments: 'Comments @{account} has written.'
+  posts: 'Latest posts from @{account}.',
+  blog: 'Latest posts @{account} wrote or reblogged.',
+  feed: 'Latest posts from accounts @{account} follows.',
+  replies: 'Latest replies @{account} has written.',
+  comments: 'Latest comments @{account} has written.'
 }
 
 const STANDARD_SORTS = new Set(['trending', 'created', 'hot', 'promoted', 'muted'])

@@ -4,12 +4,12 @@
       <div class="browse-toolbar__summary">
         <span v-if="loading && posts.length === 0">Loading posts…</span>
         <span v-else>
-          <strong>{{ filteredPosts.length }}</strong>
-          {{ filteredPosts.length === 1 ? 'post' : 'posts' }}
+          Showing <strong>{{ filteredPosts.length }}</strong> {{ filteredPosts.length === 1 ? 'post' : 'posts' }}
         </span>
         <span v-if="filteredPosts.length !== posts.length" class="browse-toolbar__filtered">
           {{ posts.length - filteredPosts.length }} hidden by filters
         </span>
+        <span v-if="loadedRange" class="browse-toolbar__range" title="Date range of the posts loaded on this page">· {{ loadedRange }}</span>
       </div>
 
       <div class="browse-toolbar__actions">
@@ -221,6 +221,10 @@
   color: #81d4fa;
 }
 
+.browse-toolbar__range {
+  color: #78909c;
+}
+
 .browse-toolbar__actions {
   display: flex;
   align-items: center;
@@ -360,6 +364,7 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import moment from 'src/utils/time'
 import { postPayoutValue } from 'src/services/posts'
 
 const DEFAULT_FILTERS = () => ({
@@ -437,6 +442,17 @@ export default {
     },
     hasActiveFilters () {
       return this.activeFilterCount > 0
+    },
+    loadedRange () {
+      const times = this.posts
+        .map(post => Date.parse(post.created))
+        .filter(time => Number.isFinite(time))
+      if (!times.length) return ''
+      const oldest = moment.utc(Math.min(...times))
+      const newest = moment.utc(Math.max(...times))
+      const oldestLabel = oldest.format('D MMM YYYY')
+      const newestLabel = newest.format('D MMM YYYY')
+      return oldestLabel === newestLabel ? oldestLabel : oldestLabel + ' – ' + newestLabel
     },
     filteredPosts () {
       let list = this.posts
