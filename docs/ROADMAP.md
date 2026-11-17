@@ -7,10 +7,10 @@ It records what is done, what remains, and the design standards already in use.
 
 ## Current state
 
-Current verified baseline: **`cccde83` on `master`**, pushed to `origin/master`.
+Current verified baseline: **`404d0a7` on `master`**, pushed to `origin/master`.
 Production `hive.ausbit.dev` is deployed from this build. W16 (wallet), W17
-(witnesses, health, nodes) and W18 (markets, HBD tools, internal market) are
-complete.
+(witnesses, health, nodes), W18 (markets, HBD tools, internal market) and W19
+(queue, notifications, SmartLock, login) are complete.
 
 Recent completed workstreams:
 
@@ -41,6 +41,10 @@ Recent completed workstreams:
   and savings APR cards, conversion calculator, rebuilt internal market with
   order book, trades, open orders, balances and fees, and deeper home-market
   links (W18).
+- Queue, notifications and SmartLock: persisted per-item statuses with send all,
+  retry failures and clear completed; paginated/filterable notification inbox
+  with live unread badge and queued mark-all-read; SmartLock lock controls,
+  inactivity timeout and clearer posting/active key guidance (W19).
 
 Relevant docs:
 
@@ -56,6 +60,7 @@ Relevant docs:
 - `docs/workstreams/W16-wallet-rebuild.md`
 - `docs/workstreams/W17-witnesses-health.md`
 - `docs/workstreams/W18-markets.md`
+- `docs/workstreams/W19-queue-login.md`
 
 ## Priority 1 — wallet page rebuild (complete)
 
@@ -126,13 +131,28 @@ Completed 2026-11-18. See `docs/workstreams/W18-markets.md`.
 Checks: lint clean, 24 test files / 199 tests passing, build succeeded, zero axe
 violations at 1440px and 390px on both routes, deploy and live smoke completed.
 
-## Priority 4 — queue, login, notifications
+## Priority 4 — queue, login, notifications (complete)
 
-- Queue: send all, retry failures, clear completed, per-item status and clearer
-  key requirements.
-- SmartLock: lock button, session timeout and clearer key-type explanation.
-- Notifications: load more, filtering, mark-all-read reliability and live badge.
-- Improve login/onboarding copy around posting vs active keys.
+Completed 2026-11-18. See `docs/workstreams/W19-queue-login.md`.
+
+- Queue rebuilt with persisted per-item states (queued, sending, sent, failed),
+  send all, retry failures, clear sent, clear queue, pause/resume auto-send,
+  operation/key summaries and raw details.
+- Restored queues stay paused; interrupted broadcasts return as retryable
+  failures; any broadcast failure pauses auto-send.
+- SmartLock account status, lock/unlock controls, 5/15/30/60-minute inactivity
+  timeout and a visibility-aware auto-lock boot task.
+- Login popup now explains posting versus active keys and Keychain, and the
+  import form labels required versus optional keys.
+- Notifications inbox: page-size loading, load more with `last_id`, type filters,
+  unread-only mode, 60-second visible-tab badge refresh, and queued
+  mark-all-read that updates local unread state after a successful broadcast.
+- Keychain and SmartLock signing paths preserve the queue item’s posting/active
+  authority; SmartLock active actions always require a password confirmation.
+
+Checks: lint clean, 27 test files / 226 tests passing, build succeeded, zero axe
+violations at 1440px and 390px with the login, settings, SmartLock, queue and
+notification surfaces open, deploy and live smoke completed.
 
 ## Priority 5 — data layer and consistency
 
@@ -179,24 +199,28 @@ violations at 1440px and 390px on both routes, deploy and live smoke completed.
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The current verified baseline is commit
-> `cccde83` on `master`, pushed to `origin/master`; W16 (wallet), W17
-> (witnesses, health, nodes) and W18 (markets, HBD tools, internal market) are
-> complete, with 24 test files / 199 tests passing, a green build, and
-> production deployed from the same commit.
+> `404d0a7` on `master`, pushed to `origin/master`; W16 (wallet), W17
+> (witnesses, health, nodes), W18 (markets, HBD tools, internal market) and W19
+> (queue, notifications, SmartLock, login) are complete, with 27 test files /
+> 226 tests passing, a green build, and production deployed from the same
+> commit.
 >
-> Continue with **Priority 4 — queue, login, notifications**. Review the current
-> surfaces before changing them: `src/components/queue.vue`,
-> `src/components/smartlock/`, `src/components/notifications.vue`,
-> `src/components/userLogin.vue` and `src/stores/hive/`.
+> Continue with **Priority 5 — data layer and consistency**. Review the current
+> API, polling, cache and page-state patterns before changing them:
+> `src/services/`, `src/stores/hive/`, `src/boot/`, `src/pages/` and the shared
+> components under `src/components/`.
 >
 > Deliver:
 >
-> 1. Queue controls: send all, retry failures, clear completed, per-item status
->    and clearer posting/active key requirements.
-> 2. SmartLock: lock button, session timeout and clearer key-type explanation.
-> 3. Notifications: load more, filtering, reliable mark-all-read and a live badge.
-> 4. Clearer login/onboarding copy around posting versus active keys.
-> 5. A new `docs/workstreams/W19-queue-login.md` workstream record.
+> 1. A central API client with timeout, retries, node failover and cancellation.
+> 2. TTL cache / stale-while-revalidate for global props, accounts, posts and
+>    witnesses.
+> 3. Pause polling when the tab is hidden.
+> 4. Shared `PageHeader`, `StatCard`, `EmptyState`, `Skeleton`, `DataTable` and
+>    `FilterBar` components.
+> 5. Move remaining legacy pages onto the current card/typography system with
+>    consistent loading, empty, error and stale-data states.
+> 6. A new `docs/workstreams/W20-data-layer.md` workstream record.
 >
 > Follow the existing standards: use the design tokens and card patterns, keep
 > one page-level `h1`, preserve correct posting/active queue authorities, sanitize
@@ -208,5 +232,5 @@ violations at 1440px and 390px on both routes, deploy and live smoke completed.
 > and `ROADMAP.md`, report the test count, build/deploy status and backup path,
 > then commit and push the verified work and confirm the working tree is clean.
 >
-> Do not redo W16–W18 except for integration fixes. The README revamp is tracked
+> Do not redo W16–W19 except for integration fixes. The README revamp is tracked
 > in Priority 6 and is not part of this session.
