@@ -1,7 +1,7 @@
 # W6 — Tests / CI
 
-Status: **implemented, not executed** (dependencies and scripts are applied by
-the coordinator; tests have not been run yet).
+Status: **implemented and verified locally**. `bun run test` passes
+44 tests across 6 files (Vitest 5.1.0).
 
 ## Files created
 
@@ -24,6 +24,23 @@ the coordinator; tests have not been run yet).
 - `tests/unit/timers.spec.js` — mixin options shape, `created()` bookkeeping,
   `normalizeTimers` for object and array configs, immutability of the caller
   config, callback resolution order. No timers are started.
+- `tests/unit/safe-url.spec.js` (follow-up, W1 integration) — accepts absolute
+  http/https, rejects `javascript:`, `data:`, `vbscript:`, `file:`, `ftp:`,
+  `tel:`, protocol-relative URLs, control characters, malformed/non-absolute
+  values and non-strings; covers `allowMailto` and `safeHrefAttrs`.
+- `tests/unit/safe-html.spec.js` (follow-up, W1 integration) — keeps normal
+  rich text, strips `<script>` (and content) and inline event handlers, removes
+  `javascript:` iframes and unknown iframe hosts, keeps allowed https embeds
+  (YouTube/Vimeo), and returns `''` for empty/non-string input.
+- `tests/unit/hive-engine.spec.js` (follow-up, W1 integration) — mocks Quasar
+  `LocalStorage` and global `fetch`:
+  - `find()` posts the expected JSON-RPC body to `<node>/contracts` and returns
+    the result array;
+  - non-array/missing results return `[]`;
+  - JSON-RPC errors reject after exhausting hosts;
+  - a first-host network failure falls back to the next host.
+  - Fake timers drive the 250 ms retry delay; module-level client caching is
+    reset with `vi.resetModules()` + dynamic import per test.
 - `.github/workflows/ci.yml` — push + pull_request, `ubuntu-latest`,
   `actions/checkout`, `oven-sh/setup-bun` (`bun-version: latest`),
   `bun install --frozen-lockfile`, `bun run lint`, `bun run test`,
@@ -31,35 +48,43 @@ the coordinator; tests have not been run yet).
 - `docs/workstreams/W6-package-additions.md` — exact devDependencies, scripts
   and coordinator notes.
 
+## Test results
+
+Run on 2026-11-17 after installing Vitest 5.1.0 and W1 integration:
+
+```
+> vitest run
+
+ Test Files  6 passed (6)
+      Tests  44 passed (44)
+   Start at  18:04:40
+   Duration  2.09s (environment 93%, transform 3%, import 2%, tests 1%, worker 1%)
+```
+
+The 26 follow-up tests are split 15 (`safe-url`), 7 (`safe-html`) and 4
+(`hive-engine`). ESLint on the three new spec files also passes.
+
 ## Not created (intentional)
 
-- No tests for `src/utils/safeUrl.js` or `src/utils/safeHtml.js`; W1 is adding
-  those files and the coordinator will add the tests after integration.
 - No Playwright config/spec. It cannot be added correctly without editing
   `package.json` and installing `@playwright/test`; see follow-up below.
 
-## Deferred coverage (for the coordinator / later workstreams)
+## Deferred coverage (for later workstreams)
 
-- `src/utils/safeUrl.js`, `src/utils/safeHtml.js` — W1 files, add tests after
-  integration (happy path, javascript:/data: rejection, protocol-relative and
-  malformed URLs, sanitizer allow-list).
 - `src/utils/pageMeta.js` — W3 file; test title/description/canonical/OG/
   Twitter updates against a jsdom document.
-- Hive-Engine fetch client — W1 replacement for `sscjs`; test success, JSON-RPC
-  error, HTTP error and timeout with a mocked `fetch`.
 - Hive store **actions** — need Pinia plus `@hiveio/hive-js` mocks; mutations are
   covered now, so action tests can follow without blocking this batch.
+- Component-level tests using `@vue/test-utils` (currently declared but unused),
+  e.g. `render.vue` embeds and `accountHeader` link handling.
 
-## Package / config changes required from the coordinator
-
-See `docs/workstreams/W6-package-additions.md`. Summary:
+## Package / config changes applied by the coordinator
 
 - devDependencies: `vitest@^5.1.0`, `@vitest/coverage-v8@^5.1.0`,
   `jsdom@^31.0.1`, `@vitejs/plugin-vue@^6.0.11`, `@vue/test-utils@^2.6.0`.
 - scripts: `test`, `test:watch`, `test:coverage`.
-- Add `coverage/**` to ESLint ignores and `coverage/` to `.gitignore`.
-- Run `bun install` and commit the updated `bun.lock` before CI can use
-  `--frozen-lockfile`.
+- `coverage/**` is now in the ESLint ignores and `coverage` is in `.gitignore`.
+- `bun.lock` includes the new devDependencies.
 
 ## Assumptions
 
@@ -67,6 +92,7 @@ See `docs/workstreams/W6-package-additions.md`. Summary:
   explicitly includes Vite 8.
 - `getHivePrices` keeps its module-level cache per module instance, so
   `vi.resetModules()` in `beforeEach` gives each prices test a cold cache.
+  The same reset strategy isolates the module-level Hive-Engine client.
 - `updateFollowCount` is intentionally pure with respect to its argument; the
   test pins that behaviour.
 - Store mutations are plain functions using `this`, so tests can call them
@@ -76,16 +102,14 @@ See `docs/workstreams/W6-package-additions.md`. Summary:
 
 ## Risks / open issues
 
-- **Tests have not been run.** `bun run test`, `bun run lint` and
-  `bun run build` still need verification after dependencies are installed.
-- Lint is currently expected to pass because tests import Vitest APIs
-  explicitly, but `coverage/` is not in `eslint.config.js` ignores yet.
-- CI will fail until the devDependencies, scripts and updated lockfile are
-  committed.
-- `@vue/test-utils` is declared but unused until component tests are added.
+- `bun run build` was not re-run in this follow-up; `bun run test` and
+  `bun run lint` both pass.
 - Prices test asserts the `AbortSignal` passed to `fetch`; if the jsdom/Node
-  `AbortSignal` identity differs in the installed Vitest version, relax it to
+  `AbortSignal` identity differs in a future Vitest version, relax it to
   `expect.anything()`.
+- The Hive-Engine error test asserts five host attempts; update it if
+  `FALLBACK_HOSTS` changes.
+- `@vue/test-utils` is declared but unused until component tests are added.
 
 ## Playwright follow-up (documented, not added)
 
