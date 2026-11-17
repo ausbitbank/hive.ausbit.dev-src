@@ -94,7 +94,7 @@ export default {
         case 'dogecoin':
           return 'dogecoin:' + d
         case 'ipfs':
-          return 'https://cloudflare-ipfs.com/ipfs/' + d
+          return 'https://ipfs.io/ipfs/' + d
         case 'xbox':
           return 'https://account.xbox.com/en-us/profile?gamertag=' + d
         case 'psn':

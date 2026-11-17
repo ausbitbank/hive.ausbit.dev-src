@@ -105,7 +105,6 @@ export default {
       var keytype = action[1]
       var op = action[2]
       var ops = [op]
-      // var rpc = this.$hiveStore.user.settings.apiNode || 'https://rpc.ausbit.dev'
       if (op[0] === 'vote') {
         const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', user, op[1].permlink, op[1].author, op[1].weight)
         if (success) { this.successfullBroadcast(action) }

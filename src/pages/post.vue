@@ -69,7 +69,7 @@
                     <q-icon name="create" color="red" />
                 </q-item-section>
                 <q-item-section class="text-caption text-grey">
-                  <a :href="GetEditHistoryUrl(post.author, post.permlink)" target="_blank">Edited {{ timeDelta(post.last_update) }}</a>
+                  <span>Edited {{ timeDelta(post.last_update) }}</span>
                 </q-item-section>
               </q-item>
               <q-item title="Votes">
@@ -351,7 +351,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    GetEditHistoryUrl (author, permlink) { return 'https://scribe.hivekings.com/?url=https%3A%2F%2Fhive.blog%2F%40' + author + '%2F' + permlink },
+
     Sanitize (input) { return sanitize(input) },
     init () {
       this.post = null

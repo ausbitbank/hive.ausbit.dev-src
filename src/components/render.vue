@@ -19,8 +19,7 @@ const EMBED_HOSTS = [
   'www.bitchute.com',
   'd.tube',
   'ipfs.io',
-  'gateway.ipfs.io',
-  'cloudflare-ipfs.com'
+  'gateway.ipfs.io'
 ]
 
 let hooksInstalled = false

@@ -75,7 +75,7 @@ export default {
       spotStyle: { fill: '#54a5ff' },
       spotProps: { size: 2 },
       sparklineEnabled: true,
-      coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'link', 'litecoin', 'eos', 'monero', 'dash', 'cub-finance', 'wrapped-leo', 'uniswap', 'yearn.finance', 'dogecoin', 'steem', 'steem_dollar', 'tron'],
+      coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'litecoin', 'monero', 'dogecoin', 'solana', 'cardano', 'polkadot'],
       currency: 'usd',
       sortOrder: 'market_cap_asc',
       settingsDialog: false,
@@ -92,7 +92,7 @@ export default {
       type: Array,
       required: false,
       default () {
-        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'eos', 'cub-finance']
+        return ['hive', 'hive_dollar', 'bitcoin', 'ethereum']
       }
     }
   },
