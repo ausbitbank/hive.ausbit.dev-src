@@ -7,6 +7,10 @@ It records what is done, what remains, and the design standards already in use.
 
 ## Current state
 
+Current verified baseline: **`fe89078` on `master`**, pushed to `origin/master`.
+Production `hive.ausbit.dev` is deployed from this build. W16 (wallet) and W17
+(witnesses, health, nodes) are complete.
+
 Recent completed workstreams:
 
 - Block detail view (`/b/:blockNum`) with transaction grouping, friendly
@@ -29,6 +33,9 @@ Recent completed workstreams:
   witness directory with proxies, voting and vote-weight calculator, health
   warnings, rebuilt witness settings, network metrics dashboard and node
   latency history/failover (W17).
+- W17 follow-up: labelled saved public signing keys with one-click switching on
+  `/witness`, and corrected relative-time rendering so price-feed ages read
+  “40 minutes ago” rather than “in 40 minutes”.
 
 Relevant docs:
 
@@ -101,6 +108,10 @@ deploy and live smoke completed.
 - Internal market: order book, recent trades, open orders, balances and fees.
 - HBD peg/premium, savings APR and a HIVE/HBD conversion calculator.
 - Link the home market card deeper into the market experience.
+- Review the current market surfaces before rebuilding: `src/pages/market.vue`,
+  `src/pages/markets.vue`, `src/components/internalMarket.vue`,
+  `src/components/TradingViewWidget.vue`, `src/components/HomeMarketCard.vue`
+  and `src/services/prices.js`.
 
 ## Priority 4 — queue, login, notifications
 
@@ -132,6 +143,11 @@ deploy and live smoke completed.
 - “Back to top” for long pages.
 - Better 404 with search suggestions.
 - Copy/share actions for blocks, transactions, accounts and proposals.
+- README revamp: replace the current short README with an accurate project
+  overview, feature/route tour, screenshots, stack and architecture summary,
+  local setup, dev/lint/test/build commands, deploy/rollback workflow, API and
+  data-source notes, key-authority/security guidance, and links to `ROADMAP.md`
+  and the workstream docs.
 
 ## Standards already used
 
@@ -144,14 +160,39 @@ deploy and live smoke completed.
 - Test count and build status should be reported after each workstream.
 - Deploy with `./scripts/deploy.sh`, then live-smoke.
 - Rollback uses the backup path printed by the deploy script.
+- Commit and push verified work to `origin/master`; confirm the working tree is
+  clean and report the commit hash and deploy backup path.
 
 ## Suggested new-session prompt
 
-> Read `docs/ROADMAP.md` first. Continue with Priority 3: markets. Make the
-> TradingView chart responsive, improve pair selection and chart page layout,
-> build the internal market order book/recent trades/open orders/fees, add HBD
-> peg/premium and conversion calculators, and link the home market card deeper
-> into the market experience. Use the existing design tokens and card patterns,
-> keep one page-level h1, run lint/test/build, axe at desktop and 390px, smoke
-> the key flows, then deploy and live-smoke. Update `docs/workstreams/` and
-> `ROADMAP.md`, and report test count and build status.
+> Read `docs/ROADMAP.md` first. The current verified baseline is commit
+> `fe89078` on `master`, pushed to `origin/master`; W16 (wallet) and W17
+> (witnesses, health, nodes) are complete, with 23 test files / 188 tests
+> passing, a green build, and production deployed from the same commit.
+>
+> Continue with **Priority 3 — markets**. Inspect the current market surfaces
+> before changing them: `src/pages/market.vue`, `src/pages/markets.vue`,
+> `src/components/internalMarket.vue`, `src/components/TradingViewWidget.vue`,
+> `src/components/HomeMarketCard.vue` and `src/services/prices.js`.
+>
+> Deliver:
+>
+> 1. A responsive TradingView chart instead of the fixed 1000×1000 widget.
+> 2. Better pair selection and chart page layout.
+> 3. Internal market: order book, recent trades, open orders, balances and fees.
+> 4. HBD peg/premium, savings APR and a HIVE/HBD conversion calculator.
+> 5. Deeper links from the home market card into the market experience.
+> 6. A new `docs/workstreams/W18-markets.md` workstream record.
+>
+> Follow the existing standards: use the design tokens and card patterns, keep
+> one page-level `h1`, preserve correct posting/active queue authorities, sanitize
+> UGC, and use `noopener noreferrer` on external links.
+>
+> After implementation, run `bun run lint`, `bun run test` and `bun run build`,
+> run axe at 1440px and 390px, smoke the key flows, deploy with
+> `./scripts/deploy.sh`, and live-smoke production. Update `docs/workstreams/`
+> and `ROADMAP.md`, report the test count, build/deploy status and backup path,
+> then commit and push the verified work and confirm the working tree is clean.
+>
+> Do not redo W16/W17 except for integration fixes. The README revamp is tracked
+> in Priority 6 and is not part of this session.
