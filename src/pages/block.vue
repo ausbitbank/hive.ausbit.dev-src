@@ -298,6 +298,7 @@ export default {
           description: 'Hive block ' + blockNumber + ' — transactions, operations, virtual operations, witness and raw block JSON.',
           url: '/block/' + blockNumber
         })
+        this.scrollToHash()
       } catch (error) {
         if (error?.message !== 'Block not found') {
           console.error('Failed to load block', error)
@@ -317,6 +318,14 @@ export default {
     goTo (blockNumber) {
       if (!Number.isInteger(blockNumber) || blockNumber < 0) return
       this.$router.push('/b/' + blockNumber)
+    },
+    scrollToHash () {
+      const hash = this.$route && this.$route.hash
+      if (!hash || hash.length < 2) return
+      this.$nextTick(() => {
+        const target = document.getElementById(hash.slice(1))
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
     },
     async goLatest () {
       this.loadingLatest = true

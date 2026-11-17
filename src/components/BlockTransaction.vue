@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="block-tx">
+  <q-card flat bordered class="block-tx" :id="txId">
     <q-card-section class="block-tx__head">
       <div class="block-tx__index">Tx #{{ index + 1 }}</div>
       <router-link :to="'/tx/' + txId" class="block-tx__id" :title="txId">{{ shortId }}</router-link>
@@ -77,6 +77,7 @@ export default {
 .block-tx {
   margin-bottom: var(--space-3);
   overflow: hidden;
+  scroll-margin-top: 84px;
 }
 
 .block-tx__head {
