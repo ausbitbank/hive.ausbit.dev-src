@@ -1,9 +1,9 @@
 <template>
     <span>
-    <span v-if="coinGecko">
+    <template v-if="coinGecko">
     <q-card flat bordered dense v-for="coin in coinGecko" :key="coin.index">
         <q-card-section class="text-center">
-            <div class="text-h6"><q-avatar><q-img :src="coin.image" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" rel="noopener noreferrer" title="View coin on coingecko"><q-icon name="open_in_new" /></a></div>
+            <div class="text-h6"><q-avatar><q-img :src="coin.image" :alt="coin.name + ' logo'" /></q-avatar> {{ coin.name }} <a :href="getCoinGeckoLink(coin)" target="_blank" rel="noopener noreferrer" title="View coin on coingecko" aria-label="View coin on coingecko"><q-icon name="open_in_new" aria-hidden="true" /></a></div>
                 <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
             <div v-if="coin.market_cap !== 0"><span class="text-bold">Market Cap: </span> ${{ tidyNumber(coin.market_cap) }}</div>
@@ -16,7 +16,7 @@
     </q-card>
     <div class="text-center">
       <div class="text-caption">Priced in <span class="text-bold" @click="settingsDialog = true">{{ currency }}</span> via <a href="https://coingecko.com">coingecko</a></div>
-      <q-btn push icon="settings" title="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
+      <q-btn push icon="settings" title="Price settings" aria-label="Price settings" color="primary" flat bordered dense @click="settingsDialog = true" />
       <q-dialog v-model="settingsDialog">
           <q-card flat bordered>
               <q-card-section>
@@ -28,9 +28,16 @@
               </q-card-section>
           </q-card>
       </q-dialog>
-      <span v-if="$route.path !== '/markets'"><router-link to="markets"><q-btn dense flat push icon="link" /></router-link></span>
+      <span v-if="$route.path !== '/markets'"><router-link to="markets" aria-label="Open the markets page"><q-btn dense flat push icon="link" title="Markets" aria-label="Markets" /></router-link></span>
     </div>
-    </span>
+    </template>
+    <q-card v-else-if="priceError" flat bordered class="q-my-md q-pa-lg text-center text-grey-4 bg-dark">
+      <q-icon name="cloud_off" size="2em" color="orange" />
+      <div class="text-subtitle1 q-mt-sm">Price data unavailable</div>
+      <div class="text-caption">CoinGecko could not be reached. Prices will refresh when you retry.</div>
+      <q-btn flat dense color="primary" icon="refresh" label="Retry" class="q-mt-sm" @click="getCoinGecko()" />
+    </q-card>
+    <q-skeleton v-else :height="$q.screen.lt.sm ? '320px' : '260px'" width="100%" rect />
     </span>
 </template>
 <style scoped>
@@ -54,7 +61,8 @@ export default {
       coinList: ['hive', 'hive_dollar', 'bitcoin', 'ethereum', 'litecoin', 'monero', 'dogecoin', 'solana', 'cardano', 'polkadot'],
       currency: 'usd',
       sortOrder: 'market_cap_asc',
-      settingsDialog: false
+      settingsDialog: false,
+      priceError: false
       // url: 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive%2C%20hive_dollar&order=market_cap_desc&per_page=2&page=1&sparkline=true'
     }
   },
@@ -91,9 +99,18 @@ export default {
     },
     getCoinGecko () {
       this.coinGecko = null
+      this.priceError = false
       this.$axios.get(this.apiUrl)
-        .then((response) => { this.coinGecko = response.data })
-        .catch(() => { console.log('Failed to load data from coingecko api') })
+        .then((response) => {
+          if (!Array.isArray(response.data) || response.data.length === 0) {
+            this.priceError = true
+            return
+          }
+          this.coinGecko = response.data
+        })
+        .catch(() => {
+          this.priceError = true
+        })
     },
     getCoinGeckoLink (coin) {
       return 'https://coingecko.com/en/coins/' + coin.id

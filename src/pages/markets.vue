@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
+    <h1 class="sr-only">Hive markets</h1>
     <transition appear enter-active-class="animated fadeIn" leave-active-class="animated fadeOut"><div><trading-view-widget class="q-ml-md" :options="tvOptions" /></div></transition>
     <internalMarket />
   </q-page>

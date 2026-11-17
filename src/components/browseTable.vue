@@ -18,7 +18,7 @@
     <template v-slot:body="props">
       <q-tr :props="props">
         <q-td auto-width>
-          <q-btn size="xs" color="primary" round dense @click="props.expand = !props.expand" :icon="props.expand ? 'remove' : 'add'" title="View Post" />
+          <q-btn size="xs" color="primary" round dense @click="props.expand = !props.expand" :icon="props.expand ? 'remove' : 'add'" title="View Post" aria-label="View post details" />
         </q-td>
         <q-td v-for="col in props.cols" :key="col.name" :props="props" >{{ col.value }}</q-td>
       </q-tr>
@@ -46,7 +46,7 @@ function wrapCsvValue (val, formatFn) {
 
 export default {
   name: 'browseTable',
-  props: ['filteredPosts'],
+  props: ['filteredPosts', 'loading'],
   data () {
     return {
       postTableColumns: [

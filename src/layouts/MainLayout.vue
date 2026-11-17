@@ -1,20 +1,30 @@
 <template>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
       <q-toolbar class="bg-dark text-primary">
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
+        <q-btn flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title>
-          <router-link to="/" class="text-primary" style="font-weight: normal"><q-icon name="img:/statics/hive.svg" style="max-width:50%" /> hive.ausbit.dev </router-link>
+          <router-link to="/" class="text-primary" style="font-weight: normal" aria-label="hive.ausbit.dev home">
+            <q-icon name="img:/statics/hive.svg" style="max-width:50%" aria-hidden="true" />
+            <span class="gt-xs">hive.ausbit.dev</span>
+          </router-link>
         </q-toolbar-title>
-        <searchbox />
+        <div class="gt-xs"><searchbox /></div>
+        <q-btn class="lt-sm" flat dense round icon="search" aria-label="Search" title="Search" @click="mobileSearchOpen = true" />
         <queue v-if="loggedInUser !== null && queue.length > 0" />
         <notifications v-if="loggedInUser !== null" />
         <user-login />
-        <q-btn dense flat icon="settings" title="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
+        <q-btn dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
       </q-toolbar>
     </q-header>
+    <q-dialog v-model="mobileSearchOpen" position="top" full-width>
+      <q-card class="q-pa-sm">
+        <searchbox autofocus @submitted="mobileSearchOpen = false" />
+      </q-card>
+    </q-dialog>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
-      <q-list>
+      <q-list @click="leftDrawerOpen = false">
         <q-item-label header>
           <a
             href="https://hive.io"
@@ -31,15 +41,30 @@
             />
           </a>
         </q-item-label>
+        <q-separator spaced />
+        <q-item-label header class="text-overline text-grey-5 q-py-none">Explore</q-item-label>
         <EssentialLink
-          v-for="link in essentialLinks"
+          v-for="link in exploreLinks"
+          :key="link.title"
+          v-bind="link"
+        />
+        <q-item-label header class="text-overline text-grey-5 q-py-none">Tools</q-item-label>
+        <EssentialLink
+          v-for="link in toolLinks"
+          :key="link.title"
+          v-bind="link"
+        />
+        <q-separator spaced />
+        <q-item-label header class="text-overline text-grey-5 q-py-none">Community &amp; links</q-item-label>
+        <EssentialLink
+          v-for="link in externalLinks"
           :key="link.title"
           v-bind="link"
         />
       </q-list>
-      <div class="text-center"><q-icon name="code" color="grey" title="coded" /> with <q-icon name="favorite" color="red" title="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
+      <div class="text-center q-pb-md"><q-icon name="code" color="grey" title="coded" aria-label="coded" /> with <q-icon name="favorite" color="red" title="love" aria-label="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
-    <q-page-container>
+    <q-page-container id="main-content" tabindex="-1">
       <router-view :key="$route.fullPath" :class="backgroundStyle" />
     </q-page-container>
   </q-layout>
@@ -89,21 +114,91 @@ export default {
       }
     }
   },
+  watch: {
+    $route: function () {
+      this.leftDrawerOpen = false
+      this.mobileSearchOpen = false
+    }
+  },
   data () {
     return {
-      search: '',
       leftDrawerOpen: false,
+      mobileSearchOpen: false,
       searchSuggestions: null,
       darkBackgroundToggle: true,
-      essentialLinks: [
+      exploreLinks: [
         {
-          title: 'Front page',
+          title: 'Home',
           caption: 'hive.ausbit.dev',
           icon: 'home',
-          link: 'https://hive.ausbit.dev'
+          to: '/'
         },
         {
-          title: 'Create an Account',
+          title: 'Browse posts',
+          caption: 'trending, created, hot',
+          icon: 'explore',
+          to: '/browse'
+        },
+        {
+          title: 'Latest blocks',
+          caption: 'live chain activity',
+          icon: 'view_agenda',
+          to: '/blocks'
+        },
+        {
+          title: 'Witnesses',
+          caption: 'chain governance',
+          icon: 'how_to_vote',
+          to: '/witnesses'
+        },
+        {
+          title: 'Proposals',
+          caption: 'decentralized Hive fund',
+          icon: 'account_balance',
+          to: '/proposals'
+        }
+      ],
+      toolLinks: [
+        {
+          title: 'HBD monitor',
+          caption: 'stability and interest',
+          icon: 'attach_money',
+          to: '/hbd'
+        },
+        {
+          title: 'Internal market',
+          caption: 'trade HIVE and HBD',
+          icon: 'store',
+          to: '/market'
+        },
+        {
+          title: 'API nodes',
+          caption: 'network health',
+          icon: 'dns',
+          to: '/nodes'
+        },
+        {
+          title: 'Health',
+          caption: 'chain status',
+          icon: 'monitor_heart',
+          to: '/health'
+        },
+        {
+          title: 'Tax export',
+          caption: 'transaction CSV',
+          icon: 'receipt_long',
+          to: '/tax'
+        },
+        {
+          title: 'Create an account',
+          caption: 'join Hive',
+          icon: 'person_add',
+          to: '/create'
+        }
+      ],
+      externalLinks: [
+        {
+          title: 'Hive onboarding',
           caption: 'hiveonboard.com',
           icon: 'person_add',
           link: 'https://hiveonboard.com?ref=ausbitbank'

@@ -25,10 +25,15 @@
           </q-item-label>
         </q-item-section>
         <q-item-section side>
-          <q-btn dense flat round icon="refresh" :loading="loading" @click.stop="checkAll" title="Re-check all nodes" />
+          <q-btn dense flat round icon="refresh" :loading="loading" @click.stop="checkAll" title="Re-check all nodes" aria-label="Re-check all API nodes" />
         </q-item-section>
       </q-item>
     </q-list>
+
+    <div v-if="!loading && nodes.length === 0" class="text-center text-grey q-pa-lg">
+      <q-icon name="dns" size="2em" />
+      <div class="q-mt-sm">No API nodes are configured.</div>
+    </div>
 
     <q-card-actions align="around">
       <q-btn flat dense icon="refresh" label="Re-check" color="primary" :loading="loading" @click="checkAll" />

@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
+    <h1 class="sr-only">Latest Hive blocks</h1>
     <q-card flat bordered class="blocks-card">
       <q-card-section class="row items-center q-gutter-sm">
         <div class="text-h5"><q-icon name="view_list" color="primary" /> Latest Hive Blocks</div>

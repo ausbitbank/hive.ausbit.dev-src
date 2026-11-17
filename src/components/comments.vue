@@ -6,7 +6,7 @@
     <span v-if="viewComments">
     <span v-if="loading">
     <div><q-skeleton text /><q-skeleton button /><q-skeleton button /></div>
-    <q-card dense flat bordered v-for="i in 5" :key="i.index" style="width:400px">
+    <q-card dense flat bordered v-for="i in 5" :key="i.index" style="width: 100%; max-width: 400px">
       <q-card-section avatar>
         <q-skeleton circle width="40" height="40" />
       </q-card-section>

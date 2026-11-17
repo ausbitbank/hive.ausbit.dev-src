@@ -1,11 +1,11 @@
 <template>
-  <q-btn v-if="loggedInUser" flat icon="notifications">
+  <q-btn v-if="loggedInUser" flat icon="notifications" aria-label="Notifications" title="Notifications">
     <q-badge color="primary" v-if="$hiveStore.user.unreadNotificationCount > 0" floating>{{ $hiveStore.user.unreadNotificationCount }}</q-badge>
     <q-popup-proxy>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
     <q-card dense flat bordered class="text-center q-pa-sm q-ma-none">
       <q-card-section horizontal dense class="text-title flex-center text-center">
-        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" @click="markNotificationsRead()" v-if="$hiveStore.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" @click="getUnreadNotificationCount()"/>
+        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" aria-label="Mark all notifications as read" @click="markNotificationsRead()" v-if="$hiveStore.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" aria-label="Refresh notifications" @click="getUnreadNotificationCount()"/>
       </q-card-section>
       <q-separator v-if="notifications !== null" />
       <q-card-section class="q-ma-none q-pa-none" v-if="$hiveStore.user.unreadNotificationCount > 0">
@@ -14,7 +14,7 @@
         <q-item-section avatar>
           <router-link :to="n.url">
             <q-avatar size="md" v-if="n.msg">
-              <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" />
+              <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" alt="Account avatar" />
             </q-avatar>
           </router-link>
         </q-item-section>

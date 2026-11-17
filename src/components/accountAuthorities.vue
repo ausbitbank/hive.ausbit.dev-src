@@ -13,7 +13,7 @@
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey" />
             </q-item-section>
-            <q-item-section class="wrap text-caption">
+            <q-item-section class="wrap text-caption" tabindex="0">
                 {{ witness.signing_key }}
             </q-item-section>
             <q-item-section side>
@@ -29,7 +29,7 @@
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey" />
             </q-item-section>
-            <q-item-section class="wrap text-caption">
+            <q-item-section class="wrap text-caption" tabindex="0">
                 {{ auth[0] }}
             </q-item-section>
             <q-item-section side>
@@ -78,7 +78,7 @@
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey"/>
             </q-item-section>
-            <q-item-section class="wrap text-caption">
+            <q-item-section class="wrap text-caption" tabindex="0">
                 {{ auth[0] }}
             </q-item-section>
             <q-item-section side>
@@ -127,7 +127,7 @@
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey" />
             </q-item-section>
-            <q-item-section class="wrap text-caption">
+            <q-item-section class="wrap text-caption" tabindex="0">
                 {{ auth[0] }}
             </q-item-section>
             <q-item-section side>
@@ -176,7 +176,7 @@
             <q-item-section avatar>
                 <q-icon name="lock" color="blue-grey"/>
             </q-item-section>
-            <q-item-section class="wrap text-caption">
+            <q-item-section class="wrap text-caption" tabindex="0">
                 {{ account.memo_key }}
             </q-item-section>
             <q-item-section side>

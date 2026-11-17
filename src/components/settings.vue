@@ -8,6 +8,7 @@
           </q-item-label>
           <q-item-section>
             <q-toggle v-model="darkBackground" :label="getBackgroundLabel()" />
+            <div class="text-caption text-grey-5">On keeps a plain dark background. Off shows the animated colour gradient (disabled automatically when your device asks for reduced motion).</div>
           </q-item-section>
         </q-item>
         <q-item>
@@ -30,24 +31,25 @@
           <q-item-label header>
             Default beneficiary
           </q-item-label>
+          <div class="text-caption text-grey-5 q-mb-sm">Beneficiaries receive a share of your post rewards. The default entry supports this site; you can edit its weight or remove it at any time.</div>
           <div v-for="bene in beneficiaries" :key="bene.index">
             {{ bene.weight / 100 }} % to {{ bene.account }}
-            <q-btn title="Edit" icon="edit" color="orange" dense flat>
+            <q-btn title="Edit" aria-label="Edit beneficiary" icon="edit" color="orange" dense flat>
               <q-popup-proxy>
                 <q-card class="q-pa-md">
                 {{ bene.account }} : <q-input label="Weight (0-10000)" v-model.number="bene.weight" />
-                <q-btn icon="save" color="primary" dense flat @click="editBene(bene.account, bene.weight)" v-close-popup />
+                <q-btn icon="save" color="primary" dense flat aria-label="Save beneficiary weight" title="Save beneficiary weight" @click="editBene(bene.account, bene.weight)" v-close-popup />
                 </q-card>
               </q-popup-proxy>
             </q-btn>
-            <q-btn title="Remove" icon="delete" color="red" dense flat @click="removeBene(bene.account)"/>
-            <q-btn color="green" icon="person_add" dense flat>
+            <q-btn title="Remove" aria-label="Remove beneficiary" icon="delete" color="red" dense flat @click="removeBene(bene.account)"/>
+            <q-btn color="green" icon="person_add" dense flat title="Add beneficiary" aria-label="Add beneficiary">
               <q-popup-proxy>
                 <q-card class="q-pa-md" flat bordered>
                   Add new beneficiary<br />
                   <q-input v-model="newBeneAccount" label="Account" />
                   <q-input v-model.number="newBeneWeight" label="Weight (0-10000)" />
-                  <q-btn icon="save" color="primary" dense flat @click="addBene(newBeneAccount, newBeneWeight)" />
+                  <q-btn icon="save" color="primary" dense flat aria-label="Add beneficiary" title="Add beneficiary" @click="addBene(newBeneAccount, newBeneWeight)" />
                 </q-card>
               </q-popup-proxy>
             </q-btn>
@@ -127,9 +129,9 @@ export default {
     },
     getBackgroundLabel () {
       if (this.darkBackground) {
-        return 'Dark'
+        return 'Dark background'
       } else {
-        return 'Fabulous'
+        return 'Animated background'
       }
     }
   }

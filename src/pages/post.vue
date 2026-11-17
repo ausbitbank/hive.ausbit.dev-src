@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex">
-    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="globalProps" :account="account" :showBalances="false" :showNavBar="true" class="full-width" style="overflow:hidden" />
+    <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="globalProps" :account="account" :showBalances="false" :showNavBar="true" headingTag="div" class="full-width" style="overflow:hidden" />
     <div style="margin: auto" v-if="error !== null">
       <q-card class="q-pa-md text-center" bordered>
         <q-icon name="error" size="lg" color="orange" /><br />
@@ -11,11 +11,11 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="row items-start content-start justify-center" style="margin:auto; max-width:1000px">
-      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start" v-if="post">
+    <div class="row items-start content-start justify-center" style="margin:auto; width:100%; max-width:1000px; min-width:0">
+      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start" style="min-width:0" v-if="post">
         <q-card flat bordered class="q-pa-xs" style="margin:auto">
           <q-card-section class="text-h5 text-center" v-if="post.title">
-            {{ Sanitize(post.title) }}
+            <h1 class="text-h5 q-my-none">{{ Sanitize(post.title) }}</h1>
           </q-card-section>
           <q-card-section v-if="post.parent_author !== ''">
             Reply to <router-link :to="linkAccount(post.parent_author)">{{ post.parent_author }}</router-link> / <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
@@ -40,10 +40,10 @@
               <q-item>
                 <q-item-section avatar>
                 <q-avatar size="sm">
-                    <q-img :src="GetHiveAvatarUrl(author)" />
+                    <q-img :src="GetHiveAvatarUrl(author)" :alt="'Avatar of @' + author" />
                 </q-avatar>
                 <q-avatar v-if="postMeta.author && (postMeta.author !== author)"  size="sm" class="q-pt-xs q-mb-xs">
-                    <q-img :src="GetHiveAvatarUrl(postMeta.author)" />
+                    <q-img :src="GetHiveAvatarUrl(postMeta.author)" :alt="'Avatar of @' + postMeta.author" />
                 </q-avatar>
                 </q-item-section>
                 <q-item-section>
@@ -74,7 +74,7 @@
               </q-item>
               <q-item title="Votes">
                 <q-item-section avatar>
-                  <q-icon name="thumbs_up_down" color="purple" title="View voter information" class="cursor-hand" @click="showVotes = true" />
+                  <q-btn flat dense round icon="thumbs_up_down" color="purple" aria-label="View voter information" title="View voter information" class="cursor-hand" @click="showVotes = true" />
                 </q-item-section>
                 <q-item-section v-if="loggedInUser && postPastPayout" class="text-caption">
                   <div>This post is past its payout window.</div>

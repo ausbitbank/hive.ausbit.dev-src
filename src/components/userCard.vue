@@ -1,6 +1,6 @@
 <template>
   <div class="text-center" :style='coverImageStyle'>
-    <router-link :to="'/@' + username" v-if="profile"><q-avatar size="6rem" v-if="profile.profile_image" class="q-pt-xs hvr"><q-img :src="getHiveAvatarUrl(username)" /></q-avatar></router-link>
+    <router-link :to="'/@' + username" v-if="profile"><q-avatar size="6rem" v-if="profile.profile_image" class="q-pt-xs hvr"><q-img :src="getHiveAvatarUrl(username)" :alt="'Avatar of @' + username" /></q-avatar></router-link>
     <div v-if="!profile"><router-link :to="'/@' + username">@{{ username }}</router-link></div>
     <div v-if="profile">
       <div v-if="profile.name" class="text-title text-bold">{{ profile.name }}</div><router-link :to="'/@' + username">@{{username}}</router-link>
@@ -13,7 +13,7 @@
         <span v-if="account && roundedHPTidy !== '0' && roundedHPTidy !== null" title="Hive Power (rounded)" class="q-mr-md"><q-icon name="img:/statics/hive.svg" /> {{ roundedHPTidy }}</span>
         <span class="q-mr-md text-caption" v-if="account && account.last_post !== '1970-01-01T00:00:00'">Posted: <router-link :to="linkPosts(account.name)"><span :title="account.last_post">{{ timeDelta(account.last_post) }}</span></router-link></span>
         <span v-if="account && account.last_vote_time !== '1970-01-01T00:00:00'" class="text-caption">Voted: {{ timeDelta(account.last_vote_time) }}</span>
-        <q-fab flat dense v-if="loggedInUser && username !== loggedInUser" color="primary" icon="settings" direction="left" :persistent="false" size="xs" @click="getRelationship(username)">
+        <q-fab flat dense v-if="loggedInUser && username !== loggedInUser" color="primary" icon="settings" aria-label="Follow options" title="Follow options" direction="left" :persistent="false" size="xs" @click="getRelationship(username)">
             <q-spinner-grid v-if="relationship === null" color="primary" />
             <span v-if="relationship">
             <q-fab-action v-if="relationship.follows" no-caps push dense label="Following" color="primary" icon="star" @click="unfollowUser(account.name)" />

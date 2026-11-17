@@ -1,7 +1,7 @@
 <template>
   <div>
     <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-    <q-toolbar class="bg-dark text-white text-center" v-if="toolbarOpen">
+    <q-toolbar class="bg-dark text-white text-center gt-xs" v-if="toolbarOpen">
       <q-space />
       <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" />
       <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
@@ -16,9 +16,31 @@
       <q-space />
     </q-toolbar>
     </transition>
+    <div class="lt-sm row items-center justify-center q-gutter-sm q-py-sm">
+      <q-btn outline color="primary" icon="filter_alt" label="Filters" aria-label="Open advanced browse filters" @click="filtersDialog = true" />
+      <q-btn outline color="primary" icon="search" label="Browse" aria-label="Browse posts with the current filters" @click="getPosts()" />
+    </div>
+    <q-dialog v-model="filtersDialog">
+      <q-card class="q-pa-md" style="width: 100%; max-width: 460px">
+        <div class="text-h6 text-center q-mb-md">Browse filters</div>
+        <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" class="q-mb-sm" />
+        <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'" class="q-mb-sm" />
+        <q-select dense v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" class="q-mb-sm" />
+        <q-select dense v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" class="q-mb-sm" />
+        <q-input dense v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'" clearable @clear="tag = ''" class="q-mb-sm" />
+        <q-input dense maxlength="3" v-model.number="limit" label="limit" type="number" class="q-mb-sm" />
+        <q-input dense v-model="observer" label="observer" clearable @clear="observer = ''" class="q-mb-sm" />
+        <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" class="q-mb-sm" />
+        <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_permlink = ''" class="q-mb-sm" />
+        <div class="text-center q-mt-md">
+          <q-btn flat label="Close" color="grey" v-close-popup />
+          <q-btn color="primary" label="Browse" icon="search" @click="filtersDialog = false; getPosts()" />
+        </div>
+      </q-card>
+    </q-dialog>
     <div class="text-center">
-      <q-btn flat color="grey" @click="toolbarOpen = !toolbarOpen" icon="settings" title="Toggle full navigation toolbar" />
-      <q-btn flat color="grey" title="Filter posts" icon="filter_alt">
+      <q-btn flat color="grey" class="gt-xs" @click="toolbarOpen = !toolbarOpen" icon="settings" title="Toggle full navigation toolbar" aria-label="Toggle full navigation toolbar" />
+      <q-btn flat color="grey" title="Filter posts" aria-label="Filter posts" icon="filter_alt">
         <q-badge color="primary" floating transparent v-if="(posts.length - filteredPosts.length) > 0">{{ posts.length - filteredPosts.length }}/{{ posts.length }}</q-badge>
         <q-popup-proxy>
           <q-card flat bordered>
@@ -95,10 +117,15 @@
           </q-card>
         </q-popup-proxy>
       </q-btn>
-      <q-btn-toggle dense no-caps v-model="styleType" push glossy toggle-color="primary" :options="[{label: 'Full', value: 'full', icon: 'subject'}, {label: 'Preview', value: 'preview', icon: 'preview'}, {label: 'Media', value: 'media', icon: 'photo_library'}, {label: 'Table', value: 'table', icon: 'table_view'}]" />
+      <q-select class="lt-sm" dense outlined options-dense v-model="styleType" :options="styleOptions" label="View" aria-label="Choose post layout" style="min-width: 130px" />
+      <q-btn-toggle class="gt-xs" dense no-caps v-model="styleType" push glossy toggle-color="primary" aria-label="Choose post layout" :options="styleOptions" />
       <q-spinner-puff color="primary" v-if="loading && styleType !== 'table'" size="lg" class="q-ma-md text-center" style="margin:auto" />
     </div>
-    <div class="masonry-wrapper">
+    <div v-if="!loading && !error && filteredPosts.length === 0" class="text-center q-pa-lg text-grey">
+      <q-icon name="search_off" size="2.5em" />
+      <div class="text-subtitle1 q-mt-sm">{{ posts.length === 0 ? 'No posts found.' : 'No posts match the current filters.' }}</div>
+    </div>
+    <div class="masonry-wrapper" v-if="filteredPosts.length > 0 || error">
       <div class="masonry justify-center" v-if="styleType !== 'table'">
         <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
           <post-preview :post="post" :styleType="styleType" />
@@ -110,7 +137,7 @@
         </div>
       </div>
       <div v-if="styleType === 'table'">
-        <browseTable :filteredPosts="filteredPosts" />
+        <browseTable :filteredPosts="filteredPosts" :loading="loading" />
          <div v-if="!loading" class="q-ma-md" style="clear:both">
           <h5>
             <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
@@ -188,7 +215,14 @@ export default {
     return {
       loading: false,
       toolbarOpen: this.showToolbar,
+      filtersDialog: false,
       styleType: this.$route.query.style || 'preview',
+      styleOptions: [
+        { label: 'Full', value: 'full', icon: 'subject' },
+        { label: 'Preview', value: 'preview', icon: 'preview' },
+        { label: 'Media', value: 'media', icon: 'photo_library' },
+        { label: 'Table', value: 'table', icon: 'table_view' }
+      ],
       posts: [],
       method: this.callMethod || 'bridge.get_ranked_posts',
       observer: this.$route.query.observer || this.$hiveStore.user.username,

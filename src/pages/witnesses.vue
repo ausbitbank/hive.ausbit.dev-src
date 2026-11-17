@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
+    <h1 class="sr-only">Hive witnesses</h1>
     <div>
         <witnesses />
    </div>

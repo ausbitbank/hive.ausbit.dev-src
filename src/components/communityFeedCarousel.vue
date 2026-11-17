@@ -17,8 +17,9 @@
         arrows
         infinite
         :autoplay="autoplaySlides"
-        height="250px"
-        width="450px"
+        :height="$q.screen.lt.sm ? '300px' : '250px'"
+        :width="$q.screen.lt.sm ? '100%' : '450px'"
+        :aria-label="'Community feed for ' + account"
         @mouseenter="autoplaySlides = false"
         class="bg-dark text-white shadow-2 rounded-borders"
       >
@@ -30,7 +31,7 @@
             <span class="text-caption wrap" v-if="post.json_metadata.description"> {{s(post.json_metadata.description).substr(0,100)}}</span>
             <span class="text-caption wrap" v-else> {{ returnPostSummary(post) }}</span>
           </div>
-          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
+          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
       </q-card>

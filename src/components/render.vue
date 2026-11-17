@@ -39,6 +39,17 @@ function installPurifyHooks () {
       }
     }
   })
+
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'IMG') {
+      if (!node.getAttribute('alt')) node.setAttribute('alt', '')
+      node.setAttribute('loading', 'lazy')
+      node.setAttribute('decoding', 'async')
+    }
+    if (node.tagName === 'A' && node.getAttribute('target') === '_blank') {
+      node.setAttribute('rel', 'noopener noreferrer')
+    }
+  })
 }
 
 export default {

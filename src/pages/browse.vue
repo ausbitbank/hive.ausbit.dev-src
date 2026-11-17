@@ -1,5 +1,6 @@
 <template>
     <q-page>
+        <h1 v-if="username === undefined || $route.path.startsWith('/c/')" class="sr-only">Browse Hive posts</h1>
         <community-header v-if="$route.path.startsWith('/c/') && account !== undefined" :globalProps="globalProps" :account="account" />
         <account-header v-else-if="username !== undefined" :globalProps="globalProps" :account="account" :showBalances="false" />
         <!-- <browse-container v-if="$route.path.startsWith('/trending')" callMethod="bridge.get_ranked_posts" sortMethod="trending" :showTag="$route.params.tag" :showToolbar="true"/>

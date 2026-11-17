@@ -33,7 +33,7 @@
                     Voting Power
                 </div>
                 <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="votePower / 100" color="blue" class="q-mt-sm">
+                    <q-linear-progress dark stripe rounded size="20px" :value="votePower / 100" color="blue" class="q-mt-sm" aria-label="Voting power">
                       <div class="absolute-full flex flex-center">
                           <q-badge color="black" text-color="primary" :label="votePower" />
                       </div>
@@ -43,7 +43,7 @@
                     Downvote Power
                 </div>
                 <div>
-                    <q-linear-progress dark stripe rounded size="20px" :value="downvotePowerPct / 100" color="red" class="q-mt-sm">
+                    <q-linear-progress dark stripe rounded size="20px" :value="downvotePowerPct / 100" color="red" class="q-mt-sm" aria-label="Downvote power">
                       <div class="absolute-full flex flex-center">
                           <q-badge color="black" text-color="primary" :label="downvotePowerPct" />
                       </div>
@@ -148,9 +148,9 @@
       <div class="col-xs-12 col-sm-12 col-md-8 q-pa-md" style="max-width: 1000px">
         <q-toolbar rounded flat class="text-center">
           <q-space />
-          <q-btn title="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
+          <q-btn title="Check for new transactions" aria-label="Check for new transactions" icon="refresh" size="sm" color="green" round dense flat @click="getAccountHistoryMarker()" />
           <q-toggle v-model="autorefresh" checked-icon="check" unchecked-icon="clear" label="Auto refresh" dense left-label @update:model-value="autoRefreshToggle()"  /><span v-if="autorefresh" class="q-ml-md">&nbsp; every <q-input v-model.number="autorefreshMinutes" type="number" dense standout style="max-width: 80px" :rules="[ val => val > 0.5 || 'Too fast!']" /> minutes</span>
-          <q-btn title="Filter Operations" icon="sort" dense size="sm" round color="blue-grey" class="q-ml-sm hvr">
+          <q-btn title="Filter Operations" aria-label="Filter operations" icon="sort" dense size="sm" round color="blue-grey" class="q-ml-sm hvr">
             <q-popup-proxy>
               <q-card class="q-ma-md" rounded>
                 <p>What hive operations do you want to see ?</p>
@@ -162,16 +162,16 @@
           <q-space />
         </q-toolbar>
         <div v-if="$route.query.filter" class="text-center">
-            Only showing: <span v-for="i in $route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" disable /></span>
+            Only showing: <span v-for="i in $route.query.filter.split(',')" :key="i.index"><q-badge dense color="blue-grey-5">{{ i }}&nbsp;</q-badge><q-btn icon="clear" color="red" dense size="sm" class="hvr" aria-label="Clear operation filter" title="Clear operation filter" disable /></span>
         </div>
         <account-operations :accountOperations="accountOperations" />
         <q-card class="text-center">
             <q-card-section>
-                <q-btn icon="keyboard_backspace" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2"/>
-                <q-btn icon="keyboard_arrow_left" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1"/>
+                <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2"/>
+                <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1"/>
                 Page {{ page }} <q-spinner-puff size="2em" color="primary" v-if="accountOperations.length < 1" />
-                <q-btn icon="keyboard_arrow_right" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
-                <q-btn icon="keyboard_tab" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
+                <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)"/>
+                <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
             </q-card-section>
         </q-card>
       </div>

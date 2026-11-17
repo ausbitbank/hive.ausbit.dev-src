@@ -1,8 +1,8 @@
 <template>
     <q-page flat bordered class="flex q-pa-md flex-center">
       <q-card>
-        <q-card-section class="text-h5 text-center">
-          Decentralized Hive Fund
+        <q-card-section>
+          <h1 class="text-h5 text-center q-my-none">Decentralized Hive Fund</h1>
         </q-card-section>
         <q-card-section class="text-center">
           <q-checkbox v-model="filterExpired" label="Hide Expired" />
@@ -19,12 +19,25 @@
           <div style="text-align: center">
             <q-input v-model="search" label="Search proposals">
               <template v-if="search" v-slot:append>
-                <q-icon name="cancel" @click.stop="search = ''" class="cursor-pointer" />
+                <q-btn flat dense round icon="cancel" aria-label="Clear proposal search" title="Clear search" @click.stop="search = ''" />
               </template>
             </q-input>
           </div>
         </q-card-section>
         <q-card-section>
+        <div v-if="loading" class="text-center q-pa-lg">
+          <q-spinner-puff color="primary" size="2em" aria-label="Loading proposals" />
+          <div class="text-caption q-mt-sm">Loading proposals…</div>
+        </div>
+        <div v-else-if="loadError" class="text-center q-pa-lg text-orange">
+          <q-icon name="error_outline" size="2em" />
+          <div class="q-mt-sm">{{ loadError }}</div>
+          <q-btn flat dense color="primary" icon="refresh" label="Retry" class="q-mt-sm" @click="listProposals()" />
+        </div>
+        <div v-else-if="filteredProposals.length === 0" class="text-center q-pa-lg text-grey">
+          <q-icon name="search_off" size="2em" />
+          <div class="q-mt-sm">No proposals match the current filters.</div>
+        </div>
         <q-card bordered flat v-for="proposal in filteredProposals" :key="proposal.index">
           <proposal :p="proposal" :returnProposalVotes="returnProposalVotes" />
         </q-card>
@@ -48,7 +61,9 @@ export default {
       filterActive: false,
       filterVoted: false,
       search: this.$route.params.proposal || this.$route.query.search || '',
-      votes: null
+      votes: null,
+      loading: true,
+      loadError: null
     }
   },
   methods: {
@@ -58,13 +73,20 @@ export default {
       }
     },
     listProposals () {
+      this.loading = true
+      this.loadError = null
       const params = { limit: 200, order: 'by_total_votes', order_direction: 'descending', start: ['-1'] }
       this.$hive.api.callAsync('database_api.list_proposals', params)
         .then(response => {
           this.proposals = response.proposals
+          this.loading = false
           if (this.loggedInUser) this.getUserVotes()
         })
-        .catch(() => this.$q.notify({ type: 'negative', message: 'Failed to load proposals' }))
+        .catch(() => {
+          this.loading = false
+          this.loadError = 'Failed to load proposals. Please try again.'
+          this.$q.notify({ type: 'negative', message: 'Failed to load proposals' })
+        })
     },
     tidyNumber (x) {
       if (x) {

@@ -7,7 +7,7 @@
             <q-icon name="img:/statics/hbd.svg" title="HBD" size="lg" />
           </q-item-section>
           <q-item-section class="text-h4">
-            Hive Backed Dollars
+            <h1 class="text-h4 q-my-none">Hive Backed Dollars</h1>
           </q-item-section>
         </q-item>
         Hive Backed Dollars are a stablecoin used on the Hive network. They are "backed" by the networks ability to convert them into $1 USD worth of HIVE.<br />
@@ -33,7 +33,7 @@
         <div v-if="hiveCap && hbdCap">
           <div>HBD Marketcap = <b>${{ tidyNumber(hbdCap) }}</b></div>
           <div>HIVE Marketcap = <b>${{ tidyNumber(hiveCap) }}</b></div>
-          <div><q-linear-progress stripe size="10px" :value="percentCap / hbdCapRatio" :color="percentColor" /></div>
+          <div><q-linear-progress stripe size="10px" :value="percentCap / hbdCapRatio" :color="percentColor" aria-label="HBD market cap as a percentage of HIVE market cap" /></div>
           <div>HBD Marketcap is currently <q-badge :color="percentColor">{{ percentCap }} %</q-badge> of HIVE Marketcap</div>
           <div v-if="medianPrice !== null">HIVE median price must stay above <q-badge color="primary">${{ haircutPrice }}</q-badge> to avoid haircut (currently <q-badge color="primary">${{ (medianPrice.base.split(' ')[0] / parseFloat(medianPrice.quote.split(' ')[0])).toFixed(4) }}</q-badge>)</div>
           <div v-if="internalMarketLatest">Internal market Hive price is <q-badge color="primary">${{ internalMarketLatest }}</q-badge></div>

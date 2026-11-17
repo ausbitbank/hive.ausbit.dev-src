@@ -31,6 +31,46 @@ a {
   }
 }
 
+/* Quasar route-tabs render as anchors, so the global link colour above would
+   otherwise win over the tab's own colour and fail contrast on the dark bar. */
+.q-tabs .q-tab,
+.q-tabs .q-tab__label {
+  color: #cfd8dc;
+}
+
+.q-tabs .q-tab--active,
+.q-tabs .q-tab--active .q-tab__label {
+  color: #fff;
+}
+
+/* White on the primary blue is ~3:1; use a dark ink for small status badges. */
+.q-badge.bg-primary {
+  color: #0b1d2a;
+}
+
+/* q-tabs already scrolls its content, but its flex parent needs min-width: 0
+   and clipping so a long tab strip cannot widen the whole page on mobile. */
+.q-tabs {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.q-toolbar .q-tabs {
+  min-width: 0;
+}
+
+/* Quasar's *-9/*-10 colour shades are meant for light surfaces; on the dark
+   theme they fail contrast badly (e.g. wallet transaction amounts). */
+.body--dark .text-green-9,
+.body--dark .text-green-10 {
+  color: #81c784 !important;
+}
+
+.body--dark .text-red-9,
+.body--dark .text-red-10 {
+  color: #e57373 !important;
+}
+
 .wrap {
   overflow: auto;
   overflow-wrap: break-word;
@@ -81,4 +121,95 @@ body {
   line-height: 1.5;
   word-wrap: normal;
   word-break: normal;
+}
+
+/* Visually hidden, still available to assistive technology. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link becomes visible when focused with the keyboard. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  padding: 0.5rem 0.75rem;
+  background: #ffd54f;
+  color: #111;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+/* Make keyboard focus clearly visible against both themes. */
+:focus-visible {
+  outline: 3px solid #ffd54f;
+  outline-offset: 2px;
+}
+
+/* Rendered post bodies contain user-supplied URLs and long unbroken strings.
+   Allow them to wrap instead of forcing the whole post column wider than the
+   viewport on mobile. */
+.postbody,
+.postbody * {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.postbody img,
+.postbody iframe,
+.postbody video,
+.postbody table {
+  max-width: 100%;
+  height: auto;
+}
+
+.postbody blockquote {
+  max-width: 100%;
+}
+
+/* Comments and other cards also contain user text; keep their flex children
+   shrinkable so a long word cannot widen the whole page. */
+.q-card,
+.q-item,
+.q-item__section,
+.q-item__label {
+  min-width: 0;
+}
+
+.q-card p,
+.q-card li,
+.q-card blockquote,
+.q-item__label {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Respect the operating system reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .gradientBg {
+    animation: none !important;
+  }
 }

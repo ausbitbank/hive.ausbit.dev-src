@@ -51,7 +51,7 @@
                 <q-item-section avatar class="text-center">
                   <router-link class="text-primary" :to="linkAccount(witness.owner)">
                   <q-avatar size="xl">
-                    <q-img :src="getHiveAvatarUrl(witness.owner)" />
+                    <q-img :src="getHiveAvatarUrl(witness.owner)" :alt="'Avatar of witness @' + witness.owner" />
                   </q-avatar>
                   </router-link>
                 </q-item-section>
@@ -71,7 +71,7 @@
                     <q-popup-proxy>
                       <q-card flat bordered>
                         <q-card-section header class="text-center">
-                          <div class="text-h5"><router-link :to="linkAccount(witness.owner)" class="text-primary"><q-avatar class="q-mr-sm"><q-img :src="getHiveAvatarUrl(witness.owner)" /></q-avatar>{{ witness.owner }}</router-link></div>
+                          <div class="text-h5"><router-link :to="linkAccount(witness.owner)" class="text-primary"><q-avatar class="q-mr-sm"><q-img :src="getHiveAvatarUrl(witness.owner)" :alt="'Avatar of witness @' + witness.owner" /></q-avatar>{{ witness.owner }}</router-link></div>
                           <div>Currently in rank <b>#{{ rank + 1 }}</b> with <b>{{ tidyNumber((witness.votes / 1000000000000).toFixed(0)) }}</b> MVests of approval</div>
                           <div>Last pricefeed update: {{ witness.hbd_exchange_rate.base }} per {{ witness.hbd_exchange_rate.quote }} <b>{{ timeDelta(witness.last_hbd_exchange_update) }}</b></div>
                           <div v-if="witness.created !== '1970-01-01T00:00:00'">{{ witness.owner }} first registered their witness <b>{{ timeDelta(witness.created) }}</b></div>
@@ -108,10 +108,10 @@
         </q-card-section>
         <q-separator />
         <q-card-actions align="center">
-          <router-link to="witnesses" v-if="$route.path !== '/witnesses'"><q-btn dense flat icon="link" /></router-link>
-          <q-btn dense flat icon="unfold_more" @click="currentLimit = 200; witnesses = null; getWitnessesByVote()" v-if="currentLimit < 200 "/>
-          <q-btn dense flat icon="unfold_less" @click="currentLimit = 25; witnesses = null; getWitnessesByVote()" v-if="currentLimit === 200 "/>
-          <q-btn dense flat icon="more_horiz" v-if="loggedInUser">
+          <router-link to="witnesses" v-if="$route.path !== '/witnesses'"><q-btn dense flat icon="link" aria-label="Open the witnesses page" title="Witnesses page" /></router-link>
+          <q-btn dense flat icon="unfold_more" aria-label="Show more witnesses" title="Show more witnesses" @click="currentLimit = 200; witnesses = null; getWitnessesByVote()" v-if="currentLimit < 200 "/>
+          <q-btn dense flat icon="unfold_less" aria-label="Show fewer witnesses" title="Show fewer witnesses" @click="currentLimit = 25; witnesses = null; getWitnessesByVote()" v-if="currentLimit === 200 "/>
+          <q-btn dense flat icon="more_horiz" aria-label="Witness actions" title="Witness actions" v-if="loggedInUser">
             <q-menu>
               <q-list bordered separator>
                 <q-item clickable @click="proxyDialog = true" class="text-primary" title="Voting Proxy">

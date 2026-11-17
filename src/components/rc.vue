@@ -1,6 +1,6 @@
 <template>
   <div v-if="RC.rc_manabar !== undefined">
-    <q-linear-progress dark stripe rounded size="20px" :value="rcPercent" color="green" class="q-mt-sm" v-if="!showAccountClaimsOnly">
+    <q-linear-progress dark stripe rounded size="20px" :value="rcPercent" color="green" class="q-mt-sm" aria-label="Resource credits available" v-if="!showAccountClaimsOnly">
       <div class="absolute-full flex flex-center">
           <q-badge color="black" text-color="primary" >{{ (rcPercent * 100).toFixed(2) }} %</q-badge>
       </div>

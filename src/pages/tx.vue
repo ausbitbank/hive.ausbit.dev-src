@@ -3,7 +3,7 @@
     <span class="column items-center">
     <q-card bordered flat v-if="tx" style="max-width: 100%;" class="col">
       <q-card-section>
-        <div class="text-h6">Transaction {{ txId }}</div>
+        <h1 class="text-h6 q-my-none">Transaction {{ txId }}</h1>
         <div class="text-subtitle"> Included in
           <span v-if="tx.block_num"><router-link :to="returnBlockLink(tx.block_num)"> Block {{ tidyNumber(tx.block_num) }}</router-link></span>
           <span v-else><router-link :to="returnBlockLink(tx[0].block)"> Block {{ tidyNumber(tx[0].block) }}</router-link></span>

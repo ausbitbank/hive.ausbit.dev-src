@@ -2,7 +2,7 @@
   <q-page class="flex q-pa-md flex-center">
     <q-card flat bordered class="text-center">
       <q-card-section>
-        <h3 class="text-center text-bold text-h5">Create new HIVE account</h3>
+        <h1 class="text-center text-bold text-h5 q-my-none">Create new HIVE account</h1>
         <div><i>New accounts can be created by any user on the Hive network.</i></div>
         <div><b>If you're new here:</b> use an onboarding service like <a href="https://hiveonboard.com/?ref=ausbitbank">hiveonboard</a> (<a href="https://signup.hive.io/">or others</a>) to get started.</div>
         <div><b>If you have an account already:</b> you can directly create new accounts with the form below</div>

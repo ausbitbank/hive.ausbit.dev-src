@@ -1,21 +1,21 @@
 <template>
   <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutUp">
-  <q-btn flat icon="schedule" title="Queued actions">
+  <q-btn flat icon="schedule" title="Queued actions" aria-label="Queued actions">
     <q-badge color="orange" floating>{{ queue.length }}</q-badge>
     <q-popup-proxy>
       <q-card flat bordered class="q-pa-sm q-ma-none">
         <q-card-section horizontal class="text-title text-bold flex-center text-center">
           {{ queue.length }} Queued Actions
-          <q-btn dense flat icon="play_circle" color="green" v-if="timerEnabled" @click="toggleTimer()" title="Queue is running, click to pause" />
-          <q-btn dense flat icon="pause_circle" color="orange" v-if="!timerEnabled" @click="toggleTimer()" title="Queue is paused, click to continue" />
-          <q-btn dense flat icon="cancel" color="red" title="Cancel queued actions" @click="$hiveStore.clearQueue()" v-if="queue.length > 0"/>
+          <q-btn dense flat icon="play_circle" color="green" v-if="timerEnabled" @click="toggleTimer()" title="Queue is running, click to pause" aria-label="Pause queue timer" />
+          <q-btn dense flat icon="pause_circle" color="orange" v-if="!timerEnabled" @click="toggleTimer()" title="Queue is paused, click to continue" aria-label="Resume queue timer" />
+          <q-btn dense flat icon="cancel" color="red" title="Cancel queued actions" aria-label="Cancel queued actions" @click="$hiveStore.clearQueue()" v-if="queue.length > 0"/>
         </q-card-section>
         <q-separator v-if="queue.length > 0" />
         <q-card-section class="q-ma-none q-pa-none" v-if="queue.length > 0">
           <q-list separator dense>
             <q-item v-for="(a, index) in queue" :key="index" clickable dense>
               <q-item-section avatar>
-                <q-avatar><q-img :src="getHiveAvatarUrl(a[0])" /></q-avatar>
+                <q-avatar><q-img :src="getHiveAvatarUrl(a[0])" alt="Account avatar" /></q-avatar>
                 <q-avatar v-if="a[1] === 'posting'"><q-icon name="lock" title="Posting key" color="green"/></q-avatar>
                 <q-avatar v-if="a[1] === 'active'"><q-icon name="lock" title="Active key" color="orange"/></q-avatar>
               </q-item-section>

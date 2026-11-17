@@ -2,14 +2,14 @@
     <div>
     <div v-if="post.reblogged_by && $route.path.endsWith('feed')" class="text-center">
       <span class="text-bold">Reblogged By: </span>
-      <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)"></q-avatar> {{ reblogger }}</router-link> </span>
+      <span v-for="reblogger in post.reblogged_by" :key="reblogger.index"><router-link :to="getAccountLink(reblogger)"><q-avatar class="q-ma-sm" size="sm"><img :src="getHiveAvatarUrl(reblogger)" :alt="'Avatar of @' + reblogger"></q-avatar> {{ reblogger }}</router-link> </span>
     </div>
     <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
     <q-card class="postPreviewCard q-ma-xs" dark dense bordered v-if="post">
       <q-card-section horizontal v-if="styleType === 'preview'">
         <q-card-section v-if="postImage && $q.screen.gt.sm">
             <!-- <router-link :to="returnPostPath(post.author, post.permlink)"> -->
-              <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" @click="postOverlay = true" />
+              <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" :alt="post.title" @click="postOverlay = true" />
             <!-- </router-link> -->
         </q-card-section>
         <!-- <q-separator vertical v-if="postImage" /> -->
@@ -20,7 +20,7 @@
                     <span v-if="$q.screen.gt.xs"><render :input="summary" /></span>
                     <div style="margin:auto; text-align:center" v-if="$q.screen.lt.md">
                     <router-link :to="returnPostPath(post.author, post.permlink)">
-                      <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" />
+                      <q-img style="width: 200px; height: 200px" :src="postImage" :title="post.title" :alt="post.title" />
                     </router-link>
                     </div>
                 </q-item-label>
@@ -45,6 +45,7 @@
         infinite
         navigation
         :autoplay="autoplaySlides"
+        aria-label="Post images"
         @mouseenter="autoplaySlides = false"
         class="rounded-borders"
         v-model:fullscreen="fullscreen"
@@ -52,11 +53,11 @@
         <q-carousel-slide class="column no-wrap flex-center" v-for="image in postImages" :key="image" :name="image" :img-src="image" />
         <template v-slot:control>
           <q-carousel-control position="bottom-right" :offset="[18, 18]" >
-          <q-btn push round dense color="dark" text-color="primary" :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'" @click="fullscreen = !fullscreen" />
+          <q-btn push round dense color="dark" text-color="primary" :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'" :aria-label="fullscreen ? 'Exit full screen' : 'View images full screen'" :title="fullscreen ? 'Exit full screen' : 'View images full screen'" @click="fullscreen = !fullscreen" />
           </q-carousel-control>
         </template>
       </q-carousel>
-      <q-img v-if="postImages.length === 1" :src="postImages[0]" />
+      <q-img v-if="postImages.length === 1" :src="postImages[0]" :alt="post.title" />
         <div>
           <span class="text-caption" v-if="postMeta.description"><render :input="postMeta.description.substr(0,200)" /></span>
           <span class="text-caption" v-else-if="summary"><render :input="summary.substr(0,200)" /></span>

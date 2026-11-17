@@ -1,10 +1,11 @@
 <template>
   <q-page class="flex flex-center">
+    <h1 class="sr-only">hive.ausbit.dev — Hive block explorer</h1>
     <div class="q-pa-md row items-start q-gutter-md content-start content-stretch self-stretch col-grow justify-center">
-      <div style="width:400px">
+      <div class="home-column">
         <block :blockNum="0" view="simple" class="q-mb-lg" />
-        <recent-posts-carousel account="ausbitbank" type="blog" style="width:400px" />
-        <ranked-posts-carousel sortMethod="trending" style="width:400px" />
+        <recent-posts-carousel account="ausbitbank" type="blog" />
+        <ranked-posts-carousel sortMethod="trending" />
         <coingeckoCarousel />
       </div>
         <!--<nodes />-->
@@ -16,6 +17,11 @@
 a {text-decoration: none; color: #3344dd }
 a:link { color: #3344dd; font-weight: bold; text-decoration: none; }
 a:visited { color: #884488; }
+.home-column {
+  flex: 1 1 100%;
+  min-width: 0;
+  max-width: 450px;
+}
 </style>
 <script>
 // import nodes from 'components/nodes.vue'

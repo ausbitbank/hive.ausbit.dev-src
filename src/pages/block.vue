@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
+    <h1 class="sr-only">Hive block {{ blockNum }}</h1>
     <block :blockNum="blockNum" />
   </q-page>
 </template>

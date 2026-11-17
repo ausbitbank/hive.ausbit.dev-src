@@ -5,8 +5,8 @@
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
         </q-card>
-      <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
-      <div class="text-h4">{{ account.name }}</div>
+      <router-link :to="getAccountLink(account.name)" :aria-label="'View @' + account.name + ' profile'"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" :alt="'Avatar of @' + account.name" /></q-avatar></router-link>
+      <component :is="headingTag" class="text-h4 q-my-none">{{ account.name }}</component>
       <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ Sanitize(postingJsonMeta.profile.about) }}</div>
@@ -23,25 +23,42 @@
           <q-btn v-if="relationship.ignores" no-caps push dense label="Ignored" color="red" @click="unignoreUser(account.name)" />
           <q-btn v-if="!relationship.ignores && !relationship.follows" no-caps push dense label="Ignore" color="grey" icon="volume_off" @click="ignoreUser(account.name)" />
         </div>
-        <span v-if="postingJsonMeta.profile">
+        <div class="service-strip" v-if="postingJsonMeta.profile">
           <user-services :username="account.name" />
-        </span>
+        </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="rounded-borders bg-dark text-white text-center" v-if="showNavBar">
-        <q-tabs :dense="$q.screen.lt.md" shrink inline-label active-color="white" indicator-color="secondary" align="justify" class="text-center" style="margin:auto">
-          <q-route-tab name="posts" class="text-deep-purple" label="posts" icon="library_books" :to="'/@' + account.name + '/posts'"/>
-          <q-route-tab name="blog" class="text-purple" label="blog" icon="menu_book" :to="'/@' + account.name + '/blog'"/>
-          <q-route-tab name="feed" class="text-orange" label="feed" icon="rss_feed" :to="'/@' + account.name + '/feed'"/>
-          <q-route-tab name="replies" class="text-blue-grey" label="replies" icon="comment" :to="'/@' + account.name + '/replies'"/>
+      <q-toolbar :dense="$q.screen.lt.md" class="rounded-borders bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
+        <q-tabs
+          :dense="$q.screen.lt.md"
+          :mobile-arrows="$q.screen.lt.sm"
+          :align="$q.screen.lt.sm ? 'left' : 'center'"
+          no-caps
+          inline-label
+          active-color="white"
+          indicator-color="secondary"
+          class="text-grey-4 full-width"
+        >
+          <q-route-tab name="posts" label="posts" icon="library_books" :to="'/@' + account.name + '/posts'"/>
+          <q-route-tab name="blog" label="blog" icon="menu_book" :to="'/@' + account.name + '/blog'"/>
+          <q-route-tab name="feed" label="feed" icon="rss_feed" :to="'/@' + account.name + '/feed'"/>
+          <q-route-tab name="replies" label="replies" icon="comment" :to="'/@' + account.name + '/replies'"/>
           <q-route-tab name="comments" label="comments" icon="message" :to="'/@' + account.name + '/comments'"/>
-          <q-route-tab name="communities" class="text-teal" label="communities" icon="forum" :to="'/@' + account.name + '/communities'"/>
-          <q-route-tab name="wallet" class="text-green" label="wallet" icon="account_balance" :to="'/@' + account.name + '/wallet'"/>
-          <q-route-tab exact name="explorer" class="text-indigo" icon="perm_identity" label="profile" :to="'/@' + account.name"/>
+          <q-route-tab name="communities" label="communities" icon="forum" :to="'/@' + account.name + '/communities'"/>
+          <q-route-tab name="wallet" label="wallet" icon="account_balance" :to="'/@' + account.name + '/wallet'"/>
+          <q-route-tab exact name="explorer" icon="perm_identity" label="profile" :to="'/@' + account.name"/>
           <q-route-tab v-if="$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
         </q-tabs>
       </q-toolbar>
     </div>
 </template>
+<style scoped>
+.service-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+</style>
 <script>
 import { defineAsyncComponent } from 'vue'
 import sanitize from 'sanitize-html'
@@ -56,6 +73,10 @@ export default {
   props: {
     account: {
       required: false
+    },
+    headingTag: {
+      type: String,
+      default: 'h1'
     },
     globalProps: {
       type: Object,

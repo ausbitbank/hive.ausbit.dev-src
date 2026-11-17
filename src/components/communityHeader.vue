@@ -1,7 +1,7 @@
 <template>
   <span v-if="account !== undefined && communityInfo !== undefined">
     <div class="col-12 text-center full-width" :style='coverImageStyle'>
-      <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar></router-link>
+      <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" alt="Community avatar" /></q-avatar></router-link>
       <div v-if="communityInfo !== undefined" class="text-h4">{{ communityInfo.title }}</div>
       <div v-else-if="postingJsonMeta && postingJsonMeta.name" class="text-h4" :title="account.name">{{ postingJsonMeta.profile.name }}</div>
       <div v-else class="text-h4">{{ account.name }}</div>
@@ -20,22 +20,22 @@
         </span>
       </div>
       <div v-if="loggedInUser !== ''">
-        <q-btn v-if="userSubscribed === false" color="primary" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'subscribe')"><q-icon name="person_add" class="q-mr-sm" /> Subscribe to <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
-        <q-btn v-else-if="userSubscribed === true" color="red" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'unsubscribe')"><q-icon name="person_remove" class="q-mr-sm" /> Unsubscribe from <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" /></q-avatar> {{ communityInfo.title }}</q-btn>
+        <q-btn v-if="userSubscribed === false" color="primary" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'subscribe')"><q-icon name="person_add" class="q-mr-sm" /> Subscribe to <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" alt="Community avatar" /></q-avatar> {{ communityInfo.title }}</q-btn>
+        <q-btn v-else-if="userSubscribed === true" color="red" outline rounded glossy class="hvr" @click="manageCommunity(account.name, 'unsubscribe')"><q-icon name="person_remove" class="q-mr-sm" /> Unsubscribe from <q-avatar size="sm" class="q-ml-sm q-mr-sm"><q-img :src="getHiveAvatarUrl(account.name)" alt="Community avatar" /></q-avatar> {{ communityInfo.title }}</q-btn>
       </div>
     </div>
-    <q-toolbar class="shadow-2 rounded-borders">
-      <q-tabs v-model="tab" animated shrink dense style="margin:auto">
+    <q-toolbar class="shadow-2 rounded-borders" style="max-width: 100%; overflow: hidden">
+      <q-tabs v-model="tab" animated shrink dense :mobile-arrows="$q.screen.lt.sm" class="text-grey-4" style="margin:auto">
         <q-tab name="posts" label="Posts" />
         <q-tab name="about" label="About" />
         <q-tab name="subscribers" label="Subscribers" />
         <q-tab name="activities" label="Activities" />
       </q-tabs>
     </q-toolbar>
-    <q-toolbar class="rounded-borders text-white q-pa-none q-ma-none">
+    <q-toolbar class="rounded-borders text-white q-pa-none q-ma-none" style="max-width: 100%; overflow: hidden">
     <q-tab-panels v-model="tab" animated dense class="text-white" style="margin:auto">
       <q-tab-panel name="posts" class="q-pa-none rounded-borders">
-        <q-tabs v-model="postTab" dense animated shrink active-color="white" indicator-color="secondary">
+        <q-tabs v-model="postTab" dense animated shrink :mobile-arrows="$q.screen.lt.sm" :align="$q.screen.lt.sm ? 'left' : 'center'" no-caps active-color="white" indicator-color="secondary" class="text-grey-4 full-width" aria-label="Community post sort">
           <q-route-tab name="created" label="created" :to="'/c/' + account.name + '/created'"/>
           <q-route-tab name="trending" label="trending" :to="'/c/' + account.name + '/trending'"/>
           <q-route-tab name="hot" label="hot" :to="'/c/' + account.name + '/hot'"/>
@@ -57,7 +57,7 @@
         <q-list>
         <q-item v-for="member in communityInfo.team" :key="member.index">
           <q-item-section avatar>
-            <router-link :to="getAccountLink(member[0])"><q-avatar><img :src="getHiveAvatarUrl(member[0])" /></q-avatar></router-link>
+            <router-link :to="getAccountLink(member[0])"><q-avatar><img :src="getHiveAvatarUrl(member[0])" alt="Account avatar" /></q-avatar></router-link>
           </q-item-section>
           <q-item-section>
           <q-item-label>
@@ -79,7 +79,7 @@
         <q-list>
         <q-item v-for="subscriber in subscribers" :key="subscriber.index">
           <q-item-section avatar>
-            <router-link :to="getAccountLink(subscriber[0])"><q-avatar><img :src="getHiveAvatarUrl(subscriber[0])" /></q-avatar></router-link>
+            <router-link :to="getAccountLink(subscriber[0])"><q-avatar><img :src="getHiveAvatarUrl(subscriber[0])" alt="Account avatar" /></q-avatar></router-link>
           </q-item-section>
           <q-item-section>
           <q-item-label>
@@ -103,7 +103,7 @@
             <q-item-section avatar>
               <router-link :to="n.url">
                 <q-avatar size="lg">
-                  <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" />
+                  <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" alt="Account avatar" />
                 </q-avatar>
               </router-link>
             </q-item-section>

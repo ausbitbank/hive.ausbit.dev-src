@@ -1,5 +1,6 @@
 <template>
     <q-page class="flex q-pa-md flex-center">
+        <h1 class="sr-only">Hive internal market</h1>
         <internalMarket :tradeEnabled="true"/>
     </q-page>
 </template>

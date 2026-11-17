@@ -22,7 +22,9 @@
         arrows
         infinite
         :autoplay="autoplay"
-        height="250px"
+        :height="$q.screen.lt.sm ? '300px' : '250px'"
+        :width="$q.screen.lt.sm ? '100%' : '450px'"
+        :aria-label="'Recently voted posts by ' + account"
         @mouseenter="autoplay = false"
         @mouseleave="autoplay = true"
         class="bg-dark text-white shadow-2 rounded-borders"
@@ -33,7 +35,7 @@
             by <span class="text-bold">@{{ post.author }}</span><br />
             <span class="text-caption">{{ timeDelta(post.created) }}</span>
           </div>
-          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" /></q-avatar></div>
+          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
       <ul v-for="post in posts" :key="post.index">

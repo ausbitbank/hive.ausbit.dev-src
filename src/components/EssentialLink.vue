@@ -1,14 +1,16 @@
 <template>
   <q-item
     clickable
-    tag="a"
-    @click="open(link)"
+    :to="to || undefined"
+    :href="to ? undefined : link"
+    :target="to ? undefined : '_blank'"
+    :rel="to ? undefined : 'noopener noreferrer'"
   >
     <q-item-section
       v-if="icon"
       avatar
     >
-      <q-icon :name="icon" color="secondary" />
+      <q-icon :name="icon" color="secondary" aria-hidden="true" />
     </q-item-section>
 
     <q-item-section>
@@ -20,7 +22,6 @@
   </q-item>
 </template>
 <script>
-import { openURL } from 'quasar'
 export default {
   name: 'EssentialLink',
   props: {
@@ -39,14 +40,14 @@ export default {
       default: '#'
     },
 
+    to: {
+      type: String,
+      default: null
+    },
+
     icon: {
       type: String,
       default: ''
-    }
-  },
-  methods: {
-    open (link) {
-      openURL(link)
     }
   }
 }

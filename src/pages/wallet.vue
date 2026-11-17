@@ -14,7 +14,7 @@
                         <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
-                                <img src="/statics/hive.svg"/>
+                                <img src="/statics/hive.svg" alt="Hive logo"/>
                               </q-avatar>
                             </q-item-section>
                             <q-item-section>
@@ -61,14 +61,14 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHive = true" class="gt-xs"/>
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" aria-label="Transfer Hive" @click="transferHive = true" class="gt-xs"/>
                                 <q-dialog v-model="transferHive"><transfer-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="stakeHive"><staking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="unstakeHive"><unstaking-dialog tokenName="HIVE" network="hive" :balance="parseFloat(account.balance.split(' ')[0])" :username="username" /></q-dialog>
                                 <q-dialog v-model="savings"><savings-dialog :tokenName="savingsTokenName" network="hive" :username="username" :type="savingsType" /></q-dialog>
                                 <q-dialog v-model="delegationDialogVisible"><delegationDialog :username="username" tokenName="HIVE" :amountVestsSuggest="0" /></q-dialog>
                                 <q-dialog v-model="convertDialogVisible"><convertDialog :username="username" :tokenName="convertTokenName" /></q-dialog>
-                                <q-btn dense flat icon="more_horiz">
+                                <q-btn dense flat icon="more_horiz" title="More Hive actions" aria-label="More Hive actions">
                                   <q-menu>
                                     <q-list bordered separator>
                                       <q-item clickable @click="transferHive = true" class="text-primary">
@@ -100,7 +100,7 @@
                                         <q-item-section>Delegate</q-item-section>
                                       </q-item>
                                       <q-item clickable class="text-green" title="Convert Hive to HBD" @click="convertDialogVisible = true; convertTokenName = 'HIVE'" v-if="account.balance.split(' ')[0] !== '0.000'">
-                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg"/></q-avatar></q-item-section>
+                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hbd.svg" alt="HBD logo"/></q-avatar></q-item-section>
                                         <q-item-section>Convert</q-item-section>
                                       </q-item>
                                       <q-item clickable class="text-green" title="Create New Account" @click="$router.push('/create')">
@@ -115,7 +115,7 @@
                         <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
-                                <img src="/statics/hbd.svg"/>
+                                <img src="/statics/hbd.svg" alt="HBD logo"/>
                               </q-avatar>
                             </q-item-section>
                             <q-item-section>
@@ -156,9 +156,9 @@
                               </q-item-label>
                             </q-item-section>
                             <q-item-section top side v-if="loggedInUser === username">
-                                <q-btn dense flat icon="send" color="primary" title="Transfer" @click="transferHbd = true" class="gt-xs"/>
+                                <q-btn dense flat icon="send" color="primary" title="Transfer" aria-label="Transfer HBD" @click="transferHbd = true" class="gt-xs"/>
                                 <q-dialog v-model="transferHbd"><transfer-dialog tokenName="HBD" network="hive" :balance="parseFloat(account.hbd_balance.split(' ')[0])" :username="username" /></q-dialog>
-                                <q-btn dense flat icon="more_horiz">
+                                <q-btn dense flat icon="more_horiz" title="More HBD actions" aria-label="More HBD actions">
                                   <q-menu>
                                     <q-list bordered separator>
                                       <q-item clickable @click="transferHbd = true" class="text-primary" title="Transfer HBD">
@@ -178,7 +178,7 @@
                                         <q-item-section>Withdraw</q-item-section>
                                       </q-item>
                                       <q-item clickable class="text-secondary" title="Convert HBD to Hive" @click="convertDialogVisible = true; convertTokenName = 'HBD'" v-if="account.hbd_balance.split(' ')[0] !== '0.000'">
-                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hive.svg"/></q-avatar></q-item-section>
+                                        <q-item-section avatar><q-avatar size="sm"><img src="/statics/hive.svg" alt="Hive logo"/></q-avatar></q-item-section>
                                         <q-item-section>Convert</q-item-section>
                                       </q-item>
                                     </q-list>
@@ -199,7 +199,7 @@
                               <div>Next: {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} Hive <span class="text-caption color-grey">{{ timeDelta(account.next_vesting_withdrawal) }}</span></div>
                           </q-item-section>
                           <q-item-section side v-if="loggedInUser === username">
-                              <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" @click="unstakeHive = true" />
+                              <q-btn flat icon="cancel" color="red" title="Cancel Powerdown" aria-label="Cancel powerdown" @click="unstakeHive = true" />
                           </q-item-section>
                         </q-item>
                         <savingsWithdrawalsInProgress :username="username" />
@@ -213,7 +213,7 @@
                             {{ tidyNumber(order.sell_price.base.split(' ')[0]) }} {{ order.sell_price.base.split(' ')[1] }} for {{ tidyNumber(order.sell_price.quote.split(' ')[0]) }} {{ order.sell_price.quote.split(' ')[1] }}
                             <span v-if="order.sell_price.base.split(' ')[1] === 'HBD'">({{ parseFloat(order.sell_price.base.split(' ')[0] / order.sell_price.quote.split(' ')[0]).toFixed(3) }})</span>
                             <span v-else>({{ parseFloat(order.sell_price.quote.split(' ')[0] / order.sell_price.base.split(' ')[0]).toFixed(3) }})</span>
-                            <q-btn dense flat icon="cancel" color="red" v-if="loggedInUser === username" @click="$hiveStore.addToQueue([loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
+                            <q-btn dense flat icon="cancel" color="red" title="Cancel order" aria-label="Cancel order" v-if="loggedInUser === username" @click="$hiveStore.addToQueue([loggedInUser, 'active', ['limit_order_cancel', { owner: loggedInUser, orderid: order.orderid }]])"/>
                           </div>
                           </q-item-section>
                         </q-item>
@@ -324,17 +324,17 @@
                             </q-item-section>
                             <q-item-section>
                               <q-item-label>
-                                <span v-if="tx[1].op[1].from === username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
-                                <span v-else-if="tx[1].op[1].from !== username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
-                                <span v-else-if="tx[1].op[1].account === username && tx[1].op[0] === 'claim_reward_balance'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_convert_request'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                                <span v-else-if="['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'transfer_to_vesting'].includes(tx[1].op[0])"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'"> <router-link :to="getAccountLink(tx[1].op[1].from_account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from_account)" /></q-avatar> {{ tx[1].op[1].from_account }}</router-link></span>
-                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
+                                <span v-if="tx[1].op[1].from === username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
+                                <span v-else-if="tx[1].op[1].from !== username && tx[1].op[0] === 'transfer'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
+                                <span v-else-if="tx[1].op[1].account === username && tx[1].op[0] === 'claim_reward_balance'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'fill_convert_request'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
+                                <span v-else-if="['transfer_to_savings', 'transfer_from_savings', 'fill_transfer_from_savings', 'transfer_to_vesting'].includes(tx[1].op[0])"> <router-link :to="getAccountLink(tx[1].op[1].to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].to)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].to }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'cancel_transfer_from_savings'"> <router-link :to="getAccountLink(tx[1].op[1].from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'withdraw_vesting'"> <router-link :to="getAccountLink(tx[1].op[1].account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].account }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'fill_order'"> <router-link :to="getAccountLink(tx[1].op[1].open_owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].open_owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].open_owner }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'interest'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'fill_vesting_withdraw'"> <router-link :to="getAccountLink(tx[1].op[1].from_account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].from_account)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].from_account }}</router-link></span>
+                                <span v-else-if="tx[1].op[0] === 'collateralized_convert'"> <router-link :to="getAccountLink(tx[1].op[1].owner)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx[1].op[1].owner)" alt="Account avatar" /></q-avatar> {{ tx[1].op[1].owner }}</router-link></span>
                               </q-item-label>
                             </q-item-section>
                             <q-item-section :title="tx[1].timestamp" class="gt-xs">
@@ -519,10 +519,24 @@
                       </div> -->
                     </div>
                 </q-tab-panel>
-                <q-tab-panel name="hive-engine" v-if="hiveEngineBalances !== null && hiveEngineTokenInfo !== null">
+                <q-tab-panel name="hive-engine">
+                  <q-banner v-if="hiveEngineError" class="bg-orange-10 text-white q-ma-md" rounded>
+                    <template v-slot:avatar><q-icon name="cloud_off" /></template>
+                    {{ hiveEngineError }}
+                    <template v-slot:action><q-btn flat color="white" label="Retry" @click="initHiveEngine()" /></template>
+                  </q-banner>
+                  <div v-else-if="hiveEngineBalances === null || hiveEngineTokenInfo === null" class="text-center q-pa-lg">
+                    <q-spinner-puff color="primary" size="2em" aria-label="Loading Hive-Engine balances" />
+                    <div class="text-caption q-mt-sm">Loading Hive-Engine balances…</div>
+                  </div>
+                  <div v-else>
+                  <q-banner v-if="hiveEngineBalances.length === 0" class="bg-grey-9 text-white q-ma-md" rounded>
+                    <template v-slot:avatar><q-icon name="inbox" /></template>
+                    No Hive-Engine token balances were found for this account.
+                  </q-banner>
                   <div style="margin: auto;" class="text-center">
                     <q-checkbox v-model="hiveEngineBalancesFilterSmall">Filter under ${{ hiveEngineBalancesFilterUsdAmount }} USD value</q-checkbox>
-                    <q-btn dense flat title="Change filter amount" icon="settings">
+                    <q-btn dense flat title="Change filter amount" aria-label="Change Hive-Engine value filter" icon="settings">
                       <q-popup-proxy>
                         <q-card flat bordered class="q-pa-md text-center">
                           Filter below USD amount
@@ -530,13 +544,13 @@
                         </q-card>
                       </q-popup-proxy>
                     </q-btn>
-                    <q-btn icon="refresh" color="green" dense flat @click="initHiveEngine()" title="Refresh Hive-Engine data" />
+                    <q-btn icon="refresh" color="green" dense flat @click="initHiveEngine()" title="Refresh Hive-Engine data" aria-label="Refresh Hive-Engine data" />
                   </div>
                     <q-list bordered separator class="rounded-borders">
                         <q-item v-for="token in hiveEngineBalancesFiltered" :key="token.index">
                           <q-item-section dense avatar class="gt-xs">
                             <q-avatar size="md">
-                              <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/>
+                              <img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc" :alt="token.symbol + ' token logo'"/>
                             </q-avatar>
                           </q-item-section>
                           <q-item-section>
@@ -545,7 +559,7 @@
                                 <q-popup-proxy>
                                   <q-card dense flat bordered style="max-width: 400px">
                                     <q-card-section header class="text-caption text-center">
-                                      <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc"/></q-avatar>{{ token.symbol }}<br />
+                                      <q-avatar size="lg"><img :src="returnTokenInfoMeta(token.symbol).icon" :title="returnTokenInfoMeta(token.symbol).desc" :alt="token.symbol + ' token logo'"/></q-avatar>{{ token.symbol }}<br />
                                       {{ returnTokenInfoMeta(token.symbol).desc }}
                                     </q-card-section>
                                     <q-card-section caption class="text-caption">
@@ -596,8 +610,8 @@
                             <q-item-label caption>Value (USD)</q-item-label>
                           </q-item-section>
                           <q-item-section side v-if="loggedInUser === username">
-                          <q-btn v-if="parseFloat(token.balance) > 0" dense flat icon="send" color="primary" title="Transfer Token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
-                              <q-btn dense flat icon="more_horiz">
+                          <q-btn v-if="parseFloat(token.balance) > 0" dense flat icon="send" color="primary" title="Transfer Token" aria-label="Transfer token" @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance);  transferHiveEngine = true" />
+                              <q-btn dense flat icon="more_horiz" title="More token actions" aria-label="More token actions">
                                 <q-menu>
                                   <q-list style="min-width: 100px" bordered separator>
                                     <q-item clickable @click="transferDialogTokenName = token.symbol; transferDialogBalance = parseFloat(token.balance); transferHiveEngine = true" v-if="parseFloat(token.balance) > 0" class="text-primary" title="Transfer Token">
@@ -680,22 +694,22 @@
                           </q-item-section>
                           <q-item-section>
                             <q-item-label>
-                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-if="tx.from === username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.from !== username && tx.operation === 'tokens_transfer'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_stake'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'tokens_unstake'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm" class="gt-xs"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
                               <span v-else-if="tx.to === username && tx.operation === 'tokens_issue'"> {{ tx.from }}</span>
                               <span v-else-if="tx.from === username && tx.operation === 'tokens_issue'"> {{ tx.to }}</span>
                               <span v-else-if="tx.operation === 'mining_lottery'"> {{ tx.poolId }}</span>
-                              <span v-else-if="tx.account === username && tx.operation === 'market_placeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_closeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_cancel'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_expire'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" /></q-avatar> {{ tx.account }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'market_sell'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'hivepegged_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" /></q-avatar> {{ tx.from }}</router-link></span>
-                              <span v-else-if="tx.operation === 'hivepegged_withdraw'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
-                              <span v-else-if="tx.operation === 'witnesses_proposeRound'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.account === username && tx.operation === 'market_placeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_closeOrder'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_cancel'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_expire'"> <router-link :to="getAccountLink(tx.account)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.account)" alt="Account avatar" /></q-avatar> {{ tx.account }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'market_sell'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'hivepegged_buy'"> <router-link :to="getAccountLink(tx.from)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.from)" alt="Account avatar" /></q-avatar> {{ tx.from }}</router-link></span>
+                              <span v-else-if="tx.operation === 'hivepegged_withdraw'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
+                              <span v-else-if="tx.operation === 'witnesses_proposeRound'"> <router-link :to="getAccountLink(tx.to)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(tx.to)" alt="Account avatar" /></q-avatar> {{ tx.to }}</router-link></span>
                             </q-item-label>
                           </q-item-section>
                           <q-item-section :title="tx.timestamp">
@@ -842,6 +856,7 @@
                     <q-dialog v-model="transferHiveEngine"><transfer-dialog :tokenName="transferDialogTokenName" network="hiveEngine" :balance="transferDialogBalance" :username="username" /></q-dialog>
                     <q-dialog v-model="stakeHiveEngine"><staking-dialog :tokenName="stakingDialogTokenName" network="hiveEngine" :balance="stakingDialogBalance" :username="username" /></q-dialog>
                     <q-dialog v-model="unstakeHiveEngine"><unstaking-dialog :tokenName="unstakingDialogTokenName" network="hiveEngine" :stake="unstakingDialogStake" :transactions="unstakingDialogTransactions" :cooldown="unstakingDialogCooldown" :unstaking="unstakingDialogUnstaking" :username="username" /></q-dialog>
+                  </div>
                 </q-tab-panel>
             </q-tab-panels>
           </q-card>
@@ -917,6 +932,7 @@ export default {
       bitmask: walletBitmask,
       loading: false,
       hiveEngineBalances: null,
+      hiveEngineError: null,
       hiveEngineBalancesFilterSmall: true,
       hiveEngineBalancesFilterUsdAmount: 1,
       hiveEngineMarketInfo: null,
@@ -1105,34 +1121,47 @@ export default {
         })
     },
     getHiveEngineBalances (username) {
+      this.hiveEngineError = null
+      this.hiveEngineBalances = null
       getHiveEngine().find('tokens', 'balances', { account: username }, 1000, 0, [])
         .then((response) => {
           this.hiveEngineBalances = response
           var preferredTokens = ['SWAP.HIVE', 'PAL', 'PALMM', 'LEO', 'LEOMM', 'CCC', 'STEM'].reverse()
           preferredTokens.forEach(function (t) {
             var currentIndex = this.hiveEngineBalances.findIndex(token => token.symbol === t)
-            this.hiveEngineBalances.splice(this.hiveEngineBalances.length - 1, 1, ...this.hiveEngineBalances.splice(currentIndex, 1))
+            if (currentIndex !== -1) {
+              this.hiveEngineBalances.splice(this.hiveEngineBalances.length - 1, 1, ...this.hiveEngineBalances.splice(currentIndex, 1))
+            }
           }.bind(this))
           this.hiveEngineBalances.reverse()
           this.getHiveEngineMarketInfo()
           this.getHiveEngineTokenInfo()
         })
-        .catch(() => { console.error('Error connecting to Hive-Engine api') })
+        .catch(() => {
+          this.hiveEngineError = 'Hive-Engine balances are unavailable right now.'
+        })
     },
     getHiveEngineTokenInfo () {
       var tokens = this.returnTokenArray()
-      if (tokens.length > 0) {
+      if (tokens && tokens.length > 0) {
         getHiveEngine().find('tokens', 'tokens', { symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => { this.hiveEngineTokenInfo = response })
-          .catch(() => { console.error('Error connecting to Hive-Engine api') })
+          .catch(() => {
+            this.hiveEngineTokenInfo = null
+            this.hiveEngineError = 'Hive-Engine token details are unavailable right now.'
+          })
+      } else {
+        this.hiveEngineTokenInfo = []
       }
     },
     getHiveEngineMarketInfo () {
       var tokens = this.returnTokenArray()
-      if (tokens.length > 0) {
+      if (tokens && tokens.length > 0) {
         getHiveEngine().find('market', 'metrics', { symbol: { $in: tokens } }, 1000, 0, [])
           .then((response) => { this.hiveEngineMarketInfo = response })
           .catch(() => { console.error('Error connecting to Hive-Engine api') })
+      } else {
+        this.hiveEngineMarketInfo = []
       }
     },
     getHiveEngineTransactionHistory () {

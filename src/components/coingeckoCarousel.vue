@@ -4,8 +4,15 @@
       <div class="text-h6 text-center">
         <router-link to="markets" class="text-primary"><q-icon name="monetization_on" color="green" />&nbsp; Coin Prices</router-link>
       </div>
-      <q-skeleton height="250px" width="400" rect v-if="coinGecko === null" />
+      <q-skeleton :height="$q.screen.lt.sm ? '300px' : '260px'" width="100%" rect v-if="priceLoading" />
+      <q-card v-else-if="priceError" flat bordered class="q-pa-lg text-center text-grey-4 bg-dark">
+        <q-icon name="cloud_off" size="2em" color="orange" />
+        <div class="text-subtitle1 q-mt-sm">Price data unavailable</div>
+        <div class="text-caption">CoinGecko could not be reached. Prices will refresh when you retry.</div>
+        <q-btn flat dense color="primary" icon="refresh" label="Retry" class="q-mt-sm" @click="getCoinGecko()" />
+      </q-card>
       <q-carousel
+        role="region"
         v-if="coinGecko !== null"
         v-model="slide"
         transition-prev="jump-left"
@@ -17,15 +24,16 @@
         arrows
         infinite
         :autoplay="autoplaySlides"
-        height="260px"
-        width="450px"
+        :height="$q.screen.lt.sm ? '320px' : '260px'"
+        :width="$q.screen.lt.sm ? '100%' : '450px'"
+        aria-label="Cryptocurrency price carousel"
         @mouseenter="autoplaySlides = false"
         class="bg-dark text-white shadow-2 rounded-borders"
       >
         <q-carousel-slide :name="coin.name" class="column no-wrap flex-center" v-for="coin in coinGecko" :key="coin.name" :img-src="coin.image">
           <div class="custom-caption">
             <div class="text-bold">
-              <q-avatar size="sm"><q-img :src="coin.image" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank" rel="noopener noreferrer">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
+              <q-avatar size="sm"><q-img :src="coin.image" :alt="coin.name + ' logo'" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank" rel="noopener noreferrer">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
             </div>
             <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
             <div><span class="text-bold">Current Price: </span> <span :class="getCoinColorClass(coin)">${{ tidyNumber(coin.current_price.toFixed(3)) }}</span></div>
@@ -40,7 +48,7 @@
       </q-carousel>
     <div class="text-center">
       <div class="text-caption">Priced in <span class="text-bold text-primary" @click="settingsDialog = true">{{ currency }}</span> via <router-link to="/@coingecko">coingecko</router-link></div>
-      <q-btn push icon="settings" title="Settings" color="primary" flat bordered dense @click="settingsDialog = true" />
+      <q-btn push icon="settings" title="Price settings" aria-label="Price settings" color="primary" flat bordered dense @click="settingsDialog = true" />
       <q-dialog v-model="settingsDialog">
           <q-card flat bordered>
               <q-card-section>
@@ -80,7 +88,9 @@ export default {
       sortOrder: 'market_cap_asc',
       settingsDialog: false,
       autoplaySlides: true,
-      slide: null
+      slide: null,
+      priceLoading: true,
+      priceError: false
       // url: 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive%2C%20hive_dollar&order=market_cap_desc&per_page=2&page=1&sparkline=true'
     }
   },
@@ -117,9 +127,22 @@ export default {
     },
     getCoinGecko () {
       this.coinGecko = null
+      this.priceError = false
+      this.priceLoading = true
       this.$axios.get(this.apiUrl)
-        .then((response) => { this.slide = response.data[0].id; this.coinGecko = response.data })
-        .catch(() => { console.log('Failed to load data from coingecko api') })
+        .then((response) => {
+          this.priceLoading = false
+          if (!Array.isArray(response.data) || response.data.length === 0) {
+            this.priceError = true
+            return
+          }
+          this.slide = response.data[0].id
+          this.coinGecko = response.data
+        })
+        .catch(() => {
+          this.priceLoading = false
+          this.priceError = true
+        })
     },
     tidyNumber (x) {
       var parts = x.toString().split('.')

@@ -1,11 +1,11 @@
 <template>
   <span>
-  <q-btn flat dense round no-caps aria-label="Login" class="q-ml-md text-capitalize">
+  <q-btn flat dense round no-caps :aria-label="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" :title="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" class="q-ml-md text-capitalize">
     <q-avatar>
-      <q-img :src="userAvatar" v-if="loggedInUser !== '' && loggedInUser !== null" />
+      <q-img :src="userAvatar" :alt="loggedInUser ? 'Avatar of @' + loggedInUser : 'Login'" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />
     </q-avatar>
-    <span class="q-ml-xs">{{ loggedInUser }}</span>
+    <span class="q-ml-xs gt-xs">{{ loggedInUser }}</span>
     <q-popup-proxy>
       <q-card flat bordered>
       <div v-if="loggedInUser">
@@ -56,7 +56,7 @@
             <q-item-section class="text-red">Logout</q-item-section>
           </q-item>
           <q-item>
-            <q-linear-progress dark stripe rounded size="20px" :value="votePower" color="blue" class="q-mt-none" title="Vote Power %">
+            <q-linear-progress dark stripe rounded size="20px" :value="votePower" color="blue" class="q-mt-none" title="Vote Power %" aria-label="Voting power">
               <div class="absolute-full flex flex-center">
                   <q-badge color="black" text-color="primary">VP {{ votePower }} %</q-badge>
               </div>
@@ -94,19 +94,20 @@
             <q-btn icon="img:/statics/member.png" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
+            <div class="text-caption text-grey-5">Saves only your username on this device. It does not store keys; SmartLock keeps unlocked keys in memory and needs your password again after a reload.</div>
           </q-item-section>
         </q-item>
         <div class="text-center">
         <div v-if="savedUsers.length > 0">Hive-Keychain logins</div>
         <q-item v-for="user in savedUsers" :key="user.index">
           <q-item-section>
-            <q-chip outline size="md" removable @remove="removeSavedUser(user)" clickable @click="rememberLogin = true; checkLoginKeychain(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-chip>
+            <q-chip outline size="md" removable @remove="removeSavedUser(user)" clickable @click="rememberLogin = true; checkLoginKeychain(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
           </q-item-section>
         </q-item>
         <div v-if="savedUsersSmartLock.length > 0">SmartLock logins</div>
         <q-item v-for="user in savedUsersSmartLock" :key="user.index">
           <q-item-section>
-            <q-chip outline size="md" removable @remove="smartLockRemoveAccount(user)" clickable @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" /></q-avatar> {{ user }}</q-chip>
+            <q-chip outline size="md" removable @remove="smartLockRemoveAccount(user)" clickable @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
           </q-item-section>
         </q-item>
         </div>
