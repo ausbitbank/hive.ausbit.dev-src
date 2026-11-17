@@ -1,273 +1,200 @@
-# hive.ausbit.dev roadmap and session handoff
+# hive.ausbit.dev roadmap
 
 Last updated: 2026-11-18
 
-This file is the persistent handoff for future agent sessions. Read it first.
-It records what is done, what remains, and the design standards already in use.
+This is the active roadmap. Completed work is recorded in
+`docs/workstreams/`; the previous priority list was retired after W21.
 
 ## Current state
 
-Current verified baseline: **`7b82f97` on `master`**, pushed to `origin/master`.
-Production `hive.ausbit.dev` is deployed from this build. W16 (wallet), W17
-(witnesses, health, nodes), W18 (markets, HBD tools, internal market), W19
-(queue, notifications, SmartLock, login), W20 (data layer, shared UI, legacy
-page consistency) and W21 (E2E, offline shell, SEO, navigation polish) are
-complete.
+The explorer is feature-complete through W21.
 
-Recent completed workstreams:
+- Verified implementation baseline: `7b82f97`.
+- Documentation handoff baseline: `b98b24b`.
+- W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
+  notifications, the data layer and the hardening pass.
+- 31 unit-test files / 245 tests, 20 Playwright E2E tests, green build.
+- Production is deployed from the W21 build.
 
-- Block detail view (`/b/:blockNum`) with transaction grouping, friendly
-  operations, virtual ops and raw block JSON.
-- Transaction detail view (`/tx/:txId`) with summaries, signatures, raw JSON,
-  prev/next navigation and block anchors.
-- Post pages and comment threads: content-first layout, lazy/paginated comments,
-  native markdown comment composer, replies to any comment.
-- Browse/profile listings: cards/list/table views, filters, sort navigation,
-  profile compact headers.
-- Front page dashboard: live block card, market list, top witnesses, trending
-  posts, recent author posts.
-- Account overview (W14).
-- Wallet page full rebuild: portfolio header, asset cards, pending strip and
-  panel, date-grouped filtered activity, extracted Hive-Engine tokens, removed
-  duplicated balances (W16).
-- Command palette and navigation: Ctrl/Cmd+K, direct route parsing, recents,
-  header/mobile/drawer triggers.
-- Witnesses, witness editing, network health and API nodes: searchable/sortable
-  witness directory with proxies, voting and vote-weight calculator, health
-  warnings, rebuilt witness settings, network metrics dashboard and node
-  latency history/failover (W17).
-- W17 follow-up: labelled saved public signing keys with one-click switching on
-  `/witness`, and corrected relative-time rendering so price-feed ages read
-  “40 minutes ago” rather than “in 40 minutes”.
-- Markets: responsive TradingView chart with pair/interval URL state, HBD peg
-  and savings APR cards, conversion calculator, rebuilt internal market with
-  order book, trades, open orders, balances and fees, and deeper home-market
-  links (W18).
-- Queue, notifications and SmartLock: persisted per-item statuses with send all,
-  retry failures and clear completed; paginated/filterable notification inbox
-  with live unread badge and queued mark-all-read; SmartLock lock controls,
-  inactivity timeout and clearer posting/active key guidance (W19).
-- Data layer and consistency: central JSON-RPC read client with timeouts,
-  retries, failover and cancellation; TTL/stale-while-revalidate caches for
-  accounts, global props, witnesses and posts; visibility-aware polling;
-  shared page/stat/empty/skeleton/table/filter components; rebuilt HBD,
-  stabilizer and tax pages (W20).
-- Quick wins and hardening: Playwright E2E and axe checks in CI, offline
-  shell/manifest/feed, prerendered key routes, keyboard shortcuts,
-  back-to-top, searchable 404, copy/share menus and a full README revamp (W21).
+The next phase is intentionally different: performance and reliability are the
+primary product work, with governance, discovery and content creation built on
+top of that foundation.
 
-Relevant docs:
+## Vision
 
-- `docs/workstreams/W7-proposals.md` and `W7-proposals-log.md`
-- `docs/workstreams/W8-block-view.md`
-- `docs/workstreams/W9-post-reading.md`
-- `docs/workstreams/W10-transactions.md`
-- `docs/workstreams/W11-browse-previews.md`
-- `docs/workstreams/W12-comment-composer.md`
-- `docs/workstreams/W13-home-dashboard.md`
-- `docs/workstreams/W14-wallet-account.md`
-- `docs/workstreams/W15-command-palette.md`
-- `docs/workstreams/W16-wallet-rebuild.md`
-- `docs/workstreams/W17-witnesses-health.md`
-- `docs/workstreams/W18-markets.md`
-- `docs/workstreams/W19-queue-login.md`
-- `docs/workstreams/W20-data-layer.md`
-- `docs/workstreams/W21-hardening.md`
+Make hive.ausbit.dev the fastest, most trustworthy Hive explorer for people who
+use the chain every day: quick to open, resilient on weak or dead API nodes,
+comfortable on mobile, and deep enough for governance, discovery and publishing
+workflows.
 
-## Priority 1 — wallet page rebuild (complete)
+## Product principles
 
-Completed 2026-11-18. See `docs/workstreams/W16-wallet-rebuild.md`.
+1. **Fast by default.** Measure before changing. Enforce route and bundle budgets
+   in CI. Prefer fewer requests, smaller payloads and progressive loading.
+2. **Reliable under failure.** Every network path has a timeout, a fallback and a
+   clear stale/error state. A dead node must not become a dead page.
+3. **Evidence over guesses.** New behaviour gets unit tests, E2E coverage where it
+   matters, and axe checks at desktop and mobile widths.
+4. **Least privilege.** Posting keys stay posting; active actions stay active.
+   Signing intent must be visible before broadcast.
+5. **Accessible and mobile-first.** One page-level `h1`, semantic tables, visible
+   focus, reduced-motion support and no horizontal overflow.
+6. **No unbounded scope.** Each workstream ships independently with a documented
+   verification record.
 
-`src/pages/wallet.vue` was rebuilt from ~1,571 lines to ~700 lines and split
-into focused components under `src/components/wallet/`:
+## North-star metrics
 
-- Portfolio header: total holdings, weighted 24h change, HP/HBD APR and
-  logged-in primary actions.
-- Overview: liquid HIVE, staked HP, liquid HBD, HIVE savings and HBD savings
-  cards, each with USD value, status, contextual actions and authority labels.
-- Pending strip and panel: power-down progress/cancel, savings withdrawals,
-  conversions, open orders, rewards, HBD interest and delegations.
-- Recent activity plus full activity with date grouping, type/direction/search
-  filters, raw JSON, tx/block links and on-demand pagination (50 at a time).
-- Hive-Engine tokens with balances, details, transfer/stake/unstake, market
-  links and token history.
+| Area | Target |
+| --- | --- |
+| Initial route JavaScript | Define a CI budget, then keep it below the agreed ceiling |
+| Route chunks | Each route-owned chunk stays within its budget |
+| LCP / INP / CLS | LCP ≤ 2.5s, INP ≤ 200ms, CLS < 0.1 at p75 |
+| API reliability | p95 read latency ≤ 1.5s; failed-request rate < 1% |
+| Cache efficiency | > 70% of repeat reads served without a network call |
+| Resilience | Dead-node failover, offline shell and queue survive smoke tests |
+| Accessibility | Zero axe WCAG A/AA violations on key routes at 1440px and 390px |
+| Quality gate | Lint + unit + E2E + build + live smoke green for every workstream |
 
-The old Hive/Hive-Engine tabs and duplicated balance list were removed. All
-wallet actions, memo decryption, claiming and the tax export link are preserved.
+## Track 1 — Performance and reliability (primary)
 
-Checks: lint clean, 19 test files / 142 tests passing, build succeeded, zero axe
-violations at 1440px and 390px, deploy and live smoke completed.
+This track comes first. It unlocks every later feature by making the app faster
+and safer to extend.
 
-## Priority 2 — witnesses and network health (complete)
+### W22 — Performance measurement and delivery
 
-Completed 2026-11-18. See `docs/workstreams/W17-witnesses-health.md`.
+- Add repeatable performance baselines: Lighthouse/Playwright runs for home,
+  browse, block, post, wallet and market surfaces.
+- Analyse the current bundle (largest route/vendor chunks, duplicate
+  dependencies, heavy libraries).
+- Split route-level code, defer non-critical dialogs/editors and prefetch likely
+  next routes on intent.
+- Optimise images, fonts, icons and third-party embeds.
+- Add CI budgets for initial JS, route chunks, CSS and total transfer size.
+- Record before/after numbers in the workstream doc.
 
-- `/witnesses` rebuilt: search by name/URL/version, sorting with direction,
-  my-votes view, voting proxy set/clear, vote/unvote, vote-weight and top-20
-  impact calculator, expandable raw details, and warnings for signing disabled,
-  stale price feeds, missed scheduled blocks and version mismatch.
-- `/witness` rebuilt: status cards, validated identity/chain/advanced subsidy
-  settings, labelled saved public signing keys with one-click switching,
-  percentage-to-basis-point HBD interest, JSON and `cli_wallet` preview, reset,
-  registration and confirmed signing disable.
-- `/health` rebuilt: overall status banner, witness participation, treasury-
-  excluded HBD debt ratio, median price and feed range, vesting resource pool,
-  hardfork and chain versions, chain state, scheduled witness health and API
-  latency summary.
-- `/nodes` rebuilt: head, lag, version and health per node, local 24-sample
-  latency history with sparklines, 30-second re-checks, manual selection,
-  auto-select fastest, automatic failover and version comparison.
-- All witness mutations queue with active authority; the queue refreshes the
-  affected account after a witness broadcast.
+### W23 — Network and data resilience
 
-Checks: lint clean, 23 test files / 188 tests passing, build succeeded, zero
-axe violations at 1440px and 390px on all four routes, browser smoke completed,
-deploy and live smoke completed.
+- Add structured telemetry for the central API client: success rate, latency,
+  retries, failover events and cache hit/miss.
+- Harden timeouts, retry policy, cancellation and node rotation.
+- Add error boundaries and consistent stale-data fallbacks across remaining
+  pages.
+- Verify every cache has an invalidation path after writes.
+- Add offline data snapshots for selected read-only views while keeping signing
+  actions blocked offline.
+- Make service-worker updates explicit: update-available prompt and safe reload.
 
-## Priority 3 — markets (complete)
+### W24 — Runtime polish and startup
 
-Completed 2026-11-18. See `docs/workstreams/W18-markets.md`.
+- Reduce startup work: defer boot-only services and route-independent polling.
+- Improve skeleton/loading transitions and avoid layout shift when data lands.
+- Add performance regression smoke coverage for slow-network profiles.
+- Verify PWA install, update and offline-navigation flows end to end.
+- Add a small performance status panel for developers (route chunk sizes, cache
+  hits, API node health) behind a query flag.
 
-- `/markets` is now a market chart and HBD tools page: responsive TradingView
-  chart, pair/interval selection with URL state, HIVE/HBD snapshot, HBD peg
-  premium/discount, HBD savings APR and a HIVE ↔ HBD conversion calculator.
-- `/market` is the rebuilt internal market: ticker strip, order book with
-  cumulative depth and click-to-prefill, recent trades, open orders, balances,
-  zero-fee disclosure and a validated buy/sell form.
-- Order creation and cancellation queue with active authority; the existing
-  queue refreshes the account after a broadcast.
-- Home market card rows link HIVE to the chart and HBD to the peg/converter
-  section; BTC/ETH remain external CoinGecko links with `noopener noreferrer`.
-- Hash navigation now scrolls to anchored sections with a header offset.
+## Track 2 — Governance and community
 
-Checks: lint clean, 24 test files / 199 tests passing, build succeeded, zero axe
-violations at 1440px and 390px on both routes, deploy and live smoke completed.
+### W25 — Governance and community intelligence
 
-## Priority 4 — queue, login, notifications (complete)
+- Witness analytics: vote concentration, missed-block trends, feed history,
+  version drift and per-witness voter segments.
+- Proposal analytics: funding history, voter overlap, return-proposal threshold
+  and category/creator breakdowns.
+- Delegation explorer: inbound/outbound delegations, effective HP and historical
+  changes.
+- Community insight pages: activity, subscribers, top authors, moderation
+  signals and growth trends.
+- Account authority risk: key age, proxy usage, multisig-style authority
+  warnings and readable permission diffs before updates.
 
-Completed 2026-11-18. See `docs/workstreams/W19-queue-login.md`.
+## Track 3 — Search and discovery
 
-- Queue rebuilt with persisted per-item states (queued, sending, sent, failed),
-  send all, retry failures, clear sent, clear queue, pause/resume auto-send,
-  operation/key summaries and raw details.
-- Restored queues stay paused; interrupted broadcasts return as retryable
-  failures; any broadcast failure pauses auto-send.
-- SmartLock account status, lock/unlock controls, 5/15/30/60-minute inactivity
-  timeout and a visibility-aware auto-lock boot task.
-- Login popup now explains posting versus active keys and Keychain, and the
-  import form labels required versus optional keys.
-- Notifications inbox: page-size loading, load more with `last_id`, type filters,
-  unread-only mode, 60-second visible-tab badge refresh, and queued
-  mark-all-read that updates local unread state after a successful broadcast.
-- Keychain and SmartLock signing paths preserve the queue item’s posting/active
-  authority; SmartLock active actions always require a password confirmation.
+### W26 — Unified search and discovery
 
-Checks: lint clean, 27 test files / 226 tests passing, build succeeded, zero axe
-violations at 1440px and 390px with the login, settings, SmartLock, queue and
-notification surfaces open, deploy and live smoke completed.
+- One search surface for accounts, posts, tags, communities, blocks,
+  transactions, proposals and witnesses.
+- Typed suggestions and facets, with direct-route parsing preserved.
+- Saved searches and shareable search URLs.
+- Tag and community analytics: trending authors, reward distribution, posting
+  cadence and related tags.
+- Recommendation rails based on followed tags/communities, without hiding the
+  chronological option.
+- Keyboard-first result navigation and recent-search management.
 
-## Priority 5 — data layer and consistency (complete)
+## Track 4 — Content creation
 
-Completed 2026-11-18. See `docs/workstreams/W20-data-layer.md`.
+### W27 — Drafts, scheduling and creator workflow
 
-- Central JSON-RPC read client with timeout, retry, node failover, cancellation
-  and `HiveApiError` metadata. Node selection now keeps hive-js and the central
-  client on the same endpoint.
-- Bounded TTL cache with stale-while-revalidate, in-flight de-duplication and
-  prefix invalidation. Cached reads cover global props, accounts, witnesses,
-  posts, follow counts, median/ticker and open orders.
-- Store actions, witness/health surfaces, home/browse posts, block head reads,
-  HBD and stabilizer now use the cached read layer; mutation paths force fresh
-  account reads.
-- `VueTimers` and a shared polling helper pause while the tab is hidden and
-  refresh once when it returns; account auto-refresh and notifications follow
-  the same visibility rule.
-- Shared `PageHeader`, `StatCard`, `EmptyState`, `Skeleton`, `DataTable` and
-  `FilterBar` components under `src/components/ui/`.
-- `/hbd`, `/hbdstabilizer` and `/tax` moved onto the shared card/typography
-  system with consistent loading, empty, error and stale/error-with-data states.
+- Local drafts with autosave, restore and explicit discard.
+- Schedule posts/comments through the existing queue with posting authority.
+- Rich markdown editor improvements: tables, image insertion, preview parity,
+  keyboard shortcuts and draft length guidance.
+- Cross-posting and community selection with clear beneficiary/authority
+  preview.
+- Publish checklist: tags, beneficiaries, reward settings, community and
+  expected posting key.
+- Export/import drafts as JSON for backup.
 
-Checks: lint clean, 31 test files / 245 tests passing, build succeeded, zero axe
-violations at 1440px and 390px on the migrated pages, deploy and live smoke
-completed.
+## Sequencing
 
-## Priority 6 — quick wins and hardening (complete)
+| Phase | Workstreams | Outcome |
+| --- | --- | --- |
+| 1 | W22, W23 | Measured speed, enforced budgets and resilient reads |
+| 2 | W24 | Stable startup, updates and offline behaviour |
+| 3 | W26 | Fast discovery across the whole chain |
+| 4 | W25 | Deep governance and community intelligence |
+| 5 | W27 | Creator workflow on top of the reliable platform |
 
-Completed 2026-11-18. See `docs/workstreams/W21-hardening.md`.
+Tracks may overlap only when they share a dependency. Performance and reliability
+land before feature work that would otherwise make the bundle or network layer
+harder to reason about.
 
-- Playwright E2E covers login simulation, comment queueing, proposal voting,
-  wallet transfers, browse filters, queue controls, navigation shortcuts, 404
-  search, back-to-top, share menus and the offline shell.
-- Axe WCAG A/AA checks run in CI for eight key routes at 1440px and 390px.
-- PWA manifest, production-only service worker, offline page, online/offline
-  notices and offline-safe queue failures.
-- Build-generated RSS feed plus optional Chromium prerender of key routes,
-  sitemap/robots updates and existing post/account JSON-LD.
-- Keyboard shortcuts: `Ctrl K` / `/` search, `?` help, `g` navigation sequences.
-- Back-to-top, searchable 404, copy/share actions on blocks, transactions,
-  accounts and proposals.
-- README rewritten with screenshots, feature/route tour, stack, architecture,
-  data layer, commands, E2E/deploy workflow, data sources and key safety.
+## Definition of done
 
-Checks: lint clean, 31 test files / 245 unit tests passing, 20 Playwright tests
-passing, build and feed/prerender succeeded, zero axe violations at 1440px and
-390px, deploy and live smoke completed.
+Every workstream must include:
 
-## Future candidates
+- A `docs/workstreams/W*-*.md` record with scope, components, authorities,
+  verification and notes.
+- `bun run lint`, `bun run test`, `bun run build` and `bun run test:e2e` green.
+- Axe checks at 1440px and 390px for affected routes.
+- A browser smoke of the key flows, including stale/error states.
+- Deploy with `./scripts/deploy.sh` and a live production smoke.
+- Unit/E2E test counts, build/deploy status and backup path reported.
+- Commit and push to `origin/master`, with a clean working tree.
 
-- Migrate the remaining small legacy pages (`connections`, `communities`,
-  `trail`, `tip`, `create`, `token`) onto the shared UI primitives.
-- Performance budgets, route-level bundle splitting and images lazy-loading.
-- Authenticated E2E against a disposable test account with mocked signing.
-- Offline data snapshots for selected explorer views.
-- PWA install prompt and update-available flow.
-- More structured data for proposals, blocks and transactions.
-- Search relevance, grouped results and saved searches.
-
-## Standards already used
+## Standards
 
 - Vue 3 + Quasar 2 + Vite.
-- Page classes and design tokens in `src/css/app.scss`.
-- Full card headers use `.home-card` / `.home-panel` patterns.
+- Design tokens and `.home-card` / `.home-panel` patterns.
 - One page-level `h1`; section headings are `h2`.
-- UGC is sanitized; external links use `noopener noreferrer`.
-- Expandable JSON is important on explorer pages.
-- Test count and build status should be reported after each workstream.
-- Deploy with `./scripts/deploy.sh`, then live-smoke.
-- Rollback uses the backup path printed by the deploy script.
-- Commit and push verified work to `origin/master`; confirm the working tree is
-  clean and report the commit hash and deploy backup path.
+- Sanitized UGC and `noopener noreferrer` on external links.
+- Posting/active queue authorities preserved exactly.
+- Expandable raw JSON on explorer pages.
+- Shared UI primitives under `src/components/ui/`.
+- Central API client and cached read layer for chain data.
+- Visibility-aware polling; no background polling without intent.
+- Prefer semantic tables, real buttons and keyboard-operable surfaces.
 
 ## Suggested new-session prompt
 
-> Read `docs/ROADMAP.md` first. The current verified baseline is commit
-> `7b82f97` on `master`, pushed to `origin/master`; W16–W21 are complete, with
-> 31 unit test files / 245 tests passing, 20 Playwright E2E tests passing, a
-> green build, and production deployed from the same commit.
+> Read `docs/ROADMAP.md` first. The verified implementation baseline is
+> `7b82f97`; W16–W21 are complete, with 31 unit-test files / 245 tests and 20
+> Playwright E2E tests passing. Production is deployed from the W21 build.
 >
-> All named priorities are complete. Review the current state and **Future
-> candidates** section, then choose and execute the next follow-up workstream.
-> The recommended first pass is:
+> Start **Track 1 — W22: Performance measurement and delivery**.
 >
-> 1. Migrate the remaining small legacy pages (`connections`, `communities`,
->    `trail`, `tip`, `create`, `token`) onto the shared UI primitives and
->    consistent loading/empty/error states.
-> 2. Add performance budgets, route-level bundle splitting and image lazy-loading.
-> 3. Add structured data for proposals, blocks and transactions.
-> 4. Extend the authenticated E2E suite against a disposable test account with
->    mocked signing.
-> 5. Add an offline data snapshot and PWA update-available flow.
-> 6. Record the work in a new `docs/workstreams/W22-*.md` file.
+> Measure the current home, browse, block, post, wallet and market surfaces;
+> analyse bundle size and route chunks; define CI performance budgets; then split
+> and defer code, optimise images/fonts/embeds and record before/after numbers.
 >
-> Follow the existing standards: use the design tokens and card patterns, keep
-> one page-level `h1`, preserve correct posting/active queue authorities, sanitize
-> UGC, and use `noopener noreferrer` on external links.
+> Follow the standards in this roadmap: design tokens, one page-level `h1`,
+> posting/active authority correctness, sanitized UGC and `noopener noreferrer`.
 >
-> After implementation, run `bun run lint`, `bun run test`, `bun run build` and
-> `bun run test:e2e`, run axe at 1440px and 390px, smoke the key flows, deploy
-> with `./scripts/deploy.sh`, and live-smoke production. Update
-> `docs/workstreams/` and `ROADMAP.md`, report the unit/E2E counts, build/deploy
-> status and backup path, then commit and push the verified work and confirm the
-> working tree is clean.
+> Run `bun run lint`, `bun run test`, `bun run build` and `bun run test:e2e`, run
+> axe at 1440px and 390px, smoke the key flows, deploy with
+> `./scripts/deploy.sh`, and live-smoke production. Update `docs/workstreams/`
+> and this roadmap, report unit/E2E counts, build/deploy status and backup path,
+> then commit and push the verified work with a clean working tree.
 >
-> Do not redo W16–W21 except for integration fixes.
+> Do not redo finished workstreams except for integration fixes.
