@@ -7,7 +7,7 @@
           Showing <strong>{{ filteredPosts.length }}</strong> {{ filteredPosts.length === 1 ? 'post' : 'posts' }}
         </span>
         <span v-if="filteredPosts.length !== posts.length" class="browse-toolbar__filtered">
-          {{ posts.length - filteredPosts.length }} hidden by filters
+          · {{ posts.length - filteredPosts.length }} hidden by filters
         </span>
         <span v-if="loadedRange" class="browse-toolbar__range" title="Date range of the posts loaded on this page">· {{ loadedRange }}</span>
       </div>
