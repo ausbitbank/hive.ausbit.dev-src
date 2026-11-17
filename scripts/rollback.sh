@@ -19,6 +19,10 @@ REMOTE_DIR="${REMOTE_DIR:-/var/www/hive.ausbit.dev}"
 REMOTE_PARENT="$(dirname "$REMOTE_DIR")"
 REMOTE_NAME="$(basename "$REMOTE_DIR")"
 BACKUP="$1"
+REMOTE_BACKUP="$BACKUP"
+if [[ "$REMOTE_BACKUP" == "~/"* ]]; then
+  REMOTE_BACKUP='$HOME/'"${REMOTE_BACKUP#\~/}"
+fi
 
 echo "==> Saving the current deployment before rollback"
 ssh "$REMOTE" "set -e
@@ -29,10 +33,10 @@ ssh "$REMOTE" "set -e
 
 echo "==> Restoring $BACKUP"
 ssh "$REMOTE" "set -e
-  test -f '$BACKUP'
+  test -f \"$REMOTE_BACKUP\"
   TMP=\$(mktemp -d)
-  tar -xzf '$BACKUP' -C \"\$TMP\"
-  rsync -a --delete-delay --delay-updates \"\$TMP/'$REMOTE_NAME'/\" '$REMOTE_DIR'/
+  tar -xzf \"$REMOTE_BACKUP\" -C \"\$TMP\"
+  rsync -a --checksum --delete-delay --delay-updates \"\$TMP/$REMOTE_NAME/\" '$REMOTE_DIR'/
   rm -rf \"\$TMP\"
   sha256sum '$REMOTE_DIR'/index.html"
 

@@ -31,7 +31,7 @@ echo "==> Uploading to $REMOTE:~/$STAGE"
 rsync -az --delete --stats dist/spa/ "$REMOTE:~/$STAGE/"
 
 echo "==> Activating release"
-ssh "$REMOTE" "rsync -a --delete-delay --delay-updates ~/'$STAGE'/ '$REMOTE_DIR'/ && sha256sum '$REMOTE_DIR'/index.html"
+ssh "$REMOTE" "rsync -a --checksum --delete-delay --delay-updates ~/'$STAGE'/ '$REMOTE_DIR'/ && sha256sum '$REMOTE_DIR'/index.html"
 
 echo
 echo "Deployed $REMOTE_DIR"
