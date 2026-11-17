@@ -231,6 +231,7 @@ import moment from 'src/utils/time'
 import jsonViewer from 'components/jsonViewer.vue'
 import VueTimers from 'src/mixins/timers.js'
 import animInt from 'components/animInt.vue'
+import { fetchGlobalProps } from 'src/services/chainData'
 export default {
   name: 'blockView',
   mixins: [VueTimers],
@@ -510,7 +511,7 @@ export default {
       this.getBlockOps(blockNumber)
     },
     getLatestIrreversibleBlock () {
-      this.$hive.api.getDynamicGlobalPropertiesAsync()
+      fetchGlobalProps({ force: true })
         .then(res => this.updateBlock(res.last_irreversible_block_num))
     },
     getRawBlock (blocknum) {

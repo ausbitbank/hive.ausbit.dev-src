@@ -244,7 +244,7 @@ export default {
       }
 
       if (this.loggedInUser && !this.account) {
-        await this.$hiveStore.getAccount(this.loggedInUser)
+        await this.$hiveStore.getAccount(this.loggedInUser, { force: true })
       }
       await this.loadOpenOrders()
 
@@ -262,7 +262,7 @@ export default {
     },
     async refreshAccount () {
       if (!this.loggedInUser) return
-      await this.$hiveStore.getAccount(this.loggedInUser)
+      await this.$hiveStore.getAccount(this.loggedInUser, { force: true })
       await this.loadOpenOrders()
     },
     async loadOpenOrders () {

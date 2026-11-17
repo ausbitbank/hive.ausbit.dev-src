@@ -78,6 +78,8 @@
 <script>
 import moment from 'src/utils/time'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { pollWhileVisible } from 'src/services/polling'
+import { fetchGlobalProps } from 'src/services/chainData'
 
 const BLOCK_COUNT = 10
 const REFRESH_INTERVAL_MS = 8000
@@ -91,7 +93,7 @@ export default {
       refreshing: false,
       autoRefresh: true,
       error: null,
-      refreshTimer: null
+      refreshPoller: null
     }
   },
   computed: {
@@ -122,7 +124,7 @@ export default {
       if (initial || this.blocks.length === 0) this.loading = true
 
       try {
-        const props = await this.$hive.api.getDynamicGlobalPropertiesAsync()
+        const props = await fetchGlobalProps({ force: true })
         const head = parseInt(props?.head_block_number, 10)
         if (!Number.isFinite(head) || head <= 0) throw new Error('Invalid chain head')
 
@@ -160,12 +162,13 @@ export default {
     },
     startAutoRefresh () {
       this.stopAutoRefresh()
-      this.refreshTimer = setInterval(() => { this.loadBlocks() }, REFRESH_INTERVAL_MS)
+      this.refreshPoller = pollWhileVisible(() => { this.loadBlocks() }, REFRESH_INTERVAL_MS, { immediate: false })
+      this.refreshPoller.start()
     },
     stopAutoRefresh () {
-      if (this.refreshTimer !== null) {
-        clearInterval(this.refreshTimer)
-        this.refreshTimer = null
+      if (this.refreshPoller) {
+        this.refreshPoller.stop()
+        this.refreshPoller = null
       }
     },
     toggleAutoRefresh () {

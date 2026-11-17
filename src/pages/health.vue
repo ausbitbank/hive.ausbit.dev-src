@@ -407,6 +407,7 @@ import HealthStatCard from 'components/health/HealthStatCard.vue'
 import WitnessHealthList from 'components/health/WitnessHealthList.vue'
 import HealthNodeSummary from 'components/health/HealthNodeSummary.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { fetchAccounts, fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
 import {
   chainVersions,
   formatCount,
@@ -645,15 +646,15 @@ export default {
       this.loadError = ''
       try {
         const [props, median, feed, config, schedule, hardfork, accounts, count, witnesses] = await Promise.allSettled([
-          this.$hive.api.getDynamicGlobalPropertiesAsync(),
+          fetchGlobalProps(),
           this.$hive.api.getCurrentMedianHistoryPriceAsync(),
           this.$hive.api.callAsync('condenser_api.get_feed_history', []),
           this.$hive.api.callAsync('condenser_api.get_config', []),
           this.$hive.api.callAsync('condenser_api.get_witness_schedule', []),
           this.$hive.api.callAsync('condenser_api.get_hardfork_version', []),
-          this.$hive.api.getAccountsAsync(['hive.fund']),
+          fetchAccounts(['hive.fund']),
           this.$hive.api.getAccountCountAsync(),
-          this.$hive.api.getWitnessesByVoteAsync('', 200)
+          fetchWitnessesByVote(200)
         ])
 
         this.props = settledValue(props, this.globalProps)

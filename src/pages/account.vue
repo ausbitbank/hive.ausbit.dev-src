@@ -172,7 +172,7 @@
               </q-card-section>
             </q-card>
 
-            <account-authorities :account="account" :witness="witness" class="account-card" v-on:authEdited="$hiveStore.getAccount(username)" />
+            <account-authorities :account="account" :witness="witness" class="account-card" v-on:authEdited="$hiveStore.getAccount(username, { force: true })" />
 
             <q-card flat bordered class="account-card" v-if="witness">
               <q-card-section>
@@ -500,6 +500,7 @@ const op = ChainTypes.operations
 import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
+import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
 export default {
   name: 'accountPage',
   components: {
@@ -765,6 +766,10 @@ export default {
       clearTimeout(this.autorefreshTimer)
       if (this.autorefreshMinutes < 0.5) { this.autorefreshMinutes = 1 }
       if (this.autorefresh === true) {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
+          return
+        }
         this.getAccountHistoryMarker()
         this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
       }
@@ -873,8 +878,7 @@ export default {
     },
     async loadAccount () {
       try {
-        const response = await this.$hive.api.getAccountsAsync([this.username])
-        const account = response && response[0]
+        const account = await fetchAccount(this.username, { force: true })
         if (!account || !account.name) {
           this.error = true
           this.errorMessage = 'Account @' + this.username + ' was not found.'
@@ -897,7 +901,7 @@ export default {
       }
     },
     getWitness (username) {
-      this.$hive.api.getWitnessByAccountAsync(username)
+      fetchWitnessByAccount(username)
         .then((response) => {
           this.witness = response
         })
@@ -933,7 +937,7 @@ export default {
     },
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
-    refreshAccount () { this.$hiveStore.getAccount(this.username) },
+    refreshAccount () { this.$hiveStore.getAccount(this.username, { force: true }) },
     async init () {
       this.error = false
       this.errorMessage = ''

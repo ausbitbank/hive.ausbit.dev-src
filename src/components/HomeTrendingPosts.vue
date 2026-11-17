@@ -73,6 +73,7 @@
 
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
+import { fetchRankedPosts } from 'src/services/chainData'
 
 const SORTS = [
   { label: 'Trending', value: 'trending' },
@@ -114,7 +115,7 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const response = await this.$hive.api.callAsync('bridge.get_ranked_posts', {
+        const response = await fetchRankedPosts({
           observer: this.loggedInUser || null,
           limit: 6,
           sort: this.sort,

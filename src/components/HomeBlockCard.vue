@@ -215,6 +215,8 @@
 
 <script>
 import moment from 'src/utils/time'
+import { pollWhileVisible } from 'src/services/polling'
+import { fetchGlobalProps } from 'src/services/chainData'
 import {
   blockOperationCount,
   blockOperationMix,
@@ -233,6 +235,7 @@ export default {
       virtualOps: [],
       headBlock: null,
       followHead: true,
+      poller: null,
       loading: true,
       refreshing: false,
       error: '',
@@ -283,10 +286,11 @@ export default {
   },
   mounted () {
     this.loadLatest()
-    this.timer = setInterval(this.refreshIfNewBlock, POLL_INTERVAL)
+    this.poller = pollWhileVisible(this.refreshIfNewBlock, POLL_INTERVAL, { immediate: false })
+    this.poller.start()
   },
   beforeUnmount () {
-    clearInterval(this.timer)
+    if (this.poller) this.poller.stop()
   },
   methods: {
     avatarUrl (user) {
@@ -296,7 +300,7 @@ export default {
       this.followHead = true
       this.refreshing = Boolean(this.block)
       try {
-        const props = await this.$hive.api.getDynamicGlobalPropertiesAsync()
+        const props = await fetchGlobalProps({ force: true })
         const head = Number(props && props.head_block_number)
         if (!Number.isFinite(head) || head <= 0) throw new Error('Head block unavailable')
         this.headBlock = head
@@ -347,7 +351,7 @@ export default {
     async refreshIfNewBlock () {
       if (!this.followHead) return
       try {
-        const props = await this.$hive.api.getDynamicGlobalPropertiesAsync()
+        const props = await fetchGlobalProps({ force: true })
         const head = Number(props && props.head_block_number)
         if (Number.isFinite(head) && head > this.blockNumber) {
           this.headBlock = head

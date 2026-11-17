@@ -453,17 +453,17 @@ export default {
     refreshAfterAction (action) {
       const op = action[2]
       if (['claim_reward_balance', 'account_update', 'account_update2', 'withdraw_vesting'].includes(op[0])) {
-        this.$hiveStore.getAccount(op[1].account)
+        this.$hiveStore.getAccount(op[1].account, { force: true })
       }
       if (['transfer', 'transfer_to_savings', 'transfer_from_savings', 'transfer_to_vesting', 'cancel_transfer_from_savings'].includes(op[0])) {
-        this.$hiveStore.getAccount(op[1].from)
+        this.$hiveStore.getAccount(op[1].from, { force: true })
       }
       if (['convert', 'collateralized_convert', 'limit_order_cancel', 'limit_order_create'].includes(op[0])) {
-        this.$hiveStore.getAccount(op[1].owner)
+        this.$hiveStore.getAccount(op[1].owner, { force: true })
       }
       if (['account_witness_vote', 'account_witness_proxy', 'witness_update'].includes(op[0])) {
         const witnessAccount = op[1].account || op[1].owner
-        if (witnessAccount) this.$hiveStore.getAccount(witnessAccount)
+        if (witnessAccount) this.$hiveStore.getAccount(witnessAccount, { force: true })
       }
       if (op[0] === 'custom_json' && op[1]?.id === 'notify') {
         this.$hiveStore.markNotificationsReadLocally()

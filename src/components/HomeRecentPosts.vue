@@ -49,6 +49,7 @@
 
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
+import { fetchAccountPosts } from 'src/services/chainData'
 
 export default {
   name: 'homeRecentPosts',
@@ -76,7 +77,7 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const response = await this.$hive.api.callAsync('bridge.get_account_posts', {
+        const response = await fetchAccountPosts({
           sort: 'blog',
           account: this.account,
           observer: this.loggedInUser || this.account,

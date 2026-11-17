@@ -505,7 +505,7 @@ export default {
         url: '/@' + this.username + '/wallet'
       })
       if (this.globalProps.empty) this.$hiveStore.getGlobalProps()
-      if (this.account === undefined) this.$hiveStore.getAccount(this.username)
+      if (this.account === undefined) this.$hiveStore.getAccount(this.username, { force: true })
       this.hiveTransactions = []
       this.decryptedMemos = {}
       this.accountHistoryPointer = -1
@@ -517,14 +517,14 @@ export default {
       this.getHiveWalletTransactions()
     },
     refresh () {
-      this.$hiveStore.getAccount(this.username)
+      this.$hiveStore.getAccount(this.username, { force: true })
       this.getPrices()
     },
     async refreshAll () {
       this.refreshing = true
       try {
         await Promise.all([
-          this.$hiveStore.getAccount(this.username),
+          this.$hiveStore.getAccount(this.username, { force: true }),
           this.getPrices(),
           this.getOpenOrders(),
           this.getPendingExtras()

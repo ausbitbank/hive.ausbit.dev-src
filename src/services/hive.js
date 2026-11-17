@@ -1,12 +1,15 @@
 import hive from '@hiveio/hive-js'
 import { DEFAULT_HIVE_NODE, HIVE_API_NODES } from './hiveNodes'
+import { configureApi } from './api'
 
 hive.config.set('alternative_api_endpoints', HIVE_API_NODES)
 
 export const HIVE_NODE_PROBE_TIMEOUT_MS = 2000
 
 export function setHiveNode (url) {
-  hive.api.setOptions({ url: url || DEFAULT_HIVE_NODE })
+  const node = url || DEFAULT_HIVE_NODE
+  hive.api.setOptions({ url: node })
+  configureApi({ node })
 }
 
 /**

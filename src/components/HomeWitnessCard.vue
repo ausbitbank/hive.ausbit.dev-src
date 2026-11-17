@@ -135,6 +135,7 @@
 <script>
 import moment from 'src/utils/time'
 import { formatCompactNumber, witnessVotesHp } from 'src/services/home'
+import { fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
 
 export default {
   name: 'homeWitnessCard',
@@ -182,8 +183,8 @@ export default {
       this.error = ''
       try {
         const [witnesses, props, hardfork] = await Promise.all([
-          this.$hive.api.getWitnessesByVoteAsync('', 6),
-          this.$hive.api.getDynamicGlobalPropertiesAsync(),
+          fetchWitnessesByVote(6),
+          fetchGlobalProps(),
           this.$hive.api.getHardforkVersionAsync().catch(() => '')
         ])
         this.witnesses = Array.isArray(witnesses) ? witnesses : []

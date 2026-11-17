@@ -199,6 +199,7 @@ import jsonViewer from 'components/jsonViewer.vue'
 import BlockTransaction from 'components/BlockTransaction.vue'
 import BlockOperation from 'components/BlockOperation.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { fetchGlobalProps } from 'src/services/chainData'
 
 export default {
   name: 'blockViewPage',
@@ -281,7 +282,7 @@ export default {
         const [block, virtualOps, globalProps] = await Promise.all([
           this.$hive.api.getBlockAsync(blockNumber),
           this.$hive.api.getOpsInBlockAsync(blockNumber, true).catch(() => []),
-          this.$hive.api.getDynamicGlobalPropertiesAsync().catch(() => null)
+          fetchGlobalProps({ force: true }).catch(() => null)
         ])
 
         if (!block) throw new Error('Block not found')
@@ -330,7 +331,7 @@ export default {
     async goLatest () {
       this.loadingLatest = true
       try {
-        const props = await this.$hive.api.getDynamicGlobalPropertiesAsync()
+        const props = await fetchGlobalProps({ force: true })
         const head = Number(props?.head_block_number)
         if (Number.isInteger(head) && head > 0) {
           this.$router.push('/b/' + (head - 1))

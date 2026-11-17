@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import timersMixin from '../../src/mixins/timers'
 
 // normalizeTimers is a pure method; calling it with a fake `this` avoids the
@@ -20,7 +20,9 @@ describe('timers mixin', () => {
       normalizeTimers: expect.any(Function),
       resolveTimerCallback: expect.any(Function),
       startTimer: expect.any(Function),
-      stopTimer: expect.any(Function)
+      stopTimer: expect.any(Function),
+      pauseTimers: expect.any(Function),
+      resumeTimers: expect.any(Function)
     }))
   })
 
@@ -98,5 +100,35 @@ describe('timers mixin', () => {
     expect(fromOptions).toBe(optionCallback)
     expect(fromMethod).toBe(methodCallback)
     expect(missing).toBeNull()
+  })
+
+  it('pauses running timers and resumes them', () => {
+    vi.useFakeTimers()
+    const refresh = vi.fn()
+    const vm = {
+      _timerHandles: {},
+      _timerOptions: { refresh: { name: 'refresh', time: 1000, repeat: true, immediate: false } },
+      _pausedTimerNames: [],
+      timers: { refresh: { isRunning: false } },
+      refresh
+    }
+    Object.assign(vm, timersMixin.methods)
+
+    vm.startTimer('refresh')
+    vi.advanceTimersByTime(1000)
+    expect(refresh).toHaveBeenCalledTimes(1)
+
+    vm.pauseTimers()
+    expect(vm.timers.refresh.isRunning).toBe(false)
+    vi.advanceTimersByTime(2000)
+    expect(refresh).toHaveBeenCalledTimes(1)
+
+    vm.resumeTimers()
+    expect(vm.timers.refresh.isRunning).toBe(true)
+    vi.advanceTimersByTime(1000)
+    expect(refresh).toHaveBeenCalledTimes(2)
+
+    vm.stopTimer('refresh')
+    vi.useRealTimers()
   })
 })

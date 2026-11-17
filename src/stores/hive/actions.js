@@ -1,37 +1,44 @@
 import hive from '@hiveio/hive-js'
+import {
+  fetchAccount,
+  fetchAccounts,
+  fetchCommunity,
+  fetchFollowCount,
+  fetchGlobalProps
+} from '../../services/chainData'
 
-export async function getAccount (account) {
+export async function getAccount (account, { force = false } = {}) {
   if (!account) return
   try {
-    const response = await hive.api.getAccountsAsync([account])
-    if (response?.[0]) this.updateAccountData(response[0])
+    const data = await fetchAccount(account, { force })
+    if (data) this.updateAccountData(data)
   } catch {
     console.error('Failed to load profile')
   }
 }
 
-export async function getAccounts (accounts) {
+export async function getAccounts (accounts, { force = false } = {}) {
   if (!accounts?.length) return
   try {
-    const response = await hive.api.getAccountsAsync(accounts)
+    const response = await fetchAccounts(accounts, { force })
     response?.forEach(account => this.updateAccountData(account))
   } catch {
     console.error('Failed to load profiles')
   }
 }
 
-export async function getGlobalProps () {
+export async function getGlobalProps ({ force = false } = {}) {
   try {
-    this.updateGlobalProps(await hive.api.getDynamicGlobalPropertiesAsync())
+    this.updateGlobalProps(await fetchGlobalProps({ force }))
   } catch {
     console.error('Failed to load global properties')
   }
 }
 
-export async function getCommunityInfo (username) {
-  const params = { observer: this.user.username, name: username }
+export async function getCommunityInfo (username, { force = false } = {}) {
   try {
-    this.updateCommunityInfo(await hive.api.callAsync('bridge.get_community', params))
+    const info = await fetchCommunity(username, this.user.username, { force })
+    if (info?.name) this.updateCommunityInfo(info)
   } catch {
     console.error('Failed to get community info')
   }
@@ -46,9 +53,9 @@ export async function getCommunitySubscriptions (username) {
   }
 }
 
-export async function getFollowCount (username) {
+export async function getFollowCount (username, { force = false } = {}) {
   try {
-    this.updateFollowCount(await hive.api.getFollowCountAsync(username))
+    this.updateFollowCount(await fetchFollowCount(username, { force }))
   } catch {
     console.error('Failed to load follow count')
   }

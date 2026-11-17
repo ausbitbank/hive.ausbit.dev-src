@@ -468,7 +468,7 @@ export default {
     linkCommunities (username) { return '/@' + username + '/communities' },
     login (username) {
       this.loggedInUser = username
-      this.$hiveStore.getAccount(this.loggedInUser)
+      this.$hiveStore.getAccount(this.loggedInUser, { force: true })
     },
     logout () {
       this.smartLockLockAccount(this.loggedInUser)

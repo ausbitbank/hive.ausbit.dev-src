@@ -366,6 +366,7 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { postPayoutValue } from 'src/services/posts'
+import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
 
 const DEFAULT_FILTERS = () => ({
   hideVoted: false,
@@ -515,7 +516,7 @@ export default {
     this.getPosts(false)
   },
   methods: {
-    async getPosts (append = false) {
+    async getPosts (append = false, { force = false } = {}) {
       if (append && (this.loading || this.loadingMore || !this.hasMore)) return
 
       const last = this.posts[this.posts.length - 1]
@@ -540,7 +541,9 @@ export default {
       if (this.method === 'bridge.get_ranked_posts') params.tag = this.tag || undefined
 
       try {
-        const response = await this.$hive.api.callAsync(this.method, params)
+        const response = this.method === 'bridge.get_account_posts'
+          ? await fetchAccountPosts(params, { force })
+          : await fetchRankedPosts(params, { force })
         const list = Array.isArray(response) ? response : []
 
         if (append) {
@@ -559,7 +562,7 @@ export default {
       }
     },
     refresh () {
-      this.getPosts(false)
+      this.getPosts(false, { force: true })
     },
     loadMore () {
       this.getPosts(true)

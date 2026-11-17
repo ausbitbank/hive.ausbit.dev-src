@@ -682,6 +682,7 @@ import { copyToClipboard } from 'quasar'
 import jsonViewer from 'components/jsonViewer.vue'
 import HealthStatCard from 'components/health/HealthStatCard.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { fetchWitnessByAccount, fetchWitnessesByVote } from 'src/services/chainData'
 import {
   DISABLED_SIGNING_KEY,
   buildWitnessUpdate,
@@ -868,8 +869,8 @@ export default {
         }
 
         const [witnessResult, ranked, hardfork] = await Promise.allSettled([
-          this.$hive.api.getWitnessByAccountAsync(this.username),
-          this.$hive.api.getWitnessesByVoteAsync('', 200),
+          fetchWitnessByAccount(this.username),
+          fetchWitnessesByVote(200),
           this.$hive.api.callAsync('condenser_api.get_hardfork_version', [])
         ])
 

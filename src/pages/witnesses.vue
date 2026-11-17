@@ -221,6 +221,7 @@ import WitnessFilters from 'components/witness/WitnessFilters.vue'
 import WitnessRow from 'components/witness/WitnessRow.vue'
 import WitnessVoteCalculator from 'components/witness/WitnessVoteCalculator.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { fetchWitnessByAccount, fetchWitnessesByVote } from 'src/services/chainData'
 import {
   accountVoteWeight,
   aggregateWitnessHealth,
@@ -368,7 +369,7 @@ export default {
         }
 
         const [witnesses, hardforkVersion] = await Promise.all([
-          this.$hive.api.getWitnessesByVoteAsync('', 200),
+          fetchWitnessesByVote(200),
           this.$hive.api.callAsync('condenser_api.get_hardfork_version', []).catch(() => '')
         ])
 
@@ -400,7 +401,7 @@ export default {
       if (!missing.length) return
 
       const results = await Promise.allSettled(
-        missing.map(owner => this.$hive.api.getWitnessByAccountAsync(owner))
+        missing.map(owner => fetchWitnessByAccount(owner))
       )
       const extras = results
         .filter(result => result.status === 'fulfilled' && result.value?.owner)

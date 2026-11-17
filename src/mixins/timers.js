@@ -20,6 +20,7 @@ export default {
 
   mounted () {
     this._timerOptions = this.normalizeTimers(this.$options.timers)
+    this._pausedTimerNames = []
     for (const [name, options] of Object.entries(this._timerOptions)) {
       this.timers[name] = {
         time: options.time,
@@ -29,10 +30,21 @@ export default {
       }
       if (options.autostart !== false) this.startTimer(name)
     }
+
+    if (typeof document !== 'undefined') {
+      this._timerVisibilityHandler = () => {
+        if (document.visibilityState === 'hidden') this.pauseTimers()
+        else this.resumeTimers()
+      }
+      document.addEventListener('visibilitychange', this._timerVisibilityHandler)
+    }
   },
 
   beforeUnmount () {
     for (const name of Object.keys(this._timerHandles || {})) this.stopTimer(name)
+    if (typeof document !== 'undefined' && this._timerVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this._timerVisibilityHandler)
+    }
   },
 
   methods: {
@@ -77,6 +89,22 @@ export default {
         delete this._timerHandles[name]
       }
       if (this.timers[name]) this.timers[name].isRunning = false
+    },
+
+    pauseTimers () {
+      if (!this._pausedTimerNames) this._pausedTimerNames = []
+      for (const name of Object.keys(this._timerHandles || {})) {
+        this._pausedTimerNames.push(name)
+        this.stopTimer(name)
+      }
+    },
+
+    resumeTimers () {
+      const names = this._pausedTimerNames || []
+      this._pausedTimerNames = []
+      for (const name of names) {
+        if (this._timerOptions[name]) this.startTimer(name)
+      }
     }
   }
 }
