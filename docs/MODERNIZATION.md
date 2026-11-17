@@ -1,6 +1,7 @@
 # Modernization audit & revamp
 
-Branch: `revamp/vue3-quasar2`
+Status: merged to `master` by fast-forward on 2026-11-17. The pre-revamp master
+is preserved as tag `archive/pre-revamp-2026-11-17`.
 
 This document records the audit of the abandoned codebase and the changes made
 to bring it back to a supported stack. It is intentionally concrete so the

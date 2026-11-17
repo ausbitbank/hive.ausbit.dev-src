@@ -64,10 +64,12 @@ The rollback script first snapshots the current (bad) deployment as
 reversible. Override the defaults for another host with `REMOTE` and
 `REMOTE_DIR`.
 
-## Branch history
+## History
 
-The `revamp/vue3-quasar2` branch modernizes the abandoned Quasar 1 / Vue 2 /
-webpack codebase. See [`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) for the
-audit, the removed features and the migration notes.
+The 2026 revamp modernized the abandoned Quasar 1 / Vue 2 / webpack codebase.
+It was merged to `master` on 2026-11-17; the pre-revamp state is preserved as
+the `archive/pre-revamp-2026-11-17` tag. See
+[`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) for the audit, the removed
+features and the migration notes.
 
 Pull requests, feedback and issues are welcome.
