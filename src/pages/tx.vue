@@ -25,6 +25,7 @@
           :disable="!nextTxId"
           @click="goTx(nextTxId)"
         />
+        <share-menu :title="'Hive transaction ' + txId" :path="'/tx/' + txId" />
         <q-btn flat dense no-caps icon="view_agenda" label="Block" :to="blockLink" :disable="!blockNum" />
       </div>
 
@@ -577,12 +578,14 @@ import {
   shortTxId,
   transactionNumber
 } from 'src/services/transactions'
+import ShareMenu from 'components/ui/ShareMenu.vue'
 
 export default {
   name: 'transactionViewPage',
   components: {
     jsonViewer,
-    BlockOperation
+    BlockOperation,
+    ShareMenu
   },
   data () {
     return {

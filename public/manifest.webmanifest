@@ -1,0 +1,30 @@
+{
+  "name": "hive.ausbit.dev — Hive block explorer",
+  "short_name": "hive.ausbit.dev",
+  "description": "A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, wallets, witnesses, proposals and markets.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1114",
+  "theme_color": "#0d1114",
+  "icons": [
+    {
+      "src": "/statics/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/statics/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/statics/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -88,6 +88,8 @@
       </footer>
     </q-page-container>
     <command-palette ref="commandPalette" />
+    <back-to-top />
+    <keyboard-shortcuts />
   </q-layout>
 </template>
 <style>
@@ -146,6 +148,8 @@ import Notifications from 'components/notifications.vue'
 import CommandPalette from 'components/CommandPalette.vue'
 import queue from 'components/queue.vue'
 import settings from 'components/settings.vue'
+import BackToTop from 'components/ui/BackToTop.vue'
+import KeyboardShortcuts from 'components/ui/KeyboardShortcuts.vue'
 export default {
   name: 'MainLayout',
   components: {
@@ -154,7 +158,15 @@ export default {
     Notifications,
     CommandPalette,
     queue,
-    settings
+    settings,
+    BackToTop,
+    KeyboardShortcuts
+  },
+  mounted () {
+    window.addEventListener('hive:open-command-palette', this.openCommandPalette)
+  },
+  beforeUnmount () {
+    window.removeEventListener('hive:open-command-palette', this.openCommandPalette)
   },
   methods: {
     openCommandPalette () {

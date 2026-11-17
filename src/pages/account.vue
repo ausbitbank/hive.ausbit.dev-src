@@ -18,14 +18,17 @@
                 <div class="account-card__eyebrow">Account overview</div>
                 <h2 class="account-card__title">@{{ account.name }}</h2>
               </div>
-              <nav class="account-quick-links" aria-label="Account quick links">
-                <router-link :to="linkWallet(username)">Wallet</router-link>
-                <router-link :to="linkBlog(username)">Blog</router-link>
-                <router-link :to="linkPosts(username)">Posts</router-link>
-                <router-link :to="linkComments(username)">Comments</router-link>
-                <router-link :to="'/@' + username + '/followers'">Followers</router-link>
-                <router-link :to="'/@' + username + '/following'">Following</router-link>
-              </nav>
+              <div class="account-overview-actions">
+                <share-menu :title="'@' + account.name + ' on hive.ausbit.dev'" :path="'/@' + account.name" />
+                <nav class="account-quick-links" aria-label="Account quick links">
+                  <router-link :to="linkWallet(username)">Wallet</router-link>
+                  <router-link :to="linkBlog(username)">Blog</router-link>
+                  <router-link :to="linkPosts(username)">Posts</router-link>
+                  <router-link :to="linkComments(username)">Comments</router-link>
+                  <router-link :to="'/@' + username + '/followers'">Followers</router-link>
+                  <router-link :to="'/@' + username + '/following'">Following</router-link>
+                </nav>
+              </div>
             </div>
 
             <div class="account-stat-grid">
@@ -266,6 +269,13 @@
   font-size: 0.9rem;
 }
 
+.account-overview-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
 .account-quick-links {
   display: flex;
   flex-wrap: wrap;
@@ -501,6 +511,7 @@ import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
+import ShareMenu from 'components/ui/ShareMenu.vue'
 export default {
   name: 'accountPage',
   components: {
@@ -512,7 +523,8 @@ export default {
     accountHeader,
     rc,
     accountAuthorities,
-    withdrawRoutes
+    withdrawRoutes,
+    ShareMenu
     // recentVotedPostsCarousel
   },
   data () {

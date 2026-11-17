@@ -9,7 +9,7 @@ const root = dirname(fileURLToPath(import.meta.url))
 const src = (...parts) => resolve(root, 'src', ...parts)
 
 export default defineConfig(() => ({
-  boot: ['axios', 'hivejs', 'hiveStore', 'smartlock'],
+  boot: ['axios', 'hivejs', 'hiveStore', 'smartlock', 'pwa'],
 
   css: ['app.scss'],
 

@@ -311,6 +311,13 @@ export default {
     },
     async broadcastAt (index, { auto = false } = {}) {
       if (this.broadcastingIndex !== null) return
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.FAILED, 'You are offline. Reconnect and retry.')
+        this.$q.notify({ message: 'You are offline. Reconnect before broadcasting.', color: 'orange', icon: 'cloud_off', position: 'top', timeout: 5000 })
+        this.timerEnabled = false
+        this.bulkSending = false
+        return
+      }
       const action = this.queue[index]
       if (!action) return
       const status = this.metaFor(index).status

@@ -31,6 +31,7 @@
           <div class="proposal-detail-header__meta">
             <q-badge :color="statusBadge.color" :label="statusBadge.label" />
             <span class="proposal-detail-header__id">Proposal #{{ proposal.id }}</span>
+            <share-menu :title="'Hive proposal #' + proposal.id" :path="'/proposals/' + proposal.id" />
           </div>
 
           <h1 class="page-title proposal-detail-title">{{ proposal.subject }}</h1>
@@ -374,10 +375,11 @@ import {
   formatHbd,
   formatHp
 } from 'src/services/proposals'
+import ShareMenu from 'components/ui/ShareMenu.vue'
 
 export default {
   name: 'ProposalDetail',
-  components: { render },
+  components: { render, ShareMenu },
   data () {
     return {
       proposalId: null,

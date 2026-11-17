@@ -16,6 +16,7 @@
         />
         <q-btn flat dense round icon="refresh" aria-label="Refresh block" title="Refresh block" :loading="loading" @click="loadBlock(blockNumber)" />
         <q-btn flat dense round icon="navigate_next" aria-label="Next block" title="Next block" :disable="isHead" @click="goTo(blockNumber + 1)" />
+        <share-menu :title="'Hive block ' + blockNumber" :path="'/b/' + blockNumber" />
         <q-btn flat dense no-caps icon="last_page" label="Latest" :loading="loadingLatest" @click="goLatest" />
       </div>
 
@@ -200,13 +201,15 @@ import BlockTransaction from 'components/BlockTransaction.vue'
 import BlockOperation from 'components/BlockOperation.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchGlobalProps } from 'src/services/chainData'
+import ShareMenu from 'components/ui/ShareMenu.vue'
 
 export default {
   name: 'blockViewPage',
   components: {
     jsonViewer,
     BlockTransaction,
-    BlockOperation
+    BlockOperation,
+    ShareMenu
   },
   data () {
     return {

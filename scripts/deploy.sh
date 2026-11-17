@@ -24,6 +24,9 @@ bun run lint
 echo "==> Build"
 bun run build
 
+echo "==> Prerender key routes"
+node scripts/prerender.mjs || echo "Prerender skipped"
+
 echo "==> Backing up $REMOTE:$REMOTE_DIR"
 ssh "$REMOTE" "mkdir -p ~/hive-backups && tar -C '$REMOTE_PARENT' -czf ~/'$BACKUP' '$REMOTE_NAME' && sha256sum ~/'$BACKUP'"
 
