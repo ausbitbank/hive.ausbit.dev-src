@@ -1,148 +1,492 @@
 <template>
-  <q-btn v-if="loggedInUser" flat icon="notifications" aria-label="Notifications" title="Notifications">
-    <q-badge color="primary" v-if="$hiveStore.user.unreadNotificationCount > 0" floating>{{ $hiveStore.user.unreadNotificationCount }}</q-badge>
-    <q-popup-proxy>
-    <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-    <q-card dense flat bordered class="text-center q-pa-sm q-ma-none">
-      <q-card-section horizontal dense class="text-title flex-center text-center">
-        <span v-if="notifications === null">No&nbsp;</span>Notifications <q-btn flat v-close-popup icon="check_circle" size="sm" color="green" title="Mark all notifications as read" aria-label="Mark all notifications as read" @click="markNotificationsRead()" v-if="$hiveStore.user.unreadNotificationCount > 0"/><q-btn v-close-popup flat icon="refresh" size="sm" color="blue" title="Refresh notifications" aria-label="Refresh notifications" @click="getUnreadNotificationCount()"/>
-      </q-card-section>
-      <q-separator v-if="notifications !== null" />
-      <q-card-section class="q-ma-none q-pa-none" v-if="$hiveStore.user.unreadNotificationCount > 0">
-      <q-list separator dense v-if="notifications !== null" class="q-pa-none q-ma-none">
-      <q-item v-for="n in notifications" :key="n.index" clickable @click="$router.push('/' + n.url)" dense>
-        <q-item-section avatar>
-          <router-link :to="n.url">
-            <q-avatar size="md" v-if="n.msg">
-              <q-img :src="getHiveAvatarUrl(getUserFromMention(n.msg))" alt="Account avatar" />
-            </q-avatar>
-          </router-link>
-        </q-item-section>
-        <q-item-section v-if="n.msg">
-          <q-item-label>
-            {{ n.msg.substr(1) }}
-          </q-item-label>
-          <q-item-label caption>
-            <router-link :to="getUrl(n.url)">{{ n.url.substr(0,40) }}</router-link>
-          </q-item-label>
-          <q-item-label caption>
-            {{ timeDelta(n.date) }}
-          </q-item-label>
-        </q-item-section>
-        <q-item-section side>
-          <q-icon name="circle" :size="returnScoreSize(n.score)" :color="returnScoreColor(n.score)" :title="n.score" />
-        </q-item-section>
-      </q-item>
-      </q-list>
-      </q-card-section>
-      <q-card-actions v-if="false">
-        <q-btn flat label="Load more notifications" v-if="unreadNotificationCount > notifications.length"/>
-      </q-card-actions>
-    </q-card>
-    </transition>
+  <q-btn
+    v-if="loggedInUser"
+    flat
+    icon="notifications"
+    :aria-label="notificationButtonLabel"
+    :title="notificationButtonLabel"
+  >
+    <q-badge color="primary" v-if="unreadNotificationCount > 0" floating>{{ unreadNotificationCount }}</q-badge>
+    <q-popup-proxy @before-show="refreshOnOpen">
+      <q-card flat bordered class="home-card home-panel notifications-panel">
+        <q-card-section class="home-panel__head">
+          <div>
+            <div class="home-eyebrow">
+              <span class="home-live-dot is-live" aria-hidden="true"></span>
+              Inbox
+            </div>
+            <h2 class="home-panel__title">Notifications</h2>
+          </div>
+          <div class="home-panel__actions">
+            <q-btn
+              flat
+              dense
+              no-caps
+              color="green"
+              :icon="markQueued ? 'schedule' : 'done_all'"
+              :label="markQueued ? 'Queued' : 'Mark read'"
+              :disable="unreadNotificationCount === 0 || markQueued"
+              aria-label="Mark all notifications as read"
+              title="Mark all notifications as read"
+              @click="markNotificationsRead"
+            />
+            <q-btn
+              flat
+              dense
+              round
+              icon="refresh"
+              color="primary"
+              :loading="loading"
+              aria-label="Refresh notifications"
+              title="Refresh notifications"
+              @click="refreshOnOpen"
+            />
+          </div>
+        </q-card-section>
+
+        <div class="notifications-toolbar">
+          <q-select
+            v-model="filter"
+            :options="filterOptions"
+            dense
+            outlined
+            emit-value
+            map-options
+            options-dense
+            label="Filter"
+            aria-label="Filter notifications"
+            class="notifications-filter"
+          />
+          <q-toggle v-model="unreadOnly" dense label="Unread only" class="notifications-unread" />
+        </div>
+
+        <q-separator />
+
+        <div v-if="loadError" class="notifications-state notifications-state--error" role="status">
+          <q-icon name="warning" size="20px" aria-hidden="true" />
+          <span>{{ loadError }}</span>
+          <q-btn flat dense no-caps color="primary" label="Retry" @click="refreshOnOpen" />
+        </div>
+
+        <div v-else-if="loading && notifications.length === 0" class="notifications-skeleton">
+          <div v-for="i in 6" :key="i" class="notifications-skeleton__row">
+            <q-skeleton type="circle" size="30px" />
+            <div class="notifications-skeleton__body">
+              <q-skeleton type="text" width="78%" />
+              <q-skeleton type="text" width="38%" />
+            </div>
+          </div>
+        </div>
+
+        <q-scroll-area v-else class="notifications-scroll" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.25, backgroundColor: '#4fc3f7' }">
+          <div v-if="filteredNotifications.length === 0" class="notifications-state">
+            <q-icon name="notifications_none" size="26px" color="grey" aria-hidden="true" />
+            <span v-if="unreadOnly">No unread notifications match this filter.</span>
+            <span v-else>No notifications match this filter.</span>
+          </div>
+
+          <q-list v-else separator role="menu" aria-label="Notifications">
+            <q-item
+              v-for="notification in filteredNotifications"
+              :key="notification.id"
+              clickable
+              v-close-popup
+              role="menuitem"
+              class="notification-row"
+              @click="openNotification(notification)"
+            >
+              <q-item-section avatar>
+                <q-avatar size="30px">
+                  <q-img
+                    v-if="actorFor(notification)"
+                    :src="avatarUrl(actorFor(notification))"
+                    :alt="'Avatar of @' + actorFor(notification)"
+                  />
+                  <q-icon v-else name="notifications" size="18px" aria-hidden="true" />
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <div class="notification-row__message">
+                  <q-badge v-if="unreadIds.has(notification.id)" color="primary" class="notification-row__dot" aria-label="Unread" />
+                  {{ plainMessage(notification.msg) }}
+                </div>
+                <div class="notification-row__meta">
+                  <span>{{ typeLabel(notification) }}</span>
+                  <span aria-hidden="true">·</span>
+                  <time :datetime="notification.date">{{ timeAgo(notification.date) }}</time>
+                </div>
+              </q-item-section>
+
+              <q-item-section side>
+                <q-icon
+                  name="circle"
+                  :size="scoreSize(notification.score)"
+                  :color="scoreColor(notification.score)"
+                  :aria-label="'Score ' + notification.score"
+                  :title="'Score ' + notification.score"
+                />
+              </q-item-section>
+            </q-item>
+          </q-list>
+
+          <div class="notifications-load">
+            <q-btn
+              v-if="!reachedEnd"
+              flat
+              dense
+              no-caps
+              color="primary"
+              icon="expand_more"
+              label="Load more"
+              :loading="loadingMore"
+              @click="loadMore"
+            />
+            <span v-else class="notifications-end">End of notifications</span>
+          </div>
+        </q-scroll-area>
+
+        <q-card-section class="home-panel__footer">
+          <span>{{ unreadNotificationCount }} unread · {{ notifications.length }} loaded</span>
+          <span v-if="markQueued" class="notifications-queued">Mark-read queued</span>
+          <span v-else>Updates every 60 seconds</span>
+        </q-card-section>
+      </q-card>
     </q-popup-proxy>
   </q-btn>
 </template>
+
 <script>
 import moment from 'src/utils/time'
-// import { keychain } from '@hiveio/keychain'
+import {
+  NOTIFICATION_FILTERS,
+  filterNotifications,
+  mergeNotifications,
+  notificationActor,
+  notificationPath,
+  notificationTypeLabel,
+  plainNotificationMessage,
+  unreadNotificationIds
+} from 'src/services/notifications'
+
 export default {
   name: 'notifications',
-  props: [],
   data () {
     return {
       loading: false,
-      last_id: null,
-      limit: 100
+      loadingMore: false,
+      loadError: '',
+      filter: 'all',
+      unreadOnly: false,
+      reachedEnd: false,
+      markQueued: false,
+      limit: 20,
+      pollTimer: null
     }
   },
   computed: {
-    loggedInUser: {
-      get () { return this.$hiveStore.user.username }
+    loggedInUser () {
+      return this.$hiveStore.user.username
     },
-    notifications: {
-      get () { return this.$hiveStore.user.notifications },
-      set (val) { this.$hiveStore.updateNotifications(val) }
+    notifications () {
+      return this.$hiveStore.user.notifications || []
     },
-    unreadNotificationCount: {
-      get () { return this.$hiveStore.user.unreadNotificationCount },
-      set (val) { this.$hiveStore.updateUnreadNotificationCount(val) }
+    unreadNotificationCount () {
+      return this.$hiveStore.user.unreadNotificationCount || 0
+    },
+    lastReadAt () {
+      return this.$hiveStore.user.notificationsLastRead || null
+    },
+    filterOptions () {
+      return NOTIFICATION_FILTERS
+    },
+    unreadIds () {
+      return unreadNotificationIds(this.notifications, this.lastReadAt, this.unreadNotificationCount)
+    },
+    filteredNotifications () {
+      return filterNotifications(this.notifications, {
+        filter: this.filter,
+        unreadOnly: this.unreadOnly,
+        unreadIds: this.unreadIds
+      })
+    },
+    notificationButtonLabel () {
+      const count = this.unreadNotificationCount
+      return count > 0 ? count + ' unread notification' + (count === 1 ? '' : 's') : 'Notifications'
     }
   },
   watch: {
-    loggedInUser: function (newState, _oldState) {
-      if (newState !== '') {
-        this.getUnreadNotificationCount()
-      }
-    }
-  },
-  methods: {
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    getAccountLink (user) { return '/@' + user },
-    async getNotifications () {
-      this.loading = true
-      var params = { account: this.loggedInUser, last_id: this.last_id, limit: Math.min(this.unreadNotificationCount, this.limit) }
-      this.$hive.api.callAsync('bridge.account_notifications', params)
-        .then(response => {
-          this.notifications = response
-          this.loading = false
-        })
-    },
-    async getUnreadNotificationCount () {
-      this.loading = true
-      var params = { account: this.loggedInUser }
-      this.$hive.api.callAsync('bridge.unread_notifications', params)
-        .then(res => {
-          this.unreadNotificationCount = res.unread
-          this.loading = false
-          if (this.unreadNotificationCount === 0) { this.notifications = null }
-          if (this.unreadNotificationCount > 0) { this.getNotifications() }
-        })
-    },
-    async markNotificationsRead () {
-      var json = '[ "setLastRead",{"date":"' + moment.utc().format('YYYY-MM-DDTHH:mm:ss') + '"}]'
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json: json }]])
-    },
-    filterMentions (n) {
-      if (n.type === 'mention') {
-        return true
+    loggedInUser (value, previous) {
+      if (value === previous) return
+      this.resetInbox()
+      if (value) {
+        this.startPolling()
+        this.refreshUnreadCount()
       } else {
-        return false
+        this.stopPolling()
       }
     },
-    getRelativeTime (time) {
-      return moment(time).fromNow()
-    },
-    getUrl (permlink) {
-      return '/' + permlink
-    },
-    getUserFromMention (mention) {
-      return mention.split(' ')[0].substr(1)
-    },
-    timeDelta (timestamp) {
-      var now = moment.utc()
-      var stamp = moment.utc(timestamp)
-      var diff = stamp.diff(now, 'minutes')
-      return moment.duration(diff, 'minutes').humanize(true)
-    },
-    returnScoreColor (score) {
-      var s = parseInt(score)
-      if (s >= 90) { return 'red-14' } else
-      if (s >= 75) { return 'deep-purple' } else
-      if (s >= 60) { return 'indigo' } else
-      if (s >= 45) { return 'blue' } else
-      if (s >= 30) { return 'light-blue' } else { return 'grey' }
-    },
-    returnScoreSize (score) {
-      var s = parseInt(score)
-      if (s >= 90) { return 'lg' } else
-      if (s >= 60) { return 'md' } else
-      if (s >= 20) { return 'sm' } else
-      if (s >= 0) { return 'xs' }
+    unreadNotificationCount (value) {
+      if (value === 0) this.markQueued = false
     }
   },
   mounted () {
-    if (this.loggedInUser !== '') { this.getUnreadNotificationCount() }
+    if (this.loggedInUser) {
+      this.startPolling()
+      this.refreshUnreadCount()
+    }
+  },
+  beforeUnmount () {
+    this.stopPolling()
+  },
+  methods: {
+    avatarUrl (user) {
+      return 'https://images.hive.blog/u/' + encodeURIComponent(user || 'null') + '/avatar'
+    },
+    actorFor (notification) {
+      return notificationActor(notification?.msg)
+    },
+    plainMessage (message) {
+      return plainNotificationMessage(message)
+    },
+    typeLabel (notification) {
+      return notificationTypeLabel(notification)
+    },
+    timeAgo (value) {
+      return value ? moment.utc(value).fromNow() : '—'
+    },
+    scoreColor (score) {
+      const value = parseInt(score, 10)
+      if (value >= 90) return 'red-14'
+      if (value >= 75) return 'deep-purple'
+      if (value >= 60) return 'indigo'
+      if (value >= 45) return 'blue'
+      if (value >= 30) return 'light-blue'
+      return 'grey'
+    },
+    scoreSize (score) {
+      const value = parseInt(score, 10)
+      if (value >= 90) return 'lg'
+      if (value >= 60) return 'md'
+      if (value >= 20) return 'sm'
+      return 'xs'
+    },
+    openNotification (notification) {
+      this.$router.push(notificationPath(notification?.url))
+    },
+    resetInbox () {
+      this.$hiveStore.updateNotifications([])
+      this.$hiveStore.updateUnreadNotificationCount(0)
+      this.$hiveStore.updateNotificationsLastRead(null)
+      this.reachedEnd = false
+      this.loadError = ''
+      this.markQueued = false
+    },
+    async refreshOnOpen () {
+      if (!this.loggedInUser) return
+      this.loadError = ''
+      await Promise.allSettled([
+        this.refreshUnreadCount(),
+        this.loadNotifications({ reset: true })
+      ])
+    },
+    async refreshUnreadCount () {
+      if (!this.loggedInUser) return
+      try {
+        const response = await this.$hive.api.callAsync('bridge.unread_notifications', { account: this.loggedInUser })
+        const unread = Number(response?.unread) || 0
+        this.$hiveStore.updateUnreadNotificationCount(unread)
+        if (response?.lastread) this.$hiveStore.updateNotificationsLastRead(response.lastread)
+      } catch (error) {
+        console.error('Failed to load unread notification count', error)
+      }
+    },
+    async loadNotifications ({ reset = false } = {}) {
+      if (!this.loggedInUser) return
+      if (reset) this.loading = true
+      else this.loadingMore = true
+      this.loadError = ''
+
+      const lastId = reset ? null : this.notifications[this.notifications.length - 1]?.id
+      const params = { account: this.loggedInUser, limit: this.limit }
+      if (lastId) params.last_id = lastId
+
+      try {
+        const response = await this.$hive.api.callAsync('bridge.account_notifications', params)
+        const page = Array.isArray(response) ? response : []
+        this.$hiveStore.updateNotifications(reset
+          ? mergeNotifications([], page)
+          : mergeNotifications(this.notifications, page))
+        this.reachedEnd = page.length < this.limit
+      } catch (error) {
+        console.error('Failed to load notifications', error)
+        this.loadError = 'Notifications could not be loaded. Try again in a moment.'
+      } finally {
+        this.loading = false
+        this.loadingMore = false
+      }
+    },
+    loadMore () {
+      this.loadNotifications()
+    },
+    markNotificationsRead () {
+      if (!this.loggedInUser || this.unreadNotificationCount === 0) return
+      const date = moment.utc().format('YYYY-MM-DDTHH:mm:ss')
+      const json = JSON.stringify(['setLastRead', { date }])
+      this.$hiveStore.addToQueue([
+        this.loggedInUser,
+        'posting',
+        ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json }]
+      ])
+      this.markQueued = true
+      this.$q.notify({
+        message: 'Mark-all-read queued with posting authority. It applies when the queue broadcasts it.',
+        color: 'orange',
+        icon: 'schedule',
+        position: 'top'
+      })
+    },
+    startPolling () {
+      this.stopPolling()
+      if (typeof window === 'undefined') return
+      this.pollTimer = setInterval(() => {
+        if (document.visibilityState === 'visible') this.refreshUnreadCount()
+      }, 60000)
+      document.addEventListener('visibilitychange', this.onVisibility)
+    },
+    stopPolling () {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer)
+        this.pollTimer = null
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', this.onVisibility)
+      }
+    },
+    onVisibility () {
+      if (document.visibilityState === 'visible') this.refreshUnreadCount()
+    }
   }
 }
 </script>
+
+<style scoped>
+.notifications-panel {
+  width: 440px;
+  max-width: 94vw;
+  background: #1d1d1d;
+}
+
+.notifications-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.notifications-filter {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+.notifications-unread {
+  flex: 0 0 auto;
+  color: #b0bec5;
+  font-size: 0.75rem;
+}
+
+.notifications-scroll {
+  height: 52vh;
+  max-height: 500px;
+  min-height: 140px;
+}
+
+.notifications-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.8rem 1rem;
+}
+
+.notifications-skeleton__row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.notifications-skeleton__body {
+  flex: 1;
+}
+
+.notifications-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  color: #b0bec5;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.notifications-state--error {
+  color: #ffb74d;
+}
+
+.notification-row__message {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: #e4eaed;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.notification-row__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.notification-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.1rem;
+  color: #78909c;
+  font-size: 0.66rem;
+}
+
+.notifications-load {
+  display: flex;
+  justify-content: center;
+  padding: 0.45rem 0 0.6rem;
+}
+
+.notifications-end {
+  color: #78909c;
+  font-size: 0.68rem;
+}
+
+.notifications-queued {
+  color: #ffb74d;
+  font-weight: 600;
+}
+
+@media (max-width: 599px) {
+  .notifications-toolbar {
+    padding: 0.5rem 0.7rem;
+  }
+
+  .notifications-panel :deep(.home-panel__head) {
+    padding: 0.7rem 0.7rem 0.55rem;
+  }
+}
+</style>

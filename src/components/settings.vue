@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="rounded-corners q-pa-sm">
+  <q-card flat bordered class="rounded-corners q-pa-sm settings-card">
     <div class="text-h5 text-center">Settings</div>
       <q-list dense>
         <q-item>
@@ -16,7 +16,16 @@
             Default vote %
           </q-item-label>
           <q-item-section>
-            <q-slider v-model="voteWeightPost" :min="-100" :max="100" :color="voteColor" label label-always />
+            <q-slider
+              v-model="voteWeightPost"
+              :min="-100"
+              :max="100"
+              :color="voteColor"
+              label
+              label-always
+              label-text-color="black"
+              aria-label="Default post vote weight"
+            />
           </q-item-section>
         </q-item>
         <q-item v-if="false">
@@ -74,11 +83,65 @@
           <q-input label='Hive-Engine Api Node' v-model="heApiNode" />
         </q-item>
         <q-item>
+          <q-item-label header>
+            SmartLock
+          </q-item-label>
+          <q-item-section>
+            <q-select
+              v-model.number="smartlockSessionMinutes"
+              :options="smartlockTimeoutOptions"
+              emit-value
+              map-options
+              dense
+              outlined
+              label="Auto-lock after inactivity"
+            />
+            <div class="text-caption text-grey-5">Unlocked posting keys are removed from memory after this much browser inactivity. The active key is never kept in memory.</div>
+          </q-item-section>
+        </q-item>
+        <q-item>
             <q-btn label="Save" color="primary" flat icon="save" @click="saveSettings()" style="margin: auto" class="hvr" v-close-popup />
         </q-item>
       </q-list>
   </q-card>
 </template>
+<style scoped>
+.settings-card {
+  width: 620px;
+  max-width: 94vw;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #1d1d1d;
+}
+
+@media (max-width: 599px) {
+  .settings-card {
+    padding: 0.35rem;
+  }
+
+  .settings-card :deep(.q-item) {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .settings-card :deep(.q-item__label--header) {
+    flex: 0 0 100%;
+    width: 100%;
+    padding-bottom: 0.25rem;
+  }
+
+  .settings-card :deep(.q-item__section) {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .settings-card :deep(.q-field) {
+    width: 100%;
+  }
+}
+</style>
 <script>
 import { setHiveNode } from 'src/services/hive'
 
@@ -94,7 +157,14 @@ export default {
       newBeneWeight: 1000,
       apiNode: this.$hiveStore.user.settings.apiNode || 'https://api.hive.blog',
       heApiNode: this.$hiveStore.user.settings.heApiNode || 'https://herpc.dtools.dev',
-      ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog'
+      ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog',
+      smartlockSessionMinutes: Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15,
+      smartlockTimeoutOptions: [
+        { label: '5 minutes', value: 5 },
+        { label: '15 minutes', value: 15 },
+        { label: '30 minutes', value: 30 },
+        { label: '60 minutes', value: 60 }
+      ]
     }
   },
   computed: {
@@ -121,7 +191,8 @@ export default {
         beneficiary: this.beneficiaries,
         apiNode: this.apiNode,
         ahNode: this.ahNode,
-        heApiNode: this.heApiNode
+        heApiNode: this.heApiNode,
+        smartlockSessionMinutes: this.smartlockSessionMinutes
       }
       this.$hiveStore.updateSettings(settings)
       setHiveNode(settings.apiNode)

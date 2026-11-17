@@ -1,4 +1,5 @@
 import { LocalStorage, SessionStorage } from 'quasar'
+import { normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
 
 export const DEFAULT_SETTINGS = {
   darkBackground: true,
@@ -7,7 +8,8 @@ export const DEFAULT_SETTINGS = {
   beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
   apiNode: 'https://api.hive.blog',
   ahNode: 'https://api.hive.blog',
-  heApiNode: 'https://herpc.dtools.dev'
+  heApiNode: 'https://herpc.dtools.dev',
+  smartlockSessionMinutes: 15
 }
 
 export const QUEUE_STORAGE_KEY = 'queuedActions'
@@ -22,51 +24,81 @@ function isValidQueueItem (item) {
     typeof item[2][0] === 'string'
 }
 
-// Queued broadcast operations never contain private keys, so they are safe to
-// keep in LocalStorage. Entries expire after 24 hours to avoid replaying stale
-// actions long after they were queued. The owner check prevents a queue saved
-// by one account from being replayed by a different account.
-export function restoreQueue (currentUsername) {
+function isValidMetaEntry (entry) {
+  return entry &&
+    typeof entry === 'object' &&
+    QUEUE_STATUSES.includes(entry.status)
+}
+
+/**
+ * Restore the queue together with its per-item status metadata. Legacy queues
+ * have no metadata, so aligned pending entries are synthesised for them.
+ */
+export function restoreQueueState (currentUsername) {
+  const empty = { queue: [], meta: [] }
   try {
     const stored = LocalStorage.getItem(QUEUE_STORAGE_KEY)
-    if (!stored) return []
+    if (!stored) return empty
 
     const savedAt = Number(stored.savedAt)
     const items = stored.items
     if (!Array.isArray(items) || !Number.isFinite(savedAt) || Date.now() - savedAt > QUEUE_TTL_MS) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
-      return []
+      return empty
     }
 
     if (stored.owner && stored.owner !== currentUsername) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
-      return []
+      return empty
     }
 
     const validItems = items.filter(isValidQueueItem)
     if (validItems.length !== items.length) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
-      if (validItems.length === 0) return []
+      if (validItems.length === 0) return empty
     }
-    return validItems
+
+    const storedMeta = Array.isArray(stored.meta) ? stored.meta : []
+    const alignedMeta = validItems.map((_, index) => {
+      const entry = storedMeta[index]
+      const normalized = isValidMetaEntry(entry) ? normalizeQueueMetaEntry(entry) : normalizeQueueMetaEntry(null)
+      // A page reload can interrupt a broadcast. Keep the action but make the
+      // interruption visible and retryable rather than leaving it stuck.
+      if (normalized.status === 'broadcasting') {
+        normalized.status = 'failed'
+        normalized.error = 'Broadcast was interrupted by a page reload. Retry to send.'
+        normalized.updatedAt = Date.now()
+      }
+      return normalized
+    })
+
+    return { queue: validItems, meta: alignedMeta }
   } catch {
     // Corrupt or unavailable storage should never prevent the store loading.
     try { LocalStorage.remove(QUEUE_STORAGE_KEY) } catch {}
-    return []
+    return empty
   }
 }
 
-export function persistQueue (queue) {
+export function restoreQueue (currentUsername) {
+  return restoreQueueState(currentUsername).queue
+}
+
+export function persistQueue (queue, meta) {
   try {
     if (!Array.isArray(queue) || queue.length === 0) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
       return
     }
-    LocalStorage.set(QUEUE_STORAGE_KEY, {
+    const payload = {
       savedAt: Date.now(),
       owner: typeof queue[0]?.[0] === 'string' ? queue[0][0] : null,
       items: queue
-    })
+    }
+    if (Array.isArray(meta)) {
+      payload.meta = normalizeQueueMeta(queue, meta)
+    }
+    LocalStorage.set(QUEUE_STORAGE_KEY, payload)
   } catch {
     // Ignore quota/private-mode failures; the in-memory queue still works.
   }
@@ -74,7 +106,8 @@ export function persistQueue (queue) {
 
 export default function () {
   const username = SessionStorage.getItem('loggedInUser') || null
-  const restoredQueue = restoreQueue(username)
+  const restored = restoreQueueState(username)
+  const activeQueueCount = restored.meta.filter(entry => entry.status !== 'sent').length
   return {
     user: {
       username,
@@ -86,11 +119,13 @@ export default function () {
       state: {},
       notifications: SessionStorage.getItem('notifications') || [],
       unreadNotificationCount: 0,
+      notificationsLastRead: SessionStorage.getItem('notificationsLastRead') || null,
       settings: LocalStorage.getItem('settings') || { ...DEFAULT_SETTINGS }
     },
-    queue: restoredQueue,
-    queueRestored: restoredQueue.length > 0,
-    restoredQueueCount: restoredQueue.length,
+    queue: restored.queue,
+    queueMeta: restored.meta,
+    queueRestored: activeQueueCount > 0,
+    restoredQueueCount: activeQueueCount,
     accounts: {},
     followCounts: {},
     posts: {},

@@ -40,6 +40,7 @@ vi.mock('quasar', () => ({
 import {
   persistQueue,
   restoreQueue,
+  restoreQueueState,
   QUEUE_STORAGE_KEY,
   QUEUE_TTL_MS
 } from '../../src/stores/hive/state'
@@ -105,6 +106,63 @@ describe('queue persistence', () => {
       localSet.mockImplementationOnce(() => { throw new Error('quota exceeded') })
 
       expect(() => persistQueue([validItem()])).not.toThrow()
+    })
+
+    it('persists aligned per-item status metadata when provided', () => {
+      const items = [validItem('alice'), validItem('bob')]
+      const meta = [
+        { status: 'sent', error: '', txId: 'abc', addedAt: 1, updatedAt: 2 },
+        { status: 'failed', error: 'Nope', txId: '', addedAt: 3, updatedAt: 4 }
+      ]
+
+      persistQueue(items, meta)
+
+      expect(localStore.get(QUEUE_STORAGE_KEY)).toEqual({
+        savedAt: NOW.getTime(),
+        owner: 'alice',
+        items,
+        meta
+      })
+    })
+  })
+
+  describe('restoreQueueState', () => {
+    it('reconstructs pending metadata for legacy queues without it', () => {
+      const items = [validItem('alice')]
+      persistQueue(items)
+
+      const restored = restoreQueueState('alice')
+      expect(restored.queue).toEqual(items)
+      expect(restored.meta).toHaveLength(1)
+      expect(restored.meta[0]).toMatchObject({ status: 'pending', error: '', txId: '' })
+    })
+
+    it('restores persisted status metadata', () => {
+      const items = [validItem('alice')]
+      persistQueue(items, [{ status: 'failed', error: 'Rejected', txId: '', addedAt: 1, updatedAt: 2 }])
+
+      const restored = restoreQueueState('alice')
+      expect(restored.meta[0]).toMatchObject({ status: 'failed', error: 'Rejected' })
+    })
+
+    it('synthesises metadata when the stored entry is invalid', () => {
+      localStore.set(QUEUE_STORAGE_KEY, {
+        savedAt: NOW.getTime(),
+        owner: 'alice',
+        items: [validItem('alice')],
+        meta: [{ status: 'not-a-status' }]
+      })
+
+      const restored = restoreQueueState('alice')
+      expect(restored.meta[0].status).toBe('pending')
+    })
+
+    it('turns an interrupted broadcast into a retryable failure', () => {
+      persistQueue([validItem('alice')], [{ status: 'broadcasting', error: '', txId: '', addedAt: 1, updatedAt: 2 }])
+
+      const restored = restoreQueueState('alice')
+      expect(restored.meta[0].status).toBe('failed')
+      expect(restored.meta[0].error).toContain('interrupted')
     })
   })
 

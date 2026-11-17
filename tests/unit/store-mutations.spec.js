@@ -20,10 +20,16 @@ vi.mock('quasar', () => ({
 
 import {
   addToQueue,
+  clearCompletedQueue,
   clearQueue,
+  markNotificationsReadLocally,
   removeFromQueue,
+  removeQueueItemAt,
+  resetFailedQueueStatuses,
+  setQueueStatus,
   updateAccountData,
   updateFollowCount,
+  updateNotificationsLastRead,
   updateSettings
 } from '../../src/stores/hive/mutations'
 
@@ -31,6 +37,7 @@ function makeState () {
   return {
     user: { settings: {} },
     queue: [],
+    queueMeta: [],
     accounts: {},
     followCounts: {}
   }
@@ -94,6 +101,72 @@ describe('hive store mutations', () => {
       expect(state.queue).toEqual([])
       expect(state.queue).not.toBe(original)
       expect(original).toHaveLength(1)
+    })
+
+    it('addToQueue records aligned pending status metadata', () => {
+      const state = makeState()
+
+      addToQueue.call(state, ['alice', 'posting', ['vote', {}]])
+
+      expect(state.queue).toHaveLength(1)
+      expect(state.queueMeta).toHaveLength(1)
+      expect(state.queueMeta[0]).toMatchObject({ status: 'pending', error: '' })
+    })
+
+    it('updates, retries and clears item statuses', () => {
+      const state = makeState()
+      addToQueue.call(state, ['alice', 'posting', ['vote', {}]])
+      addToQueue.call(state, ['alice', 'active', ['transfer', {}]])
+      setQueueStatus.call(state, 0, 'sent')
+      setQueueStatus.call(state, 1, 'failed', 'Rejected')
+
+      expect(state.queueMeta[0].status).toBe('sent')
+      expect(state.queueMeta[1].status).toBe('failed')
+
+      resetFailedQueueStatuses.call(state)
+      expect(state.queueMeta[1].status).toBe('pending')
+      expect(state.queueMeta[1].error).toBe('')
+
+      clearCompletedQueue.call(state)
+      expect(state.queue).toHaveLength(1)
+      expect(state.queueMeta).toHaveLength(1)
+      expect(state.queue[0][1]).toBe('active')
+    })
+
+    it('removes an item and its status together', () => {
+      const state = makeState()
+      addToQueue.call(state, ['alice', 'posting', ['vote', {}]])
+      addToQueue.call(state, ['alice', 'active', ['transfer', {}]])
+
+      removeQueueItemAt.call(state, 0)
+
+      expect(state.queue).toHaveLength(1)
+      expect(state.queueMeta).toHaveLength(1)
+      expect(state.queue[0][1]).toBe('active')
+    })
+  })
+
+  describe('notification state', () => {
+    it('marks notifications read locally and persists the timestamp', () => {
+      const state = makeState()
+      state.user.unreadNotificationCount = 4
+      state.user.notificationsLastRead = null
+
+      markNotificationsReadLocally.call(state)
+
+      expect(state.user.unreadNotificationCount).toBe(0)
+      expect(typeof state.user.notificationsLastRead).toBe('string')
+      expect(sessionStorageSet).toHaveBeenCalledWith('unreadNotificationCount', 0)
+    })
+
+    it('stores and clears the last-read timestamp', () => {
+      const state = makeState()
+
+      updateNotificationsLastRead.call(state, '2026-11-17 13:00:00')
+      expect(state.user.notificationsLastRead).toBe('2026-11-17 13:00:00')
+
+      updateNotificationsLastRead.call(state, null)
+      expect(state.user.notificationsLastRead).toBeNull()
     })
   })
 

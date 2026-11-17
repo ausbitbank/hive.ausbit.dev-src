@@ -1,7 +1,19 @@
 // Code kindly provided by Asgarth of peakd.com and probably butchered by ausbit
 
 import hive from '@hiveio/hive-js'
-import { getPosting, unlock, lock, save, remove, allUsers, purgeLegacyUnlockedKeyCache } from './store'
+import {
+  getPosting,
+  unlock,
+  lock,
+  save,
+  remove,
+  allUsers,
+  purgeLegacyUnlockedKeyCache,
+  isUnlocked,
+  touchActivity,
+  lockExpired,
+  DEFAULT_SESSION_TIMEOUT_MS
+} from './store'
 import api from './api'
 
 // Remove plaintext unlocked keys left behind by older SmartLock versions.
@@ -15,8 +27,8 @@ const allAccounts = () => {
   return allUsers()
 }
 
-const isAccountUnlocked = username => {
-  return getPosting(username) && getPosting(username).length > 0
+const isAccountUnlocked = (username, timeoutMs = DEFAULT_SESSION_TIMEOUT_MS) => {
+  return isUnlocked(username, timeoutMs) && Boolean(getPosting(username))
 }
 
 const unlockAccount = async (username, password, keepUnlocked = false) => {
@@ -99,5 +111,7 @@ export default {
   lockAccount,
   importAccount,
   removeAccount,
+  touchActivity,
+  lockExpired,
   api
 }

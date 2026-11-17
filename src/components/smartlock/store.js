@@ -1,6 +1,7 @@
 import { encryptKey, decryptKey } from './utils'
 
 export const LOCKER_LOCALSTORAGE_KEY = 'ausbitdev_peaklock_v2'
+export const DEFAULT_SESSION_TIMEOUT_MS = 15 * 60 * 1000
 
 // Older SmartLock versions wrote unlocked posting keys to lscache in plaintext.
 // The app no longer reads or writes these entries; purge them so a later XSS
@@ -11,6 +12,7 @@ const LEGACY_LSCACHE_PREFIX = `lscache-${LEGACY_UNLOCKED_CACHE_PREFIX}`
 // Unlocked posting keys live in memory only. They are never written to
 // localStorage/sessionStorage, so a reload always requires the password again.
 const unlocked = {}
+const lastActivity = {}
 
 function getLocker () {
   const storedLocker = localStorage.getItem(LOCKER_LOCALSTORAGE_KEY)
@@ -88,6 +90,33 @@ export function getPosting (username) {
   return unlocked[username]
 }
 
+export function touchActivity (username) {
+  const now = Date.now()
+  if (username) {
+    if (unlocked[username]) lastActivity[username] = now
+    return
+  }
+  for (const user of Object.keys(unlocked)) lastActivity[user] = now
+}
+
+export function isUnlocked (username, timeoutMs = DEFAULT_SESSION_TIMEOUT_MS) {
+  if (!unlocked[username]) return false
+  const last = lastActivity[username] || 0
+  if (timeoutMs > 0 && Date.now() - last > timeoutMs) {
+    lock(username)
+    return false
+  }
+  return true
+}
+
+export function lockExpired (timeoutMs = DEFAULT_SESSION_TIMEOUT_MS) {
+  if (!(timeoutMs > 0)) return []
+  const now = Date.now()
+  const expired = Object.keys(unlocked).filter(username => now - (lastActivity[username] || 0) > timeoutMs)
+  expired.forEach(lock)
+  return expired
+}
+
 export function getMemo (username, password) {
   return getAccountKey(username, 'memo', password)
 }
@@ -102,6 +131,7 @@ export function unlock (username, password, _keepUnlocked = false) {
 
   // keep it in memory only; never persist unlocked keys
   unlocked[username] = postingKey
+  lastActivity[username] = Date.now()
 
   return true
 }
@@ -109,6 +139,7 @@ export function unlock (username, password, _keepUnlocked = false) {
 export function lock (username) {
   // clear memory only
   delete unlocked[username]
+  delete lastActivity[username]
   return true
 }
 
@@ -133,6 +164,7 @@ export function save (username, password, keys) {
 
   // keep the newly imported posting key in memory
   unlocked[username] = keys.posting
+  lastActivity[username] = Date.now()
 
   return true
 }
