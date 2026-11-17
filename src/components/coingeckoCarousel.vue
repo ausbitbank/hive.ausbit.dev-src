@@ -1,7 +1,7 @@
 <template>
     <span>
     <q-card bordered>
-      <div class="text-h6 text-center">
+      <div class="text-h6 text-center section-title">
         <router-link to="markets" class="text-primary"><q-icon name="monetization_on" color="green" />&nbsp; Coin Prices</router-link>
       </div>
       <q-skeleton :height="$q.screen.lt.sm ? '300px' : '260px'" width="100%" rect v-if="priceLoading" />
@@ -28,11 +28,11 @@
         :width="$q.screen.lt.sm ? '100%' : '450px'"
         aria-label="Cryptocurrency price carousel"
         @mouseenter="autoplaySlides = false"
-        class="bg-dark text-white shadow-2 rounded-borders"
+        class="hive-carousel bg-dark text-white shadow-2"
       >
         <q-carousel-slide :name="coin.name" class="column no-wrap flex-center" v-for="coin in coinGecko" :key="coin.name" :img-src="coin.image">
-          <div class="custom-caption">
-            <div class="text-bold">
+          <div class="carousel-caption carousel-caption--overlay coin-caption">
+            <div class="text-bold q-mb-xs">
               <q-avatar size="sm"><q-img :src="coin.image" :alt="coin.name + ' logo'" /></q-avatar> <a :href="returnCoinGeckoLink(coin.id)" target="_blank" rel="noopener noreferrer">{{ coin.name }}</a> <span v-if="coin.market_cap_rank" class="caption text-grey">#{{ coin.market_cap_rank }}</span>
             </div>
             <sparkline :data="coin.sparkline_in_7d.price" :width="250" :height="60" :stroke="sparklineStyle.stroke" v-if="coin.sparkline_in_7d" />
@@ -65,10 +65,12 @@
     </span>
 </template>
 <style scoped>
-a {text-decoration: none; color: #1d8ce0 }
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
-.custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
+.hive-carousel :deep(.carousel-caption a) {
+  text-decoration: none;
+}
+.hive-carousel :deep(.carousel-caption a:hover) {
+  text-decoration: underline;
+}
 </style>
 <script>
 import Sparkline from 'components/Sparkline.vue'

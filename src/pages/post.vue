@@ -1,7 +1,7 @@
 <template>
-  <q-page class="flex">
+  <q-page class="post-page flex">
     <account-header v-if="globalProps !== undefined && account !== undefined" :globalProps="globalProps" :account="account" :showBalances="false" :showNavBar="true" headingTag="div" class="full-width" style="overflow:hidden" />
-    <div style="margin: auto" v-if="error !== null">
+    <div class="post-error" v-if="error !== null">
       <q-card class="q-pa-md text-center" bordered>
         <q-icon name="error" size="lg" color="orange" /><br />
         <b>{{ error.name }} : {{ error.message }}</b><br />
@@ -11,19 +11,17 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="row items-start content-start justify-center" style="margin:auto; width:100%; max-width:1000px; min-width:0">
-      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start" style="min-width:0" v-if="post">
-        <q-card flat bordered class="q-pa-xs" style="margin:auto">
-          <q-card-section class="text-h5 text-center" v-if="post.title">
-            <h1 class="text-h5 q-my-none">{{ stripHtml(post.title) }}</h1>
+    <div class="row items-start content-start justify-center post-layout">
+      <div class="col-xs-11 col-md-9 col-lg-9 justify-center items-start post-main" v-if="post">
+        <q-card flat bordered class="post-article">
+          <q-card-section class="post-title-section" v-if="post.title">
+            <h1 class="post-title">{{ stripHtml(post.title) }}</h1>
           </q-card-section>
-          <q-card-section v-if="post.parent_author !== ''">
+          <q-card-section class="post-reply-to" v-if="post.parent_author !== ''">
             Reply to <router-link :to="linkAccount(post.parent_author)">{{ post.parent_author }}</router-link> / <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
           </q-card-section>
-          <q-card-section v-if="post.body">
-            <transition appear enter-active-class="animated bounceInUp" leave-active-class="animated bounceOutDown">
+          <q-card-section class="post-body-section" v-if="post.body">
             <render :input="post.body" class="postbody" />
-            </transition>
           </q-card-section>
           <q-card-section v-else>
             <q-skeleton type="rect" height="200px" width="200" />
@@ -34,7 +32,7 @@
         <q-skeleton type="text" height="100" />
       </div>
       <div class="col-sm-11 col-md-3 col-lg-3 text-center justify-center items-start">
-        <q-card dense flat bordered class="q-pa-none q-ma-none" style="min-width: 300px; position:relative; top:0" v-if="post">
+        <q-card dense flat bordered class="post-sidebar q-pa-none q-ma-none" v-if="post">
           <q-card-section>
             <q-list dense separator>
               <q-item>
@@ -226,7 +224,9 @@
           <q-skeleton type="rect" height="200" width="200" />
         </q-card>
       </div>
-      <comments :author="post.author" :permlink="post.permlink" v-if="post && post.children > 0" />
+      <div class="post-comments col-xs-12 col-md-12" v-if="post && post.children > 0">
+        <comments :author="post.author" :permlink="post.permlink" />
+      </div>
       <transition appear enter-active-class="animated bounceInDown" leave-active-class="animated bounceOutDown" v-if="false">
           <recent-posts-carousel v-if="post" :account="author" :autoplay=true />
       </transition>
@@ -234,12 +234,75 @@
   </q-page>
 </template>
 <style scoped>
-.postview img { display:block; margin-left:auto; margin-right: auto; width: 50% }
-a, a:link { color: #1d8ce0 }
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
-h1, h2, h3, h4, h5, h6 {font-size: 1em; font-weight: 500 }
-
+.post-page {
+  min-width: 0;
+}
+.post-layout {
+  width: 100%;
+  max-width: 1000px;
+  min-width: 0;
+  margin: auto;
+  padding: 0 0.25rem 2rem;
+}
+.post-main {
+  min-width: 0;
+  padding: 0 0.25rem;
+}
+.post-article {
+  width: 100%;
+  margin: auto;
+  overflow: hidden;
+}
+.post-title-section {
+  padding: 1.35rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
+}
+.post-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.post-reply-to {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  font-size: 0.82rem;
+  color: #b0bec5;
+}
+.post-body-section {
+  padding: 1.1rem 1.15rem 1.5rem;
+}
+.post-sidebar {
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto !important;
+  overflow: hidden;
+}
+.post-sidebar :deep(.q-list .q-item) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.post-error {
+  margin: auto;
+  padding: 1rem;
+}
+.post-comments {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 1.5rem;
+  padding: 0 0.25rem;
+}
+@media (max-width: 1023px) {
+  .post-article {
+    margin-bottom: 1rem;
+  }
+  .post-body-section {
+    padding: 0.9rem 0.85rem 1.25rem;
+  }
+}
 </style>
 <script>
 import render from 'components/render.vue'

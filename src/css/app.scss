@@ -1,4 +1,37 @@
 // app global css in Sass form
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   The app is intentionally dark-only; these tokens keep spacing, radii,
+   shadows and type sizes consistent across pages without changing the palette.
+   --------------------------------------------------------------------------- */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 6px;
+  --radius-card: 10px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.26);
+  --shadow-pop: 0 14px 40px rgba(0, 0, 0, 0.45);
+
+  --border-subtle: rgba(255, 255, 255, 0.09);
+  --surface-glass: rgba(8, 13, 17, 0.72);
+
+  --font-page-title: clamp(1.4rem, 2.6vw, 1.9rem);
+  --font-title: 1.5rem;
+  --font-h2: 1.3rem;
+  --font-h3: 1.12rem;
+  --line-body: 1.65;
+  --line-tight: 1.3;
+}
+
 .hvr {
   display: inline-block;
   vertical-align: middle;
@@ -19,6 +52,7 @@
 
 a {
   color: #1d8ce0;
+  transition: color 0.15s ease;
 
   &:link {
     color: #1d8ce0;
@@ -29,6 +63,73 @@ a {
   &:visited {
     color: #884488;
   }
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+}
+
+/* Quasar renders tabs and buttons as anchors; never underline their labels. */
+.q-tab:hover,
+.q-btn:hover,
+.q-item:hover > a,
+.home-chip:hover,
+.carousel-caption a:hover,
+.site-footer a:hover {
+  text-decoration: none;
+}
+
+/* Consistent card/radius language without touching table or carousel internals. */
+.q-card {
+  border-radius: var(--radius-card);
+}
+
+.q-dialog .q-card,
+.q-menu,
+.q-popup-proxy .q-card {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+}
+
+/* Quasar uppercases button labels; sentence case reads better in this UI. */
+.q-btn {
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+/* Shared page/section typography. */
+.page-title {
+  font-size: var(--font-page-title);
+  line-height: var(--line-tight);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.page-intro {
+  max-width: 68ch;
+  margin: var(--space-2) auto 0;
+  color: #cfd8dc;
+  line-height: 1.55;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-2);
+  margin: 0;
+  line-height: var(--line-tight);
+}
+
+.section-divider {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--space-5) auto;
+  max-width: 1100px;
 }
 
 /* Quasar route-tabs render as anchors, so the global link colour above would
@@ -177,8 +278,257 @@ body {
   height: auto;
 }
 
+.postbody {
+  font-size: 1.02rem;
+  line-height: var(--line-body);
+}
+
+.postbody p {
+  margin: 0 0 1.1em;
+}
+
+.postbody h1,
+.postbody h2,
+.postbody h3,
+.postbody h4,
+.postbody h5,
+.postbody h6 {
+  line-height: var(--line-tight);
+  margin: 1.6em 0 0.6em;
+  font-weight: 600;
+}
+
+.postbody h1 { font-size: 1.7rem; }
+.postbody h2 { font-size: 1.45rem; }
+.postbody h3 { font-size: 1.2rem; }
+.postbody h4 { font-size: 1.08rem; }
+.postbody h5,
+.postbody h6 { font-size: 1rem; }
+
 .postbody blockquote {
   max-width: 100%;
+  margin: 1.2em 0;
+  padding: 0.65em 1em;
+  border-left: 3px solid #3e92cc;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(255, 255, 255, 0.045);
+  color: #e4eaed;
+}
+
+.postbody ul,
+.postbody ol {
+  padding-left: 1.4em;
+  margin: 0 0 1.1em;
+}
+
+.postbody li {
+  margin-bottom: 0.35em;
+}
+
+.postbody code {
+  padding: 0.12em 0.35em;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.postbody pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.postbody img {
+  display: block;
+  margin: 1em auto;
+  border-radius: var(--radius-sm);
+}
+
+.postbody table {
+  display: block;
+  overflow-x: auto;
+  margin: 1.2em 0;
+  border-collapse: collapse;
+}
+
+.postbody th,
+.postbody td {
+  padding: 0.45em 0.65em;
+  border: 1px solid var(--border-subtle);
+}
+
+.postbody hr {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: 1.6em 0;
+}
+
+/* --- Carousels ---------------------------------------------------------- */
+.hive-carousel {
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.hive-carousel .q-carousel__slide {
+  overflow: hidden;
+}
+
+.carousel-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 48px 16px 58px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(to top, rgba(4, 8, 12, 0.95) 0%, rgba(4, 8, 12, 0.8) 45%, rgba(4, 8, 12, 0) 100%);
+}
+
+.carousel-caption a {
+  color: #fff;
+  font-weight: 600;
+}
+
+.carousel-caption a:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.carousel-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 1rem;
+  line-height: var(--line-tight);
+}
+
+.carousel-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 2px;
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+  color: #cfd8dc;
+}
+
+.carousel-author {
+  font-weight: 600;
+  color: #e3f2fd;
+}
+
+.carousel-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #dde5e9;
+}
+
+.carousel-avatar {
+  bottom: 8px;
+  z-index: 2;
+}
+
+.carousel-caption--overlay {
+  inset: 0;
+  bottom: 0;
+  justify-content: center;
+  padding: 16px 14px;
+  background: linear-gradient(180deg, rgba(4, 8, 12, 0.88) 0%, rgba(4, 8, 12, 0.64) 100%);
+}
+
+.coin-caption {
+  gap: 1px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.coin-caption .text-bold {
+  font-weight: 600;
+}
+
+/* --- Site footer -------------------------------------------------------- */
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2) var(--space-5);
+  width: 100%;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(8, 13, 17, 0.5);
+  color: #b0bec5;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.site-footer__links,
+.site-footer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.site-footer a {
+  color: #90caf9;
+  font-weight: 600;
+}
+
+.site-footer a:visited {
+  color: #ce93d8;
+}
+
+/* --- Mobile search dialog ---------------------------------------------- */
+.mobile-search-card {
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  background: #10181d;
+}
+
+.mobile-search-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.mobile-search-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.mobile-search-hint {
+  margin-top: 2px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: #b0bec5;
+}
+
+.searchbox--full {
+  width: 100%;
+  margin: 0;
+}
+
+.searchbox--full .q-field {
+  width: 100%;
 }
 
 /* Comments and other cards also contain user text; keep their flex children

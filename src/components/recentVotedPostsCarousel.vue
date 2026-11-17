@@ -10,7 +10,7 @@
     <q-spinner-puff size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
-      <div class="text-h6 text-center"><q-icon name="rss_feed" /> Recently voted by {{ account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <div class="text-h6 text-center section-title"><q-icon name="rss_feed" /> Recently voted by {{ account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -27,15 +27,18 @@
         :aria-label="'Recently voted posts by ' + account"
         @mouseenter="autoplay = false"
         @mouseleave="autoplay = true"
-        class="bg-dark text-white shadow-2 rounded-borders"
+        class="hive-carousel bg-dark text-white shadow-2"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
-          <div class="custom-caption">
-            <router-link :to="returnPostPath(post.author, post.permlink)" class="text-white text-italic">{{ post.title.substr(0,100) }}</router-link><br />
-            by <span class="text-bold">@{{ post.author }}</span><br />
-            <span class="text-caption">{{ timeDelta(post.created) }}</span>
+          <div class="carousel-caption">
+            <router-link class="carousel-title" :to="returnPostPath(post.author, post.permlink)">{{ post.title.substr(0,100) }}</router-link>
+            <div class="carousel-meta">
+              <span class="carousel-author"><router-link :to="'/@' + post.author">@{{ post.author }}</router-link></span>
+              <span aria-hidden="true">·</span>
+              <span class="carousel-time">{{ timeDelta(post.created) }}</span>
+            </div>
           </div>
-          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
+          <div class="absolute-bottom text-center carousel-avatar"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
       <ul v-for="post in posts" :key="post.index">
@@ -46,10 +49,10 @@
   </div>
 </template>
 <style scoped>
-a {text-decoration: none; color: #1d8ce0 }
-a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
-a:visited { color: #884488; }
-.custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
+.hive-carousel :deep(.carousel-title),
+.hive-carousel :deep(.carousel-author a) {
+  text-decoration: none;
+}
 </style>
 <script>
 import moment from 'src/utils/time'

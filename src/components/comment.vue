@@ -1,6 +1,6 @@
 <template>
   <span>
-  <q-item flat separator bordered v-if="comment.permlink !== parentPermlink">
+  <q-item class="comment-item" flat separator bordered v-if="comment.permlink !== parentPermlink">
     <q-item-section>
       <q-item-label>
         <render :input="comment.body" />
@@ -8,15 +8,37 @@
       <q-item-label><postFooter :post="comment" /></q-item-label>
     </q-item-section>
   </q-item>
-  <q-item v-for="authperm in comment.replies" :key="authperm.index">
+  <q-item class="comment-replies" v-for="authperm in comment.replies" :key="authperm.index">
     <comment :comment="comments[authperm]" :comments="comments" :parentDepth="comment.depth" />
   </q-item>
   </span>
 </template>
+<style scoped>
+.comment-item {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  align-items: flex-start;
+}
+.comment-item :deep(.postbody) {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.comment-replies {
+  display: block;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  margin-left: 0.75rem;
+}
+@media (max-width: 599px) {
+  .comment-replies {
+    padding-left: 0.35rem;
+    margin-left: 0.35rem;
+  }
+}
+</style>
 <script>
 import { defineAsyncComponent } from 'vue'
 import render from 'components/render.vue'
-import comment from 'components/comment.vue'
 import moment from 'src/utils/time'
 export default {
   name: 'comment',
@@ -25,7 +47,7 @@ export default {
     }
   },
   props: ['comment', 'comments', 'parentAuthor', 'parentPermlink', 'parentDepth'],
-  components: { render, comment, postFooter: defineAsyncComponent(() => import('components/postFooter.vue')) },
+  components: { render, postFooter: defineAsyncComponent(() => import('components/postFooter.vue')) },
   computed: {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }

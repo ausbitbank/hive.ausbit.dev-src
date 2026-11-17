@@ -1,13 +1,13 @@
 <template>
-    <div class="col-12 text-center full-width" :style='coverImageStyle' v-if="account !== undefined && globalProps !== undefined">
-        <q-card flat bordered class="text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances && account !== undefined">
+    <div class="col-12 text-center full-width account-header" :style='coverImageStyle' v-if="account !== undefined && globalProps !== undefined">
+        <q-card flat bordered class="account-header__balances text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances && account !== undefined">
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
         </q-card>
-      <router-link :to="getAccountLink(account.name)" :aria-label="'View @' + account.name + ' profile'"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" :alt="'Avatar of @' + account.name" /></q-avatar></router-link>
-      <component :is="headingTag" class="text-h4 q-my-none">{{ account.name }}</component>
-      <div class="text-subtitle" v-if="account.posting_json_metadata && showProfile">
+      <router-link class="account-header__avatar" :to="getAccountLink(account.name)" :aria-label="'View @' + account.name + ' profile'"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" :alt="'Avatar of @' + account.name" /></q-avatar></router-link>
+      <component :is="headingTag" class="account-header__name q-my-none">{{ account.name }}</component>
+      <div class="account-header__profile text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
             <div v-if="postingJsonMeta.profile.about">{{ stripHtml(postingJsonMeta.profile.about) }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ stripHtml(postingJsonMeta.profile.location) }}</div>
@@ -27,7 +27,7 @@
           <user-services :username="account.name" />
         </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="rounded-borders bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
+      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
         <q-tabs
           :dense="$q.screen.lt.md"
           :mobile-arrows="$q.screen.lt.sm"
@@ -52,11 +52,89 @@
     </div>
 </template>
 <style scoped>
+.account-header {
+  position: relative;
+  padding: 1.25rem 0.75rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background-color: #0b1014;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  background-size: cover, cover;
+}
+.account-header__name {
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+  overflow-wrap: anywhere;
+}
+.account-header__avatar {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+.account-header__avatar :deep(.q-avatar) {
+  width: 88px;
+  height: 88px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+.account-header__profile {
+  max-width: 720px;
+  margin: 0.5rem auto 0;
+  padding: 0 0.25rem;
+  line-height: 1.5;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+.account-header__profile :deep(.q-icon) {
+  font-size: 1.05em;
+  vertical-align: -2px;
+  margin-right: 2px;
+  opacity: 0.85;
+}
+.account-header__balances {
+  max-width: 210px;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-radius: var(--radius-card, 10px);
+  background: rgba(8, 13, 17, 0.78) !important;
+  box-shadow: var(--shadow-card, 0 6px 18px rgba(0, 0, 0, 0.26));
+}
+.account-tabs {
+  max-width: 1100px;
+  min-height: 48px;
+  margin: 0.9rem auto 0.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 10px);
+  background: rgba(8, 13, 17, 0.84) !important;
+  box-shadow: none;
+}
+.account-tabs :deep(.q-tab) {
+  min-height: 44px;
+}
 .service-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.6rem;
+}
+@media (max-width: 599px) {
+  .account-header {
+    padding: 0.9rem 0.5rem 0.6rem;
+  }
+  .account-header__balances {
+    float: none;
+    display: inline-block;
+    margin: 0.5rem auto;
+  }
+  .account-header__avatar :deep(.q-avatar) {
+    width: 72px;
+    height: 72px;
+  }
+  .account-tabs {
+    margin-top: 0.6rem;
+  }
 }
 </style>
 <script>
@@ -185,7 +263,7 @@ export default {
     },
     coverImageStyle: function () {
       if (this.coverImage) {
-        return { 'background-image': 'linear-gradient(rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 40%, rgba(10, 10, 10, 0.75) 100%), url(' + this.coverImage + ')', 'background-position': 'center, center', 'background-repeat': 'no-repeat', 'background-size': 'cover', 'background-clip': 'border-box, border-box', 'background-color': 'rgba(0, 0, 0, 0)', 'background-attachment': 'scroll, scroll' }
+        return { 'background-image': 'linear-gradient(rgba(6, 10, 14, 0.2) 0%, rgba(6, 10, 14, 0.32) 40%, rgba(8, 12, 16, 0.86) 100%), url(' + this.coverImage + ')', 'background-position': 'center, center', 'background-repeat': 'no-repeat', 'background-size': 'cover, cover', 'background-clip': 'border-box, border-box', 'background-color': '#0b1014', 'background-attachment': 'scroll, scroll' }
       } else {
         return null
       }

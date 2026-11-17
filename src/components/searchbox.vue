@@ -1,12 +1,13 @@
 <template>
-  <q-form @submit.prevent="onSearchSubmit" @reset="onSearchReset" class="q-mr-md q-electron-drag--exception">
+  <q-form @submit.prevent="onSearchSubmit" @reset="onSearchReset" :class="['searchbox', fullWidth ? 'searchbox--full' : 'q-mr-md q-electron-drag--exception']">
     <q-input
       ref="searchInput"
       dense
       v-model="search"
       :autofocus="autofocus"
-      :input-class="$q.screen.lt.sm ? '' : 'text-right'"
-      class="q-ml-md"
+      :outlined="fullWidth"
+      :input-class="!fullWidth && !$q.screen.lt.sm ? 'text-right' : ''"
+      :class="fullWidth || $q.screen.lt.sm ? '' : 'q-ml-md'"
       label="Search accounts, posts, tags, tx or block"
       aria-label="Search accounts, posts, tags, transactions or blocks"
       @keyup.enter.stop.prevent="onSearchSubmit"
@@ -30,6 +31,10 @@ export default {
   name: 'searchbox',
   props: {
     autofocus: {
+      type: Boolean,
+      default: false
+    },
+    fullWidth: {
       type: Boolean,
       default: false
     }

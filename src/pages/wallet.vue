@@ -1,16 +1,16 @@
 <template>
-  <q-page class="flex">
+  <q-page class="wallet-page flex">
       <div class="fit row wrap justify-center items-start content-start" v-if="account !== null && account !== undefined && globalProps !== null">
           <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
-          <q-card dense flat bordered class="q-ma-none q-pt-sm" style="max-width:1000px; max-width:100%; min-width: 50%">
-            <div class="text-h6 text-center text-green" style="clear:both"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
+          <q-card dense flat bordered class="wallet-shell q-ma-none q-pt-sm">
+            <div class="text-h6 text-center text-green wallet-section-title"><q-icon name="account_balance" color="green" />&nbsp; Wallet</div>
             <q-tabs v-model="tab" dense class="text-grey shadow-2" active-color="primary" indicator-color="primary" align="justify" narrow-indicator inline-label>
                 <q-tab name="hive"><q-icon name="img:/statics/hive.svg" size="sm" />&nbsp;Hive</q-tab>
                 <q-tab name="hive-engine"><q-icon name="img:/statics/hive-engine.png" size="sm" />&nbsp;Hive-Engine</q-tab>
             </q-tabs>
             <q-tab-panels v-model="tab" animated>
                 <q-tab-panel name="hive">
-                    <q-list bordered separator class="rounded-borders">
+                    <q-list bordered separator class="rounded-borders wallet-balances">
                         <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-avatar size="sm">
@@ -251,7 +251,7 @@
                         </q-item>
                     </q-list>
                     <div id="scrollTargetRef">
-                      <div class="text-h6 text-center">Transaction History</div>
+                      <div class="text-h6 text-center wallet-section-title">Transaction History</div>
                       <div class="text-center">
                         <q-btn no-caps dense glossy label="Filter" icon="filter_alt">
                           <q-popup-proxy>
@@ -273,7 +273,7 @@
                       </div>
                       <q-scroll-area style="height: 500px;" ref="infiniteScroll">
                       <q-infinite-scroll @load="getHiveWalletTransactions" :offset="150" scroll-target="body">
-                        <q-list dense bordered v-for="tx in filteredTransactionsHive" :key="tx.index">
+                        <q-list dense bordered class="wallet-tx" v-for="tx in filteredTransactionsHive" :key="tx.index">
                           <q-item>
                             <q-item-section avatar class="gt-xs">
                               <q-item-label>
@@ -546,7 +546,7 @@
                     </q-btn>
                     <q-btn icon="refresh" color="green" dense flat @click="initHiveEngine()" title="Refresh Hive-Engine data" aria-label="Refresh Hive-Engine data" />
                   </div>
-                    <q-list bordered separator class="rounded-borders">
+                    <q-list bordered separator class="rounded-borders wallet-tokens">
                         <q-item v-for="token in hiveEngineBalancesFiltered" :key="token.index">
                           <q-item-section dense avatar class="gt-xs">
                             <q-avatar size="md">
@@ -646,7 +646,7 @@
                     <div v-if="hiveEngineTransactionHistory">
                       <div class="text-h6 text-center">Transaction History</div>
                       <q-scroll-area style="height: 500px">
-                      <q-list bordered v-for="tx in hiveEngineTransactionHistory" :key="tx.index">
+                      <q-list bordered class="wallet-tx" v-for="tx in hiveEngineTransactionHistory" :key="tx.index">
                         <q-item>
                           <q-item-section avatar class="gt-xs">
                             <q-item-label>
@@ -867,6 +867,61 @@
 .wrap { overflow:auto; overflow-wrap: break-word; }
 a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
 a:visited { color: #1d8ce0; }
+.wallet-shell {
+  width: 100%;
+  max-width: 1000px;
+  min-width: 0;
+  border-radius: var(--radius-card, 10px);
+  overflow: hidden;
+}
+.wallet-section-title {
+  margin: 0;
+  padding: 0.5rem 0.25rem 0.25rem;
+}
+.wallet-page :deep(.q-scroll-area) {
+  max-width: 100%;
+}
+.wallet-balances :deep(.q-item),
+.wallet-tokens :deep(.q-item) {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.wallet-balances :deep(.q-item__label),
+.wallet-tokens :deep(.q-item__label) {
+  line-height: 1.35;
+}
+.wallet-tx :deep(.q-item) {
+  padding: 9px 12px;
+}
+.wallet-tx :deep(.q-item__label.text-bold) {
+  font-size: 0.96rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.wallet-tx :deep(.q-item__section--side) {
+  padding-left: 10px;
+}
+.wallet-tx :deep(.q-item__label--caption) {
+  color: #b0bec5;
+  font-size: 0.72rem;
+}
+@media (max-width: 599px) {
+  .wallet-tx :deep(.q-item) {
+    padding: 8px 6px;
+  }
+  .wallet-tx :deep(.q-item__label.text-bold) {
+    font-size: 0.86rem;
+  }
+  .wallet-tx :deep(.q-item__section--side) {
+    max-width: 45%;
+    text-align: right;
+  }
+  .wallet-balances :deep(.q-item),
+  .wallet-tokens :deep(.q-item) {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}
 </style>
 <script>
 import { defineAsyncComponent } from 'vue'

@@ -20,8 +20,8 @@
       </q-card-section>
     </q-card>
     </span>
-    <q-card dense flat bordered v-if="!loading">
-      <q-card-section class="text-h6 text-center">
+    <q-card dense flat bordered class="comments-card" v-if="!loading">
+      <q-card-section class="text-h6 text-center section-title">
           <div>
             {{ Object.keys(comments).length - 1 }} Replies
             <q-btn icon="settings" title="Comment filtering and sorting options" class="hvr" dense flat>
@@ -45,6 +45,21 @@
     </span>
   </span>
 </template>
+<style scoped>
+.comments-card {
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+.comments-card :deep(.q-card-section.section-title) {
+  padding-top: 0.9rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.comments-card :deep(.q-card) {
+  margin: 0.5rem;
+  border-radius: var(--radius-sm, 6px);
+}
+</style>
 <script>
 import comment from 'components/comment.vue'
 export default {

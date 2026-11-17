@@ -19,8 +19,17 @@
       </q-toolbar>
     </q-header>
     <q-dialog v-model="mobileSearchOpen" position="top" full-width>
-      <q-card class="q-pa-sm">
-        <searchbox autofocus @submitted="mobileSearchOpen = false" />
+      <q-card class="mobile-search-card">
+        <div class="mobile-search-header">
+          <div>
+            <div class="mobile-search-title"><q-icon name="search" aria-hidden="true" /> Search Hive</div>
+            <div class="mobile-search-hint">Account, @account/post, #tag, block number or transaction id.</div>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close search" title="Close search" v-close-popup />
+        </div>
+        <q-card-section class="q-pt-none">
+          <searchbox autofocus full-width @submitted="mobileSearchOpen = false" />
+        </q-card-section>
       </q-card>
     </q-dialog>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
@@ -66,6 +75,19 @@
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
       <router-view :key="$route.fullPath" :class="backgroundStyle" />
+      <footer class="site-footer" aria-label="Site footer">
+        <nav class="site-footer__links" aria-label="Footer navigation">
+          <router-link to="/browse">Browse</router-link>
+          <router-link to="/blocks">Blocks</router-link>
+          <router-link to="/proposals">Proposals</router-link>
+          <router-link to="/nodes">Nodes</router-link>
+        </nav>
+        <div class="site-footer__meta">
+          <a href="https://hive.io" target="_blank" rel="noopener noreferrer">Powered by Hive</a>
+          <span aria-hidden="true">·</span>
+          <a href="https://github.com/ausbitbank/hive.ausbit.dev-src" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+        </div>
+      </footer>
     </q-page-container>
   </q-layout>
 </template>

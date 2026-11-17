@@ -2,7 +2,7 @@
   <div>
     <div>
       <q-card flat bordered>
-      <div class="text-h6 text-center">
+      <div class="text-h6 text-center section-title">
         <q-icon name="rss_feed" color="orange" /> <span v-if="postType === 'blog'" @click="postType = 'posts'; init()" class="text-primary cursor-pointer">Recently shared</span><span v-if="postType === 'posts'" @click="postType = 'blog'; init()" class="text-primary cursor-pointer">Recently posted</span> by <span @click="settings = true" class="text-primary cursor-pointer">{{ accountInput }}</span> <q-btn v-if="false" icon="settings" @click="settings = true" />
       </div>
       <q-skeleton :height="$q.screen.lt.sm ? '300px' : '250px'" width="100%" animation="fade" rect v-if="loading" />
@@ -23,17 +23,20 @@
         :width="$q.screen.lt.sm ? '100%' : '450px'"
         :aria-label="'Recent posts by @' + accountInput"
         @mouseenter="autoplaySlides = false"
-        class="bg-dark text-white shadow-2 rounded-borders"
+        class="hive-carousel bg-dark text-white shadow-2"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
-          <div class="custom-caption">
-            <router-link :to="returnPostPath(post.author, post.permlink)">{{ s(post.title).substr(0,100) }}</router-link><br />
-            by <span class="text-bold"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span><br />
-            <span class="text-caption">{{ timeDelta(post.created) }}</span><br />
-            <span class="text-caption wrap" v-if="post.json_metadata.description"> {{s(post.json_metadata.description).substr(0,100)}}</span>
-            <span class="text-caption wrap" v-else> {{ returnPostSummary(post) }}</span>
+          <div class="carousel-caption">
+            <router-link class="carousel-title" :to="returnPostPath(post.author, post.permlink)">{{ s(post.title).substr(0,100) }}</router-link>
+            <div class="carousel-meta">
+              <span class="carousel-author"><router-link :to="linkAccount(post.author)">@{{ post.author }}</router-link></span>
+              <span aria-hidden="true">·</span>
+              <span class="carousel-time">{{ timeDelta(post.created) }}</span>
+            </div>
+            <span class="carousel-summary" v-if="post.json_metadata.description"> {{s(post.json_metadata.description).substr(0,100)}}</span>
+            <span class="carousel-summary" v-else> {{ returnPostSummary(post) }}</span>
           </div>
-          <div class="absolute-bottom text-center"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
+          <div class="absolute-bottom text-center carousel-avatar"><q-avatar size="3em"><q-img :src="getHiveAvatarUrl(post.author)" :alt="'Avatar of @' + post.author" /></q-avatar></div>
         </q-carousel-slide>
       </q-carousel>
       <q-dialog v-model="settings">
@@ -48,10 +51,10 @@
   </div>
 </template>
 <style scoped>
-a { text-decoration: none; color: #1d8ce0 }
-a:link { color: #1d8ce0; font-weight: normal; text-decoration: none; }
-a:visited { color: #1d8ce0; }
-.custom-caption { text-align: center; padding: 12px; font-weight: normal; color: white; background-color: rgba(0, 0, 0, .9) }
+.hive-carousel :deep(.carousel-title),
+.hive-carousel :deep(.carousel-author a) {
+  text-decoration: none;
+}
 </style>
 <script>
 import moment from 'src/utils/time'
