@@ -74,7 +74,7 @@
       <div class="text-center q-pb-md"><q-icon name="code" color="grey" title="coded" aria-label="coded" /> with <q-icon name="favorite" color="red" title="love" aria-label="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
-      <router-view :key="$route.fullPath" :class="backgroundStyle" />
+      <router-view :key="$route.path" :class="backgroundStyle" />
       <footer class="site-footer" aria-label="Site footer">
         <nav class="site-footer__links" aria-label="Footer navigation">
           <router-link to="/browse">Browse</router-link>

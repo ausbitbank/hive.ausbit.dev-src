@@ -1,7 +1,8 @@
 # W7 — Proposals parity with PeakD
 
-Status: in progress
+Status: complete
 Branch: `improve/proposals` (from `master`)
+Worklog: `docs/workstreams/W7-proposals-log.md`
 
 ## Goal
 
@@ -24,13 +25,17 @@ Preserve the existing dark visual system and the in-app broadcast queue.
 - `daily_pay` = `{ amount, precision, nai }`; HBD = amount / 10^precision.
 - `total_votes` is micro-VESTS-like; HP = `$hive.formatter.vestToHive(total_votes, total_vesting_shares, total_vesting_fund_hive) / 1e6`.
 - Return proposal is `id === 0`; proposals with `total_votes >= returnProposal.total_votes` are funded.
+- Voting: `update_proposal_votes` is an **active authority** operation
+  (`get_required_active_authorities` in Hive core), so queue entries must use
+  key type `'active'`, not `'posting'`. Both the list cards and the detail page
+  show a small “Requires your active key.” note next to the vote controls.
 
 ## List page (`src/pages/proposals.vue`)
 
 - Header: title, short DHF explainer, stats strip:
   - Daily funded (sum active funded proposals excluding return and `hbdstabilizer`)
   - HBD Stabilizer daily pay
-  - Max daily budget (`hive.fund` HBD balance / 10)
+  - Max daily budget (`hive.fund` HBD balance / 100)
   - Total budget (`hive.fund` HBD balance)
 - Tabs: All, Active, Upcoming, Expired, Voted (only when logged in).
 - Sort: Votes (default), Daily pay, Newest, Ending soon.
@@ -45,7 +50,8 @@ Preserve the existing dark visual system and the in-app broadcast queue.
   - `@creator/permlink` link
   - Daily pay, remaining days, paid, to pay, vote value HP
   - support-level progress vs return proposal
-  - Vote/Unvote button (queue `update_proposal_votes`), or Login hint
+  - Vote/Unvote button (queue `update_proposal_votes` with the `active` key),
+    or Login hint
   - Open post / PeakD links
 - Mobile responsive card layout; loading/error/empty states; h1.
 - URL query sync for tab/sort/search (nice-to-have).
@@ -67,7 +73,8 @@ Preserve the existing dark visual system and the in-app broadcast queue.
 - Handle missing/invalid proposal id with a clear not-found state.
 - Votes: show up to ~24 avatars + a “View all votes” expandable list; each
   voter links to `/@voter`. Do not fetch hundreds of account balances.
-- Voting uses the shared queue; optimistic `voted` state; login prompt.
+- Voting uses the shared queue with the `active` key; optimistic `voted` state;
+  login prompt; visible “Requires your active key.” note.
 
 ## Shared logic
 

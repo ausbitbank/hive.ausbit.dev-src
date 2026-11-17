@@ -145,7 +145,13 @@ a {
 }
 
 /* White on the primary blue is ~3:1; use a dark ink for small status badges. */
-.q-badge.bg-primary {
+.q-badge.bg-primary,
+.q-badge.bg-green,
+.q-badge.bg-grey,
+.q-badge.bg-orange,
+.q-badge.bg-blue,
+.q-badge.bg-blue-grey,
+.q-badge.bg-amber {
   color: #0b1d2a;
 }
 

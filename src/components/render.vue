@@ -76,10 +76,14 @@ export default {
   methods: {
     render () {
       const html = renderPostBody(this.input, false, false)
-      this.rendered = DOMPurify.sanitize(html, {
+      const safe = DOMPurify.sanitize(html, {
         ADD_TAGS: ['iframe'],
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
       })
+      // The page title is the only h1; post content headings start at h2.
+      this.rendered = safe
+        .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
+        .replace(/<\/h1>/gi, '</h2>')
     },
 
     isAllowedEmbed (src) {
