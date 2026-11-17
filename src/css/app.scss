@@ -771,6 +771,240 @@ body {
   word-break: break-word;
 }
 
+/* --- Network and governance pages -------------------------------------- */
+.net-page {
+  min-width: 0;
+  padding-bottom: var(--space-6);
+}
+
+.net-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+.net-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.net-head__text {
+  min-width: 0;
+}
+
+.net-head__title {
+  margin: 0.25rem 0 0.3rem;
+  font-size: clamp(1.55rem, 3vw, 2.05rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.net-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.net-intro {
+  max-width: 720px;
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.net-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.net-section {
+  min-width: 0;
+  margin-top: var(--space-5);
+  scroll-margin-top: 84px;
+}
+
+.net-section__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.net-section__title {
+  margin: 0;
+  color: #e4eaed;
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.net-section__hint {
+  color: #78909c;
+  font-size: 0.74rem;
+}
+
+.net-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
+.net-stat-card {
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.net-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: 100%;
+  padding: 0.85rem 0.95rem;
+}
+
+.net-stat__head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #90a4ae;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.net-stat__value {
+  color: #e4eaed;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.net-stat__unit {
+  color: #90a4ae;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.net-stat__hint {
+  margin-top: auto;
+  padding-top: 0.3rem;
+  color: #78909c;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.net-stat__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.net-stat__links a {
+  color: #4fc3f7;
+  text-decoration: none;
+}
+
+.net-stat__links a:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.net-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.net-chip--ok {
+  border-color: rgba(76, 175, 80, 0.35);
+  color: #81c784;
+}
+
+.net-chip--warning {
+  border-color: rgba(255, 183, 77, 0.4);
+  color: #ffb74d;
+}
+
+.net-chip--critical {
+  border-color: rgba(239, 83, 80, 0.4);
+  color: #e57373;
+}
+
+.net-key-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
+.net-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: var(--space-6) var(--space-4);
+  color: #b0bec5;
+  text-align: center;
+}
+
+.net-state--error {
+  color: #ffb74d;
+}
+
+@media (max-width: 599px) {
+  .net-shell {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .net-head {
+    margin-bottom: var(--space-3);
+  }
+
+  .net-head__title {
+    font-size: 1.5rem;
+  }
+
+  .net-section {
+    margin-top: var(--space-4);
+  }
+
+  .net-section__hint {
+    display: none;
+  }
+}
+
 /* Respect the operating system reduced-motion preference. */
 @media (prefers-reduced-motion: reduce) {
   *,

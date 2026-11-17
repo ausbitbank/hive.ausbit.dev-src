@@ -59,6 +59,66 @@ export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS
 }
 
 /**
+ * Fetch the reporting node's software version. Supports both the condenser
+ * `get_version` result and a `hive_version` field on global properties.
+ */
+export async function probeHiveNodeVersion (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS) {
+  if (!url || typeof url !== 'string') {
+    return { url, ok: false, version: null, chainId: null, error: 'No node URL' }
+  }
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'condenser_api.get_version',
+        params: []
+      }),
+      signal: controller.signal
+    })
+    if (!response.ok) {
+      return { url, ok: false, version: null, chainId: null, error: 'HTTP ' + response.status }
+    }
+    const data = await response.json()
+    const version = data?.result?.blockchain_version || data?.result?.hive_version || null
+    return {
+      url,
+      ok: Boolean(version),
+      version,
+      chainId: data?.result?.chain_id || null,
+      error: version ? '' : (data?.error?.message || 'Version unavailable')
+    }
+  } catch (error) {
+    const message = error?.name === 'AbortError' ? 'Timed out' : (error?.message || 'Unreachable')
+    return { url, ok: false, version: null, chainId: null, error: message }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * Probe a node for head, latency and software version in parallel. Always
+ * resolves; a version failure does not make an otherwise healthy node fail.
+ */
+export async function probeHiveNodeFull (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS) {
+  const [base, version] = await Promise.all([
+    probeHiveNode(url, timeoutMs),
+    probeHiveNodeVersion(url, timeoutMs)
+  ])
+  return {
+    ...base,
+    version: version.ok ? version.version : null,
+    chainId: version.chainId || null
+  }
+}
+
+/**
  * Pick a usable API node at startup.
  *
  * The configured node wins when it is healthy; otherwise the fastest healthy

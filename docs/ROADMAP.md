@@ -25,6 +25,10 @@ Recent completed workstreams:
   duplicated balances (W16).
 - Command palette and navigation: Ctrl/Cmd+K, direct route parsing, recents,
   header/mobile/drawer triggers.
+- Witnesses, witness editing, network health and API nodes: searchable/sortable
+  witness directory with proxies, voting and vote-weight calculator, health
+  warnings, rebuilt witness settings, network metrics dashboard and node
+  latency history/failover (W17).
 
 Relevant docs:
 
@@ -38,6 +42,7 @@ Relevant docs:
 - `docs/workstreams/W14-wallet-account.md`
 - `docs/workstreams/W15-command-palette.md`
 - `docs/workstreams/W16-wallet-rebuild.md`
+- `docs/workstreams/W17-witnesses-health.md`
 
 ## Priority 1 — wallet page rebuild (complete)
 
@@ -63,16 +68,31 @@ wallet actions, memo decryption, claiming and the tax export link are preserved.
 Checks: lint clean, 19 test files / 142 tests passing, build succeeded, zero axe
 violations at 1440px and 390px, deploy and live smoke completed.
 
-## Priority 2 — witnesses and network health
+## Priority 2 — witnesses and network health (complete)
 
-- Modern `/witnesses` directory: search, sort, my votes, proxy, vote/unvote,
-  vote-weight calculator, health warnings (missed blocks, stale price feed,
-  signing disabled, version mismatch).
-- Modern `/witness` edit experience.
-- `/health` network dashboard: witness participation, HBD debt ratio, resource
-  pool, median price, hardfork status, chain version and API/latency summary.
-- `/nodes` proper status view: latency history, head lag, version, failover and
-  auto-select fastest healthy node.
+Completed 2026-11-18. See `docs/workstreams/W17-witnesses-health.md`.
+
+- `/witnesses` rebuilt: search by name/URL/version, sorting with direction,
+  my-votes view, voting proxy set/clear, vote/unvote, vote-weight and top-20
+  impact calculator, expandable raw details, and warnings for signing disabled,
+  stale price feeds, missed scheduled blocks and version mismatch.
+- `/witness` rebuilt: status cards, validated identity/chain/advanced subsidy
+  settings, labelled saved public signing keys with one-click switching,
+  percentage-to-basis-point HBD interest, JSON and `cli_wallet` preview, reset,
+  registration and confirmed signing disable.
+- `/health` rebuilt: overall status banner, witness participation, treasury-
+  excluded HBD debt ratio, median price and feed range, vesting resource pool,
+  hardfork and chain versions, chain state, scheduled witness health and API
+  latency summary.
+- `/nodes` rebuilt: head, lag, version and health per node, local 24-sample
+  latency history with sparklines, 30-second re-checks, manual selection,
+  auto-select fastest, automatic failover and version comparison.
+- All witness mutations queue with active authority; the queue refreshes the
+  affected account after a witness broadcast.
+
+Checks: lint clean, 23 test files / 188 tests passing, build succeeded, zero
+axe violations at 1440px and 390px on all four routes, browser smoke completed,
+deploy and live smoke completed.
 
 ## Priority 3 — markets
 
@@ -127,9 +147,11 @@ violations at 1440px and 390px, deploy and live smoke completed.
 
 ## Suggested new-session prompt
 
-> Read `docs/ROADMAP.md` first. Continue with Priority 2: witnesses and network
-> health. Build the modern `/witnesses` directory with search, sort, my votes,
-> proxy, vote/unvote, vote-weight calculator and health warnings; rebuild
-> `/witness` editing; then improve `/health` and `/nodes` using the existing
-> design tokens and card patterns. Run lint/test/build, axe, desktop and 390px
-> smoke tests, then deploy and live-smoke.
+> Read `docs/ROADMAP.md` first. Continue with Priority 3: markets. Make the
+> TradingView chart responsive, improve pair selection and chart page layout,
+> build the internal market order book/recent trades/open orders/fees, add HBD
+> peg/premium and conversion calculators, and link the home market card deeper
+> into the market experience. Use the existing design tokens and card patterns,
+> keep one page-level h1, run lint/test/build, axe at desktop and 390px, smoke
+> the key flows, then deploy and live-smoke. Update `docs/workstreams/` and
+> `ROADMAP.md`, and report test count and build status.
