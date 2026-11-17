@@ -90,3 +90,14 @@ Completed on branch `improve/phase-2` and merged to `master`.
 4. Optional light theme (the current UI is intentionally dark because several
    surfaces use explicit dark backgrounds).
 5. Add Playwright route smoke tests to CI and Pinia store action tests.
+
+## Production deployment
+
+- Deployed to https://hive.ausbit.dev on 2026-11-17 from `master` commit
+  `da9a91b`.
+- Pre-phase-2 backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261117T085841Z.tar.gz`.
+- Original pre-revamp backup:
+  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261117T074127Z.tar.gz`.
+- Live verification: all primary routes HTTP 200, no mobile overflow, one `h1`
+  per page, OG/Twitter tags present, zero axe violations on home/account/wallet
+  and no console errors.
