@@ -1,5 +1,5 @@
 <template>
-    <div class="col-12 text-center full-width account-header" :style='coverImageStyle' v-if="account !== undefined && globalProps !== undefined">
+    <div class="col-12 text-center full-width account-header" :class="{ 'account-header--compact': compact }" :style='coverImageStyle' v-if="account !== undefined && globalProps !== undefined">
         <q-card flat bordered class="account-header__balances text-center text-subtitle q-pa-md q-ma-md float-right" v-if="showBalances && account !== undefined">
             <div>{{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }} HP</div>
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
@@ -119,9 +119,39 @@
   gap: 0.35rem 0.6rem;
   margin-top: 0.6rem;
 }
+.account-header--compact {
+  padding: 0.7rem 0.75rem 0.45rem;
+}
+
+.account-header--compact .account-header__avatar :deep(.q-avatar) {
+  width: 56px;
+  height: 56px;
+}
+
+.account-header--compact .account-header__name {
+  font-size: 1.3rem;
+}
+
+.account-header--compact .account-tabs {
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 599px) {
   .account-header {
     padding: 0.9rem 0.5rem 0.6rem;
+  }
+
+  .account-header--compact {
+    padding: 0.6rem 0.5rem 0.35rem;
+  }
+
+  .account-header--compact .account-header__avatar :deep(.q-avatar) {
+    width: 46px;
+    height: 46px;
+  }
+
+  .account-header--compact .account-header__name {
+    font-size: 1.15rem;
   }
   .account-header__balances {
     float: none;
@@ -184,6 +214,11 @@ export default {
       type: Boolean,
       required: false,
       default: true
+    },
+    compact: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   components: {

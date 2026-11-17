@@ -1,199 +1,392 @@
 <template>
-  <div>
-    <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-    <q-toolbar class="bg-dark text-white text-center gt-xs" v-if="toolbarOpen">
-      <q-space />
-      <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" />
-      <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'"/>
-      <q-select dense v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" />
-      <q-select dense v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" />
-      <q-input dense v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'" clearable @clear="tag = ''" style="max-width: 150px"/>
-      <q-input dense maxlength="3" v-model.number="limit" label="limit" style="max-width: 50px" />
-      <q-input dense v-model="observer" label="observer" clearable @clear="observer = ''" style="max-width: 150px" />
-      <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
-      <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" style="max-width: 100px" />
-      <q-btn flat dense color="primary" icon="search" label="Browse" @click="getPosts()" />
-      <q-space />
-    </q-toolbar>
-    </transition>
-    <div class="lt-sm row items-center justify-center q-gutter-sm q-py-sm">
-      <q-btn outline color="primary" icon="filter_alt" label="Filters" aria-label="Open advanced browse filters" @click="filtersDialog = true" />
-      <q-btn outline color="primary" icon="search" label="Browse" aria-label="Browse posts with the current filters" @click="getPosts()" />
+  <div class="browse-container">
+    <div class="browse-toolbar">
+      <div class="browse-toolbar__summary">
+        <span v-if="loading && posts.length === 0">Loading posts…</span>
+        <span v-else>
+          <strong>{{ filteredPosts.length }}</strong>
+          {{ filteredPosts.length === 1 ? 'post' : 'posts' }}
+        </span>
+        <span v-if="filteredPosts.length !== posts.length" class="browse-toolbar__filtered">
+          {{ posts.length - filteredPosts.length }} hidden by filters
+        </span>
+      </div>
+
+      <div class="browse-toolbar__actions">
+        <q-btn flat dense round icon="refresh" aria-label="Refresh posts" title="Refresh posts" :loading="loading" @click="refresh" />
+
+        <q-btn
+          flat
+          dense
+          no-caps
+          icon="filter_alt"
+          :label="$q.screen.gt.xs ? 'Filters' : ''"
+          aria-label="Filter posts"
+          :class="{ 'browse-filter--active': hasActiveFilters }"
+        >
+          <q-badge v-if="hasActiveFilters" color="primary" floating>{{ activeFilterCount }}</q-badge>
+          <q-popup-proxy>
+            <q-card class="browse-filter-card">
+              <q-card-section>
+                <div class="browse-filter-card__head">
+                  <div>
+                    <div class="browse-filter-card__title">Filter posts</div>
+                    <div class="browse-filter-card__hint">Applies to the posts loaded so far.</div>
+                  </div>
+                  <q-btn flat dense round icon="close" aria-label="Close filters" v-close-popup />
+                </div>
+
+                <q-list dense class="browse-filter-list">
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label>Hide voted posts</q-item-label>
+                      <q-item-label v-if="!loggedInUser" caption>Log in to filter voted posts</q-item-label>
+                    </q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideVoted" dense color="primary" :disable="!loggedInUser" /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section><q-item-label>Hide reblogs</q-item-label></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideReblogs" dense color="primary" /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section><q-item-label>Hide pinned posts</q-item-label></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hidePinned" dense color="primary" /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section><q-item-label>Hide muted posts</q-item-label></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideHidden" dense color="primary" /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section><q-item-label>Hide moderated posts</q-item-label></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideGray" dense color="primary" /></q-item-section>
+                  </q-item>
+                  <q-item>
+                    <q-item-section><q-item-label>Hide rewards outside range</q-item-label></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideRewardsFilter" dense color="primary" /></q-item-section>
+                  </q-item>
+                </q-list>
+
+                <div class="browse-filter-card__range">
+                  <q-input
+                    v-model.number="filter.hideRewardsBelow"
+                    type="number"
+                    dense
+                    outlined
+                    label="Min HBD"
+                    :disable="!filter.hideRewardsFilter"
+                  />
+                  <q-input
+                    v-model.number="filter.hideRewardsAbove"
+                    type="number"
+                    dense
+                    outlined
+                    label="Max HBD"
+                    :disable="!filter.hideRewardsFilter"
+                  />
+                </div>
+
+                <div class="browse-filter-card__actions">
+                  <q-btn flat no-caps color="primary" label="Reset filters" @click="resetFilters" />
+                  <q-btn unelevated no-caps color="primary" label="Done" v-close-popup />
+                </div>
+              </q-card-section>
+            </q-card>
+          </q-popup-proxy>
+        </q-btn>
+
+        <q-select
+          v-if="$q.screen.lt.sm"
+          v-model="styleType"
+          :options="styleOptions"
+          dense
+          outlined
+          options-dense
+          emit-value
+          map-options
+          aria-label="Post layout"
+          class="browse-layout-select"
+        />
+        <q-btn-toggle
+          v-else
+          v-model="styleType"
+          :options="styleOptions"
+          dense
+          no-caps
+          outline
+          toggle-color="primary"
+          aria-label="Post layout"
+          class="browse-layout-toggle"
+        />
+      </div>
     </div>
-    <q-dialog v-model="filtersDialog">
-      <q-card class="q-pa-md" style="width: 100%; max-width: 460px">
-        <div class="text-h6 text-center q-mb-md">Browse filters</div>
-        <q-select dense v-model="method" :options="['bridge.get_ranked_posts', 'bridge.get_account_posts']" label="method" class="q-mb-sm" />
-        <q-input dense maxlength="25" v-model="account" label="account" v-if="method === 'bridge.get_account_posts'" class="q-mb-sm" />
-        <q-select dense v-if="method === 'bridge.get_account_posts'" v-model="sort" :options="['feed', 'blog', 'posts', 'replies', 'comments']" label="Sort Method" class="q-mb-sm" />
-        <q-select dense v-if="method === 'bridge.get_ranked_posts'" v-model="sort" :options="['trending', 'hot', 'created', 'promoted', 'payout', 'payout_comments', 'muted']" label="Sort Method" class="q-mb-sm" />
-        <q-input dense v-model="tag" label="tag" v-if="method === 'bridge.get_ranked_posts'" clearable @clear="tag = ''" class="q-mb-sm" />
-        <q-input dense maxlength="3" v-model.number="limit" label="limit" type="number" class="q-mb-sm" />
-        <q-input dense v-model="observer" label="observer" clearable @clear="observer = ''" class="q-mb-sm" />
-        <q-input dense v-model="start_author" label="start_author" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_author = ''" class="q-mb-sm" />
-        <q-input dense v-model="start_permlink" label="start_permlink" v-if="['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(method)" clearable @clear="start_permlink = ''" class="q-mb-sm" />
-        <div class="text-center q-mt-md">
-          <q-btn flat label="Close" color="grey" v-close-popup />
-          <q-btn color="primary" label="Browse" icon="search" @click="filtersDialog = false; getPosts()" />
-        </div>
+
+    <div v-if="loading && posts.length === 0" class="browse-grid browse-grid--cards" aria-label="Loading posts">
+      <q-card v-for="i in 6" :key="i" flat bordered class="browse-skeleton">
+        <q-skeleton height="170px" square />
+        <q-card-section>
+          <q-skeleton type="text" width="45%" />
+          <q-skeleton type="text" width="90%" />
+          <q-skeleton type="text" width="75%" />
+          <q-skeleton type="text" width="55%" />
+        </q-card-section>
       </q-card>
-    </q-dialog>
-    <div class="text-center">
-      <q-btn flat color="grey" class="gt-xs" @click="toolbarOpen = !toolbarOpen" icon="settings" title="Toggle full navigation toolbar" aria-label="Toggle full navigation toolbar" />
-      <q-btn flat color="grey" title="Filter posts" aria-label="Filter posts" icon="filter_alt">
-        <q-badge color="primary" floating transparent v-if="(posts.length - filteredPosts.length) > 0">{{ posts.length - filteredPosts.length }}/{{ posts.length }}</q-badge>
-        <q-popup-proxy>
-          <q-card flat bordered>
-          <div v-if="(posts.length - filteredPosts.length) > 0" class="text-center text-bold">
-            {{ posts.length - filteredPosts.length }} / {{ posts.length }} posts filtered with the settings below
-          </div>
-          <q-list separator bordered dense>
-            <q-item>
-              <q-item-section>
-                <q-checkbox v-model="filter.hideVoted" />
-              </q-item-section>
-              <q-item-section>
-                Hide Voted
-              </q-item-section>
-            </q-item>
-            <q-item>
-              <q-item-section>
-                <q-checkbox v-model="filter.hideReblogs" />
-              </q-item-section>
-              <q-item-section>
-                Hide Reblogs
-              </q-item-section>
-            </q-item>
-            <q-item>
-              <q-item-section>
-                <q-checkbox v-model="filter.hidePinned" />
-              </q-item-section>
-              <q-item-section>
-                Hide Pinned
-              </q-item-section>
-            </q-item>
-            <q-item v-if="false">
-              <q-item-section>
-                <q-checkbox v-model="filter.hideCrossPost" />
-              </q-item-section>
-              <q-item-section>
-                Hide Cross-Post
-              </q-item-section>
-            </q-item>
-            <q-item>
-              <q-item-section>
-                <q-checkbox v-model="filter.hideHidden" />
-              </q-item-section>
-              <q-item-section>
-                Hide Muted
-              </q-item-section>
-            </q-item>
-            <q-item>
-              <q-item-section>
-                <q-checkbox v-model="filter.hideGray" />
-              </q-item-section>
-              <q-item-section>
-                Hide Moderated
-              </q-item-section>
-            </q-item>
-            <q-item>
-              <q-item-section avatar>
-                <q-checkbox v-model="filter.hideRewardsFilter" />
-              </q-item-section>
-              <q-item-section>
-                Hide posts rewards below
-              </q-item-section>
-              <q-item-section>
-                <q-input v-model="filter.hideRewardsBelow" :disable="!filter.hideRewardsFilter" debounce="500" style="max-width: 3em" />
-              </q-item-section>
-              <q-item-section>
-                Hide posts rewards above
-              </q-item-section>
-              <q-item-section>
-                <q-input v-model="filter.hideRewardsAbove" :disable="!filter.hideRewardsFilter" debounce="500" style="max-width: 3em" />
-              </q-item-section>
-            </q-item>
-          </q-list>
-          </q-card>
-        </q-popup-proxy>
-      </q-btn>
-      <q-select class="lt-sm" dense outlined options-dense v-model="styleType" :options="styleOptions" label="View" aria-label="Choose post layout" style="min-width: 130px" />
-      <q-btn-toggle class="gt-xs" dense no-caps v-model="styleType" push glossy toggle-color="primary" aria-label="Choose post layout" :options="styleOptions" />
-      <q-spinner-puff color="primary" v-if="loading && styleType !== 'table'" size="lg" class="q-ma-md text-center" style="margin:auto" />
     </div>
-    <div v-if="!loading && !error && filteredPosts.length === 0" class="text-center q-pa-lg text-grey">
-      <q-icon name="search_off" size="2.5em" />
-      <div class="text-subtitle1 q-mt-sm">{{ posts.length === 0 ? 'No posts found.' : 'No posts match the current filters.' }}</div>
+
+    <div v-else-if="error && posts.length === 0" class="browse-state">
+      <q-icon name="error_outline" size="2.4em" color="orange" aria-hidden="true" />
+      <p>{{ error }}</p>
+      <q-btn outline no-caps color="primary" icon="refresh" label="Try again" @click="refresh" />
     </div>
-    <div class="masonry-wrapper" v-if="filteredPosts.length > 0 || error">
-      <div class="masonry justify-center" v-if="styleType !== 'table'">
-        <div v-for="post in filteredPosts" :key="post.post_id" class="masonry-item">
-          <post-preview :post="post" :styleType="styleType" />
-        </div>
-         <div v-if="!loading" class="q-ma-md" style="clear:both">
-          <h5>
-            <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
-          </h5>
-        </div>
-      </div>
-      <div v-if="styleType === 'table'">
-        <browseTable :filteredPosts="filteredPosts" :loading="loading" />
-         <div v-if="!loading" class="q-ma-md" style="clear:both">
-          <h5>
-            <div v-if="error"><q-icon name="error_outline" color="orange" />&nbsp; {{ error }}</div>
-          </h5>
-        </div>
+
+    <div v-else-if="filteredPosts.length === 0" class="browse-state">
+      <q-icon name="search_off" size="2.4em" aria-hidden="true" />
+      <p>{{ posts.length === 0 ? 'No posts found.' : 'No posts match the current filters.' }}</p>
+      <div class="row q-gutter-sm justify-center">
+        <q-btn v-if="hasActiveFilters" outline no-caps color="primary" icon="filter_alt_off" label="Reset filters" @click="resetFilters" />
+        <q-btn v-if="hasMore" outline no-caps color="primary" icon="expand_more" label="Load more posts" :loading="loadingMore" @click="loadMore" />
+        <q-btn flat no-caps color="primary" icon="refresh" label="Refresh" @click="refresh" />
       </div>
     </div>
-    <div v-if="posts.length > 0" class="text-center">
-      <q-btn outline rounded color="primary" icon="search" label="Load more" @click="start_author = posts[posts.length - 1].author; start_permlink = posts[posts.length - 1].permlink; getPosts()" />
-    </div>
+
+    <template v-else>
+      <div v-if="styleType === 'table'" class="browse-table-card">
+        <browse-table :filteredPosts="filteredPosts" :loading="loading" />
+      </div>
+      <div v-else class="browse-grid" :class="'browse-grid--' + styleType">
+        <post-preview
+          v-for="post in filteredPosts"
+          :key="postKey(post)"
+          :post="post"
+          :style-type="styleType"
+        />
+      </div>
+
+      <div v-if="error" class="browse-inline-error">
+        <q-icon name="error_outline" color="orange" aria-hidden="true" />
+        <span>{{ error }}</span>
+        <q-btn flat dense no-caps color="primary" label="Retry" @click="loadMore" />
+      </div>
+
+      <div class="browse-more">
+        <q-btn
+          v-if="hasMore"
+          outline
+          no-caps
+          color="primary"
+          icon="expand_more"
+          :label="loadingMore ? 'Loading…' : 'Load more posts'"
+          :loading="loadingMore"
+          @click="loadMore"
+        />
+        <div v-else class="browse-end">
+          <q-icon name="check_circle" size="16px" aria-hidden="true" /> You’re all caught up.
+        </div>
+      </div>
+    </template>
   </div>
 </template>
-<style>
-/* Live, working masonry layout ordered top to bottom, THEN left to right
-  TODO: Find / Design a version that works left to right, THEN top to bottom */
-.masonry-wrapper {
-  padding: 1.5em;
-  margin-right: auto;
-  margin-left: auto;
+
+<style scoped>
+.browse-container {
+  width: 100%;
+  min-width: 0;
 }
-.masonry {
-  columns: 1;
-  column-gap: 15px;
+
+.browse-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
 }
-.masonry-item {
-  display: inline-block;
-  vertical-align: top;
-  margin-bottom: 10px;
+
+.browse-toolbar__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  color: #90a4ae;
+  font-size: 0.8rem;
 }
-.masonry-item, .masonry-content {
-  border-radius: 4px;
-  overflow: visible;
+
+.browse-toolbar__summary strong {
+  color: #e4eaed;
 }
-@media only screen and (max-width: 1365px) and (min-width: 1024px) {
-  .masonry {
-    columns: 2;
+
+.browse-toolbar__filtered {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: #81d4fa;
+}
+
+.browse-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.browse-filter--active {
+  color: #81d4fa;
+}
+
+.browse-filter-card {
+  width: min(360px, 92vw);
+}
+
+.browse-filter-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: 0.35rem;
+}
+
+.browse-filter-card__title {
+  font-weight: 600;
+}
+
+.browse-filter-card__hint {
+  color: #90a4ae;
+  font-size: 0.72rem;
+}
+
+.browse-filter-list {
+  margin: 0 -0.5rem;
+}
+
+.browse-filter-card__range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.browse-filter-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.browse-layout-select {
+  min-width: 126px;
+}
+
+.browse-layout-toggle :deep(.q-btn) {
+  padding: 0 0.55rem;
+}
+
+.browse-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+.browse-grid--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  align-items: stretch;
+  gap: var(--space-3);
+}
+
+.browse-grid--list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.browse-skeleton {
+  overflow: hidden;
+}
+
+.browse-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: #b0bec5;
+}
+
+.browse-state p {
+  margin: 0;
+}
+
+.browse-inline-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+  color: #ffb74d;
+  font-size: 0.82rem;
+}
+
+.browse-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
+.browse-end {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #78909c;
+  font-size: 0.8rem;
+}
+
+.browse-table-card {
+  overflow-x: auto;
+}
+
+@media (max-width: 599px) {
+  .browse-toolbar {
+    align-items: flex-start;
   }
-}
-@media only screen and (min-width: 1366px) {
-  .masonry {
-    columns: 3;
-  }
-}
-@media only screen and (min-width: 1920px) {
-  .masonry {
-    columns: 4;
-  }
-}
-@media only screen and (min-width: 3600px) {
-  .masonry {
-    columns: 5;
+
+  .browse-toolbar__actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 </style>
+
 <script>
 import { defineAsyncComponent } from 'vue'
+import { postPayoutValue } from 'src/services/posts'
+
+const DEFAULT_FILTERS = () => ({
+  hideVoted: false,
+  hideReblogs: false,
+  hidePinned: false,
+  hideHidden: true,
+  hideGray: true,
+  hideRewardsFilter: false,
+  hideRewardsAbove: 50,
+  hideRewardsBelow: 0
+})
+
+const STYLE_ALIASES = {
+  preview: 'cards',
+  media: 'cards',
+  full: 'list',
+  compact: 'list',
+  cards: 'cards',
+  list: 'list',
+  table: 'table'
+}
+
+function normalizeStyle (value) {
+  return STYLE_ALIASES[value] || 'cards'
+}
+
 export default {
   name: 'browseContainer',
   props: {
@@ -213,111 +406,159 @@ export default {
   },
   data () {
     return {
-      loading: false,
-      toolbarOpen: this.showToolbar,
-      filtersDialog: false,
-      styleType: this.$route.query.style || 'preview',
-      styleOptions: [
-        { label: 'Full', value: 'full', icon: 'subject' },
-        { label: 'Preview', value: 'preview', icon: 'preview' },
-        { label: 'Media', value: 'media', icon: 'photo_library' },
-        { label: 'Table', value: 'table', icon: 'table_view' }
-      ],
       posts: [],
-      method: this.callMethod || 'bridge.get_ranked_posts',
-      observer: this.$route.query.observer || this.$hiveStore.user.username,
-      limit: this.$route.query.limit || this.responseLimit || 20,
-      sort: this.$route.query.sort || this.sortMethod,
-      start_author: this.$route.query.start_author || this.Pstart_author,
-      start_permlink: this.$route.query.start_permlink || this.Pstart_permlink,
-      page: this.Ppage,
-      account: this.showAccount,
-      name: null,
-      tag: this.$route.query.tag || this.showTag,
-      filteredPosts: [],
+      loading: false,
+      loadingMore: false,
       error: null,
-      filter: {
-        hideVoted: false,
-        hideReblogs: false,
-        hidePinned: false,
-        hideCrossPost: false,
-        hideHidden: true,
-        hideGray: true,
-        hideRewardsFilter: false,
-        hideRewardsAbove: 50,
-        hideRewardsBelow: 0
-      }
+      hasMore: true,
+      limit: Number(this.$route.query.limit) || this.responseLimit || 20,
+      styleType: normalizeStyle(this.$route.query.style),
+      styleOptions: [
+        { label: 'Cards', value: 'cards', icon: 'grid_view' },
+        { label: 'List', value: 'list', icon: 'view_list' },
+        { label: 'Table', value: 'table', icon: 'table_rows' }
+      ],
+      method: this.callMethod || 'bridge.get_ranked_posts',
+      sort: this.sortMethod || 'created',
+      account: this.showAccount || null,
+      tag: this.showTag || null,
+      filter: DEFAULT_FILTERS()
     }
   },
   computed: {
-    loggedInUser: {
-      get () { return this.$hiveStore.user.username }
+    loggedInUser () {
+      return this.$hiveStore.user.username || null
+    },
+    activeFilterCount () {
+      const defaults = DEFAULT_FILTERS()
+      return ['hideVoted', 'hideReblogs', 'hidePinned', 'hideHidden', 'hideGray', 'hideRewardsFilter']
+        .filter(key => this.filter[key] !== defaults[key])
+        .length
+    },
+    hasActiveFilters () {
+      return this.activeFilterCount > 0
+    },
+    filteredPosts () {
+      let list = this.posts
+
+      if (this.filter.hideVoted && this.loggedInUser) {
+        list = list.filter(post => !(post.active_votes || []).some(vote => vote.voter === this.loggedInUser))
+      }
+      if (this.filter.hideReblogs) {
+        list = list.filter(post => !(post.reblogged_by && post.reblogged_by.length))
+      }
+      if (this.filter.hidePinned) {
+        list = list.filter(post => !(post.stats && post.stats.is_pinned))
+      }
+      if (this.filter.hideHidden) {
+        list = list.filter(post => !(post.stats && (post.stats.hidden || post.stats.hide)))
+      }
+      if (this.filter.hideGray) {
+        list = list.filter(post => !(post.stats && post.stats.gray))
+      }
+      if (this.filter.hideRewardsFilter) {
+        const min = Number(this.filter.hideRewardsBelow)
+        const max = Number(this.filter.hideRewardsAbove)
+        if (Number.isFinite(min) && min > 0) {
+          list = list.filter(post => postPayoutValue(post) >= min)
+        }
+        if (Number.isFinite(max) && max > 0) {
+          list = list.filter(post => postPayoutValue(post) <= max)
+        }
+      }
+
+      return list
     }
   },
   watch: {
-    sortMethod: function (newData) {
-      this.sort = newData
-      this.getPosts()
+    callMethod (value) {
+      this.method = value || 'bridge.get_ranked_posts'
+      this.refresh()
     },
-    posts: {
-      deep: true,
-      immediate: false,
-      handler: 'filterPosts'
+    sortMethod (value) {
+      this.sort = value || 'created'
+      this.refresh()
     },
-    filter: {
-      deep: true,
-      immediate: false,
-      handler: 'filterPosts'
-    }
-  },
-  methods: {
-    get () {
-      this.getPosts()
+    showAccount (value) {
+      this.account = value || null
+      this.refresh()
     },
-    async getPosts () {
-      this.loading = true
-      this.posts = []
-      this.error = null
-      var params = { observer: this.observer, limit: this.limit, sort: this.sort, start_author: this.start_author, start_permlink: this.start_permlink }
-      if (this.method === 'bridge.get_account_posts') { params.account = this.account }
-      if (this.method === 'bridge.get_ranked_posts') { params.tag = this.tag }
-      if (this.method === 'bridge.get_community') { params.name = this.name }
-      this.$hive.api.callAsync(this.method, params)
-        .then(response => {
-          if (['bridge.get_account_posts', 'bridge.get_ranked_posts'].includes(this.method)) {
-            this.posts = response
-          }
-          this.loading = false
-        })
-        .catch(err => {
-          this.loading = false
-          this.error = err?.cause?.data || err?.message || 'Failed to load posts'
-        })
+    showTag (value) {
+      this.tag = value || null
+      this.refresh()
     },
-    filterPosts () {
-      if (!Array.isArray(this.posts)) {
-        this.filteredPosts = []
-        return
-      }
-      var fp = this.posts
-      this.filteredPosts = []
-      if (this.filter.hideReblogs) { fp = fp.filter(post => !post.reblogged_by) }
-      if (this.filter.hideVoted) { fp = fp.filter(post => post.active_votes.filter(v => v.voter === this.loggedInUser).length === 0) }
-      // if (this.filter.hideCrossPost) { fp = fp.filter(post => post.json_metadata.includes('"tags":["cross-post"]')) }
-      if (this.filter.hidePinned) { fp = fp.filter(post => !post.stats?.is_pinned) }
-      if (this.filter.hideHidden) { fp = fp.filter(post => !post.stats?.hidden) }
-      if (this.filter.hideGray) { fp = fp.filter(post => !post.stats?.gray) }
-      if (this.filter.hideRewardsFilter) {
-        if (this.filter.hideRewardsBelow !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) > this.filter.hideRewardsBelow) || (parseFloat(post.payout) > this.filter.hideRewardsBelow)) }
-        if (this.filter.hideRewardsAbove !== null) { fp = fp.filter(post => (parseFloat(post.pending_payout_value.split(' ')[0]) < this.filter.hideRewardsAbove) || (parseFloat(post.payout) < this.filter.hideRewardsAbove)) }
-      }
-      this.filteredPosts = fp
+    '$route.query.style' (value) {
+      const style = normalizeStyle(value)
+      if (style !== this.styleType) this.styleType = style
+    },
+    styleType (value) {
+      this.syncStyleQuery(value)
     }
   },
   mounted () {
-    this.getPosts()
-    document.title = 'Browsing ' + this.sortMethod
-    if (this.tag) { document.title = document.title + ' / ' + this.tag }
+    this.getPosts(false)
+  },
+  methods: {
+    async getPosts (append = false) {
+      if (append && (this.loading || this.loadingMore || !this.hasMore)) return
+
+      const last = this.posts[this.posts.length - 1]
+      if (append && !last) return
+
+      if (append) {
+        this.loadingMore = true
+      } else {
+        this.loading = true
+      }
+      this.error = null
+
+      const params = {
+        observer: this.loggedInUser || undefined,
+        limit: this.limit,
+        sort: this.sort,
+        start_author: append ? last.author : undefined,
+        start_permlink: append ? last.permlink : undefined
+      }
+
+      if (this.method === 'bridge.get_account_posts') params.account = this.account
+      if (this.method === 'bridge.get_ranked_posts') params.tag = this.tag || undefined
+
+      try {
+        const response = await this.$hive.api.callAsync(this.method, params)
+        const list = Array.isArray(response) ? response : []
+
+        if (append) {
+          const seen = new Set(this.posts.map(post => post.author + '/' + post.permlink))
+          this.posts = this.posts.concat(list.filter(post => !seen.has(post.author + '/' + post.permlink)))
+        } else {
+          this.posts = list
+        }
+        this.hasMore = list.length >= this.limit
+      } catch (error) {
+        this.error = error?.cause?.data || error?.message || 'Failed to load posts'
+        if (!append) this.posts = []
+      } finally {
+        this.loading = false
+        this.loadingMore = false
+      }
+    },
+    refresh () {
+      this.getPosts(false)
+    },
+    loadMore () {
+      this.getPosts(true)
+    },
+    resetFilters () {
+      this.filter = DEFAULT_FILTERS()
+    },
+    syncStyleQuery (value) {
+      if (this.$route.query.style === value) return
+      const query = { ...this.$route.query, style: value }
+      this.$router.replace({ path: this.$route.path, query }).catch(() => {})
+    },
+    postKey (post) {
+      return (post.post_id || (post.author + '/' + post.permlink)) + '-' + ((post.reblogged_by && post.reblogged_by[0]) || '')
+    }
   }
 }
 </script>
