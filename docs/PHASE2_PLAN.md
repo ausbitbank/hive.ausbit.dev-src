@@ -27,12 +27,12 @@ functionality → performance/aesthetics**, without regressing the revamp.
 
 | ID | Name | Status | Owner | Files |
 |----|------|--------|-------|-------|
-| W1 | Security hardening | pending | security agent | smartlock, communityHeader, safe URL helper, target=_blank, security docs |
+| W1 | Security hardening | in_progress | security agent | smartlock, communityHeader, safe URL helper, target=_blank, security docs |
 | W2 | Mobile/UX/accessibility | pending | ux agent | MainLayout, header/search, accountHeader, carousels, browse toolbar, a11y |
 | W3 | SEO/meta/sitemap | pending | seo agent | index.html, router, pages, meta utility, public/sitemap.xml |
 | W4 | Functionality | pending | feature agent | blocks page, proposal votes, queue persistence, node selection, RC/account fee |
 | W5 | Performance/aesthetics | pending | perf agent | sanitize-html→DOMPurify, moment→dayjs, animations, theme/polish |
-| W6 | Tests/CI | pending | test agent | vitest, unit tests, CI workflow, package scripts |
+| W6 | Tests/CI | in_progress | test agent | vitest, unit tests, CI workflow, package scripts |
 
 ## Integration order
 
