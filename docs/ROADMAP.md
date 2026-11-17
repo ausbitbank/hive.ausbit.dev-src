@@ -7,11 +7,12 @@ It records what is done, what remains, and the design standards already in use.
 
 ## Current state
 
-Current verified baseline: **`05e28c2` on `master`**, pushed to `origin/master`.
+Current verified baseline: **`7b82f97` on `master`**, pushed to `origin/master`.
 Production `hive.ausbit.dev` is deployed from this build. W16 (wallet), W17
 (witnesses, health, nodes), W18 (markets, HBD tools, internal market), W19
-(queue, notifications, SmartLock, login) and W20 (data layer, shared UI,
-legacy page consistency) are complete.
+(queue, notifications, SmartLock, login), W20 (data layer, shared UI, legacy
+page consistency) and W21 (E2E, offline shell, SEO, navigation polish) are
+complete.
 
 Recent completed workstreams:
 
@@ -51,6 +52,9 @@ Recent completed workstreams:
   accounts, global props, witnesses and posts; visibility-aware polling;
   shared page/stat/empty/skeleton/table/filter components; rebuilt HBD,
   stabilizer and tax pages (W20).
+- Quick wins and hardening: Playwright E2E and axe checks in CI, offline
+  shell/manifest/feed, prerendered key routes, keyboard shortcuts,
+  back-to-top, searchable 404, copy/share menus and a full README revamp (W21).
 
 Relevant docs:
 
@@ -68,6 +72,7 @@ Relevant docs:
 - `docs/workstreams/W18-markets.md`
 - `docs/workstreams/W19-queue-login.md`
 - `docs/workstreams/W20-data-layer.md`
+- `docs/workstreams/W21-hardening.md`
 
 ## Priority 1 — wallet page rebuild (complete)
 
@@ -186,22 +191,38 @@ Checks: lint clean, 31 test files / 245 tests passing, build succeeded, zero axe
 violations at 1440px and 390px on the migrated pages, deploy and live smoke
 completed.
 
-## Priority 6 — quick wins and hardening
+## Priority 6 — quick wins and hardening (complete)
 
-- Playwright E2E for login simulation, comment posting, proposal voting, wallet
-  actions, browse filters and queue broadcasting.
-- Axe checks in CI for key routes.
-- PWA/offline shell and queue persistence.
-- SEO: prerender key routes, post/account structured data, RSS feeds.
-- Keyboard shortcuts and focus traps in dialogs.
-- “Back to top” for long pages.
-- Better 404 with search suggestions.
-- Copy/share actions for blocks, transactions, accounts and proposals.
-- README revamp: replace the current short README with an accurate project
-  overview, feature/route tour, screenshots, stack and architecture summary,
-  local setup, dev/lint/test/build commands, deploy/rollback workflow, API and
-  data-source notes, key-authority/security guidance, and links to `ROADMAP.md`
-  and the workstream docs.
+Completed 2026-11-18. See `docs/workstreams/W21-hardening.md`.
+
+- Playwright E2E covers login simulation, comment queueing, proposal voting,
+  wallet transfers, browse filters, queue controls, navigation shortcuts, 404
+  search, back-to-top, share menus and the offline shell.
+- Axe WCAG A/AA checks run in CI for eight key routes at 1440px and 390px.
+- PWA manifest, production-only service worker, offline page, online/offline
+  notices and offline-safe queue failures.
+- Build-generated RSS feed plus optional Chromium prerender of key routes,
+  sitemap/robots updates and existing post/account JSON-LD.
+- Keyboard shortcuts: `Ctrl K` / `/` search, `?` help, `g` navigation sequences.
+- Back-to-top, searchable 404, copy/share actions on blocks, transactions,
+  accounts and proposals.
+- README rewritten with screenshots, feature/route tour, stack, architecture,
+  data layer, commands, E2E/deploy workflow, data sources and key safety.
+
+Checks: lint clean, 31 test files / 245 unit tests passing, 20 Playwright tests
+passing, build and feed/prerender succeeded, zero axe violations at 1440px and
+390px, deploy and live smoke completed.
+
+## Future candidates
+
+- Migrate the remaining small legacy pages (`connections`, `communities`,
+  `trail`, `tip`, `create`, `token`) onto the shared UI primitives.
+- Performance budgets, route-level bundle splitting and images lazy-loading.
+- Authenticated E2E against a disposable test account with mocked signing.
+- Offline data snapshots for selected explorer views.
+- PWA install prompt and update-available flow.
+- More structured data for proposals, blocks and transactions.
+- Search relevance, grouped results and saved searches.
 
 ## Standards already used
 
@@ -220,37 +241,33 @@ completed.
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The current verified baseline is commit
-> `05e28c2` on `master`, pushed to `origin/master`; W16 (wallet), W17
-> (witnesses, health, nodes), W18 (markets, HBD tools, internal market), W19
-> (queue, notifications, SmartLock, login) and W20 (data layer, shared UI,
-> legacy page consistency) are complete, with 31 test files / 245 tests
-> passing, a green build, and production deployed from the same commit.
+> `7b82f97` on `master`, pushed to `origin/master`; W16–W21 are complete, with
+> 31 unit test files / 245 tests passing, 20 Playwright E2E tests passing, a
+> green build, and production deployed from the same commit.
 >
-> Continue with **Priority 6 — quick wins and hardening**.
+> All named priorities are complete. Review the current state and **Future
+> candidates** section, then choose and execute the next follow-up workstream.
+> The recommended first pass is:
 >
-> Deliver:
->
-> 1. Playwright E2E coverage for login simulation, comment posting, proposal
->    voting, wallet actions, browse filters and queue broadcasting.
-> 2. Axe checks in CI for key routes.
-> 3. PWA/offline shell and queue persistence hardening.
-> 4. SEO: prerender key routes, post/account structured data and RSS feeds.
-> 5. Keyboard shortcuts and focus traps in dialogs.
-> 6. “Back to top” for long pages, a better 404 with search suggestions, and
->    copy/share actions for blocks, transactions, accounts and proposals.
-> 7. README revamp: project overview, feature/route tour, screenshots, stack and
->    architecture, local setup, commands, deploy/rollback, API/data sources,
->    key-authority guidance, and links to `ROADMAP.md` and workstream docs.
-> 8. A new `docs/workstreams/W21-hardening.md` workstream record.
+> 1. Migrate the remaining small legacy pages (`connections`, `communities`,
+>    `trail`, `tip`, `create`, `token`) onto the shared UI primitives and
+>    consistent loading/empty/error states.
+> 2. Add performance budgets, route-level bundle splitting and image lazy-loading.
+> 3. Add structured data for proposals, blocks and transactions.
+> 4. Extend the authenticated E2E suite against a disposable test account with
+>    mocked signing.
+> 5. Add an offline data snapshot and PWA update-available flow.
+> 6. Record the work in a new `docs/workstreams/W22-*.md` file.
 >
 > Follow the existing standards: use the design tokens and card patterns, keep
 > one page-level `h1`, preserve correct posting/active queue authorities, sanitize
 > UGC, and use `noopener noreferrer` on external links.
 >
-> After implementation, run `bun run lint`, `bun run test` and `bun run build`,
-> run axe at 1440px and 390px, smoke the key flows, deploy with
-> `./scripts/deploy.sh`, and live-smoke production. Update `docs/workstreams/`
-> and `ROADMAP.md`, report the test count, build/deploy status and backup path,
-> then commit and push the verified work and confirm the working tree is clean.
+> After implementation, run `bun run lint`, `bun run test`, `bun run build` and
+> `bun run test:e2e`, run axe at 1440px and 390px, smoke the key flows, deploy
+> with `./scripts/deploy.sh`, and live-smoke production. Update
+> `docs/workstreams/` and `ROADMAP.md`, report the unit/E2E counts, build/deploy
+> status and backup path, then commit and push the verified work and confirm the
+> working tree is clean.
 >
-> Do not redo W16–W20 except for integration fixes.
+> Do not redo W16–W21 except for integration fixes.
