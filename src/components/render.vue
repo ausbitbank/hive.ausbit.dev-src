@@ -122,26 +122,26 @@ export default {
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
       })
       // The page title is the only h1; post content headings start at h2.
-      const next = safe
+      const normalizeHeadings = html => html
         .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
         .replace(/<\/h1>/gi, '</h2>')
 
       const token = ++this.renderToken
       if (!this.preload) {
-        this.rendered = next
+        this.rendered = normalizeHeadings(safe)
         return
       }
 
       if (!this.rendered) this.loading = true
-      this.preloadImages(safe).then(() => {
+      this.preloadImages(safe).then(dimensions => {
         if (token !== this.renderToken) return
-        this.rendered = next
+        this.rendered = normalizeHeadings(this.applyImageDimensions(safe, dimensions))
         this.loading = false
       })
     },
 
     preloadImages (html) {
-      if (typeof Image === 'undefined') return Promise.resolve()
+      if (typeof Image === 'undefined') return Promise.resolve(new Map())
       const urls = []
       const pattern = /<img\b[^>]*\bsrc=["']([^"']+)["']/gi
       let match = pattern.exec(html)
@@ -149,7 +149,7 @@ export default {
         if (match[1]) urls.push(match[1])
         match = pattern.exec(html)
       }
-      if (!urls.length) return Promise.resolve()
+      if (!urls.length) return Promise.resolve(new Map())
 
       return Promise.all(urls.map(url => new Promise(resolve => {
         const image = new Image()
@@ -158,13 +158,35 @@ export default {
           if (settled) return
           settled = true
           clearTimeout(timer)
-          resolve()
+          resolve({
+            url,
+            width: image.naturalWidth || 0,
+            height: image.naturalHeight || 0
+          })
         }
-        const timer = setTimeout(done, 5000)
+        const timer = setTimeout(done, 10000)
         image.onload = done
         image.onerror = done
         image.src = url
-      })))
+      }))).then(results => {
+        const dimensions = new Map()
+        for (const result of results) {
+          if (result.width > 0 && result.height > 0) dimensions.set(result.url, result)
+        }
+        return dimensions
+      })
+    },
+
+    applyImageDimensions (html, dimensions) {
+      if (!dimensions || dimensions.size === 0) return html
+      return html.replace(/<img\b[^>]*>/gi, tag => {
+        const source = tag.match(/\bsrc=["']([^"']+)["']/i)
+        const size = source && dimensions.get(source[1])
+        if (!size || /\bwidth=["']?\d/i.test(tag)) return tag
+        const close = tag.endsWith('/>') ? '/>' : '>'
+        return tag.slice(0, tag.length - close.length) +
+          ' width="' + size.width + '" height="' + size.height + '"' + close
+      })
     },
 
     isAllowedEmbed (src) {
