@@ -31,6 +31,7 @@ Wallet:
 | `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
 | `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens and transfers |
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
+| `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics and saved searches |

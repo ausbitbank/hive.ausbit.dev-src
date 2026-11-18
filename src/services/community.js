@@ -141,6 +141,129 @@ export function communityInsights (posts, options = {}) {
   }
 }
 
+// -- Profile community directory ---------------------------------------------
+//
+// The profile "communities" view shows one card per subscription plus a feed
+// merged from the communities the account belongs to. Both are pure views of
+// the bridge responses so they can be unit-tested without a node.
+
+const ROLE_WEIGHT = { owner: 4, admin: 3, mod: 2, member: 1, guest: 0 }
+
+export function communityRoleWeight (role) {
+  return ROLE_WEIGHT[String(role || '').toLowerCase()] ?? 0
+}
+
+function cleanText (value) {
+  if (typeof value !== 'string') return ''
+  return value
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[#*_>`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Merge subscription rows with community records into display cards. Official
+ * roles sort first so the communities an account runs come before ones it
+ * merely follows; ties fall back to subscriber count and then name.
+ */
+export function buildCommunityCards (subscriptions, infoByName = {}, options = {}) {
+  const rows = Array.isArray(subscriptions) ? subscriptions : []
+  const info = infoByName && typeof infoByName === 'object' ? infoByName : {}
+  const limit = Number(options.aboutLength) || 200
+
+  return rows
+    .map(row => {
+      const name = row?.name
+      if (!name) return null
+      const record = info[name] || null
+      const role = String(row.role || '').toLowerCase()
+      const roleLabel = row.guestTitle && role === 'guest'
+        ? row.guestTitle
+        : (role ? role.charAt(0).toUpperCase() + role.slice(1) : '')
+      return {
+        name,
+        title: cleanText(record?.title) || row.title || name,
+        about: cleanText(record?.about).slice(0, limit),
+        role,
+        roleLabel,
+        weight: communityRoleWeight(role),
+        subscribers: numberFrom(record?.subscribers),
+        authors: numberFrom(record?.num_authors),
+        pendingRewards: numberFrom(record?.sum_pending),
+        weeklyInteractions: numberFrom(record?.num_pending),
+        nsfw: Boolean(record?.is_nsfw || record?.settings?.nsfw),
+        restricted: Boolean(record?.settings?.restricted || record?.settings?.posting_restricted),
+        known: Boolean(record),
+        link: '/c/' + name + '/trending'
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) =>
+      b.weight - a.weight ||
+      b.subscribers - a.subscribers ||
+      a.title.localeCompare(b.title, 'en', { sensitivity: 'base' })
+    )
+    .map((card, index) => ({ ...card, order: index }))
+}
+
+/**
+ * Merge per-community ranked feeds into one "my communities" timeline.
+ *
+ * Posts are grouped by community so one busy tag cannot fill the whole page,
+ * then taken round-robin in each community's own sort order. Every community
+ * contributes its pinned post first, and links to the community that provided
+ * the post even when `get_ranked_posts` omits `community`.
+ */
+export function mergeCommunityFeeds (feeds, options = {}) {
+  const limit = Math.max(1, Number(options.limit) || 30)
+  const seen = new Set()
+  const pinned = []
+  const grouped = []
+
+  for (const feed of Array.isArray(feeds) ? feeds : []) {
+    const name = feed?.name
+    if (!name) continue
+    const posts = []
+    for (const post of Array.isArray(feed.posts) ? feed.posts : []) {
+      if (!post?.author || !post?.permlink) continue
+      const postKey = post.author + '/' + post.permlink
+      if (seen.has(postKey)) continue
+      seen.add(postKey)
+      const entry = {
+        ...post,
+        community: post.community || name,
+        community_title: post.community_title || feed.title || name
+      }
+      if (post?.stats?.is_pinned) {
+        pinned.push(entry)
+      } else {
+        posts.push(entry)
+      }
+    }
+    if (posts.length) grouped.push(posts)
+  }
+
+  const merged = []
+  let index = 0
+  while (merged.length < limit) {
+    let added = false
+    for (const posts of grouped) {
+      if (index < posts.length) {
+        merged.push(posts[index])
+        added = true
+        if (merged.length >= limit) break
+      }
+    }
+    if (!added) break
+    index += 1
+  }
+
+  return [...pinned, ...merged].slice(0, limit)
+}
+
 export async function fetchCommunityInsightData (name, options = {}) {
   if (!name) return { posts: [], mutedPosts: [], pages: 0, truncated: false }
 

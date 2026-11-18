@@ -416,6 +416,11 @@ export function apiListCommunities (params, options = {}) {
   return bridgeRequest('list_communities', params, options)
 }
 
+/** Communities an account subscribed to (`[name, title, role, guestTitle]` rows). */
+export function apiListAllSubscriptions (params, options = {}) {
+  return bridgeRequest('list_all_subscriptions', params, options)
+}
+
 export function apiBlockHeader (blockNum, options = {}) {
   return rpcRequest('condenser_api.get_block_header', [Number(blockNum)], options)
 }

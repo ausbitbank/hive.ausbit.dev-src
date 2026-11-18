@@ -11,6 +11,7 @@ import {
   apiGetTicker,
   apiGetWitnessByAccount,
   apiGetWitnessesByVote,
+  apiListAllSubscriptions,
   apiListCommunities,
   apiLookupAccounts,
   apiRankedPosts,
@@ -28,6 +29,8 @@ export const CACHE_TTL = {
   median: 15000,
   searchAccounts: 120000,
   searchCommunities: 120000,
+  communities: 300000,
+  subscriptions: 60000,
   searchPosts: 60000,
   blockHeader: 600000
 }
@@ -167,6 +170,82 @@ export function fetchCommunity (name, observer = null, { force = false } = {}) {
   })
 }
 
+/**
+ * Communities an account subscribed to. Hivemind returns short rows:
+ * `[name, title, role, guestTitle]`. Malformed rows degrade to an empty list.
+ */
+export function fetchAccountSubscriptions (account, { force = false } = {}) {
+  if (!account) return Promise.resolve([])
+  return loadCached('subscriptions:' + account, async () => {
+    const rows = await apiListAllSubscriptions({ account })
+    if (!Array.isArray(rows)) return []
+    return rows
+      .filter(row => Array.isArray(row) && typeof row[0] === 'string')
+      .map(row => ({
+        name: row[0],
+        title: typeof row[1] === 'string' && row[1].trim() ? row[1].trim() : row[0],
+        role: typeof row[2] === 'string' ? row[2] : '',
+        guestTitle: typeof row[3] === 'string' ? row[3] : ''
+      }))
+  }, {
+    ttl: CACHE_TTL.subscriptions,
+    force
+  })
+}
+
+/**
+ * Community records from `bridge.list_communities`, keyed by name.
+ * `list_communities` has no multi-id lookup, so the ranked pages are walked
+ * for communities in good standing; ids that never appear (long-tail or
+ * unlisted communities) are then searched by title via `titleFor`. Anything
+ * still missing is simply absent from the result map.
+ */
+export function fetchCommunityInfoBatch (names, { force = false, limit = 40, titleFor = null } = {}) {
+  const unique = [...new Set((Array.isArray(names) ? names : []).filter(name => typeof name === 'string' && name))]
+  if (unique.length === 0) return Promise.resolve({})
+
+  const pageSize = Math.max(1, Number(limit) || 40)
+  const maxPages = 10
+
+  return loadCached('communities:batch:' + unique.slice().sort().join(','), async () => {
+    const found = {}
+
+    // Ranked pages cover the popular communities cheaply.
+    let last = ''
+    for (let page = 0; page < maxPages; page++) {
+      const batch = await apiListCommunities({ last, limit: pageSize, query: null, sort: 'rank' })
+      if (!Array.isArray(batch) || batch.length === 0) break
+      for (const community of batch) {
+        if (community?.name) found[community.name] = community
+      }
+      if (Object.keys(found).length >= unique.length) break
+      const next = batch[batch.length - 1]?.name
+      if (!next || next === last) break
+      last = next
+    }
+
+    // Smaller communities are not ranked high enough to reach; look them up
+    // one by one using the subscription title as the search needle.
+    const missing = unique.filter(name => !found[name])
+    for (const name of missing) {
+      const needle = typeof titleFor === 'function' ? titleFor(name) : name
+      if (!needle) continue
+      try {
+        const matches = await apiListCommunities({ last: '', limit: 5, query: needle, sort: 'subs' })
+        const match = Array.isArray(matches) ? matches.find(community => community?.name === name) : null
+        if (match) found[name] = match
+      } catch {
+        // A failed lookup only costs that card its stats.
+      }
+    }
+
+    return found
+  }, {
+    ttl: CACHE_TTL.communities,
+    force
+  }).then(map => map || {})
+}
+
 export function invalidateAccountCache (name = null) {
   return invalidateCache(name ? accountKey(name) : 'account:')
 }
@@ -184,7 +263,8 @@ export function invalidatePostCache () {
 }
 
 export function invalidateCommunityCache (name = null) {
-  return invalidateCache(name ? 'community:' + name : 'community:')
+  const removed = invalidateCache(name ? 'community:' + name : 'community:')
+  return removed + invalidateCache('communities:') + invalidateCache('subscriptions:')
 }
 
 export function invalidateFollowCountCache (account = null) {
