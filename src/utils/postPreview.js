@@ -45,11 +45,13 @@ function metadataFor (post) {
 
 /**
  * Card images are thumbnails, not full-size media. Cloudinary URLs can be
- * resized at the edge; the same post image often drops from hundreds of KB to
- * tens of KB without touching the article page.
+ * resized at the edge; YouTube thumbnails can move from maxresdefault (often
+ * 200 KB+) to hqdefault (~20 KB) without touching the article page.
  */
 export function previewImageUrl (url, width = 480) {
   if (typeof url !== 'string' || !url) return ''
+  const youtube = url.match(/^(https?:\/\/i\.ytimg\.com\/vi\/[\w-]+\/)(?:maxresdefault|sddefault|hqdefault|mqdefault)(\.[a-z]+)$/i)
+  if (youtube) return youtube[1] + 'hqdefault' + youtube[2]
   const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/i)
   if (!match) return url
   const rest = match[2]

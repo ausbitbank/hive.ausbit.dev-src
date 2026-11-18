@@ -101,6 +101,12 @@
         </q-card>
       </section>
 
+      <witness-analytics
+        :witnesses="witnessRows"
+        :global-props="globalProps"
+        :hardfork-version="hardforkVersion"
+      />
+
       <section class="net-section" aria-labelledby="witness-calculator-title">
         <div class="net-section__head">
           <div>
@@ -220,6 +226,7 @@ import WitnessHeader from 'components/witness/WitnessHeader.vue'
 import WitnessFilters from 'components/witness/WitnessFilters.vue'
 import WitnessRow from 'components/witness/WitnessRow.vue'
 import WitnessVoteCalculator from 'components/witness/WitnessVoteCalculator.vue'
+import WitnessAnalytics from 'components/witness/WitnessAnalytics.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchWitnessByAccount, fetchWitnessesByVote } from 'src/services/chainData'
 import {
@@ -242,7 +249,8 @@ export default {
     WitnessHeader,
     WitnessFilters,
     WitnessRow,
-    WitnessVoteCalculator
+    WitnessVoteCalculator,
+    WitnessAnalytics
   },
   data () {
     const query = this.$route?.query || {}

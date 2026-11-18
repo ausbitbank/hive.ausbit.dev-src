@@ -18,6 +18,7 @@ const routes = [
       { path: '@:username', name: 'account', component: () => import('pages/account.vue') },
       { path: '@:username/wallet/:token', name: 'wallet-token', component: () => import('pages/token.vue') },
       { path: '@:username/wallet', name: 'wallet', component: () => import('pages/wallet.vue') },
+      { path: '@:username/delegations', name: 'account-delegations', component: () => import('pages/delegations.vue') },
       { path: '@:username/transfers', name: 'wallet-transfers', component: () => import('pages/wallet.vue') },
       { path: 'account/@:username', name: 'account-alias', component: () => import('pages/account.vue') },
       { path: '@:account/trail', name: 'trail', component: () => import('pages/trail.vue') },

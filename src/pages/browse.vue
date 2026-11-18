@@ -43,6 +43,12 @@
         </router-link>
       </nav>
 
+      <community-insights
+        v-if="isCommunity"
+        :community-name="communityName"
+        :community-info="communityInfo"
+      />
+
       <browse-container
         :callMethod="callMethod"
         :sortMethod="section"
@@ -141,6 +147,7 @@
 import { defineAsyncComponent } from 'vue'
 import browseContainer from 'components/browseContainer.vue'
 import accountHeader from 'components/accountHeader.vue'
+import CommunityInsights from 'components/community/CommunityInsights.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const SORT_LABELS = {
@@ -184,6 +191,7 @@ export default {
   components: {
     browseContainer,
     accountHeader,
+    CommunityInsights,
     communityHeader: defineAsyncComponent(() => import('components/communityHeader.vue'))
   },
   data () {

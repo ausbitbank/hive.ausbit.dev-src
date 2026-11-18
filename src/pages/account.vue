@@ -22,6 +22,7 @@
                 <share-menu :title="'@' + account.name + ' on hive.ausbit.dev'" :path="'/@' + account.name" />
                 <nav class="account-quick-links" aria-label="Account quick links">
                   <router-link :to="linkWallet(username)">Wallet</router-link>
+                  <router-link :to="'/@' + username + '/delegations'">Delegations</router-link>
                   <router-link :to="linkBlog(username)">Blog</router-link>
                   <router-link :to="linkPosts(username)">Posts</router-link>
                   <router-link :to="linkComments(username)">Comments</router-link>
@@ -176,6 +177,8 @@
             </q-card>
 
             <account-authorities :account="account" :witness="witness" class="account-card" v-on:authEdited="$hiveStore.getAccount(username, { force: true })" />
+
+            <authority-risk-card :account="account" :witness="witness" class="account-card" />
 
             <q-card flat bordered class="account-card" v-if="witness">
               <q-card-section>
@@ -507,6 +510,7 @@ import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
 import accountAuthorities from 'components/accountAuthorities.vue'
+import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 import rc from 'components/rc.vue'
@@ -525,6 +529,7 @@ export default {
     accountHeader,
     rc,
     accountAuthorities,
+    AuthorityRiskCard,
     withdrawRoutes,
     ShareMenu
     // recentVotedPostsCarousel

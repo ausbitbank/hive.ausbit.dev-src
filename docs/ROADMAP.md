@@ -7,9 +7,9 @@ This is the active roadmap. Completed work is recorded in
 
 ## Current state
 
-The explorer is feature-complete through W24, with W27 UI polish and W22
-performance work delivered early and W23 resilience and W24 runtime polish
-layered on top.
+The explorer is feature-complete through W25, with W27 UI polish and W22
+performance work delivered early and W23 resilience, W24 runtime polish and
+W25 governance intelligence layered on top.
 
 - Verified W16–W21 baseline: `7b82f97`.
 - W27 UI polish: `docs/workstreams/W27-ui-polish.md`.
@@ -18,14 +18,16 @@ layered on top.
 - W23 network and data resilience:
   `docs/workstreams/W23-network-resilience.md`.
 - W24 runtime polish and startup: `docs/workstreams/W24-runtime-polish.md`.
+- W25 governance and community intelligence:
+  `docs/workstreams/W25-governance-intelligence.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 39 unit-test files / 287 tests, 32 Playwright E2E tests, green build.
+- 46 unit-test files / 330 tests, 40 Playwright E2E tests, green build.
 - Performance dashboard: `docs/performance/README.md`.
-- Production is deployed from the W27b build with the nginx header/metadata policy.
+- Production is deployed from the W25 build with the nginx header/metadata policy.
 
-The next phase is W25 — governance and community intelligence. Discovery and
-content creation remain planned on top of the measured, resilient foundation.
+The next phase is W26 — drafts and creator workflow. Search and discovery remain
+planned on top of the measured, resilient foundation.
 
 ## Vision
 
@@ -119,16 +121,22 @@ and safer to extend.
 
 ### W25 — Governance and community intelligence
 
-- Witness analytics: vote concentration, missed-block trends, feed history,
-  version drift and per-witness voter segments.
-- Proposal analytics: funding history, voter overlap, return-proposal threshold
-  and category/creator breakdowns.
-- Delegation explorer: inbound/outbound delegations, effective HP and historical
-  changes.
-- Community insight pages: activity, subscribers, top authors, moderation
-  signals and growth trends.
-- Account authority risk: key age, proxy usage, multisig-style authority
-  warnings and readable permission diffs before updates.
+**Status: complete (2026-11-18).** See
+`docs/workstreams/W25-governance-intelligence.md`.
+
+- Witness analytics: approval-stake concentration, top-21/top-50 share, HHI and
+  Gini, feed freshness, version drift, missed-block leaders, a local trend
+  column and on-demand voter segments by HP and account age.
+- Proposal analytics: committed daily funding, 30/90-day projections, estimated
+  paid-to-date, monthly outlook, top creators, receivers and inferred topics;
+  voter overlap against the return proposal on proposal detail.
+- Delegation explorer: outbound and inbound delegations, effective HP, share of
+  owned/effective stake and a recent delegation change timeline.
+- Community insight pages: subscribers, active authors, posting cadence, pending
+  payouts, top recent authors, reward concentration and moderation signals.
+- Account authority risk: key reuse, shared authority, single-key control,
+  proxy and governance-vote expiry signals, owner-key age and readable diffs
+  for queued permission changes.
 
 ## Track 3 — Content creation
 
@@ -193,15 +201,15 @@ evidence.
 | Delivered early | W27, W22 | UI polish complete; measured speed, dashboard and hard-reload fix complete |
 | 1 | W23 | Network and data resilience — complete |
 | 2 | W24 | Stable startup, updates and offline behaviour — complete |
-| 3 | W25 | Deep governance and community intelligence |
+| 3 | W25 | Deep governance and community intelligence — complete |
 | 4 | W26 | Creator workflow on top of the reliable platform |
 | 5 | W28 | Search and discovery, last by request |
 
-Tracks may overlap only when they share a dependency. W27, W22, W23 and W24
-were pulled forward and landed first; the next workstream is W25. Performance
-and reliability land before feature work that would otherwise make the bundle
-or network layer harder to reason about. UI polish remains a continuous layer,
-with W27 as the formal audit and cleanup pass.
+Tracks may overlap only when they share a dependency. W27, W22, W23, W24 and
+W25 were pulled forward and landed first; the next workstream is W26.
+Performance and reliability land before feature work that would otherwise make
+the bundle or network layer harder to reason about. UI polish remains a
+continuous layer, with W27 as the formal audit and cleanup pass.
 
 ## Definition of done
 
@@ -232,17 +240,17 @@ Every workstream must include:
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
-> W27 UI polish, W22 performance, W23 resilience and W24 runtime polish were
-> delivered on top of it. W16–W24 are complete, with 38 unit-test files / 280
-> tests and 32 Playwright E2E tests passing. Production is deployed from the
-> W24 build.
+> W27 UI polish, W22 performance, W23 resilience, W24 runtime polish and W25
+> governance intelligence were delivered on top of it. W16–W25 are complete,
+> with 46 unit-test files / 330 tests and 40 Playwright E2E tests passing.
+> Production is deployed from the W25 build.
 >
-> Start **Track 2 — W25: Governance and community intelligence**. Do not start
-> W26 or W28 yet; W28 search stays last.
+> Start **Track 3 — W26: Drafts and creator workflow**. Do not start W28 yet;
+> W28 search stays last.
 >
-> Add witness analytics, proposal analytics, a delegation explorer, community
-> insight pages and account authority risk views on top of the measured,
-> resilient platform.
+> Add local drafts with autosave/restore, richer markdown editing, cross-posting
+> and community selection, a publish checklist and JSON draft export/import on
+> top of the measured, resilient platform.
 >
 > Follow the standards in this roadmap: design tokens, one page-level `h1`,
 > posting/active authority correctness, sanitized UGC and `noopener noreferrer`.

@@ -345,6 +345,8 @@
                 </template>
               </q-card-section>
             </q-card>
+
+            <voter-overlap-card :proposal-id="Number(proposal.id)" :votes="votes" />
           </aside>
         </div>
       </template>
@@ -376,10 +378,11 @@ import {
   formatHp
 } from 'src/services/proposals'
 import ShareMenu from 'components/ui/ShareMenu.vue'
+import VoterOverlapCard from 'components/proposal/VoterOverlapCard.vue'
 
 export default {
   name: 'ProposalDetail',
-  components: { render, ShareMenu },
+  components: { render, ShareMenu, VoterOverlapCard },
   data () {
     return {
       proposalId: null,

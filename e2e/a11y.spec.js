@@ -13,6 +13,8 @@ const ROUTES = [
   '/markets',
   '/@ausbitbank',
   '/@ausbitbank/wallet',
+  '/@ausbitbank/delegations',
+  '/c/hive-174578',
   POST_ROUTE
 ]
 

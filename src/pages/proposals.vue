@@ -192,12 +192,20 @@
           </div>
         </section>
       </template>
+
+      <proposal-analytics
+        v-if="!loading && !loadError && proposals.length"
+        :proposals="proposals"
+        :global-props="globalProps"
+        :return-votes="returnProposalVotes"
+      />
     </div>
   </q-page>
 </template>
 
 <script>
 import ProposalCard from 'components/proposal.vue'
+import ProposalAnalytics from 'components/proposal/ProposalAnalytics.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import {
   listProposals,
@@ -217,7 +225,7 @@ const VALID_SORTS = ['votes', 'daily', 'newest', 'ending']
 
 export default {
   name: 'Proposals',
-  components: { ProposalCard },
+  components: { ProposalCard, ProposalAnalytics },
   data () {
     const query = this.$route?.query || {}
     return {

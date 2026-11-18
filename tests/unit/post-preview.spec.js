@@ -42,6 +42,14 @@ describe('postImage', () => {
       })
     })).toBe('https://res.cloudinary.com/demo/image/upload/w_320,q_auto/v1234/photo.jpg')
   })
+
+  it('requests the compact YouTube thumbnail for card images', () => {
+    expect(postImage({
+      json_metadata: JSON.stringify({
+        image: 'https://i.ytimg.com/vi/4mvf4Bguquo/maxresdefault.jpg'
+      })
+    })).toBe('https://i.ytimg.com/vi/4mvf4Bguquo/hqdefault.jpg')
+  })
 })
 
 describe('postSummary', () => {

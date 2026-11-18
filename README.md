@@ -28,12 +28,14 @@ Wallet:
 | --- | --- |
 | `/` | Live block card, prices, top witnesses, trending posts and recent author posts |
 | `/blocks`, `/b/:blockNum`, `/tx/:txId` | Latest blocks, block detail with grouped operations, transaction detail and raw JSON |
-| `/@:username` | Account overview, activity filters, authorities, delegations, rewards and profile links |
+| `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
 | `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens and transfers |
+| `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |
-| `/witnesses`, `/witness` | Witness directory, health warnings, voting, proxies, vote-weight calculator and witness settings |
-| `/proposals`, `/proposals/:id` | DHF proposals, funding status, votes and voting |
+| `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
+| `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |
+| `/proposals`, `/proposals/:id` | DHF proposals, funding status, votes, funding outlook, creator/receiver/topic mix and voter overlap |
 | `/health`, `/nodes` | Network health, witness participation, HBD backing and API node latency/failover |
 | `/market` | Hive internal market: order book, trades, open orders, balances, fees and limit orders |
 | `/markets` | External charts, HBD peg/premium, savings APR and HIVE/HBD conversion calculator |
