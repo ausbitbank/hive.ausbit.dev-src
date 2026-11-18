@@ -2,9 +2,7 @@ import { LocalStorage, SessionStorage } from 'quasar'
 import { normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
 
 export const DEFAULT_SETTINGS = {
-  darkBackground: true,
   voteWeightPost: 100,
-  voteWeightComment: 100,
   beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
   apiNode: 'https://api.hive.blog',
   ahNode: 'https://api.hive.blog',
