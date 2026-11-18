@@ -453,12 +453,24 @@ export default {
       if (!cancel) {
         if (notActive) {
           console.error('Please allow Keychain to access this website')
-        } else if (notInstalled) { // alert('Please install Keychain')
-          console.error('Keychain not available')
+        } else if (notInstalled) {
+          this.openKeychainInstallPage()
         } else {
           console.info(msg)
         }
       }
+    },
+    openKeychainInstallPage () {
+      const installUrl = 'https://hive-keychain.com/'
+      const openInstallPage = () => window.open(installUrl, '_blank', 'noopener,noreferrer')
+      openInstallPage()
+      this.$q.notify({
+        type: 'info',
+        message: 'Hive Keychain is not installed. Install the extension, then try again.',
+        position: 'top',
+        timeout: 8000,
+        actions: [{ label: 'Open install page', color: 'white', handler: openInstallPage }]
+      })
     },
     linkBlog (username) { return '/@' + username + '/blog' },
     linkPosts (username) { return '/@' + username + '/posts' },
