@@ -29,8 +29,8 @@ Status: complete
 
 - Visible page heading and subtitle for global, account, community and tag
   contexts.
-- Global sort navigation as link chips: Trending, New, Hot, Promoted, Top
-  payout, Top comments and Muted.
+- Global sort navigation as link chips: Trending, New, Hot, Top payout,
+  Top comments and Muted.
 - Active sort state and tag context with a clear-tag action.
 - Sort links preserve the selected layout (`?style=cards|list|table`).
 - One `h1` on every page: visible on global pages, account name on profiles,

@@ -167,8 +167,7 @@ export default {
         { name: 'tags', label: 'Tags', field: row => (row.json_metadata && Array.isArray(row.json_metadata.tags) ? row.json_metadata.tags.join(', ') : ''), required: false, sortable: false, align: 'left' },
         { name: 'pending_payout_value', label: 'Pending Payout', field: 'pending_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' },
         { name: 'author_payout_value', label: 'Author Payout', field: 'author_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' },
-        { name: 'curator_payout_value', label: 'Curator Payout', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' },
-        { name: 'promoted', label: 'Promotion Value', field: 'promoted', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' }
+        { name: 'curator_payout_value', label: 'Curator Payout', field: 'curator_payout_value', required: false, sortable: true, sort: (a, b) => parseFloat(a) - parseFloat(b), align: 'left' }
       ],
       postTableColumnsVisible: [...DEFAULT_VISIBLE_COLUMNS],
       postTablePagination: { rowsPerPage: 0 }

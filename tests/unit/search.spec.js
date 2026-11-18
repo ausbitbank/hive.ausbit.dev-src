@@ -43,6 +43,7 @@ describe('search route parser', () => {
   it('rejects empty and unsupported input', () => {
     expect(parseSearchRoute('')).toBe(null)
     expect(parseSearchRoute('https://example.com/thing')).toBe(null)
+    expect(parseSearchRoute('https://hive.ausbit.dev/promoted/photography')).toBe(null)
     expect(parseSearchRoute('//example.com')).toBe(null)
     expect(parseSearchRoute('not a real search query!!')).toBe(null)
   })

@@ -1,3 +1,14 @@
+function redirectDiscontinuedSort (to) {
+  if (String(to.params.sortMethod || '').toLowerCase() !== 'promoted') return true
+  if (to.name === 'community-sorted') {
+    return { name: 'community', params: { username: to.params.username }, query: to.query }
+  }
+  if (to.params.tag) {
+    return { name: 'trending', params: { tag: to.params.tag }, query: to.query }
+  }
+  return { name: 'browse', query: to.query }
+}
+
 const routes = [
   {
     path: '/',
@@ -33,11 +44,10 @@ const routes = [
       { path: 'hbd', name: 'hbd', component: () => import('pages/hbd.vue') },
       { path: 'health', name: 'health', component: () => import('pages/health.vue') },
       { path: 'browse', name: 'browse', component: () => import('pages/browse.vue') },
-      { path: 'browse/:sortMethod/:tag?', name: 'browse-sorted', component: () => import('pages/browse.vue') },
+      { path: 'browse/:sortMethod/:tag?', name: 'browse-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'trending/:tag?', name: 'trending', component: () => import('pages/browse.vue'), props: { defaultSort: 'trending' } },
       { path: 'created/:tag?', name: 'created', component: () => import('pages/browse.vue'), props: { defaultSort: 'created' } },
       { path: 'hot/:tag?', name: 'hot', component: () => import('pages/browse.vue'), props: { defaultSort: 'hot' } },
-      { path: 'promoted/:tag?', name: 'promoted', component: () => import('pages/browse.vue'), props: { defaultSort: 'promoted' } },
       { path: 'payout/:tag?', name: 'payout', component: () => import('pages/browse.vue'), props: { defaultSort: 'payout' } },
       { path: 'payout_comments/:tag?', name: 'payout-comments', component: () => import('pages/browse.vue'), props: { defaultSort: 'payout_comments' } },
       { path: 'muted/:tag?', name: 'muted', component: () => import('pages/browse.vue'), props: { defaultSort: 'muted' } },
@@ -48,7 +58,7 @@ const routes = [
       { path: 'tax', name: 'tax', component: () => import('pages/tax.vue') },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
-      { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue') },
+      { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'c/:username', name: 'community', component: () => import('pages/browse.vue') }
     ]
   },

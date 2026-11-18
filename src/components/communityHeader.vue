@@ -39,7 +39,6 @@
           <q-route-tab name="created" label="created" :to="'/c/' + account.name + '/created'"/>
           <q-route-tab name="trending" label="trending" :to="'/c/' + account.name + '/trending'"/>
           <q-route-tab name="hot" label="hot" :to="'/c/' + account.name + '/hot'"/>
-          <q-route-tab name="promoted" label="promoted" :to="'/c/' + account.name + '/promoted'"/>
           <q-route-tab name="payout" label="payout" :to="'/c/' + account.name + '/payout'"/>
           <q-route-tab name="payout_comments" label="comments" :to="'/c/' + account.name + '/payout_comments'"/>
           <q-space />

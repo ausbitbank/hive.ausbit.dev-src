@@ -12,7 +12,7 @@ const FILTER_TYPES = {
   votes: ['vote', 'unvote'],
   replies: ['reply'],
   mentions: ['mention'],
-  other: ['follow', 'reblog', 'transfer', 'promoted', 'unfollow']
+  other: ['follow', 'reblog', 'transfer', 'unfollow']
 }
 
 export function plainNotificationMessage (value, max = 160) {
@@ -52,8 +52,7 @@ export function notificationTypeLabel (notification) {
     mention: 'Mention',
     follow: 'Follow',
     reblog: 'Reblog',
-    transfer: 'Transfer',
-    promoted: 'Promotion'
+    transfer: 'Transfer'
   }
   return known[type] || type.replace(/_/g, ' ')
 }

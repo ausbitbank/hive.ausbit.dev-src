@@ -5,7 +5,7 @@ const ACCOUNT_SUBPAGES = [
   'wallet', 'posts', 'blog', 'feed', 'replies', 'comments', 'communities',
   'followers', 'following', 'tip', 'transfers', 'trail'
 ]
-const SORT_ROUTES = ['trending', 'created', 'hot', 'promoted', 'payout', 'payout_comments', 'muted']
+const SORT_ROUTES = ['trending', 'created', 'hot', 'payout', 'payout_comments', 'muted']
 
 function isValidAccount (name) {
   if (!name) return false

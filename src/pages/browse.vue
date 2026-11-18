@@ -147,7 +147,6 @@ const SORT_LABELS = {
   trending: 'Trending',
   created: 'New',
   hot: 'Hot',
-  promoted: 'Promoted',
   payout: 'Top payout',
   payout_comments: 'Top payout comments',
   muted: 'Muted',
@@ -166,13 +165,12 @@ const PROFILE_SUBTITLES = {
   comments: 'Latest comments @{account} has written.'
 }
 
-const STANDARD_SORTS = new Set(['trending', 'created', 'hot', 'promoted', 'muted'])
+const STANDARD_SORTS = new Set(['trending', 'created', 'hot', 'muted'])
 
 const SORT_OPTIONS = [
   { route: 'trending', label: 'Trending', icon: 'trending_up' },
   { route: 'created', label: 'New', icon: 'schedule' },
   { route: 'hot', label: 'Hot', icon: 'local_fire_department' },
-  { route: 'promoted', label: 'Promoted', icon: 'campaign' },
   { route: 'payout', label: 'Top payout', icon: 'payments' },
   { route: 'payout_comments', label: 'Top comments', icon: 'forum' },
   { route: 'muted', label: 'Muted', icon: 'volume_off' }
