@@ -181,7 +181,8 @@ export default {
       reachedEnd: false,
       markQueued: false,
       limit: 20,
-      pollTimer: null
+      pollTimer: null,
+      initialRefreshHandle: null
     }
   },
   computed: {
@@ -220,9 +221,9 @@ export default {
       if (value === previous) return
       this.resetInbox()
       if (value) {
-        this.startPolling()
-        this.refreshUnreadCount()
+        this.scheduleInitialRefresh()
       } else {
+        this.cancelInitialRefresh()
         this.stopPolling()
       }
     },
@@ -230,13 +231,41 @@ export default {
       if (value === 0) this.markQueued = false
     }
   },
-  mounted () {
-    if (this.loggedInUser) {
+  scheduleInitialRefresh () {
+    if (typeof window === 'undefined') {
+      if (this.loggedInUser) {
+        this.startPolling()
+        this.refreshUnreadCount()
+      }
+      return
+    }
+    if (this.initialRefreshHandle) return
+    const run = () => {
+      this.initialRefreshHandle = null
+      if (!this.loggedInUser) return
       this.startPolling()
       this.refreshUnreadCount()
     }
+    if (typeof window.requestIdleCallback === 'function') {
+      this.initialRefreshHandle = window.requestIdleCallback(run, { timeout: 2500 })
+    } else {
+      this.initialRefreshHandle = window.setTimeout(run, 1200)
+    }
+  },
+  cancelInitialRefresh () {
+    if (!this.initialRefreshHandle) return
+    if (typeof window !== 'undefined' && typeof window.cancelIdleCallback === 'function') {
+      window.cancelIdleCallback(this.initialRefreshHandle)
+    } else {
+      clearTimeout(this.initialRefreshHandle)
+    }
+    this.initialRefreshHandle = null
+  },
+  mounted () {
+    if (this.loggedInUser) this.scheduleInitialRefresh()
   },
   beforeUnmount () {
+    this.cancelInitialRefresh()
     this.stopPolling()
   },
   methods: {

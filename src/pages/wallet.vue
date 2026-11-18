@@ -209,10 +209,19 @@
       </q-dialog>
     </template>
 
-    <div v-else class="wallet-loading" aria-label="Loading wallet">
-      <q-skeleton type="rect" height="150px" />
-      <q-skeleton type="rect" height="120px" class="q-mt-md" />
-      <q-skeleton type="rect" height="320px" class="q-mt-md" />
+    <div v-else class="wallet-loading" aria-label="Loading wallet" role="status" aria-busy="true">
+      <div class="wallet-loading__header">
+        <q-skeleton type="circle" size="72px" />
+        <div class="wallet-loading__header-text">
+          <q-skeleton type="text" width="180px" />
+          <q-skeleton type="text" width="280px" />
+        </div>
+      </div>
+      <q-skeleton type="rect" height="150px" class="wallet-loading__portfolio" />
+      <div class="wallet-loading__grid">
+        <q-skeleton v-for="i in 5" :key="i" type="rect" height="176px" />
+      </div>
+      <q-skeleton type="rect" height="240px" class="wallet-loading__activity" />
     </div>
   </q-page>
 </template>
@@ -277,10 +286,62 @@
 }
 
 .wallet-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   width: 100%;
   max-width: 1280px;
+  min-height: 78vh;
   margin: 0 auto;
   padding: var(--space-4);
+}
+
+.wallet-loading__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 112px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.wallet-loading__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-loading__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.wallet-loading__activity {
+  min-height: 240px;
+}
+
+@media (max-width: 1099px) {
+  .wallet-loading__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 699px) {
+  .wallet-loading__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .wallet-loading {
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
 }
 
 @media (max-width: 1099px) {
@@ -324,6 +385,7 @@ import VueTimers from 'src/mixins/timers.js'
 import { getHivePrices } from 'src/services/prices'
 import { buildPortfolio, tidyNumber } from 'src/services/wallet'
 import { setPageMeta } from 'src/utils/pageMeta'
+import AccountHeader from 'components/accountHeader.vue'
 import WalletPortfolioHeader from 'components/wallet/WalletPortfolioHeader.vue'
 import WalletAssetCard from 'components/wallet/WalletAssetCard.vue'
 import WalletPendingStrip from 'components/wallet/WalletPendingStrip.vue'
@@ -353,7 +415,7 @@ const walletBitmask = makeBitMaskFilter([
 export default {
   name: 'wallet',
   components: {
-    accountHeader: defineAsyncComponent(() => import('components/accountHeader.vue')),
+    accountHeader: AccountHeader,
     transferDialog: defineAsyncComponent(() => import('components/transferDialog.vue')),
     stakingDialog: defineAsyncComponent(() => import('components/stakingDialog.vue')),
     unstakingDialog: defineAsyncComponent(() => import('components/unstakingDialog.vue')),

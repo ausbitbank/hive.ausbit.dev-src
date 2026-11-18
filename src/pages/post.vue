@@ -23,11 +23,17 @@
         </q-card>
       </div>
 
-      <div v-else-if="!post" class="post-loading" aria-label="Loading post">
-        <q-skeleton type="rect" height="30px" width="68%" />
-        <q-skeleton type="rect" height="16px" width="42%" class="q-mt-md" />
-        <q-skeleton type="rect" height="16px" width="30%" class="q-mt-sm" />
-        <q-skeleton type="rect" height="380px" class="q-mt-lg" />
+      <div v-else-if="!post" class="post-loading" aria-label="Loading post" role="status" aria-busy="true">
+        <div class="post-loading__article">
+          <q-skeleton type="rect" height="30px" width="68%" />
+          <q-skeleton type="rect" height="16px" width="42%" class="q-mt-md" />
+          <q-skeleton type="rect" height="16px" width="30%" class="q-mt-sm" />
+          <q-skeleton type="rect" height="420px" class="q-mt-lg" />
+        </div>
+        <aside class="post-loading__sidebar" aria-hidden="true">
+          <q-skeleton type="rect" height="190px" />
+          <q-skeleton type="rect" height="230px" />
+        </aside>
       </div>
 
       <div v-else class="post-grid">
@@ -101,7 +107,7 @@
               </header>
 
               <div class="post-body-section">
-                <render v-if="post.body" :input="post.body" class="postbody" />
+                <render v-if="post.body" :input="post.body" class="postbody" preload />
                 <q-skeleton v-else type="rect" height="220px" />
               </div>
 
@@ -663,8 +669,7 @@
   text-decoration: underline;
 }
 
-.post-state-card,
-.post-loading {
+.post-state-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -675,9 +680,37 @@
 }
 
 .post-loading {
-  align-items: stretch;
-  max-width: 760px;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  align-items: start;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 72vh;
+}
+
+.post-loading__article,
+.post-loading__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.post-loading__article {
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+@media (max-width: 1023px) {
+  .post-loading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .post-loading__sidebar {
+    display: none;
+  }
 }
 
 .post-state-card__title {

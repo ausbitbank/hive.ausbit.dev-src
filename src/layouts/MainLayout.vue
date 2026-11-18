@@ -27,7 +27,7 @@
           <queue v-if="loggedInUser !== null && queue.length > 0" />
           <notifications v-if="loggedInUser !== null" />
           <user-login />
-          <q-btn class="site-toolbar__icon" dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
+          <q-btn class="site-toolbar__icon" dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy anchor="bottom right" self="top right" :offset="[0, 8]"><settings /></q-popup-proxy></q-btn>
         </div>
       </q-toolbar>
     </q-header>
@@ -82,7 +82,7 @@
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
       <error-boundary :key="$route.path">
-        <router-view :class="backgroundStyle" />
+        <router-view />
       </error-boundary>
       <footer class="site-footer" aria-label="Site footer">
         <nav class="site-footer__links" aria-label="Footer navigation">
@@ -99,6 +99,7 @@
       </footer>
     </q-page-container>
     <command-palette ref="commandPalette" />
+    <perf-panel v-if="showPerfPanel" @close="closePerfPanel" />
     <back-to-top />
     <keyboard-shortcuts />
   </q-layout>
@@ -273,17 +274,6 @@
   }
 }
 
-.gradientBg {
-background: linear-gradient(-45deg, #9C27B0, #E31337, #3E92CC, #23d5ab); /* -45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab */
-background-size: 400% 400%;
-animation: gradient 15s ease infinite;
-}
-
-@keyframes gradient {
-0% {background-position: 0% 50%;}
-50% {background-position: 100% 50%;}
-100% {background-position: 0% 50%;}
-}
 </style>
 <script>
 import { defineAsyncComponent } from 'vue'
@@ -297,6 +287,7 @@ import KeyboardShortcuts from 'components/ui/KeyboardShortcuts.vue'
 const Notifications = defineAsyncComponent(() => import('components/notifications.vue'))
 const Queue = defineAsyncComponent(() => import('components/queue.vue'))
 const Settings = defineAsyncComponent(() => import('components/settings.vue'))
+const PerfPanel = defineAsyncComponent(() => import('components/ui/PerfPanel.vue'))
 
 export default {
   name: 'MainLayout',
@@ -307,6 +298,7 @@ export default {
     CommandPalette,
     queue: Queue,
     settings: Settings,
+    PerfPanel,
     BackToTop,
     ErrorBoundary,
     KeyboardShortcuts
@@ -332,6 +324,12 @@ export default {
       } else {
         window.setTimeout(load, 1500)
       }
+    },
+    closePerfPanel () {
+      const query = { ...this.$route.query }
+      delete query.perf
+      delete query.debug
+      this.$router.replace({ path: this.$route.path, query, hash: this.$route.hash }).catch(() => {})
     }
   },
   computed: {
@@ -341,12 +339,8 @@ export default {
     queue: {
       get () { return this.$hiveStore.queue }
     },
-    backgroundStyle: function () {
-      if (this.$hiveStore.user.settings.darkBackground) {
-        return ''
-      } else {
-        return 'gradientBg'
-      }
+    showPerfPanel () {
+      return this.$route.query.perf === '1' || this.$route.query.debug === 'perf'
     }
   },
   watch: {
@@ -361,7 +355,6 @@ export default {
     return {
       leftDrawerOpen: false,
       searchSuggestions: null,
-      darkBackgroundToggle: true,
       exploreLinks: [
         {
           title: 'Home',

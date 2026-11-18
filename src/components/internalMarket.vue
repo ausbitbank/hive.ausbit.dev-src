@@ -470,6 +470,7 @@ export default {
   align-items: start;
   gap: var(--space-4);
   min-width: 0;
+  min-height: 960px;
 }
 
 .market-side {
@@ -548,6 +549,7 @@ export default {
 @media (max-width: 799px) {
   .market-data-grid {
     grid-template-columns: minmax(0, 1fr);
+    min-height: 1400px;
   }
 }
 

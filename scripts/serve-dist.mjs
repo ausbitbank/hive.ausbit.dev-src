@@ -87,7 +87,7 @@ const server = createServer(async (request, response) => {
     response.writeHead(200, {
       'Content-Type': type,
       'Content-Length': payload.length,
-      'Cache-Control': file.endsWith('sw.js') ? 'no-cache' : 'no-cache',
+      'Cache-Control': file.endsWith('sw.js') ? 'no-store' : 'no-cache',
       'Vary': 'Accept-Encoding',
       ...(encoding ? { 'Content-Encoding': encoding } : {})
     })
