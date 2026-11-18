@@ -7,20 +7,22 @@ This is the active roadmap. Completed work is recorded in
 
 ## Current state
 
-The explorer is feature-complete through W21, with W27 UI polish and W22
-performance work delivered early.
+The explorer is feature-complete through W23, with W27 UI polish and W22
+performance work delivered early and W23 resilience layered on top.
 
 - Verified W16–W21 baseline: `7b82f97`.
 - W27 UI polish: `docs/workstreams/W27-ui-polish.md`.
 - W22 performance: `docs/workstreams/W22-performance.md`.
+- W23 network and data resilience:
+  `docs/workstreams/W23-network-resilience.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 33 unit-test files / 257 tests, 25 Playwright E2E tests, green build.
+- 38 unit-test files / 279 tests, 28 Playwright E2E tests, green build.
 - Performance dashboard: `docs/performance/README.md`.
-- Production is deployed from the W22 build.
+- Production is deployed from the W23 build.
 
-The next phase is W23 — network and data resilience. Governance, discovery and
-content creation remain planned on top of the measured foundation.
+The next phase is W24 — runtime polish and startup. Governance, discovery and
+content creation remain planned on top of the measured, resilient foundation.
 
 ## Vision
 
@@ -84,6 +86,9 @@ and safer to extend.
 - Record before/after numbers in the workstream doc.
 
 ### W23 — Network and data resilience
+
+**Status: complete (2026-11-18).** See
+`docs/workstreams/W23-network-resilience.md`.
 
 - Add structured telemetry for the central API client: success rate, latency,
   retries, failover events and cache hit/miss.
@@ -180,14 +185,14 @@ evidence.
 | Phase | Workstreams | Outcome |
 | --- | --- | --- |
 | Delivered early | W27, W22 | UI polish complete; measured speed, dashboard and hard-reload fix complete |
-| 1 | W23 | Network and data resilience |
+| 1 | W23 | Network and data resilience — complete |
 | 2 | W24 | Stable startup, updates and offline behaviour |
 | 3 | W25 | Deep governance and community intelligence |
 | 4 | W26 | Creator workflow on top of the reliable platform |
 | 5 | W28 | Search and discovery, last by request |
 
-Tracks may overlap only when they share a dependency. W27 and W22 were pulled
-forward and landed first; the next workstream is W23. Performance and
+Tracks may overlap only when they share a dependency. W27, W22 and W23 were
+pulled forward and landed first; the next workstream is W24. Performance and
 reliability land before feature work that would otherwise make the bundle or
 network layer harder to reason about. UI polish remains a continuous layer,
 with W27 as the formal audit and cleanup pass.
@@ -221,17 +226,16 @@ Every workstream must include:
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
-> W27 UI polish and W22 performance were delivered early on top of it. W16–W21,
-> W27 and W22 are complete, with 33 unit-test files / 257 tests and 25 Playwright
-> E2E tests passing. Production is deployed from the W22 build.
+> W27 UI polish, W22 performance and W23 resilience were delivered on top of it.
+> W16–W23 are complete, with 38 unit-test files / 279 tests and 28 Playwright
+> E2E tests passing. Production is deployed from the W23 build.
 >
-> Start **Track 1 — W23: Network and data resilience**. Do not start W25–W28
-> yet; W28 search stays last.
+> Start **Track 1 — W24: Runtime polish and startup**. Do not start W25–W28 yet;
+> W28 search stays last.
 >
-> Add structured API telemetry, harden timeouts/retry/cancellation/node
-> rotation, verify cache invalidation after writes, add consistent stale/error
-> fallbacks and offline read snapshots for selected read-only views, and make
-> service-worker updates explicit.
+> Reduce startup work, improve skeleton/loading transitions and CLS, add
+> slow-network regression coverage, verify PWA install/update/offline flows end
+> to end, and add the developer performance panel behind a query flag.
 >
 > Follow the standards in this roadmap: design tokens, one page-level `h1`,
 > posting/active authority correctness, sanitized UGC and `noopener noreferrer`.

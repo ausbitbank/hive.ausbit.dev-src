@@ -4,6 +4,18 @@ import { loginAs, readQueue, waitForApp } from './helpers'
 const POST_ROUTE = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
 
 test.describe('network and data resilience', () => {
+  test('rotates away from a dead primary node', async ({ page }) => {
+    test.setTimeout(120000)
+    await page.route(url => url.hostname === 'api.hive.blog', route => route.abort())
+    await page.goto('/')
+    await waitForApp(page)
+    await expect(page.locator('.home-block__witness')).toBeVisible({ timeout: 40000 })
+
+    const telemetry = await page.evaluate(() => window.__hiveTelemetry?.snapshot())
+    expect(telemetry.attempts.failovers).toBeGreaterThan(0)
+    expect(telemetry.nodes.some(node => node.successes > 0 && node.key !== 'https://api.hive.blog')).toBe(true)
+  })
+
   test('home falls back to saved read snapshots when chain reads fail', async ({ page }) => {
     test.setTimeout(120000)
     await page.goto('/')

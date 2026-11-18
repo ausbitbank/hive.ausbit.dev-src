@@ -85,6 +85,21 @@ where a full body is rendered (the post page and the community header).
 - Added intent-based route prefetch on link hover/focus.
 - Removed the unused TradingView preconnect from the HTML shell.
 
+## W23 delta
+
+W23 adds API telemetry, failover health state, the error boundary, offline
+snapshots and the explicit service-worker update flow. The measured cost is
+small and stays inside every budget:
+
+- initial Brotli JS **314.2 → 318.7 KB** (+4.5 KB);
+- route JS **+1.3–3.4 KB** (home +3.4 KB, browse/block/post/wallet/market
+  +1.3–1.6 KB);
+- total transfer **+4.4–8.6 KB**, with the same request-count band;
+- LCP is unchanged within run-to-run noise and `bun run perf:check` passes.
+
+Post and wallet CLS remain above the 0.1 target; that is the known W24
+skeleton/loading-transition work, not a W23 regression.
+
 ## Remaining opportunities
 
 1. **hive-js in the initial chunk.** Continue the W20 migration for the
