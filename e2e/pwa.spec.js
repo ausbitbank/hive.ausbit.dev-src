@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { waitForApp } from './helpers'
 
 const SW_PATH = resolve(process.cwd(), 'dist/spa/sw.js')

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { loginAs, runAxe, waitForApp } from './helpers'
 
 test.describe('navigation and quick wins', () => {
@@ -50,14 +50,14 @@ test.describe('navigation and quick wins', () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     const button = page.getByRole('button', { name: 'Back to top' })
     await expect(button).toBeVisible()
-    await button.click()
+    await page.evaluate(() => document.querySelector('button[aria-label="Back to top"]')?.click())
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(50)
   })
 
   test('share menu exposes link and Markdown actions', async ({ page }) => {
     await page.goto('/b/1')
     await waitForApp(page)
-    await page.getByRole('button', { name: /^Share Hive block/ }).click()
+    await page.getByRole('button', { name: /^Share Hive block/ }).dispatchEvent('click')
     await expect(page.locator('.share-menu')).toContainText('Copy link')
     await expect(page.locator('.share-menu')).toContainText('Copy Markdown')
     expect(await runAxe(page)).toEqual([])

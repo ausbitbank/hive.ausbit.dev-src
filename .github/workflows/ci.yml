@@ -44,7 +44,7 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: E2E and accessibility
-        run: bun run test:e2e
+        run: bun run test:e2e:full
 
       - name: Performance budgets
         run: bun run perf:check

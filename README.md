@@ -65,7 +65,7 @@ Additional UX:
 - `dompurify` for sanitized post/community HTML
 - Hive-Engine Hive RPC and CoinGecko for token and market data
 - Vitest for unit tests
-- Playwright + axe-core for end-to-end and accessibility checks
+- Playwright + axe-core for end-to-end and accessibility checks, with Obscura for the fast functional loop and Chromium for the full release gate
 
 ## Architecture
 
@@ -120,8 +120,11 @@ The dev server opens at <http://localhost:8080>.
 | `bun run test` | Run Vitest unit tests |
 | `bun run test:watch` | Watch mode for unit tests |
 | `bun run test:coverage` | Unit-test coverage report |
-| `bun run test:e2e` | Run Playwright E2E and axe checks against `dist/spa` |
-| `bun run test:e2e:build` | Build, then run the E2E/axe suite |
+| `bun run test:e2e` | Fast functional E2E through Obscura (local iteration) |
+| `bun run test:e2e:full` | Full Chromium E2E: axe, PWA, performance and resilience |
+| `bun run test:e2e:build` | Build, then run the full Chromium E2E suite |
+| `bun run test:e2e:fast:build` | Build, then run the fast Obscura suite |
+| `bun run e2e:install` | Download the Obscura binary into `.tools/obscura` |
 | `bun run perf` | Measure routes and refresh `docs/performance/` |
 | `bun run perf:check` | Run the measured performance budgets |
 | `bun run prerender` | Write metadata-only crawler snapshots into `dist/spa` |
@@ -148,19 +151,31 @@ against a built production bundle served by `scripts/serve-dist.mjs`.
 
 ```bash
 bun run test
-bun run test:e2e:build
+bun run e2e:install     # once per machine
+bun run test:e2e        # fast functional suite, ~35s
+bun run test:e2e:full   # full Chromium suite, ~7 minutes
 ```
 
-The E2E suite covers login simulation, comment queueing, proposal voting, wallet
-transfers, browse filters, queue controls, 404 search, keyboard shortcuts,
-back-to-top, share actions, the offline shell/manifest/feed, and axe WCAG A/AA
-checks for key routes at desktop and mobile widths.
+The **fast suite** connects Playwright to [Obscura](https://github.com/h4ckf0r0day/obscura),
+a lightweight Rust/V8 headless browser with a CDP server. It runs 16 functional
+tests in about 35 seconds with four workers: login simulation, queueing,
+transfers, browse filters, navigation, keyboard shortcuts, share actions and the
+governance/community surfaces.
 
-Playwright requires a Chromium browser once per machine:
+The **full Chromium suite** remains the release gate: 40 tests covering axe
+WCAG A/AA at desktop and mobile widths, visual/layout assertions, LCP/CLS
+performance, PWA install/offline/update flows, and resilience/offline signing.
+Chromium is required because Obscura has an independent layout engine, no
+Performance API LCP/CLS entries, and no service-worker/offline emulation.
+
+Playwright requires a Chromium browser once per machine for the full suite:
 
 ```bash
 bunx playwright install chromium
 ```
+
+CI runs `bun run test:e2e:full`; use `bun run test:e2e` for the fast local loop.
+See [`docs/e2e.md`](docs/e2e.md) for the suite split and troubleshooting.
 
 ## Deployment
 

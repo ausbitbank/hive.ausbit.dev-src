@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { waitForApp } from './helpers'
 
 test('browse filters and layout controls work', async ({ page }) => {
@@ -11,6 +11,9 @@ test('browse filters and layout controls work', async ({ page }) => {
   const reblogs = page.locator('.browse-filter-list .q-item', { hasText: 'Hide reblogs' })
   await reblogs.locator('.q-toggle').click()
   await expect(page.getByRole('button', { name: 'Filter posts' }).locator('.q-badge')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.browse-filter-card')).toBeHidden()
 
   const tableToggle = page.getByRole('button', { name: 'Table' })
   if (await tableToggle.count()) {

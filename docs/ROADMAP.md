@@ -20,9 +20,12 @@ W25 governance intelligence layered on top.
 - W24 runtime polish and startup: `docs/workstreams/W24-runtime-polish.md`.
 - W25 governance and community intelligence:
   `docs/workstreams/W25-governance-intelligence.md`.
+- Fast E2E through Obscura: `docs/workstreams/W25b-e2e-obscura.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
 - 47 unit-test files / 333 tests, 40 Playwright E2E tests, green build.
+- Fast local E2E: 16 functional tests through Obscura (~35s); the full
+  Chromium suite remains the CI/release gate. See `docs/e2e.md`.
 - Performance dashboard: `docs/performance/README.md`.
 - Production is deployed from the W25 build with the nginx header/metadata policy.
 

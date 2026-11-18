@@ -29,3 +29,6 @@ yarn-error.log*
 test-results/
 playwright-report/
 blob-report/
+
+# Local browser binaries (Obscura fast E2E)
+.tools/
