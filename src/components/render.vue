@@ -190,7 +190,7 @@ export default {
       return html.replace(/<img\b[^>]*>/gi, tag => {
         const source = tag.match(/\bsrc=["']([^"']+)["']/i)
         const size = source && (dimensions.get(source[1]) || dimensions.get(decodedImageUrl(source[1])))
-        if (!size || /\bwidth=["']?\d/i.test(tag)) return tag
+        if (!size || /\swidth\s*=\s*["']?\d/i.test(tag)) return tag
         const close = tag.endsWith('/>') ? '/>' : '>'
         return tag.slice(0, tag.length - close.length) +
           ' width="' + size.width + '" height="' + size.height + '"' + close
