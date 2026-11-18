@@ -30,9 +30,9 @@
       <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" v-if="showNavBar">
         <q-tabs
           :dense="$q.screen.lt.md"
-          :mobile-arrows="true"
-          :outside-arrows="true"
-          :align="$q.screen.lt.sm ? 'left' : 'center'"
+          :mobile-arrows="$q.screen.lt.sm === false"
+          :outside-arrows="$q.screen.lt.sm === false"
+          align="center"
           icons
           no-caps
           inline-label
@@ -41,7 +41,10 @@
           class="text-grey-4 full-width"
           aria-label="Account sections"
         >
-          <q-route-tab v-for="tab in navTabs" :key="tab.name" :name="tab.name" :label="tab.label" :icon="tab.icon" :exact="tab.exact" :to="tab.to" />
+          <template v-for="(tab, index) in navTabs" :key="tab.name">
+            <span v-if="index === tabsPerRow" class="account-tabs__break" aria-hidden="true" />
+            <q-route-tab :name="tab.name" :label="tab.label" :icon="tab.icon" :exact="tab.exact" :to="tab.to" />
+          </template>
         </q-tabs>
       </q-toolbar>
     </div>
@@ -123,6 +126,55 @@
 }
 .account-tabs :deep(.q-tab) {
   min-height: 44px;
+}
+/* On narrow screens the eight tabs do not fit on one row, and any one-row
+   answer cuts a label at an edge (under the arrow or off-screen). Wrap them
+   into two rows of four instead, so every label is whole. Quasar still
+   reports the strip as scrollable, hence the `!important` overrides; the
+   arrows are hidden because nothing is actually hidden. */
+@media (max-width: 959px) {
+  .account-tabs {
+    min-height: 0;
+  }
+  .account-tabs :deep(.q-tabs) {
+    flex-wrap: wrap;
+  }
+  .account-tabs :deep(.q-tabs__content) {
+    flex-wrap: wrap;
+    justify-content: center !important;
+    overflow: visible !important;
+    /* Quasar would otherwise scroll the strip to reveal the active tab,
+       sliding a row sideways out of the pill. */
+    scroll-behavior: auto !important;
+  }
+  /* Two rows of four, sized so the longest label ("communities") still fits
+     without the icons. Icons come back above this breakpoint. */
+  .account-tabs :deep(.q-tab) {
+    flex: 0 1 24% !important;
+    min-width: 0 !important;
+    min-height: 36px;
+    padding: 0;
+  }
+  .account-tabs :deep(.q-tab__content) {
+    padding: 0;
+  }
+  .account-tabs :deep(.q-tab__icon) {
+    display: none;
+  }
+  .account-tabs :deep(.q-tab__label) {
+    font-size: 12px;
+    padding-left: 0;
+    white-space: nowrap;
+  }
+  .account-tabs :deep(.q-tabs__arrow) {
+    display: none;
+  }
+  /* A full-width spacer before the fifth tab forces the second row. */
+  .account-tabs :deep(.q-tabs__content) .account-tabs__break {
+    display: block;
+    flex: 0 0 100%;
+    height: 0;
+  }
 }
 /* A shaded, clickable edge makes the overflow obvious: the strip fades under
    the arrow instead of cutting a label mid-character. */
@@ -331,6 +383,11 @@ export default {
   computed: {
     avatarSrc: function () {
       return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.account.name)
+    },
+    // Kept just above the eight default tabs so the narrow-screen spacer
+    // lands before the fifth one; the extra tip tab only exists on /tip.
+    tabsPerRow: function () {
+      return 4
     },
     navTabs: function () {
       const name = this.account.name
