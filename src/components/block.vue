@@ -313,11 +313,11 @@ export default {
     },
     linkPrevious: function () {
       var num = parseInt(this.blockNumber) - 1
-      return '/block/' + num
+      return '/b/' + num
     },
     linkNext: function () {
       var num = parseInt(this.blockNumber) + 1
-      return '/block/' + num
+      return '/b/' + num
     },
     loading: function () {
       if (this.blockOps.length === 0) {

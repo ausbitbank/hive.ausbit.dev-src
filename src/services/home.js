@@ -131,6 +131,11 @@ export function blockTransactionCount (block) {
   return block && Array.isArray(block.transactions) ? block.transactions.length : 0
 }
 
+/**
+ * Count regular operations, optionally including a separate virtual-op list.
+ * The home card calls this without virtual ops so its "Operations" figure
+ * matches the block detail page; both report virtual ops separately.
+ */
 export function blockOperationCount (block, virtualOperations = []) {
   const regular = block && Array.isArray(block.transactions)
     ? block.transactions.reduce((total, tx) => total + (Array.isArray(tx.operations) ? tx.operations.length : 0), 0)

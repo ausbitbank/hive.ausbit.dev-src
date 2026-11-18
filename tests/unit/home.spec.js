@@ -73,6 +73,7 @@ describe('home dashboard helpers', () => {
       ]
     }
     expect(blockTransactionCount(block)).toBe(2)
+    expect(blockOperationCount(block)).toBe(3)
     expect(blockOperationCount(block, [{}, {}])).toBe(5)
     expect(blockTransactionCount(null)).toBe(0)
     expect(blockOperationCount(null, null)).toBe(0)

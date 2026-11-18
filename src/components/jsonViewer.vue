@@ -100,7 +100,7 @@ export default {
 
     valueLink (key, value) {
       if (['head_block_number', 'last_irreversible_block_num', 'last_confirmed_block_num'].includes(key)) {
-        return { href: '/block/' + encodeURIComponent(value), text: value }
+        return { href: '/b/' + encodeURIComponent(value), text: value }
       }
       if (['url', 'profile_image', 'cover_image'].includes(key)) {
         return { href: value, text: value }

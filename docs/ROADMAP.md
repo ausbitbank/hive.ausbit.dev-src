@@ -13,15 +13,16 @@ layered on top.
 
 - Verified W16–W21 baseline: `7b82f97`.
 - W27 UI polish: `docs/workstreams/W27-ui-polish.md`.
+- Issue triage #30–#42: `docs/workstreams/W27b-issue-triage.md`.
 - W22 performance: `docs/workstreams/W22-performance.md`.
 - W23 network and data resilience:
   `docs/workstreams/W23-network-resilience.md`.
 - W24 runtime polish and startup: `docs/workstreams/W24-runtime-polish.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 38 unit-test files / 280 tests, 32 Playwright E2E tests, green build.
+- 39 unit-test files / 287 tests, 32 Playwright E2E tests, green build.
 - Performance dashboard: `docs/performance/README.md`.
-- Production is deployed from the W24 build.
+- Production is deployed from the W27b build with the nginx header/metadata policy.
 
 The next phase is W25 — governance and community intelligence. Discovery and
 content creation remain planned on top of the measured, resilient foundation.

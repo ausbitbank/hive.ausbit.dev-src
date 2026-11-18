@@ -5,7 +5,7 @@
             <div>{{ tidyNumber(account.balance.split(' ')[0]) }} HIVE</div>
             <div>{{ tidyNumber(account.hbd_balance.split(' ')[0]) }} HBD</div>
         </q-card>
-      <router-link class="account-header__avatar" :to="getAccountLink(account.name)" :aria-label="'View @' + account.name + ' profile'"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" :alt="'Avatar of @' + account.name" /></q-avatar></router-link>
+      <router-link class="account-header__avatar" :to="getAccountLink(account.name)" :aria-label="'View @' + account.name + ' profile'"><q-avatar class="hvr"><q-img :src="avatarSrc" @error="avatarFailed = true" :alt="'Avatar of @' + account.name" /></q-avatar></router-link>
       <component :is="headingTag" class="account-header__name q-my-none">{{ account.name }}</component>
       <div class="account-header__profile text-subtitle" v-if="account.posting_json_metadata && showProfile">
         <span v-if="postingJsonMeta.profile">
@@ -30,7 +30,8 @@
       <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
         <q-tabs
           :dense="$q.screen.lt.md"
-          :mobile-arrows="false"
+          :mobile-arrows="true"
+          :outside-arrows="true"
           :align="$q.screen.lt.sm ? 'left' : 'center'"
           no-caps
           inline-label
@@ -123,6 +124,19 @@
 .account-tabs :deep(.q-tab) {
   min-height: 44px;
 }
+.account-tabs :deep(.q-tabs__arrow) {
+  min-width: 30px;
+  color: #b0bec5;
+  font-size: 26px;
+  text-shadow: none;
+  opacity: 0.9;
+}
+.account-tabs :deep(.q-tabs__arrow--faded) {
+  opacity: 0.28;
+}
+.account-tabs :deep(.q-tabs__content) {
+  scrollbar-width: none;
+}
 .service-strip {
   display: flex;
   flex-wrap: wrap;
@@ -187,7 +201,13 @@ export default {
   name: 'accountHeader',
   data () {
     return {
-      relationship: null
+      relationship: null,
+      avatarFailed: false
+    }
+  },
+  watch: {
+    'account.name' () {
+      this.avatarFailed = false
     }
   },
   props: {
@@ -290,6 +310,9 @@ export default {
     }
   },
   computed: {
+    avatarSrc: function () {
+      return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.account.name)
+    },
     coverImage: function () {
       // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
       var defaultCover = ''

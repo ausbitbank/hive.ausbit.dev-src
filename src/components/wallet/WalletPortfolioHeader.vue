@@ -53,10 +53,10 @@
 
     <q-card-section class="wallet-portfolio__footer">
       <nav class="wallet-jump" aria-label="Wallet sections">
-        <button type="button" class="wallet-jump__link" @click="$emit('navigate', 'overview')">Overview</button>
-        <button type="button" class="wallet-jump__link" @click="$emit('navigate', 'activity')">Activity</button>
-        <button type="button" class="wallet-jump__link" @click="$emit('navigate', 'pending')">Pending</button>
-        <button type="button" class="wallet-jump__link" @click="$emit('navigate', 'tokens')">Tokens</button>
+        <router-link class="wallet-jump__link" :class="{ 'wallet-jump__link--active': $route.hash === '#overview' }" :to="{ path: $route.path, hash: '#overview' }">Overview</router-link>
+        <router-link class="wallet-jump__link" :class="{ 'wallet-jump__link--active': $route.hash === '#activity' }" :to="{ path: $route.path, hash: '#activity' }">Activity</router-link>
+        <router-link class="wallet-jump__link" :class="{ 'wallet-jump__link--active': $route.hash === '#pending' }" :to="{ path: $route.path, hash: '#pending' }">Pending</router-link>
+        <router-link class="wallet-jump__link" :class="{ 'wallet-jump__link--active': $route.hash === '#tokens' }" :to="{ path: $route.path, hash: '#tokens' }">Tokens</router-link>
         <router-link to="/tax" class="wallet-jump__link">Tax export</router-link>
       </nav>
       <span v-if="loggedIn" class="wallet-portfolio__note">
@@ -192,6 +192,13 @@
 .wallet-jump__link:hover {
   color: #81d4fa;
   text-decoration: underline;
+}
+
+.wallet-jump__link--active {
+  color: #e4eaed;
+  text-decoration: underline;
+  text-decoration-color: #4fc3f7;
+  text-underline-offset: 4px;
 }
 
 .wallet-portfolio__note {

@@ -25,7 +25,7 @@ test.describe('navigation and quick wins', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('That page is not here')
     await page.getByLabel('Search for a Hive page').fill('1')
     await page.getByRole('button', { name: 'Search', exact: true }).click()
-    await page.waitForURL('**/block/1')
+    await page.waitForURL('**/b/1')
     await expect(page.locator('.block-page')).toBeVisible()
   })
 

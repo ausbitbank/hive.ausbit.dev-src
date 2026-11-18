@@ -301,7 +301,7 @@ export default {
         setPageMeta({
           title: 'Hive block ' + blockNumber,
           description: 'Hive block ' + blockNumber + ' — transactions, operations, virtual operations, witness and raw block JSON.',
-          url: '/block/' + blockNumber
+          url: '/b/' + blockNumber
         })
         this.scrollToHash()
       } catch (error) {

@@ -163,7 +163,11 @@ bunx playwright install chromium
 ## Deployment
 
 The production site is served by nginx from `/var/www/hive.ausbit.dev` on
-`hurgenburgen`, with history-mode fallback to `index.html`.
+`hurgenburgen`, with history-mode fallback to `index.html`. The canonical
+virtual-host file is [`deploy/nginx/hive.ausbit.dev.conf`](deploy/nginx/hive.ausbit.dev.conf);
+it owns the security headers, the no-trailing-slash redirect, real 404
+statuses, the manifest content type and the SSI metadata shell for dynamic
+routes. Keep the certbot-managed SSL lines when installing it.
 
 ```bash
 ./scripts/deploy.sh

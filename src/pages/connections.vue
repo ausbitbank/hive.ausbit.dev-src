@@ -8,12 +8,12 @@
     <q-tab-panels v-model="tab" animated style="margin:auto; max-width: 1000px">
       <q-tab-panel name="following">
         <div class="text-h5 text-center">
-          {{ username }} is following {{ followCount?.following_count ?? '…' }} accounts:
+          {{ username }} is following {{ formattedCount(followCount?.following_count) }} accounts:
         </div>
         <connections type="following" :username="username" />
       </q-tab-panel>
       <q-tab-panel name="followers">
-        <div class="text-h5 text-center">{{ username }} is followed by {{ followCount?.follower_count ?? '…' }} accounts:</div>
+        <div class="text-h5 text-center">{{ username }} is followed by {{ formattedCount(followCount?.follower_count) }} accounts:</div>
         <connections type="followers" :username="username" />
       </q-tab-panel>
     </q-tab-panels>
@@ -21,6 +21,7 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
+import { setPageMeta } from 'src/utils/pageMeta'
 export default {
   name: 'followers',
   components: {
@@ -41,7 +42,30 @@ export default {
     followCount: { get () { return this.$hiveStore.followCounts[this.username] || null } }
   },
   methods: {
-    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } }
+    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
+    formattedCount (x) {
+      if (x === null || x === undefined) return '…'
+      return x === 0 ? '0' : (this.tidyNumber(x) ?? String(x))
+    },
+    applyPageMeta () {
+      const kind = this.tab === 'followers' ? 'followers' : 'following'
+      setPageMeta({
+        title: '@' + this.username + "'s " + kind + ' — hive.ausbit.dev',
+        description: 'Accounts ' + (kind === 'followers' ? 'following' : 'followed by') + ' @' + this.username + ' on the Hive blockchain.',
+        url: '/@' + this.username + '/' + kind
+      })
+    },
+    load () {
+      if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+      if (this.account === undefined) { this.$hiveStore.getAccount(this.username) }
+      if (this.followCount === null) { this.$hiveStore.getFollowCount(this.username) }
+    },
+    syncRoute () {
+      this.username = this.$route.params.username || this.$route.params.account
+      this.tab = this.$route.path.endsWith('/followers') ? 'followers' : 'following'
+      this.applyPageMeta()
+      this.load()
+    }
   },
   data () {
     return {
@@ -49,10 +73,12 @@ export default {
       tab: this.$route.path.endsWith('/followers') ? 'followers' : 'following'
     }
   },
+  watch: {
+    '$route.path' () { this.syncRoute() }
+  },
   mounted () {
-    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
-    if (this.account === undefined) { this.$hiveStore.getAccount(this.username) }
-    if (this.followCount === null) { this.$hiveStore.getFollowCount(this.username) }
+    this.load()
+    this.applyPageMeta()
   }
 }
 </script>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyMetadata, MARKER } from '../../scripts/lib/prerender-meta.mjs'
+import { applyMetadata, buildMetadataTemplate, MARKER } from '../../scripts/lib/prerender-meta.mjs'
 
 const SHELL = `<!DOCTYPE html>
 <html>
@@ -17,6 +17,9 @@ const SHELL = `<!DOCTYPE html>
   </body>
 </html>`
 
+// Vite/Quasar minifies the built index and removes optional attribute quotes.
+const MINIFIED_SHELL = '<!DOCTYPE html><html lang=en><head><meta charset=utf-8><title>hive.ausbit.dev — Hive block explorer</title><meta name=description content="A block explorer and toolkit for the Hive blockchain."><link rel=canonical href=https://hive.ausbit.dev/ ><meta property=og:title content="hive.ausbit.dev — Hive block explorer"><meta property=og:description content="A block explorer and toolkit for the Hive blockchain."><meta property=og:type content=website><meta property=og:url content=https://hive.ausbit.dev/ ><meta name=twitter:card content=summary_large_image><meta name=twitter:title content="hive.ausbit.dev — Hive block explorer"><meta name=twitter:description content="A block explorer and toolkit for the Hive blockchain."><script data-cfasync="false" type=module crossorigin src="/assets/index.js"></script></head><body><div id=q-app></div></body></html>'
+
 const META = {
   title: 'New <title>',
   description: 'A new description',
@@ -31,6 +34,10 @@ const META = {
   twitterDescription: 'Twitter description',
   twitterImage: 'https://example.com/twitter.png',
   jsonLd: JSON.stringify({ '@type': 'Article', name: 'Test' })
+}
+
+function count (html, pattern) {
+  return (html.match(new RegExp(pattern, 'gi')) || []).length
 }
 
 describe('applyMetadata', () => {
@@ -59,5 +66,53 @@ describe('applyMetadata', () => {
     expect(html).toContain('<title>Only title</title>')
     expect(html).toContain('Old description')
     expect(html).not.toContain('<script type="application/ld+json">')
+  })
+
+  it('replaces unquoted attributes emitted by the minifier', () => {
+    const html = applyMetadata(MINIFIED_SHELL, {
+      title: 'Latest Hive blocks',
+      description: 'Live block list',
+      canonical: 'https://hive.ausbit.dev/blocks',
+      ogTitle: 'Latest Hive blocks',
+      ogDescription: 'Live block list',
+      ogUrl: 'https://hive.ausbit.dev/blocks'
+    })
+    expect(html).toContain('<title>Latest Hive blocks</title>')
+    expect(html).toContain('<meta name="description" content="Live block list">')
+    expect(html).toContain('<link rel="canonical" href="https://hive.ausbit.dev/blocks">')
+    expect(count(html, '<link[^>]*rel="canonical"')).toBe(1)
+    expect(count(html, '<meta[^>]*name="description"')).toBe(1)
+    expect(count(html, '<meta[^>]*property="og:title"')).toBe(1)
+  })
+
+  it('removes duplicate tags instead of appending a second set', () => {
+    const duplicated = MINIFIED_SHELL.replace(
+      '<link rel=canonical href=https://hive.ausbit.dev/ >',
+      '<link rel=canonical href=https://hive.ausbit.dev/ ><link rel="canonical" href="https://hive.ausbit.dev/duplicate">'
+    ).replace(
+      '<meta name=description content="A block explorer and toolkit for the Hive blockchain.">',
+      '<meta name=description content="A block explorer and toolkit for the Hive blockchain."><meta name="description" content="second description">'
+    )
+    const html = applyMetadata(duplicated, META)
+    expect(count(html, '<link[^>]*rel=("?)canonical')).toBe(1)
+    expect(count(html, '<meta[^>]*name=("?)description')).toBe(1)
+    expect(html).not.toContain('second description')
+  })
+})
+
+describe('buildMetadataTemplate', () => {
+  it('emits an SSI template without duplicating the static defaults', () => {
+    const html = buildMetadataTemplate(MINIFIED_SHELL, {
+      title: 'hive.ausbit.dev — Hive block explorer',
+      description: 'A block explorer and toolkit for the Hive blockchain.'
+    })
+    expect(html).toContain('<!--# echo var="page_title"')
+    expect(html).toContain('<!--# echo var="page_path"')
+    expect(html).toContain('<!--# echo var="page_description"')
+    expect(html).toContain('<!--# echo var="page_type"')
+    expect(count(html, '<link[^>]*rel=("?)canonical')).toBe(1)
+    expect(count(html, '<meta[^>]*name=("?)description')).toBe(1)
+    expect(html).not.toContain('<script type="application/ld+json">')
+    expect(html).toContain('/assets/index.js')
   })
 })

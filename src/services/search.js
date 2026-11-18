@@ -131,7 +131,7 @@ function parseUrl (raw) {
 
 function blockResult (value) {
   return {
-    path: '/block/' + value,
+    path: '/b/' + value,
     label: 'Block ' + tidyNumber(value),
     description: 'Open block details',
     icon: 'view_agenda',

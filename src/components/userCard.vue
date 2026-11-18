@@ -1,6 +1,6 @@
 <template>
   <div class="text-center" :style='coverImageStyle'>
-    <router-link :to="'/@' + username" v-if="profile"><q-avatar size="6rem" v-if="profile.profile_image" class="q-pt-xs hvr"><q-img :src="getHiveAvatarUrl(username)" :alt="'Avatar of @' + username" /></q-avatar></router-link>
+    <router-link :to="'/@' + username" v-if="profile"><q-avatar size="6rem" v-if="profile.profile_image" class="q-pt-xs hvr"><q-img :src="avatarSrc" @error="avatarFailed = true" :alt="'Avatar of @' + username" /></q-avatar></router-link>
     <div v-if="!profile"><router-link :to="'/@' + username">@{{ username }}</router-link></div>
     <div v-if="profile">
       <div v-if="profile.name" class="text-title text-bold">{{ profile.name }}</div><router-link :to="'/@' + username">@{{username}}</router-link>
@@ -32,14 +32,21 @@ import moment from 'src/utils/time'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 export default {
   name: 'userCard',
-  props: ['username'],
+  props: {
+    username: { type: String, required: true },
+    showCover: { type: Boolean, default: true }
+  },
   data () {
     return {
-      relationship: null
+      relationship: null,
+      avatarFailed: false
     }
   },
   components: {
     userServices: defineAsyncComponent(() => import('components/userServices.vue'))
+  },
+  watch: {
+    username () { this.avatarFailed = false }
   },
   methods: {
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
@@ -80,6 +87,9 @@ export default {
   mounted () {},
   computed: {
     account: function () { return this.$hiveStore.accounts[this.username] },
+    avatarSrc: function () {
+      return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.username)
+    },
     loggedInUser: function () { return this.$hiveStore.user.username },
     meta: function () {
       if (this.account !== undefined) {
@@ -102,6 +112,7 @@ export default {
       return null
     },
     coverImage: function () {
+      if (!this.showCover) return ''
       // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
       var defaultCover = ''
       if (this.account === undefined) {
