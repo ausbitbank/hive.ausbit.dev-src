@@ -147,7 +147,7 @@ describe('post construction', () => {
     expect(changed.find(item => item.id === 'editCategory').status).toBe('warn')
   })
 
-  it('queues an edit for an existing permlink without comment options', () => {
+  it('queues a top-level post edit without comment options', () => {
     const item = postQueueItem({
       username: 'alice',
       draft,
@@ -155,10 +155,65 @@ describe('post construction', () => {
       parentPermlink: 'hive-174578',
       commentOptions: false
     })
+    expect(item[2][1].parent_author).toBe('')
     expect(item[2][1].parent_permlink).toBe('hive-174578')
     expect(item[2][1].permlink).toBe('existing')
     expect(item[2][1]._edit).toBe(true)
     expect(item[2][1].comment_options).toBeUndefined()
+  })
+
+  it('builds a comment edit with its parent author and no title', () => {
+    const commentDraft = {
+      title: '',
+      body: 'edited reply',
+      tags: [],
+      community: '',
+      owner: 'alice',
+      editing: {
+        author: 'alice',
+        permlink: 're-parent',
+        parentAuthor: 'bob',
+        parentPermlink: 'parent-post',
+        previousMetadata: {}
+      }
+    }
+    const operation = buildPostOperation({
+      username: 'alice',
+      draft: commentDraft,
+      permlink: 're-parent',
+      parentAuthor: 'bob',
+      parentPermlink: 'parent-post',
+      commentOptions: false,
+      previousMetadata: {}
+    })
+    expect(operation[1]).toMatchObject({
+      parent_author: 'bob',
+      parent_permlink: 'parent-post',
+      author: 'alice',
+      permlink: 're-parent',
+      title: '',
+      body: 'edited reply'
+    })
+    // The stray comment_options is what caused
+    // "A comment cannot accept a greater payout" on Keychain edits.
+    expect(operation[1].comment_options).toBeUndefined()
+    expect(operation[1]._edit).toBe(true)
+  })
+
+  it('does not require a title, tags or rewards when editing a comment', () => {
+    const commentDraft = {
+      title: '',
+      body: 'edited reply',
+      tags: [],
+      community: '',
+      owner: 'alice',
+      editing: { author: 'alice', permlink: 're-parent', parentAuthor: 'bob', parentPermlink: 'parent-post', previousMetadata: {} }
+    }
+    const items = publishChecklist(commentDraft, { username: 'alice' })
+    expect(checklistErrors(items)).toEqual([])
+    expect(items.find(item => item.id === 'title').status).toBe('ok')
+    expect(items.find(item => item.id === 'tags').status).toBe('ok')
+    expect(canPublish(commentDraft, { username: 'alice' })).toBe(true)
   })
 
   it('rejects missing accounts and categories', () => {

@@ -83,13 +83,35 @@ tools, while keeping the legacy shape readable:
   when it would replace existing text.
 - The publish checklist warns when you attribute a post to yourself.
 
+## Follow-up fixes (2026-11-19)
+
+Two bugs surfaced when editing a real comment:
+
+**1. Keychain edits failed with “A comment cannot accept a greater payout.”**
+Edits went through Keychain's `requestPost`, which always appends a
+`comment_options` operation. With no options stored, `JSON.stringify(undefined)`
+produced `undefined` (and `JSON.stringify(null)` the *string* `"null"` — neither a
+real `null`), so Keychain resent a default `comment_options` with a
+`100000.000 HBD` cap. The chain rejects a payout cap above the comment's stored
+cap. Edits now broadcast a bare `comment` operation through
+`requestBroadcast`, exactly like SmartLock. New comments pass a real `null` when
+they have no options.
+
+**2. The full composer required a title for comment edits.**
+`buildPostOperation` hardcoded `parent_author: ''`, so a comment loaded from
+`/compose?edit=…` was turned into a top-level post, and the publish checklist
+required a title, tags and rewards. The edit marker now records `parentAuthor`;
+the operation keeps the real parent, sends an empty title and never carries
+`comment_options`. The checklist treats comment edits as having no title, no
+tags and fixed payout settings, and the composer hides the title field, the
+destination panel and the rewards panel.
+
 ## Verification
 
 - `bun run lint` — clean.
-- Targeted unit tests — 47 passing across `publish`, `comments`, `drafts`, `queue`.
+- Unit tests — 429 passing, including comment-edit operation and checklist
+  regressions for the title and payout bugs.
 - `bun run build` — succeeds.
-- The full suite has two failures in `vote-control.spec.js` from unrelated,
-  pre-existing uncommitted work in `vote.vue`; they fail on a clean tree too.
 
 ## Files
 
@@ -110,6 +132,10 @@ tools, while keeping the legacy shape readable:
 
 - Deleting is blocked while a post or comment still has replies, matching the
   chain rule; the UI explains why.
+- Some existing comments were published with **double-encoded `json_metadata`**
+  (a JSON string containing another JSON string). Reads are unaffected, but any
+  code that parses metadata from those comments needs to unwrap twice. Edits
+  now write clean single-encoded metadata.
 - Edits do not resend `comment_options`. Changing beneficiaries or payout
   settings after publishing needs a separate `comment_options` update, which
   this change does not add.

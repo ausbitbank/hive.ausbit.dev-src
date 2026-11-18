@@ -165,28 +165,48 @@ export function buildPostMetadata (draft) {
  *
  * The queue splits `comment_options` into the on-chain operation at broadcast.
  */
-export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, commentOptions = true, previousMetadata = null } = {}) {
+export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null } = {}) {
   const author = String(username || '').trim().toLowerCase()
   if (!ACCOUNT_RE.test(author)) throw new Error('A valid Hive account is required to publish.')
-  const category = parentPermlink ? normalizeTag(parentPermlink) : resolveCategory(draft)
-  if (!category) throw new Error('A community or first tag is required to publish.')
+  // A comment edit keeps its parent author. Comments never have a title.
+  const isComment = Boolean(parentAuthor)
+  const parent = String(parentAuthor || '').trim().toLowerCase()
+
+  // parent_permlink is a category tag for a top-level post, but the target's
+  // permlink for a comment. Use the recorded value verbatim on an edit so a
+  // comment reply target is not mangled by tag normalisation.
+  const category = parentPermlink
+    ? (isComment ? String(parentPermlink).trim().toLowerCase() : normalizeTag(parentPermlink))
+    : resolveCategory(draft)
+  if (!category) {
+    throw new Error(isComment ? 'The comment parent is required to edit.' : 'A community or first tag is required to publish.')
+  }
+  if (isComment && !/^[a-z0-9][a-z0-9-]{0,254}$/.test(category)) {
+    throw new Error('The comment parent permlink is not valid.')
+  }
 
   const postPermlink = String(permlink || '').trim() || createPostPermlink(draft && draft.title, now)
   if (!/^[a-z0-9][a-z0-9-]{0,254}$/.test(postPermlink)) throw new Error('The post permlink is not valid.')
 
   // Merge onto the original metadata so an edit does not silently drop keys a
   // different client wrote (images, description, app-specific data).
-  const metadata = {
-    ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
-    ...buildPostMetadata(draft)
-  }
+  const metadata = isComment
+    ? {
+        ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
+        app: 'hive.ausbit.dev',
+        format: 'markdown'
+      }
+    : {
+        ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
+        ...buildPostMetadata(draft)
+      }
 
   const operation = {
-    parent_author: '',
+    parent_author: parent,
     parent_permlink: category,
     author,
     permlink: postPermlink,
-    title: String(draft && draft.title || '').trim(),
+    title: isComment ? '' : String(draft && draft.title || '').trim(),
     body: String(draft && draft.body || ''),
     json_metadata: JSON.stringify(metadata)
   }
@@ -194,7 +214,8 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
   // Queue-only marker so the action list can label this as an edit.
   if (!commentOptions) operation._edit = true
 
-  if (commentOptions) {
+  // Comments never carry comment_options on edit; a new top-level post does.
+  if (commentOptions && !isComment) {
     operation.comment_options = buildCommentOptions({
       username: author,
       permlink: postPermlink,
@@ -234,15 +255,22 @@ export function publishChecklist (draft, { username = null } = {}) {
     items.push(checklistItem('login', 'Sign in with a posting key', 'ok', 'Will be queued for @' + user + ' and signed with the posting key.'))
   }
 
-  const title = String(source.title || '').trim()
-  if (!title) {
-    items.push(checklistItem('title', 'Title', 'error', 'Add a title before publishing.'))
-  } else if (title.length > MAX_TITLE_CHARS) {
-    items.push(checklistItem('title', 'Title', 'error', 'Titles are limited to ' + MAX_TITLE_CHARS + ' characters.'))
-  } else if (title.length > 120) {
-    items.push(checklistItem('title', 'Title', 'warn', 'Long titles are truncated on cards and search results.'))
+  // A comment edit has no title, and replies never did. Only require one when
+  // the draft is a real post.
+  const isCommentEdit = Boolean(source.editing && source.editing.parentAuthor)
+  if (isCommentEdit) {
+    items.push(checklistItem('title', 'Title', 'ok', 'Comments have no title.'))
   } else {
-    items.push(checklistItem('title', 'Title', 'ok', title))
+    const title = String(source.title || '').trim()
+    if (!title) {
+      items.push(checklistItem('title', 'Title', 'error', 'Add a title before publishing.'))
+    } else if (title.length > MAX_TITLE_CHARS) {
+      items.push(checklistItem('title', 'Title', 'error', 'Titles are limited to ' + MAX_TITLE_CHARS + ' characters.'))
+    } else if (title.length > 120) {
+      items.push(checklistItem('title', 'Title', 'warn', 'Long titles are truncated on cards and search results.'))
+    } else {
+      items.push(checklistItem('title', 'Title', 'ok', title))
+    }
   }
 
   const body = String(source.body || '')
@@ -257,7 +285,9 @@ export function publishChecklist (draft, { username = null } = {}) {
 
   const tags = resolvedTags(source)
   const community = normalizeTag(source.community)
-  if (!tags.length) {
+  if (isCommentEdit) {
+    items.push(checklistItem('tags', 'Tags and community', 'ok', 'Comments inherit their parent’s category.'))
+  } else if (!tags.length) {
     items.push(checklistItem('tags', 'Tags and community', 'error', 'Add a community or at least one tag.'))
   } else {
     items.push(checklistItem(
@@ -276,7 +306,9 @@ export function publishChecklist (draft, { username = null } = {}) {
     const weight = Number(item && item.weight)
     return !ACCOUNT_RE.test(account) || !Number.isFinite(weight) || weight <= 0 || weight > 10000
   })
-  if (invalidBene) {
+  if (isCommentEdit) {
+    items.push(checklistItem('beneficiaries', 'Beneficiaries', 'ok', 'Comment edits keep the original payout settings.'))
+  } else if (invalidBene) {
     items.push(checklistItem('beneficiaries', 'Beneficiaries', 'error', 'Each beneficiary needs a valid account and a share between 0.01% and 100%.'))
   } else if (rawBeneficiaries.length > MAX_BENEFICIARIES) {
     items.push(checklistItem('beneficiaries', 'Beneficiaries', 'error', 'Up to ' + MAX_BENEFICIARIES + ' beneficiaries are allowed.'))
@@ -296,7 +328,9 @@ export function publishChecklist (draft, { username = null } = {}) {
 
   const rewards = normalizeRewards(source.rewards)
   const payout = normalizeMaxPayout(rewards.maxAcceptedPayout)
-  if (!payout) {
+  if (isCommentEdit) {
+    items.push(checklistItem('rewards', 'Reward settings', 'ok', 'Comment edits do not resend comment_options.'))
+  } else if (!payout) {
     items.push(checklistItem('rewards', 'Reward settings', 'error', 'Enter a valid maximum accepted payout in HBD.'))
   } else {
     const split = rewards.percentHbd === 10000
@@ -324,13 +358,17 @@ export function publishChecklist (draft, { username = null } = {}) {
   }
 
   if (source.editing) {
-    const changedCategory = source.editing.parentPermlink &&
-      normalizeTag(source.community) &&
-      normalizeTag(source.community) !== normalizeTag(source.editing.parentPermlink)
-    if (changedCategory) {
-      items.push(checklistItem('editCategory', 'Edit category', 'warn', 'Hive keeps the original category on edit. The new community/tag is stored in metadata only.'))
+    if (isCommentEdit) {
+      items.push(checklistItem('editCategory', 'Edit keeps identity', 'ok', 'Replies to @' + source.editing.parentAuthor + '; comment options are not resent.'))
     } else {
-      items.push(checklistItem('editCategory', 'Edit keeps identity', 'ok', 'Same permlink and parent; comment options are not resent.'))
+      const changedCategory = source.editing.parentPermlink &&
+        normalizeTag(source.community) &&
+        normalizeTag(source.community) !== normalizeTag(source.editing.parentPermlink)
+      if (changedCategory) {
+        items.push(checklistItem('editCategory', 'Edit category', 'warn', 'Hive keeps the original category on edit. The new community/tag is stored in metadata only.'))
+      } else {
+        items.push(checklistItem('editCategory', 'Edit keeps identity', 'ok', 'Same permlink and parent; comment options are not resent.'))
+      }
     }
   }
 

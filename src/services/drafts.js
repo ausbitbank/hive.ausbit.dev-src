@@ -105,6 +105,9 @@ export function normalizeEditing (value, editedBy = null) {
   return {
     author,
     permlink,
+    parentAuthor: typeof value.parentAuthor === 'string' && ACCOUNT_RE.test(value.parentAuthor.trim().toLowerCase())
+      ? value.parentAuthor.trim().toLowerCase()
+      : '',
     parentPermlink: normalizeTag(value.parentPermlink) || normalizeTag(metadata && metadata.tags && metadata.tags[0]) || '',
     previousMetadata: metadata
   }

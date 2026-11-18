@@ -398,22 +398,32 @@ export default {
       if (operation[0] === 'vote') {
         result = await keychain(window, 'requestVote', user, operation[1].permlink, operation[1].author, operation[1].weight)
       } else if (operation[0] === 'comment') {
+        const isEdit = operation[1]._edit === true
         const commentOptions = operation[1].comment_options
         delete operation[1].comment_options
         // Queue-only edit marker; not a field of the on-chain operation.
         delete operation[1]._edit
-        result = await keychain(
-          window,
-          'requestPost',
-          user,
-          operation[1].title,
-          operation[1].body,
-          operation[1].parent_permlink,
-          operation[1].parent_author,
-          postMetadataArgument(operation[1].json_metadata),
-          operation[1].permlink,
-          JSON.stringify(commentOptions)
-        )
+
+        if (isEdit) {
+          // Edits must be broadcast as a bare `comment` operation. requestPost
+          // always appends a `comment_options` operation with a default
+          // 100000 HBD payout cap, which the chain rejects on an edit with
+          // "A comment cannot accept a greater payout".
+          result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
+        } else {
+          result = await keychain(
+            window,
+            'requestPost',
+            user,
+            operation[1].title,
+            operation[1].body,
+            operation[1].parent_permlink,
+            operation[1].parent_author,
+            postMetadataArgument(operation[1].json_metadata),
+            operation[1].permlink,
+            commentOptions ? JSON.stringify(commentOptions) : null
+          )
+        }
       } else {
         result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
       }

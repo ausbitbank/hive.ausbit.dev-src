@@ -205,11 +205,20 @@ describe('draft length guidance', () => {
     const editing = {
       author: 'alice',
       permlink: 'my-post',
+      parentAuthor: '',
       parentPermlink: 'hive-174578',
       previousMetadata: { image: ['https://img.example/a.png'] }
     }
     const own = normalizeDraft({ owner: 'alice', title: 'T', body: 'B', editing }, 1000)
     expect(own.editing).toEqual(editing)
+
+    const reply = normalizeDraft({
+      owner: 'alice',
+      title: '',
+      body: 'B',
+      editing: { author: 'alice', permlink: 're-parent', parentAuthor: 'bob', parentPermlink: 'the-parent' }
+    }, 1000)
+    expect(reply.editing.parentAuthor).toBe('bob')
 
     const other = normalizeDraft({ owner: 'bob', title: 'T', body: 'B', editing }, 1000)
     expect(other.editing).toBeNull()

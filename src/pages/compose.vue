@@ -49,6 +49,7 @@
 
         <div class="compose-editor">
           <q-input
+            v-if="!isEditingComment"
             v-model="draft.title"
             class="compose-title"
             label="Title"
@@ -59,6 +60,10 @@
             aria-label="Post title"
             placeholder="A clear, specific title"
           />
+          <div v-else class="compose-comment-notice">
+            <q-icon name="reply" size="16px" aria-hidden="true" />
+            <span>Editing a comment. Comments have no title or category.</span>
+          </div>
 
           <div v-if="mode === 'write'" class="compose-write">
             <markdown-toolbar @action="applyAction">
@@ -142,7 +147,7 @@
           </div>
         </section>
 
-        <section class="compose-panel home-card home-panel" aria-labelledby="compose-community-title">
+        <section v-if="!isEditingComment" class="compose-panel home-card home-panel" aria-labelledby="compose-community-title">
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Destination</div>
@@ -240,7 +245,7 @@
           </div>
         </section>
 
-        <section class="compose-panel home-card home-panel" aria-labelledby="compose-rewards-title">
+        <section v-if="!isEditingComment" class="compose-panel home-card home-panel" aria-labelledby="compose-rewards-title">
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Rewards</div>
@@ -493,6 +498,18 @@
 .compose-title :deep(.q-field__control) {
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+.compose-comment-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(79, 195, 247, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(79, 195, 247, 0.06);
+  color: #90a4ae;
+  font-size: 0.75rem;
 }
 
 .compose-write {
@@ -1056,6 +1073,10 @@ export default {
     isEditing () {
       return Boolean(this.draft && this.draft.editing)
     },
+    /** Editing a reply: no title, no category, no reward settings. */
+    isEditingComment () {
+      return Boolean(this.draft && this.draft.editing && this.draft.editing.parentAuthor)
+    },
     visibleDrafts () {
       if (!this.loggedInUser) return this.drafts
       return this.drafts.filter(item => !item.owner || item.owner === this.loggedInUser)
@@ -1193,6 +1214,7 @@ export default {
           editing: {
             author: post.author,
             permlink: post.permlink,
+            parentAuthor: post.parent_author || '',
             parentPermlink: post.parent_permlink || '',
             previousMetadata: metadata
           }
@@ -1530,6 +1552,7 @@ export default {
           permlink,
           // An edit keeps the original parent and does not resend comment options.
           parentPermlink: editing ? editing.parentPermlink : null,
+          parentAuthor: editing ? editing.parentAuthor : '',
           commentOptions: !editing,
           previousMetadata: editing ? editing.previousMetadata : null
         })
