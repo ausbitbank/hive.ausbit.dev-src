@@ -18,6 +18,24 @@ async function setQueuedVoteStatus (page, status) {
   }, { store: handle, status })
 }
 
+test('both vote directions are always available on a post with no votes', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await loginAs(page)
+  await page.goto(POST_ROUTE, { waitUntil: 'domcontentloaded' })
+  await waitForApp(page)
+
+  await expect(page.locator('.vote-control')).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('.vote-control__btn--up').first()).toBeVisible()
+  // The downvote must not be hidden just because the post has no downvotes.
+  await expect(page.locator('.vote-control__btn--down').first()).toBeVisible()
+  await expect(page.locator('.vote-control__btn--down').first()).toBeEnabled()
+
+  // A downvote opens the composer on a negative weight.
+  await page.locator('.vote-control__btn--down').first().click()
+  await expect(page.locator('.vote-control__composer--down')).toBeVisible()
+  await expect(page.locator('.vote-control__composer-value')).toHaveText('100%')
+})
+
 test('queued vote stops spinning once the queue confirms it', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   await loginAs(page)

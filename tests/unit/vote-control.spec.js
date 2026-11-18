@@ -22,13 +22,13 @@ const QBtn = defineComponent({
 const Stub = defineComponent({ name: 'Stub', setup: (_, { slots }) => () => h('span', slots.default ? slots.default() : []) })
 const Spinner = defineComponent({ name: 'QSpinnerTail', setup: () => () => h('span', { class: 'q-spinner-stub' }) })
 
-function mountVote (store) {
+function mountVote (store, votes = []) {
   // The component reads settings and username straight off the store, so keep
   // the shape identical to the real store.
   store.user.username = 'alice'
   store.user.settings = { ...store.user.settings, voteWeightPost: 100 }
   return mount(Vote, {
-    props: { votes: [], author: 'bob', permlink: 'hello-world' },
+    props: { votes, author: 'bob', permlink: 'hello-world' },
     global: {
       plugins: [{ install (app) { app.config.globalProperties.$hiveStore = store } }],
       components: { QBtn, QIcon: Stub, QSpinnerTail: Spinner }
@@ -110,6 +110,25 @@ describe('vote control', () => {
     expect(wrapper.find('.q-spinner-stub').exists()).toBe(true)
   })
 
+  it('always offers both upvote and downvote buttons', async () => {
+    setActivePinia(createPinia())
+    const store = reactive(useHiveStore())
+    const wrapper = mountVote(store)
+
+    // No existing votes: the downvote must still be available.
+    expect(wrapper.find('.vote-control__btn--up').exists()).toBe(true)
+    expect(wrapper.find('.vote-control__btn--down').exists()).toBe(true)
+
+    await wrapper.find('.vote-control__btn--down').trigger('click')
+    await nextTick()
+    expect(wrapper.find('.vote-control__composer').classes()).toContain('vote-control__composer--down')
+
+    // Confirm: the queued vote is a negative weight.
+    await wrapper.find('.vote-control__confirm').trigger('click')
+    await nextTick()
+    expect(store.queue[0][2][1].weight).toBe(-10000)
+  })
+
   it('lets a voter change their vote after voting', async () => {
     setActivePinia(createPinia())
     const store = reactive(useHiveStore())
@@ -121,10 +140,10 @@ describe('vote control', () => {
     await wrapper.find('.vote-control__sent-dismiss').trigger('click')
     await nextTick()
 
-    // The queued vote is now "mine", so the up button stays clickable and
-    // opens the composer again rather than being disabled forever.
+    // The queued vote is now "mine", so the buttons stay clickable and open
+    // the composer again rather than being disabled forever.
     const up = wrapper.find('.vote-control__btn--up')
-    expect(up.attributes('disabled')).toBeUndefined()
+    expect(up.element.disabled).toBe(false)
     await up.trigger('click')
     await nextTick()
     expect(wrapper.find('.vote-control__composer').exists()).toBe(true)
@@ -145,7 +164,7 @@ describe('vote control', () => {
     // back to the unvoted state in the meantime.
     const up = wrapper.find('.vote-control__btn--up')
     expect(up.classes()).toContain('is-active')
-    expect(up.attributes('title')).toContain('change your vote')
+    expect(up.attributes('title')).toContain('adjust')
   })
 
   it('does not mark a failed vote as cast', async () => {
@@ -160,5 +179,35 @@ describe('vote control', () => {
     await nextTick()
 
     expect(wrapper.find('.vote-control__btn--up').classes()).not.toContain('is-active')
+  })
+
+  it('starts a downvote from the downvote button and queues a negative weight', async () => {
+    setActivePinia(createPinia())
+    const store = reactive(useHiveStore())
+    const wrapper = mountVote(store)
+
+    await wrapper.find('.vote-control__btn--down').trigger('click')
+    await nextTick()
+    expect(wrapper.find('.vote-control__composer').classes()).toContain('vote-control__composer--down')
+    expect(wrapper.find('.vote-control__composer-value').text()).toBe('100%')
+
+    await wrapper.find('.vote-control__confirm').trigger('click')
+    await nextTick()
+    expect(store.queue[0][2][1].weight).toBe(-10000)
+  })
+
+  it('can be cancelled back to the buttons', async () => {
+    setActivePinia(createPinia())
+    const store = reactive(useHiveStore())
+    const wrapper = mountVote(store)
+
+    await wrapper.find('.vote-control__btn--down').trigger('click')
+    await nextTick()
+    await wrapper.find('.vote-control__cancel').trigger('click')
+    await nextTick()
+
+    expect(wrapper.find('.vote-control__composer').exists()).toBe(false)
+    expect(store.queue).toHaveLength(0)
+    expect(wrapper.find('.vote-control__btn--down').exists()).toBe(true)
   })
 })

@@ -1,61 +1,33 @@
 <template>
   <span class="vote-control" :class="{ 'vote-control--open': direction !== null && !voteSent, 'vote-control--sent': voteSent }">
     <template v-if="direction === null && !voteSent">
-      <span v-if="myVote" class="vote-control__lockup">
-        <q-btn
-          class="vote-control__btn vote-control__btn--up"
-          :class="{ 'is-active': myUpvote }"
-          size="sm"
-          dense
-          flat
-          no-caps
-          :icon="upvoteIcon"
-          :label="upvoteLabel"
-          :style="myUpvote ? voteWeightStyle(myVote) : undefined"
-          :aria-label="voteAriaLabel('up')"
-          title="You already voted on this post — click to change your vote"
-          @click="voteClicked(myUpvote ? 'up' : 'down')"
-        />
-        <q-btn
-          v-if="myDownvote || (downvotes && downvotes.length > 0)"
-          class="vote-control__btn vote-control__btn--down"
-          :class="{ 'is-active': myDownvote }"
-          size="sm"
-          dense
-          flat
-          no-caps
-          :icon="downvoteIcon"
-          :label="downvoteLabel"
-          :style="myDownvote ? voteWeightStyle(myVote) : undefined"
-          :aria-label="voteAriaLabel('down')"
-          title="You downvoted this post — click to change your vote"
-          @click="voteClicked('down')"
-        />
-      </span>
       <q-btn
-        v-else
         class="vote-control__btn vote-control__btn--up"
+        :class="{ 'is-active': myUpvote }"
         size="sm"
         dense
         flat
         no-caps
         :icon="upvoteIcon"
         :label="upvoteLabel"
+        :style="myUpvote ? voteWeightStyle(myVote) : undefined"
         :aria-label="voteAriaLabel('up')"
-        :title="loggedInUser ? 'Upvote this post' : 'Log in to vote'"
+        :title="voteButtonTitle('up')"
         :disable="disableVoting"
         @click="voteClicked('up')"
       />
-      <q-btn v-if="!myVote && downvotes && downvotes.length > 0"
+      <q-btn
         class="vote-control__btn vote-control__btn--down"
+        :class="{ 'is-active': myDownvote }"
         size="sm"
         dense
         flat
         no-caps
         :icon="downvoteIcon"
         :label="downvoteLabel"
+        :style="myDownvote ? voteWeightStyle(myVote) : undefined"
         :aria-label="voteAriaLabel('down')"
-        :title="loggedInUser ? 'Downvote this post' : 'Log in to vote'"
+        :title="voteButtonTitle('down')"
         :disable="disableVoting"
         @click="voteClicked('down')"
       />
@@ -249,9 +221,9 @@ export default {
       return this.myVote !== undefined && Math.sign(this.myVote.rshares) === -1
     },
     disableVoting () {
-      if (!this.loggedInUser) return true
-      if (this.myVote !== undefined) return true
-      return false
+      // Logged out cannot vote. Having already voted no longer disables the
+      // buttons: clicking opens the composer so the vote can be changed.
+      return !this.loggedInUser
     },
     activePercent: {
       get () {
@@ -297,6 +269,8 @@ export default {
       return { '--vote-weight': Math.min(100, Math.max(1, pct)) + '%' }
     },
     voteClicked (d) {
+      // Opening the composer twice for the same direction submits; clicking the
+      // opposite button switches direction at any point.
       if (this.direction === d) {
         this.submitVote()
         return
@@ -304,6 +278,15 @@ export default {
       this.direction = d
       const preferred = Math.abs(Number(this.$hiveStore.user.settings.voteWeightPost) || 0) || 100
       this.weight = d === 'down' ? -preferred : preferred
+    },
+    voteButtonTitle (d) {
+      if (!this.loggedInUser) return 'Log in to vote'
+      const verb = d === 'up' ? 'Upvote' : 'Downvote'
+      if (this.myDownvote && d === 'up') return 'Change your downvote to an upvote'
+      if (this.myUpvote && d === 'down') return 'Change your upvote to a downvote'
+      if (this.myDownvote && d === 'down') return 'You downvoted this post — adjust the downvote weight'
+      if (this.myUpvote && d === 'up') return 'You upvoted this post — adjust the upvote weight'
+      return verb + ' this post'
     },
     submitVote () {
       const weight = this.weight
@@ -451,6 +434,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
 }
 
 .vote-control__composer-icon {
@@ -462,9 +446,11 @@ export default {
 }
 
 .vote-control__composer-label {
+  overflow: hidden;
   color: #b0bec5;
   font-size: 0.72rem;
   font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -629,17 +615,6 @@ export default {
 .vote-control__sent-dismiss.q-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-}
-
-/* Once a vote lands, the count belongs on the button again. */
-.vote-control__lockup {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.vote-control__lockup .vote-control__btn:not(.is-active) {
-  opacity: 0.75;
 }
 
 @media (max-width: 599px) {
