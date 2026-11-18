@@ -43,17 +43,17 @@ Same machine, same static server, cold cache, 1440×1000.
 
 | Route | FCP before → after | LCP before → after | Route JS before → after | Total transfer before → after |
 | --- | --- | --- | --- | --- |
-| Home | 1844 → **124 ms** | 1844 → **452 ms** | 280.6 → **104.3 KB** | 871.7 → **632.0 KB** |
-| Browse | 1724 → **52 ms** | 3712 → **2560 ms** | 294.3 → **111.4 KB** | 825.6 → **668.6 KB** |
-| Block 1 | 1560 → **52 ms** | 1836 → **1208 ms** | 137.0 → **98.2 KB** | 667.1 → **625.4 KB** |
-| Post | 1648 → **56 ms** | 3300 → **1964 ms** | 306.0 → **245.0 KB** | 858.7 → **774.1 KB** |
-| Wallet | 1864 → **48 ms** | 3644 → **1560 ms** | 167.8 → **132.7 KB** | 770.4 → **671.9 KB** |
-| Internal market | 1632 → **56 ms** | 1632 → **416 ms** | 136.1 → **95.6 KB** | 667.5 → **624.1 KB** |
+| Home | 1844 → **136 ms** | 1844 → **460 ms** | 280.6 → **104.3 KB** | 871.7 → **632.0 KB** |
+| Browse | 1724 → **52 ms** | 3712 → **2380 ms** | 294.3 → **111.4 KB** | 825.6 → **668.6 KB** |
+| Block 1 | 1560 → **48 ms** | 1836 → **1160 ms** | 137.0 → **98.2 KB** | 667.1 → **625.4 KB** |
+| Post | 1648 → **60 ms** | 3300 → **1920 ms** | 306.0 → **245.0 KB** | 858.7 → **774.1 KB** |
+| Wallet | 1864 → **48 ms** | 3644 → **1528 ms** | 167.8 → **132.7 KB** | 770.4 → **671.9 KB** |
+| Internal market | 1632 → **52 ms** | 1632 → **388 ms** | 136.1 → **95.6 KB** | 667.5 → **624.1 KB** |
 
 After FCP is the static boot splash; LCP is the meaningful first content paint
-of the app. Home LCP improved by **75.5%** and total transfer by **27.5%**.
-Browse route JS fell by **62.1%**, wallet LCP by **57.2%** and block/post LCP
-by **34–41%**. Initial shell JS is essentially unchanged at 318.3 KB (the
+of the app. Home LCP improved by **75.1%** and total transfer by **27.5%**.
+Browse route JS fell by **62.1%**, wallet LCP by **58.1%** and block/post LCP
+by **37–42%**. Initial shell JS is essentially unchanged at 318.3 KB (the
 hive-js + Quasar entry chunk); the route work is what moved.
 
 Home font transfer dropped from 228.2 KB to **167.7 KB** by self-hosting only
@@ -136,8 +136,8 @@ after the E2E/axe suite. The measured final run passes:
 - CSS **39.6–42.1 KB** (budget 55 KB)
 - route JS **95.6–245.0 KB** (per-route budgets 125–280 KB)
 - total transfer **624.1–774.1 KB** (per-route budgets 710–860 KB)
-- LCP **416–2560 ms** (budget 8000 ms; CI headroom)
-- CLS **0–0.256** (budget 0.5; W24 will tighten toward 0.1)
+- LCP **388–2380 ms** (budget 8000 ms; CI headroom)
+- CLS **0–0.214** (budget 0.5; W24 will tighten toward 0.1)
 
 ## Verification
 
