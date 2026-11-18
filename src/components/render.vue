@@ -27,6 +27,10 @@ const EMBED_HOSTS = [
   'gateway.ipfs.io'
 ]
 
+function decodedImageUrl (url) {
+  return String(url || '').replace(/&amp;/g, '&')
+}
+
 let hooksInstalled = false
 function installPurifyHooks () {
   if (hooksInstalled) return
@@ -146,12 +150,12 @@ export default {
       const pattern = /<img\b[^>]*\bsrc=["']([^"']+)["']/gi
       let match = pattern.exec(html)
       while (match && urls.length < 4) {
-        if (match[1]) urls.push(match[1])
+        if (match[1]) urls.push({ raw: match[1], decoded: decodedImageUrl(match[1]) })
         match = pattern.exec(html)
       }
       if (!urls.length) return Promise.resolve(new Map())
 
-      return Promise.all(urls.map(url => new Promise(resolve => {
+      return Promise.all(urls.map(entry => new Promise(resolve => {
         const image = new Image()
         let settled = false
         const done = () => {
@@ -159,7 +163,8 @@ export default {
           settled = true
           clearTimeout(timer)
           resolve({
-            url,
+            raw: entry.raw,
+            decoded: entry.decoded,
             width: image.naturalWidth || 0,
             height: image.naturalHeight || 0
           })
@@ -167,11 +172,14 @@ export default {
         const timer = setTimeout(done, 10000)
         image.onload = done
         image.onerror = done
-        image.src = url
+        image.src = entry.decoded
       }))).then(results => {
         const dimensions = new Map()
         for (const result of results) {
-          if (result.width > 0 && result.height > 0) dimensions.set(result.url, result)
+          if (result.width > 0 && result.height > 0) {
+            dimensions.set(result.raw, result)
+            dimensions.set(result.decoded, result)
+          }
         }
         return dimensions
       })
@@ -181,7 +189,7 @@ export default {
       if (!dimensions || dimensions.size === 0) return html
       return html.replace(/<img\b[^>]*>/gi, tag => {
         const source = tag.match(/\bsrc=["']([^"']+)["']/i)
-        const size = source && dimensions.get(source[1])
+        const size = source && (dimensions.get(source[1]) || dimensions.get(decodedImageUrl(source[1])))
         if (!size || /\bwidth=["']?\d/i.test(tag)) return tag
         const close = tag.endsWith('/>') ? '/>' : '>'
         return tag.slice(0, tag.length - close.length) +
