@@ -1,6 +1,6 @@
 # Performance dashboard
 
-Generated 2026-11-18T01:41:04.652Z from commit `a1da1e1` (W22-splash).
+Generated 2026-11-18T01:48:35.423Z from commit `ea1a8a5` (W22-final).
 
 This dashboard measures the built SPA served by `scripts/serve-dist.mjs` with
 Brotli/gzip compression and a cold browser cache. It records Core Web Vitals
@@ -11,12 +11,12 @@ repeatable locally and in CI rather than tied to a hosted Lighthouse account.
 
 | Route | FCP | LCP | CLS | Initial JS | Route JS | CSS | Total transfer | Requests |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Home | 124 ms | 452 ms | 0.009 | 318.300 KB | 104.300 KB | 40.100 KB | 632 KB | 104 |
-| Browse | 52 ms | 2560 ms | 0.028 | 318.300 KB | 111.400 KB | 40.800 KB | 668.600 KB | 118 |
-| Block 1 | 52 ms | 1208 ms | 0 | 318.300 KB | 98.200 KB | 39.600 KB | 625.400 KB | 80 |
-| Post | 56 ms | 1964 ms | 0.047 | 318.300 KB | 245 KB | 40.500 KB | 774.100 KB | 102 |
-| Wallet | 48 ms | 1560 ms | 0.256 | 318.300 KB | 132.700 KB | 42.100 KB | 671.900 KB | 114 |
-| Internal market | 56 ms | 416 ms | 0.124 | 318.300 KB | 95.600 KB | 39.900 KB | 624.100 KB | 74 |
+| Home | 136 ms | 460 ms | 0.008 | 318.300 KB | 104.300 KB | 40.100 KB | 632 KB | 105 |
+| Browse | 52 ms | 2380 ms | 0.028 | 318.300 KB | 111.400 KB | 40.800 KB | 668.600 KB | 119 |
+| Block 1 | 48 ms | 1160 ms | 0 | 318.300 KB | 98.200 KB | 39.600 KB | 625.400 KB | 80 |
+| Post | 60 ms | 1920 ms | 0.057 | 318.300 KB | 245 KB | 40.500 KB | 774.100 KB | 102 |
+| Wallet | 48 ms | 1528 ms | 0.214 | 318.300 KB | 132.700 KB | 42.100 KB | 671.900 KB | 114 |
+| Internal market | 52 ms | 388 ms | 0.124 | 318.300 KB | 95.600 KB | 39.900 KB | 624.100 KB | 74 |
 
 Initial bundle snapshot: **473.100 KB gzip**
 / **314.200 KB Brotli** (entry shell and
@@ -59,6 +59,7 @@ changes.
 
 | Run | Commit | Generated | Routes |
 | --- | --- | --- | --- |
+| W22-final | ea1a8a5 | 2026-11-18 01:48 | Home LCP 460ms / total 632KB<br>Browse LCP 2380ms / total 668.6KB<br>Block 1 LCP 1160ms / total 625.4KB<br>Post LCP 1920ms / total 774.1KB<br>Wallet LCP 1528ms / total 671.9KB<br>Internal market LCP 388ms / total 624.1KB |
 | W22-splash | a1da1e1 | 2026-11-18 01:41 | Home LCP 452ms / total 632KB<br>Browse LCP 2560ms / total 668.6KB<br>Block 1 LCP 1208ms / total 625.4KB<br>Post LCP 1964ms / total 774.1KB<br>Wallet LCP 1560ms / total 671.9KB<br>Internal market LCP 416ms / total 624.1KB |
 | W22-final | a1da1e1 | 2026-11-18 01:26 | Home LCP 432ms / total 631.5KB<br>Browse LCP 2328ms / total 639.5KB<br>Block 1 LCP 1184ms / total 624.9KB<br>Post LCP 1864ms / total 773.7KB<br>Wallet LCP 1520ms / total 671.5KB<br>Internal market LCP 376ms / total 623.7KB |
 | W22-after | a1da1e1 | 2026-11-18 01:23 | Home LCP 436ms / total 631.5KB<br>Browse LCP 2252ms / total 639.5KB<br>Block 1 LCP 1152ms / total 624.9KB<br>Post LCP 1732ms / total 773.7KB<br>Wallet LCP 1568ms / total 671.5KB<br>Internal market LCP 364ms / total 623.7KB |
