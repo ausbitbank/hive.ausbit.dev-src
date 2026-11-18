@@ -114,7 +114,7 @@
           />
         </section>
 
-        <section class="wallet-section" aria-labelledby="wallet-recent-title">
+        <section id="recent" class="wallet-section" aria-labelledby="wallet-recent-title">
           <wallet-activity
             heading-id="wallet-recent-title"
             title="Recent activity"
@@ -436,6 +436,7 @@ export default {
   data () {
     return {
       username: this.$route.params.username,
+      hashScrollTimer: null,
       transferHive: false,
       transferHbd: false,
       stakeHive: false,
@@ -761,10 +762,16 @@ export default {
       if (!hash || hash.length < 2) return
       let id = hash.slice(1)
       try { id = decodeURIComponent(id) } catch {}
-      this.$nextTick(() => {
+      // The sections only exist once the account and global props load, and
+      // the page keeps growing as history and tokens arrive, so re-anchor
+      // after the layout settles instead of being lost on the first frame.
+      const jump = () => {
         const target = document.getElementById(id)
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      })
+        if (target) target.scrollIntoView({ block: 'start' })
+      }
+      this.$nextTick(jump)
+      clearTimeout(this.hashScrollTimer)
+      this.hashScrollTimer = setTimeout(jump, 400)
     },
     scrollTo (id) {
       if (this.$route.hash === '#' + id) {
@@ -777,6 +784,9 @@ export default {
   mounted () {
     this.init()
     this.applyHashScroll()
+  },
+  beforeUnmount () {
+    clearTimeout(this.hashScrollTimer)
   }
 }
 </script>

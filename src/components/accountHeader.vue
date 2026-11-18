@@ -27,27 +27,21 @@
           <user-services :username="account.name" />
         </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
+      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" v-if="showNavBar">
         <q-tabs
           :dense="$q.screen.lt.md"
           :mobile-arrows="true"
           :outside-arrows="true"
           :align="$q.screen.lt.sm ? 'left' : 'center'"
+          icons
           no-caps
           inline-label
           active-color="white"
           indicator-color="secondary"
           class="text-grey-4 full-width"
+          aria-label="Account sections"
         >
-          <q-route-tab name="posts" label="posts" icon="library_books" :to="'/@' + account.name + '/posts'"/>
-          <q-route-tab name="blog" label="blog" icon="menu_book" :to="'/@' + account.name + '/blog'"/>
-          <q-route-tab name="feed" label="feed" icon="rss_feed" :to="'/@' + account.name + '/feed'"/>
-          <q-route-tab name="replies" label="replies" icon="comment" :to="'/@' + account.name + '/replies'"/>
-          <q-route-tab name="comments" label="comments" icon="message" :to="'/@' + account.name + '/comments'"/>
-          <q-route-tab name="communities" label="communities" icon="forum" :to="'/@' + account.name + '/communities'"/>
-          <q-route-tab name="wallet" label="wallet" icon="account_balance" :to="'/@' + account.name + '/wallet'"/>
-          <q-route-tab exact name="explorer" icon="perm_identity" label="profile" :to="'/@' + account.name"/>
-          <q-route-tab v-if="$route.path.endsWith('/tip')" name="tip" label="tip" :to="'/@' + account.name + '/tip'"/>
+          <q-route-tab v-for="tab in navTabs" :key="tab.name" :name="tab.name" :label="tab.label" :icon="tab.icon" :exact="tab.exact" :to="tab.to" />
         </q-tabs>
       </q-toolbar>
     </div>
@@ -118,21 +112,46 @@
   margin: 0.9rem auto 0.15rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-card, 10px);
+  /* The pill owns the horizontal overflow of its scrollable tab strip, but
+     does not clip it: Quasar's outside arrows sit over the rounded corners. */
+  overflow: visible;
   background: rgba(8, 13, 17, 0.84) !important;
   box-shadow: none;
+}
+.account-tabs :deep(.q-tabs) {
+  border-radius: inherit;
 }
 .account-tabs :deep(.q-tab) {
   min-height: 44px;
 }
+/* A shaded, clickable edge makes the overflow obvious: the strip fades under
+   the arrow instead of cutting a label mid-character. */
 .account-tabs :deep(.q-tabs__arrow) {
-  min-width: 30px;
-  color: #b0bec5;
+  top: 0;
+  bottom: 0;
+  min-width: 32px;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  color: #cfd8dc;
   font-size: 26px;
   text-shadow: none;
-  opacity: 0.9;
+  opacity: 0.95;
+  transition: opacity 0.2s ease;
 }
+.account-tabs :deep(.q-tabs__arrow--left) {
+  background: linear-gradient(to right, #080d11 55%, rgba(8, 13, 17, 0));
+}
+.account-tabs :deep(.q-tabs__arrow--right) {
+  background: linear-gradient(to left, #080d11 55%, rgba(8, 13, 17, 0));
+}
+.account-tabs :deep(.q-tabs__arrow:hover:not(.q-tabs__arrow--faded)) {
+  color: #fff;
+}
+/* A faded arrow means there is nothing more in that direction. */
 .account-tabs :deep(.q-tabs__arrow--faded) {
-  opacity: 0.28;
+  opacity: 0;
 }
 .account-tabs :deep(.q-tabs__content) {
   scrollbar-width: none;
@@ -312,6 +331,21 @@ export default {
   computed: {
     avatarSrc: function () {
       return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.account.name)
+    },
+    navTabs: function () {
+      const name = this.account.name
+      const tabs = [
+        { name: 'posts', label: 'posts', icon: 'library_books', to: '/@' + name + '/posts' },
+        { name: 'blog', label: 'blog', icon: 'menu_book', to: '/@' + name + '/blog' },
+        { name: 'feed', label: 'feed', icon: 'rss_feed', to: '/@' + name + '/feed' },
+        { name: 'replies', label: 'replies', icon: 'comment', to: '/@' + name + '/replies' },
+        { name: 'comments', label: 'comments', icon: 'message', to: '/@' + name + '/comments' },
+        { name: 'communities', label: 'communities', icon: 'forum', to: '/@' + name + '/communities' },
+        { name: 'wallet', label: 'wallet', icon: 'account_balance', to: '/@' + name + '/wallet' },
+        { name: 'explorer', label: 'profile', icon: 'perm_identity', to: '/@' + name, exact: true }
+      ]
+      if (this.$route.path.endsWith('/tip')) tabs.push({ name: 'tip', label: 'tip', to: '/@' + name + '/tip' })
+      return tabs
     },
     coverImage: function () {
       // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
