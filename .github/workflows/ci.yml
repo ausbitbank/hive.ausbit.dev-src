@@ -14,7 +14,10 @@ concurrency:
 jobs:
   verify:
     name: Lint, test and build
-    runs-on: ubuntu-latest
+    # Pinned: Playwright 1.58.x only ships dependency mappings up to ubuntu24.04,
+    # so `playwright install --with-deps` fails on the ubuntu-latest (26.04) image.
+    # Revisit the pin after upgrading @playwright/test.
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - name: Checkout
