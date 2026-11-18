@@ -9,6 +9,7 @@ import {
   normalizeQueueMeta,
   operationLabel,
   operationSummary,
+  postMetadataArgument,
   queueBadgeCount,
   queueCounts,
   statusMeta
@@ -35,6 +36,12 @@ describe('queue helpers', () => {
     expect(keyRequirement(transfer)).toMatchObject({ label: 'Active key', color: 'orange' })
     expect(keyRequirement(['alice', 'posting', ['unknown_op', {}]]).label).toBe('Posting key')
     expect(keyRequirement(['alice', 'owner', ['vote', {}]]).label).toBe('owner key')
+  })
+
+  it('passes post metadata to Keychain without double encoding it', () => {
+    expect(postMetadataArgument('{"tags":["hive"]}')).toBe('{"tags":["hive"]}')
+    expect(postMetadataArgument({ tags: ['hive'] })).toBe('{"tags":["hive"]}')
+    expect(postMetadataArgument(null)).toBe('')
   })
 
   it('normalises status metadata and aligns legacy queues', () => {

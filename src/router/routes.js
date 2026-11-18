@@ -57,6 +57,8 @@ const routes = [
       { path: 'proposals/:proposalId', name: 'proposal-detail', component: () => import('pages/proposal.vue') },
       { path: 'hbdstabilizer', name: 'hbdstabilizer', component: () => import('pages/hbdstabilizer.vue') },
       { path: 'tax', name: 'tax', component: () => import('pages/tax.vue') },
+      { path: 'compose/:draftId?', name: 'compose', component: () => import('pages/compose.vue') },
+      { path: 'drafts', redirect: { name: 'compose' } },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
       { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },

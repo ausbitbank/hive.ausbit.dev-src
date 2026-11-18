@@ -24,6 +24,7 @@
             <kbd class="command-trigger__kbd">Ctrl K</kbd>
           </q-btn>
           <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump to" @click="openCommandPalette" />
+          <q-btn class="site-toolbar__icon" flat dense round icon="edit_note" aria-label="Write a post" title="Write a post" @click="openCompose" />
           <queue v-if="loggedInUser !== null && queue.length > 0" />
           <notifications v-if="loggedInUser !== null" />
           <user-login />
@@ -315,6 +316,10 @@ export default {
       this.leftDrawerOpen = false
       this.$refs.commandPalette?.openPalette()
     },
+    openCompose () {
+      this.leftDrawerOpen = false
+      this.$router.push('/compose').catch(() => {})
+    },
     preloadQueueChunk () {
       // Queue is deferred for startup, but a signed-in user may need it while
       // offline. Warm the chunk on idle so it is available from the shell cache.
@@ -388,6 +393,12 @@ export default {
         }
       ],
       toolLinks: [
+        {
+          title: 'Write a post',
+          caption: 'drafts and publishing',
+          icon: 'edit_note',
+          to: '/compose'
+        },
         {
           title: 'HBD monitor',
           caption: 'stability and interest',

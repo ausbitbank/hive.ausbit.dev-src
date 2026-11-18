@@ -74,6 +74,21 @@ export function operationLabel (action) {
   return OPERATION_LABELS[type] || type.replace(/_/g, ' ') || 'Action'
 }
 
+/**
+ * Keychain's requestPost expects json_metadata as a JSON string. Queue items
+ * already store the operation's metadata as a string, so only stringify raw
+ * objects; double-encoding would make tags and cross-post metadata unreadable.
+ */
+export function postMetadataArgument (value) {
+  if (typeof value === 'string') return value
+  if (value === null || value === undefined) return ''
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return ''
+  }
+}
+
 function shorten (value, max = 70) {
   const text = String(value || '')
   return text.length > max ? text.slice(0, max - 1) + '…' : text

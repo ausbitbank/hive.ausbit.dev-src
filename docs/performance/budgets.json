@@ -33,6 +33,11 @@
       "jsKb": 460,
       "routeJsKb": 125,
       "totalKb": 710
+    },
+    "/compose": {
+      "jsKb": 460,
+      "routeJsKb": 120,
+      "totalKb": 700
     }
   }
 }

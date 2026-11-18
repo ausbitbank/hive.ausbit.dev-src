@@ -42,6 +42,51 @@ test('header lockup keeps a stable icon/title gap and hides the title on mobile'
   expect(mobile.markWidth).toBeGreaterThanOrEqual(22)
 })
 
+test('compose page stays single-column and overflow-free on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/compose')
+  await waitForApp(page)
+  await expect(page.locator('.compose-page')).toBeVisible({ timeout: 30000 })
+  await expect(page.getByLabel('Post title')).toBeVisible()
+  await expect(page.getByLabel('Post body in Markdown')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Log in to publish' })).toBeDisabled()
+
+  const mobile = await page.evaluate(() => {
+    const grid = document.querySelector('.compose-grid')
+    return {
+      h1: document.querySelectorAll('h1').length,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+      textareaHeight: document.querySelector('.compose-textarea').getBoundingClientRect().height
+    }
+  })
+  expect(mobile.h1).toBe(1)
+  expect(mobile.overflow).toBe(0)
+  expect(mobile.columns).toBe(1)
+  expect(mobile.textareaHeight).toBeGreaterThanOrEqual(320)
+
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  await page.goto('/compose')
+  await waitForApp(page)
+  await expect(page.locator('.compose-side')).toBeVisible({ timeout: 30000 })
+  const desktop = await page.evaluate(() => {
+    const grid = document.querySelector('.compose-grid')
+    const main = document.querySelector('.compose-main')
+    const side = document.querySelector('.compose-side')
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      columns: getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+      mainTop: main.getBoundingClientRect().top,
+      sideTop: side.getBoundingClientRect().top,
+      sticky: getComputedStyle(main).position
+    }
+  })
+  expect(desktop.overflow).toBe(0)
+  expect(desktop.columns).toBe(2)
+  expect(Math.abs(desktop.mainTop - desktop.sideTop)).toBeLessThanOrEqual(2)
+  expect(desktop.sticky).toBe('sticky')
+})
+
 test('post sidebar stacks between the article and comments on mobile and aligns on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(POST_ROUTE)

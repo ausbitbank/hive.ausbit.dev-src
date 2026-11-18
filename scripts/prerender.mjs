@@ -37,7 +37,8 @@ const ROUTES = [
   '/nodes',
   '/tax',
   '/create',
-  '/hbdstabilizer'
+  '/hbdstabilizer',
+  '/compose'
 ]
 const DIST = resolve(process.cwd(), 'dist/spa')
 const DEFAULT_TITLE = 'hive.ausbit.dev — Hive block explorer'

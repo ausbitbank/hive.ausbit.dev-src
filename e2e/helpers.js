@@ -50,6 +50,25 @@ export async function seedQueue (page, { items, meta }) {
   }, { items, meta })
 }
 
+export async function readDrafts (page) {
+  return page.evaluate(() => {
+    const raw = localStorage.getItem('composeDrafts')
+    if (!raw) return null
+    const text = raw.replace(/^__q_objt\|/, '')
+    try { return JSON.parse(text) } catch { return null }
+  })
+}
+
+export async function seedDrafts (page, drafts) {
+  await page.addInitScript(({ drafts }) => {
+    localStorage.setItem('composeDrafts', '__q_objt|' + JSON.stringify({
+      version: 1,
+      savedAt: Date.now(),
+      drafts
+    }))
+  }, { drafts })
+}
+
 export function escapeRegExp (value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

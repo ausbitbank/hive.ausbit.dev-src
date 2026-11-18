@@ -223,6 +223,7 @@ const COMMANDS = [
   { label: 'HBD monitor', description: 'Peg, savings and interest', icon: 'attach_money', path: '/hbd', keywords: 'stablecoin savings apr' },
   { label: 'API nodes', description: 'Latency and node health', icon: 'dns', path: '/nodes', keywords: 'api status' },
   { label: 'Network health', description: 'Chain status and global properties', icon: 'monitor_heart', path: '/health', keywords: 'status chain' },
+  { label: 'Write a post', description: 'Drafts, preview and publishing', icon: 'edit_note', path: '/compose', keywords: 'compose create publish draft blog' },
   { label: 'Create account', description: 'Join Hive', icon: 'person_add', path: '/create', keywords: 'signup register' }
 ]
 
@@ -278,6 +279,7 @@ export default {
       if (!this.loggedInUser) return []
       const user = this.loggedInUser
       const items = [
+        { path: '/compose', label: 'New post', description: 'Draft locally and publish', icon: 'edit_note' },
         { path: '/@' + user + '/wallet', label: 'My wallet', description: 'Balances and transactions', icon: 'account_balance_wallet' },
         { path: '/@' + user, label: 'My profile', description: 'Account overview', icon: 'person' }
       ]

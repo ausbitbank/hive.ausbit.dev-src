@@ -190,6 +190,7 @@ import {
   normalizeQueueMeta,
   operationLabel,
   operationSummary,
+  postMetadataArgument,
   queueBadgeCount,
   queueCounts,
   statusMeta
@@ -407,7 +408,7 @@ export default {
           operation[1].body,
           operation[1].parent_permlink,
           operation[1].parent_author,
-          JSON.stringify(operation[1].json_metadata),
+          postMetadataArgument(operation[1].json_metadata),
           operation[1].permlink,
           JSON.stringify(commentOptions)
         )

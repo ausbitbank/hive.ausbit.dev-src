@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { loginAs, readQueue, seedQueue, waitForApp } from './helpers'
+import { loginAs, readDrafts, readQueue, seedDrafts, seedQueue, waitForApp } from './helpers'
 
 const QUEUE_ITEMS = [
   ['ausbitbank', 'active', ['transfer', { from: 'ausbitbank', to: 'alice', amount: '1.000 HIVE', memo: '' }]],
@@ -11,6 +11,70 @@ const QUEUE_META = [
 ]
 
 test.describe('action flows', () => {
+  test('compose autosaves and restores a local draft', async ({ page }) => {
+    test.setTimeout(120000)
+    const runtimeErrors = []
+    page.on('pageerror', error => runtimeErrors.push(error.message))
+    page.on('console', message => {
+      if (message.type() === 'error' && /(TypeError|is not a function|Cannot read|undefined is not)/i.test(message.text())) {
+        runtimeErrors.push(message.text())
+      }
+    })
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByRole('heading', { level: 1, name: 'Write a post' })).toBeVisible({ timeout: 30000 })
+
+    await page.getByLabel('Post title').fill('E2E autosave draft')
+    await page.getByLabel('Post body in Markdown').fill('Draft body written by the fast E2E suite.')
+
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.title === 'E2E autosave draft')
+    }).toBe(true)
+
+    await page.reload()
+    await waitForApp(page)
+    await expect(page.getByLabel('Post title')).toHaveValue('E2E autosave draft')
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue('Draft body written by the fast E2E suite.')
+    expect(runtimeErrors).toEqual([])
+  })
+
+  test('compose queues a top-level posting comment', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await seedDrafts(page, [{
+      id: 'e2e-compose-draft',
+      owner: 'ausbitbank',
+      title: 'E2E compose post',
+      body: 'A queued post from the fast E2E suite.\n\n## Heading\n\n- one\n- two',
+      tags: ['hive', 'testing'],
+      community: 'hive-174578',
+      crossPost: null,
+      beneficiaries: [{ account: 'ausbitbank', weight: 1000 }],
+      rewards: { maxAcceptedPayout: '100000.000 HBD', percentHbd: 10000, allowVotes: true, allowCurationRewards: true },
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByLabel('Post title')).toHaveValue('E2E compose post')
+
+    await page.getByRole('button', { name: 'Queue post for signing' }).click()
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      return queue?.items?.some(item =>
+        item[1] === 'posting' &&
+        item[2]?.[0] === 'comment' &&
+        item[2]?.[1]?.parent_author === '' &&
+        item[2]?.[1]?.parent_permlink === 'hive-174578'
+      )
+    }).toBe(true)
+
+    const stored = await readDrafts(page)
+    expect(stored?.drafts?.some(draft => draft.id === 'e2e-compose-draft')).toBeFalsy()
+  })
+
   test('comment composer queues a posting comment', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)
