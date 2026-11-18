@@ -142,16 +142,75 @@ export function communityInsights (posts, options = {}) {
 }
 
 export async function fetchCommunityInsightData (name, options = {}) {
-  if (!name) return { posts: [], mutedPosts: [] }
-  const limit = Math.max(10, Math.min(100, Number(options.limit) || 100))
-  const [posts, mutedPosts] = await Promise.all([
-    bridgeRequest('get_ranked_posts', { sort: 'created', tag: name, limit })
-      .catch(error => { if (options.throwOnError) throw error; return [] }),
-    bridgeRequest('get_ranked_posts', { sort: 'muted', tag: name, limit: 20 })
-      .catch(error => { if (options.throwOnError) throw error; return [] })
-  ])
+  if (!name) return { posts: [], mutedPosts: [], pages: 0, truncated: false }
+
+  // bridge.get_ranked_posts caps `limit` at 20 on public nodes. Page through
+  // the created feed until a page is short, the oldest post is outside the
+  // 30-day window, or the page budget is reached.
+  const pageSize = Math.max(1, Math.min(20, Number(options.pageSize) || 20))
+  const maxPages = Math.max(1, Math.min(10, Number(options.maxPages) || 5))
+  const now = options.now ? Number(new Date(options.now)) : Date.now()
+  const oldestUseful = now - 31 * 24 * 60 * 60 * 1000
+  const posts = []
+  let startAuthor = ''
+  let startPermlink = ''
+  let pages = 0
+  let truncated = false
+
+  for (let pageIndex = 0; pageIndex < maxPages; pageIndex++) {
+    const params = { sort: 'created', tag: name, limit: pageSize }
+    if (startAuthor) {
+      params.start_author = startAuthor
+      params.start_permlink = startPermlink
+    }
+
+    let page
+    try {
+      page = await bridgeRequest('get_ranked_posts', params)
+    } catch (error) {
+      if (pageIndex === 0 || options.throwOnError) throw error
+      break
+    }
+
+    if (!Array.isArray(page)) {
+      if (pageIndex === 0) throw new Error('Unexpected community feed response')
+      break
+    }
+    if (page.length === 0) break
+    pages += 1
+    posts.push(...page)
+
+    const last = page[page.length - 1]
+    if (page.length < pageSize || !last?.author || !last?.permlink) break
+
+    const lastCreated = postTime(last)
+    if (lastCreated !== null && lastCreated < oldestUseful) break
+
+    startAuthor = last.author
+    startPermlink = last.permlink
+    if (pageIndex === maxPages - 1) truncated = true
+  }
+
+  const seen = new Set()
+  const uniquePosts = posts.filter(post => {
+    if (!post?.author || !post?.permlink) return false
+    const key = post.author + '/' + post.permlink
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  let mutedPosts = []
+  try {
+    mutedPosts = await bridgeRequest('get_ranked_posts', { sort: 'muted', tag: name, limit: 20 })
+  } catch (error) {
+    if (options.throwOnError) throw error
+  }
+
   return {
-    posts: Array.isArray(posts) ? posts : [],
-    mutedPosts: Array.isArray(mutedPosts) ? mutedPosts : []
+    posts: uniquePosts,
+    mutedPosts: Array.isArray(mutedPosts) ? mutedPosts : [],
+    pages,
+    truncated
   }
 }

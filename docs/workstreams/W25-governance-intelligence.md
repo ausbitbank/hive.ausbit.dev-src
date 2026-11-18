@@ -77,7 +77,7 @@ Integration points:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **46 files / 330 tests passing**.
+- `bun run test` — **47 files / 333 tests passing**.
 - `bun run build` — succeeded (SPA, Cloudflare compatibility and RSS steps).
 - `bun run perf:check` — passed. Browse stays inside its 730 KB total-transfer
   budget after card previews request compact `hqdefault` YouTube thumbnails
@@ -90,8 +90,10 @@ Integration points:
   `/@ausbitbank/delegations` and `/c/hive-174578` return 200 and render the new
   analytics, authority, delegation and community sections.
 - Deployment backup:
-  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261118T064801Z.tar.gz`
-  (sha256 `477ccec85261bbfd7a43bfdf7b9733a508033bf106d5b42762b12f28fee32827`).
+  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261118T072540Z.tar.gz`
+  (sha256 `fca3c9e0fe5e0615739d81b0e2cf76370067cce156a4c39b52767c01aa061997`).
+- Live community smoke after the pagination fix: `/c/hive-139531` reports
+  78 posts in the last 30 days, 18 in the last 7 days and a 100-post sample.
 - `bun run test:e2e` — **40 Playwright tests** (32 before W25, plus 6 governance
   flows and 2 new axe route checks at 1440px and 390px).
 - New axe coverage: `/@ausbitbank/delegations` and `/c/hive-174578`.
@@ -114,6 +116,10 @@ Integration points:
   state rather than a payment ledger. Paid-to-date, remaining commitments and
   the monthly outlook are derived from payment windows and are labelled as
   projections.
+- **Community insights are sampled.** `bridge.get_ranked_posts` caps each page
+  at 20 posts on public nodes, so the card pages through up to five pages
+  (100 recent posts) and stops at the 30-day boundary. High-volume communities
+  are labelled when the 30-day counts may be partial.
 - **Topics are inferred.** Proposals have no category field, so the topic mix
   uses keyword signals from the subject and falls back to `other`.
 - **Voter overlap is capped.** Overlap uses the first 1,000 recorded voters on

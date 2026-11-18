@@ -11,6 +11,11 @@
       <q-btn flat dense no-caps color="primary" icon="refresh" label="Refresh" :loading="loading" @click="load" />
     </div>
 
+    <p v-if="!loading && !error && insights.postCount" class="community-insights__sample">
+      Sample: {{ formatNumber(insights.postCount) }} most recent posts
+      <template v-if="sample.truncated"> · 30-day counts may be partial for this high-volume community</template>
+    </p>
+
     <q-card v-if="error" flat bordered class="community-insights__state community-insights__state--error">
       <q-icon name="error_outline" size="1.6em" aria-hidden="true" />
       <span>{{ error }}</span>
@@ -26,12 +31,12 @@
       <q-card flat bordered class="community-stat">
         <div class="community-stat__label">Active authors</div>
         <div class="community-stat__value">{{ loading ? '—' : formatNumber(insights.activeAuthors7d) }}</div>
-        <div class="community-stat__hint">posted in the last 7 days</div>
+        <div class="community-stat__hint">posted in the last 7 days · sampled</div>
       </q-card>
       <q-card flat bordered class="community-stat">
         <div class="community-stat__label">Posts · 30 days</div>
         <div class="community-stat__value">{{ loading ? '—' : formatNumber(insights.posts30d) }}</div>
-        <div class="community-stat__hint">{{ formatNumber(insights.posts7d) }} in the last 7 days</div>
+        <div class="community-stat__hint">{{ formatNumber(insights.posts7d) }} in the last 7 days · sampled</div>
       </q-card>
       <q-card flat bordered class="community-stat">
         <div class="community-stat__label">Pending payouts</div>
@@ -135,6 +140,7 @@ export default {
     return {
       posts: [],
       mutedPosts: [],
+      sample: { pages: 0, truncated: false },
       loading: false,
       error: ''
     }
@@ -182,10 +188,12 @@ export default {
         const data = await fetchCommunityInsightData(this.communityName)
         this.posts = data.posts
         this.mutedPosts = data.mutedPosts
+        this.sample = { pages: data.pages, truncated: data.truncated }
       } catch {
         this.error = 'Could not load community insights.'
         this.posts = []
         this.mutedPosts = []
+        this.sample = { pages: 0, truncated: false }
       } finally {
         this.loading = false
       }
@@ -227,6 +235,12 @@ export default {
   max-width: 70ch;
   color: #90a4ae;
   font-size: 0.76rem;
+}
+
+.community-insights__sample {
+  margin: 0 0 var(--space-2);
+  color: #78909c;
+  font-size: 0.68rem;
 }
 
 .community-insights__state {

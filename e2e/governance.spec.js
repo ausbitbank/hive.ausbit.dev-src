@@ -49,11 +49,15 @@ test.describe('W25 governance and community intelligence', () => {
 
   test('community pages render insight cards', async ({ page }) => {
     test.setTimeout(120000)
-    await page.goto('/c/hive-174578', { waitUntil: 'domcontentloaded' })
+    await page.goto('/c/hive-139531', { waitUntil: 'domcontentloaded' })
     await waitForApp(page)
     await expect(page.getByRole('heading', { name: 'Activity and moderation signals' })).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('Top recent authors')).toBeVisible()
     await expect(page.getByText('Visible signals')).toBeVisible()
+    await expect(page.getByText('Sample:')).toBeVisible()
+    const postsCard = page.locator('.community-stat').filter({ hasText: 'Posts · 30 days' })
+    await expect(postsCard.locator('.community-stat__value')).not.toHaveText('0', { timeout: 30000 })
+    await expect(page.getByText('No recent posts found.')).toHaveCount(0)
   })
 
   test('new governance surfaces do not overflow at 390px', async ({ page }) => {

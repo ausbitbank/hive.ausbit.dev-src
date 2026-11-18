@@ -22,7 +22,7 @@ W25 governance intelligence layered on top.
   `docs/workstreams/W25-governance-intelligence.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 46 unit-test files / 330 tests, 40 Playwright E2E tests, green build.
+- 47 unit-test files / 333 tests, 40 Playwright E2E tests, green build.
 - Performance dashboard: `docs/performance/README.md`.
 - Production is deployed from the W25 build with the nginx header/metadata policy.
 
@@ -242,7 +242,7 @@ Every workstream must include:
 > Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
 > W27 UI polish, W22 performance, W23 resilience, W24 runtime polish and W25
 > governance intelligence were delivered on top of it. W16–W25 are complete,
-> with 46 unit-test files / 330 tests and 40 Playwright E2E tests passing.
+> with 47 unit-test files / 333 tests and 40 Playwright E2E tests passing.
 > Production is deployed from the W25 build.
 >
 > Start **Track 3 — W26: Drafts and creator workflow**. Do not start W28 yet;
