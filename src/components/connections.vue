@@ -1,13 +1,10 @@
 <template>
     <div>
-        <user-card :username="person" :show-cover="false" v-for="person in currentPage" :key="person" />
-        <div class="q-pa-lg flex flex-center" v-if="maxPages > 1">
-          <q-pagination v-model="page" :max="maxPages" :max-pages="3" direction-links input unelevated style="margin:auto"/>
-        </div>
-        <div style="margin:auto" class="text-center">
-            <q-btn flat icon="search" @click="getConnections()" v-if="!loadMoreEnabled" color="primary">
-                Load more ({{ people.length }} so far)
-            </q-btn>
+        <infinite-scroll :can-load="!loadMoreEnabled" :loading="loading" :offset="400" @load="getConnections">
+            <user-card :username="person" :show-cover="false" v-for="person in people" :key="person" />
+        </infinite-scroll>
+        <div class="text-center text-caption text-grey q-pa-md">
+            Showing {{ people.length }} of {{ total }} {{ type }}
         </div>
     </div>
 </template>
@@ -20,23 +17,16 @@ export default {
     return {
       people: [],
       loading: false,
-      limit: 100,
-      page: 1
+      limit: 100
     }
   },
   components: {
-    userCard: defineAsyncComponent(() => import('components/userCard.vue'))
+    userCard: defineAsyncComponent(() => import('components/userCard.vue')),
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
   },
   watch: {
-    currentPage: function (newState) {
-      if (newState.length === 0) {
-        this.getConnections()
-      }
-      this.getAccounts(newState)
-    },
     username () {
       this.people = []
-      this.page = 1
       this.loading = false
       if (this.followCount === null) this.$hiveStore.getFollowCount(this.username)
       this.getConnections()
@@ -44,6 +34,7 @@ export default {
   },
   methods: {
     getConnections () {
+      if (this.loading) return
       this.loading = true
       var last = ''
       if (this.people.length > 0) { last = this.people[this.people.length - 1] }
@@ -56,6 +47,7 @@ export default {
             if (this.type === 'followers') { newPeople.push(r.follower) }
           })
           this.people.push.apply(this.people, newPeople)
+          this.getAccounts(newPeople)
           this.loading = false
         })
         .catch(() => {
@@ -63,8 +55,6 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Failed to load ' + this.type })
         })
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    getAccountLink (user) { return '/@' + user },
     getAccounts (accounts) {
       var newPeopleToCache = []
       accounts.forEach(p => { if (this.$hiveStore.accounts[p] === undefined) { newPeopleToCache.push(p) } })
@@ -74,29 +64,24 @@ export default {
   computed: {
     globalProps: function () { return this.$hiveStore.globalProps },
     followCount: function () { return this.$hiveStore.followCounts[this.username] },
+    total: function () {
+      const count = this.type === 'following'
+        ? this.followCount?.following_count
+        : this.followCount?.follower_count
+      return count === undefined || count === null ? this.people.length : count
+    },
     loadMoreEnabled: function () {
       const count = this.type === 'following'
         ? this.followCount?.following_count
         : this.followCount?.follower_count
-      if (count !== undefined) return count <= this.people.length
+      if (count !== undefined && count !== null) return count <= this.people.length
       return this.people.length < this.limit
-    },
-    currentPage: function () {
-      return this.people.slice((this.page * this.limit - this.limit), (this.page * this.limit))
-    },
-    maxPages: function () {
-      const count = this.type === 'following'
-        ? this.followCount?.following_count
-        : this.followCount?.follower_count
-      if (count !== undefined) return Math.ceil(count / this.limit)
-      return Math.ceil(this.people.length / this.limit)
     }
   },
   mounted () {
     this.getConnections()
     if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
     if (this.followCount === null) { this.$hiveStore.getFollowCount(this.username) }
-    this.page = 1
   }
 }
 </script>

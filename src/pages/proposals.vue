@@ -160,28 +160,23 @@
           <p class="proposal-section__note">
             Payment windows that have ended. They are kept for historical reference.
           </p>
-          <div class="proposal-grid">
-            <proposal-card
-              v-for="proposal in expiredVisible"
-              :key="proposal.id"
-              :p="proposal"
-              :return-proposal-votes="returnProposalVotes"
-              :voted="isVoted(proposal.id)"
-              @vote="onVote"
-            />
-          </div>
-          <div v-if="expiredProposals.length > expiredVisible.length || tab !== 'expired'" class="proposal-section__more">
+          <infinite-scroll
+            :can-load="tab === 'expired' && expiredLimit < expiredProposals.length"
+            @load="expiredLimit += 24"
+          >
+            <div class="proposal-grid">
+              <proposal-card
+                v-for="proposal in expiredVisible"
+                :key="proposal.id"
+                :p="proposal"
+                :return-proposal-votes="returnProposalVotes"
+                :voted="isVoted(proposal.id)"
+                @vote="onVote"
+              />
+            </div>
+          </infinite-scroll>
+          <div v-if="tab !== 'expired'" class="proposal-section__more">
             <q-btn
-              v-if="tab === 'expired' && expiredLimit < expiredProposals.length"
-              outline
-              no-caps
-              color="primary"
-              icon="expand_more"
-              :label="'Load more expired proposals (' + (expiredProposals.length - expiredVisible.length) + ' remaining)'"
-              @click="expiredLimit += 24"
-            />
-            <q-btn
-              v-else-if="tab !== 'expired'"
               flat
               no-caps
               color="primary"
@@ -204,6 +199,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import ProposalCard from 'components/proposal.vue'
 import ProposalAnalytics from 'components/proposal/ProposalAnalytics.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
@@ -225,7 +221,11 @@ const VALID_SORTS = ['votes', 'daily', 'newest', 'ending']
 
 export default {
   name: 'Proposals',
-  components: { ProposalCard, ProposalAnalytics },
+  components: {
+    ProposalCard,
+    ProposalAnalytics,
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
+  },
   data () {
     const query = this.$route?.query || {}
     return {

@@ -92,31 +92,30 @@
         <p>{{ count > 0 ? 'No comments match the current filters.' : 'No comments yet.' }}</p>
       </div>
 
-      <div v-else class="comments__list">
-        <comment
-          v-for="item in visibleComments"
-          :key="item.key"
-          :comment="item.comment"
-          :depth="item.depth"
-          @posted="onCommentPosted"
-        />
-      </div>
+      <infinite-scroll
+        v-else
+        :can-load="hasMore"
+        :loading="paging"
+        :offset="300"
+        @load="loadMore"
+      >
+        <div class="comments__list">
+          <comment
+            v-for="item in visibleComments"
+            :key="item.key"
+            :comment="item.comment"
+            :depth="item.depth"
+            @posted="onCommentPosted"
+          />
+        </div>
+      </infinite-scroll>
 
-      <div class="comments__footer">
+      <div v-if="visibleComments.length" class="comments__footer">
         <span class="comments__progress">
           Showing {{ visibleComments.length }} of {{ totalComments }} comments
         </span>
         <q-btn
-          v-if="hasMore"
-          outline
-          no-caps
-          color="primary"
-          icon="expand_more"
-          label="Load more comments"
-          @click="loadMore"
-        />
-        <q-btn
-          v-else-if="totalComments > pageSize"
+          v-if="!hasMore && totalComments > pageSize"
           flat
           no-caps
           color="primary"
@@ -158,7 +157,8 @@ export default {
   name: 'comments',
   components: {
     comment,
-    commentForm: defineAsyncComponent(() => import('components/CommentForm.vue'))
+    commentForm: defineAsyncComponent(() => import('components/CommentForm.vue')),
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
   },
   props: {
     author: { type: String, required: true },
@@ -176,6 +176,7 @@ export default {
       showFiltered: false,
       visibleCount: PAGE_SIZE,
       pageSize: PAGE_SIZE,
+      paging: false,
       composerOpen: false,
       refreshing: false,
       refreshTimer: null,
@@ -273,7 +274,12 @@ export default {
       }, 4500)
     },
     loadMore () {
+      // The next page is already in memory, so flag the request for one tick.
+      // This gives the infinite scroller a completion signal while keeping the
+      // pagination trivially synchronous.
+      this.paging = true
       this.visibleCount += PAGE_SIZE
+      this.$nextTick(() => { this.paging = false })
     },
     backToPost () {
       const post = document.querySelector('.post-article')

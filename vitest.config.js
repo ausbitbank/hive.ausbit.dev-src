@@ -19,7 +19,10 @@ export default defineConfig({
       components: src('components'),
       layouts: src('layouts'),
       pages: src('pages'),
-      stores: src('stores')
+      stores: src('stores'),
+      // Outside an SSR app Vitest resolves Quasar's server build; the client
+      // build is required for mounting components under jsdom.
+      quasar: 'quasar/dist/quasar.client.js'
     }
   },
   test: {

@@ -130,20 +130,18 @@
             </q-item>
           </q-list>
 
-          <div class="notifications-load">
-            <q-btn
-              v-if="!reachedEnd"
-              flat
-              dense
-              no-caps
-              color="primary"
-              icon="expand_more"
-              label="Load more"
-              :loading="loadingMore"
-              @click="loadMore"
-            />
-            <span v-else class="notifications-end">End of notifications</span>
-          </div>
+          <infinite-scroll
+            v-if="filteredNotifications.length > 0"
+            :can-load="!reachedEnd"
+            :loading="loadingMore"
+            scroll-target=".notifications-scroll"
+            :offset="200"
+            @load="loadMore"
+          >
+            <template #done>
+              <span class="notifications-end">End of notifications</span>
+            </template>
+          </infinite-scroll>
         </q-scroll-area>
 
         <q-card-section class="home-panel__footer">
@@ -157,6 +155,7 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import {
   NOTIFICATION_FILTERS,
@@ -171,6 +170,9 @@ import {
 
 export default {
   name: 'notifications',
+  components: {
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
+  },
   data () {
     return {
       loading: false,
@@ -491,12 +493,6 @@ export default {
   margin-top: 0.1rem;
   color: #78909c;
   font-size: 0.66rem;
-}
-
-.notifications-load {
-  display: flex;
-  justify-content: center;
-  padding: 0.45rem 0 0.6rem;
 }
 
 .notifications-end {

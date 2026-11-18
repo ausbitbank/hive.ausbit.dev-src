@@ -167,21 +167,18 @@
         <q-btn flat dense no-caps color="primary" label="Retry" @click="loadMore" />
       </div>
 
-      <div class="browse-more">
-        <q-btn
-          v-if="hasMore"
-          outline
-          no-caps
-          color="primary"
-          icon="expand_more"
-          :label="loadingMore ? 'Loading…' : 'Load more posts'"
-          :loading="loadingMore"
-          @click="loadMore"
-        />
-        <div v-else class="browse-end">
-          <q-icon name="check_circle" size="16px" aria-hidden="true" /> You’re all caught up.
-        </div>
-      </div>
+      <infinite-scroll
+        :can-load="hasMore"
+        :disabled="Boolean(error)"
+        :loading="loadingMore"
+        @load="loadMore"
+      >
+        <template #done>
+          <div class="browse-end">
+            <q-icon name="check_circle" size="16px" aria-hidden="true" /> You’re all caught up.
+          </div>
+        </template>
+      </infinite-scroll>
     </template>
   </div>
 </template>
@@ -332,9 +329,6 @@
 }
 
 .browse-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin-top: var(--space-4);
 }
 
@@ -408,7 +402,8 @@ export default {
   },
   components: {
     postPreview: defineAsyncComponent(() => import('components/postPreview.vue')),
-    browseTable: defineAsyncComponent(() => import('components/browseTable.vue'))
+    browseTable: defineAsyncComponent(() => import('components/browseTable.vue')),
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
   },
   data () {
     return {
