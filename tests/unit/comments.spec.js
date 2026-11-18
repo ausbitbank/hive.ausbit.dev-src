@@ -3,6 +3,7 @@ import {
   COMMENT_SORT_OPTIONS,
   commentQueueItem,
   countDiscussion,
+  deleteCommentQueueItem,
   flattenDiscussion,
   formatReputation
 } from '../../src/services/comments'
@@ -135,6 +136,34 @@ describe('comment queue item', () => {
     expect(item[2][1].comment_options.extensions).toBeUndefined()
   })
 
+  it('builds an edit without comment options and preserves metadata', () => {
+    const item = commentQueueItem({
+      username: 'alice',
+      mode: 'edit',
+      parentAuthor: 'bob',
+      parentPermlink: 'post',
+      author: 'alice',
+      permlink: 're-existing',
+      body: 'Updated text',
+      previousMetadata: { image: ['https://img.example/a.png'] }
+    })
+    const operation = item[2][1]
+    expect(operation).toMatchObject({
+      parent_author: 'bob',
+      parent_permlink: 'post',
+      author: 'alice',
+      permlink: 're-existing',
+      body: 'Updated text',
+      _edit: true
+    })
+    expect(operation.comment_options).toBeUndefined()
+    expect(JSON.parse(operation.json_metadata)).toMatchObject({
+      app: 'hive.ausbit.dev',
+      format: 'markdown',
+      image: ['https://img.example/a.png']
+    })
+  })
+
   it('includes valid beneficiaries', () => {
     const item = commentQueueItem({
       username: 'alice',
@@ -145,5 +174,10 @@ describe('comment queue item', () => {
       beneficiaries: [{ account: 'ausbitbank', weight: 1000 }, { account: '', weight: 100 }]
     })
     expect(item[2][1].comment_options.extensions).toEqual([[0, { beneficiaries: [{ account: 'ausbitbank', weight: 1000 }] }]])
+  })
+
+  it('builds a delete_comment operation', () => {
+    const item = deleteCommentQueueItem({ username: 'alice', author: 'alice', permlink: 're-old' })
+    expect(item).toEqual(['alice', 'posting', ['delete_comment', { author: 'alice', permlink: 're-old' }]])
   })
 })

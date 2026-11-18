@@ -10,6 +10,7 @@ import {
   parseHivePostUrl,
   postQueueItem,
   publishChecklist,
+  readCrossPostMetadata,
   resolveCategory,
   resolvedTags
 } from '../../src/services/publish'
@@ -89,14 +90,75 @@ describe('post construction', () => {
     expect(options.max_accepted_payout).toBe('0.000 HBD')
   })
 
-  it('records cross-post attribution in json_metadata', () => {
+  it('records cross-post attribution using the interoperable flags', () => {
     const metadata = buildPostMetadata({
       ...draft,
       crossPost: { author: 'bob', permlink: 'original-post' }
     })
-    expect(metadata.cross_post).toEqual({ author: 'bob', permlink: 'original-post' })
-    const operation = buildPostOperation({ username: 'alice', draft: { ...draft, crossPost: metadata.cross_post } })
-    expect(JSON.parse(operation[1].json_metadata).cross_post).toEqual({ author: 'bob', permlink: 'original-post' })
+    expect(metadata.cross_post).toBe(true)
+    expect(metadata.original_author).toBe('bob')
+    expect(metadata.original_permlink).toBe('original-post')
+    expect(readCrossPostMetadata(metadata)).toEqual({ author: 'bob', permlink: 'original-post' })
+
+    const operation = buildPostOperation({ username: 'alice', draft: { ...draft, crossPost: { author: 'bob', permlink: 'original-post' } } })
+    const stored = JSON.parse(operation[1].json_metadata)
+    expect(stored.cross_post).toBe(true)
+    expect(stored.original_author).toBe('bob')
+  })
+
+  it('reads legacy cross_post objects and ignores malformed flags', () => {
+    expect(readCrossPostMetadata({ cross_post: { author: 'bob', permlink: 'old' } })).toEqual({ author: 'bob', permlink: 'old' })
+    expect(readCrossPostMetadata({ cross_post: true, original_author: 'bob', original_permlink: 'x' })).toEqual({ author: 'bob', permlink: 'x' })
+    expect(readCrossPostMetadata({ cross_post: true })).toBeNull()
+    expect(readCrossPostMetadata(null)).toBeNull()
+  })
+
+  it('builds an edit that keeps the parent and omits comment options', () => {
+    const operation = buildPostOperation({
+      username: 'alice',
+      draft,
+      permlink: 'existing-post',
+      parentPermlink: 'original-category',
+      commentOptions: false,
+      previousMetadata: { image: ['https://img.example/one.jpg'], app: 'other.app' }
+    })
+    expect(operation[0]).toBe('comment')
+    expect(operation[1]).toMatchObject({
+      parent_author: '',
+      parent_permlink: 'original-category',
+      permlink: 'existing-post',
+      _edit: true
+    })
+    expect(operation[1].comment_options).toBeUndefined()
+    const metadata = JSON.parse(operation[1].json_metadata)
+    expect(metadata.image).toEqual(['https://img.example/one.jpg'])
+    expect(metadata.app).toBe('hive.ausbit.dev')
+  })
+
+  it('reports the edit category as ok or warn', () => {
+    const base = {
+      ...draft,
+      editing: { author: 'alice', permlink: 'existing', parentPermlink: 'hive-174578', previousMetadata: {} }
+    }
+    const same = publishChecklist({ ...base, community: 'hive-174578' }, { username: 'alice' })
+    expect(same.find(item => item.id === 'editCategory').status).toBe('ok')
+
+    const changed = publishChecklist({ ...base, community: 'other', tags: ['other'] }, { username: 'alice' })
+    expect(changed.find(item => item.id === 'editCategory').status).toBe('warn')
+  })
+
+  it('queues an edit for an existing permlink without comment options', () => {
+    const item = postQueueItem({
+      username: 'alice',
+      draft,
+      permlink: 'existing',
+      parentPermlink: 'hive-174578',
+      commentOptions: false
+    })
+    expect(item[2][1].parent_permlink).toBe('hive-174578')
+    expect(item[2][1].permlink).toBe('existing')
+    expect(item[2][1]._edit).toBe(true)
+    expect(item[2][1].comment_options).toBeUndefined()
   })
 
   it('rejects missing accounts and categories', () => {

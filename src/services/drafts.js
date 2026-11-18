@@ -87,6 +87,29 @@ export function normalizeCrossPost (value) {
   return { author, permlink }
 }
 
+/**
+ * The published post a draft is editing. Keeping this on the draft means a
+ * reload of `/compose?edit=…` still produces an edit rather than a new post.
+ */
+export function normalizeEditing (value, editedBy = null) {
+  if (!value || typeof value !== 'object') return null
+  const author = cleanString(value.author, 16).trim().toLowerCase()
+  const permlink = cleanString(value.permlink, 255).trim().toLowerCase()
+  if (!ACCOUNT_RE.test(author)) return null
+  if (!/^[a-z0-9][a-z0-9-]{0,254}$/.test(permlink)) return null
+  // Never let a draft edit someone else's post.
+  if (editedBy && ACCOUNT_RE.test(editedBy) && editedBy !== author) return null
+  const metadata = value.previousMetadata && typeof value.previousMetadata === 'object'
+    ? value.previousMetadata
+    : null
+  return {
+    author,
+    permlink,
+    parentPermlink: normalizeTag(value.parentPermlink) || normalizeTag(metadata && metadata.tags && metadata.tags[0]) || '',
+    previousMetadata: metadata
+  }
+}
+
 export function normalizeRewards (value) {
   const rewards = value && typeof value === 'object' ? value : {}
   const percent = Number(rewards.percentHbd)
@@ -115,6 +138,7 @@ export function normalizeDraft (raw, now = Date.now()) {
     tags: normalizeTags(source.tags),
     community: normalizeTag(source.community),
     crossPost: normalizeCrossPost(source.crossPost),
+    editing: normalizeEditing(source.editing, typeof source.owner === 'string' ? source.owner : null),
     beneficiaries: normalizeBeneficiaries(source.beneficiaries),
     rewards: normalizeRewards(source.rewards),
     createdAt: Number.isFinite(createdAt) && createdAt > 0 ? createdAt : now,

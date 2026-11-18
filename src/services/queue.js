@@ -37,6 +37,7 @@ export const KEY_REQUIREMENTS = {
 const OPERATION_LABELS = {
   vote: 'Vote',
   comment: 'Post or comment',
+  delete_comment: 'Delete post',
   transfer: 'Transfer',
   transfer_to_vesting: 'Power up',
   withdraw_vesting: 'Power down',
@@ -108,8 +109,18 @@ export function operationSummary (action) {
     case 'vote':
       return 'Vote on ' + mention(data.author, data.permlink)
     case 'comment':
+      // An edit is a `comment` operation targeted at the same permlink. It has
+      // no comment_options and either matches an existing parent or carries an
+      // explicit edit marker from the composer.
+      if (data._edit) {
+        return data.parent_author
+          ? 'Edit reply on ' + mention(data.parent_author, data.parent_permlink)
+          : 'Edit ' + shorten(data.title || data.permlink || 'a post', 58)
+      }
       if (data.parent_author) return 'Reply to ' + mention(data.parent_author, data.parent_permlink)
       return 'Publish ' + shorten(data.title || data.permlink || 'a post', 58)
+    case 'delete_comment':
+      return 'Delete ' + mention(data.author, data.permlink)
     case 'transfer':
       return (data.amount || 'Transfer') + ' to @' + (data.to || 'unknown')
     case 'transfer_to_vesting':

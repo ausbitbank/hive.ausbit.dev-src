@@ -63,6 +63,14 @@
                   <router-link :to="linkPost(post.parent_author, post.parent_permlink)">{{ post.parent_permlink }}</router-link>
                 </div>
 
+                <div v-if="crossPostSource" class="post-crosspost">
+                  <q-icon name="repeat" size="15px" aria-hidden="true" />
+                  <span>Cross-post of</span>
+                  <router-link :to="linkPost(crossPostSource.author, crossPostSource.permlink)">
+                    @{{ crossPostSource.author }}/{{ crossPostSource.permlink }}
+                  </router-link>
+                </div>
+
                 <div class="post-hero__meta">
                   <router-link :to="linkAccount(author)" class="post-author">
                     <q-avatar size="32px">
@@ -200,6 +208,11 @@
             </div>
             <div class="post-side-card__body post-side-card__actions">
               <tip-button :account="post.author" />
+              <template v-if="isOwnPost">
+                <q-btn outline no-caps color="primary" icon="edit" label="Edit post" class="post-side-card__action" :to="editLink" />
+                <q-btn outline no-caps color="negative" icon="delete_outline" label="Delete post" class="post-side-card__action" :disable="hasReplies" @click="deleteOpen = true" />
+                <span v-if="hasReplies" class="post-side-card__hint">Replies must be removed before this post can be deleted.</span>
+              </template>
               <q-btn outline no-caps color="primary" icon="code" label="Full post metadata" class="post-side-card__action">
                 <q-popup-proxy>
                   <q-card class="post-meta-card">
@@ -249,6 +262,24 @@
           <div class="post-share-card__title">Share this post</div>
           <shareButtons v-if="post" :title="post.title" />
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="deleteOpen">
+      <q-card class="post-delete-card">
+        <q-card-section>
+          <div class="home-eyebrow">Delete</div>
+          <h2 class="home-panel__title">Delete this post?</h2>
+          <p class="post-delete-card__text">
+            This queues a <code>delete_comment</code> operation for
+            @{{ author }}/{{ permlink }}. Deletion is permanent on chain, and the
+            URL stops resolving.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Cancel" @click="deleteOpen = false" />
+          <q-btn unelevated no-caps color="negative" icon="delete_forever" label="Delete" @click="confirmDelete" />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-page>
@@ -408,6 +439,25 @@
   margin-bottom: 0.7rem;
   color: #b0bec5;
   font-size: 0.82rem;
+}
+
+.post-crosspost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(79, 195, 247, 0.28);
+  border-radius: var(--radius-pill);
+  background: rgba(79, 195, 247, 0.06);
+  color: #90a4ae;
+  font-size: 0.76rem;
+}
+
+.post-crosspost a {
+  color: #81d4fa;
+  overflow-wrap: anywhere;
 }
 
 .post-tags {
@@ -780,6 +830,26 @@
   font-weight: 600;
 }
 
+.post-side-card__hint {
+  color: #78909c;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.post-delete-card {
+  width: 430px;
+  max-width: 94vw;
+  background: #1d1d1d;
+}
+
+.post-delete-card__text {
+  margin: 0.5rem 0 0;
+  color: #b0bec5;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 1023px) {
   .post-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -859,7 +929,8 @@ const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'
 import tipButton from 'components/tipButton.vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
-import { formatReputation } from 'src/services/comments'
+import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
+import { readCrossPostMetadata } from 'src/services/publish'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 
 export default {
@@ -883,6 +954,7 @@ export default {
       showVotes: false,
       showShareDialog: false,
       showReply: false,
+      deleteOpen: false,
       commentRefreshToken: 0,
       error: null
     }
@@ -912,6 +984,20 @@ export default {
     },
     loggedInUser () {
       return this.$hiveStore.user.username
+    },
+    isOwnPost () {
+      return Boolean(this.loggedInUser) && this.loggedInUser === this.author
+    },
+    hasReplies () {
+      return Number(this.post && this.post.children) > 0
+    },
+    editLink () {
+      return { name: 'compose', query: { edit: '@' + this.author + '/' + this.permlink } }
+    },
+    /** Original post this one credits, from cross_post metadata. */
+    crossPostSource () {
+      if (!this.post) return null
+      return readCrossPostMetadata(this.postMeta)
     },
     postPastPayout () {
       if (!this.post) return false
@@ -1098,6 +1184,24 @@ export default {
       this.showReply = false
       this.commentRefreshToken += 1
       if (this.post) this.post.children = (Number(this.post.children) || 0) + 1
+    },
+    confirmDelete () {
+      this.deleteOpen = false
+      try {
+        this.$hiveStore.addToQueue(deleteCommentQueueItem({
+          username: this.loggedInUser,
+          author: this.author,
+          permlink: this.permlink
+        }))
+        this.$q.notify({
+          type: 'positive',
+          message: 'Delete queued for broadcast',
+          caption: 'The post is removed after the transaction is confirmed.'
+        })
+      } catch (error) {
+        console.error('Failed to queue delete', error)
+        this.$q.notify({ type: 'negative', message: 'Could not queue the delete' })
+      }
     },
     init () {
       this.post = null

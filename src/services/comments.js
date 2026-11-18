@@ -106,8 +106,48 @@ export function formatReputation (raw) {
  * Build the queue item for a comment or reply. The queue's Keychain/SmartLock
  * paths expect `comment_options` inside the comment operation; they split it
  * into the separate on-chain `comment_options` operation at broadcast time.
+ *
+ * Pass `mode: 'edit'` with the original `author`/`permlink` to update an
+ * existing comment. Hive requires the original `parent_author` and
+ * `parent_permlink` on an edit, and comment options are set once at creation,
+ * so an edit never carries `comment_options`.
  */
 export function commentQueueItem ({
+  username,
+  parentAuthor,
+  parentPermlink,
+  body,
+  permlink,
+  mode = 'create',
+  previousMetadata = null,
+  beneficiaries = []
+}) {
+  if (mode === 'edit') {
+    const metadata = {
+      ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
+      app: 'hive.ausbit.dev',
+      format: 'markdown'
+    }
+    return [
+      username,
+      'posting',
+      ['comment', {
+        parent_author: parentAuthor || '',
+        parent_permlink: parentPermlink,
+        author: username,
+        permlink,
+        title: '',
+        body,
+        json_metadata: JSON.stringify(metadata),
+        _edit: true
+      }]
+    ]
+  }
+
+  return createCommentQueueItem({ username, parentAuthor, parentPermlink, body, permlink, beneficiaries })
+}
+
+function createCommentQueueItem ({
   username,
   parentAuthor,
   parentPermlink,
@@ -146,4 +186,13 @@ export function commentQueueItem ({
       comment_options: commentOptions
     }]
   ]
+}
+
+/**
+ * Queue item for deleting a post or comment. Hive only allows the author to
+ * delete, and blocks deleting anything that still has replies.
+ */
+export function deleteCommentQueueItem ({ username, author, permlink }) {
+  const owner = String(author || username || '').trim().toLowerCase()
+  return [owner, 'posting', ['delete_comment', { author: owner, permlink: String(permlink || '').trim() }]]
 }

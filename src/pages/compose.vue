@@ -2,10 +2,15 @@
   <q-page class="compose-page">
     <header class="compose-header">
       <div class="compose-header__intro">
-        <div class="home-eyebrow">Creator workflow</div>
-        <h1 class="page-title">Write a post</h1>
+        <div class="home-eyebrow">{{ isEditing ? 'Editing a published post' : 'Creator workflow' }}</div>
+        <h1 class="page-title">{{ isEditing ? 'Edit post' : 'Write a post' }}</h1>
         <p class="page-intro">
-          Draft locally, preview the rendered post, then queue it for signing with your posting key.
+          <template v-if="isEditing">
+            Changes keep the same permlink and parent. Queue the edit, then sign it with your posting key.
+          </template>
+          <template v-else>
+            Draft locally, preview the rendered post, then queue it for signing with your posting key.
+          </template>
         </p>
       </div>
       <div class="compose-header__actions">
@@ -121,12 +126,18 @@
               no-caps
               color="primary"
               icon="send"
-              :label="loggedInUser ? 'Queue post for signing' : 'Log in to publish'"
+              :label="!loggedInUser ? 'Log in to publish' : isEditing ? 'Queue edit for signing' : 'Queue post for signing'"
               :disable="!canPublish"
               @click="publish"
             />
             <p class="compose-hint">
-              Publishing adds a posting-key <code>comment</code> operation to the action queue. Nothing is broadcast until you sign it.
+              <template v-if="isEditing">
+                Saving adds a posting-key <code>comment</code> operation for the existing permlink to the action queue.
+                Nothing is broadcast until you sign it.
+              </template>
+              <template v-else>
+                Publishing adds a posting-key <code>comment</code> operation to the action queue. Nothing is broadcast until you sign it.
+              </template>
             </p>
           </div>
         </section>
@@ -185,34 +196,47 @@
         <section class="compose-panel home-card home-panel" aria-labelledby="compose-crosspost-title">
           <div class="home-panel__head">
             <div>
-              <div class="home-eyebrow">Attribution</div>
-              <h2 id="compose-crosspost-title" class="home-panel__title">Cross-post from Hive</h2>
+              <div class="home-eyebrow">Attribution (optional)</div>
+              <h2 id="compose-crosspost-title" class="home-panel__title">Cross-post source</h2>
             </div>
           </div>
           <div class="home-panel__body compose-fields">
+            <p class="compose-hint compose-hint--top">
+              Records the original author and permlink in <code>json_metadata</code> so this post
+              shows a “Cross-post of” credit. It does not copy media, rewards or the original’s payout settings.
+            </p>
             <q-input
               v-model.trim="crossPostInput"
               outlined
               dense
               label="Hive post URL or @author/permlink"
               aria-label="Cross-post source URL"
-              hint="Records the original author and permlink in json_metadata."
               :error="Boolean(crossPostError)"
               :error-message="crossPostError"
               @keyup.enter="loadCrossPost"
             />
             <div class="compose-inline-actions">
               <q-btn
-                unelevated
+                outline
                 no-caps
                 color="primary"
-                icon="download"
-                label="Load source"
+                icon="link"
+                label="Record source"
                 :loading="loadingSource"
                 @click="loadCrossPost"
               />
-              <span v-if="crossPostTitle" class="compose-source__label">{{ crossPostTitle }}</span>
+              <q-btn
+                v-if="crossPostLoaded"
+                flat
+                dense
+                no-caps
+                icon="download"
+                label="Copy original text"
+                title="Fill the title and body from the original when they are empty"
+                @click="applyCrossPostContent"
+              />
             </div>
+            <div v-if="crossPostTitle" class="compose-source__label compose-source__label--wrap">{{ crossPostTitle }}</div>
           </div>
         </section>
 
@@ -655,6 +679,10 @@
   line-height: 1.5;
 }
 
+.compose-hint--top {
+  margin: 0 0 0.1rem;
+}
+
 .compose-fields {
   display: flex;
   flex-direction: column;
@@ -679,6 +707,10 @@
 .compose-source__label {
   color: #90a4ae;
   font-size: 0.68rem;
+}
+
+.compose-source__label--wrap {
+  overflow-wrap: anywhere;
 }
 
 .compose-source__link {
@@ -934,12 +966,24 @@ import {
   createPostPermlink,
   parseHivePostUrl,
   postQueueItem,
-  publishChecklist
+  publishChecklist,
+  readCrossPostMetadata
 } from 'src/services/publish'
 import { isOnline } from 'src/services/connectivity'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
+
+function parseJsonMetadata (value) {
+  if (!value) return null
+  if (typeof value === 'object') return value
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
 
 export default {
   name: 'ComposePage',
@@ -953,6 +997,7 @@ export default {
       draft: null,
       mode: 'write',
       saveState: 'idle',
+      editingLoading: false,
       lastSavedAt: null,
       lastSavedSnapshot: '',
       autosaveTimer: null,
@@ -960,6 +1005,9 @@ export default {
       crossPostInput: '',
       crossPostError: '',
       crossPostTitle: '',
+      crossPostLoaded: false,
+      // Original post fetched with the attribution, applied only on request.
+      crossPostOriginal: null,
       loadingSource: false,
       newBeneAccount: '',
       newBenePercent: 10,
@@ -1004,6 +1052,9 @@ export default {
     },
     activeDraftTitle () {
       return this.draft ? draftDisplayTitle(this.draft) : 'New draft'
+    },
+    isEditing () {
+      return Boolean(this.draft && this.draft.editing)
     },
     visibleDrafts () {
       if (!this.loggedInUser) return this.drafts
@@ -1092,16 +1143,77 @@ export default {
     },
     hydrate () {
       this.drafts = readDrafts(LocalStorage)
+      if (this.$route.query.edit) {
+        this.loadPostForEdit()
+        return
+      }
       const requested = this.$route.params.draftId
       const found = requested ? this.drafts.find(item => item.id === requested) : null
       const initial = found || this.drafts[0] || this.blankDraft()
       this.setActiveDraft(initial)
+    },
+    /**
+     * Load an existing post into an edit draft. The draft carries the real
+     * permlink and parent so publishing produces an edit, not a new post.
+     */
+    async loadPostForEdit () {
+      const parsed = parseHivePostUrl(this.$route.query.edit)
+      if (!parsed) {
+        this.$q.notify({ type: 'negative', message: 'That edit link is not a Hive post.' })
+        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+        return
+      }
+      if (this.loggedInUser !== parsed.author) {
+        this.$q.notify({ type: 'negative', message: 'You can only edit your own posts.', caption: 'Sign in as @' + parsed.author + ' first.' })
+        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+        return
+      }
+
+      this.editingLoading = true
+      try {
+        const post = await this.$hive.api.getContentAsync(parsed.author, parsed.permlink)
+        if (!post || !post.author) throw new Error('That post was not found on the Hive API.')
+
+        const metadata = parseJsonMetadata(post.json_metadata) || {}
+        const tags = Array.isArray(metadata.tags) ? metadata.tags : []
+        const draft = createDraft({
+          owner: parsed.author,
+          title: post.title || '',
+          body: post.body || '',
+          community: post.parent_permlink || post.category || '',
+          tags: tags.filter(tag => tag !== post.parent_permlink),
+          crossPost: readCrossPostMetadata(metadata),
+          beneficiaries: (post.beneficiaries || []).map(item => ({ account: item.account, weight: Number(item.weight) })),
+          rewards: {
+            maxAcceptedPayout: post.max_accepted_payout || defaultRewards().maxAcceptedPayout,
+            percentHbd: Number.isFinite(Number(post.percent_hbd)) ? Number(post.percent_hbd) : 10000,
+            allowVotes: post.allow_votes !== false,
+            allowCurationRewards: post.allow_curation_rewards !== false
+          },
+          editing: {
+            author: post.author,
+            permlink: post.permlink,
+            parentPermlink: post.parent_permlink || '',
+            previousMetadata: metadata
+          }
+        })
+        this.setActiveDraft(draft)
+        this.mode = 'write'
+      } catch (error) {
+        console.error('Failed to load post for editing', error)
+        this.$q.notify({ type: 'negative', message: 'Could not load that post', caption: error.message })
+        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+      } finally {
+        this.editingLoading = false
+      }
     },
     setActiveDraft (draft) {
       this.draft = normalizeDraft(draft)
       this.crossPostInput = this.draft.crossPost ? this.postUrl(this.draft.crossPost) : ''
       this.crossPostError = ''
       this.crossPostTitle = ''
+      this.crossPostLoaded = Boolean(this.draft.crossPost)
+      this.crossPostOriginal = null
       this.mode = 'write'
       this.lastSavedSnapshot = this.snapshotDraft(this.draft)
       if (!this.drafts.some(item => item.id === this.draft.id)) {
@@ -1291,6 +1403,38 @@ export default {
       this.crossPostInput = ''
       this.crossPostTitle = ''
       this.crossPostError = ''
+      this.crossPostLoaded = false
+      this.crossPostOriginal = null
+    },
+    /** Copy the source title/body/category on explicit request, never silently. */
+    applyCrossPostContent () {
+      const post = this.crossPostOriginal || (this.draft && this.draft.crossPost)
+      if (!post) {
+        this.$q.notify({ message: 'Record a cross-post source first.' })
+        return
+      }
+      const hasText = this.draft.title.trim() || this.draft.body.trim()
+      const apply = () => {
+        if (post.title) this.draft.title = post.title
+        if (post.body) this.draft.body = post.body
+        if (post.category) this.draft.community = normalizeTag(post.category)
+        this.mode = 'write'
+      }
+      if (!hasText) {
+        apply()
+        this.$q.notify({ message: 'Original title and body copied', caption: 'Edit it before publishing.' })
+        return
+      }
+      this.$q.dialog({
+        dark: true,
+        title: 'Replace this draft?',
+        message: 'Copying the original text replaces the current title and body.',
+        cancel: true,
+        persistent: true
+      }).onOk(() => {
+        apply()
+        this.$q.notify({ message: 'Original title and body copied' })
+      })
     },
     async loadCrossPost () {
       const parsed = parseHivePostUrl(this.crossPostInput)
@@ -1307,11 +1451,19 @@ export default {
           return
         }
         this.draft.crossPost = { author: post.author, permlink: post.permlink }
-        this.crossPostTitle = 'Loaded “' + (post.title || post.permlink) + '” by @' + post.author
-        if (!this.draft.title.trim()) this.draft.title = post.title || ''
-        if (!this.draft.body.trim()) this.draft.body = post.body || ''
-        if (!this.draft.community && post.category) this.draft.community = normalizeTag(post.category)
-        this.$q.notify({ type: 'positive', message: 'Cross-post source recorded', caption: 'Original content filled when the draft was empty.' })
+        this.crossPostTitle = '“' + (post.title || post.permlink) + '” by @' + post.author
+        this.crossPostLoaded = true
+        this.crossPostOriginal = post
+        if (this.crossPostInput !== this.postUrl(this.draft.crossPost)) {
+          this.crossPostInput = this.postUrl(this.draft.crossPost)
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: 'Cross-post source recorded',
+          caption: this.draft.body.trim()
+            ? 'Use “Copy original text” if you want the original body.'
+            : 'Use “Copy original text” to start from the original.'
+        })
       } catch (error) {
         this.crossPostError = 'Could not load that post. Check the URL and try again.'
         console.error('Failed to load cross-post source', error)
@@ -1370,17 +1522,36 @@ export default {
       }
 
       try {
-        const permlink = createPostPermlink(this.draft.title)
-        const item = postQueueItem({ username: this.loggedInUser, draft: this.draft, permlink })
+        const editing = this.draft.editing
+        const permlink = editing ? editing.permlink : createPostPermlink(this.draft.title)
+        const item = postQueueItem({
+          username: this.loggedInUser,
+          draft: this.draft,
+          permlink,
+          // An edit keeps the original parent and does not resend comment options.
+          parentPermlink: editing ? editing.parentPermlink : null,
+          commentOptions: !editing,
+          previousMetadata: editing ? editing.previousMetadata : null
+        })
         this.$hiveStore.addToQueue(item)
-        this.drafts = removeDraftById(this.drafts, this.draft.id)
-        writeDrafts(LocalStorage, this.drafts)
-        this.lastSavedSnapshot = ''
-        this.setActiveDraft(this.blankDraft())
-        this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
+
+        if (editing) {
+          // Keep the local draft around so a failed edit can be retried, but
+          // stop autosaving it as a fresh draft.
+          this.lastSavedSnapshot = this.snapshotDraft(this.draft)
+        } else {
+          this.drafts = removeDraftById(this.drafts, this.draft.id)
+          writeDrafts(LocalStorage, this.drafts)
+          this.lastSavedSnapshot = ''
+          this.setActiveDraft(this.blankDraft())
+          this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
+        }
+
         this.$q.notify({
           type: isOnline() ? 'positive' : 'warning',
-          message: isOnline() ? 'Post queued for signing' : 'Queued, but you are offline',
+          message: isOnline()
+            ? (editing ? 'Edit queued for signing' : 'Post queued for signing')
+            : 'Queued, but you are offline',
           caption: (isOnline()
             ? 'Open the action queue to sign and broadcast it.'
             : 'Reconnect, then retry the failed queue item.') + ' @' + this.loggedInUser + '/' + permlink,

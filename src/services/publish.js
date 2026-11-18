@@ -115,6 +115,27 @@ export function buildCommentOptions ({ username, permlink, beneficiaries, reward
   return options
 }
 
+/**
+ * Read a cross-post reference from post metadata.
+ *
+ * The current convention is `cross_post: true` plus `original_author` /
+ * `original_permlink` (Ecency, PeakD and the hive-cross-post extension). Older
+ * drafts written by this app stored `cross_post` as an `{ author, permlink }`
+ * object. Both shapes are accepted here so edits preserve what was published.
+ */
+export function readCrossPostMetadata (metadata) {
+  const source = metadata && typeof metadata === 'object' ? metadata : {}
+  const legacy = normalizeCrossPost(source.cross_post)
+  if (legacy) return legacy
+  if (source.cross_post === true || source.cross_post === 'true') {
+    return normalizeCrossPost({
+      author: source.original_author,
+      permlink: source.original_permlink
+    })
+  }
+  return null
+}
+
 /** Metadata for a post, including tags and an optional cross-post reference. */
 export function buildPostMetadata (draft) {
   const metadata = {
@@ -123,43 +144,75 @@ export function buildPostMetadata (draft) {
     tags: resolvedTags(draft)
   }
   const crossPost = normalizeCrossPost(draft && draft.crossPost)
-  if (crossPost) metadata.cross_post = crossPost
+  if (crossPost) {
+    // Write the interoperable flags used by other cross-post tools, plus the
+    // legacy object so older drafts round-trip through this app unchanged.
+    metadata.cross_post = true
+    metadata.original_author = crossPost.author
+    metadata.original_permlink = crossPost.permlink
+  }
   return metadata
 }
 
 /**
- * Build the `comment` operation for a new top-level post.
+ * Build the `comment` operation for a top-level post.
+ *
+ * On the chain an edit is another `comment` operation with the same author and
+ * permlink. Hive requires `parent_author` and `parent_permlink` to stay
+ * identical to the original, and ignores `comment_options` on edits — those are
+ * set once by a separate `comment_options` operation at publish time. Pass
+ * `parentPermlink` and `commentOptions: false` when editing.
+ *
  * The queue splits `comment_options` into the on-chain operation at broadcast.
  */
-export function buildPostOperation ({ username, draft, permlink, now = new Date() } = {}) {
+export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, commentOptions = true, previousMetadata = null } = {}) {
   const author = String(username || '').trim().toLowerCase()
   if (!ACCOUNT_RE.test(author)) throw new Error('A valid Hive account is required to publish.')
-  const category = resolveCategory(draft)
+  const category = parentPermlink ? normalizeTag(parentPermlink) : resolveCategory(draft)
   if (!category) throw new Error('A community or first tag is required to publish.')
 
   const postPermlink = String(permlink || '').trim() || createPostPermlink(draft && draft.title, now)
   if (!/^[a-z0-9][a-z0-9-]{0,254}$/.test(postPermlink)) throw new Error('The post permlink is not valid.')
 
-  return ['comment', {
+  // Merge onto the original metadata so an edit does not silently drop keys a
+  // different client wrote (images, description, app-specific data).
+  const metadata = {
+    ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
+    ...buildPostMetadata(draft)
+  }
+
+  const operation = {
     parent_author: '',
     parent_permlink: category,
     author,
     permlink: postPermlink,
     title: String(draft && draft.title || '').trim(),
     body: String(draft && draft.body || ''),
-    json_metadata: JSON.stringify(buildPostMetadata(draft)),
-    comment_options: buildCommentOptions({
+    json_metadata: JSON.stringify(metadata)
+  }
+
+  // Queue-only marker so the action list can label this as an edit.
+  if (!commentOptions) operation._edit = true
+
+  if (commentOptions) {
+    operation.comment_options = buildCommentOptions({
       username: author,
       permlink: postPermlink,
       beneficiaries: draft && draft.beneficiaries,
       rewards: draft && draft.rewards
     })
-  }]
+  }
+
+  return ['comment', operation]
 }
 
-/** Posting-key queue item for a new top-level post. */
-export function postQueueItem ({ username, draft, permlink, now = new Date() } = {}) {
-  return [String(username || '').trim().toLowerCase(), 'posting', buildPostOperation({ username, draft, permlink, now })]
+/** Posting-key queue item for a top-level post (new or edited). */
+export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, commentOptions = true, previousMetadata = null } = {}) {
+  return [
+    String(username || '').trim().toLowerCase(),
+    'posting',
+    buildPostOperation({ username, draft, permlink, now, parentPermlink, commentOptions, previousMetadata })
+  ]
 }
 
 function checklistItem (id, label, status, detail) {
@@ -263,8 +316,21 @@ export function publishChecklist (draft, { username = null } = {}) {
   if (source.crossPost) {
     if (!crossPost) {
       items.push(checklistItem('crossPost', 'Cross-post source', 'error', 'The cross-post author or permlink is not valid.'))
+    } else if (crossPost.author === normalizeTag(source.owner)) {
+      items.push(checklistItem('crossPost', 'Cross-post source', 'warn', 'This credits your own post. Edit the original instead if you meant to update it.'))
     } else {
-      items.push(checklistItem('crossPost', 'Cross-post source', 'ok', 'Credits @' + crossPost.author + '/' + crossPost.permlink + ' in json_metadata.'))
+      items.push(checklistItem('crossPost', 'Cross-post source', 'ok', 'Credits @' + crossPost.author + '/' + crossPost.permlink + ' via cross_post metadata.'))
+    }
+  }
+
+  if (source.editing) {
+    const changedCategory = source.editing.parentPermlink &&
+      normalizeTag(source.community) &&
+      normalizeTag(source.community) !== normalizeTag(source.editing.parentPermlink)
+    if (changedCategory) {
+      items.push(checklistItem('editCategory', 'Edit category', 'warn', 'Hive keeps the original category on edit. The new community/tag is stored in metadata only.'))
+    } else {
+      items.push(checklistItem('editCategory', 'Edit keeps identity', 'ok', 'Same permlink and parent; comment options are not resent.'))
     }
   }
 

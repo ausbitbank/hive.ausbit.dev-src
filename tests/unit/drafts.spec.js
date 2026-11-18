@@ -198,5 +198,22 @@ describe('draft length guidance', () => {
     expect(draft.tags).toEqual([])
     expect(draft.community).toBe('bad-tag')
     expect(draft.beneficiaries).toEqual([])
+    expect(draft.editing).toBeNull()
+  })
+
+  it('keeps edit state for the owner only', () => {
+    const editing = {
+      author: 'alice',
+      permlink: 'my-post',
+      parentPermlink: 'hive-174578',
+      previousMetadata: { image: ['https://img.example/a.png'] }
+    }
+    const own = normalizeDraft({ owner: 'alice', title: 'T', body: 'B', editing }, 1000)
+    expect(own.editing).toEqual(editing)
+
+    const other = normalizeDraft({ owner: 'bob', title: 'T', body: 'B', editing }, 1000)
+    expect(other.editing).toBeNull()
+
+    expect(normalizeDraft({ owner: 'alice', title: 'T', body: 'B', editing: { author: 'alice', permlink: 'BAD PERMLINK' } }, 1000).editing).toBeNull()
   })
 })

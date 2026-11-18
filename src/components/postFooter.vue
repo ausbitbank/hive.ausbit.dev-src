@@ -54,6 +54,26 @@
               <reblog :author="post.author" :permlink="post.permlink" />
             </q-item-section>
           </q-item>
+          <template v-if="isOwnPost">
+            <q-separator />
+            <q-item clickable @click="editOpen = true">
+              <q-item-section avatar>
+                <q-icon name="edit" />
+              </q-item-section>
+              <q-item-section>
+                Edit
+              </q-item-section>
+            </q-item>
+            <q-item clickable :disable="hasReplies" @click="deleteOpen = true">
+              <q-item-section avatar>
+                <q-icon name="delete_outline" color="red-4" />
+              </q-item-section>
+              <q-item-section>
+                Delete
+                <div v-if="hasReplies" class="post-footer__menu-hint">Replies must be removed first</div>
+              </q-item-section>
+            </q-item>
+          </template>
         </q-list>
       </q-popup-proxy>
     </q-btn>
@@ -73,11 +93,44 @@
         />
       </q-card>
     </q-dialog>
+    <q-dialog v-model="editOpen">
+      <q-card class="post-footer__composer">
+        <comment-form
+          v-if="editOpen"
+          mode="edit"
+          :parent-author="post.parent_author || ''"
+          :parent-permlink="post.parent_permlink || post.permlink"
+          :author="post.author"
+          :permlink="post.permlink"
+          :initial-body="post.body || ''"
+          :json-metadata="post.json_metadata"
+          @cancel="editOpen = false"
+          @posted="onCommentPosted"
+        />
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="deleteOpen">
+      <q-card class="post-footer__confirm">
+        <q-card-section>
+          <div class="home-eyebrow">Delete</div>
+          <h2 class="home-panel__title">Delete this {{ compact ? 'comment' : 'post' }}?</h2>
+          <p class="post-footer__confirm-text">
+            This queues a <code>delete_comment</code> operation for
+            @{{ post.author }}/{{ post.permlink }}. Deletion is permanent on chain.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Cancel" @click="deleteOpen = false" />
+          <q-btn unelevated no-caps color="negative" icon="delete_forever" label="Delete" @click="confirmDelete" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-card-section>
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
+import { deleteCommentQueueItem } from 'src/services/comments'
 export default {
   name: 'postFooter',
   props: {
@@ -89,7 +142,9 @@ export default {
     return {
       votedWeight: null,
       postDialogVisible: false,
-      replyOpen: false
+      replyOpen: false,
+      editOpen: false,
+      deleteOpen: false
     }
   },
   components: {
@@ -102,6 +157,12 @@ export default {
   computed: {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
+    },
+    isOwnPost () {
+      return Boolean(this.loggedInUser) && this.loggedInUser === this.post.author
+    },
+    hasReplies () {
+      return Number(this.post.children) > 0
     },
     postMeta: function () {
       if (this.post.json_metadata) {
@@ -152,7 +213,27 @@ export default {
     },
     onCommentPosted () {
       this.replyOpen = false
+      this.editOpen = false
       this.$emit('posted')
+    },
+    confirmDelete () {
+      this.deleteOpen = false
+      try {
+        this.$hiveStore.addToQueue(deleteCommentQueueItem({
+          username: this.loggedInUser,
+          author: this.post.author,
+          permlink: this.post.permlink
+        }))
+        this.$q.notify({
+          type: 'positive',
+          message: 'Delete queued for broadcast',
+          caption: 'It is removed after the transaction is confirmed.'
+        })
+        this.$emit('posted')
+      } catch (error) {
+        console.error('Failed to queue delete', error)
+        this.$q.notify({ type: 'negative', message: 'Could not queue the delete' })
+      }
     }
   }
 }
@@ -308,6 +389,26 @@ export default {
 .post-footer__menu .q-item:hover {
   background: rgba(79, 195, 247, 0.08);
   color: #fff;
+}
+
+.post-footer__menu-hint {
+  color: #78909c;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.post-footer__confirm {
+  width: 430px;
+  max-width: 94vw;
+  background: #1d1d1d;
+}
+
+.post-footer__confirm-text {
+  margin: 0.5rem 0 0;
+  color: #b0bec5;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .post-footer--compact {

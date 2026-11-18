@@ -5,8 +5,11 @@
         <q-img :src="avatarUrl(loggedInUser)" :alt="'Avatar of @' + loggedInUser" />
       </q-avatar>
       <div class="comment-form__ident">
-        <div class="comment-form__title">{{ heading }}</div>
-        <div v-if="context" class="comment-form__context">{{ context }}</div>
+        <div class="comment-form__title">{{ isEdit ? 'Edit comment' : heading }}</div>
+        <div v-if="isEdit" class="comment-form__context">
+          Editing your comment{{ parentAuthor ? ' to @' + parentAuthor : '' }} · the permlink stays the same
+        </div>
+        <div v-else-if="context" class="comment-form__context">{{ context }}</div>
       </div>
       <q-btn
         flat
@@ -50,7 +53,7 @@
 
       <div class="comment-form__hint">
         <span>Markdown supported</span>
-        <span>Ctrl+Enter to {{ submitLabel.toLowerCase() }}</span>
+        <span>Ctrl+Enter to {{ submitText.toLowerCase() }}</span>
       </div>
     </div>
 
@@ -70,10 +73,10 @@
         unelevated
         no-caps
         color="primary"
-        icon="send"
-        :label="submitLabel"
         :disable="!canSubmit"
         :loading="submitting"
+        :icon="isEdit ? 'save' : 'send'"
+        :label="submitText"
         @click="submit"
       />
     </footer>
@@ -246,12 +249,21 @@ export default {
     context: { type: String, default: '' },
     submitLabel: { type: String, default: 'Reply' },
     placeholder: { type: String, default: 'Write a comment…' },
-    autofocus: { type: Boolean, default: true }
+    autofocus: { type: Boolean, default: true },
+    /**
+     * Edit mode: existing comment text to load. The permlink and parent fields
+     * must describe the comment being edited, not the reply target.
+     */
+    mode: { type: String, default: 'create' },
+    initialBody: { type: String, default: '' },
+    author: { type: String, default: '' },
+    permlink: { type: String, default: '' },
+    jsonMetadata: { type: [String, Object], default: null }
   },
   emits: ['posted', 'cancel'],
   data () {
     return {
-      body: '',
+      body: this.mode === 'edit' ? String(this.initialBody || '') : '',
       preview: false,
       submitting: false
     }
@@ -260,8 +272,18 @@ export default {
     loggedInUser () {
       return this.$hiveStore.user.username || null
     },
+    isEdit () {
+      return this.mode === 'edit'
+    },
     canSubmit () {
-      return Boolean(this.loggedInUser) && !this.submitting && this.body.trim().length > 0
+      if (!this.loggedInUser || this.submitting) return false
+      if (!this.body.trim().length) return false
+      if (!this.isEdit) return true
+      // An edit must actually change something.
+      return this.body.trim() !== String(this.initialBody || '').trim()
+    },
+    submitText () {
+      return this.isEdit ? 'Save edit' : this.submitLabel
     }
   },
   mounted () {
@@ -302,6 +324,17 @@ export default {
         textarea.setSelectionRange(position, position)
       })
     },
+    parseMetadata () {
+      const value = this.jsonMetadata
+      if (!value) return null
+      if (typeof value === 'object') return value
+      try {
+        const parsed = JSON.parse(value)
+        return parsed && typeof parsed === 'object' ? parsed : null
+      } catch {
+        return null
+      }
+    },
     submit () {
       if (!this.canSubmit) return
 
@@ -311,25 +344,29 @@ export default {
 
       this.submitting = true
       try {
-        const permlink = this.$hive.formatter.commentPermlink(this.parentAuthor, this.parentPermlink)
-        const beneficiaries = this.$hiveStore.user.settings.beneficiary || []
+        const permlink = this.isEdit
+          ? this.permlink
+          : this.$hive.formatter.commentPermlink(this.parentAuthor, this.parentPermlink)
+
         this.$hiveStore.addToQueue(commentQueueItem({
           username,
-          parentAuthor: this.parentAuthor,
+          parentAuthor: this.isEdit ? this.author : this.parentAuthor,
           parentPermlink: this.parentPermlink,
           body,
           permlink,
-          beneficiaries
+          mode: this.isEdit ? 'edit' : 'create',
+          previousMetadata: this.parseMetadata(),
+          beneficiaries: this.$hiveStore.user.settings.beneficiary || []
         }))
 
         this.$q.notify({
           type: 'positive',
-          message: this.submitLabel + ' queued for broadcast',
+          message: this.isEdit ? 'Edit queued for broadcast' : this.submitText + ' queued for broadcast',
           caption: 'It will appear after the transaction is confirmed.'
         })
-        this.body = ''
+        if (!this.isEdit) this.body = ''
         this.preview = false
-        this.$emit('posted', { permlink, body })
+        this.$emit('posted', { permlink, body, mode: this.mode })
       } catch (error) {
         console.error('Failed to queue comment', error)
         this.$q.notify({ type: 'negative', message: 'Could not queue the comment' })

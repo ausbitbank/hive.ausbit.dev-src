@@ -400,6 +400,8 @@ export default {
       } else if (operation[0] === 'comment') {
         const commentOptions = operation[1].comment_options
         delete operation[1].comment_options
+        // Queue-only edit marker; not a field of the on-chain operation.
+        delete operation[1]._edit
         result = await keychain(
           window,
           'requestPost',

@@ -22,6 +22,10 @@ const signBuffer = (username, data) => {
 }
 
 const broadcastAsync = async (username, operations, role = 'posting', password) => {
+  if (operations[0][0] === 'comment' && operations[0][1]._edit) {
+    // Queue-only marker used to label edits; the chain rejects unknown fields.
+    delete operations[0][1]._edit
+  }
   if (operations[0][0] === 'comment' && operations[0][1].comment_options) {
     // `comment_options` is a separate operation, not a field of `comment`.
     // Preserve the beneficiary settings chosen by the user.
