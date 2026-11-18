@@ -101,7 +101,7 @@ export default {
   justify-content: space-between;
   gap: var(--space-2);
   flex-wrap: wrap;
-  padding: 0.65rem 0.9rem;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -184,7 +184,7 @@ export default {
 }
 
 .ui-table__footer {
-  padding: 0.5rem 0.9rem 0.6rem;
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border-subtle);
   color: #78909c;
   font-size: 0.7rem;

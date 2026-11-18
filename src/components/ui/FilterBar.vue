@@ -22,7 +22,7 @@ export default {
   justify-content: space-between;
   gap: var(--space-2);
   flex-wrap: wrap;
-  padding: 0.7rem 0.9rem;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.025);
@@ -46,7 +46,7 @@ export default {
 
 @media (max-width: 599px) {
   .ui-filter-bar {
-    padding: 0.55rem 0.65rem;
+    padding: var(--space-2) var(--space-3);
   }
 
   .ui-filter-bar__main {

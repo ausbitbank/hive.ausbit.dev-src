@@ -83,15 +83,15 @@
 
             <div class="account-external">
               View on
-              <a :href="linkHiveBlog(username)">Hive.blog</a>,
-              <a :href="linkPeakd(username)">PeakD</a>,
-              <a :href="linkEcency(username)">Ecency</a>
+              <a :href="linkHiveBlog(username)" target="_blank" rel="noopener noreferrer">Hive.blog</a>,
+              <a :href="linkPeakd(username)" target="_blank" rel="noopener noreferrer">PeakD</a>,
+              <a :href="linkEcency(username)" target="_blank" rel="noopener noreferrer">Ecency</a>
             </div>
           </q-card-section>
         </q-card>
 
         <div class="account-grid">
-          <main class="account-main">
+          <section class="account-main" aria-label="Account activity">
             <q-card flat bordered class="account-card account-activity">
               <q-card-section class="account-card__head">
                 <div>
@@ -132,7 +132,7 @@
                 <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
               </q-card-section>
             </q-card>
-          </main>
+          </section>
 
           <aside class="account-sidebar">
             <home-recent-posts :account="username" />
@@ -295,7 +295,7 @@
 .account-stat-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  align-items: start;
+  align-items: stretch;
   gap: 0.5rem;
   margin-top: 1rem;
 }
@@ -304,6 +304,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
+  height: 100%;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);

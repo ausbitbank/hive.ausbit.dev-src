@@ -2,29 +2,38 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
-      <q-toolbar class="bg-dark text-primary">
+      <q-toolbar class="bg-dark text-primary site-toolbar">
         <q-btn flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
-        <q-toolbar-title>
-          <router-link to="/" class="text-primary" style="font-weight: normal" aria-label="hive.ausbit.dev home">
-            <q-icon name="img:/statics/hive.svg" style="max-width:50%" aria-hidden="true" />
-            <span class="gt-xs">hive.ausbit.dev</span>
+        <q-toolbar-title class="site-toolbar__brand">
+          <router-link to="/" class="site-brand" aria-label="hive.ausbit.dev home">
+            <img
+              src="/statics/hive.svg"
+              class="site-brand__mark"
+              alt=""
+              width="30"
+              height="26"
+              aria-hidden="true"
+            />
+            <span class="site-brand__text gt-xs">hive.ausbit.dev</span>
           </router-link>
         </q-toolbar-title>
-        <q-btn class="command-trigger gt-xs" flat no-caps aria-label="Search or jump to a Hive page" title="Search or jump to a Hive page" @click="openCommandPalette">
-          <q-icon name="search" size="18px" aria-hidden="true" />
-          <span class="command-trigger__label">Search or jump to…</span>
-          <kbd class="command-trigger__kbd">Ctrl K</kbd>
-        </q-btn>
-        <q-btn class="lt-sm" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump to" @click="openCommandPalette" />
-        <queue v-if="loggedInUser !== null && queue.length > 0" />
-        <notifications v-if="loggedInUser !== null" />
-        <user-login />
-        <q-btn dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
+        <div class="site-toolbar__actions">
+          <q-btn class="command-trigger gt-xs" flat no-caps aria-label="Search or jump to a Hive page" title="Search or jump to a Hive page" @click="openCommandPalette">
+            <q-icon name="search" size="18px" aria-hidden="true" />
+            <span class="command-trigger__label">Search or jump to…</span>
+            <kbd class="command-trigger__kbd">Ctrl K</kbd>
+          </q-btn>
+          <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump to" @click="openCommandPalette" />
+          <queue v-if="loggedInUser !== null && queue.length > 0" />
+          <notifications v-if="loggedInUser !== null" />
+          <user-login />
+          <q-btn class="site-toolbar__icon" dense flat icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy><settings /></q-popup-proxy></q-btn>
+        </div>
       </q-toolbar>
     </q-header>
     <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
-      <q-list @click="leftDrawerOpen = false">
-        <q-item-label header>
+      <q-list class="site-nav" role="navigation" aria-label="Site navigation" @click="leftDrawerOpen = false">
+        <q-item-label header class="site-nav__brand">
           <a
             href="https://hive.io"
             target="_blank"
@@ -49,27 +58,27 @@
           </q-item-section>
         </q-item>
         <q-separator spaced />
-        <q-item-label header class="text-overline text-grey-5 q-py-none">Explore</q-item-label>
+        <q-item-label header class="site-nav__heading">Explore</q-item-label>
         <EssentialLink
           v-for="link in exploreLinks"
           :key="link.title"
           v-bind="link"
         />
-        <q-item-label header class="text-overline text-grey-5 q-py-none">Tools</q-item-label>
+        <q-item-label header class="site-nav__heading">Tools</q-item-label>
         <EssentialLink
           v-for="link in toolLinks"
           :key="link.title"
           v-bind="link"
         />
         <q-separator spaced />
-        <q-item-label header class="text-overline text-grey-5 q-py-none">Community &amp; links</q-item-label>
+        <q-item-label header class="site-nav__heading">Community &amp; links</q-item-label>
         <EssentialLink
           v-for="link in externalLinks"
           :key="link.title"
           v-bind="link"
         />
       </q-list>
-      <div class="text-center q-pb-md"><q-icon name="code" color="grey" title="coded" aria-label="coded" /> with <q-icon name="favorite" color="red" title="love" aria-label="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
+      <div class="site-nav__footer"><q-icon name="code" color="grey" title="coded" aria-label="coded" /> with <q-icon name="favorite" color="red" title="love" aria-label="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
       <router-view :key="$route.path" :class="backgroundStyle" />
@@ -93,10 +102,118 @@
   </q-layout>
 </template>
 <style>
+.site-toolbar {
+  gap: var(--space-1);
+}
+
+.site-toolbar__brand {
+  min-width: 0;
+  padding: 0 var(--space-3) 0 var(--space-2);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  color: var(--q-primary);
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-brand:hover {
+  color: #81d4fa;
+  text-decoration: none;
+}
+
+.site-brand__mark {
+  display: block;
+  flex: none;
+  width: auto;
+  height: 26px;
+  transform: translateY(-1px);
+}
+
+.site-brand__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  min-width: 0;
+}
+
+.site-toolbar__actions .q-btn {
+  margin: 0;
+}
+
+.site-toolbar__icon {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.site-nav__brand {
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  min-height: 0;
+}
+
+.site-nav__heading {
+  padding: var(--space-3) var(--space-4) var(--space-1);
+  min-height: 0;
+  color: #90a4ae;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.site-nav .q-item {
+  min-height: 46px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.site-nav .q-item__label--caption {
+  margin-top: 1px;
+  overflow: hidden;
+  color: #78909c;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.site-nav__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  color: #90a4ae;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.site-nav__footer .q-icon {
+  font-size: 1.05em;
+}
+
 .command-trigger {
   gap: 0.4rem;
   min-width: 255px;
   max-width: 350px;
+  min-height: 36px;
   padding: 0.2rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
@@ -127,6 +244,29 @@
   color: #78909c;
   font-family: monospace;
   font-size: 0.65rem;
+}
+
+@media (max-width: 599px) {
+  .site-brand {
+    gap: var(--space-2);
+  }
+
+  .site-brand__mark {
+    height: 24px;
+  }
+
+  .site-toolbar__brand {
+    padding-left: var(--space-1);
+  }
+
+  .site-toolbar__actions {
+    gap: 0;
+  }
+
+  .site-toolbar__icon {
+    min-width: 34px;
+    min-height: 34px;
+  }
 }
 
 .gradientBg {

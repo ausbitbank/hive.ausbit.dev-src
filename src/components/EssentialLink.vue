@@ -15,7 +15,7 @@
 
     <q-item-section>
       <q-item-label>{{ title }}</q-item-label>
-      <q-item-label caption>
+      <q-item-label caption :title="caption">
         {{ caption }}
       </q-item-label>
     </q-item-section>

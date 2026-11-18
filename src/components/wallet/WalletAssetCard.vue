@@ -70,7 +70,7 @@
   flex-direction: column;
   gap: 0.2rem;
   height: 100%;
-  padding: 0.8rem 0.85rem;
+  padding: var(--space-3) var(--space-4);
 }
 
 .wallet-asset__head {
@@ -141,7 +141,7 @@
 
 @media (max-width: 599px) {
   .wallet-asset__body {
-    padding: 0.65rem 0.7rem;
+    padding: var(--space-3);
   }
 
   .wallet-asset__balance {

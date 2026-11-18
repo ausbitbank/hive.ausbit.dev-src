@@ -7,18 +7,20 @@ This is the active roadmap. Completed work is recorded in
 
 ## Current state
 
-The explorer is feature-complete through W21.
+The explorer is feature-complete through W21, with the W27 UI polish pass
+delivered early.
 
-- Verified implementation baseline: `7b82f97`.
-- Documentation handoff baseline: `b98b24b`.
+- Verified implementation baseline: `7b82f97` (W16–W21).
+- W27 was pulled forward and delivered on top of that baseline; its record is
+  `docs/workstreams/W27-ui-polish.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 31 unit-test files / 245 tests, 20 Playwright E2E tests, green build.
-- Production is deployed from the W21 build.
+- 31 unit-test files / 245 tests, 25 Playwright E2E tests, green build.
+- Production is deployed from the W27 build.
 
-The next phase is intentionally different: performance and reliability are the
-primary product work, with governance, discovery and content creation built on
-top of that foundation.
+The next phase returns to the planned performance-first sequence at W22.
+Governance, discovery and content creation remain planned on top of that
+foundation.
 
 ## Vision
 
@@ -135,6 +137,10 @@ scanability and perceived reliability.
 
 ### W27 — UI polish and visual consistency audit
 
+**Status: complete (2026-11-18), pulled forward ahead of W22–W26.** See
+`docs/workstreams/W27-ui-polish.md` for the measurements and before/after
+evidence.
+
 - **Header lockup:** fix the `src/layouts/MainLayout.vue` hive icon and title
   gap, optical alignment, icon sizing and responsive hiding. Audit the search,
   queue, notifications, account and settings action group spacing.
@@ -170,17 +176,18 @@ scanability and perceived reliability.
 
 | Phase | Workstreams | Outcome |
 | --- | --- | --- |
+| Delivered early | W27 | UI polish and visual consistency audit complete |
 | 1 | W22, W23 | Measured speed, published budgets/dashboard and resilient reads |
 | 2 | W24 | Stable startup, updates and offline behaviour |
 | 3 | W25 | Deep governance and community intelligence |
 | 4 | W26 | Creator workflow on top of the reliable platform |
-| 5 | W27 | UI polish and visual consistency audit |
-| 6 | W28 | Search and discovery, last by request |
+| 5 | W28 | Search and discovery, last by request |
 
-Tracks may overlap only when they share a dependency. Performance and reliability
-land before feature work that would otherwise make the bundle or network layer
-harder to reason about. UI polish is applied continuously; W27 is the formal
-audit and cleanup pass.
+Tracks may overlap only when they share a dependency. W27 was pulled forward and
+landed first; the next workstream is W22. Performance and reliability land before
+feature work that would otherwise make the bundle or network layer harder to
+reason about. UI polish remains a continuous layer, with W27 as the formal audit
+and cleanup pass.
 
 ## Definition of done
 
@@ -210,12 +217,13 @@ Every workstream must include:
 
 ## Suggested new-session prompt
 
-> Read `docs/ROADMAP.md` first. The verified implementation baseline is
-> `7b82f97`; W16–W21 are complete, with 31 unit-test files / 245 tests and 20
-> Playwright E2E tests passing. Production is deployed from the W21 build.
+> Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
+> W27 UI polish was delivered early on top of it. W16–W21 and W27 are complete,
+> with 31 unit-test files / 245 tests and 25 Playwright E2E tests passing.
+> Production is deployed from the W27 build.
 >
 > Start **Track 1 — W22: Performance measurement, dashboard and hard-reload
-> startup**.
+> startup**. Do not start W25–W28 yet; W28 search stays last.
 >
 > Measure the current home, browse, block, post, wallet and market surfaces;
 > publish a Lighthouse/CI performance dashboard with route budgets; and fix the

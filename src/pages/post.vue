@@ -31,7 +31,6 @@
       </div>
 
       <div v-else class="post-grid">
-        <main class="post-main">
           <article class="post-article">
             <q-card flat bordered class="post-article-card">
               <header class="post-hero">
@@ -112,104 +111,107 @@
             </q-card>
           </article>
 
-          <comments :author="author" :permlink="permlink" :comment-count="commentCount" :refresh-token="commentRefreshToken" />
-        </main>
+        <aside class="post-sidebar" aria-label="Post information">
+          <q-card flat bordered class="home-card post-side-card post-author-card">
+            <div class="post-side-card__head">
+              <h2 class="post-side-card__title">Author</h2>
+            </div>
+            <div class="post-side-card__body">
+              <div class="post-author-card__top">
+                <q-avatar size="48px" class="post-author-card__avatar">
+                  <q-img :src="GetHiveAvatarUrl(author)" :alt="'Avatar of @' + author" />
+                </q-avatar>
+                <div class="post-author-card__ident">
+                  <router-link :to="linkAccount(author)" class="post-author-card__name" :title="'@' + author">@{{ author }}</router-link>
+                  <span class="post-author-card__rep">Reputation <strong>{{ reputation }}</strong></span>
+                </div>
+              </div>
+              <p v-if="authorAbout" class="post-author-card__about">{{ authorAbout }}</p>
+              <q-btn outline no-caps color="primary" icon="person" label="Open profile" :to="linkAccount(author)" class="post-side-card__action" />
+            </div>
+          </q-card>
 
-          <aside class="post-sidebar" aria-label="Post information">
-            <q-card flat bordered class="post-side-card post-author-card">
-              <q-card-section>
-                <div class="post-author-card__top">
-                  <q-avatar size="54px">
-                    <q-img :src="GetHiveAvatarUrl(author)" :alt="'Avatar of @' + author" />
-                  </q-avatar>
-                  <div class="post-author-card__ident">
-                    <router-link :to="linkAccount(author)" class="post-author-card__name">@{{ author }}</router-link>
-                    <span class="post-author-card__rep">Reputation {{ reputation }}</span>
-                  </div>
+          <q-card flat bordered class="home-card post-side-card">
+            <div class="post-side-card__head">
+              <h2 class="post-side-card__title">Post details</h2>
+              <span class="post-side-card__hint">On-chain</span>
+            </div>
+            <div class="post-side-card__body">
+              <dl class="post-facts">
+                <div class="post-fact">
+                  <dt><q-icon name="calendar_today" aria-hidden="true" /><span>Published</span></dt>
+                  <dd><time :datetime="post.created">{{ formattedCreated }}</time></dd>
                 </div>
-                <p v-if="authorAbout" class="post-author-card__about">{{ authorAbout }}</p>
-                <q-btn outline no-caps color="primary" icon="person" label="Open profile" :to="linkAccount(author)" class="full-width q-mt-sm" />
-              </q-card-section>
-            </q-card>
-
-            <q-card flat bordered class="post-side-card">
-              <q-card-section>
-                <h2 class="post-side-card__title">Post details</h2>
-                <div class="post-detail">
-                  <q-icon name="calendar_today" aria-hidden="true" />
-                  <span>Published <time :datetime="post.created">{{ formattedCreated }}</time></span>
+                <div class="post-fact" v-if="isEdited">
+                  <dt><q-icon name="edit" aria-hidden="true" /><span>Edited</span></dt>
+                  <dd>{{ timeDelta(post.last_update) }}</dd>
                 </div>
-                <div class="post-detail" v-if="isEdited">
-                  <q-icon name="edit" aria-hidden="true" />
-                  <span>Edited {{ timeDelta(post.last_update) }}</span>
+                <div class="post-fact" v-if="communityTitle">
+                  <dt><q-icon name="forum" aria-hidden="true" /><span>Community</span></dt>
+                  <dd :title="communityTitle"><router-link :to="linkCommunity(communityName)">{{ communityTitle }}</router-link></dd>
                 </div>
-                <div class="post-detail" v-if="communityTitle">
-                  <q-icon name="forum" aria-hidden="true" />
-                  <router-link :to="linkCommunity(communityName)">{{ communityTitle }}</router-link>
+                <div class="post-fact" v-if="post.category && post.category !== communityName">
+                  <dt><q-icon name="label" aria-hidden="true" /><span>Tag</span></dt>
+                  <dd :title="post.category"><router-link :to="linkDetect(post.category)">{{ post.category }}</router-link></dd>
                 </div>
-                <div class="post-detail" v-if="post.category && post.category !== communityName">
-                  <q-icon name="label" aria-hidden="true" />
-                  <router-link :to="linkDetect(post.category)">{{ post.category }}</router-link>
+                <div class="post-fact" v-if="postMeta && postMeta.app">
+                  <dt><q-icon name="fingerprint" aria-hidden="true" /><span>App</span></dt>
+                  <dd :title="postMeta.app">{{ postMeta.app }}</dd>
                 </div>
-                <div class="post-detail" v-if="postMeta && postMeta.app">
-                  <q-icon name="fingerprint" aria-hidden="true" />
-                  <span>{{ postMeta.app }}</span>
+                <div class="post-fact">
+                  <dt><q-icon name="thumb_up" aria-hidden="true" /><span>Votes</span></dt>
+                  <dd><button type="button" class="post-fact__button" @click="showVotes = true">{{ tidyNumber(voteCount) }}</button></dd>
                 </div>
-                <button type="button" class="post-detail post-detail--button" @click="showVotes = true">
-                  <q-icon name="thumb_up" aria-hidden="true" />
-                  <span>{{ voteCount }} votes</span>
-                </button>
-                <div class="post-detail" v-if="payoutDisplay">
-                  <q-icon name="monetization_on" aria-hidden="true" />
-                  <span>{{ payoutDisplay }}</span>
-                </div>
-                <div class="post-detail" v-if="postPastPayout && loggedInUser">
-                  <q-icon name="schedule" aria-hidden="true" />
-                  <span>Payout window ended</span>
-                </div>
-                <div class="post-detail" v-if="post.max_accepted_payout === '0.000 HBD'">
-                  <q-icon name="money_off" aria-hidden="true" />
-                  <span>Author declined payout</span>
-                </div>
-                <div class="post-detail" v-if="post.percent_hbd === 0">
-                  <q-icon name="bolt" aria-hidden="true" />
-                  <span>Rewards 100% powered up</span>
-                </div>
-                <div class="post-detail" v-if="maxPayoutCapped">
-                  <q-icon name="money_off" aria-hidden="true" />
-                  <span>Rewards capped at {{ post.max_accepted_payout }}</span>
+                <div class="post-fact" v-if="payoutDisplay">
+                  <dt><q-icon name="monetization_on" aria-hidden="true" /><span>Payout</span></dt>
+                  <dd>{{ payoutDisplay }}</dd>
                 </div>
                 <div
-                  class="post-detail"
+                  class="post-fact"
                   v-for="bene in post.beneficiaries || []"
                   :key="bene.account + '-' + bene.weight"
                 >
-                  <q-icon name="alt_route" aria-hidden="true" />
-                  <span>@{{ bene.account }} {{ bene.weight / 100 }}%</span>
+                  <dt><q-icon name="alt_route" aria-hidden="true" /><span>Beneficiary</span></dt>
+                  <dd :title="'@' + bene.account">@{{ bene.account }} {{ bene.weight / 100 }}%</dd>
                 </div>
-              </q-card-section>
-            </q-card>
+              </dl>
 
-            <q-card flat bordered class="post-side-card">
-              <q-card-section class="post-side-card__actions">
-                <tip-button :account="post.author" />
-                <q-btn outline no-caps color="primary" icon="code" label="Full post metadata">
-                  <q-popup-proxy>
-                    <q-card class="post-meta-card">
-                      <json-viewer :data="post" :deep="1" title="Post metadata" />
-                    </q-card>
-                  </q-popup-proxy>
-                </q-btn>
-              </q-card-section>
-            </q-card>
-
-            <div class="post-external">
-              View on
-              <a :href="linkHiveBlogPost(author, permlink)" target="_blank" rel="noopener noreferrer">Hive.blog</a>,
-              <a :href="linkPeakdPost(author, permlink)" target="_blank" rel="noopener noreferrer">PeakD</a>,
-              <a :href="linkEcencyPost(author, permlink)" target="_blank" rel="noopener noreferrer">Ecency</a>
+              <ul v-if="postNotices.length" class="post-notices" aria-label="Post reward notices">
+                <li v-for="notice in postNotices" :key="notice.text" class="post-notice">
+                  <q-icon :name="notice.icon" size="16px" aria-hidden="true" />
+                  <span>{{ notice.text }}</span>
+                </li>
+              </ul>
             </div>
-          </aside>
+          </q-card>
+
+          <q-card flat bordered class="home-card post-side-card">
+            <div class="post-side-card__head">
+              <h2 class="post-side-card__title">Actions</h2>
+            </div>
+            <div class="post-side-card__body post-side-card__actions">
+              <tip-button :account="post.author" />
+              <q-btn outline no-caps color="primary" icon="code" label="Full post metadata" class="post-side-card__action">
+                <q-popup-proxy>
+                  <q-card class="post-meta-card">
+                    <json-viewer :data="post" :deep="1" title="Post metadata" />
+                  </q-card>
+                </q-popup-proxy>
+              </q-btn>
+            </div>
+          </q-card>
+
+          <nav class="post-external" aria-label="View this post on other Hive front ends">
+            <span class="post-external__label">View on</span>
+            <a :href="linkHiveBlogPost(author, permlink)" target="_blank" rel="noopener noreferrer">Hive.blog</a>
+            <span class="post-external__dot" aria-hidden="true">·</span>
+            <a :href="linkPeakdPost(author, permlink)" target="_blank" rel="noopener noreferrer">PeakD</a>
+            <span class="post-external__dot" aria-hidden="true">·</span>
+            <a :href="linkEcencyPost(author, permlink)" target="_blank" rel="noopener noreferrer">Ecency</a>
+          </nav>
+        </aside>
+
+        <comments class="post-comments" :author="author" :permlink="permlink" :comment-count="commentCount" :refresh-token="commentRefreshToken" />
       </div>
     </div>
 
@@ -257,13 +259,22 @@
 
 .post-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 312px;
+  grid-template-areas:
+    "article sidebar"
+    "comments sidebar";
   align-items: start;
   gap: var(--space-4);
 }
 
-.post-main {
+.post-article {
+  grid-area: article;
   min-width: 0;
+}
+
+.post-grid .post-comments {
+  grid-area: comments;
+  margin-top: 0;
 }
 
 .post-article-card {
@@ -393,104 +404,228 @@
 
 .post-sidebar {
   position: sticky;
-  top: 72px;
+  top: 64px;
+  grid-area: sidebar;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .post-side-card {
   overflow: hidden;
+  flex: none;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.post-side-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.post-side-card__title {
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.post-side-card__hint {
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.post-side-card__body {
+  padding: var(--space-3);
 }
 
 .post-author-card__top {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 10px;
+}
+
+.post-author-card__avatar {
+  flex: none;
+  border: 1px solid var(--border-subtle);
 }
 
 .post-author-card__ident {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 2px;
   min-width: 0;
 }
 
 .post-author-card__name {
+  display: block;
+  overflow: hidden;
   color: #e4eaed;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  line-height: 1.25;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-author-card__name:hover {
+  color: #81d4fa;
+  text-decoration: underline;
 }
 
 .post-author-card__rep {
   color: #90a4ae;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.post-author-card__rep strong {
+  color: #b0bec5;
+  font-weight: 600;
 }
 
 .post-author-card__about {
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin: 0.7rem 0 0;
+  margin: 10px 0 0;
+  color: #b0bec5;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.post-side-card__action.q-btn {
+  width: 100%;
+  min-height: 38px;
+  margin-top: var(--space-3);
+}
+
+.post-facts {
+  margin: 0;
+}
+
+.post-fact {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 7px 0;
   color: #b0bec5;
   font-size: 0.8rem;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
-.post-side-card__title {
-  margin: 0 0 0.55rem;
-  color: #90a4ae;
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.post-fact + .post-fact {
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
 }
 
-.post-detail {
+.post-fact dt {
   display: flex;
-  align-items: flex-start;
-  gap: 0.45rem;
-  padding: 0.28rem 0;
-  color: #b0bec5;
-  font-size: 0.82rem;
-  line-height: 1.4;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.76rem;
 }
 
-.post-detail .q-icon {
+.post-fact dt .q-icon {
   flex: none;
-  margin-top: 1px;
   color: #78909c;
+  font-size: 15px;
 }
 
-.post-detail a {
+.post-fact dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #cfd8dc;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-fact dd a {
   color: #4fc3f7;
-  overflow-wrap: anywhere;
+  text-decoration: none;
 }
 
-.post-detail--button {
-  width: 100%;
+.post-fact dd a:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.post-fact__button {
+  padding: 0;
   border: 0;
   background: none;
-  text-align: left;
-  cursor: pointer;
+  color: #4fc3f7;
   font: inherit;
+  font-variant-numeric: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
 }
 
-.post-detail--button:hover {
-  color: #e4eaed;
+.post-fact__button:hover {
+  color: #81d4fa;
+}
+
+.post-notices {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px solid var(--border-subtle);
+  list-style: none;
+}
+
+.post-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  color: #b0bec5;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+.post-notice .q-icon {
+  flex: none;
+  margin-top: 1px;
+  color: #ffb74d;
 }
 
 .post-side-card__actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .post-side-card__actions :deep(.q-btn) {
   width: 100%;
+  min-height: 38px;
+  border-radius: var(--radius-sm);
+}
+
+.post-side-card__actions :deep(.post-side-card__action) {
+  margin-top: 0;
 }
 
 .post-meta-card {
@@ -500,13 +635,32 @@
 }
 
 .post-external {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   color: #90a4ae;
-  font-size: 0.76rem;
-  text-align: center;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.post-external__label {
+  color: #78909c;
+}
+
+.post-external__dot {
+  color: #546e7a;
 }
 
 .post-external a {
   color: #4fc3f7;
+  text-decoration: none;
+}
+
+.post-external a:hover {
+  color: #81d4fa;
+  text-decoration: underline;
 }
 
 .post-state-card,
@@ -563,10 +717,35 @@
 @media (max-width: 1023px) {
   .post-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "article"
+      "sidebar"
+      "comments";
   }
 
   .post-sidebar {
     position: static;
+    max-height: none;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .post-author-card {
+    grid-column: 1 / -1;
+  }
+
+  .post-external {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .post-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -725,6 +904,23 @@ export default {
       if (!this.post || typeof this.post.max_accepted_payout !== 'string') return false
       const max = parseFloat(this.post.max_accepted_payout)
       return Number.isFinite(max) && max > 0 && max < 100
+    },
+    postNotices () {
+      if (!this.post) return []
+      const notices = []
+      if (this.postPastPayout && this.loggedInUser) {
+        notices.push({ icon: 'schedule', text: 'Payout window ended' })
+      }
+      if (this.post.max_accepted_payout === '0.000 HBD') {
+        notices.push({ icon: 'money_off', text: 'Author declined payout' })
+      }
+      if (this.post.percent_hbd === 0) {
+        notices.push({ icon: 'bolt', text: 'Rewards 100% powered up' })
+      }
+      if (this.maxPayoutCapped) {
+        notices.push({ icon: 'money_off', text: 'Rewards capped at ' + this.post.max_accepted_payout })
+      }
+      return notices
     }
   },
   methods: {

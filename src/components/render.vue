@@ -56,8 +56,31 @@ function installPurifyHooks () {
       node.setAttribute('loading', 'lazy')
       node.setAttribute('decoding', 'async')
     }
-    if (node.tagName === 'A' && node.getAttribute('target') === '_blank') {
-      node.setAttribute('rel', 'noopener noreferrer')
+    if (node.tagName === 'A') {
+      if (node.getAttribute('target') === '_blank') {
+        node.setAttribute('rel', 'noopener noreferrer')
+      }
+      // Image-only links (a logo inside a heading, or an image wrapper) have no
+      // text for assistive technology. Name them from the image alt text, or
+      // from the destination when the author did not provide any.
+      if (!node.textContent.trim()) {
+        const image = node.querySelector('img')
+        const alt = (image?.getAttribute('alt') || '').trim()
+        if (alt) {
+          node.setAttribute('aria-label', alt)
+        } else {
+          const href = node.getAttribute('href') || ''
+          let label = 'Open link'
+          try {
+            const url = new URL(href, window.location.origin)
+            label = 'Open ' + url.hostname + (url.pathname === '/' ? '' : url.pathname)
+          } catch {
+            // Keep the generic label when the URL cannot be parsed.
+          }
+          node.setAttribute('aria-label', label)
+        }
+        if (image) image.setAttribute('alt', '')
+      }
     }
   })
 }

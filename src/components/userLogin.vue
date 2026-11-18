@@ -1,6 +1,6 @@
 <template>
   <span>
-  <q-btn flat dense round no-caps :aria-label="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" :title="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" class="q-ml-md text-capitalize">
+  <q-btn flat dense round no-caps :aria-label="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" :title="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" class="text-capitalize">
     <q-avatar>
       <q-img :src="userAvatar" :alt="loggedInUser ? 'Avatar of @' + loggedInUser : 'Login'" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />

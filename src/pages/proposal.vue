@@ -124,7 +124,7 @@
         </header>
 
         <div class="proposal-detail-layout">
-          <main class="proposal-detail-main">
+          <section class="proposal-detail-main" aria-label="Proposal details">
             <q-card flat bordered class="proposal-detail-post">
               <q-card-section>
                 <div v-if="postLoading" class="text-center q-pa-md">
@@ -195,7 +195,7 @@
                 </q-card-section>
               </q-expansion-item>
             </q-card>
-          </main>
+          </section>
 
           <aside class="proposal-detail-sidebar" aria-label="Proposal details and voters">
             <q-card flat bordered>

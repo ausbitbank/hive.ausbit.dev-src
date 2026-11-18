@@ -150,7 +150,7 @@
   grid-template-columns: 2.4rem 40px minmax(0, 1fr) auto;
   align-items: start;
   gap: 0.65rem;
-  padding: 0.8rem 0.95rem;
+  padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.012);
 }

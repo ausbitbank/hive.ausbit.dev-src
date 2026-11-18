@@ -131,7 +131,7 @@ export default {
 
 <style scoped>
 .market-snapshot__body {
-  padding: 0.3rem 0.95rem 0.55rem;
+  padding: var(--space-1) var(--space-4) var(--space-2);
 }
 
 .market-snapshot__list {
@@ -143,7 +143,7 @@ export default {
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: 0.42rem 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border-subtle);
 }
 

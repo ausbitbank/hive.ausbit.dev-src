@@ -30,7 +30,7 @@
       <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" style="max-width: 100%; overflow: hidden" v-if="showNavBar">
         <q-tabs
           :dense="$q.screen.lt.md"
-          :mobile-arrows="$q.screen.lt.sm"
+          :mobile-arrows="false"
           :align="$q.screen.lt.sm ? 'left' : 'center'"
           no-caps
           inline-label
@@ -83,7 +83,7 @@
   max-width: 720px;
   margin: 0.5rem auto 0;
   padding: 0 0.25rem;
-  line-height: 1.5;
+  line-height: 1.55;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 }
 .account-header__profile :deep(.q-icon) {
@@ -91,6 +91,18 @@
   vertical-align: -2px;
   margin-right: 2px;
   opacity: 0.85;
+}
+.account-header__profile .text-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 12px;
+}
+.account-header__profile .text-caption > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .account-header__balances {
   max-width: 210px;

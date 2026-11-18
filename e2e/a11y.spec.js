@@ -1,7 +1,20 @@
 import { test, expect } from '@playwright/test'
 import { runAxe, waitForApp } from './helpers'
 
-const ROUTES = ['/', '/browse', '/blocks', '/witnesses', '/proposals', '/hbd', '/market', '/markets']
+const POST_ROUTE = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
+const ROUTES = [
+  '/',
+  '/browse',
+  '/blocks',
+  '/witnesses',
+  '/proposals',
+  '/hbd',
+  '/market',
+  '/markets',
+  '/@ausbitbank',
+  '/@ausbitbank/wallet',
+  POST_ROUTE
+]
 
 for (const route of ROUTES) {
   test('axe clean: ' + route, async ({ page }) => {
