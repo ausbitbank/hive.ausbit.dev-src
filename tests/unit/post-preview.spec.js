@@ -28,6 +28,20 @@ describe('postImage', () => {
     expect(postImage(null)).toBe('')
     expect(postImage({ body: 'Plain text only.' })).toBe('')
   })
+
+  it('requests a small Cloudinary variant for card images', () => {
+    expect(postImage({
+      json_metadata: JSON.stringify({
+        image: 'https://res.cloudinary.com/demo/image/upload/v1234/photo.jpg'
+      })
+    })).toBe('https://res.cloudinary.com/demo/image/upload/w_480,q_auto:eco,f_auto/v1234/photo.jpg')
+
+    expect(postImage({
+      json_metadata: JSON.stringify({
+        image: 'https://res.cloudinary.com/demo/image/upload/w_320,q_auto/v1234/photo.jpg'
+      })
+    })).toBe('https://res.cloudinary.com/demo/image/upload/w_320,q_auto/v1234/photo.jpg')
+  })
 })
 
 describe('postSummary', () => {

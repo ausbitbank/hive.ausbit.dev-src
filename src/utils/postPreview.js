@@ -43,6 +43,20 @@ function metadataFor (post) {
   return safeJsonParse(post.json_metadata || '{}')
 }
 
+/**
+ * Card images are thumbnails, not full-size media. Cloudinary URLs can be
+ * resized at the edge; the same post image often drops from hundreds of KB to
+ * tens of KB without touching the article page.
+ */
+export function previewImageUrl (url, width = 480) {
+  if (typeof url !== 'string' || !url) return ''
+  const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/i)
+  if (!match) return url
+  const rest = match[2]
+  if (/^[a-z]{1,3}_[^/]+\//i.test(rest)) return url
+  return match[1] + 'w_' + Number(width) + ',q_auto:eco,f_auto/' + rest
+}
+
 function firstBodyImage (body) {
   if (typeof body !== 'string' || !body) return ''
   const markdown = body.match(/!\[[^\]]*\]\(\s*([^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/)
@@ -60,13 +74,13 @@ function firstBodyImage (body) {
  */
 export function postImage (post) {
   if (!post) return ''
-  if (typeof post === 'string') return decodeImage(firstBodyImage(post))
+  if (typeof post === 'string') return previewImageUrl(decodeImage(firstBodyImage(post)))
   const meta = metadataFor(post)
   const thumbnail = firstString(meta.thumbnails)
-  if (thumbnail) return decodeImage(thumbnail)
+  if (thumbnail) return previewImageUrl(decodeImage(thumbnail))
   const image = firstString(meta.image)
-  if (image) return decodeImage(image)
-  return decodeImage(firstBodyImage(post.body))
+  if (image) return previewImageUrl(decodeImage(image))
+  return previewImageUrl(decodeImage(firstBodyImage(post.body)))
 }
 
 /**

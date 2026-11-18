@@ -160,7 +160,7 @@ export default {
           clearTimeout(timer)
           resolve()
         }
-        const timer = setTimeout(done, 1500)
+        const timer = setTimeout(done, 5000)
         image.onload = done
         image.onerror = done
         image.src = url
