@@ -438,6 +438,7 @@ import {
   versionStatus
 } from 'src/services/network'
 import {
+  SCHEDULED_WITNESSES,
   aggregateWitnessHealth,
   formatHp,
   formatPercent,
@@ -576,15 +577,16 @@ export default {
             primaryWarnings: []
           }
         }
+        const rank = this.rankedWitnesses.findIndex(item => item.owner === owner) + 1
         const health = witnessHealth(witness, {
           globalProps: this.globalProps,
           hardforkVersion: this.versions.consensusVersion,
           headBlock: this.headBlock,
-          scheduled: true
+          scheduled: rank > 0 && rank <= SCHEDULED_WITNESSES
         })
         return {
           ...witness,
-          rank: this.rankedWitnesses.findIndex(item => item.owner === owner) + 1,
+          rank,
           scheduled: true,
           votesHp: formatHp(witnessVotesHp(witness.votes, this.globalProps)),
           missed: Number(witness.total_missed || 0).toLocaleString('en-US'),

@@ -234,6 +234,7 @@ import {
   aggregateWitnessHealth,
   filterWitnesses,
   formatHp,
+  SCHEDULED_WITNESSES,
   sortWitnesses,
   validateProxy,
   witnessHealth,
@@ -306,7 +307,7 @@ export default {
           globalProps: this.globalProps,
           hardforkVersion: this.hardforkVersion,
           headBlock: this.globalProps?.head_block_number,
-          scheduled: rank !== null ? rank <= 21 : false
+          scheduled: rank !== null ? rank <= SCHEDULED_WITNESSES : false
         })
         return {
           ...witness,

@@ -7,9 +7,12 @@ import moment from '../utils/time'
 export const DISABLED_SIGNING_KEY = 'STM1111111111111111111111111111111114T1Anm'
 export const MAX_WITNESS_VOTES = 30
 export const CONSENSUS_WITNESSES = 21
+/** The top 20 witnesses are elected; rank 21 is the backup that only signs on demand. */
+export const SCHEDULED_WITNESSES = 20
 export const PARTICIPATION_WINDOW = 128
 export const PRICE_FEED_STALE_HOURS = 24
-export const MISSED_BLOCK_GAP = 21
+/** Tolerate head lag and schedule position across several 21-block rounds. */
+export const MISSED_BLOCK_GAP = 60
 export const HARDFORK_TAG_BASE = 'https://gitlab.syncad.com/hive/hive/-/tags/v'
 
 const SEVERITY_ORDER = { critical: 0, warning: 1, info: 2 }
@@ -110,9 +113,10 @@ export function versionMatches (runningVersion, networkVersion) {
 /**
  * Describe the health problems for one witness.
  *
- * `headBlock` makes the missed-block check relative to the current chain head;
- * a witness that has not confirmed a block for more than one 21-block round is
- * considered to have missed its scheduled slot. Total missed blocks are kept as
+ * `headBlock` makes the missed-block check relative to the current chain head.
+ * A healthy scheduled witness signs about once per 21-block round, but schedule
+ * position and head lag can leave it quiet for a few rounds, so it is only
+ * flagged after MISSED_BLOCK_GAP blocks. Total missed blocks are kept as
  * informational context because the counter is cumulative for the whole chain.
  */
 export function witnessHealth (witness, {
@@ -158,7 +162,7 @@ export function witnessHealth (witness, {
     warnings.push({
       id: 'missed-blocks',
       label: 'Missed blocks',
-      detail: 'Last confirmed block was ' + gap.toLocaleString('en-US') + ' blocks ago; a signing round is ' + missedGap + ' blocks.',
+      detail: 'Last confirmed block was ' + gap.toLocaleString('en-US') + ' blocks ago; scheduled witnesses should confirm within ' + missedGap + ' blocks.',
       severity: 'warning',
       icon: 'block'
     })

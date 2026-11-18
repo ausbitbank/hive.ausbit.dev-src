@@ -686,6 +686,8 @@ import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchWitnessByAccount, fetchWitnessesByVote } from 'src/services/chainData'
 import {
   DISABLED_SIGNING_KEY,
+  MISSED_BLOCK_GAP,
+  SCHEDULED_WITNESSES,
   buildWitnessUpdate,
   cliWalletCommand,
   formFromWitness,
@@ -751,7 +753,7 @@ export default {
     },
     missedStatus () {
       const gap = Number(this.globalProps?.head_block_number || 0) - Number(this.witness?.last_confirmed_block_num || 0)
-      return gap > 21
+      return gap > MISSED_BLOCK_GAP
         ? { label: 'Missed slot', color: 'orange' }
         : { label: 'Signing', color: 'green' }
     },
@@ -779,7 +781,7 @@ export default {
         globalProps: this.globalProps,
         hardforkVersion: this.hardforkVersion,
         headBlock: this.globalProps?.head_block_number,
-        scheduled: this.rank ? this.rank <= 21 : false
+        scheduled: this.rank ? this.rank <= SCHEDULED_WITNESSES : false
       }).filter(warning => warning.severity !== 'info')
     },
     validation () {

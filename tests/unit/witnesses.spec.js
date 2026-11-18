@@ -125,6 +125,15 @@ describe('witnessHealth', () => {
     expect(witnessStatus(warnings)).toBe('ok')
   })
 
+  it('only flags a missed slot after the tolerated gap of 60 blocks', () => {
+    const options = { globalProps: GLOBAL_PROPS, hardforkVersion: '1.28.9', now: NOW }
+
+    expect(witnessHealth(witness({ last_confirmed_block_num: 960 }), options)).toEqual([])
+    expect(witnessHealth(witness({ last_confirmed_block_num: 940 }), options)).toEqual([])
+    expect(witnessHealth(witness({ last_confirmed_block_num: 939 }), options).map(item => item.id))
+      .toEqual(['missed-blocks'])
+  })
+
   it('does not flag a missed slot for backup witnesses that are not scheduled', () => {
     const warnings = witnessHealth(witness({ last_confirmed_block_num: 500, total_missed: 0 }), {
       globalProps: GLOBAL_PROPS,
