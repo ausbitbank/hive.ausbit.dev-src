@@ -81,8 +81,8 @@ Integration points:
 - `bun run build` — succeeded (SPA, Cloudflare compatibility and RSS steps).
 - `bun run perf:check` — passed. Browse stays inside its 730 KB total-transfer
   budget after card previews request compact `hqdefault` YouTube thumbnails
-  instead of `maxresdefault` images. W25-final run: Home 642.8 KB / 1748 ms LCP,
-  Browse 703.3 KB / 2324 ms LCP, Post 782.6 KB / 2092 ms LCP.
+  instead of `maxresdefault` images. W25-final run: Home 642.2 KB / 1820 ms LCP,
+  Browse 674 KB / 3328 ms LCP, Post 782.1 KB / 1988 ms LCP.
 - `./scripts/deploy.sh` — build, feed, prerender, timestamped backup, staged
   rsync and release activation completed.
 - Live smoke on `https://hive.ausbit.dev`: the live entry asset matches the local
