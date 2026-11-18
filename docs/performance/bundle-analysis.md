@@ -100,6 +100,25 @@ small and stays inside every budget:
 Post and wallet CLS remain above the 0.1 target; that is the known W24
 skeleton/loading-transition work, not a W23 regression.
 
+## W24 delta
+
+W24 keeps the initial Brotli shell at **318.7 KB** and spends a small amount of
+route code on runtime polish:
+
+- wallet route JS **134.3 → 134.7 KB** (synchronous account header removes the
+  late header shift);
+- post route JS **246.3 → 247.6 KB** (image preload plus decoded intrinsic
+  dimensions before body paint);
+- market route JS **96.9 → 97.5 KB** (stable loading placeholder);
+- total transfer **+2.0–3.4 KB** on most routes; browse is **693.0 KB** when
+  visible preview thumbnails load (480px Cloudinary variants), still under its
+  730 KB budget. All budgets pass.
+
+The measured CLS is now below the 0.1 target on every dashboard route:
+home 0.008, browse 0.028, block 0, post 0, wallet 0.037 and market 0.023.
+The slow-4G smoke also keeps post at effectively zero by reserving each image's
+intrinsic dimensions before the body enters the DOM.
+
 ## Remaining opportunities
 
 1. **hive-js in the initial chunk.** Continue the W20 migration for the
