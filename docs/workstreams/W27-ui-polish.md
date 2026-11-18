@@ -26,16 +26,20 @@ The pass covered:
 with `max-width: 50%` and no gap, so the title touched the artwork and the two
 elements were centred differently. The header now uses:
 
-- a real `<img>` mark at `26px` high (`30.1 × 26` at 1440px) with the title
+- a real `<img>` mark at `22px` high (`25.5 × 22` at 1440px) with the title
   hidden below 600px;
-- an explicit `10px` icon/title gap and a 1px optical lift on the mark;
-- an `inline-flex` brand link with `align-items: center`, a 1.1rem title and
-  ellipsis protection;
+- a `9px` icon/title gap; the menu icon, mark and title all share the same
+  vertical centre, and the menu-to-mark and mark-to-title visual gaps are
+  `9.8px` / `9px`;
+- an `inline-flex` brand link with `align-items: center`, a 1.22rem/600 title
+  and ellipsis protection; the menu icon is `22px` so the lockup uses one
+  optical icon size;
 - a single `.site-toolbar__actions` flex group with a 4px rhythm, 36px targets
   and no ad-hoc `q-ml-md` margin on the account button.
 
-Measured in Chromium: desktop gap **10px**, mark centre-to-title centre **1px**;
-390px hides the label and keeps a `27.8 × 24` mark.
+Measured in Chromium: desktop gap **9px**, mark **25.5 × 22**, and menu, mark and
+title centres all at **25px**; 390px hides the label and keeps a `25.5 × 22`
+mark with the same 9.8px menu gap.
 
 ### 1440px
 
@@ -161,11 +165,12 @@ metadata content without removing any information:
 ## Deploy and live smoke
 
 - Deployed with `./scripts/deploy.sh` (lint, build, feed, prerender, backup,
-  upload, activate).
+  upload, activate). The final pass followed the header optical-alignment
+  refinement.
 - Backup:
-  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261118T003649Z.tar.gz`
-  (`efff0bda514615b7c0774aafeb3ccfa0302cc7b93ed4da67b1b60922eab31576`).
-- Activated index hash: `8255b22452c2e1044e31955140f6f1a3b533dbcd9e3693a8c8030eb308d6ef52`.
+  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261118T005751Z.tar.gz`
+  (`d0ff0223ee87472295ff231b5c17f99a8d5f1b36c53dc31f8cf96ba93959442c`).
+- Activated index hash: `a5453bdf235e63c8e4570352c4b94e5d6bc91ae9a99eba58acf53602a088b9a3`.
 - Prerendered `/`, `/blocks`, `/browse`, `/witnesses`, `/proposals`, `/hbd`,
   `/market`, `/markets`, `/health`, `/nodes` and `/tax`.
 - Live smoke on `https://hive.ausbit.dev` with service workers blocked and a
@@ -173,7 +178,8 @@ metadata content without removing any information:
   - home, post, account, wallet, witnesses and market at 1440px and 390px;
   - one `h1` / one `main` and zero horizontal overflow on every route;
   - zero axe violations on all six routes at both widths and on the open drawer;
-  - header gap 10px at 1440px, title hidden and a 24px mark at 390px;
+  - header gap 9px at 1440px with menu, mark and title on the same centre line;
+    title hidden and a 22px mark at 390px;
   - post hard reload rendered all three sidebar cards with 38px action buttons;
   - zero console errors.
 

@@ -3,7 +3,7 @@
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
       <q-toolbar class="bg-dark text-primary site-toolbar">
-        <q-btn flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
+        <q-btn class="site-toolbar__menu" flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title class="site-toolbar__brand">
           <router-link to="/" class="site-brand" aria-label="hive.ausbit.dev home">
             <img
@@ -107,18 +107,25 @@
 }
 
 .site-toolbar__brand {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
   min-width: 0;
-  padding: 0 var(--space-3) 0 var(--space-2);
+  padding: 0 var(--space-3) 0 0;
+}
+
+.site-toolbar__menu .q-icon {
+  font-size: 22px;
 }
 
 .site-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   max-width: 100%;
   color: var(--q-primary);
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1.22rem;
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1;
   text-decoration: none;
@@ -134,8 +141,7 @@
   display: block;
   flex: none;
   width: auto;
-  height: 26px;
-  transform: translateY(-1px);
+  height: 22px;
 }
 
 .site-brand__text {
@@ -252,11 +258,7 @@
   }
 
   .site-brand__mark {
-    height: 24px;
-  }
-
-  .site-toolbar__brand {
-    padding-left: var(--space-1);
+    height: 22px;
   }
 
   .site-toolbar__actions {

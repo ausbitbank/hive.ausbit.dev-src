@@ -25,7 +25,8 @@ test('header lockup keeps a stable icon/title gap and hides the title on mobile'
   expect(desktop.labelVisible).toBe(true)
   expect(desktop.gap).toBeGreaterThanOrEqual(8)
   expect(desktop.gap).toBeLessThanOrEqual(12)
-  expect(desktop.markHeight).toBeGreaterThanOrEqual(24)
+  expect(desktop.markHeight).toBeGreaterThanOrEqual(20)
+  expect(desktop.markHeight).toBeLessThanOrEqual(24)
   expect(desktop.centerDelta).toBeLessThanOrEqual(2)
 
   await page.setViewportSize({ width: 390, height: 844 })
@@ -38,7 +39,7 @@ test('header lockup keeps a stable icon/title gap and hides the title on mobile'
     return { markWidth: mark.width, labelVisible: label.width > 0 }
   })
   expect(mobile.labelVisible).toBe(false)
-  expect(mobile.markWidth).toBeGreaterThanOrEqual(24)
+  expect(mobile.markWidth).toBeGreaterThanOrEqual(22)
 })
 
 test('post sidebar stacks between the article and comments on mobile and aligns on desktop', async ({ page }) => {
