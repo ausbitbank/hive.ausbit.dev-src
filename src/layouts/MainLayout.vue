@@ -81,7 +81,9 @@
       <div class="site-nav__footer"><q-icon name="code" color="grey" title="coded" aria-label="coded" /> with <q-icon name="favorite" color="red" title="love" aria-label="love" /> by <router-link to="/@ausbitbank">ausbitbank</router-link></div>
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
-      <router-view :key="$route.path" :class="backgroundStyle" />
+      <error-boundary :key="$route.path">
+        <router-view :class="backgroundStyle" />
+      </error-boundary>
       <footer class="site-footer" aria-label="Site footer">
         <nav class="site-footer__links" aria-label="Footer navigation">
           <router-link to="/browse">Browse</router-link>
@@ -289,6 +291,7 @@ import EssentialLink from 'components/EssentialLink.vue'
 import userLogin from 'components/userLogin.vue'
 import CommandPalette from 'components/CommandPalette.vue'
 import BackToTop from 'components/ui/BackToTop.vue'
+import ErrorBoundary from 'components/ui/ErrorBoundary.vue'
 import KeyboardShortcuts from 'components/ui/KeyboardShortcuts.vue'
 
 const Notifications = defineAsyncComponent(() => import('components/notifications.vue'))
@@ -305,10 +308,12 @@ export default {
     queue: Queue,
     settings: Settings,
     BackToTop,
+    ErrorBoundary,
     KeyboardShortcuts
   },
   mounted () {
     window.addEventListener('hive:open-command-palette', this.openCommandPalette)
+    if (this.loggedInUser) this.preloadQueueChunk()
   },
   beforeUnmount () {
     window.removeEventListener('hive:open-command-palette', this.openCommandPalette)
@@ -317,6 +322,16 @@ export default {
     openCommandPalette () {
       this.leftDrawerOpen = false
       this.$refs.commandPalette?.openPalette()
+    },
+    preloadQueueChunk () {
+      // Queue is deferred for startup, but a signed-in user may need it while
+      // offline. Warm the chunk on idle so it is available from the shell cache.
+      const load = () => { import('components/queue.vue').catch(() => {}) }
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(load, { timeout: 3000 })
+      } else {
+        window.setTimeout(load, 1500)
+      }
     }
   },
   computed: {
@@ -337,6 +352,9 @@ export default {
   watch: {
     $route: function () {
       this.leftDrawerOpen = false
+    },
+    loggedInUser (value) {
+      if (value) this.preloadQueueChunk()
     }
   },
   data () {

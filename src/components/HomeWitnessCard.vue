@@ -8,6 +8,16 @@
       <router-link to="/witnesses" class="home-panel__link">View all</router-link>
     </q-card-section>
 
+    <div v-if="staleAt" class="home-panel__notice">
+      <data-notice
+        variant="stale"
+        :message="offline ? 'Offline — showing saved witness data.' : 'Witness refresh failed — showing saved data.'"
+        :updated-at="staleAt"
+        action-label="Retry"
+        @action="loadWitnesses"
+      />
+    </div>
+
     <q-card-section v-if="loading" class="home-panel__body">
       <div v-for="i in 6" :key="i" class="home-witness-skeleton">
         <q-skeleton type="circle" size="28px" />
@@ -136,19 +146,28 @@
 import moment from 'src/utils/time'
 import { formatCompactNumber, witnessVotesHp } from 'src/services/home'
 import { fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
+import DataNotice from 'components/ui/DataNotice.vue'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+
+const SNAPSHOT_KEY = 'home:witnesses'
 
 export default {
   name: 'homeWitnessCard',
+  components: { DataNotice },
   data () {
     return {
       witnesses: [],
       globalProps: null,
       hardforkVersion: '',
       loading: true,
-      error: ''
+      error: '',
+      staleAt: null
     }
   },
   computed: {
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     rows () {
       return this.witnesses.map((witness, index) => {
         const disabled = witness.signing_key === 'STM1111111111111111111111111111111114T1Anm'
@@ -190,12 +209,33 @@ export default {
         this.witnesses = Array.isArray(witnesses) ? witnesses : []
         this.globalProps = props
         this.hardforkVersion = hardfork || ''
+        this.staleAt = null
+        saveSnapshot(SNAPSHOT_KEY, {
+          witnesses: this.witnesses,
+          globalProps: this.globalProps,
+          hardforkVersion: this.hardforkVersion
+        })
       } catch (error) {
         console.error('Failed to load home witnesses', error)
-        this.error = 'Could not load witnesses.'
+        if (this.witnesses.length) {
+          this.staleAt = this.staleAt || Date.now()
+        } else if (!this.restoreSnapshot()) {
+          this.error = 'Could not load witnesses.'
+        }
       } finally {
         this.loading = false
       }
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const data = snapshot?.data
+      if (!Array.isArray(data?.witnesses) || !data.witnesses.length) return false
+      this.witnesses = data.witnesses
+      this.globalProps = data.globalProps || null
+      this.hardforkVersion = data.hardforkVersion || ''
+      this.staleAt = snapshot.savedAt
+      this.error = ''
+      return true
     }
   }
 }

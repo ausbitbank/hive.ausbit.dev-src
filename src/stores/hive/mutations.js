@@ -1,6 +1,7 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { persistQueue } from './state'
 import { createQueueMeta, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
+import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
 
 function ensureQueueMeta (state) {
   if (!Array.isArray(state.queueMeta)) state.queueMeta = []
@@ -73,8 +74,17 @@ export function updateSettings (settings) {
 }
 
 export function addToQueue (newItem) {
+  const meta = createQueueMeta()
+  if (!isOnline()) {
+    // Keep the intent, but mark it failed so nothing can be signed until the
+    // connection returns. Send-all resets failed items when the user retries.
+    meta.status = QUEUE_STATUS.FAILED
+    meta.error = 'You are offline. Reconnect before signing this action.'
+    meta.updatedAt = Date.now()
+    notifyOfflineSigningBlocked()
+  }
   this.queue.push(newItem)
-  ensureQueueMeta(this).push(createQueueMeta())
+  ensureQueueMeta(this).push(meta)
   persistQueue(this.queue, this.queueMeta)
 }
 

@@ -174,6 +174,22 @@ export function invalidatePostCache () {
   return invalidateCache('posts:')
 }
 
+export function invalidateCommunityCache (name = null) {
+  return invalidateCache(name ? 'community:' + name : 'community:')
+}
+
+export function invalidateFollowCountCache (account = null) {
+  return invalidateCache(account ? 'followCount:' + account : 'followCount:')
+}
+
+export function invalidateTickerCache () {
+  return invalidateCache('ticker')
+}
+
+export function invalidateMedianCache () {
+  return invalidateCache('medianHistory')
+}
+
 export function invalidateOpenOrderCache (account = null) {
   return invalidateCache(account ? 'openOrders:' + account : 'openOrders:')
 }

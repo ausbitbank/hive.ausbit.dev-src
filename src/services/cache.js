@@ -4,6 +4,8 @@
 // fresh, stale but usable, or missing. Revalidations are de-duplicated so a
 // burst of components asking for the same account results in one request.
 
+import { recordCacheEvent } from './telemetry'
+
 export function createTtlCache ({ maxEntries = 300, now = () => Date.now() } = {}) {
   const entries = new Map()
 
@@ -45,13 +47,17 @@ export function createTtlCache ({ maxEntries = 300, now = () => Date.now() } = {
 
 export const apiCache = createTtlCache({ maxEntries: 400 })
 const inflight = new Map()
+let invalidationEpoch = 0
 
 function revalidate (key, fetcher, ttl, cache) {
   if (inflight.has(key)) return inflight.get(key)
+  const epoch = invalidationEpoch
   const promise = Promise.resolve()
     .then(fetcher)
     .then(value => {
-      cache.set(key, value, { ttl })
+      // A write invalidated the cache while this read was in flight. Return the
+      // value to the caller but do not repopulate the old cache entry.
+      if (epoch === invalidationEpoch) cache.set(key, value, { ttl })
       return value
     })
     .finally(() => inflight.delete(key))
@@ -73,18 +79,24 @@ export async function loadCached (key, fetcher, {
 } = {}) {
   const entry = cache.get(key)
   if (entry && !force) {
-    if (entry.age <= ttl) return entry.value
+    if (entry.age <= ttl) {
+      recordCacheEvent({ key, hit: true })
+      return entry.value
+    }
     if (swr) {
+      recordCacheEvent({ key, hit: true, stale: true })
       if (typeof onStale === 'function') onStale(entry)
       revalidate(key, fetcher, ttl, cache).catch(() => {})
       return entry.value
     }
   }
 
+  recordCacheEvent({ key, hit: false })
   return revalidate(key, fetcher, ttl, cache)
 }
 
 export function invalidateCache (prefix, cache = apiCache) {
+  invalidationEpoch += 1
   let removed = 0
   for (const key of cache.keys()) {
     if (!prefix || key.startsWith(prefix)) {
@@ -92,10 +104,19 @@ export function invalidateCache (prefix, cache = apiCache) {
       removed++
     }
   }
+  for (const key of inflight.keys()) {
+    if (!prefix || key.startsWith(prefix)) inflight.delete(key)
+  }
   return removed
 }
 
 export function clearCache (cache = apiCache) {
+  invalidationEpoch += 1
   cache.clear()
   inflight.clear()
+}
+
+/** Test/diagnostic helper: number of logical invalidations this session. */
+export function getCacheInvalidationEpoch () {
+  return invalidationEpoch
 }

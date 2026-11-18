@@ -5,9 +5,18 @@
 // SmartLock because they need the signing stack.
 
 import { DEFAULT_HIVE_NODE, HIVE_API_NODES } from './hiveNodes'
+import {
+  recordApiAttempt,
+  recordApiFailover,
+  recordApiRequest,
+  recordApiRetry
+} from './telemetry'
 
 export const DEFAULT_API_TIMEOUT_MS = 8000
 export const DEFAULT_API_RETRIES = 1
+export const DEFAULT_API_RETRY_DELAY_MS = 100
+export const NODE_COOLDOWN_BASE_MS = 15000
+export const NODE_COOLDOWN_MAX_MS = 5 * 60 * 1000
 
 export class HiveApiError extends Error {
   constructor (message, { method, node, code = null, attempts = 0, cause = null } = {}) {
@@ -25,10 +34,56 @@ let currentNode = DEFAULT_HIVE_NODE
 let configuredNodes = [...HIVE_API_NODES]
 let defaultTimeoutMs = DEFAULT_API_TIMEOUT_MS
 let defaultRetries = DEFAULT_API_RETRIES
+let defaultRetryDelayMs = DEFAULT_API_RETRY_DELAY_MS
 let requestCounter = 0
 
+const nodeHealth = new Map()
+
+function nodeState (node) {
+  if (!nodeHealth.has(node)) {
+    nodeHealth.set(node, {
+      failures: 0,
+      totalFailures: 0,
+      totalSuccesses: 0,
+      cooldownUntil: 0,
+      lastFailureAt: null,
+      lastSuccessAt: null,
+      lastLatency: null
+    })
+  }
+  return nodeHealth.get(node)
+}
+
+function noteNodeSuccess (node, latencyMs) {
+  const state = nodeState(node)
+  state.failures = 0
+  state.cooldownUntil = 0
+  state.totalSuccesses += 1
+  state.lastSuccessAt = Date.now()
+  state.lastLatency = Number.isFinite(Number(latencyMs)) ? Number(latencyMs) : state.lastLatency
+}
+
+function noteNodeFailure (node) {
+  const state = nodeState(node)
+  state.failures += 1
+  state.totalFailures += 1
+  state.lastFailureAt = Date.now()
+  const backoff = Math.min(NODE_COOLDOWN_MAX_MS, NODE_COOLDOWN_BASE_MS * Math.pow(2, Math.min(4, state.failures - 1)))
+  state.cooldownUntil = Date.now() + backoff
+}
+
+function isCoolingDown (node, now = Date.now()) {
+  const state = nodeHealth.get(node)
+  return Boolean(state && state.cooldownUntil > now)
+}
+
 export function configureApi (options = {}) {
-  if (options.node) currentNode = options.node
+  if (options.node) {
+    currentNode = options.node
+    // An explicit node choice should be tried immediately even if an earlier
+    // automatic failover put it into cooldown.
+    nodeHealth.delete(options.node)
+  }
   if (Array.isArray(options.nodes) && options.nodes.length > 0) {
     configuredNodes = [...new Set([options.node, ...options.nodes].filter(Boolean))]
     if (!options.node && !configuredNodes.includes(currentNode)) currentNode = configuredNodes[0]
@@ -39,7 +94,16 @@ export function configureApi (options = {}) {
   if (Number.isFinite(Number(options.retries)) && Number(options.retries) >= 0) {
     defaultRetries = Number(options.retries)
   }
-  return { node: currentNode, nodes: [...configuredNodes], timeoutMs: defaultTimeoutMs, retries: defaultRetries }
+  if (Number.isFinite(Number(options.retryDelayMs)) && Number(options.retryDelayMs) >= 0) {
+    defaultRetryDelayMs = Number(options.retryDelayMs)
+  }
+  return {
+    node: currentNode,
+    nodes: [...configuredNodes],
+    timeoutMs: defaultTimeoutMs,
+    retries: defaultRetries,
+    retryDelayMs: defaultRetryDelayMs
+  }
 }
 
 export function getApiNode () {
@@ -51,8 +115,28 @@ export function getApiConfig () {
     node: currentNode,
     nodes: [...configuredNodes],
     timeoutMs: defaultTimeoutMs,
-    retries: defaultRetries
+    retries: defaultRetries,
+    retryDelayMs: defaultRetryDelayMs
   }
+}
+
+/** Per-node health derived from the current session, for diagnostics and tests. */
+export function getApiNodeHealth () {
+  return [...new Set([currentNode, ...configuredNodes])].filter(Boolean).map(node => {
+    const state = nodeState(node)
+    return {
+      url: node,
+      active: node === currentNode,
+      coolingDown: state.cooldownUntil > Date.now(),
+      cooldownUntil: state.cooldownUntil,
+      consecutiveFailures: state.failures,
+      failures: state.totalFailures,
+      successes: state.totalSuccesses,
+      lastLatency: state.lastLatency,
+      lastFailureAt: state.lastFailureAt,
+      lastSuccessAt: state.lastSuccessAt
+    }
+  })
 }
 
 /** Test helper: restore the default client state. */
@@ -61,7 +145,11 @@ export function resetApiClient (options = {}) {
   configuredNodes = [...(options.nodes || HIVE_API_NODES)]
   defaultTimeoutMs = Number(options.timeoutMs) || DEFAULT_API_TIMEOUT_MS
   defaultRetries = Number.isFinite(Number(options.retries)) ? Number(options.retries) : DEFAULT_API_RETRIES
+  defaultRetryDelayMs = Number.isFinite(Number(options.retryDelayMs))
+    ? Number(options.retryDelayMs)
+    : DEFAULT_API_RETRY_DELAY_MS
   requestCounter = 0
+  nodeHealth.clear()
 }
 
 function abortError () {
@@ -80,7 +168,16 @@ function isAbortError (error) {
 function candidatesFor (options = {}) {
   const preferred = options.node
   const explicit = Array.isArray(options.nodes) && options.nodes.length > 0 ? options.nodes : configuredNodes
-  return [...new Set([preferred, currentNode, ...explicit].filter(Boolean))]
+  const candidates = [...new Set([preferred, currentNode, ...explicit].filter(Boolean))]
+  const available = candidates.filter(node => !isCoolingDown(node))
+  // If every node is cooling down, try them anyway rather than failing without
+  // a network attempt. This is what stops a transient outage becoming a dead page.
+  return available.length > 0 ? available : candidates
+}
+
+function sleep (ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return Promise.resolve()
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function requestNode (node, method, params, { timeoutMs, signal }) {
@@ -107,7 +204,12 @@ async function requestNode (node, method, params, { timeoutMs, signal }) {
       signal: controller.signal
     })
 
-    if (!response.ok) throw new Error('HTTP ' + response.status)
+    if (!response.ok) {
+      const error = new Error('HTTP ' + response.status)
+      error.status = response.status
+      error.code = response.status
+      throw error
+    }
     const data = await response.json()
     if (data?.error) {
       const error = new Error(data.error.message || 'RPC request failed')
@@ -133,7 +235,8 @@ async function requestNode (node, method, params, { timeoutMs, signal }) {
 /**
  * Send a JSON-RPC request to the configured node, moving to the next known node
  * when an attempt fails. `retries` is the number of extra attempts, capped by
- * the number of configured nodes.
+ * the number of configured nodes. Failed nodes cool down briefly so a dead
+ * endpoint does not slow every subsequent read.
  */
 export async function rpcRequest (method, params = [], options = {}) {
   if (typeof method !== 'string' || !method) throw new HiveApiError('A JSON-RPC method is required', { method })
@@ -142,27 +245,106 @@ export async function rpcRequest (method, params = [], options = {}) {
 
   const timeoutMs = Number(options.timeoutMs) || defaultTimeoutMs
   const retries = Number.isFinite(Number(options.retries)) ? Number(options.retries) : defaultRetries
+  const retryDelayMs = Number.isFinite(Number(options.retryDelayMs))
+    ? Number(options.retryDelayMs)
+    : defaultRetryDelayMs
   const candidates = candidatesFor(options)
   const attempts = Math.max(1, Math.min(candidates.length, retries + 1))
 
+  const requestStarted = Date.now()
   let lastError = null
   let attemptsMade = 0
+  let retriesMade = 0
+  let failoversMade = 0
+  let previousNode = null
 
   for (let attempt = 0; attempt < attempts; attempt++) {
+    if (signal?.aborted) {
+      recordApiRequest({
+        method,
+        node: previousNode || candidates[0],
+        ok: false,
+        aborted: true,
+        attempts: attemptsMade,
+        retries: retriesMade,
+        failovers: failoversMade,
+        durationMs: Date.now() - requestStarted
+      })
+      throw abortError()
+    }
+
     const node = candidates[attempt % candidates.length]
+    if (previousNode && node !== previousNode) {
+      failoversMade += 1
+      recordApiFailover({ method, from: previousNode, to: node, reason: lastError?.message || '' })
+    }
+    previousNode = node
+
     attemptsMade++
+    const attemptStarted = Date.now()
+
     try {
       const result = await requestNode(node, method, params, { timeoutMs, signal })
+      const durationMs = Date.now() - attemptStarted
+      noteNodeSuccess(node, durationMs)
+      recordApiAttempt({ method, node, ok: true, durationMs })
+      recordApiRequest({
+        method,
+        node,
+        ok: true,
+        durationMs: Date.now() - requestStarted,
+        attempts: attemptsMade,
+        retries: retriesMade,
+        failovers: failoversMade
+      })
       currentNode = node
       return result
     } catch (error) {
+      const durationMs = Date.now() - attemptStarted
+      const timedOut = error?.name === 'TimeoutError'
+      const aborted = isAbortError(error) && Boolean(signal?.aborted)
       if (error && typeof error === 'object' && !error.node) error.node = node
       lastError = error
-      if (isAbortError(error) && signal?.aborted) throw error
+
+      if (aborted) {
+        recordApiAttempt({ method, node, ok: false, durationMs, aborted: true })
+        recordApiRequest({
+          method,
+          node,
+          ok: false,
+          aborted: true,
+          attempts: attemptsMade,
+          retries: retriesMade,
+          failovers: failoversMade,
+          durationMs: Date.now() - requestStarted
+        })
+        throw error
+      }
+
+      noteNodeFailure(node)
+      recordApiAttempt({ method, node, ok: false, durationMs, timedOut, code: error?.code ?? null })
+
+      if (attempt < attempts - 1) {
+        retriesMade += 1
+        recordApiRetry({ method, node, attempt: attemptsMade, error: error?.message || '' })
+        await sleep(retryDelayMs)
+      }
     }
   }
 
   const message = lastError?.message || 'Hive API request failed'
+  recordApiRequest({
+    method,
+    node: lastError?.node || candidates[0],
+    ok: false,
+    durationMs: Date.now() - requestStarted,
+    attempts: attemptsMade,
+    retries: retriesMade,
+    failovers: failoversMade,
+    timedOut: lastError?.name === 'TimeoutError',
+    code: lastError?.code ?? null,
+    error: message
+  })
   throw new HiveApiError(message, {
     method,
     node: lastError?.node || candidates[0],

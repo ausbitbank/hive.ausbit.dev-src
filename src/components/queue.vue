@@ -18,6 +18,7 @@
                 :color="timerEnabled ? 'green' : 'orange'"
                 :aria-label="timerEnabled ? 'Pause auto-send' : 'Resume auto-send'"
                 :title="timerEnabled ? 'Pause auto-send' : 'Resume auto-send'"
+                :disable="offline"
                 @click="toggleTimer"
               />
               <q-btn
@@ -43,6 +44,13 @@
             </span>
           </div>
 
+          <div v-if="offline" class="queue-offline">
+            <data-notice
+              variant="offline"
+              message="Offline — reviewing is available, signing is blocked until the connection returns."
+            />
+          </div>
+
           <div class="queue-toolbar">
             <q-btn
               no-caps
@@ -52,7 +60,7 @@
               icon="send"
               label="Send all"
               :loading="bulkSending"
-              :disable="!canSendAll"
+              :disable="offline || !canSendAll"
               @click="sendAll"
             />
             <q-btn
@@ -137,7 +145,7 @@
                     :aria-label="(metaFor(index).status === 'failed' ? 'Retry ' : 'Broadcast ') + operationLabel(action)"
                     :title="metaFor(index).status === 'failed' ? 'Retry action' : 'Broadcast now'"
                     :loading="metaFor(index).status === 'broadcasting'"
-                    :disable="broadcastingIndex !== null"
+                    :disable="offline || broadcastingIndex !== null"
                     @click="manualBroadcast(index)"
                   />
                   <q-spinner-dots v-if="metaFor(index).status === 'broadcasting'" color="primary" size="20px" aria-label="Broadcasting" />
@@ -186,10 +194,12 @@ import {
   queueCounts,
   statusMeta
 } from 'src/services/queue'
+import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
+import DataNotice from 'components/ui/DataNotice.vue'
 
 export default {
   name: 'queue',
-  components: { jsonViewer },
+  components: { jsonViewer, DataNotice },
   data () {
     return {
       timerStart: 500,
@@ -202,6 +212,9 @@ export default {
   computed: {
     loggedInUser () { return this.$hiveStore.user.username },
     loginType () { return this.$hiveStore.user.loginType },
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     queue () { return this.$hiveStore.queue },
     queueMeta () { return this.$hiveStore.queueMeta },
     smartlockTimeoutMs () {
@@ -333,6 +346,7 @@ export default {
         if (result.success) {
           this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.SENT)
           this.$hiveStore.setQueueTxId(index, result.txId)
+          invalidateOperationCaches(action[2], { signer: action[0] })
           this.$q.notify({
             message: 'Sent ' + operationLabel(action) + '.',
             color: 'green',
@@ -564,6 +578,10 @@ export default {
 
 .queue-auto--paused {
   color: #ffb74d;
+}
+
+.queue-offline {
+  padding: 0.45rem 0.9rem 0;
 }
 
 .queue-toolbar {

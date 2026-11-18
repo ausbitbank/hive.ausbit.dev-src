@@ -28,6 +28,16 @@
 
       <q-linear-progress v-if="refreshing && blocks.length > 0" indeterminate color="primary" />
 
+      <div v-if="staleAt" class="q-px-md q-pb-sm">
+        <data-notice
+          variant="stale"
+          :message="offline ? 'Offline — showing saved blocks.' : 'Block refresh failed — showing saved blocks.'"
+          :updated-at="staleAt"
+          action-label="Retry"
+          @action="loadBlocks({ initial: true })"
+        />
+      </div>
+
       <q-list separator v-if="blocks.length > 0">
         <q-item v-for="block in blocks" :key="block.number">
           <q-item-section avatar>
@@ -80,12 +90,16 @@ import moment from 'src/utils/time'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { pollWhileVisible } from 'src/services/polling'
 import { fetchGlobalProps } from 'src/services/chainData'
+import DataNotice from 'components/ui/DataNotice.vue'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
 const BLOCK_COUNT = 10
 const REFRESH_INTERVAL_MS = 8000
+const SNAPSHOT_KEY = 'blocks:latest'
 
 export default {
   name: 'blocksPage',
+  components: { DataNotice },
   data () {
     return {
       blocks: [],
@@ -93,10 +107,14 @@ export default {
       refreshing: false,
       autoRefresh: true,
       error: null,
+      staleAt: null,
       refreshPoller: null
     }
   },
   computed: {
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     rangeLabel () {
       if (this.blocks.length === 0) return ''
       const newest = this.blocks[0].number
@@ -153,12 +171,29 @@ export default {
 
         this.blocks = blocks
         this.error = null
+        this.staleAt = null
+        saveSnapshot(SNAPSHOT_KEY, { blocks })
       } catch (error) {
-        this.error = error?.message || 'Unknown error'
+        if (this.blocks.length) {
+          this.error = error?.message || 'Unknown error'
+          this.staleAt = this.staleAt || Date.now()
+        } else if (this.restoreSnapshot()) {
+          this.error = null
+        } else {
+          this.error = error?.message || 'Unknown error'
+        }
       } finally {
         this.loading = false
         this.refreshing = false
       }
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const blocks = snapshot?.data?.blocks
+      if (!Array.isArray(blocks) || !blocks.length) return false
+      this.blocks = blocks
+      this.staleAt = snapshot.savedAt
+      return true
     },
     startAutoRefresh () {
       this.stopAutoRefresh()

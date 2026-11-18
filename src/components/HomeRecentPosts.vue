@@ -8,6 +8,16 @@
       <router-link :to="'/@' + account + '/blog'" class="home-panel__link">Blog</router-link>
     </q-card-section>
 
+    <div v-if="staleAt" class="home-panel__notice">
+      <data-notice
+        variant="stale"
+        :message="offline ? 'Offline — showing saved posts.' : 'Post refresh failed — showing saved posts.'"
+        :updated-at="staleAt"
+        action-label="Retry"
+        @action="loadPosts"
+      />
+    </div>
+
     <q-card-section v-if="loading" class="home-panel__body">
       <div v-for="i in 4" :key="i" class="home-recent-skeleton">
         <q-skeleton type="rect" width="42px" height="38px" />
@@ -49,11 +59,15 @@
 
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
+import DataNotice from 'components/ui/DataNotice.vue'
 import { fetchAccountPosts } from 'src/services/chainData'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+
+const SNAPSHOT_KEY = 'home:posts:recent:'
 
 export default {
   name: 'homeRecentPosts',
-  components: { HomePostRow },
+  components: { HomePostRow, DataNotice },
   props: {
     account: { type: String, default: 'ausbitbank' }
   },
@@ -61,12 +75,19 @@ export default {
     return {
       posts: [],
       loading: true,
-      error: ''
+      error: '',
+      staleAt: null
     }
   },
   computed: {
     loggedInUser () {
       return this.$hiveStore.user.username || null
+    },
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
+    snapshotKey () {
+      return SNAPSHOT_KEY + this.account
     }
   },
   mounted () {
@@ -86,12 +107,27 @@ export default {
           start_permlink: null
         })
         this.posts = Array.isArray(response) ? response : []
+        this.staleAt = null
+        saveSnapshot(this.snapshotKey, { posts: this.posts })
       } catch (error) {
         console.error('Failed to load recent posts', error)
-        this.error = 'Could not load recent posts.'
+        if (this.posts.length) {
+          this.staleAt = this.staleAt || Date.now()
+        } else if (!this.restoreSnapshot()) {
+          this.error = 'Could not load recent posts.'
+        }
       } finally {
         this.loading = false
       }
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(this.snapshotKey)
+      const posts = snapshot?.data?.posts
+      if (!Array.isArray(posts) || !posts.length) return false
+      this.posts = posts
+      this.staleAt = snapshot.savedAt
+      this.error = ''
+      return true
     }
   }
 }

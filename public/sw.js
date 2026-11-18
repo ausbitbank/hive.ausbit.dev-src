@@ -4,16 +4,16 @@
  * The app remains a static SPA. Navigations are network-first with a cached
  * index.html fallback; same-origin assets and API-independent images use
  * stale-while-revalidate. Chain data is intentionally not cached here — the app
- * has its own read cache and a stale shell is safer than stale balances.
+ * has its own read cache and offline snapshots. Updates wait for an explicit
+ * SKIP_WAITING message so an open tab is never reloaded mid-action.
  */
-const CACHE = 'hive-ausbit-shell-v2'
+const CACHE = 'hive-ausbit-shell-v3'
 const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest']
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
       .then(cache => cache.addAll(SHELL).catch(() => undefined))
-      .then(() => self.skipWaiting())
   )
 })
 
@@ -23,6 +23,12 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   )
+})
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 self.addEventListener('fetch', event => {

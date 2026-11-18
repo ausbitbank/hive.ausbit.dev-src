@@ -89,4 +89,18 @@ describe('TTL cache', () => {
     expect(cache.get('account:alice')).toBeNull()
     expect(cache.get('witnesses:200').value).toBe(3)
   })
+
+  it('does not repopulate a cache entry invalidated while its read was in flight', async () => {
+    const cache = createTtlCache()
+    let resolveFetch
+    const fetcher = vi.fn(() => new Promise(resolve => { resolveFetch = resolve }))
+
+    const pending = loadCached('account:alice', fetcher, { cache })
+    await Promise.resolve()
+    invalidateCache('account:', cache)
+    resolveFetch({ name: 'alice' })
+
+    await expect(pending).resolves.toEqual({ name: 'alice' })
+    expect(cache.get('account:alice')).toBeNull()
+  })
 })

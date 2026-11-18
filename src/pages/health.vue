@@ -20,6 +20,16 @@
         </div>
       </header>
 
+      <div v-if="staleAt" class="health-notice">
+        <data-notice
+          variant="stale"
+          :message="offline ? 'Offline — showing the saved network snapshot.' : 'Some health checks failed — showing saved values.'"
+          :updated-at="staleAt"
+          action-label="Retry"
+          @action="load"
+        />
+      </div>
+
       <q-card v-if="loading && !propsReady" flat bordered class="health-loading">
         <q-skeleton type="rect" height="90px" />
         <q-skeleton type="rect" height="140px" class="q-mt-md" />
@@ -207,6 +217,10 @@
 .health-loading {
   padding: var(--space-4);
   background: rgba(255, 255, 255, 0.028);
+}
+
+.health-notice {
+  margin-bottom: var(--space-3);
 }
 
 .health-banner {
@@ -406,8 +420,10 @@
 import HealthStatCard from 'components/health/HealthStatCard.vue'
 import WitnessHealthList from 'components/health/WitnessHealthList.vue'
 import HealthNodeSummary from 'components/health/HealthNodeSummary.vue'
+import DataNotice from 'components/ui/DataNotice.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchAccounts, fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import {
   chainVersions,
   formatCount,
@@ -435,9 +451,11 @@ function settledValue (result, fallback = null) {
   return result.status === 'fulfilled' ? result.value : fallback
 }
 
+const SNAPSHOT_KEY = 'health:summary'
+
 export default {
   name: 'Health',
-  components: { HealthStatCard, WitnessHealthList, HealthNodeSummary },
+  components: { HealthStatCard, WitnessHealthList, HealthNodeSummary, DataNotice },
   data () {
     return {
       props: null,
@@ -452,10 +470,14 @@ export default {
       nodeSummary: null,
       loading: true,
       loadError: '',
-      lastUpdated: null
+      lastUpdated: null,
+      staleAt: null
     }
   },
   computed: {
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     globalProps () {
       return this.props && !this.props.empty ? this.props : this.$hiveStore.globalProps
     },
@@ -668,15 +690,62 @@ export default {
         this.daoAccount = Array.isArray(dao) ? dao[0] || null : null
         this.accountCount = settledValue(count)
         this.rankedWitnesses = settledValue(witnesses, []) || []
-        this.lastUpdated = Date.now()
 
-        if (!this.propsReady) this.loadError = 'The chain did not return global properties. Please retry.'
+        const failedChecks = [props, median, feed, config, schedule, hardfork, accounts, count, witnesses]
+          .filter(result => result.status === 'rejected').length
+
+        if (this.propsReady) {
+          if (failedChecks > 0) {
+            this.staleAt = this.lastUpdated || Date.now()
+          } else {
+            this.staleAt = null
+          }
+          this.lastUpdated = Date.now()
+          this.saveSnapshot()
+        } else if (this.restoreSnapshot()) {
+          this.loadError = ''
+        } else {
+          this.loadError = 'The chain did not return global properties. Please retry.'
+        }
       } catch {
-        this.loadError = 'Could not load network health. Please retry.'
-        this.$q.notify({ type: 'negative', message: 'Failed to load network health' })
+        if (!this.restoreSnapshot()) {
+          this.loadError = 'Could not load network health. Please retry.'
+          this.$q.notify({ type: 'negative', message: 'Failed to load network health' })
+        }
       } finally {
         this.loading = false
       }
+    },
+    saveSnapshot () {
+      saveSnapshot(SNAPSHOT_KEY, {
+        props: this.props,
+        medianHistory: this.medianHistory,
+        feedHistory: this.feedHistory,
+        config: this.config,
+        schedule: this.schedule,
+        hardforkVersion: this.hardforkVersion,
+        daoAccount: this.daoAccount,
+        accountCount: this.accountCount,
+        rankedWitnesses: this.rankedWitnesses,
+        lastUpdated: this.lastUpdated
+      })
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const data = snapshot?.data
+      if (!data?.props) return false
+      this.props = data.props
+      this.medianHistory = data.medianHistory || null
+      this.feedHistory = data.feedHistory || null
+      this.config = data.config || {}
+      this.schedule = data.schedule || null
+      this.hardforkVersion = data.hardforkVersion || ''
+      this.daoAccount = data.daoAccount || null
+      this.accountCount = data.accountCount ?? null
+      this.rankedWitnesses = Array.isArray(data.rankedWitnesses) ? data.rankedWitnesses : []
+      this.lastUpdated = Number(data.lastUpdated) || snapshot.savedAt
+      this.staleAt = this.lastUpdated
+      return true
     },
     refresh () {
       this.load()

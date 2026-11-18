@@ -11,6 +11,16 @@
       </div>
     </q-card-section>
 
+    <div v-if="staleAt" class="home-panel__notice">
+      <data-notice
+        variant="stale"
+        :message="offline ? 'Offline — showing saved prices.' : 'Price refresh failed — showing saved prices.'"
+        :updated-at="staleAt"
+        action-label="Retry"
+        @action="loadPrices"
+      />
+    </div>
+
     <q-card-section v-if="loading && coins.length === 0" class="home-panel__body">
       <div v-for="i in 4" :key="i" class="home-market-skeleton">
         <q-skeleton type="circle" size="26px" />
@@ -231,7 +241,10 @@ import {
   formatUsd,
   sortMarketCoins
 } from 'src/services/home'
+import DataNotice from 'components/ui/DataNotice.vue'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
+const SNAPSHOT_KEY = 'home:market'
 const API_URL = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive,hive_dollar,bitcoin,ethereum&order=market_cap_desc&per_page=4&page=1&sparkline=true&price_change_percentage=24h'
 const COIN_ORDER = ['hive', 'hive_dollar', 'bitcoin', 'ethereum']
 const MARKET_LINKS = {
@@ -247,17 +260,21 @@ const MARKET_LINKS = {
 
 export default {
   name: 'homeMarketCard',
-  components: { Sparkline },
+  components: { Sparkline, DataNotice },
   data () {
     return {
       coins: [],
       loading: true,
       refreshing: false,
       error: '',
-      updatedAt: null
+      updatedAt: null,
+      staleAt: null
     }
   },
   computed: {
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     rows () {
       return sortMarketCoins(this.coins, COIN_ORDER).map(coin => {
         const change = Number(coin.price_change_percentage_24h)
@@ -313,13 +330,30 @@ export default {
         }
         this.coins = data
         this.updatedAt = Date.now()
+        this.staleAt = null
+        saveSnapshot(SNAPSHOT_KEY, { coins: data, updatedAt: this.updatedAt })
       } catch (error) {
         console.error('Failed to load home prices', error)
-        this.error = 'Price data unavailable.'
+        if (this.coins.length) {
+          this.staleAt = this.updatedAt || Date.now()
+          this.error = 'Price data unavailable.'
+        } else if (!this.restoreSnapshot()) {
+          this.error = 'Price data unavailable.'
+        }
       } finally {
         this.loading = false
         this.refreshing = false
       }
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const data = snapshot?.data
+      if (!Array.isArray(data?.coins) || !data.coins.length) return false
+      this.coins = data.coins
+      this.updatedAt = Number(data.updatedAt) || snapshot.savedAt
+      this.staleAt = this.updatedAt
+      this.error = ''
+      return true
     }
   }
 }

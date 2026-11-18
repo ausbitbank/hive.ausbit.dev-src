@@ -4,9 +4,11 @@ import {
   apiGetAccounts,
   configureApi,
   getApiNode,
+  getApiNodeHealth,
   resetApiClient,
   rpcRequest
 } from '../../src/services/api'
+import { getTelemetrySnapshot, resetTelemetry } from '../../src/services/telemetry'
 
 function jsonResponse (result) {
   return {
@@ -18,7 +20,8 @@ function jsonResponse (result) {
 
 describe('central Hive API client', () => {
   beforeEach(() => {
-    resetApiClient({ nodes: ['https://a.example'], retries: 0 })
+    resetApiClient({ nodes: ['https://a.example'], retries: 0, retryDelayMs: 0 })
+    resetTelemetry()
   })
 
   afterEach(() => {
@@ -101,5 +104,63 @@ describe('central Hive API client', () => {
       .catch(value => value)
 
     expect(error.name).toBe('AbortError')
+  })
+
+  it('records attempts, retries, failovers and node cooldowns', async () => {
+    configureApi({ nodes: ['https://a.example', 'https://b.example'], retries: 1, retryDelayMs: 0 })
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce(jsonResponse('ok'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(rpcRequest('condenser_api.get_ticker')).resolves.toBe('ok')
+
+    const snapshot = getTelemetrySnapshot()
+    expect(snapshot.requests).toMatchObject({ total: 1, successes: 1, failures: 0 })
+    expect(snapshot.attempts).toMatchObject({ total: 2, retries: 1, failovers: 1 })
+    expect(snapshot.recent.some(event => event.type === 'failover')).toBe(true)
+
+    const health = getApiNodeHealth()
+    expect(health.find(node => node.url === 'https://a.example')).toMatchObject({
+      coolingDown: true,
+      consecutiveFailures: 1
+    })
+    expect(health.find(node => node.url === 'https://b.example')).toMatchObject({
+      active: true,
+      consecutiveFailures: 0
+    })
+  })
+
+  it('never retries beyond the available node list', async () => {
+    configureApi({ nodes: ['https://only.example'], retries: 9, retryDelayMs: 0 })
+    const fetchMock = vi.fn().mockRejectedValue(new Error('down'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const error = await rpcRequest('condenser_api.get_ticker').catch(value => value)
+
+    expect(error).toBeInstanceOf(HiveApiError)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(getTelemetrySnapshot().attempts.retries).toBe(0)
+  })
+
+  it('does not fail over after a caller cancellation', async () => {
+    configureApi({ nodes: ['https://a.example', 'https://b.example'], retries: 1, retryDelayMs: 0 })
+    const controller = new AbortController()
+    const fetchMock = vi.fn((url, { signal }) => new Promise((resolve, reject) => {
+      signal.addEventListener('abort', () => {
+        const error = new Error('aborted')
+        error.name = 'AbortError'
+        reject(error)
+      })
+      setTimeout(() => controller.abort(), 5)
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const error = await rpcRequest('condenser_api.get_ticker', [], { signal: controller.signal })
+      .catch(value => value)
+
+    expect(error.name).toBe('AbortError')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(getTelemetrySnapshot().requests.aborted).toBe(1)
   })
 })

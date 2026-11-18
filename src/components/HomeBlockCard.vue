@@ -41,6 +41,16 @@
       </div>
     </q-card-section>
 
+    <div v-if="staleAt" class="home-panel__notice">
+      <data-notice
+        variant="stale"
+        :message="offline ? 'Offline — showing the saved block.' : 'Live refresh failed — showing the saved block.'"
+        :updated-at="staleAt"
+        action-label="Retry"
+        @action="loadLatest"
+      />
+    </div>
+
     <q-card-section v-if="loading && !block" class="home-panel__body">
       <div class="home-block-skeleton">
         <q-skeleton type="circle" size="28px" />
@@ -223,11 +233,15 @@ import {
   blockSizeKb,
   blockTransactionCount
 } from 'src/services/home'
+import DataNotice from 'components/ui/DataNotice.vue'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
 const POLL_INTERVAL = 15000
+const SNAPSHOT_KEY = 'home:block'
 
 export default {
   name: 'homeBlockCard',
+  components: { DataNotice },
   data () {
     return {
       block: null,
@@ -239,10 +253,14 @@ export default {
       loading: true,
       refreshing: false,
       error: '',
+      staleAt: null,
       timer: null
     }
   },
   computed: {
+    offline () {
+      return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
+    },
     blockNumber () {
       return this.blockNum || 0
     },
@@ -307,10 +325,32 @@ export default {
         await this.loadBlock(head)
       } catch (error) {
         console.error('Failed to load latest block', error)
-        this.error = 'Could not load the latest block.'
+        if (!this.restoreSnapshot()) this.error = 'Could not load the latest block.'
         this.loading = false
         this.refreshing = false
       }
+    },
+    saveSnapshot () {
+      if (!this.block) return
+      saveSnapshot(SNAPSHOT_KEY, {
+        block: this.block,
+        blockNum: this.blockNum,
+        headBlock: this.headBlock,
+        virtualOps: this.virtualOps
+      })
+    },
+    restoreSnapshot (number = null) {
+      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const data = snapshot?.data
+      if (!data?.block) return false
+      if (number && Number(data.blockNum) !== Number(number) && Number(data.headBlock) !== Number(number)) return false
+      this.block = data.block
+      this.blockNum = Number(data.blockNum) || 0
+      this.headBlock = Number(data.headBlock) || null
+      this.virtualOps = Array.isArray(data.virtualOps) ? data.virtualOps : []
+      this.staleAt = snapshot.savedAt
+      this.error = ''
+      return true
     },
     async loadBlock (number) {
       if (!Number.isFinite(number) || number < 1) return
@@ -334,10 +374,12 @@ export default {
         this.block = block
         this.blockNum = loadedNumber
         this.virtualOps = Array.isArray(virtualOps) ? virtualOps : []
+        this.staleAt = null
         if (loadedNumber >= (this.headBlock || 0)) this.followHead = true
+        this.saveSnapshot()
       } catch (error) {
         console.error('Failed to load home block', error)
-        this.error = 'Could not load block ' + number + '.'
+        if (!this.restoreSnapshot(number)) this.error = 'Could not load block ' + number + '.'
       } finally {
         this.loading = false
         this.refreshing = false
