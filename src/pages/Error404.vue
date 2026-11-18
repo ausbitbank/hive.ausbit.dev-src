@@ -1,5 +1,5 @@
 <template>
-  <div class="not-found-page">
+  <main class="not-found-page">
     <div class="not-found-card">
       <div class="not-found-eyebrow">404 · Off the chain</div>
       <h1 class="not-found-title">That page is not here</h1>
@@ -36,7 +36,7 @@
         <router-link to="/health">Network health</router-link>
       </nav>
     </div>
-  </div>
+  </main>
 </template>
 
 <script>

@@ -206,6 +206,7 @@
 
 <script>
 import { parseSearchRoute } from 'src/services/search'
+import { fetchAccount } from 'src/services/chainData'
 
 const RECENT_KEY = 'hive-command-recent'
 const MAX_RECENT = 5
@@ -233,6 +234,8 @@ export default {
       query: '',
       selectedIndex: 0,
       recent: [],
+      accountChecks: {},
+      accountTimer: null,
       shortcutLabel: 'Ctrl K'
     }
   },
@@ -246,7 +249,7 @@ export default {
 
       const results = [base]
       const accountMatch = base.path.match(/^\/@([^/]+)$/)
-      if (base.kind === 'account' && accountMatch) {
+      if (base.kind === 'account' && accountMatch && this.$hiveStore.accounts[accountMatch[1]] !== undefined) {
         const user = accountMatch[1]
         results.push(
           { path: '/@' + user + '/wallet', label: 'Wallet · @' + user, description: 'Balances and transactions', icon: 'account_balance_wallet' },
@@ -308,6 +311,7 @@ export default {
   watch: {
     query () {
       this.selectedIndex = 0
+      this.scheduleAccountCheck()
     }
   },
   mounted () {
@@ -317,8 +321,29 @@ export default {
   },
   beforeUnmount () {
     window.removeEventListener('keydown', this.onGlobalKeydown)
+    if (this.accountTimer) clearTimeout(this.accountTimer)
   },
   methods: {
+    scheduleAccountCheck () {
+      if (this.accountTimer) clearTimeout(this.accountTimer)
+      const base = parseSearchRoute(this.query)
+      if (!base || base.kind !== 'account') return
+      const match = base.path.match(/^\/@([^/]+)$/)
+      if (!match) return
+      const user = match[1]
+      if (this.$hiveStore.accounts[user] !== undefined || this.accountChecks[user]) return
+      this.accountChecks[user] = 'pending'
+      this.accountTimer = setTimeout(() => this.checkAccount(user), 300)
+    },
+    async checkAccount (user) {
+      try {
+        const account = await fetchAccount(user)
+        this.accountChecks[user] = account ? 'found' : 'missing'
+        if (account) this.$hiveStore.updateAccountData(account)
+      } catch {
+        this.accountChecks[user] = 'missing'
+      }
+    },
     openPalette () {
       this.query = ''
       this.selectedIndex = 0

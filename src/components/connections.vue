@@ -1,6 +1,6 @@
 <template>
     <div>
-        <user-card :username="person" v-for="person in currentPage" :key="person" />
+        <user-card :username="person" :show-cover="false" v-for="person in currentPage" :key="person" />
         <div class="q-pa-lg flex flex-center" v-if="maxPages > 1">
           <q-pagination v-model="page" :max="maxPages" :max-pages="3" direction-links input unelevated style="margin:auto"/>
         </div>
@@ -33,6 +33,13 @@ export default {
         this.getConnections()
       }
       this.getAccounts(newState)
+    },
+    username () {
+      this.people = []
+      this.page = 1
+      this.loading = false
+      if (this.followCount === null) this.$hiveStore.getFollowCount(this.username)
+      this.getConnections()
     }
   },
   methods: {

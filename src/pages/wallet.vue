@@ -555,6 +555,12 @@ export default {
   watch: {
     '$route.params.username' (value) {
       if (value !== this.username) this.init()
+    },
+    '$route.hash' () {
+      this.applyHashScroll()
+    },
+    account () {
+      this.applyHashScroll()
     }
   },
   methods: {
@@ -750,15 +756,27 @@ export default {
       this.$hiveStore.addToQueue([this.loggedInUser, 'active', ['cancel_transfer_from_savings', { from: this.loggedInUser, request_id: requestId }]])
       this.$q.notify({ message: 'Savings withdrawal cancellation queued', color: 'green', icon: 'cancel', position: 'top' })
     },
-    scrollTo (id) {
+    applyHashScroll () {
+      const hash = this.$route.hash
+      if (!hash || hash.length < 2) return
+      let id = hash.slice(1)
+      try { id = decodeURIComponent(id) } catch {}
       this.$nextTick(() => {
         const target = document.getElementById(id)
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
       })
+    },
+    scrollTo (id) {
+      if (this.$route.hash === '#' + id) {
+        this.applyHashScroll()
+        return
+      }
+      this.$router.push({ path: this.$route.path, hash: '#' + id }).catch(() => {})
     }
   },
   mounted () {
     this.init()
+    this.applyHashScroll()
   }
 }
 </script>

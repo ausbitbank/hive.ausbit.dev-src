@@ -283,7 +283,9 @@ export default {
       return this.virtualOps.length
     },
     operations () {
-      return blockOperationCount(this.block, this.virtualOps)
+      // "Operations" excludes virtual operations everywhere. Virtual ops are
+      // reported separately so the home card and the block page agree.
+      return blockOperationCount(this.block)
     },
     sizeKb () {
       return blockSizeKb(this.block).toFixed(1)
