@@ -42,6 +42,21 @@
           </div>
         </template>
 
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="command-result command-result--search"
+          :class="{ 'command-result--active': selectedIndex === -1 }"
+          @click="openFullSearch"
+        >
+          <q-icon name="manage_search" size="19px" class="command-result__icon" aria-hidden="true" />
+          <div class="command-result__body">
+            <div class="command-result__label">Search for “{{ query.trim() }}”</div>
+            <div class="command-result__description">Open the full results page</div>
+          </div>
+          <q-icon name="arrow_forward" size="16px" class="command-result__arrow" aria-hidden="true" />
+        </button>
+
         <div v-if="groups.length === 0" class="command-palette__empty">
           <q-icon name="search_off" size="24px" aria-hidden="true" />
           <span>No matches. Try @account, #tag, a block number, transaction id or a Hive URL.</span>
@@ -53,6 +68,7 @@
       <div class="command-palette__footer">
         <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
         <span><kbd>↵</kbd> open</span>
+        <span><kbd>Ctrl</kbd><kbd>↵</kbd> full search</span>
         <span><kbd>esc</kbd> close</span>
         <span class="command-palette__shortcut">{{ shortcutLabel }}</span>
       </div>
@@ -119,6 +135,21 @@
 .command-result--active {
   border-left-color: #4fc3f7;
   background: rgba(79, 195, 247, 0.1);
+}
+
+.command-result--search {
+  width: calc(100% - 1.2rem);
+  margin: 0.25rem 0.6rem;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(79, 195, 247, 0.05);
+  font: inherit;
+  text-align: left;
+}
+
+.command-result--search.command-result--active {
+  border-color: rgba(79, 195, 247, 0.5);
+  border-left-color: #4fc3f7;
 }
 
 .command-result__icon {
@@ -215,13 +246,13 @@ const COMMANDS = [
   { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
   { label: 'Browse posts', description: 'Trending, new and community posts', icon: 'explore', path: '/browse', keywords: 'posts feed content' },
   { label: 'Trending posts', description: 'What Hive is reading now', icon: 'trending_up', path: '/trending', keywords: 'hot popular' },
-  { label: 'Latest blocks', description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer' },
-  { label: 'Witnesses', description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes' },
+  { label: 'Latest blocks', description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer' },  { label: 'Witnesses', description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes' },
   { label: 'Proposals', description: 'Decentralized Hive Fund', icon: 'account_balance', path: '/proposals', keywords: 'dhf dao governance' },
   { label: 'Markets', description: 'HIVE and HBD charts', icon: 'show_chart', path: '/markets', keywords: 'prices trading' },
   { label: 'Internal market', description: 'Trade HIVE and HBD', icon: 'store', path: '/market', keywords: 'exchange order book' },
   { label: 'HBD monitor', description: 'Peg, savings and interest', icon: 'attach_money', path: '/hbd', keywords: 'stablecoin savings apr' },
   { label: 'API nodes', description: 'Latency and node health', icon: 'dns', path: '/nodes', keywords: 'api status' },
+  { label: 'Search Hive', description: 'Accounts, posts, tags, communities and chain data', icon: 'search', path: '/search', keywords: 'search find lookup explore discovery' },
   { label: 'Network health', description: 'Chain status and global properties', icon: 'monitor_heart', path: '/health', keywords: 'status chain' },
   { label: 'Write a post', description: 'Drafts, preview and publishing', icon: 'edit_note', path: '/compose', keywords: 'compose create publish draft blog' },
   { label: 'Create account', description: 'Join Hive', icon: 'person_add', path: '/create', keywords: 'signup register' }
@@ -287,6 +318,9 @@ export default {
       if (!query) return items
       return items.filter(item => (item.label + ' ' + item.description).toLowerCase().includes(query))
     },
+    searchQuery () {
+      return this.query.trim().length >= 2
+    },
     groups () {
       const used = new Set()
       let index = 0
@@ -350,8 +384,7 @@ export default {
       this.query = ''
       this.selectedIndex = 0
       this.open = true
-    },
-    onShow () {
+    },    onShow () {
       this.$nextTick(() => {
         this.$refs.queryInput?.focus()
         this.scrollSelected()
@@ -359,22 +392,39 @@ export default {
     },
     onGlobalKeydown (event) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        if (event.shiftKey) return
         event.preventDefault()
+        if (this.open) {
+          this.open = false
+          return
+        }
         this.openPalette()
+        return
+      }
+      if (event.key === 'Escape' && this.open) {
+        // Stop the search page's Escape handling from clearing the query while
+        // the palette is on top of it.
+        event.preventDefault()
+        this.open = false
       }
     },
     onKeydown (event) {
       const total = this.flatResults.length
+      const withFullSearch = total + (this.searchQuery ? 1 : 0)
       if (event.key === 'ArrowDown') {
         event.preventDefault()
-        if (total) this.selectedIndex = (this.selectedIndex + 1) % total
+        if (withFullSearch) this.selectedIndex = this.selectedIndex >= total - 1 ? (this.searchQuery ? -1 : 0) : this.selectedIndex + 1
         this.scrollSelected()
       } else if (event.key === 'ArrowUp') {
         event.preventDefault()
-        if (total) this.selectedIndex = (this.selectedIndex - 1 + total) % total
+        if (withFullSearch) this.selectedIndex = this.selectedIndex <= 0 ? (this.searchQuery ? -1 : total - 1) : this.selectedIndex - 1
         this.scrollSelected()
       } else if (event.key === 'Enter') {
         event.preventDefault()
+        if ((event.metaKey || event.ctrlKey) && this.searchQuery) {
+          this.openFullSearch()
+          return
+        }
         const result = this.flatResults[this.selectedIndex]
         if (result) this.select(result)
       } else if (event.key === 'Escape') {
@@ -392,6 +442,14 @@ export default {
       this.saveRecent(result)
       this.query = ''
       this.$router.push(result.path).catch(() => {})
+    },
+    openFullSearch () {
+      const text = this.query.trim()
+      if (!text) return
+      this.open = false
+      this.saveRecent({ path: '/search?q=' + encodeURIComponent(text), label: 'Search: ' + text, description: 'Full search results', icon: 'manage_search' })
+      this.$router.push({ path: '/search', query: { q: text } }).catch(() => {})
+      this.query = ''
     },
     loadRecent () {
       try {

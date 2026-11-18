@@ -45,7 +45,7 @@ const routes = [
       { path: 'hbd', name: 'hbd', component: () => import('pages/hbd.vue') },
       { path: 'health', name: 'health', component: () => import('pages/health.vue') },
       { path: 'browse', name: 'browse', component: () => import('pages/browse.vue') },
-      { path: 'browse/:sortMethod/:tag?', name: 'browse-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
+      { path: 'search/:type(accounts|posts|tags|communities|blocks|transactions|proposals|witnesses)?/:term?', name: 'search', component: () => import('pages/search.vue') },      { path: 'browse/:sortMethod/:tag?', name: 'browse-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'trending/:tag?', name: 'trending', component: () => import('pages/browse.vue'), props: { defaultSort: 'trending' } },
       { path: 'created/:tag?', name: 'created', component: () => import('pages/browse.vue'), props: { defaultSort: 'created' } },
       { path: 'hot/:tag?', name: 'hot', component: () => import('pages/browse.vue'), props: { defaultSort: 'hot' } },

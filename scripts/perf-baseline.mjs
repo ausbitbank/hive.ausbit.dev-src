@@ -28,7 +28,7 @@ const CHECK = args.includes('--check')
 const labelArg = args.find(arg => arg.startsWith('--label='))
 const LABEL = labelArg ? labelArg.slice('--label='.length) : (CHECK ? 'ci-check' : 'local')
 const POST = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
-const ROUTES = ['/', '/browse', '/b/1', POST, '/@ausbitbank/wallet', '/market', '/compose']
+const ROUTES = ['/', '/browse', '/b/1', POST, '/@ausbitbank/wallet', '/market', '/compose', '/search?q=hive']
 const ROUTE_NAMES = {
   '/': 'Home',
   '/browse': 'Browse',
@@ -36,7 +36,8 @@ const ROUTE_NAMES = {
   [POST]: 'Post',
   '/@ausbitbank/wallet': 'Wallet',
   '/market': 'Internal market',
-  '/compose': 'Compose'
+  '/compose': 'Compose',
+  '/search?q=hive': 'Search'
 }
 
 function commit () {
@@ -283,9 +284,9 @@ Generated ${new Date(result.generatedAt).toISOString()} from commit \`${result.c
 
 This dashboard measures the built SPA served by \`scripts/serve-dist.mjs\` with
 Brotli/gzip compression and a cold browser cache. It records Core Web Vitals
-and encoded transfer sizes for the main explorer routes plus the compose page.
-It is intentionally repeatable locally and in CI rather than tied to a hosted
-Lighthouse account.
+and encoded transfer sizes for the main explorer routes plus the compose and
+search pages. It is intentionally repeatable locally and in CI rather than tied
+to a hosted Lighthouse account.
 
 ## Latest run
 

@@ -7,9 +7,9 @@ This is the active roadmap. Completed work is recorded in
 
 ## Current state
 
-The explorer is feature-complete through W26, with W27 UI polish and W22
-performance work delivered early and W23 resilience, W24 runtime polish, W25
-governance intelligence and W26 creator workflow layered on top.
+The explorer is feature-complete across W16–W28: the W27 UI polish pass, W22
+performance work, W23 resilience, W24 runtime polish, W25 governance
+intelligence, W26 creator workflow and W28 unified search and discovery.
 
 - Verified W16–W21 baseline: `7b82f97`.
 - W27 UI polish: `docs/workstreams/W27-ui-polish.md`.
@@ -22,20 +22,21 @@ governance intelligence and W26 creator workflow layered on top.
   `docs/workstreams/W25-governance-intelligence.md`.
 - W26 drafts and creator workflow:
   `docs/workstreams/W26-drafts-creator-workflow.md`.
+- W28 unified search and discovery:
+  `docs/workstreams/W28-search-discovery.md`.
 - Fast E2E through Obscura: `docs/workstreams/W25b-e2e-obscura.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 50 unit-test files / 368 tests, 44 Playwright E2E tests, green build.
-- Fast local E2E: 19 tests through Obscura (18 functional tests, 1 Chromium-only
-  skip, ~42s); the full Chromium suite remains the CI/release gate. See
-  `docs/e2e.md`.
-- Performance dashboard: `docs/performance/README.md`; the compose route is now
-  measured (LCP 388 ms, route JS 98.1 KB, total 631.2 KB).
-- Production is deployed from the W26 build with the nginx header/metadata
+- 52 unit-test files / 391 tests, 50 Playwright E2E tests, green build.
+- Fast local E2E: 23 tests through Obscura (22 functional tests, 1 Chromium-only
+  skip); the full Chromium suite remains the CI/release gate. See `docs/e2e.md`.
+- Performance dashboard: `docs/performance/README.md`; compose and search are
+  measured (search LCP 344 ms, route JS 92.7 KB, total 643.1 KB).
+- Production is deployed from the W28 build with the nginx header/metadata
   policy.
 
-The next phase is W28 — unified search and discovery. It stays last on purpose:
-the creator workflow now builds on the measured, resilient foundation.
+All planned workstreams (W16–W28) are now complete. The next step is to agree
+the next phase from live usage and issue triage rather than a fixed list.
 
 ## Vision
 
@@ -198,15 +199,22 @@ evidence.
 
 ### W28 — Unified search and discovery
 
-- One search surface for accounts, posts, tags, communities, blocks,
-  transactions, proposals and witnesses.
-- Typed suggestions and facets, with direct-route parsing preserved.
-- Saved searches and shareable search URLs.
-- Tag and community analytics: trending authors, reward distribution, posting
-  cadence and related tags.
-- Recommendation rails based on followed tags/communities, without hiding the
-  chronological option.
-- Keyboard-first result navigation and recent-search management.
+**Status: complete (2026-11-18).** See
+`docs/workstreams/W28-search-discovery.md`.
+
+- One `/search` surface for accounts, posts, tags, communities, blocks,
+  transactions, proposals and witnesses, with typed tabs and result counts.
+- Typed input handling and direct-route parsing preserved (`@account`, `#tag`,
+  block number, tx id, proposal, Hive post URLs).
+- Facets for tags, communities and authors, plus shareable search URLs and
+  saved searches with JSON export/import.
+- Tag and community analytics: posting cadence, top authors, reward distribution
+  and related tags; author facets from an account's own posts.
+- Keyboard-first navigation (arrows/Enter/Esc), `f` for the full search page and
+  a command-palette deep link.
+- Chronological results stay first-class as the **Newest** sort.
+- Author-focused rapid discovery replaces the planned follow-based rails; the
+  multi-type result list is the discovery surface for now.
 
 ## Sequencing
 
@@ -217,13 +225,20 @@ evidence.
 | 2 | W24 | Stable startup, updates and offline behaviour — complete |
 | 3 | W25 | Deep governance and community intelligence — complete |
 | 4 | W26 | Creator workflow on top of the reliable platform — complete |
-| 5 | W28 | Search and discovery, last by request |
+| 5 | W28 | Search and discovery — complete |
 
-Tracks may overlap only when they share a dependency. W27, W22, W23, W24, W25
-and W26 were pulled forward and landed first; the next workstream is W28.
-Performance and reliability land before feature work that would otherwise make
-the bundle or network layer harder to reason about. UI polish remains a
-continuous layer, with W27 as the formal audit and cleanup pass.
+Tracks may overlap only when they share a dependency. W27, W22, W23, W24, W25,
+W26 and W28 have all landed. Performance and reliability landed before feature
+work that would otherwise make the bundle or network layer harder to reason
+about. UI polish remains a continuous layer, with W27 as the formal audit and
+cleanup pass.
+
+## Next phase
+
+There is no committed workstream after W28. Candidates are drawn from live usage
+and issue triage: follow-based discovery rails on top of the search result
+model, richer full-text post search if a node with `bridge.search_ranked_posts`
+is added, and further analytics for accounts and markets.
 
 ## Definition of done
 
@@ -255,18 +270,16 @@ Every workstream must include:
 
 > Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
 > W27 UI polish, W22 performance, W23 resilience, W24 runtime polish, W25
-> governance intelligence and W26 drafts/creator workflow were delivered on top
-> of it. W16–W26 are complete, with 50 unit-test files / 368 tests, 44 Playwright
-> E2E tests and 19 fast Obscura tests (18 pass, 1 Chromium-only skip) passing.
-> Production is deployed from the W26 build.
+> governance intelligence, W26 drafts/creator workflow and W28 unified search
+> were delivered on top of it. W16–W28 are complete, with 52 unit-test files /
+> 391 tests, 50 Playwright E2E tests and 23 fast Obscura tests (22 pass, 1
+> Chromium-only skip) passing. Production is deployed from the W28 build.
 >
-> Start **Track 5 — W28: Unified search and discovery**. W28 is the last planned
-> workstream.
->
-> Build one search surface for accounts, posts, tags, communities, blocks,
-> transactions, proposals and witnesses, with typed suggestions, facets, saved
-> searches, shareable URLs, tag/community analytics and keyboard-first result
-> navigation. Keep the chronological option when adding recommendation rails.
+> Start the **next phase**: agree scope from live usage and issue triage. Strong
+> candidates are follow-based discovery rails on the search result model, richer
+> full-text search if a node enables `bridge.search_ranked_posts`, and deeper
+> account or market analytics. A new surface should ship as W29 with its own
+> workstream record.
 >
 > Follow the standards in this roadmap: design tokens, one page-level `h1`,
 > posting/active authority correctness, sanitized UGC and `noopener noreferrer`.

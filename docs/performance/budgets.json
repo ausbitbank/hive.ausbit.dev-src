@@ -38,6 +38,11 @@
       "jsKb": 460,
       "routeJsKb": 120,
       "totalKb": 700
+    },
+    "/search?q=hive": {
+      "jsKb": 460,
+      "routeJsKb": 150,
+      "totalKb": 720
     }
   }
 }

@@ -23,7 +23,7 @@
             <span class="command-trigger__label">Search or jump to…</span>
             <kbd class="command-trigger__kbd">Ctrl K</kbd>
           </q-btn>
-          <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump to" @click="openCommandPalette" />
+          <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Open the full Hive search page" title="Search Hive" @click="openSearch" />
           <q-btn class="site-toolbar__icon" flat dense round icon="edit_note" aria-label="Write a post" title="Write a post" @click="openCompose" />
           <queue v-if="loggedInUser !== null && queue.length > 0" />
           <notifications v-if="loggedInUser !== null" />
@@ -51,10 +51,17 @@
           </a>
         </q-item-label>
         <q-separator spaced />
-        <q-item clickable @click="openCommandPalette">
+        <q-item clickable @click="openSearch">
           <q-item-section avatar><q-icon name="manage_search" /></q-item-section>
           <q-item-section>
-            <q-item-label>Search / jump</q-item-label>
+            <q-item-label>Search Hive</q-item-label>
+            <q-item-label caption>Full search page</q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item clickable @click="openCommandPalette">
+          <q-item-section avatar><q-icon name="bolt" /></q-item-section>
+          <q-item-section>
+            <q-item-label>Quick jump</q-item-label>
             <q-item-label caption>Ctrl K</q-item-label>
           </q-item-section>
         </q-item>
@@ -306,19 +313,31 @@ export default {
   },
   mounted () {
     window.addEventListener('hive:open-command-palette', this.openCommandPalette)
+    window.addEventListener('hive:open-search', this.openSearch)
     if (this.loggedInUser) this.preloadQueueChunk()
   },
   beforeUnmount () {
     window.removeEventListener('hive:open-command-palette', this.openCommandPalette)
+    window.removeEventListener('hive:open-search', this.openSearch)
   },
   methods: {
     openCommandPalette () {
+      if (this.$route.name === 'search') {
+        // The search page has its own full-surface search; Ctrl K focuses it
+        // instead of stacking the quick-jump palette on top.
+        window.dispatchEvent(new CustomEvent('hive:open-search'))
+        return
+      }
       this.leftDrawerOpen = false
       this.$refs.commandPalette?.openPalette()
     },
     openCompose () {
       this.leftDrawerOpen = false
       this.$router.push('/compose').catch(() => {})
+    },
+    openSearch () {
+      this.leftDrawerOpen = false
+      this.$router.push('/search').catch(() => {})
     },
     preloadQueueChunk () {
       // Queue is deferred for startup, but a signed-in user may need it while
@@ -393,6 +412,12 @@ export default {
         }
       ],
       toolLinks: [
+        {
+          title: 'Search Hive',
+          caption: 'accounts, posts, tags',
+          icon: 'search',
+          to: '/search'
+        },
         {
           title: 'Write a post',
           caption: 'drafts and publishing',

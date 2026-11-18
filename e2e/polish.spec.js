@@ -87,6 +87,44 @@ test('compose page stays single-column and overflow-free on mobile', async ({ pa
   expect(desktop.sticky).toBe('sticky')
 })
 
+test('search page stays single-column and overflow-free on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/search?q=hive')
+  await waitForApp(page)
+  await expect(page.locator('.search-page')).toBeVisible({ timeout: 30000 })
+  await expect(page.getByRole('heading', { level: 1, name: 'Search Hive' })).toBeVisible()
+
+  const mobile = await page.evaluate(() => {
+    const layout = document.querySelector('.search-layout')
+    return {
+      h1: document.querySelectorAll('h1').length,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      columns: getComputedStyle(layout).gridTemplateColumns.split(' ').length
+    }
+  })
+  expect(mobile.h1).toBe(1)
+  expect(mobile.overflow).toBe(0)
+  expect(mobile.columns).toBe(1)
+
+  await page.setViewportSize({ width: 1440, height: 1100 })
+  await page.goto('/search?q=hive')
+  await waitForApp(page)
+  await expect(page.locator('.search-side')).toBeVisible({ timeout: 30000 })
+  const desktop = await page.evaluate(() => {
+    const layout = document.querySelector('.search-layout')
+    const main = document.querySelector('.search-main')
+    const side = document.querySelector('.search-side')
+    return {
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      columns: getComputedStyle(layout).gridTemplateColumns.split(' ').length,
+      topDelta: Math.abs(main.getBoundingClientRect().top - side.getBoundingClientRect().top)
+    }
+  })
+  expect(desktop.overflow).toBe(0)
+  expect(desktop.columns).toBe(2)
+  expect(desktop.topDelta).toBeLessThanOrEqual(2)
+})
+
 test('post sidebar stacks between the article and comments on mobile and aligns on desktop', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(POST_ROUTE)

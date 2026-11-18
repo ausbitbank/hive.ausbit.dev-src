@@ -33,6 +33,7 @@ Wallet:
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
+| `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics and saved searches |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |
@@ -48,6 +49,8 @@ Wallet:
 Additional UX:
 
 - `Ctrl K` or `/` opens search and jump.
+- `f` opens the full search page; the search page supports arrow-key navigation
+  and saved searches.
 - `?` opens the keyboard shortcut list.
 - `g` then `h/b/w/m/p/n/s/c` jumps to the main sections (including the composer).
 - In the composer, `Ctrl/⌘ S` saves, `Ctrl/⌘ Enter` queues the post, and
@@ -160,12 +163,12 @@ bun run test:e2e:full   # full Chromium suite, ~7 minutes
 ```
 
 The **fast suite** connects Playwright to [Obscura](https://github.com/h4ckf0r0day/obscura),
-a lightweight Rust/V8 headless browser with a CDP server. It runs 18 functional
-tests in about 40 seconds with four workers: login simulation, queueing, the
-composer and drafts, transfers, browse filters, navigation, keyboard shortcuts,
-share actions and the governance/community surfaces.
+a lightweight Rust/V8 headless browser with a CDP server. It runs 22 functional
+tests in about 45 seconds with four workers: login simulation, queueing, the
+composer and drafts, unified search, transfers, browse filters, navigation,
+keyboard shortcuts, share actions and the governance/community surfaces.
 
-The **full Chromium suite** remains the release gate: 44 tests covering axe
+The **full Chromium suite** remains the release gate: 50 tests covering axe
 WCAG A/AA at desktop and mobile widths, visual/layout assertions, LCP/CLS
 performance, PWA install/offline/update flows, and resilience/offline signing.
 Chromium is required because Obscura has an independent layout engine, no

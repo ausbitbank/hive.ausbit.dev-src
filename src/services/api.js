@@ -389,3 +389,33 @@ export function apiGetOpenOrders (account, options = {}) {
 export function bridgeRequest (method, params = {}, options = {}) {
   return rpcRequest('bridge.' + method, params, options)
 }
+
+// -- Unified search reads -----------------------------------------------------
+//
+// Public Hivemind nodes expose `list_communities`, `get_ranked_posts` and
+// `get_account_posts` on the bridge plugin; `search_accounts` and
+// `search_ranked_posts` are not enabled on any of the configured nodes, so
+// account lookup uses `condenser_api.lookup_accounts` and post search ranks
+// candidate feeds locally.
+
+/**
+ * Account names matching a prefix. `lookup_accounts` is a prefix lookup, so
+ * short or older names often need several prefixes; that expansion is handled
+ * in `searchReads.js`, not here.
+ */
+export function apiLookupAccounts (lowerBound, limit = 10, options = {}) {
+  return rpcRequest('condenser_api.lookup_accounts', [String(lowerBound || '').toLowerCase(), Math.min(1000, Math.max(1, limit))], options)
+}
+
+/** Ranked posts for a tag, community or global sort. */
+export function apiRankedPosts (params, options = {}) {
+  return bridgeRequest('get_ranked_posts', params, options)
+}
+
+export function apiListCommunities (params, options = {}) {
+  return bridgeRequest('list_communities', params, options)
+}
+
+export function apiBlockHeader (blockNum, options = {}) {
+  return rpcRequest('condenser_api.get_block_header', [Number(blockNum)], options)
+}

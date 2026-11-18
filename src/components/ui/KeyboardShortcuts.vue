@@ -46,6 +46,7 @@ export default {
       shortcuts: [
         { keys: 'Ctrl / ⌘ K', label: 'Open search and jump' },
         { keys: '/', label: 'Open search and jump' },
+        { keys: 'f', label: 'Open the full search page' },
         { keys: 'g then h', label: 'Go home' },
         { keys: 'g then b', label: 'Go to blocks' },
         { keys: 'g then w', label: 'Go to witnesses' },
@@ -88,6 +89,11 @@ export default {
         this.openPalette()
         return
       }
+      if (event.key === 'f') {
+        event.preventDefault()
+        this.openSearch()
+        return
+      }
       if (event.key.toLowerCase() === 'g') {
         this.pendingG = Date.now()
         return
@@ -102,6 +108,9 @@ export default {
     },
     openPalette () {
       window.dispatchEvent(new CustomEvent('hive:open-command-palette'))
+    },
+    openSearch () {
+      this.$router.push('/search').catch(() => {})
     }
   }
 }

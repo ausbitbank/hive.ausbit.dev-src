@@ -4,8 +4,8 @@ The repository has two Playwright suites that share the same spec files:
 
 | Command | Browser | Scope | Typical time |
 | --- | --- | --- | --- |
-| `bun run test:e2e` | Obscura (CDP) | Functional flows, 18 tests (19 found, 1 Chromium-only skip) | ~42s |
-| `bun run test:e2e:full` | Chromium | Everything, 44 tests | ~7m |
+| `bun run test:e2e` | Obscura (CDP) | Functional flows, 22 tests (23 found, 1 Chromium-only skip) | ~45s |
+| `bun run test:e2e:full` | Chromium | Everything, 50 tests | ~7m |
 
 CI runs the full Chromium suite. Use the Obscura suite for the local edit/run
 loop.
@@ -36,6 +36,7 @@ The fast suite covers:
 - login/session simulation and queue actions
 - comment, proposal and transfer flows
 - compose autosave/restore and a queued top-level post
+- unified search, shared URLs, saved searches and the palette deep link
 - browse filters and layout controls
 - 404 search, keyboard shortcuts, back-to-top and share actions
 - witness/proposal analytics, delegations, authority risk and community insights

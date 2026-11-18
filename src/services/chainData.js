@@ -2,6 +2,7 @@
 
 import { apiCache, clearCache, invalidateCache, loadCached } from './cache'
 import {
+  apiBlockHeader,
   apiGetAccounts,
   apiGetFollowCount,
   apiGetGlobalProps,
@@ -10,8 +11,12 @@ import {
   apiGetTicker,
   apiGetWitnessByAccount,
   apiGetWitnessesByVote,
+  apiListCommunities,
+  apiLookupAccounts,
+  apiRankedPosts,
   bridgeRequest
 } from './api'
+import { searchReadKey } from './unifiedSearch'
 
 export const CACHE_TTL = {
   globalProps: 15000,
@@ -20,7 +25,11 @@ export const CACHE_TTL = {
   posts: 30000,
   followCount: 60000,
   ticker: 15000,
-  median: 15000
+  median: 15000,
+  searchAccounts: 120000,
+  searchCommunities: 120000,
+  searchPosts: 60000,
+  blockHeader: 600000
 }
 
 function accountKey (name) {
@@ -196,4 +205,112 @@ export function invalidateOpenOrderCache (account = null) {
 
 export function invalidateAllChainData () {
   return clearCache(apiCache)
+}
+
+// -- Unified search reads -----------------------------------------------------
+
+/** Accounts whose name starts with a prefix, via `condenser_api.lookup_accounts`. */
+export function fetchAccountNameSearch (prefix, limit = 10, { force = false } = {}) {
+  const needle = String(prefix || '').trim().toLowerCase()
+  if (!needle) return Promise.resolve([])
+  const key = 'search:accounts:' + needle + ':' + limit
+  return loadCached(key, async () => {
+    const names = await apiLookupAccounts(needle, limit)
+    const list = Array.isArray(names) ? names : []
+    if (!list.length) return []
+    const accounts = await apiGetAccounts(list)
+    return Array.isArray(accounts) ? accounts.filter(Boolean) : []
+  }, {
+    ttl: CACHE_TTL.searchAccounts,
+    force
+  })
+}
+
+/** Communities matching a query, ranked by Hivemind's `rank` sort. */
+export function fetchCommunitySearch (query, limit = 6, { force = false } = {}) {
+  const needle = String(query || '').trim().toLowerCase()
+  const key = 'search:communities:' + needle + ':' + limit
+  return loadCached(key, async () => {
+    const params = {
+      last: '',
+      limit: Math.min(20, Math.max(1, limit)),
+      query: needle || null,
+      sort: needle ? 'subs' : 'rank'
+    }
+    const response = await apiListCommunities(params)
+    return Array.isArray(response) ? response.filter(Boolean) : []
+  }, {
+    ttl: CACHE_TTL.searchCommunities,
+    force
+  })
+}
+
+/**
+ * Candidate posts for a search. Tag/community queries page the chronological
+ * feed so relevance ranking has enough of the newest posts to work with; those
+ * pages are fetched sequentially and kept locally per request.
+ */
+export function fetchPostSearch (plan, { force = false } = {}) {
+  const key = 'search:posts:' + searchReadKey(plan || {}, { sort: plan?.sort })
+  return loadCached(key, async () => {
+    const limit = 20
+    const tag = plan?.communities || plan?.tags
+
+    if (tag) {
+      const posts = []
+      let startAuthor = ''
+      let startPermlink = ''
+      for (let page = 0; page < 2; page++) {
+        const params = { sort: 'created', tag, limit }
+        if (startAuthor) {
+          params.start_author = startAuthor
+          params.start_permlink = startPermlink
+        }
+        const batch = await apiRankedPosts(params)
+        if (!Array.isArray(batch) || !batch.length) break
+        posts.push(...batch)
+        const last = batch[batch.length - 1]
+        if (batch.length < limit) break
+        if (!last?.author || !last?.permlink) break
+        startAuthor = last.author
+        startPermlink = last.permlink
+      }
+      return posts
+    }
+
+    // Keyword queries: combine trending, newest and hot feeds, then rank the
+    // union locally because public nodes do not enable `search_ranked_posts`.
+    const feeds = await Promise.all(
+      ['trending', 'created', 'hot'].map(sort => apiRankedPosts({ sort, limit }).catch(() => []))
+    )
+    const seen = new Set()
+    const posts = []
+    for (const feed of feeds) {
+      for (const post of Array.isArray(feed) ? feed : []) {
+        if (!post?.author || !post?.permlink) continue
+        const postKey = post.author + '/' + post.permlink
+        if (seen.has(postKey)) continue
+        seen.add(postKey)
+        posts.push(post)
+      }
+    }
+    return posts
+  }, {
+    ttl: CACHE_TTL.searchPosts,
+    force
+  })
+}
+
+/** Block header for a numeric search, used to confirm the block exists. */
+export function fetchBlockHeader (blockNum, { force = false } = {}) {
+  const number = Number(blockNum)
+  if (!Number.isInteger(number) || number < 1) return Promise.resolve(null)
+  return loadCached('search:block:' + number, () => apiBlockHeader(number), {
+    ttl: CACHE_TTL.blockHeader,
+    force
+  })
+}
+
+export function invalidateSearchCache () {
+  return invalidateCache('search:')
 }
