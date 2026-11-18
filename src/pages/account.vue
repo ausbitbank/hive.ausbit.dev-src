@@ -9,7 +9,6 @@
 
     <template v-else-if="account !== null && account !== undefined && globalProps !== null">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
-
       <div class="account-shell">
         <q-card flat bordered class="account-card account-overview">
           <q-card-section>
@@ -37,12 +36,15 @@
                 <span class="account-stat__label">Effective HP</span>
                 <strong class="account-stat__value">{{ effectiveHPTidy }}</strong>
                 <small class="account-stat__hint">
+                  <template v-if="accountReady">
                   {{ tidyNumber(vestToHive(parseInt(account.vesting_shares.split(' ')[0]))) }}
                   + {{ tidyNumber(vestToHive(parseInt(account.received_vesting_shares.split(' ')[0]))) }}
                   - {{ tidyNumber(vestToHive(parseInt(account.delegated_vesting_shares.split(' ')[0]))) }}
                   <template v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0">
                     - {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }}
                   </template>
+                  </template>
+                  <template v-else>Awaiting account data</template>
                 </small>
               </div>
 
@@ -61,13 +63,14 @@
               <div class="account-stat">
                 <span class="account-stat__label">Voting power</span>
                 <strong class="account-stat__value">{{ votePower }}%</strong>
-                <q-linear-progress dark rounded size="8px" :value="votePower / 100" color="primary" class="account-stat__bar" aria-label="Voting power" />
+                <q-linear-progress dark rounded size="8px" :value="Number(votePower) / 100" color="primary" class="account-stat__bar" aria-label="Voting power" />
               </div>
 
               <div class="account-stat">
                 <span class="account-stat__label">Downvote power</span>
                 <strong class="account-stat__value">{{ downvotePowerPct }}%</strong>
-                <q-linear-progress dark rounded size="8px" :value="downvotePowerPct / 100" color="red" class="account-stat__bar" aria-label="Downvote power" />
+                <q-linear-progress v-if="downvotePower !== null" dark rounded size="8px" :value="downvotePowerPct / 100" color="red" class="account-stat__bar" aria-label="Downvote power" />
+                <small v-else class="account-stat__hint">Unavailable</small>
               </div>
 
               <div class="account-stat account-stat--rc">
@@ -76,7 +79,7 @@
               </div>
             </div>
 
-            <div v-if="parseInt(account.vesting_withdraw_rate.split(' ')[0]) !== 0" class="account-powerdown">
+            <div v-if="powerDownActive" class="account-powerdown">
               <q-icon name="lock_open" color="orange" aria-hidden="true" />
               <span>Powering down {{ tidyNumber(vestToHive(parseInt(account.vesting_withdraw_rate.split(' ')[0]))) }} HIVE next</span>
               <span class="account-powerdown__time">{{ timeDelta(account.next_vesting_withdrawal) }}</span>
@@ -106,9 +109,11 @@
                     <q-popup-proxy>
                       <q-card class="account-filter-card">
                         <div class="account-filter-card__title">Filter operations</div>
-                        <q-input v-model="filter" label="Operations separated by commas" dense outlined />
-                        <q-btn label="Apply filter" color="primary" dense icon="save" size="sm" @click="$router.push({ query: { filter: filter } }); getAccountHistoryMarker()" />
-                        <q-btn flat dense no-caps color="grey" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
+                        <q-input v-model="filter" label="Operations separated by commas" dense outlined placeholder="vote, transfer, comment" />
+                        <div class="account-filter-card__actions">
+                          <q-btn flat dense no-caps color="grey" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
+                          <q-btn unelevated dense no-caps label="Apply filter" color="primary" icon="filter_alt" @click="$router.push({ query: { filter: filter } }); getAccountHistoryMarker()" />
+                        </div>
                       </q-card>
                     </q-popup-proxy>
                   </q-btn>
@@ -134,7 +139,6 @@
               </q-card-section>
             </q-card>
           </section>
-
           <aside class="account-sidebar">
             <home-recent-posts :account="username" />
 
@@ -176,7 +180,11 @@
               </q-card-section>
             </q-card>
 
-            <account-authorities :account="account" :witness="witness" class="account-card" v-on:authEdited="$hiveStore.getAccount(username, { force: true })" />
+            <q-card flat bordered class="account-card">
+              <q-card-section>
+                <account-authorities :account="account" :witness="witness" v-on:authEdited="$hiveStore.getAccount(username, { force: true })" />
+              </q-card-section>
+            </q-card>
 
             <authority-risk-card :account="account" :witness="witness" class="account-card" />
 
@@ -196,18 +204,28 @@
                   <h2 class="account-card__title account-card__title--small">Witness votes</h2>
                   <q-btn flat dense round icon="edit" color="orange" title="Edit witness votes" aria-label="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser" />
                 </div>
-                <div class="account-muted" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">Expiring {{ timeDelta(account.governance_vote_expiration_ts) }}</div>
-                <ol class="account-witness-votes" v-if="account.witness_votes.length">
-                  <li v-for="w in account.witness_votes" :key="w"><router-link :to="accountLink(w)">{{ w }}</router-link></li>
-                </ol>
-                <div v-if="account.proxy !== ''" class="account-muted">
-                  Voting proxy set to <router-link :to="accountLink(account.proxy)">{{ account.proxy }}</router-link>
+                <div class="account-muted account-muted--row" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">
+                  <q-icon name="schedule" size="14px" aria-hidden="true" />
+                  <span>Expires {{ timeDelta(account.governance_vote_expiration_ts) }}</span>
                 </div>
-                <div v-else-if="account.witness_votes.length === 0" class="account-muted">
-                  No witness votes or voting proxy have been set.
+                <ul class="account-witness-votes" v-if="witnessVotes.length" aria-label="Witness votes">
+                  <li v-for="w in witnessVotes" :key="w" class="account-witness-votes__item">
+                    <router-link :to="accountLink(w)" :title="'@' + w">
+                      <q-avatar size="18px" aria-hidden="true"><q-img :src="getHiveAvatarUrl(w)" alt="" /></q-avatar>
+                      <span class="account-witness-votes__name">@{{ w }}</span>
+                    </router-link>
+                  </li>
+                </ul>
+                <div v-if="account.proxy" class="account-muted account-muted--row">
+                  <q-icon name="swap_horiz" size="14px" aria-hidden="true" />
+                  <span>Voting proxy set to <router-link :to="accountLink(account.proxy)">@{{ account.proxy }}</router-link></span>
+                </div>
+                <div v-else-if="witnessVotes.length === 0" class="account-empty">
+                  <q-icon name="how_to_vote" size="20px" aria-hidden="true" />
+                  <span>No witness votes or voting proxy have been set.</span>
                   <template v-if="loggedInUser && username === loggedInUser">
-                    <div class="text-bold">Like this site? <router-link to="/witnesses">Vote for ausbitbank</router-link>!</div>
-                    <q-btn flat dense icon="edit" color="primary" title="Edit witness votes" @click="$router.push('/witnesses')" label="Vote for witnesses" />
+                    <span class="account-empty__pitch">Like this site? <router-link to="/witnesses">Vote for ausbitbank</router-link>!</span>
+                    <q-btn outline dense no-caps icon="how_to_vote" color="primary" class="account-empty__btn" title="Edit witness votes" @click="$router.push('/witnesses')" label="Vote for witnesses" />
                   </template>
                 </div>
               </q-card-section>
@@ -275,24 +293,33 @@
 .account-overview-actions {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .account-quick-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem 0.9rem;
+  align-items: center;
+  gap: 0.2rem;
 }
 
 .account-quick-links a {
-  color: #4fc3f7;
-  font-size: 0.78rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: #9ecbe9;
+  font-size: 0.76rem;
+  font-weight: 500;
   text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .account-quick-links a:hover {
-  text-decoration: underline;
+  border-color: rgba(79, 195, 247, 0.35);
+  background: rgba(79, 195, 247, 0.08);
+  color: #e1f5fe;
+  text-decoration: none;
 }
 
 .account-stat-grid {
@@ -335,6 +362,10 @@
 
 .account-stat__bar {
   margin-top: 0.2rem;
+}
+
+.account-stat--rc {
+  justify-content: flex-start;
 }
 
 .account-powerdown {
@@ -387,20 +418,38 @@
 .account-activity__actions {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
+}
+
+.account-activity__actions .q-toggle {
+  color: #b0bec5;
+  font-size: 0.8rem;
 }
 
 .account-filter-card {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
   width: min(360px, 92vw);
-  padding: 0.8rem;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: #10181d;
+  box-shadow: var(--shadow-pop);
 }
 
 .account-filter-card__title {
+  color: #e4eaed;
+  font-size: 0.92rem;
   font-weight: 600;
+}
+
+.account-filter-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
 }
 
 .account-filter-note {
@@ -437,19 +486,95 @@
   font-size: 0.8rem;
 }
 
-.account-witness-votes {
-  margin: 0.4rem 0 0;
-  padding-left: 1.2rem;
-  color: #b0bec5;
-  font-size: 0.8rem;
+.account-muted--row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
 }
 
-.account-witness-votes li {
-  margin: 0.1rem 0;
+.account-muted--row .q-icon {
+  color: #78909c;
 }
 
-.account-witness-votes a {
+.account-muted a {
   color: #4fc3f7;
+  text-decoration: none;
+}
+
+.account-muted a:hover {
+  text-decoration: underline;
+}
+
+.account-witness-votes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-witness-votes__item a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.15rem 0.45rem 0.15rem 0.15rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.025);
+  color: #cfd8dc;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.account-witness-votes__item a:hover {
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.08);
+  color: #fff;
+  text-decoration: none;
+}
+
+.account-witness-votes__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #90a4ae;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.account-empty > .q-icon {
+  color: #607d8b;
+}
+
+.account-empty__pitch {
+  color: #b0bec5;
+}
+
+.account-empty__pitch a {
+  color: #4fc3f7;
+}
+
+.account-empty__btn {
+  margin-top: 0.15rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.74rem;
+  font-weight: 600;
 }
 
 .account-state,
@@ -497,6 +622,11 @@
 
   .account-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-card__head {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>
@@ -593,10 +723,24 @@ export default {
         return this.$hiveStore.accounts[this.username]
       }
     },
+    /* A partially hydrated account (a node returning a trimmed payload, or a
+       privacy extension stripping fields) must degrade, not throw: every
+       balance field below is read through these guards. */
+    accountReady: {
+      get () {
+        const account = this.account
+        if (!account) return false
+        if (this.globalProps === null || this.globalProps === undefined) return false
+        return ['vesting_shares', 'received_vesting_shares', 'delegated_vesting_shares', 'vesting_withdraw_rate']
+          .every(key => typeof account[key] === 'string')
+      }
+    },
     accountAge: function () {
+      if (!this.account || !this.account.created) return '—'
       return moment(this.account.created).fromNow()
     },
     accountAgeShort: function () {
+      if (!this.account || !this.account.created) return '—'
       return moment(this.account.created).format('MMMM YYYY')
     },
     displayReputation: function () {
@@ -609,8 +753,9 @@ export default {
       return this.getReputation(raw)
     },
     votePower: function () {
+      if (!this.account || !this.account.last_vote_time) return '0.00'
       var secondsago = (new Date() - new Date(this.account.last_vote_time + 'Z')) / 1000
-      var vpow = this.account.voting_power + (10000 * secondsago / 432000)
+      var vpow = (Number(this.account.voting_power) || 0) + (10000 * secondsago / 432000)
       return Math.min(vpow / 100, 100).toFixed(2)
     },
     effectiveHPTidy: function () {
@@ -620,19 +765,30 @@ export default {
       return this.vestToHive(this.effectiveVests)
     },
     effectiveVests: function () {
-      if (this.account !== undefined && this.account !== null) {
-        return parseInt(this.account.vesting_shares.split(' ')[0]) + parseInt(this.account.received_vesting_shares.split(' ')[0]) - parseInt(this.account.delegated_vesting_shares.split(' ')[0]) - parseInt(this.account.vesting_withdraw_rate.split(' ')[0])
-      } else {
-        return null
-      }
+      if (!this.accountReady) return null
+      return parseInt(this.account.vesting_shares.split(' ')[0]) + parseInt(this.account.received_vesting_shares.split(' ')[0]) - parseInt(this.account.delegated_vesting_shares.split(' ')[0]) - parseInt(this.account.vesting_withdraw_rate.split(' ')[0])
     },
     downvotePower: function () {
-      return (this.account.downvote_manabar.current_mana / ((this.effectiveVests / 4) * 1e4)) * 100
+      if (!this.accountReady) return null
+      const manabar = this.account.downvote_manabar || {}
+      const current = Number(manabar.current_mana)
+      const max = (this.effectiveVests / 4) * 1e4
+      if (!Number.isFinite(current) || !Number.isFinite(max) || max <= 0) return null
+      return (current / max) * 100
     },
     downvotePowerPct: function () {
+      if (this.downvotePower === null) return '—'
       var pct = (this.downvotePower / 100).toFixed(2)
       if (pct > 100) { pct = 100.00 }
       return pct
+    },
+    powerDownActive: function () {
+      if (!this.accountReady) return false
+      return parseInt(this.account.vesting_withdraw_rate.split(' ')[0]) !== 0
+    },
+    witnessVotes: function () {
+      const votes = this.account && this.account.witness_votes
+      return Array.isArray(votes) ? votes : []
     },
     coverImage: function () {
       var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'

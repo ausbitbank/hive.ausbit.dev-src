@@ -1,13 +1,17 @@
 <template>
-  <span>
-    <q-btn outline rounded color="primary" class="q-ma-none q-pa-none hvr" @click="dialog = !dialog">
-      <q-icon v-for="coin in coins" :key="coin.index" :name="returnCoinSvg(coin)" /><q-icon name="img:/statics/hive.svg" /><q-icon name="img:/statics/hbd.svg" class="q-mr-md" /> Send {{ account }} a tip
+  <span class="tip-button">
+    <q-btn flat no-caps class="tip-button__btn" aria-label="Send this account a tip" title="Send a tip" @click="dialog = !dialog">
+      <q-icon name="volunteer_activism" size="17px" aria-hidden="true" />
+      <span class="tip-button__label">Send a tip</span>
+      <span v-if="coins.length" class="tip-button__coins" aria-hidden="true">
+        <q-icon v-for="coin in coins" :key="coin" :name="returnCoinSvg(coin)" size="13px" />
+      </span>
+      <q-icon name="img:/statics/hive.svg" size="14px" aria-hidden="true" />
+      <q-icon name="img:/statics/hbd.svg" size="14px" aria-hidden="true" />
     </q-btn>
     <tip-dialog v-if="dialog" :account="account" :accountData="accountData" :accountMeta="accountMeta" :coins="coins" />
   </span>
 </template>
-<style>
-</style>
 <script>
 import tipDialog from 'components/tipDialog.vue'
 export default {
@@ -45,7 +49,7 @@ export default {
       var userCoins = []
       if (this.accountMeta) {
         if ('profile' in this.accountMeta) {
-          Object.keys(this.accountMeta.profile).forEach(e => this.supportedCoins.includes(e) ? userCoins.push(e) : console.log())
+          Object.keys(this.accountMeta.profile).forEach(e => this.supportedCoins.includes(e) ? userCoins.push(e) : null)
           return userCoins
         } else {
           return []
@@ -67,3 +71,38 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.tip-button__btn.q-btn {
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  border-radius: var(--radius-pill);
+  background: rgba(79, 195, 247, 0.06);
+  color: #81d4fa;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tip-button__btn.q-btn .q-icon {
+  font-size: 17px;
+  color: inherit;
+}
+
+.tip-button__btn.q-btn:hover {
+  border-color: rgba(79, 195, 247, 0.6);
+  background: rgba(79, 195, 247, 0.12);
+  color: #e1f5fe;
+}
+
+.tip-button__coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: auto;
+  padding-left: 0.35rem;
+  opacity: 0.65;
+}
+</style>

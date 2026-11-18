@@ -1,238 +1,436 @@
 <template>
-<q-card flat bordered class="q-pa-sm q-ma-md text-center">
-  <q-card-section>
-    <div class="text-h5 text-center">
-        Authorities
-        <q-btn flat icon="edit" color="orange" v-if="loggedInUser === account.name" title="Edit account authorities" @click="editorEnabled = !editorEnabled" class="hvr" />
+<div class="authorities">
+  <div class="authorities__head">
+    <div>
+      <div class="authorities__eyebrow">Permissions</div>
+      <h2 class="authorities__title">Authorities</h2>
     </div>
-  </q-card-section>
-  <q-card-section v-if="witness">
-    <div class="text-h6">Signing <q-icon name="info" color="info" title="Signing keys are used by witnesses to sign blocks" /></div>
-    <q-list bordered seperator dense>
-        <q-item>
-            <q-item-section avatar>
-                <q-icon name="lock" color="blue-grey" />
-            </q-item-section>
-            <q-item-section class="wrap text-caption" tabindex="0">
-                {{ witness.signing_key }}
-            </q-item-section>
-            <q-item-section side>
-                1
-            </q-item-section>
-        </q-item>
-    </q-list>
-  </q-card-section>
-  <q-card-section>
-    <div class="text-h6">Owner <q-icon name="info" color="info" title="This is the admin key, that gives rights to perform any kind of transaction." /></div>
-    <q-list bordered seperator :dense="$q.screen.lt.md">
-        <q-item v-for="auth in account.owner.key_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="lock" color="blue-grey" />
-            </q-item-section>
-            <q-item-section class="wrap text-caption" tabindex="0">
-                {{ auth[0] }}
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-        </q-item>
-        <q-item v-for="auth in account.owner.account_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="person" color="primary"/>
-            </q-item-section>
-            <q-item-section>
-                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-            <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove owner authority" dense flat  @click="removeAuth('owner', 'account', account.name, auth[0])" />
-            </q-item-section>
-        </q-item>
-        <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn flat style="margin: auto" title="Add owner authority" icon="person_add" color="green">
-                <q-popup-proxy>
-                    <q-card class="q-pa-md">
-                        <q-card-section>
-                            Give owner authority to this account :
-                        </q-card-section>
-                        <q-card-section>
-                            <q-input label="account" v-model="newOwnerAuthAccount" />
-                            <q-input label="weight" v-model="newOwnerAuthWeight" />
-                        </q-card-section>
-                        <q-card-actions>
-                            <q-btn flat label="Add owner authority" icon="warning" color="orange" @click="addAuth('owner', 'account', account.name, newOwnerAuthAccount, newOwnerAuthWeight)" />
-                        </q-card-actions>
-                    </q-card>
-                </q-popup-proxy>
-            </q-btn>
-        </q-item>
-        Threshold: {{ account.owner.weight_threshold }}
-    </q-list>
-  </q-card-section>
-  <q-card-section>
-    <div class="text-h6">Active <q-icon name="info" color="info" title="The active key is needed to perform monetary transactions. It can also be used to change the other permissions (except for Owner)." /></div>
-    <q-list bordered seperator :dense="$q.screen.lt.md" class="wrap">
-        <q-item v-for="auth in account.active.key_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="lock" color="blue-grey"/>
-            </q-item-section>
-            <q-item-section class="wrap text-caption" tabindex="0">
-                {{ auth[0] }}
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-        </q-item>
-        <q-item v-for="auth in account.active.account_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="person" color="primary" />
-            </q-item-section>
-            <q-item-section>
-                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-            <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove active authority" dense flat @click="removeAuth('active', 'account', account.name, auth[0])" />
-            </q-item-section>
-        </q-item>
-        <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn style="margin: auto" title="Add active authority" icon="person_add" color="green" dense flat>
-                <q-popup-proxy>
-                    <q-card class="q-pa-md">
-                        <q-card-section>
-                            Give active authority to this account :
-                        </q-card-section>
-                        <q-card-section>
-                            <q-input label="account" v-model="newActiveAuthAccount" />
-                            <q-input label="weight" v-model="newActiveAuthWeight" />
-                        </q-card-section>
-                        <q-card-actions>
-                            <q-btn label="Add active authority" icon="warning" color="orange" @click="addAuth('active', 'account', account.name, newActiveAuthAccount, newActiveAuthWeight)" />
-                        </q-card-actions>
-                    </q-card>
-                </q-popup-proxy>
-            </q-btn>
-        </q-item>
-      Threshold: {{ account.active.weight_threshold }}
-    </q-list>
-  </q-card-section>
-  <q-card-section>
-    <div class="text-h6">Posting <q-icon name="info" color="info" title="The posting key is used to post, vote and perform some broadcasts." /></div>
-    <q-list bordered seperator :dense="$q.screen.lt.md">
-        <q-item v-for="auth in account.posting.key_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="lock" color="blue-grey" />
-            </q-item-section>
-            <q-item-section class="wrap text-caption" tabindex="0">
-                {{ auth[0] }}
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-        </q-item>
-        <q-item v-for="auth in account.posting.account_auths" :key="auth.index">
-            <q-item-section avatar>
-                <q-icon name="person" color="primary" />
-            </q-item-section>
-            <q-item-section>
-                <router-link :to="accountLink(auth[0])">{{ auth[0] }}</router-link>
-            </q-item-section>
-            <q-item-section side>
-                {{ auth[1] }}
-            </q-item-section>
-            <q-item-section side v-if="loggedInUser === account.name && editorEnabled">
-                <q-btn icon="delete" color="red" title="Remove posting authority" dense flat @click="removeAuth('posting', 'account', account.name, auth[0])" />
-            </q-item-section>
-        </q-item>
-        <q-item v-if="loggedInUser === account.name && editorEnabled">
-            <q-btn style="margin: auto" title="Add posting authority" icon="person_add" color="green" dense flat>
-                <q-popup-proxy>
-                    <q-card class="q-pa-md">
-                        <q-card-section>
-                            Give posting authority to this account :
-                        </q-card-section>
-                        <q-card-section>
-                            <q-input label="account" v-model="newPostingAuthAccount" />
-                            <q-input label="weight" v-model="newPostingAuthWeight" />
-                        </q-card-section>
-                        <q-card-actions>
-                            <q-btn label="Add posting authority" size="1rem" icon="warning" color="orange" @click="addAuth('posting', 'account', account.name, newPostingAuthAccount, newPostingAuthWeight)" />
-                        </q-card-actions>
-                    </q-card>
-                </q-popup-proxy>
-            </q-btn>
-        </q-item>
-        Threshold: {{ account.posting.weight_threshold }}
-    </q-list>
-  </q-card-section>
-  <q-card-section>
-    <div class="text-h6">Memo <q-icon name="info" color="info" title="Use to encode/decode private memos." /></div>
-    <q-list bordered seperator :dense="$q.screen.lt.md">
-        <q-item>
-            <q-item-section avatar>
-                <q-icon name="lock" color="blue-grey"/>
-            </q-item-section>
-            <q-item-section class="wrap text-caption" tabindex="0">
-                {{ account.memo_key }}
-            </q-item-section>
-            <q-item-section side>
-                1
-            </q-item-section>
-        </q-item>
-    </q-list>
-  </q-card-section>
-</q-card>
+    <q-btn
+      v-if="loggedInUser === account.name"
+      flat
+      dense
+      round
+      size="sm"
+      :icon="editorEnabled ? 'close' : 'edit'"
+      :color="editorEnabled ? 'grey' : 'primary'"
+      :title="editorEnabled ? 'Stop editing authorities' : 'Edit account authorities'"
+      :aria-label="editorEnabled ? 'Stop editing authorities' : 'Edit account authorities'"
+      class="authorities__edit"
+      @click="editorEnabled = !editorEnabled"
+    />
+  </div>
+
+  <section v-for="permission in permissionList" :key="permission.name" class="authorities__section">
+    <div class="authorities__section-head">
+      <q-icon :name="permission.icon" size="15px" class="authorities__section-icon" aria-hidden="true" />
+      <h3 class="authorities__section-title">{{ permission.label }}</h3>
+      <span class="authorities__threshold" :title="'Weight threshold: ' + permission.weightThreshold">
+        Threshold {{ permission.weightThreshold }}
+      </span>
+      <q-icon name="info" size="14px" class="authorities__info" :title="permission.hint" :aria-label="permission.hint" />
+    </div>
+
+    <ul class="authorities__keys">
+      <li v-for="auth in permission.keys" :key="'key-' + auth[0]" class="authorities__row">
+        <q-icon name="vpn_key" size="14px" class="authorities__row-icon" aria-hidden="true" />
+        <code class="authorities__key" tabindex="0" :title="auth[0]">{{ shortKey(auth[0]) }}</code>
+        <span class="authorities__weight" title="Weight">{{ auth[1] }}</span>
+      </li>
+
+      <li v-for="auth in permission.accounts" :key="'account-' + auth[0]" class="authorities__row authorities__row--account">
+        <q-icon name="person" size="14px" class="authorities__row-icon" aria-hidden="true" />
+        <router-link :to="accountLink(auth[0])" class="authorities__account">@{{ auth[0] }}</router-link>
+        <span class="authorities__weight" title="Weight">{{ auth[1] }}</span>
+        <q-btn
+          v-if="loggedInUser === account.name && editorEnabled"
+          flat
+          dense
+          round
+          size="sm"
+          icon="delete_outline"
+          color="red-4"
+          class="authorities__remove"
+          :aria-label="'Remove ' + permission.name + ' authority for @' + auth[0]"
+          title="Remove authority"
+          @click="removeAuth(permission.name, 'account', account.name, auth[0])"
+        />
+      </li>
+
+      <li v-if="!permission.keys.length && !permission.accounts.length" class="authorities__none">
+        No keys or accounts on this permission.
+      </li>
+    </ul>
+
+    <div v-if="loggedInUser === account.name && editorEnabled" class="authorities__add">
+      <q-btn flat dense no-caps icon="person_add" color="primary" class="authorities__add-btn" :title="'Add ' + permission.label + ' authority'">
+        <q-popup-proxy>
+          <q-card flat class="authorities__editor">
+            <div class="authorities__editor-head">
+              <div class="authorities__eyebrow">Grant access</div>
+              <h4 class="authorities__editor-title">Add {{ permission.label }} authority</h4>
+            </div>
+            <div class="authorities__editor-body">
+              <q-input dense outlined v-model="newAuth[permission.name].account" label="Account" />
+              <q-input dense outlined v-model="newAuth[permission.name].weight" label="Weight" type="number" min="1" />
+              <p class="authorities__editor-hint">
+                <q-icon name="warning_amber" size="14px" aria-hidden="true" />
+                <span>{{ permission.warning }}</span>
+              </p>
+            </div>
+            <div class="authorities__editor-actions">
+              <q-btn flat dense no-caps label="Cancel" color="grey" v-close-popup />
+              <q-btn
+                unelevated
+                dense
+                no-caps
+                :label="'Add ' + permission.label"
+                color="primary"
+                @click="addAuth(permission.name, 'account', account.name, newAuth[permission.name].account, newAuth[permission.name].weight)"
+                v-close-popup
+              />
+            </div>
+          </q-card>
+        </q-popup-proxy>
+      </q-btn>
+    </div>
+  </section>
+
+  <section v-if="witness" class="authorities__section">
+    <div class="authorities__section-head">
+      <q-icon name="gavel" size="15px" class="authorities__section-icon" aria-hidden="true" />
+      <h3 class="authorities__section-title">Signing</h3>
+      <span class="authorities__threshold">Witness</span>
+      <q-icon name="info" size="14px" class="authorities__info" title="Signing keys are used by witnesses to sign blocks" />
+    </div>
+    <ul class="authorities__keys">
+      <li class="authorities__row">
+        <q-icon name="vpn_key" size="14px" class="authorities__row-icon" aria-hidden="true" />
+        <code class="authorities__key" tabindex="0" :title="witness.signing_key">{{ shortKey(witness.signing_key) }}</code>
+        <span class="authorities__weight" title="Weight">1</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="authorities__section">
+    <div class="authorities__section-head">
+      <q-icon name="mail_lock" size="15px" class="authorities__section-icon" aria-hidden="true" />
+      <h3 class="authorities__section-title">Memo</h3>
+      <q-icon name="info" size="14px" class="authorities__info" title="Use to encode and decode private memos" />
+    </div>
+    <ul class="authorities__keys">
+      <li class="authorities__row">
+        <q-icon name="vpn_key" size="14px" class="authorities__row-icon" aria-hidden="true" />
+        <code class="authorities__key" tabindex="0" :title="account.memo_key">{{ shortKey(account.memo_key) }}</code>
+        <span class="authorities__weight" title="Weight">1</span>
+      </li>
+    </ul>
+  </section>
+</div>
 </template>
 <script>
 import { keychain } from '@hiveio/keychain'
+
+const PERMISSION_META = {
+  owner: {
+    label: 'Owner',
+    icon: 'shield',
+    hint: 'The admin key. It can perform any transaction, including changing every other permission.',
+    warning: 'Owner authority can take full control of this account. Grant it only to keys or accounts you fully trust.'
+  },
+  active: {
+    label: 'Active',
+    icon: 'account_balance_wallet',
+    hint: 'Needed for monetary transactions. It can also change the posting permission.',
+    warning: 'Active authority can move funds and change permissions. Grant it only to keys or accounts you trust.'
+  },
+  posting: {
+    label: 'Posting',
+    icon: 'edit_note',
+    hint: 'Used to post, comment, vote and perform some broadcasts.',
+    warning: 'Posting authority can publish as this account. Grant it only to apps or accounts you trust.'
+  }
+}
+
 export default {
   name: 'accountAuthorities',
   props: ['account', 'witness'],
   data () {
     return {
-      dialogAddAccountAuth: false,
       editorEnabled: false,
-      newPostingAuthAccount: '',
-      newPostingAuthWeight: 1,
-      newActiveAuthAccount: '',
-      newActiveAuthWeight: 1,
-      newOwnerAuthAccount: '',
-      newOwnerAuthWeight: 1,
-      newMemoAuthAccount: '',
-      newMemoAuthWeight: 1
-    }
-  },
-  methods: {
-    accountLink (username) { return '/@' + username },
-    async removeAuth (keyType, authType, accountToModify, toRemove) {
-      if (authType === 'account') {
-        console.log('remove ' + keyType + ' ' + authType + ' authority of ' + toRemove + ' over account ' + accountToModify)
-        const { success, msg } = await keychain(window, 'requestRemoveAccountAuthority', accountToModify, toRemove, keyType)
-        if (success) {
-          this.$emit('authEdited')
-          console.log(msg)
-        }
-      }
-    },
-    async addAuth (keyType, authType, accountToModify, toAdd, weight) {
-      if (authType === 'account') {
-        console.log('add ' + keyType + ' ' + authType + ' authority of ' + toAdd + ' over account ' + accountToModify)
-        const { success, msg } = await keychain(window, 'requestAddAccountAuthority', accountToModify, toAdd, keyType, weight)
-        if (success) {
-          this.$emit('authEdited')
-          console.log(msg)
-        }
+      newAuth: {
+        owner: { account: '', weight: 1 },
+        active: { account: '', weight: 1 },
+        posting: { account: '', weight: 1 }
       }
     }
   },
   computed: {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
+    },
+    permissionList () {
+      return ['owner', 'active', 'posting'].map(name => {
+        const permission = this.account?.[name] || {}
+        return {
+          name,
+          ...PERMISSION_META[name],
+          keys: permission.key_auths || [],
+          accounts: permission.account_auths || [],
+          weightThreshold: permission.weight_threshold ?? 0
+        }
+      })
+    }
+  },
+  methods: {
+    accountLink (username) { return '/@' + username },
+    shortKey (key) {
+      if (typeof key !== 'string' || key.length < 22) return key || '—'
+      return key.slice(0, 11) + '…' + key.slice(-6)
+    },
+    async removeAuth (keyType, authType, accountToModify, toRemove) {
+      if (authType === 'account') {
+        const { success, msg } = await keychain(window, 'requestRemoveAccountAuthority', accountToModify, toRemove, keyType)
+        if (success) {
+          this.$emit('authEdited')
+        } else {
+          console.warn(msg)
+        }
+      }
+    },
+    async addAuth (keyType, authType, accountToModify, toAdd, weight) {
+      if (authType === 'account') {
+        const { success, msg } = await keychain(window, 'requestAddAccountAuthority', accountToModify, toAdd, keyType, weight)
+        if (success) {
+          this.$emit('authEdited')
+        } else {
+          console.warn(msg)
+        }
+      }
     }
   }
 }
 </script>
+
+<style scoped>
+.authorities {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.authorities__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.authorities__eyebrow {
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.authorities__title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.authorities__edit {
+  color: #90a4ae;
+}
+
+.authorities__section {
+  padding: 0.5rem 0.6rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.authorities__section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.authorities__section-icon {
+  flex: none;
+  color: #78909c;
+}
+
+.authorities__section-title {
+  margin: 0;
+  color: #cfd8dc;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.authorities__threshold {
+  flex: none;
+  margin-left: auto;
+  padding: 0.02rem 0.35rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: #90a4ae;
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.authorities__info {
+  flex: none;
+  color: #607d8b;
+  cursor: help;
+}
+
+.authorities__keys {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authorities__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.22rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.authorities__row:first-child {
+  border-top: 0;
+}
+
+.authorities__row-icon {
+  flex: none;
+  color: #607d8b;
+}
+
+.authorities__key {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #b0bec5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authorities__account {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #4fc3f7;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.authorities__account:hover {
+  text-decoration: underline;
+}
+
+.authorities__weight {
+  flex: none;
+  min-width: 1.4rem;
+  color: #90a4ae;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.authorities__remove {
+  flex: none;
+}
+
+.authorities__none {
+  padding: 0.25rem 0;
+  color: #78909c;
+  font-size: 0.72rem;
+  font-style: italic;
+}
+
+.authorities__add {
+  margin-top: 0.35rem;
+}
+
+.authorities__add-btn {
+  border: 1px dashed rgba(79, 195, 247, 0.35);
+  border-radius: var(--radius-pill);
+  padding: 0 0.6rem;
+  color: #4fc3f7;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.authorities__add-btn:hover {
+  background: rgba(79, 195, 247, 0.08);
+}
+
+.authorities__editor {
+  width: min(320px, 92vw);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: #10181d;
+  box-shadow: var(--shadow-pop);
+}
+
+.authorities__editor-head {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+.authorities__editor-title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.authorities__editor-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.authorities__editor-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 183, 77, 0.06);
+  color: #ffcc80;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.authorities__editor-hint .q-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.authorities__editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: 0 var(--space-3) var(--space-3);
+}
+</style>

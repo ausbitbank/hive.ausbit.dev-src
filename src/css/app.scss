@@ -108,11 +108,20 @@ a {
   border-radius: var(--radius-card);
 }
 
-.q-dialog .q-card,
 .q-menu,
 .q-popup-proxy .q-card {
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
+}
+
+.q-dialog .q-card {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+}
+
+.q-dialog__backdrop {
+  background: rgba(4, 8, 12, 0.72);
 }
 
 /* Quasar uppercases button labels; sentence case reads better in this UI. */
@@ -545,6 +554,97 @@ body {
 .home-panel__link:hover {
   color: #81d4fa;
   text-decoration: underline;
+}
+
+/* Segmented sort switcher used in panel headers. */
+.home-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.home-sort__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.6rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: #90a4ae;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.home-sort__btn .q-icon {
+  color: #78909c;
+}
+
+.home-sort__btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.home-sort__btn:hover .q-icon {
+  color: #b0bec5;
+}
+
+.home-sort__btn.is-active {
+  background: rgba(79, 195, 247, 0.16);
+  color: #e1f5fe;
+  box-shadow: inset 0 0 0 1px rgba(79, 195, 247, 0.35);
+}
+
+.home-sort__btn.is-active .q-icon {
+  color: #4fc3f7;
+}
+
+.home-panel__link--button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  line-height: 1.2;
+}
+
+.home-panel__link--button:hover {
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.1);
+  text-decoration: none;
+}
+
+.home-panel__link--button .q-icon {
+  transition: transform 0.15s ease;
+}
+
+.home-panel__link--button:hover .q-icon {
+  transform: translateX(2px);
+}
+
+@media (max-width: 599px) {
+  .home-sort__btn {
+    padding: 0.26rem 0.45rem;
+  }
+
+  .home-sort__btn .q-icon {
+    display: none;
+  }
+
+  .home-panel__link--button {
+    display: none;
+  }
 }
 
 .home-panel .home-panel__body {

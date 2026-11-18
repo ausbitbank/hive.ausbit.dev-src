@@ -93,16 +93,19 @@
                   />
                   <q-btn
                     v-else
-                    flat
+                    class="vote-control__btn vote-control__btn--up"
+                    size="sm"
                     dense
+                    flat
                     no-caps
                     icon="thumb_up_off_alt"
                     :label="voteCount + ' votes'"
+                    aria-label="View votes on this post"
                     @click="showVotes = true"
                   />
-                  <q-btn v-if="loggedInUser" flat dense no-caps icon="comment" label="Reply" @click="showReply = true" />
-                  <q-btn flat dense no-caps icon="share" label="Share" @click="showShareDialog = true" />
-                  <reblog v-if="loggedInUser" :author="author" :permlink="permlink" />
+                  <q-btn class="post-action-btn" v-if="loggedInUser" flat dense no-caps icon="comment" label="Reply" @click="showReply = true" />
+                  <q-btn class="post-action-btn" flat dense no-caps icon="share" label="Share" @click="showShareDialog = true" />
+                  <reblog class="post-action-btn" v-if="loggedInUser" label="Reblog this post" :author="author" :permlink="permlink" />
                 </div>
               </header>
 
@@ -370,10 +373,31 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.4rem;
   margin-top: 0.9rem;
   padding-top: 0.7rem;
   border-top: 1px solid var(--border-subtle);
+}
+
+.post-hero__actions > * {
+  flex: none;
+}
+
+.post-hero__actions :deep(.post-action-btn.q-btn) {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.post-hero__actions :deep(.post-action-btn.q-btn:hover) {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
 }
 
 .post-body-section {
@@ -627,7 +651,16 @@
 .post-side-card__actions :deep(.q-btn) {
   width: 100%;
   min-height: 38px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #e4eaed;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.post-side-card__actions :deep(.q-btn:hover) {
+  border-color: rgba(79, 195, 247, 0.45);
+  background: rgba(79, 195, 247, 0.08);
 }
 
 .post-side-card__actions :deep(.post-side-card__action) {

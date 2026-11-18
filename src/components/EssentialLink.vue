@@ -5,12 +5,13 @@
     :href="to ? undefined : link"
     :target="to ? undefined : '_blank'"
     :rel="to ? undefined : 'noopener noreferrer'"
+    class="site-link"
   >
     <q-item-section
       v-if="icon"
       avatar
     >
-      <q-icon :name="icon" color="secondary" aria-hidden="true" />
+      <q-icon :name="icon" color="primary" aria-hidden="true" />
     </q-item-section>
 
     <q-item-section>
@@ -18,6 +19,10 @@
       <q-item-label caption :title="caption">
         {{ caption }}
       </q-item-label>
+    </q-item-section>
+
+    <q-item-section v-if="!to" side>
+      <q-icon name="open_in_new" size="14px" class="site-link__external" aria-hidden="true" />
     </q-item-section>
   </q-item>
 </template>
@@ -52,3 +57,15 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.site-link__external {
+  color: #546e7a;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.site-link:hover .site-link__external {
+  opacity: 1;
+}
+</style>

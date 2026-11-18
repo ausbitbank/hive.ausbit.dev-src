@@ -1,23 +1,121 @@
 <template>
-  <span>
-    <q-btn size="sm" dense flat :icon="upvoteIcon" color="green" :label="upvoteLabel" @click="voteClicked('up')" :disable="disableVoting" v-if="direction === null || direction === 'up'" class="hvr" />
-    <q-btn size="sm" dense flat :icon="downvoteIcon" color="red" :label="downvoteLabel" @click="voteClicked('down')" :disable="disableVoting" v-if="direction === null || direction === 'down'" class="hvr" />
-    <q-knob v-model="upvotePercent" :min="1" :max="100" :step="5" show-value color="green" v-if="weight > 0 && direction === 'up' && !voteSent"> {{ upvotePercent }} %</q-knob>
-    <q-knob v-model="downvotePercent" :min="1" :max="100" :step="5" show-value color="red" v-if="weight < 0 && direction === 'down' && !voteSent"> {{ downvotePercent }} % </q-knob>
-    <q-btn dense flat round icon="clear" title="Close" @click="direction = null" v-if="direction !== null && !voteSent" class="hvr" />
+  <span class="vote-control" :class="{ 'vote-control--open': direction !== null && !voteSent, 'vote-control--sent': voteSent }">
+    <template v-if="direction === null && !voteSent">
+      <q-btn
+        class="vote-control__btn vote-control__btn--up"
+        :class="{ 'is-active': myUpvote }"
+        size="sm"
+        dense
+        flat
+        no-caps
+        :icon="upvoteIcon"
+        :label="upvoteLabel"
+        :style="myUpvote ? voteWeightStyle(myVote) : undefined"
+        :aria-label="voteAriaLabel('up')"
+        :title="loggedInUser ? 'Upvote this post' : 'Log in to vote'"
+        :disable="disableVoting"
+        @click="voteClicked('up')"
+      />
+      <q-btn v-if="downvotes && downvotes.length > 0"
+        class="vote-control__btn vote-control__btn--down"
+        :class="{ 'is-active': myDownvote }"
+        size="sm"
+        dense
+        flat
+        no-caps
+        :icon="downvoteIcon"
+        :label="downvoteLabel"
+        :style="myDownvote ? voteWeightStyle(myVote) : undefined"
+        :aria-label="voteAriaLabel('down')"
+        :title="loggedInUser ? 'Downvote this post' : 'Log in to vote'"
+        :disable="disableVoting"
+        @click="voteClicked('down')"
+      />
+    </template>
+
+    <span
+      v-else-if="voteSent"
+      class="vote-control__sent"
+      :class="voteSentWeight < 0 ? 'vote-control__sent--down' : 'vote-control__sent--up'"
+    >
+      <q-icon :name="voteSentWeight < 0 ? 'thumb_down' : 'thumb_up'" size="16px" aria-hidden="true" />
+      <span>{{ Math.abs(voteSentWeight) }}%</span>
+      <q-spinner-tail size="14px" aria-label="Sending vote" />
+    </span>
+
+    <span v-else class="vote-control__composer" :class="'vote-control__composer--' + direction">
+      <div class="vote-control__composer-head">
+        <q-icon
+          :name="direction === 'up' ? 'thumb_up' : 'thumb_down'"
+          size="15px"
+          class="vote-control__composer-icon"
+          aria-hidden="true"
+        />
+        <span class="vote-control__composer-label">{{ direction === 'up' ? 'Upvote weight' : 'Downvote weight' }}</span>
+        <span class="vote-control__composer-value">{{ activePercent }}%</span>
+      </div>
+      <input
+        v-model.number="activePercent"
+        type="range"
+        class="vote-control__range"
+        min="1"
+        max="100"
+        step="5"
+        :aria-label="(direction === 'up' ? 'Upvote' : 'Downvote') + ' weight percent'"
+      />
+      <span class="vote-control__presets" role="group" aria-label="Quick weight presets">
+        <button
+          v-for="preset in quickWeights"
+          :key="preset"
+          type="button"
+          class="vote-control__preset"
+          :class="{ 'is-selected': activePercent === preset }"
+          :aria-pressed="activePercent === preset"
+          :title="'Vote at ' + preset + '%'"
+          @click="activePercent = preset"
+        >{{ preset }}%</button>
+      </span>
+      <span class="vote-control__composer-actions">
+        <q-btn
+          class="vote-control__confirm"
+          size="sm"
+          dense
+          unelevated
+          no-caps
+          :color="direction === 'up' ? 'green' : 'red'"
+          :label="direction === 'up' ? 'Vote' : 'Downvote'"
+          :title="'Send a ' + activePercent + '% ' + direction + 'vote'"
+          @click="voteClicked(direction)"
+        />
+        <q-btn
+          class="vote-control__cancel"
+          size="sm"
+          dense
+          flat
+          round
+          icon="close"
+          aria-label="Cancel vote"
+          title="Cancel"
+          @click="direction = null"
+        />
+      </span>
+    </span>
   </span>
 </template>
+
 <script>
-// import { keychain } from '@hiveio/keychain'
+const QUICK_WEIGHTS = [25, 50, 75, 100]
+
 export default {
   name: 'vote',
   props: ['votes', 'active_votes', 'author', 'permlink'],
   data () {
     return {
-      weight: this.$hiveStore.user.settings.voteWeightPost,
+      weight: Number(this.$hiveStore.user.settings.voteWeightPost) || 100,
       voteSent: false,
       voteSentWeight: null,
-      direction: null
+      direction: null,
+      quickWeights: QUICK_WEIGHTS
     }
   },
   computed: {
@@ -38,141 +136,326 @@ export default {
         return null
       }
     },
-    myVote: function () {
+    myVote () {
       if (this.voteSentWeight !== null) {
         return { voter: this.loggedInUser, weight: this.voteSentWeight, author: this.author, permlink: this.permlink, rshares: this.voteSentWeight }
-      } else {
-        if (this.votes) {
-          return this.votes.filter(this.filterMyVote)[0]
-        } else {
-          return undefined
-        }
       }
+      if (this.votes) {
+        return this.votes.find(this.filterMyVote)
+      }
+      return undefined
     },
-    disableVoting: function () {
-      if (this.loggedInUser === null) { return true }
-      if (this.myVote === undefined) { return false } else { return true }
+    myUpvote () {
+      return this.myVote !== undefined && Math.sign(this.myVote.rshares) === 1
     },
-    upvotePercent: {
+    myDownvote () {
+      return this.myVote !== undefined && Math.sign(this.myVote.rshares) === -1
+    },
+    disableVoting () {
+      if (!this.loggedInUser) return true
+      if (this.myVote !== undefined) return true
+      return false
+    },
+    activePercent: {
       get () {
-        if (this.weight > 0) {
-          return this.weight
-        } else {
-          return 0
-        }
+        if (this.weight === 0) return 100
+        return Math.min(100, Math.max(1, Math.abs(this.weight)))
       },
       set (val) {
-        this.weight = val
+        const percent = Math.min(100, Math.max(1, Number(val) || 1))
+        this.weight = this.direction === 'down' ? -percent : percent
       }
     },
-    downvotePercent: {
-      get () {
-        if (this.weight < 0) {
-          return Math.abs(this.weight)
-        } else {
-          return 0
-        }
-      },
-      set (val) {
-        this.weight = val * -1
-      }
+    upvoteLabel () {
+      return this.upvotes ? this.compactCount(this.upvotes.length) : null
     },
-    upvoteLabel: function () {
-      if (this.upvotes) {
-        return this.upvotes.length
-      } else {
-        return null
-      }
+    downvoteLabel () {
+      return this.downvotes ? this.compactCount(this.downvotes.length) : null
     },
-    downvoteLabel: function () {
-      if (this.downvotes) {
-        return this.downvotes.length
-      } else {
-        return null
-      }
+    upvoteIcon () {
+      return this.myUpvote ? 'thumb_up' : 'thumb_up_off_alt'
     },
-    voteColor: function () {
-      if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'grey' } return 'green' } else { return 'red' }
-    },
-    voteIcon: function () {
-      if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'cancel' } return 'thumb_up' } else { return 'thumb_down' }
-    },
-    upvoteIcon: function () {
-      if (this.myVote !== undefined) {
-        if (Math.sign(this.myVote.rshares) === 1) {
-          return 'thumb_up'
-        } else {
-          return 'thumb_up_off_alt'
-        }
-      } else {
-        return 'thumb_up_off_alt'
-      }
-    },
-    downvoteIcon: function () {
-      if (this.myVote !== undefined) {
-        if (Math.sign(this.myVote.rshares) === -1) {
-          return 'thumb_down'
-        } else {
-          return 'thumb_down_off_alt'
-        }
-      } else {
-        return 'thumb_down_off_alt'
-      }
-    },
-    voteLabel: function () {
-      if (Math.sign(this.weight) !== -1) { if (Math.sign(this.weight) === 0) { return 'Cancel vote on this post' } return this.votePercentBuffer + '% upvote this post' } else { return this.votePercentBuffer + '% downvote this post' }
-    },
-    votePercentBuffer: function () {
-      if (this.weight > 100) { return 100 }
-      if (this.weight < -100) { return 100 }
-      return this.weight
+    downvoteIcon () {
+      return this.myDownvote ? 'thumb_down' : 'thumb_down_off_alt'
     }
   },
-  watch: {
-  },
   methods: {
+    compactCount (count) {
+      if (count >= 1000) return (count / 1000).toFixed(count >= 10000 ? 0 : 1).replace(/\.0$/, '') + 'k'
+      return String(count)
+    },
+    voteAriaLabel (direction) {
+      const total = direction === 'up' ? (this.upvotes || []).length : (this.downvotes || []).length
+      const verb = direction === 'up' ? 'Upvote' : 'Downvote'
+      if (this.myUpvote || this.myDownvote) return 'You already voted on this post'
+      return verb + ' this post (' + total + ' ' + direction + 'votes so far)'
+    },
+    voteWeightStyle (vote) {
+      // Weight is stored in basis points (10000 = 100%) on chain.
+      const pct = vote && vote.percent !== undefined
+        ? Number(vote.percent) / 100
+        : Math.abs(Number(vote && vote.weight) || 0) / 100
+      return { '--vote-weight': Math.min(100, Math.max(1, pct)) + '%' }
+    },
     voteClicked (d) {
-      if (this.direction === d) { // second click, vote
-        this.direction = null
-        this.vote(this.permlink, this.author, this.weight)
-      } else {
-        this.direction = d
-        if (d === 'up') {
-          this.weight = this.$hiveStore.user.settings.voteWeightPost || 100
-        } else {
-          this.weight = -100
-        }
+      if (this.direction === d) {
+        this.submitVote()
+        return
       }
       this.direction = d
+      const preferred = Math.abs(Number(this.$hiveStore.user.settings.voteWeightPost) || 0) || 100
+      this.weight = d === 'down' ? -preferred : preferred
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    getAccountLink (user) { return '/@' + user },
-    getWalletLink (user) { return '/@' + user + '/wallet' },
+    submitVote () {
+      const weight = this.weight
+      this.direction = null
+      this.vote(this.permlink, this.author, weight)
+    },
     async vote (permlink, author, weight) {
       this.voteSent = true
       this.voteSentWeight = weight
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]])
-      /* const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestVote', this.loggedInUser, permlink, author, weight * 100)
-      if (success) {
-        this.$q.notify('Voted ' + weight + '% on @' + author + '/' + permlink)
-        this.$emit('Voted', weight)
-      }
-      if (cancel) { this.voteSent = false }
-      if (!cancel) {
-        if (notActive) {
-          console.error('Please allow Keychain to access this website')
-          this.voteSent = false
-        } else if (notInstalled) { // alert('Please install Keychain')
-          console.error('Keychain not available')
-          this.voteSent = false
-        } else {
-          console.info(msg)
-        }
-      } */
+      this.$emit('Voted', weight)
     },
-    filterMyVote (op) { if (op.voter === this.loggedInUser) { return true } else { return false } }
-  },
-  mounted () {
+    filterMyVote (op) { return op.voter === this.loggedInUser }
   }
 }
 </script>
+
+<style>
+/* Vote control: split pill buttons with a weight palette popover.
+   Written unscoped because the control is rendered inside several pages
+   that pass their own layout rules. */
+.vote-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vote-control__btn.q-btn {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.vote-control__btn .q-btn__content .q-icon {
+  font-size: 17px;
+}
+
+.vote-control__btn--up .q-icon {
+  color: #81c784;
+}
+
+.vote-control__btn--down .q-icon {
+  color: #e57373;
+}
+
+.vote-control__btn.q-btn:hover:not(.disabled) {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.vote-control__btn.q-btn.is-active {
+  border-color: rgba(129, 199, 132, 0.45) !important;
+  color: #e8f5e9 !important;
+  background: linear-gradient(
+    90deg,
+    rgba(76, 175, 80, 0.32) var(--vote-weight, 100%),
+    rgba(255, 255, 255, 0.04) var(--vote-weight, 100%)
+  ) !important;
+}
+
+.vote-control__btn--down.is-active {
+  border-color: rgba(229, 115, 115, 0.45) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(239, 83, 80, 0.32) var(--vote-weight, 100%),
+    rgba(255, 255, 255, 0.04) var(--vote-weight, 100%)
+  ) !important;
+}
+
+.vote-control__btn.q-btn .q-focus-helper {
+  border-radius: var(--radius-pill);
+}
+
+.vote-control__composer {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid rgba(129, 199, 132, 0.4);
+  border-radius: var(--radius-pill);
+  background: rgba(76, 175, 80, 0.08);
+  animation: vote-control-in 0.16s ease-out;
+}
+
+.vote-control__composer--down {
+  border-color: rgba(229, 115, 115, 0.4);
+  background: rgba(239, 83, 80, 0.08);
+}
+
+@keyframes vote-control-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.vote-control__composer-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vote-control__composer-icon {
+  color: #81c784;
+}
+
+.vote-control__composer--down .vote-control__composer-icon {
+  color: #e57373;
+}
+
+.vote-control__composer-label {
+  color: #b0bec5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vote-control__composer-value {
+  min-width: 38px;
+  color: #e4eaed;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.vote-control__range {
+  width: 92px;
+  flex: 0 1 auto;
+  min-width: 52px;
+  height: 18px;
+  margin: 0;
+  accent-color: #81c784;
+  cursor: pointer;
+}
+
+.vote-control__composer--down .vote-control__range {
+  accent-color: #e57373;
+}
+
+.vote-control__percent {
+  min-width: 36px;
+  color: #e4eaed;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.vote-control__presets {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vote-control__preset {
+  padding: 0.1rem 0.32rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: #90a4ae;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.vote-control__preset:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.vote-control__preset.is-selected {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.vote-control__composer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.vote-control__confirm.q-btn {
+  min-height: 26px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.vote-control__confirm.q-btn.text-white {
+  color: #0b1d2a !important;
+}
+
+.vote-control__cancel.q-btn {
+  min-width: 26px;
+  min-height: 26px;
+  color: #90a4ae;
+}
+
+.vote-control__sent {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-pill);
+  color: #b0bec5;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.vote-control__sent--up .q-icon:first-child {
+  color: #81c784;
+}
+
+.vote-control__sent--down .q-icon:first-child {
+  color: #e57373;
+}
+
+@media (max-width: 599px) {
+  .vote-control__preset {
+    display: none;
+  }
+
+  .vote-control__range {
+    width: 64px;
+  }
+
+  .vote-control__composer-label {
+    display: none;
+  }
+
+  .vote-control__composer {
+    gap: 4px;
+    padding: 4px 6px 4px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-control__composer {
+    animation: none;
+  }
+}
+</style>

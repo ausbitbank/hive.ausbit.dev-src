@@ -12,6 +12,33 @@
 .vjs-value { word-wrap: break-word; word-break: break-all; }
 .vjs-tree__node { background: none !important; }
 .vjs-tree__node:hover { background: none !important; }
+
+/* The vendored dark theme is tuned for #2e4558 panels; restyle it for the
+   app's near-black cards and quieter type scale. */
+.vjs-tree {
+  color: #cfd8dc;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.vjs-tree-node.dark:hover,
+.vjs-tree-node.dark.is-highlight {
+  background-color: rgba(79, 195, 247, 0.08) !important;
+}
+
+.vjs-key { color: #81d4fa; }
+.vjs-colon { color: #607d8b; }
+.vjs-value-string { color: #a5d6a7; }
+.vjs-value-number { color: #90caf9; }
+.vjs-value-boolean { color: #ffcc80; }
+.vjs-value-null,
+.vjs-value-undefined { color: #ce93d8; }
+.vjs-tree-brackets { color: #b0bec5; }
+.vjs-tree-brackets:hover,
+.vjs-carets:hover { color: #4fc3f7; }
+.vjs-tree-node .vjs-indent-unit.has-line {
+  border-left: 1px dashed rgba(255, 255, 255, 0.12);
+}
 </style>
 
 <script>

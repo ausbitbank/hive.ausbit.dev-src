@@ -1,38 +1,122 @@
 <template>
-    <q-card flat bordered style="max-width: 1000px; max-width: 95%">
-        <q-card-section header class="text-center text-h5">
-            Votes on this post : {{ upvotesOnly.length }} upvotes<span v-if="downvotesOnly.length > 0">, {{ downvotesOnly.length }} down</span><span v-if="unvotesOnly.length > 0">, {{ unvotesOnly.length }} unvotes</span><br />
-        </q-card-section>
-        <q-tabs dense inline-label v-model="view" v-if="!simple">
-          <q-tab name="influencers" icon="analytics" label="Influencers" class="text-primary" />
-          <q-tab name="table" icon="table_view" label="Full vote data table" class="text-primary" />
-        </q-tabs>
-        <q-table v-if="view === 'table'" :rows="votes" :columns="voteColumns" :pagination="{ sortBy: 'weight', descending: true, rowsPerPage: 25 }" dense bordered separator="cell" />
-        <q-card-section v-if="view === 'influencers'" class="text-center">
-            <div class="text-h5">The {{ biggestUpvotes.length }} largest upvotes came from</div>
-            <span v-for="voter in biggestUpvotes" :key="voter.voter" class="q-ma-sm">
-                <router-link :to="linkAccount(voter.voter)">
-                <q-avatar>
-                    <q-img :src="getHiveAvatarUrl(voter.voter)" :title="voter.voter" />
-                </q-avatar>
-                {{ voter.voter }}
-                </router-link>
-            </span>
-            <span v-if="downvotesOnly.length > 0">
-                <div class="text-h5">The {{ biggestDownvotes.length }} largest downvotes came from</div>
-                <span v-for="voter in biggestDownvotes" :key="voter.voter" class="q-ma-sm">
-                    <router-link :to="linkAccount(voter.voter)">
-                    <q-avatar>
-                        <q-img :src="getHiveAvatarUrl(voter.voter)" :title="voter.voter" />
-                    </q-avatar>
-                    {{ voter.voter }}
-                    </router-link>
-                </span>
-            </span>
-        </q-card-section>
-    </q-card>
+  <q-card flat class="votes-dialog">
+    <div class="votes-dialog__head">
+      <div class="votes-dialog__intro">
+        <div class="votes-dialog__eyebrow">Vote breakdown</div>
+        <h2 class="votes-dialog__title">Who voted on this post</h2>
+      </div>
+      <q-btn flat dense round icon="close" aria-label="Close vote breakdown" title="Close" v-close-popup class="votes-dialog__close" />
+    </div>
+
+    <div class="votes-dialog__summary" role="list">
+      <div class="votes-summary votes-summary--up" role="listitem">
+        <q-icon name="thumb_up_alt" size="17px" aria-hidden="true" />
+        <strong>{{ tidyNumber(upvotesOnly.length) }}</strong>
+        <span>upvote{{ upvotesOnly.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div v-if="downvotesOnly.length > 0" class="votes-summary votes-summary--down" role="listitem">
+        <q-icon name="thumb_down_alt" size="17px" aria-hidden="true" />
+        <strong>{{ tidyNumber(downvotesOnly.length) }}</strong>
+        <span>downvote{{ downvotesOnly.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div v-if="unvotesOnly.length > 0" class="votes-summary votes-summary--muted" role="listitem">
+        <q-icon name="remove_circle_outline" size="17px" aria-hidden="true" />
+        <strong>{{ tidyNumber(unvotesOnly.length) }}</strong>
+        <span>unvote{{ unvotesOnly.length === 1 ? '' : 's' }}</span>
+      </div>
+      <div v-if="totalRshares > 0" class="votes-summary votes-summary--muted" role="listitem" title="Total rshares from upvotes">
+        <q-icon name="insights" size="17px" aria-hidden="true" />
+        <strong>{{ compactNumber(totalRshares) }}</strong>
+        <span>rshares</span>
+      </div>
+    </div>
+
+    <q-tabs
+      v-model="view"
+      dense
+      no-caps
+      align="left"
+      active-color="primary"
+      indicator-color="primary"
+      class="votes-dialog__tabs"
+      aria-label="Vote view"
+    >
+      <q-tab name="influencers" icon="analytics" label="Top voters" />
+      <q-tab name="table" icon="table_view" label="Full data" />
+    </q-tabs>
+
+    <div v-if="view === 'influencers'" class="votes-dialog__body">
+      <section v-if="biggestUpvotes.length" aria-labelledby="votes-top-up">
+        <h3 id="votes-top-up" class="votes-dialog__section-title">Largest upvotes</h3>
+        <ul class="votes-grid">
+          <li v-for="voter in biggestUpvotes" :key="voter.voter" class="votes-grid__item">
+            <router-link :to="linkAccount(voter.voter)" class="votes-grid__link" :title="'@' + voter.voter + ' · ' + weightLabel(voter)">
+              <q-avatar size="34px" class="votes-grid__avatar">
+                <q-img :src="getHiveAvatarUrl(voter.voter)" :alt="'Avatar of @' + voter.voter" />
+              </q-avatar>
+              <span class="votes-grid__name">@{{ voter.voter }}</span>
+              <span class="votes-grid__weight">{{ weightLabel(voter) }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="biggestDownvotes.length" aria-labelledby="votes-top-down">
+        <h3 id="votes-top-down" class="votes-dialog__section-title">Largest downvotes</h3>
+        <ul class="votes-grid">
+          <li v-for="voter in biggestDownvotes" :key="voter.voter" class="votes-grid__item">
+            <router-link :to="linkAccount(voter.voter)" class="votes-grid__link votes-grid__link--down" :title="'@' + voter.voter + ' · ' + weightLabel(voter)">
+              <q-avatar size="34px" class="votes-grid__avatar">
+                <q-img :src="getHiveAvatarUrl(voter.voter)" :alt="'Avatar of @' + voter.voter" />
+              </q-avatar>
+              <span class="votes-grid__name">@{{ voter.voter }}</span>
+              <span class="votes-grid__weight">{{ weightLabel(voter) }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </section>
+
+      <div v-if="!biggestUpvotes.length && !biggestDownvotes.length" class="votes-dialog__empty">
+        <q-icon name="thumb_up_off_alt" size="22px" aria-hidden="true" />
+        <span>No votes have been cast on this post yet.</span>
+      </div>
+    </div>
+
+    <q-table
+      v-else
+      :rows="sortedVotes"
+      :columns="voteColumns"
+      row-key="voter"
+      :rows-per-page-options="[0]"
+      dense
+      flat
+      separator="horizontal"
+      class="votes-dialog__table"
+      aria-label="All votes"
+    >
+      <template #body-cell-voter="props">
+        <q-td :props="props">
+          <router-link :to="linkAccount(props.row.voter)" class="votes-dialog__voter">@{{ props.row.voter }}</router-link>
+        </q-td>
+      </template>
+      <template #body-cell-percent="props">
+        <q-td :props="props" class="votes-dialog__num">{{ props.row.percent / 100 }}%</q-td>
+      </template>
+      <template #body-cell-rshares="props">
+        <q-td :props="props" class="votes-dialog__num" :title="props.row.rshares">{{ compactNumber(props.row.rshares) }}</q-td>
+      </template>
+      <template #body-cell-reputation="props">
+        <q-td :props="props" class="votes-dialog__num">{{ reputationLabel(props.row.reputation) }}</q-td>
+      </template>
+      <template #body-cell-time="props">
+        <q-td :props="props">{{ relativeTime(props.row.time) }}</q-td>
+      </template>
+    </q-table>
+  </q-card>
 </template>
 <script>
+import moment from 'src/utils/time'
+
 export default {
   name: 'votesDialog',
   components: {
@@ -40,14 +124,12 @@ export default {
   data () {
     return {
       view: 'influencers',
-      viewOptions: ['table', 'influencers'],
       voteColumns: [
-        { name: 'voter', label: 'Voter', field: 'voter', sortable: true },
-        { name: 'percent', label: 'Percent', field: 'percent', sortable: true, format: (val, _row) => `${val / 100} %` },
-        { name: 'rshares', label: 'rshares', field: 'rshares', sortable: true },
-        { name: 'weight', label: 'weight', field: 'weight', sortable: true },
-        { name: 'reputation', label: 'reputation', field: 'reputation', sortable: true },
-        { name: 'time', label: 'time', field: 'time', sortable: true }
+        { name: 'voter', label: 'Voter', field: 'voter', sortable: true, align: 'left' },
+        { name: 'percent', label: 'Weight', field: 'percent', sortable: true, align: 'right' },
+        { name: 'rshares', label: 'rshares', field: 'rshares', sortable: true, align: 'right' },
+        { name: 'reputation', label: 'Reputation', field: 'reputation', sortable: true, align: 'right' },
+        { name: 'time', label: 'When', field: 'time', sortable: true, align: 'right' }
       ]
     }
   },
@@ -56,30 +138,243 @@ export default {
     simple: { type: Boolean, required: false, default: false }
   },
   computed: {
-    upvotesOnly: function () { return this.votes.filter(v => Math.sign(v.rshares) === 1) },
-    downvotesOnly: function () { return this.votes.filter(v => Math.sign(v.rshares) === -1) },
-    unvotesOnly: function () { return this.votes.filter(v => v.rshares === 0) },
-    biggestUpvotes: function () {
-      var votesSortedByRshares = this.upvotesOnly
-      votesSortedByRshares.sort(this.sortByRshares)
-      if (votesSortedByRshares.length > 10) { return votesSortedByRshares.slice(0, 10) } else { return votesSortedByRshares }
+    sortedVotes () {
+      return [...this.votes].sort((a, b) => Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0))
     },
-    biggestDownvotes: function () {
-      if (this.downvotesOnly.length > 0) {
-        var votesSortedByRshares = this.downvotesOnly
-        votesSortedByRshares.sort(this.sortByRshares)
-        if (votesSortedByRshares.length > 10) { return votesSortedByRshares.slice(votesSortedByRshares.length - 10, votesSortedByRshares.length - 1) } else { return votesSortedByRshares }
-      } else {
-        return []
-      }
+    upvotesOnly () { return this.votes.filter(v => Math.sign(v.rshares) === 1) },
+    downvotesOnly () { return this.votes.filter(v => Math.sign(v.rshares) === -1) },
+    unvotesOnly () { return this.votes.filter(v => v.rshares === 0) },
+    totalRshares () {
+      return this.upvotesOnly.reduce((sum, vote) => sum + (Number(vote.rshares) || 0), 0)
+    },
+    biggestUpvotes () {
+      return [...this.upvotesOnly].sort(this.sortByRshares).slice(0, 10)
+    },
+    biggestDownvotes () {
+      return [...this.downvotesOnly].sort(this.sortByRshares).slice(0, 10)
     }
   },
   methods: {
-    sortByRshares (a, b) { if (parseFloat(a.rshares) < parseFloat(b.rshares)) { return 1 } else { return -1 } },
+    sortByRshares (a, b) { return Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0) },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    linkAccount (username) { return '/@' + username }
-  },
-  mounted () {
+    linkAccount (username) { return '/@' + username },
+    tidyNumber (value) {
+      return Number(value || 0).toLocaleString('en-US')
+    },
+    compactNumber (value) {
+      const number = Number(value) || 0
+      if (number >= 1e12) return (number / 1e12).toFixed(1) + 'T'
+      if (number >= 1e9) return (number / 1e9).toFixed(1) + 'B'
+      if (number >= 1e6) return (number / 1e6).toFixed(1) + 'M'
+      if (number >= 1e3) return (number / 1e3).toFixed(1) + 'K'
+      return String(number)
+    },
+    weightLabel (vote) {
+      const percent = vote && vote.percent !== undefined ? Number(vote.percent) / 100 : null
+      if (percent === null || Number.isNaN(percent)) return ''
+      return (percent > 0 ? '+' : '') + percent + '%'
+    },
+    relativeTime (value) {
+      if (!value) return '—'
+      return moment.utc(value).fromNow()
+    },
+    reputationLabel (value) {
+      // bridge/condenser expose reputation as an offset log score.
+      const raw = Number(value)
+      if (!Number.isFinite(raw) || raw === 0) return '—'
+      return this.$hive.formatter.reputation(raw)
+    }
   }
 }
 </script>
+
+<style scoped>
+.votes-dialog {
+  width: min(720px, 96vw);
+  max-height: min(84vh, 780px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: #10181d;
+}
+
+.votes-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.votes-dialog__eyebrow {
+  color: #78909c;
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.votes-dialog__title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.votes-dialog__close {
+  color: #90a4ae;
+}
+
+.votes-dialog__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.votes-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.votes-summary strong {
+  color: #e4eaed;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.votes-summary--up {
+  border-color: rgba(129, 199, 132, 0.35);
+  color: #a5d6a7;
+}
+
+.votes-summary--up .q-icon,
+.votes-summary--up strong {
+  color: #81c784;
+}
+
+.votes-summary--down {
+  border-color: rgba(229, 115, 115, 0.35);
+}
+
+.votes-summary--down .q-icon,
+.votes-summary--down strong {
+  color: #e57373;
+}
+
+.votes-summary--muted .q-icon {
+  color: #78909c;
+}
+
+.votes-dialog__tabs {
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.votes-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.votes-dialog__section-title {
+  margin: 0 0 var(--space-2);
+  color: #78909c;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.votes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.votes-grid__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.35rem 0.5rem 0.35rem 0.35rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.025);
+  color: #e4eaed;
+  text-decoration: none;
+}
+
+.votes-grid__link:hover {
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.08);
+  text-decoration: none;
+}
+
+.votes-grid__avatar {
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.votes-grid__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.votes-grid__weight {
+  flex: none;
+  color: #81c784;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.votes-grid__link--down .votes-grid__weight {
+  color: #e57373;
+}
+
+.votes-dialog__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: var(--space-6) var(--space-4);
+  color: #90a4ae;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+.votes-dialog__table {
+  overflow-y: auto;
+  font-size: 0.78rem;
+}
+
+.votes-dialog__voter {
+  color: #4fc3f7;
+  text-decoration: none;
+}
+
+.votes-dialog__num {
+  font-variant-numeric: tabular-nums;
+}
+</style>

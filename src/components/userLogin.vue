@@ -1,16 +1,34 @@
 <template>
   <span>
-  <q-btn flat dense round no-caps :aria-label="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" :title="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" class="text-capitalize">
-    <q-avatar>
+  <q-btn flat dense round no-caps :aria-label="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" :title="loggedInUser ? 'Account menu for ' + loggedInUser : 'Login'" class="account-trigger">
+    <q-avatar class="account-trigger__avatar">
       <q-img :src="userAvatar" :alt="loggedInUser ? 'Avatar of @' + loggedInUser : 'Login'" v-if="loggedInUser !== '' && loggedInUser !== null" />
       <q-icon name="login" color="primary" title="Login" v-else />
     </q-avatar>
-    <span class="q-ml-xs gt-xs">{{ loggedInUser }}</span>
-    <q-popup-proxy @before-show="refreshSmartlockStatus">
-      <q-card flat bordered class="login-card">
+    <span class="account-trigger__name gt-xs">{{ loggedInUser }}</span>
+    <q-icon name="expand_more" size="16px" class="account-trigger__chevron gt-xs" aria-hidden="true" />
+    <q-popup-proxy ref="menu" @before-show="refreshSmartlockStatus" class="account-menu-popup">
+      <q-card flat class="login-card">
       <div v-if="loggedInUser">
-        <transition appear enter-active-class="animated fadeInDown" leave-active-class="animated fadeOutUp">
-        <q-list dense bordered class="text-primary text-center" role="navigation" aria-label="Account menu">
+        <div class="account-menu__head">
+          <q-avatar size="44px" class="account-menu__avatar">
+            <q-img :src="userAvatar" :alt="'Avatar of @' + loggedInUser" />
+          </q-avatar>
+          <div class="account-menu__ident">
+            <router-link :to="getAccountLink(loggedInUser)" class="account-menu__name" @click="closeMenu">@{{ loggedInUser }}</router-link>
+            <span class="account-menu__meta">{{ loginTypeLabel }}</span>
+          </div>
+        </div>
+
+        <div class="account-menu__voting" v-if="votePower !== null">
+          <div class="account-menu__voting-row">
+            <span class="account-menu__voting-label"><q-icon name="bolt" size="14px" aria-hidden="true" /> Voting power</span>
+            <span class="account-menu__voting-value">{{ votePower }}%</span>
+          </div>
+          <q-linear-progress dark rounded size="6px" :value="votePower / 100" color="primary" class="account-menu__voting-bar" aria-label="Voting power" />
+        </div>
+
+        <q-list dense class="account-menu" role="navigation" aria-label="Account menu">
           <q-item v-if="loginType === 'smartlock'" class="login-smartlock-status">
             <q-item-section avatar>
               <q-icon :name="smartlockUnlocked ? 'lock_open' : 'lock'" :color="smartlockUnlocked ? 'green' : 'orange'" />
@@ -44,71 +62,42 @@
               />
             </q-item-section>
           </q-item>
-          <q-item v-else-if="loginType === 'keychain'">
-            <q-item-section avatar><q-icon name="key" color="blue" /></q-item-section>
+          <q-item v-else-if="loginType === 'keychain'" class="account-menu__provider">
+            <q-item-section avatar><q-icon name="key" color="primary" /></q-item-section>
             <q-item-section>
               <q-item-label>Hive Keychain connected</q-item-label>
               <q-item-label caption>Keys stay in the extension. Approve each posting or active action in Keychain.</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item clickable :to="linkFeed(loggedInUser)">
-            <q-item-section avatar><q-icon name="rss_feed" color="orange" /></q-item-section>
-            <q-item-section class="text-orange">Feed</q-item-section>
+
+          <q-item-label header class="account-menu__heading">Your Hive</q-item-label>
+          <q-item v-for="link in menuLinks" :key="link.title" clickable :to="link.to" class="account-menu__item" @click="closeMenu">
+            <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
+            <q-item-section>{{ link.title }}</q-item-section>
           </q-item>
-          <q-item clickable :to="linkBlog(loggedInUser)">
-            <q-item-section avatar><q-icon name="menu_book" color="purple" /></q-item-section>
-            <q-item-section class="text-purple-3">Blog</q-item-section>
+          <q-item v-if="account !== undefined && account.witness_votes && account.witness_votes.includes(loggedInUser)" clickable to="/witness" class="account-menu__item" @click="closeMenu">
+            <q-item-section avatar><q-icon name="admin_panel_settings" /></q-item-section>
+            <q-item-section>Witness</q-item-section>
           </q-item>
-          <q-item clickable :to="linkPosts(loggedInUser)">
-            <q-item-section avatar><q-icon name="library_books" color="deep-purple" /></q-item-section>
-            <q-item-section class="text-deep-purple-3">Posts</q-item-section>
+
+          <q-item-label header class="account-menu__heading">Account</q-item-label>
+          <q-item clickable class="account-menu__item" @click="openSettings">
+            <q-item-section avatar><q-icon name="settings" /></q-item-section>
+            <q-item-section>Settings</q-item-section>
           </q-item>
-          <q-item clickable :to="linkCommunities(loggedInUser)">
-            <q-item-section avatar><q-icon name="forum" color="teal" /></q-item-section>
-            <q-item-section class="text-teal">Communities</q-item-section>
-          </q-item>
-          <q-item clickable :to="linkReplies(loggedInUser)">
-            <q-item-section avatar><q-icon name="comment" color="blue-grey" /></q-item-section>
-            <q-item-section class="text-blue-grey-3">Replies</q-item-section>
-          </q-item>
-          <q-item clickable :to="getAccountLink(loggedInUser)">
-            <q-item-section avatar><q-icon name="perm_identity" color="indigo" /></q-item-section>
-            <q-item-section class="text-indigo-3">Profile</q-item-section>
-          </q-item>
-          <q-item :to="getWalletLink(loggedInUser)">
-            <q-item-section avatar><q-icon name="account_balance" color="green" /></q-item-section>
-            <q-item-section class="text-green">Wallet</q-item-section>
-          </q-item>
-          <q-item to="/market">
-            <q-item-section avatar><q-icon name="store" color="orange" /></q-item-section>
-            <q-item-section class="text-orange">Market</q-item-section>
-          </q-item>
-          <q-item to="/witness" v-if="account !== undefined && account.witness_votes.includes(loggedInUser)">
-            <q-item-section avatar><q-icon name="admin_panel_settings" color="deep-orange-6" /></q-item-section>
-            <q-item-section class="text-deep-orange-6">Witness</q-item-section>
-          </q-item>
-          <q-item clickable @click="settingsDialog = !settingsDialog">
-            <q-item-section avatar><q-icon name="settings" color="grey" /></q-item-section>
-            <q-item-section class="text-grey">Settings</q-item-section>
-          </q-item>
-          <q-item clickable @click="logout()">
-            <q-item-section avatar><q-icon name="exit_to_app" color="red" class="hvr" /></q-item-section>
-            <q-item-section class="text-red">Logout</q-item-section>
-          </q-item>
-          <q-item>
-            <q-linear-progress dark stripe rounded size="20px" :value="votePower" color="blue" class="q-mt-none" title="Vote Power %" aria-label="Voting power">
-              <div class="absolute-full flex flex-center">
-                  <q-badge color="black" text-color="primary">VP {{ votePower }} %</q-badge>
-              </div>
-            </q-linear-progress>
+          <q-item clickable class="account-menu__item account-menu__item--danger" @click="logout()">
+            <q-item-section avatar><q-icon name="logout" /></q-item-section>
+            <q-item-section>Log out</q-item-section>
           </q-item>
         </q-list>
-        </transition>
       </div>
       <q-list dense v-else>
-        <q-item-label header class="text-center">
-            Login as:
-          </q-item-label>
+        <div class="account-menu__head account-menu__head--guest">
+          <div class="account-menu__ident">
+            <span class="account-menu__name">Log in to Hive</span>
+            <span class="account-menu__meta">Use Keychain or SmartLock</span>
+          </div>
+        </div>
         <q-item class="login-key-guide">
           <q-item-section>
             <div class="login-key-guide__title">Which key do you need?</div>
@@ -121,19 +110,19 @@
               <span><strong>Active key</strong> — transfers, power, savings, market orders and witness/authority changes.</span>
             </div>
             <div class="login-key-guide__row">
-              <q-icon name="key" color="blue" size="16px" aria-hidden="true" />
+              <q-icon name="key" color="primary" size="16px" aria-hidden="true" />
               <span><strong>Keychain</strong> keeps keys in the browser extension and asks for approval on each action.</span>
             </div>
           </q-item-section>
         </q-item>
         <q-item>
-          <userSearchBox @selectUsername="setUsername" label="Username" class="text-center" />
+          <userSearchBox @selectUsername="setUsername" label="Username" class="login-username text-center" />
         </q-item>
         <q-item dense v-if="username !== '' && username !== null" class="login-method">
-          <q-btn flat no-caps label="Hive-Keychain" icon="img:/statics/hive-keychain.svg" @click="checkLoginKeychain(username)" />
+          <q-btn flat no-caps class="login-method__btn" label="Hive-Keychain" icon="img:/statics/hive-keychain.svg" @click="checkLoginKeychain(username)" />
         </q-item>
         <q-item dense v-if="username !== '' && username !== null" class="login-method">
-          <q-btn flat no-caps label="SmartLock" icon="lock">
+          <q-btn flat no-caps class="login-method__btn" label="SmartLock" icon="lock">
             <q-popup-proxy>
               <q-card class="q-pa-lg rounded-borders login-smartlock-card">
                 <div class="login-smartlock-card__title">Import keys into SmartLock</div>
@@ -166,19 +155,19 @@
             <div class="text-caption text-grey-5">Saves only your username on this device. It never stores your posting, active or memo keys; SmartLock needs your password again after a reload.</div>
           </q-item-section>
         </q-item>
-        <div class="text-center">
-        <div v-if="savedUsers.length > 0">Hive-Keychain logins</div>
-        <q-item v-for="user in savedUsers" :key="user.index">
-          <q-item-section>
-            <q-chip outline size="md" removable @remove="removeSavedUser(user)" clickable @click="rememberLogin = true; checkLoginKeychain(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
-          </q-item-section>
-        </q-item>
-        <div v-if="savedUsersSmartLock.length > 0">SmartLock logins</div>
-        <q-item v-for="user in savedUsersSmartLock" :key="user.index">
-          <q-item-section>
-            <q-chip outline size="md" removable @remove="smartLockRemoveAccount(user)" clickable @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
-          </q-item-section>
-        </q-item>
+        <div class="account-menu__saved">
+          <template v-if="savedUsers.length > 0">
+            <div class="account-menu__heading">Keychain logins</div>
+            <div class="account-menu__chips">
+              <q-chip v-for="user in savedUsers" :key="user" outline removable @remove="removeSavedUser(user)" clickable class="account-menu__chip" @click="rememberLogin = true; checkLoginKeychain(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
+            </div>
+          </template>
+          <template v-if="savedUsersSmartLock.length > 0">
+            <div class="account-menu__heading">SmartLock logins</div>
+            <div class="account-menu__chips">
+              <q-chip v-for="user in savedUsersSmartLock" :key="user" outline removable @remove="smartLockRemoveAccount(user)" clickable class="account-menu__chip" @click="rememberLogin = true; checkLoginSmartLock(user)"><q-avatar><q-img :src="getHiveAvatarUrl(user)" :alt="'Avatar of @' + user" /></q-avatar> {{ user }}</q-chip>
+            </div>
+          </template>
         </div>
       </q-list>
       </q-card>
@@ -189,15 +178,198 @@
   </q-btn>
   </span>
 </template>
-<style>
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #1d8ce0; }
-</style>
 <style scoped>
+.account-trigger {
+  gap: 0.4rem;
+  min-height: 36px;
+  padding: 0 0.5rem 0 0.25rem;
+  border-radius: var(--radius-pill);
+  color: #e4eaed;
+}
+
+.account-trigger:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.account-trigger__avatar {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.account-trigger__name {
+  max-width: 140px;
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-trigger__chevron {
+  color: #90a4ae;
+}
+
 .login-card {
   width: 360px;
   max-width: 94vw;
-  background: #1d1d1d;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: #10181d;
+  box-shadow: var(--shadow-pop);
+}
+
+.account-menu__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 0.85rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.account-menu__head--guest {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.account-menu__avatar {
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.account-menu__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.account-menu__name {
+  overflow: hidden;
+  color: #e4eaed;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.account-menu__name:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.account-menu__meta {
+  overflow: hidden;
+  color: #78909c;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__voting {
+  padding: 0.6rem 0.85rem 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.account-menu__voting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.account-menu__voting-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #90a4ae;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.account-menu__voting-value {
+  color: #e4eaed;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-menu {
+  padding: 0.25rem 0;
+}
+
+.account-menu__heading {
+  padding: 0.55rem 0.85rem 0.2rem;
+  min-height: 0;
+  color: #78909c;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.account-menu .q-item {
+  min-height: 38px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  color: #cfd8dc;
+  font-size: 0.84rem;
+}
+
+.account-menu .q-item__section--avatar {
+  min-width: 36px;
+  padding-right: 0.5rem;
+}
+
+.account-menu .q-item__section--avatar .q-icon {
+  color: #78909c;
+  font-size: 19px;
+}
+
+.account-menu .q-item:hover,
+.account-menu .q-item:focus-visible {
+  background: rgba(79, 195, 247, 0.08);
+  color: #fff;
+}
+
+.account-menu .q-item:hover .q-icon,
+.account-menu .q-item:focus-visible .q-icon,
+.account-menu .q-item.q-router-link--active .q-icon {
+  color: #4fc3f7;
+}
+
+.account-menu__item--danger,
+.account-menu__item--danger .q-item__section--avatar .q-icon {
+  color: #e57373;
+}
+
+.account-menu .q-item.account-menu__item--danger:hover {
+  background: rgba(239, 83, 80, 0.1);
+  color: #ef9a9a;
+}
+
+.login-method {
+  justify-content: center;
+}
+
+.login-method__btn {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #e4eaed;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.login-method__btn:hover {
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.08);
 }
 
 .login-key-guide {
@@ -232,10 +404,6 @@ a:visited { color: #1d8ce0; }
 .login-key-guide__row strong {
   color: #cfd8dc;
   font-weight: 600;
-}
-
-.login-method {
-  justify-content: center;
 }
 
 .login-smartlock-status {
@@ -278,7 +446,28 @@ a:visited { color: #1d8ce0; }
   text-align: center;
 }
 
+.account-menu__saved {
+  padding: 0.2rem 0.5rem 0.6rem;
+  text-align: center;
+}
+
+.account-menu__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.account-menu__chip {
+  color: #cfd8dc;
+  font-size: 0.76rem;
+}
+
 @media (max-width: 599px) {
+  .account-trigger {
+    padding: 0;
+  }
+
   .login-key-guide {
     margin: 0.15rem 0.1rem 0.3rem;
   }
@@ -345,6 +534,25 @@ export default {
         return null
       }
     },
+    loginTypeLabel () {
+      if (this.loginType === 'smartlock') return 'Signed in with SmartLock'
+      if (this.loginType === 'keychain') return 'Signed in with Hive Keychain'
+      return 'Hive account'
+    },
+    menuLinks () {
+      const user = this.loggedInUser
+      if (!user) return []
+      return [
+        { title: 'Feed', icon: 'rss_feed', to: this.linkFeed(user) },
+        { title: 'Blog', icon: 'menu_book', to: this.linkBlog(user) },
+        { title: 'Posts', icon: 'library_books', to: this.linkPosts(user) },
+        { title: 'Communities', icon: 'forum', to: this.linkCommunities(user) },
+        { title: 'Replies', icon: 'comment', to: this.linkReplies(user) },
+        { title: 'Profile', icon: 'perm_identity', to: this.getAccountLink(user) },
+        { title: 'Wallet', icon: 'account_balance', to: this.getWalletLink(user) },
+        { title: 'Market', icon: 'store', to: '/market' }
+      ]
+    },
     account: {
       cache: false,
       get () {
@@ -354,6 +562,10 @@ export default {
   },
   methods: {
     setUsername (user) { this.username = user },
+    openSettings () {
+      this.$refs.menu?.hide?.()
+      this.settingsDialog = true
+    },
     smartLockRemoveAccount (user) {
       smartlock.removeAccount(user)
       this.savedUsersSmartLock = smartlock.allAccounts()

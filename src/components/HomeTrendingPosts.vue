@@ -6,17 +6,25 @@
         <h2 class="home-panel__title">Posts on Hive</h2>
       </div>
       <div class="home-panel__actions">
-        <q-btn-toggle
-          v-model="sort"
-          :options="sortOptions"
-          dense
-          no-caps
-          outline
-          toggle-color="primary"
-          aria-label="Post sort"
-          @update:model-value="loadPosts"
-        />
-        <router-link :to="viewAllLink" class="home-panel__link">View all</router-link>
+        <div class="home-sort" role="group" aria-label="Post sort">
+          <button
+            v-for="option in sortOptions"
+            :key="option.value"
+            type="button"
+            class="home-sort__btn"
+            :class="{ 'is-active': sort === option.value }"
+            :aria-pressed="sort === option.value"
+            :title="'Show ' + option.label.toLowerCase() + ' posts'"
+            @click="changeSort(option.value)"
+          >
+            <q-icon :name="option.icon" size="15px" aria-hidden="true" />
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+        <router-link :to="viewAllLink" class="home-panel__link home-panel__link--button">
+          View all
+          <q-icon name="arrow_forward" size="14px" aria-hidden="true" />
+        </router-link>
       </div>
     </q-card-section>
 
@@ -89,9 +97,9 @@ import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
 const SNAPSHOT_PREFIX = 'home:posts:ranked:'
 const SORTS = [
-  { label: 'Trending', value: 'trending' },
-  { label: 'New', value: 'created' },
-  { label: 'Hot', value: 'hot' }
+  { label: 'Trending', value: 'trending', icon: 'local_fire_department' },
+  { label: 'New', value: 'created', icon: 'fiber_new' },
+  { label: 'Hot', value: 'hot', icon: 'whatshot' }
 ]
 
 const ROUTES = {
@@ -128,6 +136,11 @@ export default {
     this.loadPosts()
   },
   methods: {
+    changeSort (value) {
+      if (value === this.sort) return
+      this.sort = value
+      this.loadPosts()
+    },
     snapshotKey () {
       return SNAPSHOT_PREFIX + this.sort
     },

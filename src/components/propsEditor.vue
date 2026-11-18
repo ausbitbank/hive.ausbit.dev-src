@@ -1,32 +1,39 @@
 <template>
-    <div>
-        <q-input outlined style="height: 100%" type="textarea" v-model="newjson" label="Edit your metadata directly here or use the tags below" />
-        <q-btn flat label="Submit changes" color="orange" icon="warning" @click="submitChanges()" v-if="newjson !== json && !edited" />
-        <div v-if="edited" class="text-caption">
-            Your posting JSON metadata has been edited. Refresh the page in a moment to see the changes
+    <div class="props-editor">
+        <q-input outlined class="props-editor__input" type="textarea" v-model="newjson" label="Edit your metadata directly here or use the tags below" />
+        <div class="props-editor__actions" v-if="newjson !== json && !edited">
+          <q-btn no-caps dense unelevated label="Submit changes" color="primary" icon="save" @click="submitChanges()" />
         </div>
-        <div v-if="log !== ''"><q-icon name="info" color="primary" v-if="!error" /><q-icon name="error" color="red" v-if="error" /> {{ log }}</div>
-        <div>
-            Commonly Supported Props:
-            <q-chip v-for="tag in commonTags" :key="tag.index" outline dense clickable color="grey" :selected=(doesKeyExist(tag)) :removable=(doesKeyExist(tag)) @remove="removeKey(tag)" @click="showKeyPrompt(tag)">{{ tag }}</q-chip>
+        <div class="props-editor__note props-editor__note--ok" v-if="edited">
+            <q-icon name="check_circle" size="15px" aria-hidden="true" />
+            <span>Your posting JSON metadata has been edited. Refresh the page in a moment to see the changes.</span>
         </div>
-        <div v-if="type !== 'jsonMeta'">
-            Extra Props recognised by this site:
-            <q-chip v-for="tag in myTags" :key="tag.index" outline dense clickable color="grey" :selected=(doesKeyExist(tag)) :removable=(doesKeyExist(tag)) @remove="removeKey(tag)" @click="showKeyPrompt(tag)">{{ tag }}</q-chip>
+        <div class="props-editor__note" :class="error ? 'props-editor__note--error' : 'props-editor__note--info'" v-if="log !== ''">
+            <q-icon :name="error ? 'error_outline' : 'info'" size="15px" aria-hidden="true" />
+            <span>{{ log }}</span>
         </div>
-        <json-viewer :data="JSON.parse(newjson)" />
+        <div class="props-editor__tags">
+            <div class="props-editor__tags-title">Commonly supported props</div>
+            <q-chip v-for="tag in commonTags" :key="tag" dense clickable :class="{'is-selected': doesKeyExist(tag)}" :removable="doesKeyExist(tag)" @remove="removeKey(tag)" @click="showKeyPrompt(tag)">{{ tag }}</q-chip>
+        </div>
+        <div class="props-editor__tags" v-if="type !== 'jsonMeta'">
+            <div class="props-editor__tags-title">Extra props recognised by this site</div>
+            <q-chip v-for="tag in myTags" :key="tag" dense clickable :class="{'is-selected': doesKeyExist(tag)}" :removable="doesKeyExist(tag)" @remove="removeKey(tag)" @click="showKeyPrompt(tag)">{{ tag }}</q-chip>
+        </div>
+        <json-viewer class="props-editor__viewer" :data="JSON.parse(newjson)" />
         <q-dialog v-model="keyDialog" persistent>
-        <q-card flat bordered style="min-width: 350px">
-            <q-card-section>
-            <div class="text-h6">Edit {{ keyDialogCurrentKey }}</div>
-            </q-card-section>
-            <q-card-section class="q-pt-none">
-            <q-input dense v-model="keyDialogCurrentData" outlined autofocus type="textarea" />
-            </q-card-section>
-            <q-card-actions align="right" class="text-primary">
-            <q-btn flat label="Cancel" v-close-popup />
-            <q-btn flat label="Ok" @click="addKey(keyDialogCurrentKey, keyDialogCurrentData)" v-close-popup />
-            </q-card-actions>
+        <q-card flat class="props-editor__dialog">
+            <div class="props-editor__dialog-head">
+              <div class="props-editor__dialog-eyebrow">Metadata</div>
+              <h3 class="props-editor__dialog-title">Edit {{ keyDialogCurrentKey }}</h3>
+            </div>
+            <div class="props-editor__dialog-body">
+              <q-input dense v-model="keyDialogCurrentData" outlined autofocus type="textarea" />
+            </div>
+            <div class="props-editor__dialog-actions">
+              <q-btn flat dense no-caps label="Cancel" color="grey" v-close-popup />
+              <q-btn unelevated dense no-caps label="Save" color="primary" @click="addKey(keyDialogCurrentKey, keyDialogCurrentData)" v-close-popup />
+            </div>
         </q-card>
         </q-dialog>
     </div>
@@ -129,3 +136,127 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.props-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.props-editor__input :deep(textarea) {
+  min-height: 140px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.props-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.props-editor__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #b0bec5;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.props-editor__note .q-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.props-editor__note--ok {
+  border-color: rgba(129, 199, 132, 0.32);
+  background: rgba(76, 175, 80, 0.06);
+  color: #a5d6a7;
+}
+
+.props-editor__note--info {
+  color: #81d4fa;
+}
+
+.props-editor__note--error {
+  border-color: rgba(229, 115, 115, 0.32);
+  background: rgba(239, 83, 80, 0.06);
+  color: #ef9a9a;
+}
+
+.props-editor__tags-title {
+  margin-bottom: 0.2rem;
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.props-editor__tags .q-chip {
+  margin: 0 0.25rem 0.25rem 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font-size: 0.7rem;
+}
+
+.props-editor__tags .q-chip.is-selected {
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.12);
+  color: #e1f5fe;
+}
+
+.props-editor__viewer {
+  overflow: auto;
+  max-height: 240px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.72rem;
+}
+
+.props-editor__dialog {
+  width: min(420px, 94vw);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: #10181d;
+  box-shadow: var(--shadow-pop);
+}
+
+.props-editor__dialog-head {
+  padding: var(--space-3) var(--space-3) 0;
+}
+
+.props-editor__dialog-eyebrow {
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.props-editor__dialog-title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.props-editor__dialog-body {
+  padding: var(--space-3);
+}
+
+.props-editor__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: 0 var(--space-3) var(--space-3);
+}
+</style>
