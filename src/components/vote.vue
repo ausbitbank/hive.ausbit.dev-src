@@ -1,31 +1,59 @@
 <template>
   <span class="vote-control" :class="{ 'vote-control--open': direction !== null && !voteSent, 'vote-control--sent': voteSent }">
     <template v-if="direction === null && !voteSent">
+      <span v-if="myVote" class="vote-control__lockup">
+        <q-btn
+          class="vote-control__btn vote-control__btn--up"
+          :class="{ 'is-active': myUpvote }"
+          size="sm"
+          dense
+          flat
+          no-caps
+          :icon="upvoteIcon"
+          :label="upvoteLabel"
+          :style="myUpvote ? voteWeightStyle(myVote) : undefined"
+          :aria-label="voteAriaLabel('up')"
+          title="You already voted on this post — click to change your vote"
+          @click="voteClicked(myUpvote ? 'up' : 'down')"
+        />
+        <q-btn
+          v-if="myDownvote || (downvotes && downvotes.length > 0)"
+          class="vote-control__btn vote-control__btn--down"
+          :class="{ 'is-active': myDownvote }"
+          size="sm"
+          dense
+          flat
+          no-caps
+          :icon="downvoteIcon"
+          :label="downvoteLabel"
+          :style="myDownvote ? voteWeightStyle(myVote) : undefined"
+          :aria-label="voteAriaLabel('down')"
+          title="You downvoted this post — click to change your vote"
+          @click="voteClicked('down')"
+        />
+      </span>
       <q-btn
+        v-else
         class="vote-control__btn vote-control__btn--up"
-        :class="{ 'is-active': myUpvote }"
         size="sm"
         dense
         flat
         no-caps
         :icon="upvoteIcon"
         :label="upvoteLabel"
-        :style="myUpvote ? voteWeightStyle(myVote) : undefined"
         :aria-label="voteAriaLabel('up')"
         :title="loggedInUser ? 'Upvote this post' : 'Log in to vote'"
         :disable="disableVoting"
         @click="voteClicked('up')"
       />
-      <q-btn v-if="downvotes && downvotes.length > 0"
+      <q-btn v-if="!myVote && downvotes && downvotes.length > 0"
         class="vote-control__btn vote-control__btn--down"
-        :class="{ 'is-active': myDownvote }"
         size="sm"
         dense
         flat
         no-caps
         :icon="downvoteIcon"
         :label="downvoteLabel"
-        :style="myDownvote ? voteWeightStyle(myVote) : undefined"
         :aria-label="voteAriaLabel('down')"
         :title="loggedInUser ? 'Downvote this post' : 'Log in to vote'"
         :disable="disableVoting"
@@ -33,14 +61,35 @@
       />
     </template>
 
-    <span
-      v-else-if="voteSent"
-      class="vote-control__sent"
-      :class="voteSentWeight < 0 ? 'vote-control__sent--down' : 'vote-control__sent--up'"
-    >
-      <q-icon :name="voteSentWeight < 0 ? 'thumb_down' : 'thumb_up'" size="16px" aria-hidden="true" />
-      <span>{{ Math.abs(voteSentWeight) }}%</span>
-      <q-spinner-tail size="14px" aria-label="Sending vote" />
+    <span v-else-if="voteSent" class="vote-control__sent" :class="sentStateClass" role="status" :aria-label="sentStateLabel">
+      <q-icon :name="sentStateIcon" size="16px" aria-hidden="true" />
+      <span class="vote-control__sent-value">{{ Math.abs(sentWeight) }}%</span>
+      <span class="vote-control__sent-label">{{ sentStateLabel }}</span>
+      <q-spinner-tail v-if="sentIsBusy" size="14px" aria-label="Sending vote" />
+      <q-btn
+        v-if="sentIsFailed"
+        flat
+        dense
+        round
+        size="sm"
+        icon="refresh"
+        class="vote-control__sent-retry"
+        aria-label="Retry vote"
+        title="Retry vote"
+        @click="retryVote"
+      />
+      <q-btn
+        v-if="!sentIsBusy"
+        flat
+        dense
+        round
+        size="sm"
+        icon="close"
+        class="vote-control__sent-dismiss"
+        aria-label="Dismiss vote status"
+        title="Dismiss"
+        @click="dismissSent"
+      />
     </span>
 
     <span v-else class="vote-control__composer" :class="'vote-control__composer--' + direction">
@@ -114,6 +163,14 @@ export default {
       weight: Number(this.$hiveStore.user.settings.voteWeightPost) || 100,
       voteSent: false,
       voteSentWeight: null,
+      // Identity of the queue item this control queued, so its fate can be
+      // read back from the queue (sent / failed / still pending).
+      sentItem: null,
+      sentResolved: false,
+      // Optimistic vote kept after dismissal until the post data reflects it;
+      // bootstrap clearing on route change would otherwise swap the confirmed
+      // vote back to "unvoted".
+      confirmedVote: null,
       direction: null,
       quickWeights: QUICK_WEIGHTS
     }
@@ -140,10 +197,50 @@ export default {
       if (this.voteSentWeight !== null) {
         return { voter: this.loggedInUser, weight: this.voteSentWeight, author: this.author, permlink: this.permlink, rshares: this.voteSentWeight }
       }
-      if (this.votes) {
-        return this.votes.find(this.filterMyVote)
-      }
-      return undefined
+      const fromChain = this.votes ? this.votes.find(this.filterMyVote) : undefined
+      if (fromChain) return fromChain
+      return this.confirmedVote || undefined
+    },
+    /* The queue entry for the vote we just queued, if it is still there.
+       Auto-send moves it pending -> broadcasting -> sent/failed; "sent" items
+       are later removed from the queue, which also means success. */
+    sentQueueIndex () {
+      if (!this.sentItem) return -1
+      return (this.$hiveStore.queue || []).indexOf(this.sentItem)
+    },
+    sentStatus () {
+      if (!this.sentItem || this.sentResolved) return 'sent'
+      const index = this.sentQueueIndex
+      if (index === -1) return 'sent'
+      return this.$hiveStore.queueMeta?.[index]?.status || 'pending'
+    },
+    sentIsBusy () {
+      return this.sentStatus === 'pending' || this.sentStatus === 'broadcasting'
+    },
+    sentIsFailed () {
+      return this.sentStatus === 'failed'
+    },
+    sentStateLabel () {
+      if (this.sentIsFailed) return 'Vote failed'
+      if (this.sentIsBusy) return 'Sending'
+      return this.sentWeight < 0 ? 'Downvoted' : 'Voted'
+    },
+    sentStateIcon () {
+      if (this.sentIsFailed) return 'error_outline'
+      if (this.sentIsBusy) return this.sentWeight < 0 ? 'thumb_down' : 'thumb_up'
+      return 'check_circle'
+    },
+    sentStateClass () {
+      if (this.sentIsFailed) return 'vote-control__sent--failed'
+      if (this.sentIsBusy) return 'vote-control__sent--pending'
+      return this.sentWeight < 0 ? 'vote-control__sent--down' : 'vote-control__sent--up'
+    },
+    /* The weight shown by the status chip, surviving the dismiss transition
+       long enough for the settled state to render. */
+    sentWeight () {
+      if (this.voteSentWeight !== null) return this.voteSentWeight
+      if (this.confirmedVote) return Number(this.confirmedVote.weight) || 0
+      return 0
     },
     myUpvote () {
       return this.myVote !== undefined && Math.sign(this.myVote.rshares) === 1
@@ -187,7 +284,9 @@ export default {
     voteAriaLabel (direction) {
       const total = direction === 'up' ? (this.upvotes || []).length : (this.downvotes || []).length
       const verb = direction === 'up' ? 'Upvote' : 'Downvote'
-      if (this.myUpvote || this.myDownvote) return 'You already voted on this post'
+      if (this.myUpvote || this.myDownvote) {
+        return 'You already voted on this post (' + total + ' ' + direction + 'votes). Click to change your vote'
+      }
       return verb + ' this post (' + total + ' ' + direction + 'votes so far)'
     },
     voteWeightStyle (vote) {
@@ -212,12 +311,52 @@ export default {
       this.vote(this.permlink, this.author, weight)
     },
     async vote (permlink, author, weight) {
+      const item = [this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]]
       this.voteSent = true
       this.voteSentWeight = weight
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['vote', { voter: this.loggedInUser, weight: weight * 100, author: author, permlink: permlink }]])
+      this.sentResolved = false
+      this.sentItem = item
+      this.$hiveStore.addToQueue(item)
       this.$emit('Voted', weight)
     },
+    retryVote () {
+      const index = this.sentQueueIndex
+      if (index >= 0) this.$hiveStore.setQueueStatus(index, 'pending')
+      this.sentResolved = false
+    },
+    dismissSent () {
+      // A failed item stays in the queue until the user removes it there, so
+      // dropping the local status is enough to bring the buttons back.
+      if (!this.sentIsFailed && this.voteSentWeight !== null) {
+        this.confirmedVote = {
+          voter: this.loggedInUser,
+          weight: this.voteSentWeight,
+          author: this.author,
+          permlink: this.permlink,
+          rshares: this.voteSentWeight
+        }
+      }
+      this.sentResolved = true
+      this.voteSent = false
+      this.voteSentWeight = null
+      this.sentItem = null
+    },
     filterMyVote (op) { return op.voter === this.loggedInUser }
+  },
+  watch: {
+    /* Once the queue reports sent (or the item disappears after sending),
+       replace the spinner with a settled Voted/Downvoted state. Failures keep
+       the retry affordance instead of spinning forever. */
+    sentStatus (status) {
+      if (status === 'sent' && !this.sentResolved && this.voteSent) {
+        this.sentResolved = true
+        if (this.dismissTimer) clearTimeout(this.dismissTimer)
+        this.dismissTimer = setTimeout(() => { this.dismissSent() }, 4000)
+      }
+    }
+  },
+  beforeUnmount () {
+    if (this.dismissTimer) clearTimeout(this.dismissTimer)
   }
 }
 </script>
@@ -418,20 +557,89 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 4px 6px 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-pill);
   color: #b0bec5;
   font-size: 0.74rem;
   font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.vote-control__sent--up .q-icon:first-child {
-  color: #81c784;
+.vote-control__sent-value {
+  font-variant-numeric: tabular-nums;
 }
 
-.vote-control__sent--down .q-icon:first-child {
-  color: #e57373;
+.vote-control__sent-label {
+  color: #90a4ae;
+  font-weight: 500;
+}
+
+.vote-control__sent--up {
+  border-color: rgba(129, 199, 132, 0.4);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.vote-control__sent--up .q-icon:first-child,
+.vote-control__sent--up .vote-control__sent-label {
+  color: #a5d6a7;
+}
+
+.vote-control__sent--down {
+  border-color: rgba(229, 115, 115, 0.4);
+  background: rgba(239, 83, 80, 0.1);
+}
+
+.vote-control__sent--down .q-icon:first-child,
+.vote-control__sent--down .vote-control__sent-label {
+  color: #ef9a9a;
+}
+
+.vote-control__sent--pending {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.vote-control__sent--pending .vote-control__sent-label {
+  color: #b0bec5;
+}
+
+.vote-control__sent--failed {
+  border-color: rgba(255, 183, 77, 0.45);
+  background: rgba(255, 183, 77, 0.08);
+}
+
+.vote-control__sent--failed .q-icon:first-child,
+.vote-control__sent--failed .vote-control__sent-label {
+  color: #ffcc80;
+}
+
+.vote-control__sent-retry.q-btn,
+.vote-control__sent-dismiss.q-btn {
+  min-width: 24px;
+  min-height: 24px;
+  color: #b0bec5;
+}
+
+.vote-control__sent-retry.q-btn:hover {
+  background: rgba(255, 183, 77, 0.15);
+  color: #ffcc80;
+}
+
+.vote-control__sent-dismiss.q-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* Once a vote lands, the count belongs on the button again. */
+.vote-control__lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vote-control__lockup .vote-control__btn:not(.is-active) {
+  opacity: 0.75;
 }
 
 @media (max-width: 599px) {
@@ -444,6 +652,10 @@ export default {
   }
 
   .vote-control__composer-label {
+    display: none;
+  }
+
+  .vote-control__sent-label {
     display: none;
   }
 
