@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "quasar dev",
-    "build": "quasar build && node scripts/generate-feed.mjs",
+    "build": "quasar build && node scripts/cf-compat.mjs && node scripts/generate-feed.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
@@ -16,6 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:build": "bun run build && playwright test",
+    "perf": "node scripts/perf-baseline.mjs",
+    "perf:check": "node scripts/perf-baseline.mjs --check",
     "prerender": "node scripts/prerender.mjs",
     "serve:dist": "node scripts/serve-dist.mjs"
   },
@@ -25,7 +27,6 @@
     "@hiveio/hivescript": "^1.4.0",
     "@hiveio/keychain": "^1.0.7",
     "@quasar/extras": "^2.1.0",
-    "axios": "^1.7.7",
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "dayjs": "^1.11.23",

@@ -410,7 +410,7 @@
 
 <script>
 import moment from 'src/utils/time'
-import { postBodySummary, catchPostImage } from '@ecency/render-helper'
+import { postImage, postSummary } from 'src/utils/postPreview'
 import { stripHtml } from 'src/utils/safeHtml'
 import {
   formatPostReputation,
@@ -453,7 +453,7 @@ export default {
       return this.isComment ? 'View' : 'Read'
     },
     postImage () {
-      return catchPostImage(this.post) || ''
+      return postImage(this.post) || ''
     },
     hasImage () {
       return Boolean(this.postImage) && !this.imageFailed
@@ -462,7 +462,7 @@ export default {
       let source = this.postMeta.description
       if (!source) {
         try {
-          source = postBodySummary(this.post, 500)
+          source = postSummary(this.post, 500)
         } catch {
           source = this.post.body
         }

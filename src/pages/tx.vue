@@ -568,7 +568,8 @@ a.tx-metric__value:visited {
 <script>
 import { copyToClipboard } from 'quasar'
 import moment from 'src/utils/time'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import BlockOperation from 'components/BlockOperation.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import {
@@ -746,13 +747,19 @@ export default {
     },
     async getTxFallback (txId) {
       try {
-        const response = await this.$axios.post(this.txLookupApiNode, {
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'condenser_api.get_transaction',
-          params: [txId]
+        const response = await fetch(this.txLookupApiNode, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'condenser_api.get_transaction',
+            params: [txId]
+          })
         })
-        if (response.data && response.data.result) return response.data.result
+        if (!response.ok) throw new Error('HTTP ' + response.status)
+        const data = await response.json()
+        if (data && data.result) return data.result
       } catch (error) {
         if (!error?.response) console.error('Fallback transaction lookup failed', error)
       }

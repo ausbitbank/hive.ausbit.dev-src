@@ -100,13 +100,17 @@ export default {
     getCoinGecko () {
       this.coinGecko = null
       this.priceError = false
-      this.$axios.get(this.apiUrl)
+      fetch(this.apiUrl)
         .then((response) => {
-          if (!Array.isArray(response.data) || response.data.length === 0) {
+          if (!response.ok) throw new Error('HTTP ' + response.status)
+          return response.json()
+        })
+        .then((data) => {
+          if (!Array.isArray(data) || data.length === 0) {
             this.priceError = true
             return
           }
-          this.coinGecko = response.data
+          this.coinGecko = data
         })
         .catch(() => {
           this.priceError = true

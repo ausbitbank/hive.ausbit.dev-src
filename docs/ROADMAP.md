@@ -7,20 +7,20 @@ This is the active roadmap. Completed work is recorded in
 
 ## Current state
 
-The explorer is feature-complete through W21, with the W27 UI polish pass
-delivered early.
+The explorer is feature-complete through W21, with W27 UI polish and W22
+performance work delivered early.
 
-- Verified implementation baseline: `7b82f97` (W16–W21).
-- W27 was pulled forward and delivered on top of that baseline; its record is
-  `docs/workstreams/W27-ui-polish.md`.
+- Verified W16–W21 baseline: `7b82f97`.
+- W27 UI polish: `docs/workstreams/W27-ui-polish.md`.
+- W22 performance: `docs/workstreams/W22-performance.md`.
 - W16–W21 delivered wallet, witnesses/health/nodes, markets, queue/login/
   notifications, the data layer and the hardening pass.
-- 31 unit-test files / 245 tests, 25 Playwright E2E tests, green build.
-- Production is deployed from the W27 build.
+- 33 unit-test files / 257 tests, 25 Playwright E2E tests, green build.
+- Performance dashboard: `docs/performance/README.md`.
+- Production is deployed from the W22 build.
 
-The next phase returns to the planned performance-first sequence at W22.
-Governance, discovery and content creation remain planned on top of that
-foundation.
+The next phase is W23 — network and data resilience. Governance, discovery and
+content creation remain planned on top of the measured foundation.
 
 ## Vision
 
@@ -63,6 +63,9 @@ This track comes first. It unlocks every later feature by making the app faster
 and safer to extend.
 
 ### W22 — Performance measurement, dashboard and hard-reload startup
+
+**Status: complete (2026-11-18).** See
+`docs/workstreams/W22-performance.md` and `docs/performance/`.
 
 - Add repeatable performance baselines: Lighthouse/Playwright runs for home,
   browse, block, post, wallet and market surfaces.
@@ -176,18 +179,18 @@ evidence.
 
 | Phase | Workstreams | Outcome |
 | --- | --- | --- |
-| Delivered early | W27 | UI polish and visual consistency audit complete |
-| 1 | W22, W23 | Measured speed, published budgets/dashboard and resilient reads |
+| Delivered early | W27, W22 | UI polish complete; measured speed, dashboard and hard-reload fix complete |
+| 1 | W23 | Network and data resilience |
 | 2 | W24 | Stable startup, updates and offline behaviour |
 | 3 | W25 | Deep governance and community intelligence |
 | 4 | W26 | Creator workflow on top of the reliable platform |
 | 5 | W28 | Search and discovery, last by request |
 
-Tracks may overlap only when they share a dependency. W27 was pulled forward and
-landed first; the next workstream is W22. Performance and reliability land before
-feature work that would otherwise make the bundle or network layer harder to
-reason about. UI polish remains a continuous layer, with W27 as the formal audit
-and cleanup pass.
+Tracks may overlap only when they share a dependency. W27 and W22 were pulled
+forward and landed first; the next workstream is W23. Performance and
+reliability land before feature work that would otherwise make the bundle or
+network layer harder to reason about. UI polish remains a continuous layer,
+with W27 as the formal audit and cleanup pass.
 
 ## Definition of done
 
@@ -218,18 +221,17 @@ Every workstream must include:
 ## Suggested new-session prompt
 
 > Read `docs/ROADMAP.md` first. The verified W16–W21 baseline is `7b82f97`;
-> W27 UI polish was delivered early on top of it. W16–W21 and W27 are complete,
-> with 31 unit-test files / 245 tests and 25 Playwright E2E tests passing.
-> Production is deployed from the W27 build.
+> W27 UI polish and W22 performance were delivered early on top of it. W16–W21,
+> W27 and W22 are complete, with 33 unit-test files / 257 tests and 25 Playwright
+> E2E tests passing. Production is deployed from the W22 build.
 >
-> Start **Track 1 — W22: Performance measurement, dashboard and hard-reload
-> startup**. Do not start W25–W28 yet; W28 search stays last.
+> Start **Track 1 — W23: Network and data resilience**. Do not start W25–W28
+> yet; W28 search stays last.
 >
-> Measure the current home, browse, block, post, wallet and market surfaces;
-> publish a Lighthouse/CI performance dashboard with route budgets; and fix the
-> hard-reload flash of unstyled/prerendered content caused by the crawler
-> snapshots. Then split and defer code, optimise images/fonts/embeds and record
-> before/after numbers.
+> Add structured API telemetry, harden timeouts/retry/cancellation/node
+> rotation, verify cache invalidation after writes, add consistent stale/error
+> fallbacks and offline read snapshots for selected read-only views, and make
+> service-worker updates explicit.
 >
 > Follow the standards in this roadmap: design tokens, one page-level `h1`,
 > posting/active authority correctness, sanitized UGC and `noopener noreferrer`.

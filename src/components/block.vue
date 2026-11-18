@@ -228,7 +228,8 @@ a:visited { color: #3E92CC; }
 </style>
 <script>
 import moment from 'src/utils/time'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import VueTimers from 'src/mixins/timers.js'
 import animInt from 'components/animInt.vue'
 import { fetchGlobalProps } from 'src/services/chainData'

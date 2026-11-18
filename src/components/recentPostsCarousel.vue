@@ -59,7 +59,7 @@
 <script>
 import moment from 'src/utils/time'
 import { stripHtml } from 'src/utils/safeHtml'
-import { postBodySummary, catchPostImage } from '@ecency/render-helper'
+import { postImage, postSummary } from 'src/utils/postPreview'
 export default {
   name: 'recentPostsCarousel',
   data () {
@@ -106,13 +106,13 @@ export default {
   },
   methods: {
     returnPostImage (post) {
-      return catchPostImage(post)
+      return postImage(post)
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink
     },
     returnPostSummary (post) {
-      return postBodySummary(post, 150)
+      return postSummary(post, 150)
     },
     linkAccount (author) {
       return '/@' + author

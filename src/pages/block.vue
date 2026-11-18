@@ -196,7 +196,8 @@
 <script>
 import { copyToClipboard } from 'quasar'
 import moment from 'src/utils/time'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import BlockTransaction from 'components/BlockTransaction.vue'
 import BlockOperation from 'components/BlockOperation.vue'
 import { setPageMeta } from 'src/utils/pageMeta'

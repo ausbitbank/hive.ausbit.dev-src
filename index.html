@@ -19,7 +19,6 @@
     <link rel="preconnect" href="https://herpc.dtools.dev" crossorigin />
     <link rel="preconnect" href="https://api.hive-engine.com" crossorigin />
     <link rel="preconnect" href="https://history.hive-engine.com" crossorigin />
-    <link rel="preconnect" href="https://s3.tradingview.com" />
     <link rel="dns-prefetch" href="https://api.hive.blog" />
     <link rel="dns-prefetch" href="https://images.hive.blog" />
     <link rel="dns-prefetch" href="https://api.coingecko.com" />
@@ -43,9 +42,43 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/statics/icons/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="96x96" href="/statics/icons/favicon-96x96.png" />
     <link rel="icon" type="image/x-icon" href="/statics/icons/favicon.ico" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #121212;
+        color: #e4eaed;
+      }
+
+      .boot-splash {
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font-family: Roboto, Helvetica Neue, Helvetica, Arial, sans-serif;
+        font-size: 0.9rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+      }
+
+      #q-app:not(:empty) + .boot-splash {
+        display: none;
+      }
+
+      .boot-splash img {
+        display: block;
+        width: auto;
+        height: 28px;
+      }
+    </style>
   </head>
   <body>
     <!-- quasar:entry-point -->
+    <div class="boot-splash" aria-hidden="true">
+      <img src="/statics/hive.svg" alt="" width="32" height="28" />
+      <span>Loading hive.ausbit.dev…</span>
+    </div>
     <a href="https://hive.io" rel="noopener noreferrer" style="position: absolute; left: -9999px">Powered by Hive</a>
   </body>
 </html>

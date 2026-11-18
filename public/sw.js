@@ -6,7 +6,7 @@
  * stale-while-revalidate. Chain data is intentionally not cached here — the app
  * has its own read cache and a stale shell is safer than stale balances.
  */
-const CACHE = 'hive-ausbit-shell-v1'
+const CACHE = 'hive-ausbit-shell-v2'
 const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest']
 
 self.addEventListener('install', event => {

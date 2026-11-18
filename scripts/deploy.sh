@@ -24,7 +24,7 @@ bun run lint
 echo "==> Build"
 bun run build
 
-echo "==> Prerender key routes"
+echo "==> Prerender key routes (metadata only)"
 node scripts/prerender.mjs || echo "Prerender skipped"
 
 echo "==> Backing up $REMOTE:$REMOTE_DIR"

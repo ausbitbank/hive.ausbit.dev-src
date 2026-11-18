@@ -51,7 +51,20 @@
     </div>
 
     <div class="market-chart__body">
-      <trading-view-widget :options="chartOptions" />
+      <div v-if="!chartRequested" class="market-chart__placeholder">
+        <q-icon name="show_chart" size="30px" aria-hidden="true" />
+        <p>Load the interactive TradingView chart only when you need it.</p>
+        <div class="market-chart__placeholder-actions">
+          <q-btn no-caps outline color="primary" icon="show_chart" label="Load chart" @click="chartRequested = true" />
+          <a
+            :href="externalChartUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="home-panel__link"
+          >Open on TradingView</a>
+        </div>
+      </div>
+      <trading-view-widget v-else :options="chartOptions" />
     </div>
 
     <q-card-section class="home-panel__footer">
@@ -62,7 +75,7 @@
 </template>
 
 <script>
-import TradingViewWidget from 'components/TradingViewWidget.vue'
+import { defineAsyncComponent } from 'vue'
 import {
   CHART_INTERVALS,
   TRADING_PAIRS,
@@ -72,7 +85,10 @@ import {
 
 export default {
   name: 'MarketChartCard',
-  components: { TradingViewWidget },
+  components: { TradingViewWidget: defineAsyncComponent(() => import('components/TradingViewWidget.vue')) },
+  data () {
+    return { chartRequested: false }
+  },
   props: {
     pair: { type: String, required: true },
     interval: { type: String, required: true },
@@ -154,6 +170,36 @@ export default {
 .market-chart__body {
   min-width: 0;
   padding: 0.35rem;
+}
+
+.market-chart__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 320px;
+  padding: var(--space-5) var(--space-4);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.018);
+  color: #90a4ae;
+  text-align: center;
+}
+
+.market-chart__placeholder p {
+  max-width: 42ch;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.market-chart__placeholder-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
 }
 
 @media (max-width: 599px) {

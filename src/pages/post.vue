@@ -783,15 +783,16 @@
 <script>
 import render from 'components/render.vue'
 import comments from 'components/comments.vue'
-import CommentForm from 'components/CommentForm.vue'
 import moment from 'src/utils/time'
 import vote from 'components/vote.vue'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const CommentForm = defineAsyncComponent(() => import('components/CommentForm.vue'))
+const shareButtons = defineAsyncComponent(() => import('components/shareButtons.vue'))
+const votesDialog = defineAsyncComponent(() => import('components/votesDialog.vue'))
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import tipButton from 'components/tipButton.vue'
-import shareButtons from 'components/shareButtons.vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
-import votesDialog from 'components/votesDialog.vue'
 import { formatReputation } from 'src/services/comments'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 

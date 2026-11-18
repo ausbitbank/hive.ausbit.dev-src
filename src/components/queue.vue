@@ -171,7 +171,8 @@
 import { keychain } from '@hiveio/keychain'
 import moment from 'src/utils/time'
 import smartlock from 'components/smartlock/index.js'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import {
   QUEUE_STATUS,
   canBroadcast,

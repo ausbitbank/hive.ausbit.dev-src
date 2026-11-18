@@ -253,7 +253,8 @@
 
 <script>
 import moment from 'src/utils/time'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import { formatUsd, vestToHive, walletOperationView, walletTransaction, walletTransactionOperation } from 'src/services/wallet'
 
 export default {

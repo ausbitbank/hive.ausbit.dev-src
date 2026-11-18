@@ -159,7 +159,7 @@
 
 <script>
 import moment from 'src/utils/time'
-import { catchPostImage } from '@ecency/render-helper'
+import { postImage } from 'src/utils/postPreview'
 import {
   postCommentCount,
   postCommunityTitle,
@@ -180,7 +180,7 @@ export default {
       return postDisplayTitle(this.post)
     },
     postImage () {
-      return catchPostImage(this.post) || ''
+      return postImage(this.post) || ''
     },
     communityTitle () {
       return postCommunityTitle(this.post)

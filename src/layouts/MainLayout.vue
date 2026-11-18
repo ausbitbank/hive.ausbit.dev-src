@@ -284,14 +284,17 @@ animation: gradient 15s ease infinite;
 }
 </style>
 <script>
+import { defineAsyncComponent } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import userLogin from 'components/userLogin.vue'
-import Notifications from 'components/notifications.vue'
 import CommandPalette from 'components/CommandPalette.vue'
-import queue from 'components/queue.vue'
-import settings from 'components/settings.vue'
 import BackToTop from 'components/ui/BackToTop.vue'
 import KeyboardShortcuts from 'components/ui/KeyboardShortcuts.vue'
+
+const Notifications = defineAsyncComponent(() => import('components/notifications.vue'))
+const Queue = defineAsyncComponent(() => import('components/queue.vue'))
+const Settings = defineAsyncComponent(() => import('components/settings.vue'))
+
 export default {
   name: 'MainLayout',
   components: {
@@ -299,8 +302,8 @@ export default {
     userLogin,
     Notifications,
     CommandPalette,
-    queue,
-    settings,
+    queue: Queue,
+    settings: Settings,
     BackToTop,
     KeyboardShortcuts
   },

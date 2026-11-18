@@ -679,7 +679,8 @@
 
 <script>
 import { copyToClipboard } from 'quasar'
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import HealthStatCard from 'components/health/HealthStatCard.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchWitnessByAccount, fetchWitnessesByVote } from 'src/services/chainData'

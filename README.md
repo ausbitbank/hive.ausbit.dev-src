@@ -120,8 +120,24 @@ The dev server opens at <http://localhost:8080>.
 | `bun run test:coverage` | Unit-test coverage report |
 | `bun run test:e2e` | Run Playwright E2E and axe checks against `dist/spa` |
 | `bun run test:e2e:build` | Build, then run the E2E/axe suite |
-| `bun run prerender` | Write crawler snapshots for key routes into `dist/spa` |
-| `bun run serve:dist` | Serve the built SPA with history fallback |
+| `bun run perf` | Measure routes and refresh `docs/performance/` |
+| `bun run perf:check` | Run the measured performance budgets |
+| `bun run prerender` | Write metadata-only crawler snapshots into `dist/spa` |
+| `bun run serve:dist` | Serve the built SPA with history fallback and compression |
+
+## Performance
+
+The repeatable performance dashboard lives at
+[`docs/performance/README.md`](docs/performance/README.md). It records Core Web
+Vitals and encoded transfer sizes for home, browse, block, post, wallet and the
+internal market. `docs/performance/budgets.json` is enforced in CI by
+`bun run perf:check`; the dependency breakdown is in
+[`docs/performance/bundle-analysis.md`](docs/performance/bundle-analysis.md).
+
+The crawler prerender is metadata-only: static route HTML carries title,
+description, canonical, Open Graph/Twitter and JSON-LD, but never a snapshot of
+the live chain body. A hard reload therefore cannot flash stale data before Vue
+mounts.
 
 ## Testing
 
@@ -153,8 +169,8 @@ The production site is served by nginx from `/var/www/hive.ausbit.dev` on
 ./scripts/deploy.sh
 ```
 
-The deploy script lints, builds, prerenders key crawler snapshots, creates a
-timestamped tarball backup, uploads the build to a staging directory and
+The deploy script lints, builds, prerenders metadata-only crawler snapshots,
+creates a timestamped tarball backup, uploads the build to a staging directory and
 activates it with rsync. It prints the backup path and matching rollback
 command:
 
@@ -197,7 +213,8 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 ## Documentation
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current state and next priorities
-- [`docs/workstreams/`](docs/workstreams/) — implementation records for W1–W21
+- [`docs/workstreams/`](docs/workstreams/) — implementation records for W1–W27
+- [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
 - [`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) — 2026 migration notes
 
 ## History

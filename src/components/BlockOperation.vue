@@ -258,7 +258,8 @@
 </template>
 
 <script>
-import jsonViewer from 'components/jsonViewer.vue'
+import { defineAsyncComponent } from 'vue'
+const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 
 const COLORS = {
   vote: 'green',

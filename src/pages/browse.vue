@@ -138,9 +138,9 @@
 </style>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import browseContainer from 'components/browseContainer.vue'
 import accountHeader from 'components/accountHeader.vue'
-import communityHeader from 'components/communityHeader.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const SORT_LABELS = {
@@ -186,7 +186,7 @@ export default {
   components: {
     browseContainer,
     accountHeader,
-    communityHeader
+    communityHeader: defineAsyncComponent(() => import('components/communityHeader.vue'))
   },
   data () {
     return {

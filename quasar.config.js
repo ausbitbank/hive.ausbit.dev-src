@@ -9,14 +9,16 @@ const root = dirname(fileURLToPath(import.meta.url))
 const src = (...parts) => resolve(root, 'src', ...parts)
 
 export default defineConfig(() => ({
-  boot: ['axios', 'hivejs', 'hiveStore', 'smartlock', 'pwa'],
+  boot: ['hivejs', 'hiveStore', 'smartlock', 'pwa', 'prefetch'],
 
   css: ['app.scss'],
 
-  extras: ['roboto-font', 'material-icons'],
+  extras: ['material-icons'],
 
   build: {
     vueRouterMode: 'history',
+    // Source maps are only generated for explicit bundle analysis builds.
+    sourcemap: process.env.PERF_SOURCE_MAP === '1',
     // The app is written with the Vue Options API; Quasar disables it by default in v3.
     vueOptionsAPI: true,
     target: {

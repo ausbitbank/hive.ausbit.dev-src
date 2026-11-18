@@ -677,8 +677,10 @@ export default {
     },
     async fetchHistory () {
       try {
-        const response = await this.$axios.get('https://history.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
-        this.history = Array.isArray(response.data) ? response.data : []
+        const response = await fetch('https://history.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
+        if (!response.ok) throw new Error('HTTP ' + response.status)
+        const data = await response.json()
+        this.history = Array.isArray(data) ? data : []
       } catch {
         this.history = []
       }

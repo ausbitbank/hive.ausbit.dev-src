@@ -305,11 +305,13 @@ export default {
       this.error = ''
 
       try {
-        const response = await this.$axios.get(API_URL)
-        if (!Array.isArray(response.data) || response.data.length === 0) {
+        const response = await fetch(API_URL)
+        if (!response.ok) throw new Error('HTTP ' + response.status)
+        const data = await response.json()
+        if (!Array.isArray(data) || data.length === 0) {
           throw new Error('Empty price response')
         }
-        this.coins = response.data
+        this.coins = data
         this.updatedAt = Date.now()
       } catch (error) {
         console.error('Failed to load home prices', error)
