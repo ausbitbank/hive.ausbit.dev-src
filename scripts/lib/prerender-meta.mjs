@@ -1,4 +1,5 @@
 export const MARKER = '<!-- hive:metadata-only-prerender -->'
+export const META_TEMPLATE_FILE = '__meta.html'
 
 export function escapeHtml (value) {
   return String(value ?? '')
@@ -8,20 +9,63 @@ export function escapeHtml (value) {
     .replaceAll('"', '&quot;')
 }
 
-function replaceMeta (html, attribute, key, content) {
-  if (content === undefined || content === null || content === '') return html
-  const tag = '<meta ' + attribute + '="' + escapeHtml(key) + '" content="' + escapeHtml(content) + '">'
-  const pattern = new RegExp('<meta[^>]*' + attribute + '="' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"[^>]*>', 'i')
-  if (pattern.test(html)) return html.replace(pattern, tag)
+function escapeRegExp (value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+// Vite minifies the built shell and drops optional attribute quotes, so the
+// matchers must accept `name=description`, `name="description"` and
+// `name='description'` alike. `(?=[\s>])` keeps `name=description` from also
+// matching a longer attribute value such as `og:description`.
+function attributePattern (attribute, value) {
+  const clean = escapeRegExp(value)
+  return '\\b' + attribute + '\\s*=\\s*(?:"' + clean + '"|\'' + clean + '\'|' + clean + '(?=[\\s>]))'
+}
+
+function insertInHead (html, tag) {
   return html.replace('</head>', '  ' + tag + '\n  </head>')
 }
 
-function replaceLink (html, rel, href) {
+// Replace the first matching tag and remove any duplicates left by an earlier
+// injector. The page must expose exactly one canonical/description/OG tag.
+function replaceTag (html, pattern, tag) {
+  const expression = new RegExp(pattern, 'gi')
+  let found = false
+  let kept = false
+  const next = html.replace(expression, () => {
+    found = true
+    if (kept) return ''
+    kept = true
+    return tag
+  })
+  return found ? next : insertInHead(html, tag)
+}
+
+function replaceMeta (html, attribute, key, content, { raw = false } = {}) {
+  if (content === undefined || content === null || content === '') return html
+  const value = raw ? content : escapeHtml(content)
+  const tag = '<meta ' + attribute + '="' + escapeHtml(key) + '" content="' + value + '">'
+  const pattern = '<meta\\b[^>]*' + attributePattern(attribute, key) + '[^>]*>'
+  return replaceTag(html, pattern, tag)
+}
+
+function replaceLink (html, rel, href, { raw = false } = {}) {
   if (!href) return html
-  const tag = '<link rel="' + escapeHtml(rel) + '" href="' + escapeHtml(href) + '">'
-  const pattern = new RegExp('<link[^>]*rel="' + rel + '"[^>]*>', 'i')
-  if (pattern.test(html)) return html.replace(pattern, tag)
-  return html.replace('</head>', '  ' + tag + '\n  </head>')
+  const value = raw ? href : escapeHtml(href)
+  const tag = '<link rel="' + escapeHtml(rel) + '" href="' + value + '">'
+  const pattern = '<link\\b[^>]*' + attributePattern('rel', rel) + '[^>]*>'
+  return replaceTag(html, pattern, tag)
+}
+
+function replaceTitle (html, title, { raw = false } = {}) {
+  if (!title) return html
+  const value = raw ? title : escapeHtml(title)
+  return replaceTag(html, '<title[^>]*>[\\s\\S]*?</title>', '<title>' + value + '</title>')
+}
+
+function removeJsonLd (html) {
+  const pattern = '<script\\b[^>]*' + attributePattern('type', 'application/ld+json') + '[^>]*>[\\s\\S]*?</script>'
+  return html.replace(new RegExp(pattern, 'gi'), '')
 }
 
 /**
@@ -29,7 +73,7 @@ function replaceLink (html, rel, href) {
  * body. The shell's mount element and script tags stay exactly as built.
  */
 export function applyMetadata (shell, metadata) {
-  let html = shell.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + escapeHtml(metadata.title) + '</title>')
+  let html = replaceTitle(shell, metadata.title)
   html = replaceMeta(html, 'name', 'description', metadata.description)
   html = replaceLink(html, 'canonical', metadata.canonical)
   html = replaceMeta(html, 'property', 'og:title', metadata.ogTitle)
@@ -41,10 +85,41 @@ export function applyMetadata (shell, metadata) {
   html = replaceMeta(html, 'name', 'twitter:title', metadata.twitterTitle)
   html = replaceMeta(html, 'name', 'twitter:description', metadata.twitterDescription)
   html = replaceMeta(html, 'name', 'twitter:image', metadata.twitterImage)
-  html = html.replace(/\s*<script type="application\/ld\+json">[\s\S]*?<\/script>/gi, '')
+  html = removeJsonLd(html)
   if (metadata.jsonLd) {
     html = html.replace('</head>', '  <script type="application/ld+json">' + metadata.jsonLd + '</script>\n  </head>')
   }
   if (!html.includes(MARKER)) html = html.replace('<head>', '<head>\n  ' + MARKER)
+  return html
+}
+
+function ssi (variable, fallback) {
+  return '<!--# echo var="' + variable + '" default="' + escapeHtml(fallback) + '" -->'
+}
+
+/**
+ * Build the nginx SSI template used for unbounded dynamic routes (accounts,
+ * posts, blocks, transactions, tags and tokens). The reverse proxy sets the
+ * `page_*` variables after validating the URL segments, so crawlers get a
+ * route-specific title and canonical even though the SPA data is client-side.
+ */
+export function buildMetadataTemplate (shell, { title, description, type = 'website' } = {}) {
+  if (!title || !description) throw new Error('metadata template needs a default title and description')
+
+  const pageTitle = ssi('page_title', title)
+  const pageDescription = ssi('page_description', description)
+  const pagePath = ssi('page_path', '/')
+  const pageType = ssi('page_type', type)
+
+  let html = replaceTitle(shell, pageTitle, { raw: true })
+  html = replaceMeta(html, 'name', 'description', pageDescription, { raw: true })
+  html = replaceLink(html, 'canonical', 'https://hive.ausbit.dev' + pagePath, { raw: true })
+  html = replaceMeta(html, 'property', 'og:title', pageTitle, { raw: true })
+  html = replaceMeta(html, 'property', 'og:description', pageDescription, { raw: true })
+  html = replaceMeta(html, 'property', 'og:url', 'https://hive.ausbit.dev' + pagePath, { raw: true })
+  html = replaceMeta(html, 'property', 'og:type', pageType, { raw: true })
+  html = replaceMeta(html, 'name', 'twitter:title', pageTitle, { raw: true })
+  html = replaceMeta(html, 'name', 'twitter:description', pageDescription, { raw: true })
+  html = removeJsonLd(html)
   return html
 }

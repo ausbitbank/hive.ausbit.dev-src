@@ -5,20 +5,23 @@ key model. Nothing here needs a build step; apply the headers at the reverse
 proxy (nginx) and/or at Cloudflare. Replace `hive.ausbit.dev` if the canonical
 host changes.
 
-## Recommended response headers
+## Response headers
+
+The production header policy is applied by the nginx origin. The canonical
+virtual-host file lives at `deploy/nginx/hive.ausbit.dev.conf`; install it as
+`/etc/nginx/sites-available/hive.ausbit.dev` and keep the certbot-managed SSL
+lines intact. `always` makes sure the headers are also sent on error responses.
 
 ### nginx
 
-Add inside the `server { ... }` block that serves the built SPA. `always` makes
-sure the headers are also sent on error responses.
-
 ```nginx
-# Do not allow the app to be framed or embedded elsewhere.
-add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-src https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://odysee.com https://rumble.com https://www.bitchute.com https://d.tube https://ipfs.io https://gateway.ipfs.io; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" always;
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+# Deny framing in both the legacy and CSP forms.
+add_header X-Frame-Options "DENY" always;
+add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' https: blob:; connect-src 'self' https: wss: https://cloudflareinsights.com; manifest-src 'self'; worker-src 'self' blob:; frame-src https://www.youtube.com https://youtube.com https://player.vimeo.com https://3speak.tv https://odysee.com https://rumble.com https://www.bitchute.com https://d.tube https://ipfs.io https://gateway.ipfs.io; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), interest-cohort=()" always;
 add_header Cross-Origin-Opener-Policy "same-origin" always;
 ```
 
@@ -36,8 +39,10 @@ Notes:
   price APIs. Narrow it to the specific hosts if they are stable.
 - `frame-src` mirrors the embed allowlist in `src/components/render.vue` and
   `src/utils/safeHtml.js`.
-- Only enable HSTS `preload` after every subdomain is HTTPS-only. Start without
-  `preload` and raise the max-age gradually if you want to be conservative.
+- The origin currently sends HSTS with `preload`. Only keep it once every
+  `ausbit.dev` subdomain is HTTPS-only; otherwise drop `preload` there first.
+- `worker-src 'self' blob:` is required by the production service worker and
+  any blob-backed workers; `manifest-src` covers `/manifest.webmanifest`.
 - If nginx sits behind Cloudflare, do not duplicate headers that Cloudflare
   already sets; either let nginx own them (Cloudflare "Transform Rules" off) or
   configure them in Cloudflare and skip the nginx `add_header` lines. Duplicate

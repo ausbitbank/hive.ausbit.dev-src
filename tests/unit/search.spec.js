@@ -3,9 +3,9 @@ import { parseSearchRoute } from '../../src/services/search'
 
 describe('search route parser', () => {
   it('parses block numbers and explicit block commands', () => {
-    expect(parseSearchRoute('12345678')).toMatchObject({ path: '/block/12345678', kind: 'block' })
-    expect(parseSearchRoute('block 12345678')).toMatchObject({ path: '/block/12345678' })
-    expect(parseSearchRoute('block #12345678')).toMatchObject({ path: '/block/12345678' })
+    expect(parseSearchRoute('12345678')).toMatchObject({ path: '/b/12345678', kind: 'block' })
+    expect(parseSearchRoute('block 12345678')).toMatchObject({ path: '/b/12345678' })
+    expect(parseSearchRoute('block #12345678')).toMatchObject({ path: '/b/12345678' })
   })
 
   it('parses transaction ids and tx commands', () => {
@@ -35,7 +35,7 @@ describe('search route parser', () => {
   })
 
   it('parses supported front-end URLs', () => {
-    expect(parseSearchRoute('https://hive.ausbit.dev/b/12345678')).toMatchObject({ path: '/block/12345678' })
+    expect(parseSearchRoute('https://hive.ausbit.dev/b/12345678')).toMatchObject({ path: '/b/12345678' })
     expect(parseSearchRoute('https://hive.blog/@ausbitbank/post-name')).toMatchObject({ path: '/@ausbitbank/post-name' })
     expect(parseSearchRoute('https://ecency.com/trending/photography')).toMatchObject({ path: '/trending/photography' })
   })

@@ -123,7 +123,7 @@ export default {
     }
   },
   methods: {
-    blockLink (number) { return '/block/' + number },
+    blockLink (number) { return '/b/' + number },
     accountLink (account) { return '/@' + account },
     tidyNumber (x) {
       return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ',')

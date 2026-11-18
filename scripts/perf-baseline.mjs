@@ -28,11 +28,11 @@ const CHECK = args.includes('--check')
 const labelArg = args.find(arg => arg.startsWith('--label='))
 const LABEL = labelArg ? labelArg.slice('--label='.length) : (CHECK ? 'ci-check' : 'local')
 const POST = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
-const ROUTES = ['/', '/browse', '/block/1', POST, '/@ausbitbank/wallet', '/market']
+const ROUTES = ['/', '/browse', '/b/1', POST, '/@ausbitbank/wallet', '/market']
 const ROUTE_NAMES = {
   '/': 'Home',
   '/browse': 'Browse',
-  '/block/1': 'Block 1',
+  '/b/1': 'Block 1',
   [POST]: 'Post',
   '/@ausbitbank/wallet': 'Wallet',
   '/market': 'Internal market'

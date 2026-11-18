@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Static routes for hive.ausbit.dev.
+
+  The site uses a no-trailing-slash policy: every <loc> below is the final
+  200 URL, and /path/ redirects once to /path.
+
   Account (@user), post (@user/permlink), block, transaction and token pages
   are intentionally omitted: they are unbounded in number and are discovered
-  through internal links. They still get canonical URLs and page metadata at
-  render time.
+  through internal links. nginx serves route-specific title/canonical metadata
+  for them from the SSI template generated during prerender.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
