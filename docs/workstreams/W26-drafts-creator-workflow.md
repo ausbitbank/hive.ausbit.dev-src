@@ -143,6 +143,15 @@ unreadable to Keychain-signed posts.
   raised `TypeError: this.scheduleInitialRefresh is not a function` for signed-in
   users. Both helpers now live in `methods`, and the fast compose test fails on
   new runtime errors.
+- Deployment note: a separate witness-health change (`fix(witnesses): loosen
+  missed-block alerts to top-20 after 60 blocks`, `fc78b21`) landed after the
+  deploy. The production bundle was built with that change present, so
+  `fc78b21` is the source of truth for production and should be
+  re-deployed/modified independently.
+- The compose prerender only covers the bare `/compose` URL. `/compose/:draftId`
+  deep links return the SPA shell through the normal history fallback; the
+  nginx allowlist and the `/drafts` redirect are in
+  `deploy/nginx/hive.ausbit.dev.conf`.
 
 ## Files
 
