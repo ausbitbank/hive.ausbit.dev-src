@@ -72,6 +72,15 @@ describe('saving and reading dashboards', () => {
     expect(resolved.widgets.map(widget => widget.type)).toEqual(['wallet', 'myWitness'])
   })
 
+  it('persists the chosen tiling mode', () => {
+    const layout = layoutOf('wallet')
+    saveDashboard('alice', layout, { storage, tiling: 'masonry' })
+    expect(resolveDashboard('alice', storage).tiling).toBe('masonry')
+
+    saveDashboard('alice', layout, { storage, tiling: 'rows' })
+    expect(resolveDashboard('alice', storage).tiling).toBe('rows')
+  })
+
   it('keeps accounts and the guest layout isolated from each other', () => {
     saveDashboard('alice', layoutOf('wallet'), { storage })
     saveDashboard('bob', layoutOf('posts', 'network'), { storage })

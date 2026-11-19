@@ -33,6 +33,16 @@
             <q-icon name="account_balance" size="16px" aria-hidden="true" /> Proposals
           </router-link>
           <button
+            v-if="!editing && customisedLayout"
+            type="button"
+            class="home-customise"
+            :title="tiling === 'masonry' ? 'Switch back to row tiling' : 'Fill vertical gaps with masonry tiling'"
+            @click="toggleTiling"
+          >
+            <q-icon :name="tiling === 'masonry' ? 'view_quilt' : 'view_stream'" size="16px" aria-hidden="true" />
+            {{ tiling === 'masonry' ? 'Masonry' : 'Rows' }}
+          </button>
+          <button
             v-if="!editing"
             type="button"
             class="home-customise"
@@ -79,6 +89,7 @@
         v-else-if="customisedLayout"
         :widgets="widgets"
         :signed-in="signedIn"
+        :masonry="tiling === 'masonry'"
         packed
       />
 
@@ -331,6 +342,9 @@ export default {
     customisedLayout () {
       return Boolean(this.$hiveStore.dashboard.customised)
     },
+    tiling () {
+      return this.$hiveStore.dashboard.tiling || 'rows'
+    },
     setupPromptVisible () {
       const dashboard = this.$hiveStore.dashboard
       return Boolean(
@@ -366,6 +380,9 @@ export default {
       this.draftBase = draftWidgets(this.widgets)
       this.draft = draftWidgets(this.widgets)
       this.$hiveStore.setDashboardEditing(true)
+    },
+    toggleTiling () {
+      this.$hiveStore.setDashboardTiling(this.tiling === 'masonry' ? 'rows' : 'masonry')
     },
     saveDraft () {
       this.$hiveStore.applyDashboardWidgets(this.draft, { customised: !isDefaultDraft(this.draft) })

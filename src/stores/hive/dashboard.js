@@ -39,6 +39,8 @@ function dashboardState (username = null) {
       // True while the user has not saved any customisation for this scope.
       customised: resolved.customised,
       savedAt: resolved.savedAt,
+      // 'rows' packs widgets into horizontal rows; 'masonry' fills gaps.
+      tiling: resolved.tiling || 'rows',
       // Editor state lives in the store so widgets and the toolbar agree.
       editing: false,
       // Set when localStorage refused a write; the layout still works in memory.
@@ -60,6 +62,7 @@ export function loadDashboard (username) {
   this.dashboard.scope = resolved.scope
   this.dashboard.customised = resolved.customised
   this.dashboard.savedAt = resolved.savedAt
+  this.dashboard.tiling = resolved.tiling || 'rows'
   this.dashboard.storageFailed = false
   this.dashboard.setupPromptDismissed = false
   this.refreshSetupPrompt(username)
@@ -69,7 +72,8 @@ export function loadDashboard (username) {
 export function persistDashboard ({ customised = true } = {}) {
   const result = saveStoredDashboard(this.dashboard.scope, this.dashboard.widgets, {
     storage: getStorage(),
-    customised
+    customised,
+    tiling: this.dashboard.tiling
   })
   this.dashboard.storageFailed = !result.ok
   if (result.ok) {
@@ -97,6 +101,11 @@ export function applyDashboardWidgets (widgets, { customised } = {}) {
 
 export function setDashboardEditing (editing) {
   this.dashboard.editing = Boolean(editing)
+}
+
+export function setDashboardTiling (tiling) {
+  this.dashboard.tiling = tiling === 'masonry' ? 'masonry' : 'rows'
+  return this.persistDashboard({ customised: this.dashboard.customised })
 }
 
 /** Replace the layout with a preset (`LOGGED_IN_STARTER_LAYOUT` etc). */

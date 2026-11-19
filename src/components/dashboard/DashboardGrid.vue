@@ -6,8 +6,10 @@
       'dw-grid--pair': pair && !editing,
       'dw-grid--packed': packed && !editing,
       'dw-grid--editing': editing,
+      'dw-grid--masonry': masonryReady,
       'dw-grid--dragging': dragging
     }"
+    :style="masonryReady && masonryHeight ? { height: masonryHeight + 'px' } : null"
   >
     <div
       v-for="entry in cells"
@@ -18,7 +20,8 @@
         'dw-grid__cell--before': markerFor(entry.widget, 'before'),
         'dw-grid__cell--after': markerFor(entry.widget, 'after')
       }"
-      :style="editing || packed ? { gridColumn: 'span ' + entry.span } : null"
+      :style="cellStyle(entry)"
+      :data-span="entry.span"
       :data-widget-type="entry.widget.type"
       :data-widget-id="entry.widget.id"
     >
@@ -112,6 +115,17 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: start;
   gap: var(--space-4);
+}
+
+.dw-grid--masonry {
+  position: relative;
+  display: block;
+  min-height: 1px;
+}
+
+.dw-grid.dw-grid--masonry > .dw-grid__cell {
+  position: absolute;
+  margin: 0;
 }
 
 .dw-grid--editing > .dw-grid__cell,
@@ -267,7 +281,9 @@ export default {
     pair: { type: Boolean, default: false },
     // View mode for a customised layout: one packed 12-column grid instead of
     // the page's main/sidebar shell.
-    packed: { type: Boolean, default: false }
+    packed: { type: Boolean, default: false },
+    // View mode tiling: fill vertical gaps by measuring widget heights.
+    masonry: { type: Boolean, default: false }
   },
   emits: ['move-to', 'remove', 'width-step', 'configure'],
   data () {
@@ -281,10 +297,20 @@ export default {
       marker: null,
       // Widget picked up from the keyboard and being moved with arrows.
       keyboardId: '',
-      endMarker: false
+      endMarker: false,
+      // Masonry view mode: measured absolute positions and container height.
+      masonryStyles: {},
+      masonryHeight: 0,
+      masonryWidth: 0,
+      masonryTimer: null,
+      masonryObserver: null,
+      resizeObserver: null
     }
   },
   computed: {
+    masonryReady () {
+      return this.masonryActive() && Object.keys(this.masonryStyles).length > 0
+    },
     cells () {
       if (this.editing || this.packed) {
         const rows = packRows(this.widgets, GRID_COLUMNS)
@@ -307,14 +333,34 @@ export default {
       }))
     }
   },
+  watch: {
+    masonry () {
+      this.resetMasonry()
+    },
+    editing () {
+      this.resetMasonry()
+    },
+    packed () {
+      this.resetMasonry()
+    },
+    widgets: {
+      handler () {
+        this.scheduleMasonry()
+      },
+      deep: true
+    }
+  },
   mounted () {
     if (typeof window === 'undefined') return
     window.addEventListener('pointermove', this.onPointerMove, { passive: false })
     window.addEventListener('pointerup', this.onPointerUp)
     window.addEventListener('pointercancel', this.cancelDrag)
     window.addEventListener('keydown', this.onKeyDown)
+    this.$nextTick(this.scheduleMasonry)
   },
   beforeUnmount () {
+    if (this.masonryTimer) clearTimeout(this.masonryTimer)
+    this.disconnectMasonry()
     if (typeof window === 'undefined') return
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
@@ -322,6 +368,120 @@ export default {
     window.removeEventListener('keydown', this.onKeyDown)
   },
   methods: {
+    masonryActive () {
+      return Boolean(this.masonry) && !this.editing && this.packed
+    },
+    cellStyle (entry) {
+      if (this.masonryActive()) {
+        const style = this.masonryStyles[entry.widget.id]
+        if (style) return style
+        return { gridColumn: 'span ' + entry.span }
+      }
+      return this.editing || this.packed ? { gridColumn: 'span ' + entry.span } : null
+    },
+    resetMasonry () {
+      if (this.masonryTimer) {
+        clearTimeout(this.masonryTimer)
+        this.masonryTimer = null
+      }
+      this.masonryStyles = {}
+      this.masonryHeight = 0
+      this.masonryWidth = 0
+      if (!this.masonryActive()) {
+        this.disconnectMasonry()
+        return
+      }
+      this.$nextTick(this.measureMasonry)
+    },
+    scheduleMasonry () {
+      if (!this.masonryActive()) return
+      if (this.masonryTimer) clearTimeout(this.masonryTimer)
+      this.masonryTimer = setTimeout(() => {
+        this.masonryTimer = null
+        this.measureMasonry()
+      }, 80)
+    },
+    measureMasonry () {
+      if (!this.masonryActive()) return
+      const grid = this.$refs.grid
+      if (!grid || typeof window === 'undefined') return
+      const width = grid.clientWidth
+      const cells = Array.from(grid.querySelectorAll(':scope > .dw-grid__cell'))
+      if (!width || !cells.length) return
+
+      // A width change means the previous absolute widths are stale. Drop them
+      // so the next pass measures the widgets at their real grid width.
+      if (this.masonryWidth && Math.abs(width - this.masonryWidth) > 1) {
+        this.masonryStyles = {}
+        this.masonryHeight = 0
+        this.masonryWidth = width
+        this.$nextTick(this.measureMasonry)
+        return
+      }
+      this.masonryWidth = width
+
+      const style = getComputedStyle(grid)
+      const gap = parseFloat(style.columnGap) || parseFloat(style.gap) || 16
+      const columnWidth = (width - gap * (GRID_COLUMNS - 1)) / GRID_COLUMNS
+      const heights = new Array(GRID_COLUMNS).fill(0)
+      const styles = {}
+      let bottom = 0
+
+      for (const cell of cells) {
+        const id = cell.getAttribute('data-widget-id')
+        const span = Math.max(1, Math.min(GRID_COLUMNS, Number(cell.getAttribute('data-span')) || GRID_COLUMNS))
+        let best = 0
+        let top = Infinity
+        for (let start = 0; start <= GRID_COLUMNS - span; start++) {
+          let candidate = 0
+          for (let column = start; column < start + span; column++) {
+            if (heights[column] > candidate) candidate = heights[column]
+          }
+          if (candidate < top - 0.5) {
+            top = candidate
+            best = start
+          }
+        }
+        if (!Number.isFinite(top)) top = 0
+        const cellWidth = span * columnWidth + (span - 1) * gap
+        styles[id] = {
+          position: 'absolute',
+          top: Math.round(top) + 'px',
+          left: Math.round(best * (columnWidth + gap)) + 'px',
+          width: Math.round(cellWidth) + 'px'
+        }
+        const next = top + cell.offsetHeight + gap
+        for (let column = best; column < best + span; column++) heights[column] = next
+        if (next > bottom) bottom = next
+      }
+
+      this.masonryStyles = styles
+      this.masonryHeight = Math.max(0, Math.round(bottom - gap))
+      this.observeMasonry(cells, grid)
+    },
+    observeMasonry (cells, grid) {
+      if (typeof ResizeObserver === 'undefined') return
+      if (!this.resizeObserver) {
+        this.resizeObserver = new ResizeObserver(() => this.scheduleMasonry())
+      }
+      this.resizeObserver.disconnect()
+      this.resizeObserver.observe(grid)
+      if (!this.masonryObserver) {
+        this.masonryObserver = new ResizeObserver(() => this.scheduleMasonry())
+      }
+      this.masonryObserver.disconnect()
+      for (const cell of cells) this.masonryObserver.observe(cell)
+    },
+    disconnectMasonry () {
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect()
+        this.resizeObserver = null
+      }
+      if (this.masonryObserver) {
+        this.masonryObserver.disconnect()
+        this.masonryObserver = null
+      }
+    },
     /**
      * The subset of a widget's settings that maps to the card's props. Only
      * declared keys are passed: unknown ones would land as DOM attributes, and

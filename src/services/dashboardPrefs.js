@@ -99,6 +99,7 @@ export function readDashboard (scope, storage) {
     savedAt: Number.isFinite(Number(raw.savedAt)) ? Number(raw.savedAt) : null,
     version: Number(raw.version) || 0,
     customised: raw.customised !== false,
+    tiling: raw.tiling === 'masonry' ? 'masonry' : 'rows',
     corrupt: false,
     scope: normaliseScope(scope)
   }
@@ -115,19 +116,20 @@ export function resolveDashboard (username, storage) {
   if (account && account !== GUEST_SCOPE) {
     const own = readDashboard(account, storage)
     if (own && !own.corrupt && own.widgets.length) {
-      return { widgets: own.widgets, source: 'account', scope: account, savedAt: own.savedAt, customised: own.customised }
+      return { widgets: own.widgets, source: 'account', scope: account, savedAt: own.savedAt, customised: own.customised, tiling: own.tiling }
     }
   }
   const guest = readDashboard(GUEST_SCOPE, storage)
   if (guest && !guest.corrupt && guest.widgets.length) {
-    return { widgets: guest.widgets, source: 'guest', scope: GUEST_SCOPE, savedAt: guest.savedAt, customised: guest.customised }
+    return { widgets: guest.widgets, source: 'guest', scope: GUEST_SCOPE, savedAt: guest.savedAt, customised: guest.customised, tiling: guest.tiling }
   }
   return {
     widgets: defaultDashboard(),
     source: 'builtin',
     scope: account && account !== GUEST_SCOPE ? account : GUEST_SCOPE,
     savedAt: null,
-    customised: false
+    customised: false,
+    tiling: 'rows'
   }
 }
 
@@ -135,7 +137,7 @@ export function resolveDashboard (username, storage) {
  * Persist a layout for one scope. Saving the account scope never touches the
  * guest scope, and vice versa. Returns `{ ok, savedAt }`.
  */
-export function saveDashboard (scope, widgets, { storage, now = Date.now(), customised = true } = {}) {
+export function saveDashboard (scope, widgets, { storage, now = Date.now(), customised = true, tiling = 'rows' } = {}) {
   const target = getStorage(storage)
   const list = normaliseLayout(widgets)
   if (!target) return { ok: false, savedAt: null }
@@ -144,6 +146,7 @@ export function saveDashboard (scope, widgets, { storage, now = Date.now(), cust
     scope: normaliseScope(scope),
     savedAt: now,
     customised: Boolean(customised),
+    tiling: tiling === 'masonry' ? 'masonry' : 'rows',
     widgets: list
   }
   const key = dashboardStorageKey(scope)
