@@ -137,13 +137,13 @@ test.describe('customisable dashboard', () => {
 
   test('configures a widget through the settings dialog', async ({ page }) => {
     await openEditor(page)
-    const trending = page.locator('[data-widget-type="posts"]')
-    await trending.getByRole('button', { name: /^Options for Posts on Hive/ }).click()
+    const trending = page.locator('[data-widget-type="posts"]').first()
+    await trending.getByRole('button', { name: /^Options for Content browser/ }).click()
     await page.getByText('Configure', { exact: true }).click()
 
     const dialog = page.locator('.dw-settings')
-    await expect(dialog.locator('.dw-settings__title')).toHaveText('Posts on Hive')
-    await dialog.getByRole('combobox').first().click()
+    await expect(dialog.locator('.dw-settings__title')).toHaveText('Content browser')
+    await dialog.getByLabel('Network feed').click()
     await page.getByRole('option', { name: 'New' }).click()
     await dialog.locator('input[type="number"]').fill('9')
     await page.getByRole('button', { name: 'Apply' }).click()
@@ -157,8 +157,8 @@ test.describe('customisable dashboard', () => {
 
   test('an account feed reference relabels the posts widget and persists', async ({ page }) => {
     await openEditor(page)
-    const posts = page.locator('[data-widget-type="posts"]')
-    await posts.getByRole('button', { name: /^Options for Posts on Hive/ }).click()
+    const posts = page.locator('[data-widget-type="posts"]').first()
+    await posts.getByRole('button', { name: /^Options for Content browser/ }).click()
     await page.getByText('Configure', { exact: true }).click()
 
     const dialog = page.locator('.dw-settings')
@@ -169,7 +169,7 @@ test.describe('customisable dashboard', () => {
     await expect(posts.locator('.home-panel__title')).toHaveText('@ausbitbank')
 
     await page.getByRole('button', { name: 'Save' }).click()
-    const card = page.locator('[data-widget-type="posts"]')
+    const card = page.locator('[data-widget-type="posts"]').first()
     await expect(card.locator('.home-panel__title')).toHaveText('@ausbitbank')
     await expect(card.getByRole('link', { name: 'View all' })).toHaveAttribute('href', '/@ausbitbank/feed')
 
@@ -180,10 +180,10 @@ test.describe('customisable dashboard', () => {
 
   test('community and short-form references change the posts header', async ({ page }) => {
     await openEditor(page)
-    const posts = page.locator('[data-widget-type="posts"]')
+    const posts = page.locator('[data-widget-type="posts"]').first()
 
     const configure = async reference => {
-      await posts.getByRole('button', { name: /^Options for Posts on Hive/ }).click()
+      await posts.getByRole('button', { name: /^Options for Content browser/ }).click()
       await page.getByText('Configure', { exact: true }).click()
       const dialog = page.locator('.dw-settings')
       await dialog.getByLabel('Feed reference').fill(reference)
@@ -201,12 +201,12 @@ test.describe('customisable dashboard', () => {
 
   test('account posts accept a feed type and reference', async ({ page }) => {
     await openEditor(page)
-    const card = page.locator('[data-widget-type="accountPosts"]')
-    await card.getByRole('button', { name: /^Options for Account posts/ }).click()
+    const card = page.locator('[data-widget-type="posts"]').nth(1)
+    await card.getByRole('button', { name: /^Options for Content browser/ }).click()
     await page.getByText('Configure', { exact: true }).click()
 
     const dialog = page.locator('.dw-settings')
-    await dialog.getByLabel('Feed type').click()
+    await dialog.getByLabel('Account feed type').click()
     await page.getByRole('option', { name: 'Feed', exact: true }).click()
     await dialog.getByLabel('Feed reference').fill('/@ausbitbank/feed')
     await page.getByRole('button', { name: 'Apply' }).click()
@@ -216,8 +216,8 @@ test.describe('customisable dashboard', () => {
 
     await page.getByRole('button', { name: 'Save' }).click()
     const stored = await readDashboard(page, GUEST_KEY)
-    const settings = stored.widgets.find(widget => widget.type === 'accountPosts').settings
-    expect(settings.sort).toBe('feed')
+    const settings = stored.widgets.filter(widget => widget.type === 'posts')[1].settings
+    expect(settings.feedSort).toBe('feed')
     expect(settings.reference).toBe('/@ausbitbank/feed')
   })
 

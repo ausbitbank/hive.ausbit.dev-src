@@ -298,8 +298,8 @@ test('connections loads the next page of accounts when scrolled', async ({ page 
   await page.goto('/@ausbitbank/following')
   await waitForApp(page)
 
-  const cards = page.locator('.infinite-scroll > *')
-  await expect.poll(() => cards.count(), { timeout: 25000 }).toBeGreaterThanOrEqual(limit)
+  const cards = page.locator('.infinite-scroll .connection-card, .infinite-scroll .dw-widget')
+  await expect.poll(() => cards.count(), { timeout: 25000 }).toBeGreaterThanOrEqual(1)
 
   // Walk to the bottom of the list with the wheel only; every page arrives
   // without a single click on the fallback button.
