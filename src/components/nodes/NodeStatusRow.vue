@@ -13,7 +13,7 @@
       <div class="node-row__title">
         <span class="node-row__url">{{ prettyUrl }}</span>
         <q-badge v-if="active" color="primary" text-color="black" class="node-row__badge">Active</q-badge>
-        <q-badge :color="status.color === 'green' ? 'green-9' : (status.color === 'warning' ? 'orange-9' : 'red-9')" :text-color="status.color === 'warning' || status.color === 'negative' ? 'black' : 'white'" class="node-row__badge">
+        <q-badge :color="status.color === 'green' ? 'green-9' : (status.color === 'warning' ? 'orange-9' : 'red-9')" :text-color="status.color === 'warning' ? 'black' : 'white'" class="node-row__badge">
           {{ status.label }}
         </q-badge>
         <q-badge
@@ -25,12 +25,27 @@
         >
           v{{ node.version }}
         </q-badge>
+        <q-badge v-if="!node.fallback" color="grey-9" text-color="white" class="node-row__badge" title="Not used as an automatic failover node">
+          watch
+        </q-badge>
+        <q-badge
+          v-if="node.beacon"
+          :color="beaconState.key === 'ok' ? 'green-9' : (beaconState.key === 'critical' ? 'red-9' : 'orange-9')"
+          :text-color="beaconState.key === 'warning' || beaconState.key === 'watch' ? 'black' : 'white'"
+          class="node-row__badge"
+          :title="'Beacon reliability score: ' + node.beacon.score + '/100 (' + beaconState.label + ')'"
+        >
+          beacon {{ node.beacon.score }}
+        </q-badge>
       </div>
 
       <div class="node-row__meta">
         <span v-if="node.ok">
           <q-icon name="bolt" size="14px" aria-hidden="true" />
           {{ formatLatency(node.latency) }} now
+        </span>
+        <span v-if="node.ok && typical !== null">
+          {{ formatLatency(typical) }} typical
         </span>
         <span v-if="node.ok && summary.average !== null">
           {{ formatLatency(summary.average) }} avg
@@ -41,6 +56,13 @@
         </span>
         <span v-if="node.ok" :class="{ 'node-row__lag': node.lag > 0 }">
           {{ node.lag > 0 ? node.lag + ' blocks behind' : 'at chain head' }}
+        </span>
+        <span v-if="node.ok && features.length" class="node-row__features">
+          <q-icon name="extension" size="14px" aria-hidden="true" />
+          {{ features.length }} API feature{{ features.length === 1 ? '' : 's' }}
+        </span>
+        <span v-if="node.beacon" class="node-row__uptime">
+          {{ formatPercent(node.beacon.uptime) }} uptime
         </span>
         <span v-if="!node.ok" class="node-row__error">{{ node.error || 'Unreachable' }}</span>
       </div>
@@ -157,6 +179,11 @@
   color: #ef9a9a;
 }
 
+.node-row__uptime,
+.node-row__features {
+  color: #78909c;
+}
+
 .node-row__history {
   display: flex;
   align-items: center;
@@ -204,8 +231,10 @@
 import Sparkline from 'components/Sparkline.vue'
 import { latencySummary } from 'src/services/nodeHistory'
 import {
+  beaconStatus,
   formatCount,
   formatLatency,
+  formatPercent,
   nodeStatus,
   versionStatus
 } from 'src/services/network'
@@ -227,6 +256,16 @@ export default {
     versionState () {
       return versionStatus(this.node.version, this.expectedVersion)
     },
+    beaconState () {
+      return beaconStatus(this.node.beacon)
+    },
+    features () {
+      return Array.isArray(this.node.beacon?.features) ? this.node.beacon.features : []
+    },
+    typical () {
+      const summary = this.summary
+      return summary.values.length ? summary.average : null
+    },
     prettyUrl () {
       return String(this.node.url || '').replace(/^https?:\/\//, '').replace(/\/+$/, '')
     },
@@ -236,7 +275,8 @@ export default {
   },
   methods: {
     formatLatency,
-    formatCount
+    formatCount,
+    formatPercent
   }
 }
 </script>

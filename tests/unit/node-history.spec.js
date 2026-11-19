@@ -43,7 +43,14 @@ describe('latency history', () => {
       latency: Infinity
     }], 500)
 
-    expect(history['https://down'][0]).toEqual({ t: 500, ok: false, latency: null, head: null })
+    expect(history['https://down'][0]).toEqual({
+      t: 500,
+      ok: false,
+      latency: null,
+      head: null,
+      headTime: null,
+      error: 'Unreachable'
+    })
   })
 
   it('summarises average, range and trend for a node', () => {
@@ -81,14 +88,29 @@ describe('latency history', () => {
 describe('node preferences', () => {
   it('defaults to failover on and auto-select off', () => {
     const storage = memoryStorage()
-    expect(loadNodePrefs(storage)).toEqual({ autoFailover: true, autoSelectFastest: false })
+    expect(loadNodePrefs(storage)).toEqual({
+      autoFailover: true,
+      autoSelectFastest: false,
+      includeWatched: true,
+      requireFeatures: false
+    })
   })
 
   it('persists and restores node preferences', () => {
     const storage = memoryStorage()
-    saveNodePrefs({ autoFailover: false, autoSelectFastest: true }, storage)
+    saveNodePrefs({
+      autoFailover: false,
+      autoSelectFastest: true,
+      includeWatched: false,
+      requireFeatures: true
+    }, storage)
 
-    expect(loadNodePrefs(storage)).toEqual({ autoFailover: false, autoSelectFastest: true })
+    expect(loadNodePrefs(storage)).toEqual({
+      autoFailover: false,
+      autoSelectFastest: true,
+      includeWatched: false,
+      requireFeatures: true
+    })
   })
 
   it('persists and restores latency history', () => {
@@ -105,6 +127,11 @@ describe('node preferences', () => {
     storage.setItem('nodeMonitorPrefs', '{not json')
 
     expect(loadNodeHistory(storage)).toEqual({})
-    expect(loadNodePrefs(storage)).toEqual({ autoFailover: true, autoSelectFastest: false })
+    expect(loadNodePrefs(storage)).toEqual({
+      autoFailover: true,
+      autoSelectFastest: false,
+      includeWatched: true,
+      requireFeatures: false
+    })
   })
 })

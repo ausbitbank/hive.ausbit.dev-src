@@ -39,7 +39,7 @@ Wallet:
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |
 | `/proposals`, `/proposals/:id` | DHF proposals, funding status, votes, funding outlook, creator/receiver/topic mix and voter overlap |
-| `/health`, `/nodes` | Network health, witness participation, HBD backing and API node latency/failover |
+| `/health`, `/nodes` | Network health, witness participation, HBD backing and API node latency, beacon reliability, feature coverage and failover |
 | `/market` | Hive internal market: order book, trades, open orders, balances, fees and limit orders |
 | `/markets` | External charts, HBD peg/premium, savings APR and HIVE/HBD conversion calculator |
 | `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |

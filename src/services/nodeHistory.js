@@ -28,7 +28,9 @@ export function recordSamples (history, nodes, now = Date.now()) {
       t: now,
       ok: Boolean(node.ok),
       latency: node.ok && Number.isFinite(Number(node.latency)) ? Math.round(Number(node.latency)) : null,
-      head: node.ok && Number.isFinite(Number(node.head)) ? Number(node.head) : null
+      head: node.ok && Number.isFinite(Number(node.head)) ? Number(node.head) : null,
+      headTime: node.ok && node.headTime ? String(node.headTime) : null,
+      error: node.ok ? null : (node.error || 'Unreachable')
     }
     next[node.url] = previous.concat(sample).slice(-MAX_SAMPLES)
   }
@@ -95,7 +97,9 @@ export function saveNodeHistory (history, storage) {
 export function defaultNodePrefs () {
   return {
     autoFailover: true,
-    autoSelectFastest: false
+    autoSelectFastest: false,
+    includeWatched: true,
+    requireFeatures: false
   }
 }
 
@@ -106,7 +110,9 @@ export function loadNodePrefs (storage) {
     const parsed = JSON.parse(target.getItem(NODE_PREFS_KEY) || '{}')
     return {
       autoFailover: parsed.autoFailover !== false,
-      autoSelectFastest: parsed.autoSelectFastest === true
+      autoSelectFastest: parsed.autoSelectFastest === true,
+      includeWatched: parsed.includeWatched !== false,
+      requireFeatures: parsed.requireFeatures === true
     }
   } catch {
     return defaultNodePrefs()
@@ -119,7 +125,9 @@ export function saveNodePrefs (prefs, storage) {
   try {
     target.setItem(NODE_PREFS_KEY, JSON.stringify({
       autoFailover: prefs?.autoFailover !== false,
-      autoSelectFastest: prefs?.autoSelectFastest === true
+      autoSelectFastest: prefs?.autoSelectFastest === true,
+      includeWatched: prefs?.includeWatched !== false,
+      requireFeatures: prefs?.requireFeatures === true
     }))
     return true
   } catch {

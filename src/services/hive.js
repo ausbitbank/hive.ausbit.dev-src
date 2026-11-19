@@ -12,11 +12,17 @@ export function setHiveNode (url) {
   configureApi({ node })
 }
 
+function probeErrorMessage (error) {
+  return error?.name === 'AbortError' ? 'Timed out' : (error?.message || 'Unreachable')
+}
+
 /**
  * Probe a Hive API node with a cheap condenser call.
  *
  * Always resolves; failures are reported as `{ ok: false, error }` so callers
- * can use it inside Promise.all without extra error handling.
+ * can use it inside Promise.all without extra error handling. A successful
+ * probe also carries `rpcMs` (JSON-RPC server time), `headTime` (chain time of
+ * the head block) and `serverVersion` when the node reports them.
  */
 export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS) {
   if (!url || typeof url !== 'string') {
@@ -51,11 +57,19 @@ export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS
       return { url, ok: false, latency, error: data?.error?.message || 'Invalid response' }
     }
 
-    return { url, ok: true, latency, head }
+    const rpcMs = Number(data?.result?.server_latency ?? data?.result?.latency)
+    return {
+      url,
+      ok: true,
+      latency,
+      head,
+      rpcMs: Number.isFinite(rpcMs) && rpcMs >= 0 ? rpcMs : null,
+      headTime: data?.result?.time || null,
+      serverVersion: data?.result?.server_version || null
+    }
   } catch (error) {
     const latency = Date.now() - started
-    const message = error?.name === 'AbortError' ? 'Timed out' : (error?.message || 'Unreachable')
-    return { url, ok: false, latency, error: message }
+    return { url, ok: false, latency, error: probeErrorMessage(error) }
   } finally {
     clearTimeout(timer)
   }
@@ -64,10 +78,14 @@ export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS
 /**
  * Fetch the reporting node's software version. Supports both the condenser
  * `get_version` result and a `hive_version` field on global properties.
+ *
+ * Distinguishes a missing method (`missing: true`) from a node error so the
+ * /nodes comparison table can show an empty feature cell without marking an
+ * otherwise healthy node as broken.
  */
 export async function probeHiveNodeVersion (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS) {
   if (!url || typeof url !== 'string') {
-    return { url, ok: false, version: null, chainId: null, error: 'No node URL' }
+    return { url, ok: false, version: null, chainId: null, missing: true, error: 'No node URL' }
   }
 
   const controller = new AbortController()
@@ -86,28 +104,45 @@ export async function probeHiveNodeVersion (url, timeoutMs = HIVE_NODE_PROBE_TIM
       signal: controller.signal
     })
     if (!response.ok) {
-      return { url, ok: false, version: null, chainId: null, error: 'HTTP ' + response.status }
+      return { url, ok: false, version: null, chainId: null, missing: false, error: 'HTTP ' + response.status }
     }
     const data = await response.json()
     const version = data?.result?.blockchain_version || data?.result?.hive_version || null
+    const missing = !version && isMissingMethodError(data?.error)
     return {
       url,
       ok: Boolean(version),
       version,
       chainId: data?.result?.chain_id || null,
+      nodeType: data?.result?.node_type || null,
+      missing,
       error: version ? '' : (data?.error?.message || 'Version unavailable')
     }
   } catch (error) {
-    const message = error?.name === 'AbortError' ? 'Timed out' : (error?.message || 'Unreachable')
-    return { url, ok: false, version: null, chainId: null, error: message }
+    return {
+      url,
+      ok: false,
+      version: null,
+      chainId: null,
+      missing: false,
+      error: probeErrorMessage(error)
+    }
   } finally {
     clearTimeout(timer)
   }
 }
 
+function isMissingMethodError (error) {
+  if (!error) return false
+  const code = Number(error.code)
+  const message = String(error.message || '').toLowerCase()
+  return code === -32601 || code === 404 || message.includes('method not found') || message.includes('unknown method')
+}
+
 /**
- * Probe a node for head, latency and software version in parallel. Always
- * resolves; a version failure does not make an otherwise healthy node fail.
+ * Probe a node for head, latency, RPC time and software version in parallel.
+ * Always resolves; a version failure does not make an otherwise healthy node
+ * fail, but a timeout does count against the overall node.
  */
 export async function probeHiveNodeFull (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS) {
   const [base, version] = await Promise.all([
@@ -117,8 +152,27 @@ export async function probeHiveNodeFull (url, timeoutMs = HIVE_NODE_PROBE_TIMEOU
   return {
     ...base,
     version: version.ok ? version.version : null,
-    chainId: version.chainId || null
+    chainId: version.chainId || null,
+    nodeType: version.nodeType || null,
+    versionMissing: Boolean(version.missing)
   }
+}
+
+/**
+ * Record a probe result into a rolling latency history.
+ *
+ * The median of the last few successful samples is a steadier "typical"
+ * latency than a single request, which can be skewed by one slow TCP round
+ * trip. Falls back to the latest sample when no history exists.
+ */
+export function typicalLatency (samples, latest) {
+  const values = (Array.isArray(samples) ? samples : [])
+    .filter(sample => sample && sample.ok && Number.isFinite(Number(sample.latency)))
+    .map(sample => Number(sample.latency))
+    .slice(-5)
+    .sort((a, b) => a - b)
+  if (values.length) return values[Math.floor(values.length / 2)]
+  return Number.isFinite(Number(latest)) ? Number(latest) : null
 }
 
 /**

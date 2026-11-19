@@ -24,7 +24,7 @@ vi.mock('../../src/services/hiveNodes', () => ({
   ]
 }))
 
-import { probeHiveNode, selectHiveNode } from '../../src/services/hive'
+import { probeHiveNode, probeHiveNodeFull, probeHiveNodeVersion, selectHiveNode } from '../../src/services/hive'
 
 const CONFIGURED = 'https://configured.example'
 
@@ -85,7 +85,10 @@ describe('probeHiveNode', () => {
       url: 'https://node-a.example',
       ok: true,
       latency: expect.any(Number),
-      head: 123456
+      head: 123456,
+      rpcMs: null,
+      headTime: null,
+      serverVersion: null
     })
     expect(fetchMock).toHaveBeenCalledWith(
       'https://node-a.example',
@@ -158,6 +161,93 @@ describe('probeHiveNode', () => {
       error: 'No node URL'
     })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('captures head time, server version and RPC fields when reported', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        result: {
+          head_block_number: 123456,
+          time: '2026-11-19T00:04:36',
+          server_version: '1.28.8',
+          server_latency: 7
+        }
+      })
+    })
+
+    await expect(probeHiveNode('https://node-a.example')).resolves.toMatchObject({
+      ok: true,
+      head: 123456,
+      headTime: '2026-11-19T00:04:36',
+      serverVersion: '1.28.8',
+      rpcMs: 7
+    })
+  })
+})
+
+describe('probeHiveNodeVersion', () => {
+  let fetchMock
+  let originalFetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    globalThis.fetch = originalFetch
+  })
+
+  function versionResponse (result) {
+    return { ok: true, status: 200, json: async () => ({ result }) }
+  }
+
+  it('reports the blockchain version, chain id and node type', async () => {
+    fetchMock.mockResolvedValue(versionResponse({
+      blockchain_version: '1.28.8',
+      chain_id: 'beeab0de'.padEnd(64, '0'),
+      node_type: 'mainnet'
+    }))
+
+    await expect(probeHiveNodeVersion('https://node-a.example')).resolves.toMatchObject({
+      ok: true,
+      version: '1.28.8',
+      nodeType: 'mainnet'
+    })
+  })
+
+  it('flags a missing get_version method without marking the node broken', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ error: { code: -32601, message: 'Method not found' } })
+    })
+
+    await expect(probeHiveNodeVersion('https://node-a.example')).resolves.toMatchObject({
+      ok: false,
+      missing: true
+    })
+  })
+
+  it('carries nodeType through probeHiveNodeFull', async () => {
+    fetchMock.mockImplementation((_url, { body }) => {
+      const parsed = JSON.parse(body)
+      if (parsed.method === 'condenser_api.get_version') {
+        return Promise.resolve(versionResponse({ blockchain_version: '1.28.8', node_type: 'mainnet' }))
+      }
+      return Promise.resolve(okResponse(100))
+    })
+
+    await expect(probeHiveNodeFull('https://node-a.example')).resolves.toMatchObject({
+      ok: true,
+      head: 100,
+      version: '1.28.8',
+      nodeType: 'mainnet'
+    })
   })
 })
 

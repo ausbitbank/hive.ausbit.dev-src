@@ -60,6 +60,21 @@ Notes:
 - **Caching → Configuration**: keep HTML uncached or with a short TTL so new
   deployments are picked up. Hashed JS/CSS assets can be cached for a long time.
 
+## nginx / nginx2root (CVE-2026-123007 and friends)
+
+The origin runs Debian's nginx 1.22.1 package. Keep every vhost TLS
+`listen` directive free of `http2` and never add `http2 on;`, `listen ... quic`,
+`http3 on;`, a request-derived `proxy_pass`/`resolver`, or a mail proxy block:
+
+```nginx
+listen 443 ssl;   # good
+# listen 443 ssl http2;   <- do not add: enables the CVE-2026-123007 path
+```
+
+Cloudflare terminates client HTTP/2/HTTP/3, so browsers still get it; the origin
+leg only speaks HTTP/1.1, which keeps the HTTP/2 and HTTP/3 code paths in
+nginx unreachable. `deploy/nginx/hive.ausbit.dev.conf` already follows this.
+
 ## Cloudflare Rocket Loader
 
 **Disable Rocket Loader** (Speed → Optimization → Rocket Loader: Off) for this
