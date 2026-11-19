@@ -27,7 +27,7 @@
         <div class="communities-head__actions">
           <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="load({ force: true })" />
           <q-btn v-if="isSelf" outline no-caps color="primary" icon="rss_feed" label="My full feed" to="/created/my" />
-          <q-btn v-else-if="!loading && cards.length" outline no-caps color="primary" icon="forum" label="Hive communities" to="/browse" />
+          <q-btn v-else-if="!loading && cards.length" outline no-caps color="primary" icon="forum" label="Hive communities" to="/created" />
         </div>
       </header>
 
@@ -69,11 +69,11 @@
             <template v-if="isSelf">Join a community from its page and it will show up here with its own card and feed.</template>
             <template v-else>@{{ username }} has not joined any Hive communities yet.</template>
           </p>
-          <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/browse" />
+          <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
         </q-card>
       </div>
 
-      <template v-else>
+      <template v-else-if="cards.length">
         <div class="communities-layout">
           <aside class="communities-sidebar" aria-label="Community filters">
             <section class="communities-filter">
@@ -274,10 +274,10 @@ export default {
       }), { subscribers: 0, authors: 0, pendingRewards: 0 })
     },
     filtersActive () {
-      return this.role !== 'all' || Boolean(this.query.trim())
+      return this.role !== 'all' || Boolean(String(this.query || '').trim())
     },
     visibleCards () {
-      const needle = this.query.trim().toLowerCase()
+      const needle = String(this.query || '').trim().toLowerCase()
       const filtered = this.cards.filter(card => {
         if (this.role !== 'all' && card.role !== this.role) return false
         if (!needle) return true

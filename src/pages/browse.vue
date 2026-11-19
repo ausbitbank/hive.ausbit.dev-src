@@ -168,7 +168,7 @@ const PROFILE_SUBTITLES = {
   posts: 'Latest posts from @{account}.',
   blog: 'Latest posts @{account} wrote or reblogged.',
   feed: 'Latest posts from accounts @{account} follows.',
-  replies: 'Latest replies @{account} has written.',
+  replies: 'Latest replies to @{account} from others.',
   comments: 'Latest comments @{account} has written.'
 }
 

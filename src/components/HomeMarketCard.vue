@@ -308,7 +308,12 @@
 }
 
 .home-market-row__spark {
-  flex: 1 1 auto;
+  /* The SVG has an intrinsic 160px width. Without an explicit CSS width the
+     flex allocation grows the box but leaves the drawing at its intrinsic size
+     and left-aligned, so the chart drifts over the name when the row narrows.
+     Let the element fill its flex share and shrink with it instead. */
+  flex: 1 1 30%;
+  width: 100%;
   min-width: 48px;
   max-width: 220px;
   height: 30px;

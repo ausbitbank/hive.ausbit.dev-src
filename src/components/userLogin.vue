@@ -16,7 +16,12 @@
           </q-avatar>
           <div class="account-menu__ident">
             <router-link :to="getAccountLink(loggedInUser)" class="account-menu__name" @click="closeMenu">@{{ loggedInUser }}</router-link>
-            <span class="account-menu__meta">{{ loginTypeLabel }}</span>
+            <span class="account-menu__meta">
+              {{ loginTypeLabel }}
+              <q-icon v-if="loginType === 'keychain'" name="info_outline" size="13px" class="account-menu__meta-info" aria-label="How Hive Keychain signing works">
+                <q-tooltip class="account-menu__tooltip">Keys stay in the extension. Approve each posting or active action in Keychain.</q-tooltip>
+              </q-icon>
+            </span>
           </div>
         </div>
 
@@ -62,12 +67,9 @@
               />
             </q-item-section>
           </q-item>
-          <q-item v-else-if="loginType === 'keychain'" class="account-menu__provider">
+          <q-item v-else-if="loginType === 'keychain'" class="account-menu__provider account-menu__provider--compact">
             <q-item-section avatar><q-icon name="key" color="primary" /></q-item-section>
-            <q-item-section>
-              <q-item-label>Hive Keychain connected</q-item-label>
-              <q-item-label caption>Keys stay in the extension. Approve each posting or active action in Keychain.</q-item-label>
-            </q-item-section>
+            <q-item-section>Hive Keychain</q-item-section>
           </q-item>
 
           <q-item-label header class="account-menu__heading">Your Hive</q-item-label>
@@ -209,7 +211,7 @@
 }
 
 .login-card {
-  width: 360px;
+  width: 320px;
   max-width: 94vw;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
@@ -260,12 +262,27 @@ a.account-menu__name:hover {
 }
 
 .account-menu__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
   overflow: hidden;
   color: #78909c;
   font-size: 0.72rem;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account-menu__meta-info {
+  flex: none;
+  color: #607d8b;
+  cursor: help;
+}
+
+.account-menu__provider--compact {
+  min-height: 34px;
+  color: #90a4ae;
+  font-size: 0.76rem;
 }
 
 .account-menu__voting {

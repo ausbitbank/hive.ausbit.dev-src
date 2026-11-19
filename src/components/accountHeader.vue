@@ -29,9 +29,10 @@
       </div>
       <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" v-if="showNavBar">
         <q-tabs
+          ref="tabs"
           :dense="$q.screen.lt.md"
-          :mobile-arrows="$q.screen.lt.sm === false"
-          :outside-arrows="$q.screen.lt.sm === false"
+          :mobile-arrows="tabsOverflow"
+          :outside-arrows="tabsOverflow"
           align="center"
           icons
           no-caps
@@ -273,7 +274,12 @@ export default {
   data () {
     return {
       relationship: null,
-      avatarFailed: false
+      avatarFailed: false,
+      // Arrows are only mounted once the strip actually overflows. Quasar's
+      // own check can leave a faded arrow visible on a one-pixel rounding
+      // difference, which looks like a dead control.
+      tabsOverflow: false,
+      tabsObserver: null
     }
   },
   watch: {
@@ -328,6 +334,19 @@ export default {
     userServices: defineAsyncComponent(() => import('components/userServices.vue'))
   },
   methods: {
+    observeTabs () {
+      const content = this.$refs.tabs?.$el?.querySelector('.q-tabs__content')
+      if (!content) return
+      this.measureTabs(content)
+      if (typeof ResizeObserver === 'undefined') return
+      this.tabsObserver = new ResizeObserver(() => this.measureTabs(content))
+      this.tabsObserver.observe(content)
+      for (const child of content.children) this.tabsObserver.observe(child)
+    },
+    measureTabs (content) {
+      const overflow = content.scrollWidth - content.clientWidth > 2
+      if (this.tabsOverflow !== overflow) this.tabsOverflow = overflow
+    },
     getUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
@@ -452,12 +471,19 @@ export default {
     linkFollowing: { get () { return this.account ? '/@' + this.account.name + '/following' : '#' } }
   },
   mounted () {
+    this.$nextTick(this.observeTabs)
     if (!this.account) return
     if (this.showRelationship && this.loggedInUser && this.loggedInUser !== this.account.name && this.relationship === null) {
       this.getRelationshipBetweenAccounts(this.loggedInUser, this.account.name)
     }
     if (this.showFollowCount) {
       this.getFollowCount(this.account.name)
+    }
+  },
+  beforeUnmount () {
+    if (this.tabsObserver) {
+      this.tabsObserver.disconnect()
+      this.tabsObserver = null
     }
   }
 }
