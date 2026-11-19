@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
   DEFAULT_HOME_MARKET_PREFS,
+  HOME_MARKET_CURRENCIES,
   HOME_MARKET_FX_URL,
   HOME_MARKET_PREFS_KEY,
   MAX_HOME_MARKET_COINS,
@@ -87,6 +88,17 @@ describe('home market preferences', () => {
 describe('home market forex conversion', () => {
   beforeEach(() => {
     resetForexCache()
+  })
+
+  it('gives every currency a display label and symbol', () => {
+    const ids = HOME_MARKET_CURRENCIES.map(entry => entry.id)
+    expect(ids).toEqual(['usd', 'aud', 'eur', 'gbp', 'btc', 'eth'])
+    for (const entry of HOME_MARKET_CURRENCIES) {
+      expect(typeof entry.label).toBe('string')
+      expect(entry.label.length).toBeGreaterThan(0)
+      expect(entry.label).not.toBe('undefined')
+      expect(entry.symbol.length).toBeGreaterThan(0)
+    }
   })
 
   it('recognises AUD and requests USD prices for it', () => {

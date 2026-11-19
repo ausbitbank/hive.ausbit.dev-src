@@ -459,7 +459,7 @@ export default {
     currencyOptions () {
       return HOME_MARKET_CURRENCIES.map(entry => ({
         value: entry.id,
-        label: entry.name + ' (' + entry.symbol + ')'
+        label: entry.label + ' (' + entry.symbol + ')'
       }))
     },
     symbol () {
