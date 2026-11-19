@@ -17,9 +17,97 @@
           toggle-color="primary"
           aria-label="Community feed sort"
         />
+        <q-btn
+          v-if="merged"
+          flat
+          dense
+          no-caps
+          color="primary"
+          icon="tune"
+          :label="'Sources'"
+          :aria-label="'Configure community feed sources, ' + sources.length + ' of ' + sourceCount + ' selected'"
+          @click="openSources"
+        >
+          <q-badge v-if="remainingSources" color="primary" floating>{{ sources.length }}/{{ sourceCount }}</q-badge>
+        </q-btn>
         <q-btn flat dense round icon="refresh" aria-label="Refresh community feed" title="Refresh" :loading="loading" @click="loadFeed({ force: true })" />
       </div>
     </div>
+
+    <q-dialog v-model="sourcesOpen">
+      <q-card class="community-sources">
+        <q-card-section class="community-sources__head">
+          <div>
+            <div class="home-eyebrow">Community feed</div>
+            <h2 class="community-sources__title">Sources and pinned posts</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close" v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="community-sources__body">
+          <div class="community-sources__modes" role="radiogroup" aria-label="Source selection mode">
+            <button
+              v-for="option in sourceModes"
+              :key="option.value"
+              type="button"
+              class="community-sources__mode"
+              :class="{ 'community-sources__mode--active': sourceMode === option.value }"
+              role="radio"
+              :aria-checked="sourceMode === option.value"
+              @click="setSourceMode(option.value)"
+            >
+              <strong>{{ option.label }}</strong>
+              <small>{{ option.hint }}</small>
+            </button>
+          </div>
+
+          <q-toggle
+            v-model="hidePinned"
+            label="Hide pinned community posts"
+            aria-label="Hide pinned community posts from the merged feed"
+            @update:model-value="savePrefs"
+          />
+
+          <div v-if="sourceMode === 'selected'" class="community-sources__picker">
+            <q-input
+              v-model="sourceQuery"
+              dense
+              outlined
+              clearable
+              label="Filter your communities"
+              aria-label="Filter the community source list"
+              @clear="sourceQuery = ''"
+            >
+              <template #prepend><q-icon name="search" size="18px" aria-hidden="true" /></template>
+            </q-input>
+            <div class="community-sources__list">
+              <q-checkbox
+                v-for="source in filteredSources"
+                :key="source.name"
+                :model-value="selectedNames.includes(source.name)"
+                :label="source.title + ' (c/' + source.name + ')'"
+                dense
+                @update:model-value="toggleSource(source.name)"
+              />
+              <p v-if="!filteredSources.length" class="community-sources__empty">No community matches that filter.</p>
+            </div>
+            <div class="community-sources__bulk">
+              <q-btn flat dense no-caps label="Select all" @click="selectAllSources" />
+              <q-btn flat dense no-caps label="Clear" @click="selectedNames = []; savePrefs()" />
+            </div>
+          </div>
+
+          <p class="community-sources__note">
+            {{ sources.length }} of {{ sourceCount }} communities feed this view.
+            Loading many sources makes one Hive request per community, so "Top 12" is the quick default.
+          </p>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn color="primary" no-caps label="Done" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <data-notice
       v-if="staleAt && posts.length"
@@ -83,7 +171,7 @@
       <template v-else #done>
         <div class="community-feed__more">
           <span v-if="remainingSources" class="community-feed__end">
-            The merged feed samples {{ sources.length }} of {{ sourceCount }} communities.
+            Using {{ sources.length }} of {{ sourceCount }} communities.
           </span>
           <span v-else class="community-feed__end">
             <q-icon name="check_circle" size="16px" aria-hidden="true" /> That’s the latest from your communities.
@@ -152,7 +240,17 @@ export default {
       loadingMore: false,
       exhausted: false,
       error: '',
-      staleAt: null
+      staleAt: null,
+      sourcesOpen: false,
+      sourceMode: 'auto',
+      selectedNames: [],
+      hidePinned: false,
+      sourceQuery: '',
+      sourceModes: [
+        { value: 'auto', label: 'Top 12', hint: 'The quick default' },
+        { value: 'all', label: 'All communities', hint: 'One request per community' },
+        { value: 'selected', label: 'Choose', hint: 'Pick specific communities' }
+      ]
     }
   },
   computed: {
@@ -179,14 +277,28 @@ export default {
     },
     sources () {
       if (!this.merged) return []
+      if (this.sourceMode === 'selected') {
+        return this.availableSources.filter(source => this.selectedNames.includes(source.name))
+      }
+      if (this.sourceMode === 'all') return this.availableSources
+      return this.availableSources.slice(0, FEED_SOURCES)
+    },
+    availableSources () {
       return [...this.sourceRows]
         .filter(row => Array.isArray(row) && row[0])
         .map((row, index) => ({ name: row[0], title: row[1] || row[0], role: row[2] || '', index }))
         .sort((a, b) => communityRoleWeight(b.role) - communityRoleWeight(a.role) || a.index - b.index)
-        .slice(0, FEED_SOURCES)
+    },
+    filteredSources () {
+      const needle = String(this.sourceQuery || '').trim().toLowerCase()
+      if (!needle) return this.availableSources
+      return this.availableSources.filter(source =>
+        source.name.toLowerCase().includes(needle) || source.title.toLowerCase().includes(needle)
+      )
     },
     sourcesKey () {
-      return this.sourceRows.filter(row => Array.isArray(row) && row[0]).map(row => row[0]).length
+      // Reload when the resolved source list, pinned setting or sort changes.
+      return this.sources.map(source => source.name).join('|') + ':' + (this.hidePinned ? '1' : '0')
     },
     remainingSources () {
       return Math.max(0, this.sourceCount - this.sources.length)
@@ -215,9 +327,49 @@ export default {
     }
   },
   mounted () {
+    this.loadPrefs()
     this.loadFeed()
   },
   methods: {
+    prefsKey () {
+      return 'communities:feed:prefs:' + (this.observer || this.loggedInUser || 'guest')
+    },
+    loadPrefs () {
+      const prefs = this.$q.localStorage.getItem(this.prefsKey())
+      if (!prefs || typeof prefs !== 'object') return
+      if (['auto', 'all', 'selected'].includes(prefs.sourceMode)) this.sourceMode = prefs.sourceMode
+      if (Array.isArray(prefs.selectedNames)) this.selectedNames = prefs.selectedNames.filter(Boolean)
+      this.hidePinned = Boolean(prefs.hidePinned)
+    },
+    savePrefs () {
+      this.$q.localStorage.set(this.prefsKey(), {
+        sourceMode: this.sourceMode,
+        selectedNames: this.selectedNames,
+        hidePinned: this.hidePinned
+      })
+    },
+    openSources () {
+      this.sourcesOpen = true
+    },
+    setSourceMode (mode) {
+      this.sourceMode = mode
+      if (mode === 'selected' && !this.selectedNames.length) {
+        this.selectedNames = this.availableSources.slice(0, FEED_SOURCES).map(source => source.name)
+      }
+      this.savePrefs()
+    },
+    toggleSource (name) {
+      if (this.selectedNames.includes(name)) {
+        this.selectedNames = this.selectedNames.filter(item => item !== name)
+      } else {
+        this.selectedNames = [...this.selectedNames, name]
+      }
+      this.savePrefs()
+    },
+    selectAllSources () {
+      this.selectedNames = this.availableSources.map(source => source.name)
+      this.savePrefs()
+    },
     reload () {
       this.exhausted = false
       this.loadFeed()
@@ -306,7 +458,7 @@ export default {
           return { name: source.name, title: source.title, posts: [] }
         }
       }))
-      const merged = mergeCommunityFeeds(feeds, { limit: MERGED_LIMIT })
+      const merged = mergeCommunityFeeds(feeds, { limit: MERGED_LIMIT, includePinned: !this.hidePinned })
       if (!merged.length) throw new Error('No community posts returned')
       return merged
     },
@@ -418,9 +570,107 @@ export default {
   flex-wrap: wrap;
 }
 
+.community-sources {
+  width: min(560px, 94vw);
+  border-radius: var(--radius-card);
+}
+
+.community-sources__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.community-sources__title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.community-sources__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.community-sources__modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.community-sources__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #b0bec5;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.community-sources__mode strong {
+  font-size: 0.78rem;
+}
+
+.community-sources__mode small {
+  color: #78909c;
+  font-size: 0.64rem;
+}
+
+.community-sources__mode--active {
+  border-color: rgba(79, 195, 247, 0.5);
+  background: rgba(79, 195, 247, 0.1);
+  color: #e4eaed;
+}
+
+.community-sources__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.community-sources__list {
+  display: flex;
+  flex-direction: column;
+  max-height: 34vh;
+  overflow-y: auto;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.community-sources__empty {
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.76rem;
+}
+
+.community-sources__bulk {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.community-sources__note {
+  margin: 0;
+  color: #78909c;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 599px) {
   .community-feed__head {
     align-items: flex-start;
+  }
+
+  .community-sources__modes {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

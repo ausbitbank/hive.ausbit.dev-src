@@ -219,6 +219,7 @@ export function buildCommunityCards (subscriptions, infoByName = {}, options = {
  */
 export function mergeCommunityFeeds (feeds, options = {}) {
   const limit = Math.max(1, Number(options.limit) || 30)
+  const includePinned = options.includePinned !== false
   const seen = new Set()
   const pinned = []
   const grouped = []
@@ -238,7 +239,7 @@ export function mergeCommunityFeeds (feeds, options = {}) {
         community_title: post.community_title || feed.title || name
       }
       if (post?.stats?.is_pinned) {
-        pinned.push(entry)
+        if (includePinned) pinned.push(entry)
       } else {
         posts.push(entry)
       }

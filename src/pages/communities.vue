@@ -102,9 +102,11 @@
                 dense
                 outlined
                 clearable
-                label="Find a community"
-                aria-label="Filter communities by name"
+                label="Filter joined communities"
+                hint="Search only covers communities this account already belongs to"
+                aria-label="Filter the joined communities by name"
                 autocomplete="off"
+                @clear="query = ''"
               >
                 <template #prepend>
                   <q-icon name="search" size="18px" aria-hidden="true" />

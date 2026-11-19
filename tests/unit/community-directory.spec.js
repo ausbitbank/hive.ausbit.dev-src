@@ -139,6 +139,18 @@ describe('mergeCommunityFeeds', () => {
     expect(merged.map(item => item.permlink)).toEqual(['pinned', '1'])
   })
 
+  it('can omit pinned posts from the merged feed', () => {
+    const feeds = [
+      {
+        name: 'hive-a',
+        title: 'Alpha',
+        posts: [post('hive-a', '1'), post('hive-a', 'pinned', { stats: { is_pinned: true } })]
+      }
+    ]
+    const merged = mergeCommunityFeeds(feeds, { limit: 5, includePinned: false })
+    expect(merged.map(item => item.permlink)).toEqual(['1'])
+  })
+
   it('returns an empty list for missing or malformed feeds', () => {
     expect(mergeCommunityFeeds(null)).toEqual([])
     expect(mergeCommunityFeeds([{ name: 'hive-a', posts: null }])).toEqual([])
