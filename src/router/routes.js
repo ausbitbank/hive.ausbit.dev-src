@@ -62,7 +62,9 @@ const routes = [
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
       { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
-      { path: 'c/:username', name: 'community', component: () => import('pages/browse.vue') }
+      { path: 'c/:username', name: 'community', component: () => import('pages/browse.vue') },
+      { path: 'shorts/:formatId', name: 'short-form', component: () => import('pages/ShortForm.vue'), props: route => ({ formatId: String(route.params.formatId || '').toLowerCase() }) },
+      { path: 'shorts/:formatId/@:author/:permlink', name: 'short-form-post', component: () => import('pages/ShortFormPost.vue'), props: route => ({ formatId: String(route.params.formatId || '').toLowerCase(), author: route.params.author, permlink: route.params.permlink }) }
     ]
   },
   {

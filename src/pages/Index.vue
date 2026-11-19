@@ -17,6 +17,9 @@
           <router-link class="home-link" to="/browse">
             <q-icon name="explore" size="16px" aria-hidden="true" /> Browse posts
           </router-link>
+          <router-link class="home-link" to="/shorts/snaps">
+            <q-icon name="bolt" size="16px" aria-hidden="true" /> Short posts
+          </router-link>
           <router-link class="home-link" to="/blocks">
             <q-icon name="view_agenda" size="16px" aria-hidden="true" /> Blocks
           </router-link>

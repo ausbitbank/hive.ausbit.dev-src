@@ -574,6 +574,12 @@ export default {
           to: '/browse'
         },
         {
+          title: 'Short posts',
+          caption: 'snaps, waves, threads, D.Buzz',
+          icon: 'bolt',
+          to: '/shorts/snaps'
+        },
+        {
           title: 'Latest blocks',
           caption: 'live chain activity',
           icon: 'view_agenda',
