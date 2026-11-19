@@ -54,7 +54,7 @@ export async function probeHiveNode (url, timeoutMs = HIVE_NODE_PROBE_TIMEOUT_MS
     const data = await response.json()
     const head = Number(data?.result?.head_block_number)
     if (!Number.isFinite(head) || head <= 0) {
-      return { url, ok: false, latency, error: data?.error?.message || 'Invalid response' }
+      return { url, ok: false, answered: true, latency, error: data?.error?.message || 'Invalid response' }
     }
 
     const rpcMs = Number(data?.result?.server_latency ?? data?.result?.latency)
@@ -189,7 +189,9 @@ export async function selectHiveNode (configuredUrl) {
   const probes = await Promise.all(candidates.map(url => probeHiveNode(url)))
 
   const configuredProbe = probes.find(probe => probe.url === configured)
-  if (configuredProbe?.ok) return configured
+  // A configured node that answers but has no readable head is degraded, not
+  // dead, so keep it rather than forcing an unnecessary switch to a fallback.
+  if (configuredProbe?.ok || configuredProbe?.answered) return configured
 
   const healthy = probes
     .filter(probe => probe.ok)

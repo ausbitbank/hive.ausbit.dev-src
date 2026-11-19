@@ -212,7 +212,10 @@ test('notifications panel pages inside its own scroll area', async ({ page }) =>
           result.push({
             id,
             type: 'vote',
-            date: '2026-01-01T00:00:00',
+            // Distinct timestamps: notifications merge with a sort that is not
+            // stable across equal keys, so a shared date reshuffles every page
+            // and `last_id` paging loses rows.
+            date: '2026-01-01T00:' + String(id).padStart(2, '0') + ':00',
             msg: JSON.stringify({ type: 'vote', voter: 'alice', author: 'poster', permlink: 'post-' + id }),
             score: 10,
             url: '/@poster/post-' + id

@@ -304,6 +304,20 @@ describe('selectHiveNode', () => {
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
 
+  it('keeps a configured node that answers without a readable head', async () => {
+    // Responses without `head_block_number` (e.g. a request intercept in the
+    // browser) still prove the node is reachable, so switching away would only
+    // rewrite the client mid-flight.
+    fetchMock.mockImplementation(url => {
+      if (url === CONFIGURED) {
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ jsonrpc: '2.0', id: 1, result: {} }) })
+      }
+      return Promise.resolve(okResponse(200))
+    })
+
+    await expect(selectHiveNode(CONFIGURED)).resolves.toBe(CONFIGURED)
+  })
+
   it('launches every probe in parallel before awaiting any response', async () => {
     const pending = new Map()
     fetchMock.mockImplementation(url => {

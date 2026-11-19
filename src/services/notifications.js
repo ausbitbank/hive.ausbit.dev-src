@@ -62,9 +62,10 @@ export function notificationTimestamp (value) {
   if (!value) return 0
   if (typeof value === 'number') return value
   const text = String(value).trim()
-  const normalised = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}$/.test(text)
-    ? text.replace(' ', 'T') + 'Z'
-    : text
+  const bare = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}$/.test(text)
+  // A bare timestamp with no zone is UTC from bridge; anything else (such as an
+  // appended "+00:00") is parsed as written.
+  const normalised = bare ? text.replace(' ', 'T') + 'Z' : text
   const parsed = Date.parse(normalised)
   return Number.isFinite(parsed) ? parsed : 0
 }

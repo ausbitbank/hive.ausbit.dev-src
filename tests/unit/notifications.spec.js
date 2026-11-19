@@ -48,6 +48,7 @@ describe('notification helpers', () => {
   it('parses both bridge date forms', () => {
     expect(notificationTimestamp('2026-11-17T13:03:01')).toBe(Date.parse('2026-11-17T13:03:01Z'))
     expect(notificationTimestamp('2026-11-17 13:03:01')).toBe(Date.parse('2026-11-17T13:03:01Z'))
+    expect(notificationTimestamp('2026-11-17T13:03:01+00:00')).toBe(Date.parse('2026-11-17T13:03:01Z'))
     expect(notificationTimestamp('')).toBe(0)
     expect(notificationTimestamp('nope')).toBe(0)
   })
