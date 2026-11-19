@@ -43,9 +43,10 @@ workflows.
 
 ## Open work
 
-There is no committed workstream. New work is selected from live usage and issue
-triage, then shipped as the next W-number with its own
-`docs/workstreams/W*-*.md` record.
+W34 (the 2026-11-19 issue sweep) is complete for the SPA surface; see
+`docs/workstreams/W34-issue-sweep.md`. The only open follow-ups are deployment
+items: the Cloudflare metadata Worker for chain-derived link previews and the
+nginx/CSP rollout.
 
 ## Definition of done
 
