@@ -31,7 +31,14 @@
         @clear="clearFilters"
       />
 
-      <section class="net-section" aria-labelledby="witness-list-title">
+      <nav class="witness-jump" aria-label="Witness page sections">
+        <a href="#witness-directory">Directory</a>
+        <a href="#witness-analytics">Governance analytics</a>
+        <a href="#witness-voter-segments">Voter segments</a>
+        <a href="#witness-calculator">Vote weight calculator</a>
+      </nav>
+
+      <section id="witness-directory" class="net-section" aria-labelledby="witness-list-title">
         <div class="net-section__head">
           <div>
             <h2 id="witness-list-title" class="net-section__title">
@@ -102,12 +109,13 @@
       </section>
 
       <witness-analytics
+        id="witness-analytics"
         :witnesses="witnessRows"
         :global-props="globalProps"
         :hardfork-version="hardforkVersion"
       />
 
-      <section class="net-section" aria-labelledby="witness-calculator-title">
+      <section id="witness-calculator" class="net-section" aria-labelledby="witness-calculator-title">
         <div class="net-section__head">
           <div>
             <h2 id="witness-calculator-title" class="net-section__title">Vote weight calculator</h2>
@@ -169,6 +177,30 @@
 </template>
 
 <style scoped>
+.witness-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.witness-jump a {
+  padding: 0.28rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: #90a4ae;
+  font-size: 0.74rem;
+  text-decoration: none;
+}
+
+.witness-jump a:hover,
+.witness-jump a:focus-visible {
+  color: #e4eaed;
+  border-color: rgba(79, 195, 247, 0.4);
+  background: rgba(79, 195, 247, 0.08);
+}
+
 .witness-list-card {
   overflow: hidden;
   border-radius: var(--radius-card);
@@ -218,6 +250,15 @@
   margin-top: 0.65rem;
   color: #78909c;
   font-size: 0.72rem;
+}
+</style>
+
+<style>
+#witness-directory,
+#witness-analytics,
+#witness-voter-segments,
+#witness-calculator {
+  scroll-margin-top: 84px;
 }
 </style>
 

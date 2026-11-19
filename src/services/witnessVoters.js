@@ -67,20 +67,34 @@ async function requestWitnessVotes (params, options) {
 
 export async function fetchWitnessVoters (owner, options = {}) {
   if (!owner) return []
-  const limit = Math.max(1, Math.min(1000, Number(options.limit) || 1000))
-  const votes = await requestWitnessVotes({
-    start: [owner, ''],
-    limit,
-    order: 'by_witness_account'
-  }, options)
-  return votes
-    .map(vote => vote?.account)
-    .filter(Boolean)
+  const max = Math.max(1, Math.min(5000, Number(options.limit) || 1000))
+  const pageSize = 1000
+  const voters = []
+  let start = ''
+  while (voters.length < max) {
+    const votes = await requestWitnessVotes({
+      start: [owner, start],
+      limit: Math.min(pageSize, max - voters.length),
+      order: 'by_witness_account'
+    }, options)
+    const page = votes
+      .map(vote => vote?.account)
+      .filter(Boolean)
+    if (!page.length) break
+    for (const name of page) {
+      if (!voters.includes(name)) voters.push(name)
+      if (voters.length >= max) break
+    }
+    const next = page[page.length - 1]
+    if (page.length < pageSize || !next || next === start) break
+    start = next
+  }
+  return voters
 }
 
 export async function fetchWitnessVoterSample (owner, options = {}) {
   const voters = await fetchWitnessVoters(owner, options)
-  const accountLimit = Math.max(1, Math.min(500, Number(options.accountLimit) || 250))
+  const accountLimit = Math.max(1, Math.min(5000, Number(options.accountLimit) || 250))
   const names = voters.slice(0, accountLimit)
   const accounts = names.length ? await fetchAccounts(names) : []
   return { voters, accounts, sampledNames: names.length }

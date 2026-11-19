@@ -225,7 +225,7 @@
       </q-card>
     </div>
 
-    <witness-voter-segments :witnesses="witnesses" :global-props="globalProps" />
+    <witness-voter-segments id="witness-voter-segments" :witnesses="witnesses" :global-props="globalProps" />
   </section>
 </template>
 

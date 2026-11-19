@@ -22,6 +22,18 @@
             aria-label="Witness to sample voters for"
             class="voter-segments__select"
           />
+          <q-select
+            v-model="sampleSize"
+            :options="sampleOptions"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            label="Accounts"
+            aria-label="Number of voter accounts to resolve"
+            class="voter-segments__sample"
+          />
           <q-btn
             no-caps
             color="primary"
@@ -117,8 +129,9 @@
         </div>
 
         <p class="voter-segments__note">
-          Up to 1,000 voter records are returned; the first {{ formatNumber(sampledNames) }} are resolved to accounts for stake and age.
-          Voters outside the sample still count in the returned total.
+          Up to {{ formatNumber(sampleCap) }} voter records are returned; the first {{ formatNumber(sampledNames) }} are resolved to accounts for stake and age.
+          <template v-if="sampleSize === 'all'">Exhaustive mode resolves every returned voter, so it takes longer.</template>
+          <template v-else>Voters outside the sample still count in the returned total.</template>
         </p>
       </template>
     </q-card-section>
@@ -131,6 +144,13 @@ import {
   voterSegments
 } from 'src/services/witnessVoters'
 import { formatHp, formatPercent } from 'src/services/witnesses'
+
+const SAMPLE_OPTIONS = [
+  { label: '250 accounts', value: 250 },
+  { label: '1,000 accounts', value: 1000 },
+  { label: '2,500 accounts', value: 2500 },
+  { label: 'All voters (up to 5,000)', value: 'all' }
+]
 
 export default {
   name: 'WitnessVoterSegments',
@@ -146,10 +166,15 @@ export default {
       accounts: [],
       sampledNames: 0,
       loading: false,
-      error: ''
+      error: '',
+      sampleSize: 250,
+      sampleOptions: SAMPLE_OPTIONS
     }
   },
   computed: {
+    sampleCap () {
+      return this.sampleSize === 'all' ? 5000 : Math.max(1000, Number(this.sampleSize) || 250)
+    },
     witnessOptions () {
       return this.witnesses
         .filter(witness => witness?.owner)
@@ -188,7 +213,11 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const data = await fetchWitnessVoterSample(this.selected, { limit: 1000, accountLimit: 250 })
+        const target = this.sampleSize === 'all' ? 5000 : Number(this.sampleSize)
+        const data = await fetchWitnessVoterSample(this.selected, {
+          limit: this.sampleCap,
+          accountLimit: target
+        })
         this.voters = data.voters
         this.accounts = data.accounts
         this.sampledNames = data.sampledNames
@@ -249,6 +278,10 @@ export default {
 
 .voter-segments__select {
   width: min(260px, 70vw);
+}
+
+.voter-segments__sample {
+  width: min(180px, 60vw);
 }
 
 .voter-segments__state {
