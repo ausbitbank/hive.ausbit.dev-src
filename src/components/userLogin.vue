@@ -7,7 +7,7 @@
     </q-avatar>
     <span class="account-trigger__name gt-xs">{{ loggedInUser }}</span>
     <q-icon name="expand_more" size="16px" class="account-trigger__chevron gt-xs" aria-hidden="true" />
-    <q-popup-proxy ref="menu" @before-show="refreshSmartlockStatus" class="account-menu-popup">
+    <q-popup-proxy ref="menu" @before-show="onMenuOpen" class="account-menu-popup">
       <q-card flat class="login-card">
       <div v-if="loggedInUser">
         <div class="account-menu__head">
@@ -31,6 +31,14 @@
             <span class="account-menu__voting-value">{{ votePower }}%</span>
           </div>
           <q-linear-progress dark rounded size="6px" :value="votePower / 100" color="primary" class="account-menu__voting-bar" aria-label="Voting power" />
+          <div class="account-menu__voting-meta">
+            <span title="Estimated value of a 100% vote at your current voting power">
+              <q-icon name="paid" size="13px" aria-hidden="true" /> {{ fullVoteLabel }} full vote
+            </span>
+            <span title="Voting power regenerates 20% per day">
+              <q-icon name="schedule" size="13px" aria-hidden="true" /> Full in {{ rechargeLabel }}
+            </span>
+          </div>
         </div>
 
         <q-list dense class="account-menu" role="navigation" aria-label="Account menu">
@@ -316,6 +324,24 @@ a.account-menu__name:hover {
   font-variant-numeric: tabular-nums;
 }
 
+.account-menu__voting-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  color: #90a4ae;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-menu__voting-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
 .account-menu {
   padding: 0.25rem 0;
 }
@@ -495,6 +521,8 @@ import smartlock from 'components/smartlock/index.js'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
+import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
+import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
 
 export default {
   name: 'userLogin',
@@ -508,6 +536,9 @@ export default {
       rememberLogin: false,
       settingsDialog: false,
       smartlockUnlocked: false,
+      rewardFund: null,
+      medianHistory: null,
+      votingStatsLoaded: false,
       postkey: '',
       activekey: '',
       memokey: '',
@@ -551,6 +582,22 @@ export default {
         return null
       }
     },
+    fullVoteValue () {
+      return estimateVoteValueUsd({
+        account: this.account,
+        rewardFund: this.rewardFund,
+        medianHistory: this.medianHistory,
+        votingPower: this.votePower
+      })
+    },
+    fullVoteLabel () {
+      if (!this.votingStatsLoaded) return '…'
+      return formatVoteValue(this.fullVoteValue)
+    },
+    rechargeLabel () {
+      if (this.votePower === null) return '—'
+      return formatRecharge(vpRechargeSeconds(this.votePower))
+    },
     loginTypeLabel () {
       if (this.loginType === 'smartlock') return 'Signed in with SmartLock'
       if (this.loginType === 'keychain') return 'Signed in with Hive Keychain'
@@ -578,6 +625,25 @@ export default {
     }
   },
   methods: {
+    onMenuOpen () {
+      this.refreshSmartlockStatus()
+      this.refreshVotingStats()
+    },
+    async refreshVotingStats () {
+      if (!this.loggedInUser) return
+      try {
+        const [fund, median] = await Promise.all([
+          this.rewardFund || apiGetRewardFund('post'),
+          this.medianHistory || apiGetMedianHistoryPrice()
+        ])
+        if (fund) this.rewardFund = fund
+        if (median) this.medianHistory = median
+      } catch (error) {
+        console.error('Failed to load vote value data', error)
+      } finally {
+        this.votingStatsLoaded = true
+      }
+    },
     setUsername (user) { this.username = user },
     openSettings () {
       this.$refs.menu?.hide?.()
