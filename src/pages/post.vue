@@ -234,6 +234,25 @@
         </aside>
 
         <comments class="post-comments" :author="author" :permlink="permlink" :comment-count="commentCount" :refresh-token="commentRefreshToken" />
+
+        <section v-if="similarPosts.length" class="home-card home-panel post-similar" aria-labelledby="post-similar-title">
+          <div class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">Semantic</div>
+              <h2 id="post-similar-title" class="home-panel__title">Similar posts</h2>
+            </div>
+          </div>
+          <div class="home-panel__body post-similar__body">
+            <ul class="post-similar__list">
+              <li v-for="item in similarPosts" :key="item.author + '/' + item.permlink">
+                <router-link :to="'/@' + item.author + '/' + item.permlink" class="post-similar__link">
+                  <span class="post-similar__title">{{ item.title || excerpt(item.body) || 'Untitled post' }}</span>
+                  <span class="post-similar__meta">@{{ item.author }} · {{ item.created ? createdLabel(item.created) : 'Hive' }}</span>
+                </router-link>
+              </li>
+            </ul>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -914,6 +933,46 @@
     display: none;
   }
 }
+
+.post-similar__body {
+  padding-top: 0.4rem;
+}
+
+.post-similar__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-similar__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.02);
+  text-decoration: none;
+}
+
+.post-similar__link:hover {
+  border-color: rgba(129, 212, 250, 0.4);
+}
+
+.post-similar__title {
+  color: #e4eaed;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.post-similar__meta {
+  color: #78909c;
+  font-size: 0.7rem;
+}
 </style>
 
 <script>
@@ -931,6 +990,7 @@ import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
 import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
 import { readCrossPostMetadata } from 'src/services/publish'
+import { fetchHiveSenseSimilar } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 
 export default {
@@ -956,6 +1016,7 @@ export default {
       showReply: false,
       deleteOpen: false,
       commentRefreshToken: 0,
+      similarPosts: [],
       error: null
     }
   },
@@ -1095,6 +1156,28 @@ export default {
       if (category && category.startsWith('hive-') && !this.$hiveStore.$state.communityInfo[category]) {
         this.$hiveStore.getCommunityInfo(category)
       }
+      this.loadSimilarPosts()
+    },
+    loadSimilarPosts () {
+      this.similarPosts = []
+      if (!this.author || !this.permlink) return
+      fetchHiveSenseSimilar(this.author, this.permlink, { limit: 6 })
+        .then(response => {
+          if (response?.ok) {
+            this.similarPosts = (response.posts || [])
+              .filter(item => !(item.author === this.author && item.permlink === this.permlink))
+              .slice(0, 6)
+          }
+        })
+        .catch(() => {})
+    },
+    createdLabel (created) {
+      return created ? moment.utc(created).format('D MMM YYYY') : 'Hive'
+    },
+    excerpt (body) {
+      if (!body) return ''
+      const text = String(body).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      return text.length > 90 ? text.slice(0, 87).trimEnd() + '…' : text
     },
     getPostMeta (post) {
       if (!post || !post.json_metadata) return {}

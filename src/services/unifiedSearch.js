@@ -101,7 +101,8 @@ export function parseSearchState (search = '') {
     sortOrder: params.get('order') || 'desc',
     window: params.get('window') || 'all',
     style: params.get('style') || 'cards',
-    page: params.get('page') || 1
+    page: params.get('page') || 1,
+    smart: params.get('smart') !== '0'
   })
 }
 
@@ -131,7 +132,8 @@ export function normalizeSearchState (state = {}) {
     sortOrder,
     window: windowKey,
     style,
-    page
+    page,
+    smart: state.smart !== false
   }
 }
 
@@ -148,6 +150,7 @@ export function searchToQuery (state = {}) {
   if (normalized.window !== 'all') params.set('window', normalized.window)
   if (normalized.style !== 'cards') params.set('style', normalized.style)
   if (normalized.page > 1) params.set('page', String(normalized.page))
+  if (!normalized.smart) params.set('smart', '0')
   return params.toString()
 }
 
@@ -320,6 +323,39 @@ export function rankPosts (posts, { query = '', sort = 'relevance', period = 'al
 }
 
 /**
+ * Merge semantic (HiveSense) results with locally ranked keyword results.
+ *
+ * HiveSense returns posts in relevance order with no score, so its ordering is
+ * kept: semantic posts come first in the order given, then keyword posts that
+ * are not already present, ordered by the local ranking. Period/facet filters
+ * are still applied so the tabs and sidebar keep working.
+ */
+export function mergeSemanticPosts (semanticPosts, keywordPosts, { period = 'all', tags = [], communities = [], authors = [], now = Date.now() } = {}) {
+  const facets = { tags, communities, authors }
+  const seen = new Set()
+  const merged = []
+
+  const semantic = filterByPeriod(filterByFacets(semanticPosts || [], facets), period, now)
+  for (const post of semantic) {
+    if (!post || !post.author || !post.permlink) continue
+    const key = post.author + '/' + post.permlink
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push({ ...post, semantic: true })
+  }
+
+  for (const post of keywordPosts || []) {
+    if (!post || !post.author || !post.permlink) continue
+    const key = post.author + '/' + post.permlink
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push({ ...post, semantic: false })
+  }
+
+  return merged
+}
+
+/**
  * Convert a typed query into specific search actions. `@user`, `#tag`,
  * block numbers, tx ids and proposal commands are handled directly; other
  * input becomes keyword, tag and community lookups.
@@ -420,9 +456,15 @@ export function buildSearchPlan (query) {
     return plan
   }
 
+  // Free text (spaces, punctuation) is not a tag or community slug: passing it
+  // as one makes `bridge.get_ranked_posts` reject the request. Only single valid
+  // tag tokens are treated as tags; the rest rely on post search + facets.
   plan.posts = text
-  plan.tags = text
-  plan.communities = text
+  const tagToken = text.toLowerCase().replace(/^#/, '')
+  if (/^[a-z0-9][a-z0-9-]{0,39}$/.test(tagToken)) {
+    plan.tags = tagToken
+    plan.communities = tagToken
+  }
   return plan
 }
 

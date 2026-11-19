@@ -11,6 +11,7 @@ import {
   buildSearchPlan,
   exploreFacets,
   filterByFacets,
+  mergeSemanticPosts,
   normalizeSearchState,
   rankAccounts,
   rankCommunities,
@@ -26,6 +27,8 @@ import {
   fetchAccounts,
   fetchBlockHeader,
   fetchCommunitySearch,
+  fetchHiveSenseAuthors,
+  fetchHiveSenseSearch,
   fetchPostSearch,
   fetchWitnessesByVote
 } from './chainData'
@@ -97,7 +100,9 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
     proposals: emptyGroup('Proposals'),
     witnesses: emptyGroup('Witnesses'),
     authorContext: author ? { author, facets: null } : null,
-    analytics: null
+    analytics: null,
+    semantic: { attempted: false, ok: false, count: 0 },
+    recommendedAuthors: []
   }
 
   if (!text) return result
@@ -127,30 +132,82 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   }
 
   let postCandidates = null
+  let postsPromise = null
   if (include('posts') && (plan.posts || author)) {
+    postsPromise = fetchPostSearch(author ? { ...plan, tags: '', communities: '', accounts: '' } : plan, { force })
+      .then(posts => {
+        postCandidates = posts
+        result.posts.items = rankPosts(posts, {
+          query: searchableQuery(plan),
+          sort: filters.sort,
+          period: filters.period,
+          tags: filters.tags,
+          communities: filters.communities,
+          authors: filters.authors
+        }).slice(0, RESULT_LIMITS.posts)
+      })
+      .catch(() => { result.posts.error = 'Posts could not be loaded.' })
+    tasks.push(postsPromise)
+  }
+
+  // Smart search: add HiveSense semantic results for free-text keyword queries.
+  // Semantic ordering is preserved and placed ahead of the keyword results.
+  const useSemantic = filters.smart && plan.kind === 'keyword' && include('posts') && plan.query.length >= 2
+  if (useSemantic) {
+    result.semantic.attempted = true
     tasks.push(
-      fetchPostSearch(author ? { ...plan, tags: '', communities: '', accounts: '' } : plan, { force })
-        .then(posts => {
-          postCandidates = posts
-          result.posts.items = rankPosts(posts, {
-            query: searchableQuery(plan),
-            sort: filters.sort,
+      Promise.allSettled([fetchHiveSenseSearch(plan.query, { limit: RESULT_LIMITS.posts * 3, force }), postsPromise])
+        .then(([response]) => {
+          const data = response.status === 'fulfilled' ? response.value : null
+          if (!data?.ok || !Array.isArray(data.posts) || !data.posts.length) return
+          result.semantic.ok = true
+          result.semantic.count = data.posts.length
+          const keyword = result.posts.items.length
+            ? result.posts.items
+            : rankPosts(postCandidates || [], {
+              query: plan.query,
+              sort: filters.sort,
+              period: filters.period,
+              tags: filters.tags,
+              communities: filters.communities,
+              authors: filters.authors
+            })
+          result.posts.items = mergeSemanticPosts(data.posts, keyword, {
             period: filters.period,
             tags: filters.tags,
             communities: filters.communities,
             authors: filters.authors
           }).slice(0, RESULT_LIMITS.posts)
+          if (result.posts.items.length) result.posts.error = ''
         })
-        .catch(() => { result.posts.error = 'Posts could not be loaded.' })
+        .catch(() => {})
     )
+  }
+
+  // Author expertise hint for keyword and tag searches.
+  if (include('posts') && (plan.kind === 'keyword' || plan.kind === 'tag') && filters.smart) {
+    const topic = plan.kind === 'tag' ? plan.tags : plan.query
+    if (topic && topic.length >= 2) {
+      tasks.push(
+        fetchHiveSenseAuthors(topic, { limit: 6, force })
+          .then(response => {
+            if (response?.ok) result.recommendedAuthors = response.authors
+          })
+          .catch(() => {})
+      )
+    }
   }
 
   if (include('tags') && (plan.tags || plan.kind === 'keyword')) {
     tasks.push(
-      (plan.tags ? fetchPostSearch({ ...plan, communities: '' }, { force }) : Promise.resolve([]))
-        .then(posts => {
+      Promise.allSettled([plan.tags ? fetchPostSearch({ ...plan, communities: '' }, { force }) : Promise.resolve([]), postsPromise])
+        .then(([feed]) => {
+          const feedPosts = feed.status === 'fulfilled' ? feed.value : []
+          const basePosts = Array.isArray(feedPosts) && feedPosts.length
+            ? feedPosts
+            : (result.posts.items || [])
           const needle = plan.tags || plan.query
-          result.tags.items = tagFacets(posts, needle, { limit: 24 })
+          result.tags.items = tagFacets(basePosts, needle, { limit: 24 })
             .filter(row => !needle || row.tag.includes(needle) || row.count > 1)
             .slice(0, RESULT_LIMITS.tags)
         })

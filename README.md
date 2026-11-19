@@ -34,7 +34,7 @@ Wallet:
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
-| `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics and saved searches |
+| `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |

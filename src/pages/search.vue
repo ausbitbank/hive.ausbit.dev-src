@@ -105,6 +105,10 @@
                 <h2 :id="'search-group-' + group.id" class="home-panel__title">{{ group.label }}</h2>
               </div>
               <div class="home-panel__actions">
+                <span v-if="group.id === 'posts' && result?.semantic?.ok" class="search-semantic-badge">
+                  <q-icon name="auto_awesome" size="13px" aria-hidden="true" />
+                  Semantic
+                </span>
                 <router-link v-if="group.more" :to="group.more" class="home-panel__link">View all</router-link>
               </div>
             </div>
@@ -200,6 +204,29 @@
           </div>
         </section>
 
+        <section v-if="recommendedAuthors.length" class="search-authors home-card home-panel" aria-labelledby="search-authors-title">
+          <div class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">Written by experts</div>
+              <h2 id="search-authors-title" class="home-panel__title">Authors who write about this</h2>
+            </div>
+          </div>
+          <div class="home-panel__body search-authors__body">
+            <p class="search-authors__hint">Ranked by thematic specialisation from the HiveSense author index.</p>
+            <div class="search-chips">
+              <button
+                v-for="account in recommendedAuthors"
+                :key="account"
+                type="button"
+                class="search-chip"
+                @click="filterAuthor(account)"
+              >
+                @{{ account }}
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section v-if="savedSearches.length" class="search-saved home-card home-panel" aria-labelledby="search-saved-title">
           <div class="home-panel__head">
             <div>
@@ -274,6 +301,19 @@
               aria-label="Posting window"
               @update:model-value="setPeriod"
             />
+            <div class="search-smart">
+              <q-toggle
+                :model-value="filters.smart"
+                label="Smart search"
+                color="primary"
+                aria-label="Use semantic search for posts"
+                @update:model-value="setSmart"
+              />
+              <p class="search-smart__hint">
+                Adds AI semantic matches (HiveSense) that understand meaning, not just
+                keywords. Turns off automatically when no node offers it.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -722,6 +762,45 @@
   line-height: 1.35;
 }
 
+.search-smart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.search-smart__hint {
+  margin: 0;
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.search-semantic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgba(129, 212, 250, 0.35);
+  border-radius: var(--radius-pill);
+  color: #81d4fa;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.search-authors__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search-authors__hint {
+  margin: 0;
+  color: #90a4ae;
+  font-size: 0.74rem;
+}
+
 .search-keys {
   display: flex;
   flex-direction: column;
@@ -969,7 +1048,7 @@ export default {
           title: post.title || 'Untitled post',
           description: '@' + post.author + ' · ' + moment.utc(post.created).fromNow() + ' · ' + (post.community_title || post.category || 'Hive'),
           badge: post.pending_payout_value || null,
-          icon: 'article',
+          icon: post.semantic ? 'auto_awesome' : 'article',
           path: '/@' + post.author + '/' + post.permlink
         })),
         error: result.posts.error
@@ -1102,6 +1181,9 @@ export default {
     },
     analytics () {
       return this.result?.analytics || null
+    },
+    recommendedAuthors () {
+      return this.result?.recommendedAuthors || []
     },
     cadenceSummary () {
       if (!this.analytics) return ''
@@ -1236,6 +1318,9 @@ export default {
     },
     setPeriod (period) {
       this.pushState({ ...this.filters, period })
+    },
+    setSmart (smart) {
+      this.pushState({ ...this.filters, smart: Boolean(smart) })
     },
     filterTag (tag, { toggle = false } = {}) {
       const tags = toggle ? toggleFacet(this.filters.tags, tag) : [String(tag).replace(/^#/, '').toLowerCase()]

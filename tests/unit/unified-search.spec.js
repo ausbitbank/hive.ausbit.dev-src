@@ -113,12 +113,17 @@ describe('search plan', () => {
     expect(buildSearchPlan('https://peakd.com/@alice/hello')).toMatchObject({ kind: 'post' })
   })
 
-  it('treats other input as a keyword, tag and community search', () => {
+  it('treats free text as a post search without using it as a tag', () => {
     expect(buildSearchPlan('hive photography')).toMatchObject({
       kind: 'keyword',
       posts: 'hive photography',
-      tags: 'hive photography',
-      communities: 'hive photography'
+      tags: null,
+      communities: null
+    })
+    expect(buildSearchPlan('landing on the moon')).toMatchObject({
+      kind: 'keyword',
+      posts: 'landing on the moon',
+      tags: null
     })
     expect(buildSearchPlan('')).toMatchObject({ kind: 'keyword', query: '' })
   })

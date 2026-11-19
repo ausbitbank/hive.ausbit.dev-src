@@ -18,6 +18,7 @@ import {
   bridgeRequest
 } from './api'
 import { searchReadKey } from './unifiedSearch'
+import { fetchSimilarPosts, resolveHiveSenseHosts, searchHiveSenseAuthors, searchHiveSensePosts } from './hiveSense'
 
 export const CACHE_TTL = {
   globalProps: 15000,
@@ -393,4 +394,51 @@ export function fetchBlockHeader (blockNum, { force = false } = {}) {
 
 export function invalidateSearchCache () {
   return invalidateCache('search:')
+}
+
+// --- HiveSense semantic search --------------------------------------------
+//
+// These reads degrade to an empty list when the service is unreachable so the
+// caller keeps whatever local keyword results it already has.
+
+async function hiveSenseHosts () {
+  try {
+    return await resolveHiveSenseHosts()
+  } catch {
+    return undefined
+  }
+}
+
+/** Semantic post results for a free-text query, in HiveSense relevance order. */
+export function fetchHiveSenseSearch (query, { limit = 20, force = false } = {}) {
+  const text = String(query || '').trim().toLowerCase()
+  if (text.length < 2) return Promise.resolve({ ok: false, posts: [], error: 'Query too short' })
+  const key = 'search:hivesense:' + text + ':' + limit
+  return loadCached(key, async () => {
+    const hosts = await hiveSenseHosts()
+    return searchHiveSensePosts(text, { limit, hosts })
+  }, { ttl: CACHE_TTL.searchPosts, force })
+}
+
+/** Posts semantically similar to one post. */
+export function fetchHiveSenseSimilar (author, permlink, { limit = 8, force = false } = {}) {
+  const name = String(author || '').trim().toLowerCase().replace(/^@/, '')
+  const slug = String(permlink || '').trim()
+  if (!name || !slug) return Promise.resolve({ ok: false, posts: [], error: 'Missing post' })
+  const key = 'hivesense:similar:' + name + '/' + slug + ':' + limit
+  return loadCached(key, async () => {
+    const hosts = await hiveSenseHosts()
+    return fetchSimilarPosts(name, slug, { limit, hosts })
+  }, { ttl: CACHE_TTL.searchPosts, force })
+}
+
+/** Accounts who write about a topic, for the search expertise hint. */
+export function fetchHiveSenseAuthors (topic, { limit = 6, force = false } = {}) {
+  const text = String(topic || '').trim().toLowerCase()
+  if (text.length < 2) return Promise.resolve({ ok: false, authors: [], error: 'Topic too short' })
+  const key = 'search:hivesense:authors:' + text + ':' + limit
+  return loadCached(key, async () => {
+    const hosts = await hiveSenseHosts()
+    return searchHiveSenseAuthors(text, { limit, hosts })
+  }, { ttl: CACHE_TTL.searchPosts, force })
 }
