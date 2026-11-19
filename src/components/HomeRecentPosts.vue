@@ -2,10 +2,10 @@
   <q-card flat bordered class="home-card home-panel">
     <q-card-section class="home-panel__head">
       <div>
-        <div class="home-eyebrow">From the author</div>
-        <h2 class="home-panel__title">@{{ resolvedAccount }}</h2>
+        <div class="home-eyebrow">{{ eyebrow }}</div>
+        <h2 class="home-panel__title">{{ heading }}</h2>
       </div>
-      <router-link :to="'/@' + resolvedAccount + '/blog'" class="home-panel__link">Blog</router-link>
+      <router-link :to="feed.link" class="home-panel__link">{{ linkLabel }}</router-link>
     </q-card-section>
 
     <div v-if="staleAt" class="home-panel__notice">
@@ -60,7 +60,7 @@
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
 import DataNotice from 'components/ui/DataNotice.vue'
-import { fetchAccountPosts } from 'src/services/chainData'
+import { fetchFeedPosts, resolveAccountFeed } from 'src/services/postFeed'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
 const SNAPSHOT_KEY = 'home:posts:recent:'
@@ -72,10 +72,18 @@ export default {
     // Whose recent posts to show. Empty means the signed-in user, falling back
     // to the site author for guests.
     account: { type: String, default: '' },
+    // An exact Hive listing path such as /@ausbitbank/feed, /c/hive-dev or
+    // /shorts/threads. Overrides the account and feed type when set.
+    reference: { type: String, default: '' },
+    // Account feed type: blog | posts | feed | replies | comments.
+    sort: { type: String, default: 'blog' },
     // Guest fallback when `account` is empty.
     fallbackAccount: { type: String, default: 'ausbitbank' },
     // Number of posts to show.
-    limit: { type: Number, default: 4 }
+    limit: { type: Number, default: 4 },
+    // Dashboard mode: show the feed type as the eyebrow instead of the page's
+    // generic "From the author", so the header describes the filter.
+    showFeedLabel: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -92,17 +100,31 @@ export default {
     offline () {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
-    // Resolve '' against the signed-in user so a dashboard widget shows "your"
-    // posts by default without the page passing anything.
-    resolvedAccount () {
-      return String(this.account || this.loggedInUser || this.fallbackAccount || '').replace(/^@/, '')
+    feed () {
+      return resolveAccountFeed(
+        { reference: this.reference, account: this.account, sort: this.sort },
+        { loggedInUser: this.loggedInUser || '', fallbackAccount: this.fallbackAccount }
+      )
+    },
+    feedKey () {
+      return this.feed.key + ':' + this.limit
+    },
+    eyebrow () {
+      return this.showFeedLabel ? this.feed.eyebrow : 'From the author'
+    },
+    heading () {
+      return this.feed.kind === 'account' ? '@' + this.feed.account : this.feed.heading
+    },
+    linkLabel () {
+      if (this.showFeedLabel) return 'View all'
+      return this.feed.kind === 'account' ? 'Blog' : this.feed.linkLabel
     },
     snapshotKey () {
-      return SNAPSHOT_KEY + this.resolvedAccount
+      return SNAPSHOT_KEY + this.feed.key + ':' + this.limit
     }
   },
   watch: {
-    resolvedAccount () {
+    feedKey () {
       this.loadPosts()
     }
   },
@@ -114,15 +136,11 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const response = await fetchAccountPosts({
-          sort: 'blog',
-          account: this.resolvedAccount,
-          observer: this.loggedInUser || this.resolvedAccount,
+        const posts = await fetchFeedPosts(this.feed, {
           limit: this.limit,
-          start_author: null,
-          start_permlink: null
+          observer: this.loggedInUser || this.feed.account || ''
         })
-        this.posts = Array.isArray(response) ? response : []
+        this.posts = posts
         this.staleAt = null
         saveSnapshot(this.snapshotKey, { posts: this.posts })
       } catch (error) {

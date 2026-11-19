@@ -2,18 +2,18 @@
   <q-card flat bordered class="home-card home-panel">
     <q-card-section class="home-panel__head">
       <div>
-        <div class="home-eyebrow">Community</div>
-        <h2 class="home-panel__title">Posts on Hive</h2>
+        <div class="home-eyebrow">{{ feed.eyebrow }}</div>
+        <h2 class="home-panel__title">{{ feed.heading }}</h2>
       </div>
       <div class="home-panel__actions">
-        <div v-if="showSortToggle" class="home-sort" role="group" aria-label="Post sort">
+        <div v-if="showSort" class="home-sort" role="group" aria-label="Post sort">
           <button
             v-for="option in sortOptions"
             :key="option.value"
             type="button"
             class="home-sort__btn"
-            :class="{ 'is-active': sort === option.value }"
-            :aria-pressed="sort === option.value"
+            :class="{ 'is-active': feed.sort === option.value }"
+            :aria-pressed="feed.sort === option.value"
             :title="'Show ' + option.label.toLowerCase() + ' posts'"
             @click="changeSort(option.value)"
           >
@@ -92,42 +92,39 @@
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
 import DataNotice from 'components/ui/DataNotice.vue'
-import { fetchRankedPosts } from 'src/services/chainData'
+import { RANKED_FEED_SORTS, fetchFeedPosts, resolvePostsFeed } from 'src/services/postFeed'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
-const SNAPSHOT_PREFIX = 'home:posts:ranked:'
-const SORTS = [
-  { label: 'Trending', value: 'trending', icon: 'local_fire_department' },
-  { label: 'New', value: 'created', icon: 'fiber_new' },
-  { label: 'Hot', value: 'hot', icon: 'whatshot' }
-]
-
-const ROUTES = {
-  trending: '/trending',
-  created: '/created',
-  hot: '/hot'
+const SNAPSHOT_PREFIX = 'home:posts:feed:'
+const QUICK_SORTS = ['trending', 'created', 'hot']
+const QUICK_ICONS = {
+  trending: 'local_fire_department',
+  created: 'fiber_new',
+  hot: 'whatshot'
 }
-
-const SOURCES = ['trending', 'created', 'hot']
+const SORT_OPTIONS = RANKED_FEED_SORTS
+  .filter(option => QUICK_SORTS.includes(option.value))
+  .map(option => ({ ...option, icon: QUICK_ICONS[option.value] }))
 
 export default {
   name: 'homeTrendingPosts',
   components: { HomePostRow, DataNotice },
   props: {
-    // Initial feed: trending | created | hot.
+    // Initial global sort: trending | created | hot.
     source: { type: String, default: 'trending' },
     // Restrict to one community/tag ('' = the whole network).
     tag: { type: String, default: '' },
+    // An exact Hive listing path: /@ausbitbank/feed, /c/hive-dev, /shorts/threads.
+    reference: { type: String, default: '' },
     // Number of posts to show.
     limit: { type: Number, default: 6 },
-    // Show the Trending/New/Hot switcher. A widget configured for a source
-    // hides it; the front page keeps it.
+    // Show the Trending/New/Hot switcher. A reference hides it because the
+    // path already names the filter.
     showSortToggle: { type: Boolean, default: true }
   },
   data () {
     return {
       sort: 'trending',
-      sortOptions: SORTS,
       posts: [],
       loading: true,
       error: '',
@@ -141,15 +138,33 @@ export default {
     offline () {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
+    feed () {
+      return resolvePostsFeed(
+        { reference: this.reference, source: this.sort, tag: this.tag },
+        { loggedInUser: this.loggedInUser || '' }
+      )
+    },
+    feedKey () {
+      return this.feed.key + ':' + this.limit
+    },
+    showSort () {
+      return Boolean(this.showSortToggle && !String(this.reference || '').trim() && this.feed.sortable)
+    },
+    sortOptions () {
+      return SORT_OPTIONS
+    },
     viewAllLink () {
-      return ROUTES[this.sort] || '/trending'
+      return this.feed.link
     }
   },
   created () {
-    this.sort = SOURCES.includes(this.source) ? this.source : 'trending'
+    if (QUICK_SORTS.includes(this.source)) this.sort = this.source
   },
   watch: {
-    tag () {
+    source (value) {
+      if (QUICK_SORTS.includes(value)) this.sort = value
+    },
+    feedKey () {
       this.loadPosts()
     }
   },
@@ -160,24 +175,16 @@ export default {
     changeSort (value) {
       if (value === this.sort) return
       this.sort = value
-      this.loadPosts()
     },
     snapshotKey () {
-      return SNAPSHOT_PREFIX + (this.tag ? 'tag:' + this.tag + ':' : '') + this.sort
+      return SNAPSHOT_PREFIX + this.feed.key + ':' + this.limit
     },
     async loadPosts () {
       this.loading = true
       this.error = ''
       try {
-        const response = await fetchRankedPosts({
-          observer: this.loggedInUser || null,
-          limit: this.limit,
-          sort: this.sort,
-          tag: this.tag || '',
-          start_author: null,
-          start_permlink: null
-        })
-        this.posts = Array.isArray(response) ? response : []
+        const posts = await fetchFeedPosts(this.feed, { limit: this.limit, observer: this.loggedInUser || '' })
+        this.posts = posts
         this.staleAt = null
         saveSnapshot(this.snapshotKey(), { posts: this.posts })
       } catch (error) {

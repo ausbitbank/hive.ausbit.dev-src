@@ -55,11 +55,11 @@
         />
         <home-trending-posts
           v-else-if="entry.widget.type === 'posts'"
-          v-bind="settingsFor(entry.widget, { source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle })"
+          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle })"
         />
         <home-recent-posts
           v-else-if="entry.widget.type === 'accountPosts'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
+          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, account: entry.widget.settings?.account, sort: entry.widget.settings?.sort, limit: entry.widget.settings?.limit, showFeedLabel: true })"
         />
         <widget-my-witness
           v-else-if="entry.widget.type === 'myWitness'"

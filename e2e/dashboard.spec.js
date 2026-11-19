@@ -155,6 +155,72 @@ test.describe('customisable dashboard', () => {
     expect(posts.settings.limit).toBe(9)
   })
 
+  test('an account feed reference relabels the posts widget and persists', async ({ page }) => {
+    await openEditor(page)
+    const posts = page.locator('[data-widget-type="posts"]')
+    await posts.getByRole('button', { name: /^Options for Posts on Hive/ }).click()
+    await page.getByText('Configure', { exact: true }).click()
+
+    const dialog = page.locator('.dw-settings')
+    await dialog.getByLabel('Feed reference').fill('/@ausbitbank/feed')
+    await page.getByRole('button', { name: 'Apply' }).click()
+
+    await expect(posts.locator('.home-eyebrow')).toHaveText('Feed')
+    await expect(posts.locator('.home-panel__title')).toHaveText('@ausbitbank')
+
+    await page.getByRole('button', { name: 'Save' }).click()
+    const card = page.locator('[data-widget-type="posts"]')
+    await expect(card.locator('.home-panel__title')).toHaveText('@ausbitbank')
+    await expect(card.getByRole('link', { name: 'View all' })).toHaveAttribute('href', '/@ausbitbank/feed')
+
+    const stored = await readDashboard(page, GUEST_KEY)
+    const settings = stored.widgets.find(widget => widget.type === 'posts').settings
+    expect(settings.reference).toBe('/@ausbitbank/feed')
+  })
+
+  test('community and short-form references change the posts header', async ({ page }) => {
+    await openEditor(page)
+    const posts = page.locator('[data-widget-type="posts"]')
+
+    const configure = async reference => {
+      await posts.getByRole('button', { name: /^Options for Posts on Hive/ }).click()
+      await page.getByText('Configure', { exact: true }).click()
+      const dialog = page.locator('.dw-settings')
+      await dialog.getByLabel('Feed reference').fill(reference)
+      await page.getByRole('button', { name: 'Apply' }).click()
+    }
+
+    await configure('/c/hive-174578')
+    await expect(posts.locator('.home-eyebrow')).toHaveText('Community · Trending')
+    await expect(posts.locator('.home-panel__title')).toHaveText('#hive-174578')
+
+    await configure('/shorts/threads')
+    await expect(posts.locator('.home-eyebrow')).toHaveText('Short posts · InLeo')
+    await expect(posts.locator('.home-panel__title')).toHaveText('Threads')
+  })
+
+  test('account posts accept a feed type and reference', async ({ page }) => {
+    await openEditor(page)
+    const card = page.locator('[data-widget-type="accountPosts"]')
+    await card.getByRole('button', { name: /^Options for Account posts/ }).click()
+    await page.getByText('Configure', { exact: true }).click()
+
+    const dialog = page.locator('.dw-settings')
+    await dialog.getByLabel('Feed type').click()
+    await page.getByRole('option', { name: 'Feed', exact: true }).click()
+    await dialog.getByLabel('Feed reference').fill('/@ausbitbank/feed')
+    await page.getByRole('button', { name: 'Apply' }).click()
+
+    await expect(card.locator('.home-eyebrow')).toHaveText('Feed')
+    await expect(card.locator('.home-panel__title')).toHaveText('@ausbitbank')
+
+    await page.getByRole('button', { name: 'Save' }).click()
+    const stored = await readDashboard(page, GUEST_KEY)
+    const settings = stored.widgets.find(widget => widget.type === 'accountPosts').settings
+    expect(settings.sort).toBe('feed')
+    expect(settings.reference).toBe('/@ausbitbank/feed')
+  })
+
   test('offers the starter layout once to a signed-in account', async ({ page }) => {
     await loginAs(page)
     await page.goto('/')

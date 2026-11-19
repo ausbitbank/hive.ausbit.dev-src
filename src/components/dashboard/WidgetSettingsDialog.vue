@@ -2,7 +2,6 @@
   <q-dialog
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
-    @show="resetDraft"
   >
     <q-card class="dw-settings" aria-labelledby="dw-settings-title">
       <q-card-section class="dw-settings__head">

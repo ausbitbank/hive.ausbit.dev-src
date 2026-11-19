@@ -158,6 +158,39 @@ All six phase-1 items are done. Follow-ups, none blocking:
 - Verified: 641 unit tests, ESLint clean, production build, dashboard e2e
   10/10.
 
+### Post feed references (done 2026-11-19)
+
+- `services/feedReference.js` — pure resolver for Hive listing paths:
+  `/@account/feed` (also blog, posts, replies and comments), `/c/community`,
+  `/shorts/<format>`, `/trending|created|hot|payout|payout_comments|muted`
+  with an optional tag, `#tag`, or a bare tag. `/@me/...` resolves to the
+  signed-in account. Each descriptor carries the eyebrow, heading, view-all
+  link and whether the quick sort toggle applies. 13 unit tests.
+- `services/postFeed.js` — fetch dispatch: account feeds use
+  `bridge.get_account_posts`, ranked/community/tag feeds use
+  `bridge.get_ranked_posts`, and short-form references use
+  `fetchShortFormFeed`.
+- The Posts on Hive and Account posts Configure dialogs now expose a **Feed
+  reference** field (`/@ausbitbank/feed`, `/c/hive-dev`, `/shorts/threads`, …).
+  Account posts also exposes the feed type: blog, posts, feed, replies or
+  comments. A reference wins over the sort/tag/account fields; when one is set
+  the Trending/New/Hot switcher is hidden because the path already names the
+  filter.
+- Headers now describe the filter: the default posts card reads
+  "Across Hive / Trending on Hive", an account feed reads "Feed /
+  @ausbitbank", a community reads "Community · Trending / #hive-dev", and a
+  short-form path reads "Short posts · InLeo / Threads". The Account posts
+  widget uses its feed type as the eyebrow in the dashboard; the same card on
+  an account page keeps "From the author".
+- `e2e/dashboard.spec.js` is now 13 tests: the three new cases cover an
+  account-feed reference (header + persistence), community and short-form
+  header changes, and the account-posts feed type/reference.
+- Fixed a latent setting-dialog bug: `@show="resetDraft"` could fire after the
+  first keystroke and wipe the entry. The `modelValue` watcher already resets
+  when the dialog opens.
+- Verified: 653 unit tests, ESLint clean, production build, dashboard + core
+  e2e 19/19; page checked at 1440 / 1000 / 760px.
+
 ## Earlier remaining list (superseded)
 
 1. Prop-parameterise the five cards (done in `69ababf`).

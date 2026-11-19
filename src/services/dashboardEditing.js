@@ -19,6 +19,7 @@ import {
   widthChoicesFor
 } from './dashboardLayout'
 import { HOME_MARKET_CURRENCIES, MAX_HOME_MARKET_COINS } from './homeMarket'
+import { ACCOUNT_FEED_SORTS, FEED_REFERENCE_PLACEHOLDER } from './feedReference'
 
 /**
  * Catalogue for the drawer: one group per category, in the registry's declared
@@ -169,6 +170,16 @@ const LIMIT_FIELD = (max, label = 'Items to show') => ({
   max
 })
 
+const REFERENCE_FIELD = {
+  key: 'reference',
+  kind: 'text',
+  label: 'Feed reference',
+  placeholder: FEED_REFERENCE_PLACEHOLDER,
+  hint: 'Paste a Hive path: an account feed, a community, a short-form timeline, a sort or a tag.'
+}
+
+const referenceField = hint => ({ ...REFERENCE_FIELD, hint })
+
 /**
  * The settings a widget instance exposes in the Configure dialog. The order is
  * the visual order. An empty list means the widget has nothing to configure
@@ -195,13 +206,19 @@ export function settingsFieldsFor (type) {
       ]
     case 'posts':
       return [
+        referenceField('Paste a Hive path. When set, it overrides the sort and tag below.'),
         { key: 'source', kind: 'select', label: 'Feed', options: POST_SOURCE_OPTIONS },
         { key: 'tag', kind: 'text', label: 'Community or tag', placeholder: 'hive-dev', stripHash: true },
         { key: 'limit', kind: 'number', label: 'Posts to show', min: 1, max: 20 },
         { key: 'showSortToggle', kind: 'toggle', label: 'Show the Trending/New/Hot switcher' }
       ]
     case 'accountPosts':
-      return [ACCOUNT_FIELD, LIMIT_FIELD(20, 'Posts to show')]
+      return [
+        ACCOUNT_FIELD,
+        { key: 'sort', kind: 'select', label: 'Feed type', options: ACCOUNT_FEED_SORTS },
+        referenceField('Paste a Hive path. When set, it overrides the account and feed type above.'),
+        LIMIT_FIELD(20, 'Posts to show')
+      ]
     case 'wallet':
     case 'myWitness':
     case 'witnessHealth':

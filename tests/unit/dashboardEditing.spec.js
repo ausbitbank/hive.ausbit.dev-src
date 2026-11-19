@@ -191,4 +191,15 @@ describe('widget settings', () => {
     expect(sanitiseWidgetSettings('wallet', { account: '@alice' })).toEqual({ account: 'alice' })
     expect(sanitiseWidgetSettings('wallet', { account: '' })).toEqual({ account: '' })
   })
+
+  it('keeps feed references and whitelists account feed types', () => {
+    expect(sanitiseWidgetSettings('posts', { reference: ' /@ausbitbank/feed ' })).toEqual({
+      reference: '/@ausbitbank/feed'
+    })
+    expect(sanitiseWidgetSettings('accountPosts', { reference: '#hive-dev' })).toEqual({
+      reference: '#hive-dev'
+    })
+    expect(sanitiseWidgetSettings('accountPosts', { sort: 'feed' })).toEqual({ sort: 'feed' })
+    expect(sanitiseWidgetSettings('accountPosts', { sort: 'wallet' })).toEqual({})
+  })
 })

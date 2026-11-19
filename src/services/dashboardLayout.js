@@ -82,24 +82,24 @@ export const WIDGET_REGISTRY = [
     type: 'posts',
     component: 'HomeTrendingPosts',
     label: 'Posts on Hive',
-    description: 'Trending, new or hot posts, or one community or tag.',
+    description: 'Trending, new or hot posts, or a community, tag, account feed or short-form timeline.',
     category: 'community',
     icon: 'article',
     defaultWidth: 'full',
     minWidth: 'half',
-    defaultSettings: { source: 'trending', tag: '', limit: 6, showSortToggle: true },
+    defaultSettings: { source: 'trending', tag: '', reference: '', limit: 6, showSortToggle: true },
     singleton: false
   },
   {
     type: 'accountPosts',
     component: 'HomeRecentPosts',
     label: 'Account posts',
-    description: 'Recent posts from one account — yours by default.',
+    description: 'Recent posts from one account or any feed reference — yours by default.',
     category: 'community',
     icon: 'person',
     defaultWidth: 'full',
     minWidth: 'third',
-    defaultSettings: { account: '' },
+    defaultSettings: { account: '', reference: '', sort: 'blog', limit: 4 },
     singleton: false
   },
   {
