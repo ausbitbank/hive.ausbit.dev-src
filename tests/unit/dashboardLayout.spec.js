@@ -20,6 +20,8 @@ import {
   nudgeWidget,
   packRows,
   removeWidget,
+  serialiseLayout,
+  parseLayoutText,
   setWidgetWidth,
   stepWidgetWidth,
   updateWidgetSettings,
@@ -137,7 +139,7 @@ describe('widget instances', () => {
     expect(addWidget(layout, 'block')).toHaveLength(1)
     const next = addWidget(layout, 'wallet')
     expect(next).toHaveLength(2)
-    expect(next[1].settings).toEqual({ account: '' })
+    expect(next[1].settings).toEqual({ account: '', currency: 'usd', includeHiveEngine: true })
   })
 
   it('inserts after a chosen widget so the add drawer can place it locally', () => {
@@ -203,6 +205,36 @@ describe('layout normalisation', () => {
   it('recognises an untouched default layout', () => {
     expect(isDefaultLayout(normaliseLayout(DEFAULT_LAYOUT.map(entry => ({ type: entry.type, width: entry.width }))))).toBe(true)
     expect(isDefaultLayout(buildLayout([{ type: 'wallet' }]))).toBe(false)
+  })
+})
+
+describe('portable layouts', () => {
+  it('round-trips widget types, widths and settings', () => {
+    const layout = buildLayout([
+      { type: 'market', width: 'third', settings: { coinIds: ['hive', 'bitcoin'], currency: 'eur' } },
+      { type: 'witnesses', width: 'twoThirds', settings: { limit: 10, pinMine: true } }
+    ])
+    const text = serialiseLayout(layout)
+    expect(text.startsWith('HIVE-DASH-1.')).toBe(true)
+
+    const result = parseLayoutText(text)
+    expect(result.error).toBe('')
+    expect(result.layout).toHaveLength(2)
+    expect(result.layout[0]).toMatchObject({
+      type: 'market',
+      width: 'third',
+      settings: { coinIds: ['hive', 'bitcoin'], currency: 'eur' }
+    })
+    expect(result.layout[1]).toMatchObject({ type: 'witnesses', width: 'twoThirds', settings: { limit: 10 } })
+    expect(result.layout[0].id).toBeTruthy()
+  })
+
+  it('accepts raw JSON and rejects unknown input without throwing', () => {
+    const json = JSON.stringify({ widgets: [{ type: 'block', width: 'half' }] })
+    expect(parseLayoutText(json).layout).toHaveLength(1)
+    expect(parseLayoutText('hello').error).toMatch(/does not look like/)
+    expect(parseLayoutText('HIVE-DASH-1.not-base64!').error).toBeTruthy()
+    expect(parseLayoutText(JSON.stringify({ widgets: [{ type: 'wat' }] })).error).toMatch(/no recognisable/)
   })
 })
 

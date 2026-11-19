@@ -111,7 +111,7 @@ export const WIDGET_REGISTRY = [
     icon: 'account_balance_wallet',
     defaultWidth: 'half',
     minWidth: 'third',
-    defaultSettings: { account: '' },
+    defaultSettings: { account: '', currency: 'usd', includeHiveEngine: true },
     requiresAccount: true
   },
   {
@@ -369,8 +369,7 @@ export function setWidgetWidth (layout, id, width) {
   ))
 }
 
-/** Width tokens a widget may use, narrowest first. */
-export function widthChoicesFor (type) {
+/** Width tokens a widget may use, narrowest first. */export function widthChoicesFor (type) {
   const meta = registryEntry(type)
   if (!meta) return []
   const minimum = widthColumns(meta.minWidth || 'quarter')
@@ -446,4 +445,74 @@ export function isDefaultLayout (layout) {
   const shape = widget => widget.type + ':' + widget.width
   return layout.length === DEFAULT_LAYOUT.length &&
     layout.every((widget, index) => shape(widget) === shape({ ...DEFAULT_LAYOUT[index] }))
+}
+
+// -- Portable layouts --------------------------------------------------------
+
+const SHARE_PREFIX = 'HIVE-DASH-1.'
+
+function encodeBase64 (text) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(text, 'utf8').toString('base64')
+  const bytes = new TextEncoder().encode(text)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
+function decodeBase64 (text) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(text, 'base64').toString('utf8')
+  const binary = atob(text)
+  const bytes = Uint8Array.from(binary, char => char.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
+}
+
+function toBase64Url (value) {
+  return value.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+}
+
+function fromBase64Url (value) {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/')
+  return padded + '='.repeat((4 - (padded.length % 4)) % 4)
+}
+
+/** Compact, pasteable layout text. Widget ids are intentionally omitted. */
+export function serialiseLayout (layout) {
+  const widgets = (Array.isArray(layout) ? layout : []).map(widget => ({
+    type: widget.type,
+    width: clampWidth(widget.type, widget.width),
+    settings: widget.settings && typeof widget.settings === 'object' ? widget.settings : {}
+  }))
+  return SHARE_PREFIX + toBase64Url(encodeBase64(JSON.stringify({ v: 1, widgets })))
+}
+
+/**
+ * Read a shared layout string or a raw JSON layout. Returns
+ * `{ layout, error }`; an invalid string never throws.
+ */
+export function parseLayoutText (text) {
+  const value = String(text || '').trim()
+  if (!value) return { layout: null, error: 'Paste a layout string to import.' }
+  let json
+  try {
+    if (value.startsWith(SHARE_PREFIX)) {
+      json = decodeBase64(fromBase64Url(value.slice(SHARE_PREFIX.length)))
+    } else if (value.startsWith('{')) {
+      json = value
+    } else {
+      return { layout: null, error: 'That does not look like a hive.ausbit.dev layout string.' }
+    }
+  } catch {
+    return { layout: null, error: 'The layout string is damaged and could not be decoded.' }
+  }
+
+  let parsed
+  try {
+    parsed = JSON.parse(json)
+  } catch {
+    return { layout: null, error: 'The layout string does not contain valid JSON.' }
+  }
+  const raw = Array.isArray(parsed) ? parsed : parsed?.widgets
+  const layout = normaliseLayout(raw)
+  if (!layout.length) return { layout: null, error: 'That layout contains no recognisable widgets.' }
+  return { layout, error: '' }
 }

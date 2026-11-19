@@ -49,10 +49,12 @@
         :changes="draftChanges"
         :dirty="dirty"
         :add-disabled="available === 0"
+        :layout="draft"
         @save="saveDraft"
         @cancel="cancelEditing"
         @reset="resetToDefault"
         @add="drawerOpen = true"
+        @import="importLayout"
       />
 
       <dashboard-setup-prompt
@@ -273,7 +275,7 @@ import DashboardCustomiseBar from 'components/dashboard/DashboardCustomiseBar.vu
 import DashboardGrid from 'components/dashboard/DashboardGrid.vue'
 import DashboardSetupPrompt from 'components/dashboard/DashboardSetupPrompt.vue'
 import WidgetSettingsDialog from 'components/dashboard/WidgetSettingsDialog.vue'
-import { LOGGED_IN_STARTER_LAYOUT, moveWidget, removeWidget, stepWidgetWidth } from 'src/services/dashboardLayout'
+import { LOGGED_IN_STARTER_LAYOUT, moveWidget, normaliseLayout, removeWidget, stepWidgetWidth } from 'src/services/dashboardLayout'
 import {
   addWidgetToLayout,
   availableWidgetCount,
@@ -406,6 +408,9 @@ export default {
     },
     addWidget (type) {
       this.draft = addWidgetToLayout(this.draft, type)
+    },
+    importLayout (layout) {
+      this.draft = normaliseLayout(layout)
     },
     onWidthStep ({ widget, direction }) {
       this.draft = stepWidgetWidth(this.draft, widget.id, direction)

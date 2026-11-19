@@ -67,7 +67,7 @@
         />
         <widget-wallet
           v-else-if="entry.widget.type === 'wallet'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, currency: entry.widget.settings?.currency, includeHiveEngine: entry.widget.settings?.includeHiveEngine })"
         />
         <widget-witness-health
           v-else-if="entry.widget.type === 'witnessHealth'"

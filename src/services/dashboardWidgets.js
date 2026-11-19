@@ -50,18 +50,20 @@ export function walletWidgetSummary (account, globalProps, hive, hbd) {
   return {
     portfolio,
     totalUsd: formatUsd(portfolio.totalUsd),
+    totalUsdValue: portfolio.totalUsd,
     changePercent: change,
     changeLabel: change === null ? '' : (change >= 0 ? '+' : '') + change.toFixed(2) + '%',
     changeDirection: change === null ? 'flat' : change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
     rows: [
-      { id: 'hive', label: 'HIVE', amount: tidyAmount(portfolio.liquidHive.toFixed(3) + ' HIVE'), usd: formatUsd(portfolio.liquidHiveUsd) },
-      { id: 'hbd', label: 'HBD', amount: tidyAmount(portfolio.liquidHbd.toFixed(3) + ' HBD'), usd: formatUsd(portfolio.liquidHbdUsd) },
-      { id: 'hp', label: 'HP', amount: tidyAmount(portfolio.stakedHive.toFixed(3) + ' HP'), usd: formatUsd(portfolio.stakedHiveUsd) },
-      { id: 'savings', label: 'Savings', amount: tidyAmount(portfolio.savingsHbd.toFixed(3) + ' HBD'), usd: formatUsd(portfolio.savingsHbdUsd) }
+      { id: 'hive', label: 'HIVE', amount: tidyAmount(portfolio.liquidHive.toFixed(3) + ' HIVE'), usd: formatUsd(portfolio.liquidHiveUsd), usdValue: portfolio.liquidHiveUsd },
+      { id: 'hbd', label: 'HBD', amount: tidyAmount(portfolio.liquidHbd.toFixed(3) + ' HBD'), usd: formatUsd(portfolio.liquidHbdUsd), usdValue: portfolio.liquidHbdUsd },
+      { id: 'hp', label: 'HP', amount: tidyAmount(portfolio.stakedHive.toFixed(3) + ' HP'), usd: formatUsd(portfolio.stakedHiveUsd), usdValue: portfolio.stakedHiveUsd },
+      { id: 'savings', label: 'Savings', amount: tidyAmount(portfolio.savingsHbd.toFixed(3) + ' HBD'), usd: formatUsd(portfolio.savingsHbdUsd), usdValue: portfolio.savingsHbdUsd }
     ],
     rewards: {
       has: portfolio.pendingHp > 0 || portfolio.pendingHive > 0 || portfolio.pendingHbd > 0,
       usd: formatUsd(portfolio.pendingUsd),
+      usdValue: portfolio.pendingUsd,
       parts: [
         portfolio.pendingHive > 0 ? tidyAmount(portfolio.pendingHive.toFixed(3) + ' HIVE') : null,
         portfolio.pendingHbd > 0 ? tidyAmount(portfolio.pendingHbd.toFixed(3) + ' HBD') : null,

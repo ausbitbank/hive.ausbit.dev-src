@@ -12,8 +12,8 @@
       <q-card-section v-if="summary" class="dw-wallet__body">
         <div class="dw-wallet__hero">
           <div>
-            <span class="dw-wallet__label">Portfolio value</span>
-            <span class="dw-wallet__total">{{ summary.totalUsd }}</span>
+            <span class="dw-wallet__label">Portfolio<template v-if="accountName"> · @{{ accountName }}</template></span>
+            <span class="dw-wallet__total">{{ totalLabel }}</span>
           </div>
           <span
             v-if="summary.changeLabel"
@@ -30,7 +30,7 @@
         </div>
 
         <dl class="dw-wallet__rows">
-          <div v-for="row in summary.rows" :key="row.id" class="dw-wallet__row">
+          <div v-for="row in rows" :key="row.id" class="dw-wallet__row">
             <dt>{{ row.label }}</dt>
             <dd>
               <span class="dw-wallet__amount">{{ row.amount }}</span>
@@ -44,12 +44,14 @@
             <span class="dw-wallet__label">Claimable rewards</span>
             <span class="dw-wallet__reward-parts">{{ summary.rewards.parts.join(' · ') }}</span>
           </div>
-          <span class="dw-wallet__reward-usd">{{ summary.rewards.usd }}</span>
+          <span class="dw-wallet__reward-usd">{{ money(summary.portfolio.pendingUsd) }}</span>
         </div>
       </q-card-section>
 
       <q-card-section class="home-panel__footer">
         <router-link :to="walletPath">Open wallet</router-link>
+        <span v-if="heLoading">Loading Hive-Engine…</span>
+        <span v-else-if="heError" class="dw-wallet__note">{{ heError }}</span>
         <span>{{ pricesReady ? 'Prices from CoinGecko' : 'Prices unavailable' }}</span>
       </q-card-section>
     </template>
@@ -182,19 +184,39 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.dw-wallet__note {
+  margin: 0;
+  color: #78909c;
+  font-size: 0.68rem;
+}
 </style>
 
 <script>
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
 import { price, walletWidgetSummary } from 'src/services/dashboardWidgets'
+import { fetchHiveEnginePortfolio } from 'src/services/hiveEnginePortfolio'
+import { currencySymbol, isForexCurrency, loadForexRate } from 'src/services/homeMarket'
 
 export default {
   name: 'WidgetWallet',
   components: { DashboardWidgetState },
   mixins: [accountWidgetMixin],
   props: {
-    account: { type: String, default: '' }
+    account: { type: String, default: '' },
+    currency: { type: String, default: 'usd' },
+    includeHiveEngine: { type: Boolean, default: true }
+  },
+  data () {
+    return {
+      forexRate: 1,
+      heTokens: [],
+      heTotalHive: 0,
+      heValueUsd: 0,
+      heLoading: false,
+      heError: ''
+    }
   },
   computed: {
     // The same `buildPortfolio` maths as the wallet page, so the totals agree.
@@ -210,8 +232,99 @@ export default {
     pricesReady () {
       return Boolean(this.summary && this.summary.portfolio.pricesReady)
     },
+    symbol () {
+      return currencySymbol(this.currency)
+    },
+    rate () {
+      return this.currency === 'usd' ? 1 : this.forexRate
+    },
+    totalUsd () {
+      const base = this.summary ? this.summary.portfolio.totalUsd : 0
+      return base + (this.includeHiveEngine ? this.heValueUsd : 0)
+    },
+    totalLabel () {
+      return this.money(this.totalUsd)
+    },
+    rows () {
+      if (!this.summary) return []
+      const rows = this.summary.rows.map(row => ({ ...row, usd: this.money(row.usdValue) }))
+      if (this.includeHiveEngine && this.heTokens.length) {
+        rows.push({
+          id: 'hive-engine',
+          label: 'Hive-Engine',
+          amount: this.heTokens.length + (this.heTokens.length === 1 ? ' token' : ' tokens'),
+          usd: this.money(this.heValueUsd)
+        })
+      }
+      return rows
+    },
     walletPath () {
       return '/@' + (this.accountName || this.targetAccount) + '/wallet'
+    }
+  },
+  watch: {
+    currency () {
+      this.loadCurrencyRate()
+    },
+    includeHiveEngine (value) {
+      if (value && this.accountName) this.loadHiveEngine(this.accountName)
+    }
+  },
+  methods: {
+    money (value) {
+      if (value === null || value === undefined) return '—'
+      const number = Number(value)
+      if (!Number.isFinite(number)) return '—'
+      return this.symbol + (number * this.rate).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    },
+    applyAccountData (result) {
+      this.loadCurrencyRate()
+      if (this.includeHiveEngine) this.loadHiveEngine(result.accountName || this.targetAccount)
+    },
+    async loadCurrencyRate () {
+      if (!isForexCurrency(this.currency)) {
+        this.forexRate = 1
+        return
+      }
+      try {
+        this.forexRate = await loadForexRate(this.currency)
+      } catch {
+        this.forexRate = 1
+      }
+    },
+    async loadHiveEngine (name) {
+      if (!name || !this.includeHiveEngine) {
+        this.heTokens = []
+        this.heTotalHive = 0
+        this.heValueUsd = 0
+        return
+      }
+      this.heLoading = true
+      this.heError = ''
+      try {
+        const result = await fetchHiveEnginePortfolio(name)
+        this.heTokens = result.tokens
+        this.heTotalHive = result.totalHive
+        const hive = price(this.prices, 'hive')
+        const hbd = price(this.prices, 'hive_dollar')
+        const hiveUsd = Number(hive?.usd) || 0
+        const hbdUsd = Number(hbd?.usd) || hiveUsd
+        this.heValueUsd = result.tokens.reduce((sum, token) => {
+          const unit = token.usdPegged ? hbdUsd : hiveUsd
+          return sum + token.balance * token.priceHive * unit
+        }, 0)
+      } catch (error) {
+        console.error('Failed to load Hive-Engine balances', error)
+        this.heError = 'Hive-Engine balances unavailable.'
+        this.heTokens = []
+        this.heTotalHive = 0
+        this.heValueUsd = 0
+      } finally {
+        this.heLoading = false
+      }
     }
   }
 }

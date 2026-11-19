@@ -220,6 +220,26 @@ export function settingsFieldsFor (type) {
         LIMIT_FIELD(20, 'Posts to show')
       ]
     case 'wallet':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'currency',
+          kind: 'select',
+          label: 'Fiat currency',
+          options: [
+            { value: 'usd', label: 'US Dollar ($)' },
+            { value: 'aud', label: 'Australian Dollar (A$)' },
+            { value: 'eur', label: 'Euro (€)' },
+            { value: 'gbp', label: 'British Pound (£)' }
+          ]
+        },
+        {
+          key: 'includeHiveEngine',
+          kind: 'toggle',
+          label: 'Include Hive-Engine tokens',
+          hint: 'Prices come from the Hive-Engine market and are shown in HIVE terms.'
+        }
+      ]
     case 'myWitness':
     case 'witnessHealth':
       return [ACCOUNT_FIELD]
