@@ -99,31 +99,34 @@
 }
 
 .node-features__count {
+  color: #cfd8dc;
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.node-features__count.is-full,
-.node-features__fill.is-full {
+.node-features__count.is-full {
   color: #81c784;
+}
+
+.node-features__count.is-partial {
+  color: #ffb74d;
+}
+
+.node-features__count.is-low {
+  color: #e57373;
+}
+
+.node-features__fill.is-full {
   background: #81c784;
 }
 
-.node-features__count.is-partial,
 .node-features__fill.is-partial {
-  color: #ffb74d;
   background: #ffb74d;
 }
 
-.node-features__count.is-low,
 .node-features__fill.is-low {
-  color: #e57373;
   background: #e57373;
-}
-
-.node-features__count {
-  background: transparent;
 }
 
 .node-features__bar {
