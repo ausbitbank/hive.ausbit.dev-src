@@ -5,6 +5,8 @@ import {
   apiBlockHeader,
   apiGetAccounts,
   apiGetFollowCount,
+  apiGetFollowers,
+  apiGetFollowing,
   apiGetGlobalProps,
   apiGetMedianHistoryPrice,
   apiGetOpenOrders,
@@ -26,6 +28,7 @@ export const CACHE_TTL = {
   witnesses: 60000,
   posts: 30000,
   followCount: 60000,
+  connections: 60000,
   ticker: 15000,
   median: 15000,
   searchAccounts: 120000,
@@ -60,9 +63,18 @@ export function fetchAccount (name, { force = false, onStale = null } = {}) {
   })
 }
 
+const ACCOUNT_BATCH_SIZE = 500
+
+function cacheAccounts (response) {
+  if (!Array.isArray(response)) return
+  response.forEach(account => {
+    if (account?.name) apiCache.set(accountKey(account.name), account, { ttl: CACHE_TTL.account })
+  })
+}
+
 /**
  * Fetch many accounts using individual cache entries. Missing accounts are
- * requested in one batch and stale entries can be refreshed in the background.
+ * requested in batches and stale entries can be refreshed in the background.
  */
 export async function fetchAccounts (names, { force = false } = {}) {
   const unique = [...new Set((Array.isArray(names) ? names : []).filter(Boolean))]
@@ -75,21 +87,16 @@ export async function fetchAccounts (names, { force = false } = {}) {
   })
 
   if (missing.length > 0) {
-    const response = await apiGetAccounts(force ? unique : missing)
-    if (Array.isArray(response)) {
-      response.forEach(account => {
-        if (account?.name) apiCache.set(accountKey(account.name), account, { ttl: CACHE_TTL.account })
-      })
+    const requested = force ? unique : missing
+    for (let index = 0; index < requested.length; index += ACCOUNT_BATCH_SIZE) {
+      cacheAccounts(await apiGetAccounts(requested.slice(index, index + ACCOUNT_BATCH_SIZE)))
     }
   } else if (stale.length > 0 && !force) {
     // Stale-while-revalidate for batch callers such as follower lists.
     Promise.resolve()
-      .then(() => apiGetAccounts(stale))
-      .then(response => {
-        if (Array.isArray(response)) {
-          response.forEach(account => {
-            if (account?.name) apiCache.set(accountKey(account.name), account, { ttl: CACHE_TTL.account })
-          })
+      .then(async () => {
+        for (let index = 0; index < stale.length; index += ACCOUNT_BATCH_SIZE) {
+          cacheAccounts(await apiGetAccounts(stale.slice(index, index + ACCOUNT_BATCH_SIZE)))
         }
       })
       .catch(() => {})
@@ -118,6 +125,21 @@ export function fetchFollowCount (account, { force = false } = {}) {
   if (!account) return Promise.resolve(null)
   return loadCached('followCount:' + account, () => apiGetFollowCount(account), {
     ttl: CACHE_TTL.followCount,
+    force
+  })
+}
+
+export function fetchConnections (account, type, { start = '', limit = 100, force = false } = {}) {
+  if (!account) return Promise.resolve([])
+  const kind = type === 'followers' ? 'followers' : 'following'
+  const page = String(start || '').toLowerCase()
+  const size = Math.min(1000, Math.max(1, Number(limit) || 100))
+  return loadCached('connections:' + kind + ':' + account + ':' + page + ':' + size, () => (
+    kind === 'followers'
+      ? apiGetFollowers(account, start, size)
+      : apiGetFollowing(account, start, size)
+  ), {
+    ttl: CACHE_TTL.connections,
     force
   })
 }

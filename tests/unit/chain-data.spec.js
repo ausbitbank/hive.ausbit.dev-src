@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const {
   apiGetAccounts,
   apiGetGlobalProps,
-  apiGetWitnessesByVote
+  apiGetWitnessesByVote,
+  apiGetFollowers,
+  apiGetFollowing
 } = vi.hoisted(() => ({
   apiGetAccounts: vi.fn(),
   apiGetGlobalProps: vi.fn(),
-  apiGetWitnessesByVote: vi.fn()
+  apiGetWitnessesByVote: vi.fn(),
+  apiGetFollowers: vi.fn(),
+  apiGetFollowing: vi.fn()
 }))
 
 vi.mock('../../src/services/api', () => ({
@@ -16,6 +20,8 @@ vi.mock('../../src/services/api', () => ({
   apiGetWitnessesByVote,
   apiGetWitnessByAccount: vi.fn(),
   apiGetFollowCount: vi.fn(),
+  apiGetFollowers,
+  apiGetFollowing,
   apiGetMedianHistoryPrice: vi.fn(),
   apiGetTicker: vi.fn(),
   apiGetOpenOrders: vi.fn(),
@@ -32,6 +38,8 @@ describe('chain data cache', () => {
     apiGetAccounts.mockReset()
     apiGetGlobalProps.mockReset()
     apiGetWitnessesByVote.mockReset()
+    apiGetFollowers.mockReset()
+    apiGetFollowing.mockReset()
   })
 
   it('caches account reads, supports force and invalidates by account', async () => {
@@ -79,6 +87,23 @@ describe('chain data cache', () => {
     data.invalidateWitnessCache()
     await data.fetchWitnessesByVote(6)
     expect(apiGetWitnessesByVote).toHaveBeenCalledTimes(2)
+  })
+
+  it('caches follower and following pages by account and cursor', async () => {
+    apiGetFollowers.mockResolvedValue([{ follower: 'alice' }])
+    apiGetFollowing.mockResolvedValue([{ following: 'bob' }])
+    const data = await chainData()
+
+    expect(await data.fetchConnections('carol', 'followers', { limit: 10 })).toEqual([{ follower: 'alice' }])
+    expect(await data.fetchConnections('carol', 'followers', { limit: 10 })).toEqual([{ follower: 'alice' }])
+    expect(apiGetFollowers).toHaveBeenCalledTimes(1)
+    expect(apiGetFollowers).toHaveBeenCalledWith('carol', '', 10)
+
+    await data.fetchConnections('carol', 'followers', { start: 'alice', limit: 10 })
+    expect(apiGetFollowers).toHaveBeenCalledTimes(2)
+
+    expect(await data.fetchConnections('carol', 'following', { limit: 10 })).toEqual([{ following: 'bob' }])
+    expect(apiGetFollowing).toHaveBeenCalledWith('carol', '', 10)
   })
 
   it('clears every chain-data cache entry', async () => {

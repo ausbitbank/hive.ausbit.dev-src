@@ -374,8 +374,20 @@ export function apiGetFollowCount (account, options = {}) {
   return rpcRequest('condenser_api.get_follow_count', [account], options)
 }
 
+export function apiGetFollowers (account, start = '', limit = 100, options = {}) {
+  return rpcRequest('condenser_api.get_followers', [account, start, 'blog', limit], options)
+}
+
+export function apiGetFollowing (account, start = '', limit = 100, options = {}) {
+  return rpcRequest('condenser_api.get_following', [account, start, 'blog', limit], options)
+}
+
 export function apiGetMedianHistoryPrice (options = {}) {
   return rpcRequest('condenser_api.get_current_median_history_price', [], options)
+}
+
+export function apiGetRewardFund (name = 'post', options = {}) {
+  return rpcRequest('condenser_api.get_reward_fund', [name], options)
 }
 
 export function apiGetTicker (options = {}) {
