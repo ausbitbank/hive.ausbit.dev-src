@@ -109,8 +109,8 @@
                   :format="format"
                   :username="loggedInUser"
                   @open="openPost(item)"
-                  @vote="vote(item)"
-                  @reblog="reblog(item)"
+                  @voted="onVoted"
+                  @reblog="onReblogged"
                 />
               </li>
             </ol>
@@ -127,7 +127,7 @@
 
       <aside class="sf-side">
         <section class="home-card sf-about">
-          <div class="home-panel__head">
+          <div class="home-panel__head sf-about__head">
             <div>
               <div class="home-eyebrow">How it works</div>
               <h2 class="home-panel__title">{{ format.label }} on Hive</h2>
@@ -163,8 +163,6 @@ import {
   getShortFormat,
   shortFormQueueItem,
   shortFormQueueSummary,
-  shortFormReblogQueueItem,
-  shortFormVoteQueueItem,
   shortFormatList
 } from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
@@ -287,40 +285,33 @@ export default {
     openPost (item) {
       this.$router.push({ name: 'short-form-post', params: { formatId: this.formatId, author: item.author, permlink: item.permlink } })
     },
-    vote (post) {
-      if (!this.loggedInUser) {
-        this.$q.notify({ type: 'info', message: 'Log in to vote.' })
-        return
+    /**
+     * Mirror a queued vote into the card's vote list so the weight picker,
+     * counts and "you voted" state update straight away. The next feed load
+     * replaces this with chain data.
+     */
+    onVoted ({ post, weight }) {
+      const stats = post.stats || (post.stats = {})
+      if (Number.isFinite(Number(stats.total_votes))) stats.total_votes = Number(stats.total_votes) + (post._voted ? 0 : 1)
+      post._voted = true
+      const votes = Array.isArray(post.active_votes) ? post.active_votes.slice() : []
+      const index = votes.findIndex(vote => String(vote && vote.voter || '').toLowerCase() === String(this.loggedInUser).toLowerCase())
+      const entry = {
+        voter: this.loggedInUser,
+        weight: Math.round(Number(weight) * 100),
+        percent: Math.round(Number(weight) * 100),
+        rshares: Math.round(Number(weight) * 100)
       }
-      try {
-        const percent = Number(this.$hiveStore.user.settings.voteWeightPost) || 100
-        const item = shortFormVoteQueueItem({ username: this.loggedInUser, post, percent })
-        this.$hiveStore.addToQueue(item)
-        this.$q.notify({
-          type: 'positive',
-          message: 'Queued a ' + percent + '% upvote for @' + post.author,
-          caption: 'Sign it from the queue to publish on chain.'
-        })
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the vote' })
-      }
+      if (index >= 0) votes.splice(index, 1, entry)
+      else votes.push(entry)
+      post.active_votes = votes
     },
-    reblog (post) {
-      if (!this.loggedInUser) {
-        this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
-        return
-      }
-      try {
-        const item = shortFormReblogQueueItem({ username: this.loggedInUser, post })
-        this.$hiveStore.addToQueue(item)
-        this.$q.notify({
-          type: 'positive',
-          message: 'Queued a reblog of @' + post.author,
-          caption: 'Sign it from the queue to publish on chain.'
-        })
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
-      }
+    onReblogged ({ author, permlink }) {
+      const post = this.items.find(item => item.author === author && item.permlink === permlink)
+      if (!post) return
+      const list = Array.isArray(post.reblogged_by) ? post.reblogged_by.slice() : []
+      if (!list.some(name => String(name).toLowerCase() === String(this.loggedInUser).toLowerCase())) list.push(this.loggedInUser)
+      post.reblogged_by = list
     },
     submit () {
       if (!this.canPost) return
@@ -422,7 +413,7 @@ export default {
 
 @media (min-width: 1024px) {
   .sf-grid {
-    grid-template-columns: minmax(0, 620px) 300px;
+    grid-template-columns: minmax(0, 660px) 280px;
   }
 }
 
@@ -549,12 +540,19 @@ export default {
   text-align: center;
 }
 
+/* The shared panel header expects an inner padding wrapper (q-card-section in
+   the dashboard cards). With a plain div it had none, so the eyebrow and title
+   sat flush against the card edge. */
+.sf-about__head {
+  padding: 0.85rem 1rem 0.7rem;
+}
+
 .sf-about__list {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.4rem var(--space-3);
   margin: 0;
-  padding: 0.85rem 1rem var(--space-4);
+  padding: 0 1rem var(--space-4);
   font-size: 0.8rem;
 }
 

@@ -1,8 +1,19 @@
 <template>
-  <q-btn class="reblog-btn" no-caps dense flat :disable="reblogged" :aria-label="reblogged ? 'Already reblogged' : 'Reblog this post'" :title="reblogged ? 'You already reblogged this post' : 'Reblog this post'">
+  <q-btn
+    class="reblog-btn"
+    :class="{ 'reblog-btn--active': reblogged }"
+    no-caps
+    dense
+    flat
+    :disable="reblogged"
+    :aria-label="reblogged ? 'You already reblogged this post' : 'Reblog this post'"
+    :title="reblogged ? 'You already reblogged this post' : 'Reblog this post'"
+  >
     <q-icon name="repeat" size="17px" aria-hidden="true" />
     <span class="reblog-btn__label">{{ reblogged ? 'Reblogged' : (label || 'Reblog') }}</span>
-    <q-popup-proxy v-if="!reblogged">
+    <!-- A reblog is public on the chain, so it is only ever sent after this
+         explicit confirmation step. -->
+    <q-popup-proxy v-if="!reblogged && loggedInUser" @show="confirming = false">
       <q-card flat class="reblog-card">
         <div class="reblog-card__head">
           <q-icon name="repeat" size="20px" class="reblog-card__icon" aria-hidden="true" />
@@ -11,40 +22,71 @@
             <h3 class="reblog-card__title">Reblog this post?</h3>
           </div>
         </div>
-        <p class="reblog-card__text">@{{ author }}'s post will appear on your blog and feed. You can undo it later.</p>
+        <p class="reblog-card__text">
+          @{{ author }}'s post will appear on your blog and feed. It shows publicly on your account, so reblog
+          only posts you are happy to share.
+        </p>
         <div class="reblog-card__actions">
           <q-btn flat dense no-caps label="Cancel" color="grey" v-close-popup />
-          <q-btn dense no-caps label="Yes" color="primary" @click="reblog(author, permlink)" />
+          <q-btn
+            dense
+            no-caps
+            color="primary"
+            label="Yes, reblog"
+            :loading="busy"
+            @click="reblog(author, permlink)"
+          />
         </div>
       </q-card>
     </q-popup-proxy>
   </q-btn>
 </template>
 <script>
+import { shortFormReblogQueueItem } from 'src/services/shortForm'
+
 export default {
   name: 'reblog',
+  props: {
+    author: { type: String, required: true },
+    permlink: { type: String, required: true },
+    label: { type: String, default: '' },
+    // Externally known state (e.g. `reblogged_by` from the chain). When true
+    // the control renders as already done instead of opening the confirm.
+    reblogged: { type: Boolean, default: false }
+  },
+  emits: ['queued'],
   data () {
     return {
-      reblogged: false
+      busy: false,
+      confirming: false
     }
   },
-  props: ['author', 'permlink', 'label'],
   computed: {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
     }
   },
   methods: {
-    undoReblog (author, permlink) {
-      // a normal reblog, but with delete: delete in the params
-      var json = '["reblog",{"account":"' + this.loggedInUser + '","author":"' + author + '","permlink":"' + permlink + '", "delete":"delete"}]'
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
-    },
     async reblog (author, permlink) {
-      var json = '["reblog",{"account":"' + this.loggedInUser + '","author":"' + author + '","permlink":"' + permlink + '"}]'
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
-      this.reblogged = true
-      this.$q.notify({ type: 'positive', message: 'Reblog queued for @' + author, position: 'top', timeout: 2500 })
+      if (this.busy) return
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
+        return
+      }
+      this.busy = true
+      try {
+        const item = shortFormReblogQueueItem({
+          username: this.loggedInUser,
+          post: { author, permlink }
+        })
+        this.$hiveStore.addToQueue(item)
+        this.$q.notify({ type: 'positive', message: 'Reblog queued for @' + author, position: 'top', timeout: 2500 })
+        this.$emit('queued', { author, permlink })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
+      } finally {
+        this.busy = false
+      }
     }
   }
 }
@@ -82,7 +124,7 @@ export default {
 }
 
 .reblog-card {
-  width: min(300px, 92vw);
+  width: min(320px, 92vw);
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);

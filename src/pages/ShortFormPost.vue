@@ -44,14 +44,13 @@
           <short-form-media :items="media" :author="post.author" linked />
 
           <footer class="sfp-post__foot">
-            <button type="button" class="sfp-action" :title="voteHint" @click="vote(post)">
-              <q-icon :name="voteDirection(post) === 'up' ? 'favorite' : 'favorite_border'" size="17px" aria-hidden="true" />
-              {{ votes }} votes
-            </button>
-            <button type="button" class="sfp-action" title="Reblog" @click="reblog(post)">
-              <q-icon name="repeat" size="17px" aria-hidden="true" />
-              {{ reblogs }}
-            </button>
+            <vote
+              :votes="post.active_votes"
+              :author="post.author"
+              :permlink="post.permlink"
+              @Voted="weight => onVoted(weight)"
+            />
+            <reblog :author="post.author" :permlink="post.permlink" :reblogged="alreadyReblogged" />
             <span class="sfp-action sfp-action--static">
               <q-icon name="mode_comment" size="16px" aria-hidden="true" /> {{ replies.length }} replies
             </span>
@@ -139,25 +138,25 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { setPageMeta, stripHtml } from 'src/utils/pageMeta'
-import { postPayoutLabel, postUserVoteDirection } from 'src/services/posts'
+import { postPayoutLabel } from 'src/services/posts'
 import {
   fetchShortFormPost,
   getShortFormat,
   shortFormQueueItem,
   shortFormQueueSummary,
-  shortFormReblogQueueItem,
-  shortFormVoteQueueItem,
   shortFormUrl,
   shortMedia
 } from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
 import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
+import Vote from 'components/vote.vue'
+import Reblog from 'components/reblog.vue'
 
 const Render = defineAsyncComponent(() => import('components/render.vue'))
 
 export default {
   name: 'ShortFormPost',
-  components: { DataNotice, Render, ShortFormMedia },
+  components: { DataNotice, Render, ShortFormMedia, Vote, Reblog },
   props: {
     formatId: { type: String, required: true },
     author: { type: String, required: true },
@@ -192,9 +191,6 @@ export default {
       if (stats && Number.isFinite(Number(stats.total_votes))) return stats.total_votes
       return this.post && Array.isArray(this.post.active_votes) ? this.post.active_votes.length : 0
     },
-    reblogs () {
-      return Number(this.post && this.post.reblogs) || (this.post && Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by.length : 0)
-    },
     payout () {
       return this.post ? postPayoutLabel(this.post) : ''
     },
@@ -204,11 +200,12 @@ export default {
     fullTime () {
       return this.post && this.post.created ? moment.utc(this.post.created).format('D MMM YYYY, HH:mm') : ''
     },
-    voteHint () {
-      const direction = this.post ? postUserVoteDirection(this.post, this.loggedInUser) : null
-      if (direction === 'up') return 'You upvoted this'
-      if (direction === 'down') return 'You downvoted this'
-      return 'Vote'
+    /** Reflect an existing reblog from the chain instead of local state. */
+    alreadyReblogged () {
+      if (!this.post || !this.loggedInUser) return false
+      const list = Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by : []
+      const voter = String(this.loggedInUser).toLowerCase()
+      return list.some(name => String(name).toLowerCase() === voter)
     },
     externalUrl () {
       return shortFormUrl(this.post, this.formatId)
@@ -266,9 +263,6 @@ export default {
     replyAge (reply) {
       return reply.created ? moment.utc(reply.created).fromNow() : ''
     },
-    voteDirection (post) {
-      return postUserVoteDirection(post, this.loggedInUser)
-    },
     replyTo (reply) {
       this.replyParent = reply
       this.$nextTick(() => {
@@ -276,30 +270,15 @@ export default {
         if (input && input.focus) input.focus()
       })
     },
-    vote (post) {
-      if (!this.loggedInUser) {
-        this.$q.notify({ type: 'info', message: 'Log in to vote.' })
-        return
-      }
-      try {
-        const percent = Number(this.$hiveStore.user.settings.voteWeightPost) || 100
-        this.$hiveStore.addToQueue(shortFormVoteQueueItem({ username: this.loggedInUser, post, percent }))
-        this.$q.notify({ type: 'positive', message: 'Queued a ' + percent + '% upvote', caption: 'Sign it from the queue.' })
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the vote' })
-      }
-    },
-    reblog (post) {
-      if (!this.loggedInUser) {
-        this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
-        return
-      }
-      try {
-        this.$hiveStore.addToQueue(shortFormReblogQueueItem({ username: this.loggedInUser, post }))
-        this.$q.notify({ type: 'positive', message: 'Queued a reblog', caption: 'Sign it from the queue.' })
-      } catch (error) {
-        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
-      }
+    /** Display-only sync; the shared vote control owns the queued operation. */
+    onVoted (weight) {
+      if (!this.post) return
+      const votes = Array.isArray(this.post.active_votes) ? this.post.active_votes.slice() : []
+      const index = votes.findIndex(vote => String(vote && vote.voter || '').toLowerCase() === String(this.loggedInUser).toLowerCase())
+      const entry = { voter: this.loggedInUser, weight: Math.round(Number(weight) * 100), percent: Math.round(Number(weight) * 100), rshares: Math.round(Number(weight) * 100) }
+      if (index >= 0) votes.splice(index, 1, entry)
+      else votes.push(entry)
+      this.post.active_votes = votes
     },
     submitReply () {
       if (!this.post || !this.replyBody.trim() || this.replyBody.length > 1000) return

@@ -15,51 +15,60 @@
       <q-btn flat dense round size="sm" icon="more_horiz" aria-label="Open on front end" :href="externalUrl" target="_blank" rel="noopener noreferrer" />
     </header>
 
-    <p v-if="preview" class="sfc-body" @click="$emit('open')">{{ preview }}</p>
+    <p v-if="preview" class="sfc-body" @click="$emit('open', post)">{{ preview }}</p>
 
     <short-form-media :items="media" :author="post.author" :linked="true" />
 
     <footer class="sfc-foot">
-      <button type="button" class="sfc-action sfc-action--vote" :class="{ 'sfc-action--down': voteDirection === 'down' }" :title="voteHint" @click="$emit('vote', post)">
-        <q-icon :name="voteDirection === 'up' ? 'favorite' : voteDirection === 'down' ? 'heart_broken' : 'favorite_border'" size="17px" aria-hidden="true" />
-        <span>{{ votes }}</span>
-      </button>
+      <!-- The same control as blog posts: shows totals and your own vote, and
+           opens the weight picker instead of voting at full weight directly. -->
+      <vote
+        class="sfc-vote"
+        :votes="post.active_votes"
+        :author="post.author"
+        :permlink="post.permlink"
+        @Voted="weight => $emit('voted', { post, weight })"
+      />
       <button type="button" class="sfc-action" title="Replies" @click="$emit('open', post)">
         <q-icon name="mode_comment" size="16px" aria-hidden="true" />
         <span>{{ replies }}</span>
       </button>
-      <button type="button" class="sfc-action" title="Reblog" @click="$emit('reblog', post)">
-        <q-icon name="repeat" size="17px" aria-hidden="true" />
-        <span>{{ reblogs }}</span>
-      </button>
+      <reblog
+        class="sfc-reblog"
+        :author="post.author"
+        :permlink="post.permlink"
+        :reblogged="alreadyReblogged"
+        @queued="$emit('reblog', post)"
+      />
       <span v-if="payout" class="sfc-action sfc-action--static" :title="'Pending payout'">
         <q-icon name="paid" size="15px" aria-hidden="true" />
         <span>{{ payout }}</span>
       </span>
       <span class="sfc-spacer" />
       <q-btn flat dense no-caps size="sm" icon="open_in_new" label="Open" @click="$emit('open', post)" />
-      <q-btn flat dense no-caps size="sm" icon="reply" label="Reply" @click="$emit('open', post)" />
     </footer>
   </article>
 </template>
 
 <script>
 import moment from 'src/utils/time'
-import { postPayoutLabel, postUserVoteDirection } from 'src/services/posts'
+import { postPayoutLabel } from 'src/services/posts'
 import { shortFormUrl, shortMedia, shortPreview } from 'src/services/shortForm'
 import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
+import Vote from 'components/vote.vue'
+import Reblog from 'components/reblog.vue'
 
 const DEFAULT_ACCENT = '#4fc3f7'
 
 export default {
   name: 'ShortFormCard',
-  components: { ShortFormMedia },
+  components: { ShortFormMedia, Vote, Reblog },
   props: {
     post: { type: Object, required: true },
     format: { type: Object, default: null },
     username: { type: String, default: null }
   },
-  emits: ['open', 'vote', 'reblog'],
+  emits: ['open', 'voted', 'reblog'],
   computed: {
     accentColor () {
       return (this.format && this.format.color) || DEFAULT_ACCENT
@@ -73,16 +82,8 @@ export default {
     media () {
       return shortMedia(this.post)
     },
-    votes () {
-      const stats = this.post.stats
-      if (stats && Number.isFinite(Number(stats.total_votes))) return stats.total_votes
-      return Array.isArray(this.post.active_votes) ? this.post.active_votes.length : 0
-    },
     replies () {
       return Number(this.post.children) || 0
-    },
-    reblogs () {
-      return Number(this.post.reblogs) || (Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by.length : 0)
     },
     payout () {
       const label = postPayoutLabel(this.post)
@@ -94,13 +95,14 @@ export default {
     fullTime () {
       return this.post.created ? moment.utc(this.post.created).format('D MMM YYYY, HH:mm') : ''
     },
-    voteDirection () {
-      return postUserVoteDirection(this.post, this.username)
+    /** Reflect a reblog already on chain rather than relying on local state. */
+    alreadyReblogged () {
+      if (!this.username) return false
+      const voter = String(this.username).toLowerCase()
+      return this.rebloggers.some(name => String(name).toLowerCase() === voter)
     },
-    voteHint () {
-      if (this.voteDirection === 'up') return 'You upvoted this'
-      if (this.voteDirection === 'down') return 'You downvoted this'
-      return this.votes + ' votes'
+    rebloggers () {
+      return Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by : []
     },
     externalUrl () {
       return shortFormUrl(this.post, this.format && this.format.id)
@@ -194,9 +196,17 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  flex-wrap: wrap;
   margin-top: var(--space-2);
   padding-top: var(--space-1);
   border-top: 1px solid var(--border-subtle);
+}
+
+/* Give the shared vote and reblog controls the same compact rhythm as the
+   card's own action buttons. */
+.sfc-foot :deep(.vote-control),
+.sfc-foot :deep(.reblog-btn) {
+  flex: none;
 }
 
 .sfc-action {
@@ -219,14 +229,6 @@ export default {
 .sfc-action:hover {
   background: rgba(79, 195, 247, 0.1);
   color: #e4eaed;
-}
-
-.sfc-action--vote:hover {
-  color: #ff8a80;
-}
-
-.sfc-action--down {
-  color: #ef9a9a;
 }
 
 .sfc-action--static {
