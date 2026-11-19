@@ -73,6 +73,42 @@ function removeJsonLd (html) {
   return html.replace(new RegExp(pattern, 'gi'), '')
 }
 
+const SEO_LINKS = [
+  ['/', 'Home'],
+  ['/created', 'Browse posts'],
+  ['/blocks', 'Blocks'],
+  ['/witnesses', 'Witnesses'],
+  ['/proposals', 'Proposals'],
+  ['/markets', 'Markets'],
+  ['/health', 'Network health'],
+  ['/nodes', 'API nodes']
+]
+
+/**
+ * A small static body inside the mount element. Vue replaces it on mount, but
+ * crawlers and link previews that do not run JavaScript still get an h1, a
+ * summary and a real internal link graph. `ssi` marks values that are nginx
+ * variables rather than text to escape.
+ */
+function bodySkeleton (title, description, { ssi = false } = {}) {
+  const heading = ssi ? title : escapeHtml(title)
+  const text = ssi ? description : escapeHtml(description)
+  const links = SEO_LINKS
+    .map(([href, label]) => '<li><a href="' + href + '">' + label + '</a></li>')
+    .join('')
+  return '<div id="q-app"><main data-seo-shell style="max-width:960px;margin:0 auto;padding:2rem 1rem;font-family:system-ui,sans-serif">' +
+    '<h1>' + heading + '</h1><p>' + text + '</p>' +
+    '<nav aria-label="Explorer sections"><ul style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;padding:0;list-style:none">' + links + '</ul></nav>' +
+    '</main></div>'
+}
+
+function applyBodySkeleton (html, title, description, { ssi = false } = {}) {
+  if (!title || !description) return html
+  const pattern = /<div\b[^>]*\bid=(?:"q-app"|'q-app'|q-app)[^>]*>\s*<\/div>/i
+  if (!pattern.test(html)) return html
+  return html.replace(pattern, bodySkeleton(title, description, { ssi }))
+}
+
 /**
  * Apply route metadata to the original SPA shell without copying any rendered
  * body. The shell's mount element and script tags stay exactly as built.
@@ -98,6 +134,7 @@ export function applyMetadata (shell, metadata) {
   if (metadata.jsonLd) {
     html = html.replace('</head>', '  <script type="application/ld+json">' + metadata.jsonLd + '</script>\n  </head>')
   }
+  html = applyBodySkeleton(html, metadata.title, metadata.description)
   if (!html.includes(MARKER)) html = html.replace('<head>', '<head>\n  ' + MARKER)
   return html
 }
@@ -112,13 +149,14 @@ function ssi (variable, fallback) {
  * `page_*` variables after validating the URL segments, so crawlers get a
  * route-specific title and canonical even though the SPA data is client-side.
  */
-export function buildMetadataTemplate (shell, { title, description, type = 'website' } = {}) {
+export function buildMetadataTemplate (shell, { title, description, type = 'website', image = 'https://hive.ausbit.dev/statics/icons/icon-512x512.png' } = {}) {
   if (!title || !description) throw new Error('metadata template needs a default title and description')
 
   const pageTitle = ssi('page_title', title)
   const pageDescription = ssi('page_description', description)
   const pagePath = ssi('page_path', '/')
   const pageType = ssi('page_type', type)
+  const pageImage = ssi('page_image', image)
 
   let html = replaceTitle(shell, pageTitle, { raw: true })
   html = replaceMeta(html, 'name', 'description', pageDescription, { raw: true })
@@ -126,9 +164,12 @@ export function buildMetadataTemplate (shell, { title, description, type = 'webs
   html = replaceMeta(html, 'property', 'og:title', pageTitle, { raw: true })
   html = replaceMeta(html, 'property', 'og:description', pageDescription, { raw: true })
   html = replaceMeta(html, 'property', 'og:url', 'https://hive.ausbit.dev' + pagePath, { raw: true })
+  html = replaceMeta(html, 'property', 'og:image', pageImage, { raw: true })
   html = replaceMeta(html, 'property', 'og:type', pageType, { raw: true })
   html = replaceMeta(html, 'name', 'twitter:title', pageTitle, { raw: true })
   html = replaceMeta(html, 'name', 'twitter:description', pageDescription, { raw: true })
+  html = replaceMeta(html, 'name', 'twitter:image', pageImage, { raw: true })
   html = removeJsonLd(html)
+  html = applyBodySkeleton(html, pageTitle, pageDescription, { ssi: true })
   return html
 }
