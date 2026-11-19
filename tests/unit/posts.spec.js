@@ -10,7 +10,10 @@ import {
   postPayoutValue,
   postRebloggers,
   postTags,
-  postVotes
+  postUserVote,
+  postUserVoteDirection,
+  postVotes,
+  voteDirection
 } from '../../src/services/posts'
 
 function post (overrides = {}) {
@@ -65,5 +68,39 @@ describe('post preview helpers', () => {
     expect(formatPostReputation(295634214098804)).toBe('74')
     expect(formatPostReputation(0)).toBe(null)
     expect(postCommunityTitle(post({ community_title: 'Hive' }))).toBe('Hive')
+  })
+})
+
+describe('post user vote helpers', () => {
+  const voters = (...votes) => post({ active_votes: votes })
+
+  it('derives vote direction from numeric and string weights', () => {
+    expect(voteDirection({ rshares: 12345 })).toBe(1)
+    expect(voteDirection({ rshares: '12345' })).toBe(1)
+    expect(voteDirection({ rshares: -42 })).toBe(-1)
+    expect(voteDirection({ rshares: '-42' })).toBe(-1)
+    // Bridge zeroes rshares on some neutral votes but keeps the percent sign.
+    expect(voteDirection({ rshares: 0, percent: -5000 })).toBe(-1)
+    expect(voteDirection({ rshares: 0, percent: 0 })).toBe(0)
+    expect(voteDirection(null)).toBe(0)
+  })
+
+  it('finds the logged-in user vote case-insensitively', () => {
+    const current = voters(
+      { voter: 'bob', rshares: 10 },
+      { voter: 'Alice', rshares: 20 }
+    )
+    expect(postUserVote(current, 'alice').rshares).toBe(20)
+    expect(postUserVote(current, 'carol')).toBe(undefined)
+    expect(postUserVote(current, '')).toBe(undefined)
+    expect(postUserVote(post(), 'alice')).toBe(undefined)
+  })
+
+  it('reports up, down or no vote for the user', () => {
+    expect(postUserVoteDirection(voters({ voter: 'alice', rshares: 20 }), 'alice')).toBe('up')
+    expect(postUserVoteDirection(voters({ voter: 'alice', rshares: '-20' }), 'alice')).toBe('down')
+    expect(postUserVoteDirection(voters({ voter: 'alice', rshares: 0 }), 'alice')).toBe(null)
+    expect(postUserVoteDirection(voters({ voter: 'bob', rshares: 20 }), 'alice')).toBe(null)
+    expect(postUserVoteDirection(voters({ voter: 'alice', rshares: 20 }), null)).toBe(null)
   })
 })

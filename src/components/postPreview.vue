@@ -88,8 +88,14 @@
       </div>
 
       <footer class="post-card__footer">
-        <span class="post-card__stat" title="Votes">
-          <q-icon name="thumb_up_alt" aria-hidden="true" />{{ votes }}
+        <span
+          class="post-card__stat post-card__stat--votes"
+          :class="userVote ? 'post-card__stat--voted-' + userVote : null"
+          :title="userVoteTitle || 'Votes'"
+          :aria-label="userVoteTitle || votes + ' votes'"
+        >
+          <q-icon :name="userVote === 'down' ? 'thumb_down' : 'thumb_up'" aria-hidden="true" />{{ votes }}
+          <span v-if="userVote" class="post-card__voted-label">{{ userVote === 'down' ? 'Downvoted' : 'Upvoted' }}</span>
         </span>
         <span class="post-card__stat" title="Comments">
           <q-icon name="comment" aria-hidden="true" />{{ commentCount }}
@@ -348,6 +354,52 @@
   font-size: 1.05em;
 }
 
+/* The user's own vote: a filled, colour-coded pill next to the vote count so
+   it reads at a glance while scanning a grid of cards. */
+.post-card__stat--votes {
+  padding: 0 0.32rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.post-card__stat--voted-up {
+  border-color: rgba(76, 175, 80, 0.45);
+  background: rgba(76, 175, 80, 0.16);
+  color: #a5d6a7;
+}
+
+.post-card__stat--voted-down {
+  border-color: rgba(239, 83, 80, 0.45);
+  background: rgba(239, 83, 80, 0.16);
+  color: #ef9a9a;
+}
+
+.post-card__voted-label {
+  margin-left: 0.1rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* A subtle directional accent on the card edge reinforces the vote state. */
+.post-card--voted-up {
+  box-shadow: inset 3px 0 0 0 rgba(129, 199, 132, 0.85);
+}
+
+.post-card--voted-down {
+  box-shadow: inset 3px 0 0 0 rgba(239, 83, 80, 0.85);
+}
+
+.post-card--voted-up:hover {
+  border-color: rgba(129, 199, 132, 0.5);
+}
+
+.post-card--voted-down:hover {
+  border-color: rgba(239, 83, 80, 0.5);
+}
+
 .post-card__read {
   display: inline-flex;
   align-items: center;
@@ -422,6 +474,7 @@ import {
   postPayoutLabel,
   postRebloggers,
   postTags,
+  postUserVoteDirection,
   postVotes
 } from 'src/services/posts'
 
@@ -515,8 +568,18 @@ export default {
       return {
         'post-card--cards': this.styleType === 'cards',
         'post-card--list': this.styleType === 'list',
-        'post-card--no-image': !this.hasImage
+        'post-card--no-image': !this.hasImage,
+        'post-card--voted-up': this.userVote === 'up',
+        'post-card--voted-down': this.userVote === 'down'
       }
+    },
+    userVote () {
+      return postUserVoteDirection(this.post, this.$hiveStore.user.username)
+    },
+    userVoteTitle () {
+      if (this.userVote === 'up') return 'You upvoted this post'
+      if (this.userVote === 'down') return 'You downvoted this post'
+      return ''
     }
   },
   watch: {

@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { useHiveStore } from '../../src/stores/hive'
+import PostPreview from '../../src/components/postPreview.vue'
 import { postImage, postSummary } from '../../src/utils/postPreview'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
@@ -73,6 +77,57 @@ describe('postSummary', () => {
   it('returns an empty string for missing bodies', () => {
     expect(postSummary(null)).toBe('')
     expect(postSummary({ body: '' })).toBe('')
+  })
+})
+
+describe('post card vote indicator', () => {
+  function mountCard (vote) {
+    setActivePinia(createPinia())
+    const store = useHiveStore()
+    store.user.username = 'alice'
+    const basePost = {
+      author: 'bob',
+      permlink: 'hello-world',
+      title: 'Hello',
+      children: 0,
+      json_metadata: {},
+      stats: { total_votes: 12 },
+      active_votes: [{ voter: 'alice', rshares: vote }]
+    }
+    return mount(PostPreview, {
+      props: { post: basePost, styleType: 'cards' },
+      global: {
+        plugins: [{ install (app) { app.config.globalProperties.$hiveStore = store } }],
+        stubs: {
+          'router-link': { template: '<a><slot /></a>' },
+          'q-avatar': true,
+          'q-img': true,
+          'q-icon': { template: '<i class="q-icon"><slot /></i>' },
+          'q-space': true
+        }
+      }
+    })
+  }
+
+  it('marks an upvoted card', () => {
+    const wrapper = mountCard(12345)
+    expect(wrapper.find('.post-card').classes()).toContain('post-card--voted-up')
+    expect(wrapper.find('.post-card__stat--voted-up').exists()).toBe(true)
+    expect(wrapper.find('.post-card__voted-label').text()).toBe('Upvoted')
+  })
+
+  it('marks a downvoted card', () => {
+    const wrapper = mountCard('-12345')
+    expect(wrapper.find('.post-card').classes()).toContain('post-card--voted-down')
+    expect(wrapper.find('.post-card__stat--voted-down').exists()).toBe(true)
+    expect(wrapper.find('.post-card__voted-label').text()).toBe('Downvoted')
+  })
+
+  it('leaves an unvoted card plain', () => {
+    const wrapper = mountCard(0)
+    expect(wrapper.find('.post-card').classes()).not.toContain('post-card--voted-up')
+    expect(wrapper.find('.post-card').classes()).not.toContain('post-card--voted-down')
+    expect(wrapper.find('.post-card__voted-label').exists()).toBe(false)
   })
 })
 

@@ -359,7 +359,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
-import { postPayoutValue } from 'src/services/posts'
+import { postPayoutValue, postUserVoteDirection } from 'src/services/posts'
 import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
 
 const DEFAULT_FILTERS = () => ({
@@ -454,7 +454,7 @@ export default {
       let list = this.posts
 
       if (this.filter.hideVoted && this.loggedInUser) {
-        list = list.filter(post => !(post.active_votes || []).some(vote => vote.voter === this.loggedInUser))
+        list = list.filter(post => postUserVoteDirection(post, this.loggedInUser) === null)
       }
       if (this.filter.hideReblogs) {
         list = list.filter(post => !(post.reblogged_by && post.reblogged_by.length))

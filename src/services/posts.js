@@ -68,6 +68,43 @@ export function postVotes (post) {
   return Array.isArray(post && post.active_votes) ? post.active_votes.length : 0
 }
 
+/**
+ * Direction of a vote weight. Bridge and condenser sometimes serialise
+ * `rshares`/`percent` as strings, so coerce before taking the sign.
+ * Returns 1 for upvotes, -1 for downvotes and 0 for a neutral/zero vote.
+ */
+export function voteDirection (vote) {
+  if (!vote) return 0
+  const rshares = Number(vote.rshares)
+  if (Number.isFinite(rshares) && rshares !== 0) return Math.sign(rshares)
+  const percent = Number(vote.percent)
+  if (Number.isFinite(percent) && percent !== 0) return Math.sign(percent)
+  return 0
+}
+
+/**
+ * The logged-in user's own vote on a post, if any (case-insensitive voter
+ * match). Returns `undefined` when the user has not voted or is logged out.
+ */
+export function postUserVote (post, username) {
+  if (!post || !username) return undefined
+  const voter = String(username).toLowerCase()
+  const votes = Array.isArray(post.active_votes) ? post.active_votes : []
+  return votes.find(vote => vote && String(vote.voter || '').toLowerCase() === voter)
+}
+
+/**
+ * "up" / "down" for the user's vote on a post, or `null` when they have not
+ * voted (or voted at neutral weight). Used by browse cards to make the user's
+ * own vote obvious at a glance.
+ */
+export function postUserVoteDirection (post, username) {
+  const direction = voteDirection(postUserVote(post, username))
+  if (direction > 0) return 'up'
+  if (direction < 0) return 'down'
+  return null
+}
+
 export function postCommentCount (post) {
   return Number(post && post.children) || 0
 }
