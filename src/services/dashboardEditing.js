@@ -18,6 +18,7 @@ import {
   updateWidgetSettings,
   widgetMeta
 } from './dashboardLayout'
+import { HOME_MARKET_CURRENCIES, MAX_HOME_MARKET_COINS } from './homeMarket'
 
 /**
  * Catalogue for the drawer: one group per category, in the registry's declared
@@ -148,6 +149,132 @@ export function draftChanges (draft, original) {
   if (shared.join('|') !== beforeOrder.join('|')) moved += 1
 
   return { added, removed, moved, resized, configured, total: added + removed + moved + resized + configured }
+}
+
+/* --- widget settings ------------------------------------------------------ */
+
+export const POST_SOURCE_OPTIONS = [
+  { value: 'trending', label: 'Trending' },
+  { value: 'created', label: 'New' },
+  { value: 'hot', label: 'Hot' }
+]
+
+const ACCOUNT_FIELD = {
+  key: 'account',
+  kind: 'text',
+  label: 'Account',
+  hint: 'Leave blank to use the signed-in user.',
+  placeholder: 'ausbitbank',
+  stripAt: true
+}
+
+const LIMIT_FIELD = (max, label = 'Items to show') => ({
+  key: 'limit',
+  kind: 'number',
+  label,
+  min: 1,
+  max
+})
+
+/**
+ * The settings a widget instance exposes in the Configure dialog. The order is
+ * the visual order. An empty list means the widget has nothing to configure
+ * (network stats), which also hides its Configure item.
+ */
+export function settingsFieldsFor (type) {
+  switch (type) {
+    case 'block':
+      return [
+        { key: 'compact', kind: 'toggle', label: 'Compact layout', hint: 'Hide the operation mix to keep the card short.' }
+      ]
+    case 'market':
+      return [
+        { key: 'coinIds', kind: 'coins', label: 'Coins' },
+        { key: 'currency', kind: 'currency', label: 'Quote currency' },
+        { key: 'compact', kind: 'toggle', label: 'Compact layout', hint: 'Show at most four coins.' }
+      ]
+    case 'witnesses':
+      return [
+        { key: 'limit', kind: 'number', label: 'Witnesses to show', min: 1, max: 20 },
+        { key: 'pinMine', kind: 'toggle', label: 'Keep my witness on top', hint: 'Added to the limit rather than replacing a row.' },
+        { key: 'highlight', kind: 'text', label: 'Highlight account', placeholder: 'ausbitbank', stripAt: true },
+        { key: 'showHealth', kind: 'toggle', label: 'Show signing and price-feed health' }
+      ]
+    case 'posts':
+      return [
+        { key: 'source', kind: 'select', label: 'Feed', options: POST_SOURCE_OPTIONS },
+        { key: 'tag', kind: 'text', label: 'Community or tag', placeholder: 'hive-dev', stripHash: true },
+        { key: 'limit', kind: 'number', label: 'Posts to show', min: 1, max: 20 },
+        { key: 'showSortToggle', kind: 'toggle', label: 'Show the Trending/New/Hot switcher' }
+      ]
+    case 'accountPosts':
+      return [ACCOUNT_FIELD, LIMIT_FIELD(20, 'Posts to show')]
+    case 'wallet':
+    case 'myWitness':
+    case 'witnessHealth':
+      return [ACCOUNT_FIELD]
+    case 'notifications':
+      return [LIMIT_FIELD(10, 'Notifications to show'), ACCOUNT_FIELD]
+    default:
+      return []
+  }
+}
+
+export function isConfigurableWidget (type) {
+  return settingsFieldsFor(type).length > 0
+}
+
+const CURRENCY_IDS = HOME_MARKET_CURRENCIES.map(entry => entry.id)
+const COIN_ID = /^[a-z0-9][a-z0-9-]*$/
+
+/**
+ * Clamp and cast values coming from the Configure dialog. Only keys the widget
+ * declares are kept, so a stale setting from an older layout cannot leak into
+ * a card that no longer accepts it.
+ */
+export function sanitiseWidgetSettings (type, settings = {}) {
+  const input = settings && typeof settings === 'object' ? settings : {}
+  const result = {}
+  for (const field of settingsFieldsFor(type)) {
+    if (!(field.key in input)) continue
+    const raw = input[field.key]
+    switch (field.kind) {
+      case 'toggle':
+        result[field.key] = Boolean(raw)
+        break
+      case 'number': {
+        const number = Number(raw)
+        if (!Number.isFinite(number)) break
+        result[field.key] = Math.min(field.max, Math.max(field.min, Math.round(number)))
+        break
+      }
+      case 'select':
+        if (field.options.some(option => option.value === raw)) result[field.key] = raw
+        break
+      case 'currency': {
+        const currency = String(raw ?? '').trim().toLowerCase()
+        if (CURRENCY_IDS.includes(currency)) result[field.key] = currency
+        break
+      }
+      case 'coins': {
+        const list = (Array.isArray(raw) ? raw : [])
+          .map(value => String(value || '').trim().toLowerCase())
+          .filter(value => COIN_ID.test(value))
+        result[field.key] = [...new Set(list)].slice(0, MAX_HOME_MARKET_COINS)
+        break
+      }
+      case 'text': {
+        let value = String(raw ?? '').trim()
+        if (field.stripAt) value = value.replace(/^@/, '')
+        if (field.stripHash) value = value.replace(/^#/, '')
+        result[field.key] = value.slice(0, 80)
+        break
+      }
+      default:
+        break
+    }
+  }
+  return result
 }
 
 /* Re-exported so the bar/drawer can do layout edits without importing the

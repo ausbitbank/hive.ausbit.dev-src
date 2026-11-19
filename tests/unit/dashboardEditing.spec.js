@@ -4,8 +4,11 @@ import {
   availableWidgetCount,
   draftChanges,
   draftWidgets,
+  isConfigurableWidget,
   isDefaultDraft,
   isDirtyDraft,
+  sanitiseWidgetSettings,
+  settingsFieldsFor,
   widthChoices,
   widgetCatalogue
 } from '../../src/services/dashboardEditing'
@@ -138,5 +141,54 @@ describe('edit-mode drafts', () => {
   it('reports an unchanged draft as no changes', () => {
     const layout = defaultLayout()
     expect(draftChanges(draftWidgets(layout), layout).total).toBe(0)
+  })
+})
+
+describe('widget settings', () => {
+  it('offers fields for every configurable registry widget', () => {
+    for (const type of ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'notifications']) {
+      expect(isConfigurableWidget(type)).toBe(true)
+      expect(settingsFieldsFor(type).length).toBeGreaterThan(0)
+    }
+    // Network stats has no per-instance settings.
+    expect(isConfigurableWidget('network')).toBe(false)
+    expect(settingsFieldsFor('network')).toEqual([])
+  })
+
+  it('clamps numbers and casts toggles', () => {
+    const settings = sanitiseWidgetSettings('witnesses', {
+      limit: 400,
+      pinMine: 'yes',
+      highlight: '@ausbitbank',
+      showHealth: 0,
+      ignored: 'x'
+    })
+    expect(settings).toEqual({
+      limit: 20,
+      pinMine: true,
+      highlight: 'ausbitbank',
+      showHealth: false
+    })
+    expect(sanitiseWidgetSettings('notifications', { limit: -3 })).toEqual({ limit: 1 })
+  })
+
+  it('keeps whitelisted feed sources and normalises tags', () => {
+    expect(sanitiseWidgetSettings('posts', { source: 'hot' })).toEqual({ source: 'hot' })
+    expect(sanitiseWidgetSettings('posts', { source: 'nonsense' })).toEqual({})
+    expect(sanitiseWidgetSettings('posts', { tag: '  #hive-dev ' })).toEqual({ tag: 'hive-dev' })
+  })
+
+  it('normalises coin ids and currency', () => {
+    const settings = sanitiseWidgetSettings('market', {
+      coinIds: ['HIVE', 'bitcoin', 'bitcoin', 'bad id!', ''],
+      currency: 'AUD'
+    })
+    expect(settings).toEqual({ coinIds: ['hive', 'bitcoin'], currency: 'aud' })
+    expect(sanitiseWidgetSettings('market', { currency: 'xyz' })).toEqual({})
+  })
+
+  it('strips the @ from account overrides', () => {
+    expect(sanitiseWidgetSettings('wallet', { account: '@alice' })).toEqual({ account: 'alice' })
+    expect(sanitiseWidgetSettings('wallet', { account: '' })).toEqual({ account: '' })
   })
 })

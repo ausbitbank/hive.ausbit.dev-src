@@ -55,6 +55,12 @@
         @add="drawerOpen = true"
       />
 
+      <dashboard-setup-prompt
+        v-if="setupPromptVisible"
+        @apply="useStarterLayout"
+        @dismiss="dismissSetupPrompt"
+      />
+
       <dashboard-grid
         v-if="editing"
         class="home-editing"
@@ -64,6 +70,14 @@
         @move-to="onMoveTo"
         @remove="onRemove"
         @width="onWidth"
+        @configure="openConfigure"
+      />
+
+      <dashboard-grid
+        v-else-if="customisedLayout"
+        :widgets="widgets"
+        :signed-in="signedIn"
+        packed
       />
 
       <div v-else class="home-layout">
@@ -84,6 +98,12 @@
         :layout="draft"
         :signed-in="signedIn"
         @add="addWidget"
+      />
+
+      <widget-settings-dialog
+        v-model="configureOpen"
+        :widget="configureWidget"
+        @save="applyConfigure"
       />
     </div>
   </q-page>
@@ -251,14 +271,17 @@
 import AddWidgetDrawer from 'components/dashboard/AddWidgetDrawer.vue'
 import DashboardCustomiseBar from 'components/dashboard/DashboardCustomiseBar.vue'
 import DashboardGrid from 'components/dashboard/DashboardGrid.vue'
-import { moveWidget, removeWidget, setWidgetWidth } from 'src/services/dashboardLayout'
+import DashboardSetupPrompt from 'components/dashboard/DashboardSetupPrompt.vue'
+import WidgetSettingsDialog from 'components/dashboard/WidgetSettingsDialog.vue'
+import { LOGGED_IN_STARTER_LAYOUT, moveWidget, removeWidget, setWidgetWidth } from 'src/services/dashboardLayout'
 import {
   addWidgetToLayout,
   availableWidgetCount,
   draftChanges,
   draftWidgets,
   isDefaultDraft,
-  isDirtyDraft
+  isDirtyDraft,
+  updateWidgetSettings
 } from 'src/services/dashboardEditing'
 import { setPageMeta } from 'src/utils/pageMeta'
 
@@ -268,14 +291,16 @@ const SIDEBAR_TYPES = ['witnesses', 'accountPosts']
 
 export default {
   name: 'Home',
-  components: { DashboardGrid, DashboardCustomiseBar, AddWidgetDrawer },
+  components: { DashboardGrid, DashboardCustomiseBar, AddWidgetDrawer, DashboardSetupPrompt, WidgetSettingsDialog },
   data () {
     return {
       // Edit mode works on a copy; Save applies it, Cancel throws it away.
       draft: [],
       // Layout the draft started from, for the change summary.
       draftBase: [],
-      drawerOpen: false
+      drawerOpen: false,
+      configureOpen: false,
+      configureWidget: null
     }
   },
   computed: {
@@ -300,6 +325,18 @@ export default {
     },
     editing () {
       return this.$hiveStore.dashboard.editing
+    },
+    customisedLayout () {
+      return Boolean(this.$hiveStore.dashboard.customised)
+    },
+    setupPromptVisible () {
+      const dashboard = this.$hiveStore.dashboard
+      return Boolean(
+        this.signedIn &&
+        !this.editing &&
+        dashboard.setupPromptVisible &&
+        !dashboard.customised
+      )
     },
     signedIn () {
       return Boolean(this.$hiveStore.user.username)
@@ -341,6 +378,13 @@ export default {
       this.$hiveStore.resetDashboard()
       this.finishEditing()
     },
+    useStarterLayout () {
+      this.$hiveStore.applyDashboardPreset(LOGGED_IN_STARTER_LAYOUT)
+      this.dismissSetupPrompt()
+    },
+    dismissSetupPrompt () {
+      this.$hiveStore.dismissDashboardSetupPrompt(this.$hiveStore.user.username)
+    },
     finishEditing () {
       this.draft = []
       this.draftBase = []
@@ -349,6 +393,13 @@ export default {
     },
     onMoveTo ({ widget, to }) {
       this.draft = moveWidget(this.draft, widget.id, to)
+    },
+    openConfigure (widget) {
+      this.configureWidget = widget
+      this.configureOpen = true
+    },
+    applyConfigure ({ widget, settings }) {
+      this.draft = updateWidgetSettings(this.draft, widget.id, settings)
     },
     onRemove (widget) {
       this.draft = removeWidget(this.draft, widget.id)

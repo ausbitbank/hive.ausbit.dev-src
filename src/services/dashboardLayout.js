@@ -149,7 +149,9 @@ export const WIDGET_REGISTRY = [
     minWidth: 'half',
     defaultSettings: {},
     singleton: true,
-    live: true
+    live: true,
+    // No per-instance settings; the shell hides its Configure item.
+    configurable: false
   },
   {
     type: 'notifications',

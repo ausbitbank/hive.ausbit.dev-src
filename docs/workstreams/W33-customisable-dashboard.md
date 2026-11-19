@@ -1,7 +1,7 @@
 # W33 — Customisable home dashboard
 
 Date: 2026-11-19
-Status: in progress
+Status: complete (phase 1)
 
 ## Goal
 
@@ -103,27 +103,66 @@ first (reverted) attempt, kept so they are not repeated:
   `customised: true`, cancel leaves storage untouched, reset returns
   `customised: false`; `e2e/core.spec.js` 6/6; 66 dashboard unit tests.
 
-## Remaining
+## Remaining — phase 1 complete
 
-1. Prop-parameterise the five cards (backwards compatible) and pass
-   `widget.settings` through again: `HomeWitnessCard` (`limit`, `pinMine`,
-   `highlight`), `HomeTrendingPosts` (`source`, `tag`, `limit` — it currently
-   has **no props**, so settings must not be passed until these exist),
-   `HomeRecentPosts` (default account to the logged-in user),
-   `HomeBlockCard`/`HomeMarketCard` (compact; market settings moved to widget
-   settings).
-2. Configure dialog for widget settings (the shell emits `configure`; the bar
-   has no settings UI yet). Width change currently cycles through tokens from
-   the card menu.
-3. New widgets: `WidgetWallet`, `WidgetMyWitness`, `WidgetWitnessHealth`,
-   `WidgetNetworkStats`, `WidgetNotifications` (registry entries exist; the
-   grid shows the shell's "available shortly" state for them).
-4. View mode for a customised layout: today it keeps the page shell, so a
-   layout without sidebar widgets leaves a 340px gap on the right. Decide
-   whether customised layouts should use the packed grid instead.
-5. The one-time setup prompt for a known account (`setupPromptVisible`) is not
-   rendered anywhere yet.
-6. e2e coverage for edit mode (drag, keyboard, bar save/cancel/reset).
+All six phase-1 items are done. Follow-ups, none blocking:
+
+1. The market widget's Configure dialog uses a suggested-coin multi-select;
+   the in-card tune dialog still offers full CoinGecko search. Sharing that
+   picker would be a polish pass, not a correctness fix.
+2. Comments on widget posts remain out of scope (agreed with the owner).
+3. Customised layouts always use the packed 12-column view; the built-in
+   default keeps the two-column page shell. Revisit if a user asks for a
+   sidebar in a custom layout.
+4. Latent `HomeWitnessCard` bug from the notes below still wants a realistic
+   global-props test.
+5. `governance.js` exports `voteOverlap`, not `voteIntersection`, for anyone
+   reusing the witness-health maths.
+
+### Wallet, configure dialog, setup prompt, packed view (done 2026-11-19)
+
+- `components/dashboard/WidgetWallet.vue` — portfolio total and 24h change,
+  HIVE/HBD/HP/savings rows, claimable rewards (same `buildPortfolio` maths as
+  the wallet page), guest/loading/error states, wallet link. The grid now
+  renders `wallet`; every phase-1 widget type has a component.
+- `services/dashboardEditing.js` — `settingsFieldsFor` / `isConfigurableWidget`
+  / `sanitiseWidgetSettings` describe the Configure dialog per widget type
+  (numbers clamped, toggles cast, `@`/`#` stripped, feed source whitelisted,
+  coin ids deduped and capped, currency whitelisted). `tests/unit/dashboardEditing.spec.js`
+  +5 tests.
+- `components/dashboard/WidgetSettingsDialog.vue` — generic Configure dialog
+  driven by those fields. The grid forwards `configure`; `Index.vue` applies
+  the result to the draft through `updateWidgetSettings`, so Configure/Cancel/
+  Save all follow the existing draft semantics.
+- `components/dashboard/DashboardSetupPrompt.vue` — one-time "Make this
+  dashboard yours" prompt with the logged-in starter layout and Not now.
+  Applying the starter layout persists `customised: true` and marks the prompt
+  dismissed; Not now only stores the dismissal.
+- `stores/hive/dashboard.js` — `setupPromptVisible` is now resolved in the
+  initial state as well as on login. A restored session never calls
+  `loadDashboard`, so the prompt previously never appeared after a reload.
+- `DashboardGrid` — `packed` view mode for customised layouts: one 12-column
+  grid with the same row packing as edit mode, collapsing below 800px. The
+  built-in default still renders through the original main/sidebar shell.
+- The shell's Configure/Change width items are wired again (they emitted but
+  nothing listened): the grid forwards `configure` and `width`, and
+  `meta.configurable === false` hides Configure for Network stats.
+- `e2e/dashboard.spec.js` (9 tests): default layout + Customise button,
+  add/save persistence, cancel, reset, keyboard reorder, pointer drag reorder,
+  Configure dialog round-trip, starter-layout prompt, prompt dismissal.
+- Verified: 635 unit tests, ESLint clean, production build, dashboard e2e 9/9,
+  `e2e/core.spec.js` 5/5.
+
+## Earlier remaining list (superseded)
+
+1. Prop-parameterise the five cards (done in `69ababf`).
+2. Configure dialog (done above).
+3. New widgets (done: wallet, my-witness, witness-health, network stats,
+   notifications).
+4. View mode for customised layouts (done: packed grid).
+5. One-time setup prompt (done).
+6. e2e coverage for edit mode (done).
+
 
 ### Edit mode (done 2026-11-19)
 

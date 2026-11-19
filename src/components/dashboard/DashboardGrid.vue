@@ -4,6 +4,7 @@
     class="dw-grid"
     :class="{
       'dw-grid--pair': pair && !editing,
+      'dw-grid--packed': packed && !editing,
       'dw-grid--editing': editing,
       'dw-grid--dragging': dragging
     }"
@@ -17,7 +18,7 @@
         'dw-grid__cell--before': markerFor(entry.widget, 'before'),
         'dw-grid__cell--after': markerFor(entry.widget, 'after')
       }"
-      :style="editing ? { gridColumn: 'span ' + entry.span } : null"
+      :style="editing || packed ? { gridColumn: 'span ' + entry.span } : null"
       :data-widget-type="entry.widget.type"
       :data-widget-id="entry.widget.id"
     >
@@ -30,11 +31,14 @@
         :guest-blocked="guestBlocked(entry.widget)"
         :unavailable="entry.unavailable"
         :hide-header="true"
+        :configurable="configurableFor(entry.widget)"
         :index="entry.index"
         :count="widgets.length"
         @drag-start="startDrag"
         @pick-up="pickUp"
         @nudge="onNudge"
+        @configure="$emit('configure', $event)"
+        @width="$emit('width', $event)"
         @remove="$emit('remove', $event)"
       >
         <home-block-card
@@ -59,6 +63,10 @@
         />
         <widget-my-witness
           v-else-if="entry.widget.type === 'myWitness'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+        />
+        <widget-wallet
+          v-else-if="entry.widget.type === 'wallet'"
           v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
         />
         <widget-witness-health
@@ -93,15 +101,17 @@
   display: block;
 }
 
-/* Edit mode: the real 12-column grid, always. */
-.dw-grid--editing {
+/* Edit mode and customised view mode: the real 12-column grid. */
+.dw-grid--editing,
+.dw-grid--packed {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   align-items: start;
   gap: var(--space-4);
 }
 
-.dw-grid--editing > .dw-grid__cell {
+.dw-grid--editing > .dw-grid__cell,
+.dw-grid--packed > .dw-grid__cell {
   min-width: 0;
   position: relative;
 }
@@ -180,6 +190,14 @@
   .dw-grid--editing > .dw-grid__cell {
     grid-column: 1 / -1 !important;
   }
+
+  .dw-grid--packed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dw-grid--packed > .dw-grid__cell {
+    grid-column: 1 / -1 !important;
+  }
 }
 </style>
 
@@ -189,6 +207,7 @@ import WidgetMyWitness from 'components/dashboard/WidgetMyWitness.vue'
 import WidgetWitnessHealth from 'components/dashboard/WidgetWitnessHealth.vue'
 import WidgetNetworkStats from 'components/dashboard/WidgetNetworkStats.vue'
 import WidgetNotifications from 'components/dashboard/WidgetNotifications.vue'
+import WidgetWallet from 'components/dashboard/WidgetWallet.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
@@ -206,9 +225,7 @@ const SPANS = new Map(WIDGET_WIDTHS.map(entry => [entry.value, entry.columns]))
 
 // Types this grid renders today. Registry entries without a component are
 // still laid out and show the shell's "available shortly" placeholder.
-// `wallet` is deliberately absent until its numbers are verified against the
-// wallet page; its registry entry renders the shell's "available shortly" state.
-const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'myWitness', 'witnessHealth', 'network', 'notifications']
+const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications']
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
 // home/end keys jump to the ends of the layout.
@@ -227,6 +244,7 @@ export default {
     WidgetWitnessHealth,
     WidgetNetworkStats,
     WidgetNotifications,
+    WidgetWallet,
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,
@@ -240,9 +258,12 @@ export default {
     // Signed-in user; account widgets show a log-in state when false.
     signedIn: { type: Boolean, default: false },
     // Render two widgets side by side when not editing (the block/coin row).
-    pair: { type: Boolean, default: false }
+    pair: { type: Boolean, default: false },
+    // View mode for a customised layout: one packed 12-column grid instead of
+    // the page's main/sidebar shell.
+    packed: { type: Boolean, default: false }
   },
-  emits: ['move-to', 'remove'],
+  emits: ['move-to', 'remove', 'width', 'configure'],
   data () {
     return {
       dragId: '',
@@ -259,7 +280,7 @@ export default {
   },
   computed: {
     cells () {
-      if (this.editing) {
+      if (this.editing || this.packed) {
         const rows = packRows(this.widgets, GRID_COLUMNS)
         const spans = new Map()
         for (const row of rows) {
@@ -311,8 +332,11 @@ export default {
     metaFor (widget) {
       return widgetMeta(widget.type) || { label: widget.type, category: '' }
     },
+    configurableFor (widget) {
+      return widgetMeta(widget.type)?.configurable !== false
+    },
     guestBlocked (widget) {
-      return Boolean(widgetMeta(widget)?.requiresAccount) && !this.signedIn
+      return Boolean(widgetMeta(widget.type)?.requiresAccount) && !this.signedIn
     },
     markerFor (widget, edge) {
       return Boolean(this.marker && this.marker.id === widget.id && this.marker.edge === edge)

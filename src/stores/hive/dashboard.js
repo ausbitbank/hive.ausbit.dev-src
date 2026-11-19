@@ -43,7 +43,10 @@ function dashboardState (username = null) {
       editing: false,
       // Set when localStorage refused a write; the layout still works in memory.
       storageFailed: false,
-      setupPromptVisible: false,
+      // The one-time "make it yours" prompt for a known account with no
+      // customised layout. Resolved at boot as well as on login, because a
+      // restored session never calls `loadDashboard`.
+      setupPromptVisible: shouldShowSetupPrompt(username),
       setupPromptDismissed: false
     }
   }

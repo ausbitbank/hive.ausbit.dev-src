@@ -16,7 +16,7 @@
 // The mixin declares no props of its own; widgets declare `account` (and any
 // other settings) so the grid can pass them through.
 
-import { useSignedInUsername } from 'src/composables/useAccountWidget'
+import { loadAccountWidgetData, useSignedInUsername } from 'src/composables/useAccountWidget'
 
 export const accountWidgetMixin = {
   data () {
@@ -96,8 +96,6 @@ export const accountWidgetMixin = {
     /** Override in a widget to receive the raw result before it is stored. */
     applyAccountData () {},
     async loadAccountData (name) {
-      // Imported lazily so widgets that do not need chains/prices stay light.
-      const { loadAccountWidgetData } = await import('src/composables/useAccountWidget')
       return loadAccountWidgetData(this, { getSettings: () => ({ account: name }) })
     }
   }
