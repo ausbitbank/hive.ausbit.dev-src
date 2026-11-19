@@ -1,0 +1,142 @@
+import { describe, expect, it } from 'vitest'
+import {
+  addWidgetToLayout,
+  availableWidgetCount,
+  draftChanges,
+  draftWidgets,
+  isDefaultDraft,
+  isDirtyDraft,
+  widthChoices,
+  widgetCatalogue
+} from '../../src/services/dashboardEditing'
+import { DEFAULT_LAYOUT, LOGGED_IN_STARTER_LAYOUT, buildLayout } from '../../src/services/dashboardLayout'
+
+function defaultLayout () {
+  return buildLayout(DEFAULT_LAYOUT)
+}
+
+describe('add-widget catalogue', () => {
+  it('groups the registry by category in the declared order', () => {
+    const groups = widgetCatalogue(defaultLayout())
+    expect(groups.map(group => group.id)).toEqual(['network', 'markets', 'governance', 'community', 'account'])
+    const all = groups.flatMap(group => group.widgets)
+    expect(all.length).toBeGreaterThanOrEqual(9)
+    for (const entry of all) {
+      expect(entry.label).toBeTruthy()
+      expect(entry.description).toBeTruthy()
+      expect(entry.icon).toBeTruthy()
+    }
+  })
+
+  it('marks singleton widgets that are already on the dashboard as added', () => {
+    const layout = defaultLayout()
+    const block = widgetCatalogue(layout).flatMap(g => g.widgets).find(entry => entry.type === 'block')
+    expect(block.added).toBe(true)
+    expect(block.disabled).toBe(true)
+    expect(block.reason).toContain('already')
+  })
+
+  it('allows repeating a non-singleton widget', () => {
+    const layout = defaultLayout()
+    const posts = widgetCatalogue(layout).flatMap(g => g.widgets).find(entry => entry.type === 'posts')
+    expect(posts.added).toBe(true)
+    expect(posts.disabled).toBe(false)
+    expect(posts.reason).toBe('')
+  })
+
+  it('keeps account widgets addable for guests, with a log-in note', () => {
+    const entries = widgetCatalogue(defaultLayout(), { signedIn: false }).flatMap(g => g.widgets)
+    const wallet = entries.find(entry => entry.type === 'wallet')
+    expect(wallet.disabled).toBe(false)
+    expect(wallet.note).toMatch(/log in/i)
+    expect(wallet.reason).toBe('')
+    const signedInEntries = widgetCatalogue(defaultLayout(), { signedIn: true }).flatMap(g => g.widgets)
+    expect(signedInEntries.find(entry => entry.type === 'wallet').note).toBe('')
+  })
+
+  it('counts the widgets that can be added right now', () => {
+    const count = availableWidgetCount(defaultLayout(), { signedIn: true })
+    expect(count).toBeGreaterThan(0)
+    // A dashboard at the maximum has nothing to add.
+    const full = buildLayout(Array.from({ length: 20 }, () => ({ type: 'market', width: 'half', settings: {} })))
+    expect(availableWidgetCount(full)).toBe(0)
+  })
+
+  it('inserts after a given widget and merges default settings', () => {
+    const layout = buildLayout(LOGGED_IN_STARTER_LAYOUT)
+    const target = layout[0]
+    const next = addWidgetToLayout(layout, 'notifications', { afterId: target.id })
+    const index = next.findIndex(widget => widget.type === 'notifications')
+    expect(index).toBe(1)
+    expect(next[index].settings).toEqual({ limit: 5 })
+    expect(next.length).toBe(layout.length + 1)
+  })
+
+  it('ignores unknown widget types', () => {
+    const layout = defaultLayout()
+    expect(addWidgetToLayout(layout, 'nope')).toBe(layout)
+  })
+
+  it('lists widths from the widget minimum upwards', () => {
+    expect(widthChoices('block')).toEqual(['quarter', 'third', 'half', 'twoThirds', 'full'])
+    expect(widthChoices('posts')).toEqual(['half', 'twoThirds', 'full'])
+    expect(widthChoices('notifications')).toEqual(['third', 'half', 'twoThirds', 'full'])
+    expect(widthChoices('nope')).toEqual([])
+  })
+})
+
+describe('edit-mode drafts', () => {
+  it('copies widgets so edits do not touch the saved layout', () => {
+    const layout = defaultLayout()
+    const draft = draftWidgets(layout)
+    draft[0].width = 'full'
+    draft[0].settings.theme = 'x'
+    expect(layout[0].width).toBe('half')
+    expect(layout[0].settings.theme).toBeUndefined()
+    expect(draft).not.toBe(layout)
+  })
+
+  it('detects a dirty draft', () => {
+    const layout = defaultLayout()
+    const draft = draftWidgets(layout)
+    expect(isDirtyDraft(draft, layout)).toBe(false)
+    draft[1].width = 'full'
+    expect(isDirtyDraft(draft, layout)).toBe(true)
+  })
+
+  it('treats a reset draft as the built-in default', () => {
+    const layout = defaultLayout()
+    expect(isDefaultDraft(draftWidgets(layout))).toBe(true)
+    const customised = draftWidgets(layout).filter(widget => widget.type !== 'posts')
+    expect(isDefaultDraft(customised)).toBe(false)
+  })
+
+  it('summarises what changed for the bar', () => {
+    const layout = defaultLayout()
+    const draft = draftWidgets(layout)
+    draft[0].width = 'full'
+    draft.push({ id: 'new', type: 'network', width: 'full', settings: {} })
+    const changes = draftChanges(draft, layout)
+    expect(changes.added).toBe(1)
+    expect(changes.resized).toBe(1)
+    expect(changes.removed).toBe(0)
+    expect(changes.total).toBe(2)
+  })
+
+  it('counts a reorder as a move but not as an add or remove', () => {
+    const layout = defaultLayout()
+    const draft = draftWidgets(layout)
+    const first = draft.shift()
+    draft.push(first)
+    const changes = draftChanges(draft, layout)
+    expect(changes.moved).toBe(1)
+    expect(changes.added).toBe(0)
+    expect(changes.removed).toBe(0)
+    expect(changes.resized).toBe(0)
+  })
+
+  it('reports an unchanged draft as no changes', () => {
+    const layout = defaultLayout()
+    expect(draftChanges(draftWidgets(layout), layout).total).toBe(0)
+  })
+})
