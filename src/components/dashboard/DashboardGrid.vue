@@ -38,7 +38,7 @@
         @pick-up="pickUp"
         @nudge="onNudge"
         @configure="$emit('configure', $event)"
-        @width="$emit('width', $event)"
+        @width-step="$emit('width-step', $event)"
         @remove="$emit('remove', $event)"
       >
         <home-block-card
@@ -263,7 +263,7 @@ export default {
     // the page's main/sidebar shell.
     packed: { type: Boolean, default: false }
   },
-  emits: ['move-to', 'remove', 'width', 'configure'],
+  emits: ['move-to', 'remove', 'width-step', 'configure'],
   data () {
     return {
       dragId: '',

@@ -40,10 +40,6 @@
                   <q-item-section avatar><q-icon name="tune" /></q-item-section>
                   <q-item-section>Configure</q-item-section>
                 </q-item>
-                <q-item v-if="meta.supportsWidths !== false" clickable @click="$emit('width', widget)">
-                  <q-item-section avatar><q-icon name="straighten" /></q-item-section>
-                  <q-item-section>Change width</q-item-section>
-                </q-item>
                 <q-item :disable="moveUpDisabled" clickable @click="$emit('nudge', { widget, direction: -1 })">
                   <q-item-section avatar><q-icon name="arrow_upward" /></q-item-section>
                   <q-item-section>Move earlier</q-item-section>
@@ -100,7 +96,30 @@
         <q-icon name="drag_indicator" size="18px" aria-hidden="true" />
         <span>Drag to reorder</span>
       </button>
-      <span class="dw-widget__width-label">{{ widthLabel }}</span>
+
+      <div class="dw-widget__width" role="group" :aria-label="'Width of ' + meta.label">
+        <button
+          type="button"
+          class="dw-widget__width-btn"
+          :disabled="!canNarrow"
+          :aria-label="'Make ' + meta.label + ' narrower'"
+          :title="'Narrower than ' + widthLabel"
+          @click="$emit('width-step', { widget, direction: -1 })"
+        >
+          <q-icon name="remove" size="15px" aria-hidden="true" />
+        </button>
+        <span class="dw-widget__width-label" aria-live="polite">{{ widthLabel }}</span>
+        <button
+          type="button"
+          class="dw-widget__width-btn"
+          :disabled="!canWiden"
+          :aria-label="'Make ' + meta.label + ' wider'"
+          :title="'Wider than ' + widthLabel"
+          @click="$emit('width-step', { widget, direction: 1 })"
+        >
+          <q-icon name="add" size="15px" aria-hidden="true" />
+        </button>
+      </div>
     </div>
   </q-card>
 </template>
@@ -195,10 +214,44 @@
   cursor: grabbing;
 }
 
+.dw-widget__width {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.dw-widget__width-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  cursor: pointer;
+}
+
+.dw-widget__width-btn:hover:not(:disabled),
+.dw-widget__width-btn:focus-visible {
+  border-color: rgba(79, 195, 247, 0.5);
+  background: rgba(79, 195, 247, 0.12);
+  color: #e1f5fe;
+}
+
+.dw-widget__width-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .dw-widget__width-label {
+  min-width: 4.6rem;
   color: #78909c;
   font-size: 0.7rem;
   letter-spacing: 0.04em;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -210,7 +263,7 @@
 </style>
 
 <script>
-import { WIDGET_WIDTHS } from 'src/services/dashboardLayout'
+import { WIDGET_WIDTHS, widthChoicesFor } from 'src/services/dashboardLayout'
 
 export default {
   name: 'DashboardWidgetShell',
@@ -231,11 +284,23 @@ export default {
     index: { type: Number, default: 0 },
     count: { type: Number, default: 1 }
   },
-  emits: ['configure', 'width', 'nudge', 'remove', 'drag-start', 'pick-up'],
+  emits: ['configure', 'width-step', 'nudge', 'remove', 'drag-start', 'pick-up'],
   computed: {
     widthLabel () {
       const match = WIDGET_WIDTHS.find(entry => entry.value === this.widget.width)
       return match ? match.label : this.widget.width
+    },
+    widthChoices () {
+      return widthChoicesFor(this.widget.type)
+    },
+    widthIndex () {
+      return this.widthChoices.indexOf(this.widget.width)
+    },
+    canNarrow () {
+      return this.widthIndex > 0
+    },
+    canWiden () {
+      return this.widthIndex !== -1 && this.widthIndex < this.widthChoices.length - 1
     },
     moveUpDisabled () {
       return this.index <= 0

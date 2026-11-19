@@ -144,14 +144,19 @@ All six phase-1 items are done. Follow-ups, none blocking:
 - `DashboardGrid` — `packed` view mode for customised layouts: one 12-column
   grid with the same row packing as edit mode, collapsing below 800px. The
   built-in default still renders through the original main/sidebar shell.
-- The shell's Configure/Change width items are wired again (they emitted but
-  nothing listened): the grid forwards `configure` and `width`, and
-  `meta.configurable === false` hides Configure for Network stats.
-- `e2e/dashboard.spec.js` (9 tests): default layout + Customise button,
-  add/save persistence, cancel, reset, keyboard reorder, pointer drag reorder,
-  Configure dialog round-trip, starter-layout prompt, prompt dismissal.
-- Verified: 635 unit tests, ESLint clean, production build, dashboard e2e 9/9,
-  `e2e/core.spec.js` 5/5.
+- The shell's Configure item is wired again (it emitted but nothing listened);
+  Configure and Change width were both dead menu entries. Width now lives in
+  the card footer instead: a `−` / `+` pair either side of the token label
+  steps one token at a time through `stepWidgetWidth`, stopping at the
+  widget's registry minimum and at full width. The menu keeps Configure, move
+  and remove only, and `meta.configurable === false` hides Configure for
+  Network stats.
+- `e2e/dashboard.spec.js` (10 tests): default layout + Customise button,
+  add/save persistence, cancel, reset, keyboard reorder, footer width +/−,
+  pointer drag reorder, Configure dialog round-trip, starter-layout prompt,
+  prompt dismissal.
+- Verified: 641 unit tests, ESLint clean, production build, dashboard e2e
+  10/10.
 
 ## Earlier remaining list (superseded)
 

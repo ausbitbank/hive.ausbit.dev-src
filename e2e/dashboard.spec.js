@@ -91,6 +91,21 @@ test.describe('customisable dashboard', () => {
     await expect(page.getByText('order changed')).toBeVisible()
   })
 
+  test('the footer +/- controls resize the card in place', async ({ page }) => {
+    await openEditor(page)
+    const block = page.locator('[data-widget-type="block"]')
+    const label = block.locator('.dw-widget__width-label')
+    await expect(label).toHaveText('Half')
+
+    await block.getByRole('button', { name: 'Make Live block wider' }).click()
+    await expect(label).toHaveText('Two thirds')
+    await expect(page.getByText('1 width change')).toBeVisible()
+
+    await block.getByRole('button', { name: 'Make Live block narrower' }).click()
+    await expect(label).toHaveText('Half')
+    await expect(page.getByText('width change')).toHaveCount(0)
+  })
+
   test('drag reordering marks the draft as changed', async ({ page }) => {
     await openEditor(page)
     await page.evaluate(() => {

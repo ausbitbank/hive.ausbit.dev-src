@@ -69,7 +69,7 @@
         editing
         @move-to="onMoveTo"
         @remove="onRemove"
-        @width="onWidth"
+        @width-step="onWidthStep"
         @configure="openConfigure"
       />
 
@@ -273,7 +273,7 @@ import DashboardCustomiseBar from 'components/dashboard/DashboardCustomiseBar.vu
 import DashboardGrid from 'components/dashboard/DashboardGrid.vue'
 import DashboardSetupPrompt from 'components/dashboard/DashboardSetupPrompt.vue'
 import WidgetSettingsDialog from 'components/dashboard/WidgetSettingsDialog.vue'
-import { LOGGED_IN_STARTER_LAYOUT, moveWidget, removeWidget, setWidgetWidth } from 'src/services/dashboardLayout'
+import { LOGGED_IN_STARTER_LAYOUT, moveWidget, removeWidget, stepWidgetWidth } from 'src/services/dashboardLayout'
 import {
   addWidgetToLayout,
   availableWidgetCount,
@@ -407,12 +407,8 @@ export default {
     addWidget (type) {
       this.draft = addWidgetToLayout(this.draft, type)
     },
-    onWidth (widget) {
-      // Edit mode has "Change width" in each card's menu; the grid cycles the
-      // token so one click always changes something visible.
-      const order = ['quarter', 'third', 'half', 'twoThirds', 'full']
-      const next = order[(order.indexOf(widget.width) + 1) % order.length]
-      this.draft = setWidgetWidth(this.draft, widget.id, next)
+    onWidthStep ({ widget, direction }) {
+      this.draft = stepWidgetWidth(this.draft, widget.id, direction)
     }
   }
 }

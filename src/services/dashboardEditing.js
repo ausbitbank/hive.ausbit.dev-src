@@ -7,7 +7,6 @@ import {
   MAX_WIDGETS,
   WIDGET_CATEGORIES,
   WIDGET_REGISTRY,
-  WIDGET_WIDTHS,
   canAddWidget,
   defaultSettingsFor,
   insertWidget,
@@ -16,7 +15,8 @@ import {
   removeWidget,
   setWidgetWidth,
   updateWidgetSettings,
-  widgetMeta
+  widgetMeta,
+  widthChoicesFor
 } from './dashboardLayout'
 import { HOME_MARKET_CURRENCIES, MAX_HOME_MARKET_COINS } from './homeMarket'
 
@@ -75,14 +75,7 @@ export function addWidgetToLayout (layout, type, { afterId = null, settings = {}
 
 /** Width tokens a widget type may use, in WIDGET_WIDTHS order. */
 export function widthChoices (type) {
-  const meta = widgetMeta(type)
-  if (!meta) return []
-  const order = ['quarter', 'third', 'half', 'twoThirds', 'full']
-  const minimum = WIDGET_WIDTHS.find(entry => entry.value === meta.minWidth)?.columns || 3
-  return WIDGET_WIDTHS
-    .filter(entry => entry.columns >= minimum)
-    .sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value))
-    .map(entry => entry.value)
+  return widthChoicesFor(type)
 }
 
 /**

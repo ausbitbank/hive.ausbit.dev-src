@@ -369,6 +369,30 @@ export function setWidgetWidth (layout, id, width) {
   ))
 }
 
+/** Width tokens a widget may use, narrowest first. */
+export function widthChoicesFor (type) {
+  const meta = registryEntry(type)
+  if (!meta) return []
+  const minimum = widthColumns(meta.minWidth || 'quarter')
+  return WIDGET_WIDTHS.filter(entry => entry.columns >= minimum).map(entry => entry.value)
+}
+
+/**
+ * Move a widget one width token narrower (`-1`) or wider (`+1`). Stops at the
+ * widget's minimum and at full width, so a disabled +/- button and the helper
+ * agree on the bounds.
+ */
+export function stepWidgetWidth (layout, id, direction) {
+  return (Array.isArray(layout) ? layout : []).map(widget => {
+    if (widget.id !== id) return widget
+    const choices = widthChoicesFor(widget.type)
+    const current = choices.indexOf(widget.width)
+    const step = direction < 0 ? -1 : 1
+    const next = choices[Math.max(0, Math.min(choices.length - 1, (current === -1 ? 0 : current) + step))]
+    return next ? { ...widget, width: next } : widget
+  })
+}
+
 /** Move a widget to a new index, keeping the others' relative order. */
 export function moveWidget (layout, id, toIndex) {
   const from = layout.findIndex(widget => widget.id === id)

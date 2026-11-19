@@ -21,8 +21,10 @@ import {
   packRows,
   removeWidget,
   setWidgetWidth,
+  stepWidgetWidth,
   updateWidgetSettings,
   widgetMeta,
+  widthChoicesFor,
   DEFAULT_LAYOUT
 } from '../../src/services/dashboardLayout'
 
@@ -83,6 +85,37 @@ describe('widget widths', () => {
     const [widget] = layoutOf('posts')
     const next = setWidgetWidth([widget], widget.id, 'quarter')
     expect(next[0].width).toBe('half')
+  })
+
+  it('lists the same choices the +/- width buttons step through', () => {
+    expect(widthChoicesFor('block')).toEqual(['quarter', 'third', 'half', 'twoThirds', 'full'])
+    expect(widthChoicesFor('posts')).toEqual(['half', 'twoThirds', 'full'])
+    expect(widthChoicesFor('nope')).toEqual([])
+  })
+
+  it('steps a widget wider and narrower within its bounds', () => {
+    const [widget] = layoutOf('posts')
+    const start = { ...widget, width: 'half' }
+
+    const wider = stepWidgetWidth([start], start.id, 1)
+    expect(wider[0].width).toBe('twoThirds')
+
+    const back = stepWidgetWidth(wider, start.id, -1)
+    expect(back[0].width).toBe('half')
+
+    // At the minimum and at full width the token does not move.
+    expect(stepWidgetWidth([start], start.id, -1)[0].width).toBe('half')
+    const full = { ...start, width: 'full' }
+    expect(stepWidgetWidth([full], full.id, 1)[0].width).toBe('full')
+  })
+
+  it('leaves other widgets and unknown ids alone when stepping width', () => {
+    const layout = layoutOf('posts', 'block')
+    const next = stepWidgetWidth(layout, 'missing', 1)
+    expect(next.map(widget => widget.width)).toEqual(layout.map(widget => widget.width))
+    const widened = stepWidgetWidth(layout, layout[1].id, 1)
+    expect(widened[0].width).toBe(layout[0].width)
+    expect(widened[1].width).toBe('twoThirds')
   })
 })
 
