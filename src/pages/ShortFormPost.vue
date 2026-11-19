@@ -2,7 +2,7 @@
   <q-page class="sfp">
     <div class="sfp-wrap">
       <nav class="sfp-back" aria-label="Breadcrumb">
-        <router-link :to="{ name: 'short-form', params: { format: formatId } }">
+        <router-link :to="{ name: 'short-form', params: { formatId } }">
           <q-icon name="arrow_back" size="15px" aria-hidden="true" /> {{ format ? format.label : 'Short posts' }}
         </router-link>
       </nav>
@@ -15,34 +15,50 @@
         @action="load()"
       />
 
-      <div v-if="loading && !post" class="sfp-loading">
-        <q-skeleton type="rect" height="160px" />
+      <div v-if="loading && !post" class="sfp-loading" aria-hidden="true">
+        <q-skeleton type="rect" height="180px" />
+        <q-skeleton type="rect" height="120px" />
       </div>
 
       <template v-else-if="post">
         <article class="sfp-post home-card" :style="{ '--sfp-accent': format ? format.color : '#4fc3f7' }">
           <header class="sfp-post__head">
             <router-link :to="{ name: 'account', params: { username: post.author } }" class="sfp-author">
-              @{{ post.author }}
+              <q-avatar size="40px" class="sfp-avatar">{{ initial }}</q-avatar>
+              <span>
+                <span class="sfp-author__name">@{{ post.author }}</span>
+                <span class="sfp-author__time">
+                  <time :datetime="post.created" :title="fullTime">{{ age }}</time>
+                  <span v-if="format" aria-hidden="true"> · </span>
+                  <span v-if="format">{{ format.label }} on {{ format.app }}</span>
+                </span>
+              </span>
             </router-link>
-            <span class="sfp-meta">
-              <q-chip v-if="format" dense square :style="{ background: format.color, color: '#10161b' }">
-                {{ format.label }}
-              </q-chip>
-              <time :datetime="post.created" :title="fullTime">{{ age }}</time>
-            </span>
+            <q-btn flat dense no-caps size="sm" icon="open_in_new" :href="externalUrl" target="_blank" rel="noopener noreferrer" />
           </header>
 
           <div class="sfp-post__body">
             <render :input="post.body" />
           </div>
 
+          <short-form-media :items="media" :author="post.author" linked />
+
           <footer class="sfp-post__foot">
-            <span><q-icon name="favorite_border" size="15px" aria-hidden="true" /> {{ votes }} votes</span>
-            <span><q-icon name="mode_comment" size="15px" aria-hidden="true" /> {{ replies.length }} replies</span>
-            <span><q-icon name="paid" size="15px" aria-hidden="true" /> {{ payout }}</span>
+            <button type="button" class="sfp-action" :title="voteHint" @click="vote(post)">
+              <q-icon :name="voteDirection(post) === 'up' ? 'favorite' : 'favorite_border'" size="17px" aria-hidden="true" />
+              {{ votes }} votes
+            </button>
+            <button type="button" class="sfp-action" title="Reblog" @click="reblog(post)">
+              <q-icon name="repeat" size="17px" aria-hidden="true" />
+              {{ reblogs }}
+            </button>
+            <span class="sfp-action sfp-action--static">
+              <q-icon name="mode_comment" size="16px" aria-hidden="true" /> {{ replies.length }} replies
+            </span>
+            <span class="sfp-action sfp-action--static">
+              <q-icon name="paid" size="15px" aria-hidden="true" /> {{ payout }}
+            </span>
             <span class="sfp-flex" />
-            <q-btn flat dense no-caps size="sm" icon="open_in_new" :href="externalUrl" target="_blank" rel="noopener noreferrer" :label="'Open on ' + (format ? format.app : 'PeakD')" />
             <q-btn flat dense no-caps size="sm" icon="code" label="Raw post" :to="{ name: 'post', params: { author: post.author, permlink: post.permlink } }" />
           </footer>
 
@@ -58,8 +74,11 @@
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Posting key</div>
-              <h2 id="sfp-reply-title" class="home-panel__title">Reply to @{{ replyTargetName }}</h2>
+              <h2 id="sfp-reply-title" class="home-panel__title">
+                {{ replyParent ? 'Reply to @' + replyParent.author : 'Reply to @' + post.author }}
+              </h2>
             </div>
+            <q-btn v-if="replyParent" flat dense no-caps size="sm" label="Cancel" @click="replyParent = null" />
           </div>
           <div v-if="!loggedInUser" class="sfp-reply__locked">
             <q-icon name="lock" size="16px" aria-hidden="true" />
@@ -67,21 +86,15 @@
           </div>
           <form v-else class="sfp-reply__form" @submit.prevent="submitReply()">
             <textarea
+              ref="reply"
               v-model="replyBody"
               class="sfp-reply__input"
               rows="3"
               maxlength="1000"
-              :placeholder="'Write a reply as @' + loggedInUser + '…'"
+              :placeholder="replyParent ? '@' + replyParent.author + ' ' : 'Write a reply as @' + loggedInUser + '…'"
               aria-label="Write a reply"
             />
             <div class="sfp-reply__foot">
-              <span v-if="replyParent" class="sfp-reply__target">
-                Replying to @{{ replyParent.author }}/{{
-                  replyParent.permlink
-                }}
-                <q-btn flat dense no-caps size="sm" label="Cancel" @click="replyParent = null" />
-              </span>
-              <span class="sfp-flex" />
               <span class="sfp-reply__count">{{ 1000 - replyBody.length }}</span>
               <q-btn unelevated no-caps color="primary" type="submit" icon="send" label="Queue reply" :disable="!replyBody.trim() || replyBody.length > 1000" />
             </div>
@@ -98,8 +111,8 @@
               :style="{ marginLeft: indent(reply._depth) }"
             >
               <header class="sfp-reply-item__head">
-                <router-link :to="{ name: 'account', params: { username: reply.author } }" class="sfp-author">@{{ reply.author }}</router-link>
-                <span class="sfp-meta">
+                <router-link :to="{ name: 'account', params: { username: reply.author } }" class="sfp-reply-author">@{{ reply.author }}</router-link>
+                <span class="sfp-reply-meta">
                   <time :datetime="reply.created">{{ replyAge(reply) }}</time>
                   <q-btn flat dense no-caps size="sm" icon="reply" label="Reply" @click="replyTo(reply)" />
                 </span>
@@ -107,6 +120,7 @@
               <div class="sfp-reply-item__body">
                 <render :input="reply.body" />
               </div>
+              <short-form-media :items="replyMedia(reply)" :author="reply.author" />
             </li>
           </ol>
           <p v-else class="sfp-empty">No replies yet.</p>
@@ -125,15 +139,25 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { setPageMeta, stripHtml } from 'src/utils/pageMeta'
-import { fetchShortFormPost, getShortFormat, shortFormQueueItem, shortFormQueueSummary, shortFormUrl } from 'src/services/shortForm'
-import { postPayoutLabel } from 'src/services/posts'
+import { postPayoutLabel, postUserVoteDirection } from 'src/services/posts'
+import {
+  fetchShortFormPost,
+  getShortFormat,
+  shortFormQueueItem,
+  shortFormQueueSummary,
+  shortFormReblogQueueItem,
+  shortFormVoteQueueItem,
+  shortFormUrl,
+  shortMedia
+} from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
+import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
 
 const Render = defineAsyncComponent(() => import('components/render.vue'))
 
 export default {
   name: 'ShortFormPost',
-  components: { DataNotice, Render },
+  components: { DataNotice, Render, ShortFormMedia },
   props: {
     formatId: { type: String, required: true },
     author: { type: String, required: true },
@@ -157,13 +181,19 @@ export default {
     loggedInUser () {
       return this.$hiveStore.user.username
     },
-    replyTargetName () {
-      return this.replyParent ? this.replyParent.author : (this.post ? this.post.author : '')
+    initial () {
+      return String(this.post && this.post.author || '?').charAt(0).toUpperCase()
+    },
+    media () {
+      return this.post ? shortMedia(this.post) : []
     },
     votes () {
       const stats = this.post && this.post.stats
       if (stats && Number.isFinite(Number(stats.total_votes))) return stats.total_votes
       return this.post && Array.isArray(this.post.active_votes) ? this.post.active_votes.length : 0
+    },
+    reblogs () {
+      return Number(this.post && this.post.reblogs) || (this.post && Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by.length : 0)
     },
     payout () {
       return this.post ? postPayoutLabel(this.post) : ''
@@ -174,20 +204,29 @@ export default {
     fullTime () {
       return this.post && this.post.created ? moment.utc(this.post.created).format('D MMM YYYY, HH:mm') : ''
     },
+    voteHint () {
+      const direction = this.post ? postUserVoteDirection(this.post, this.loggedInUser) : null
+      if (direction === 'up') return 'You upvoted this'
+      if (direction === 'down') return 'You downvoted this'
+      return 'Vote'
+    },
     externalUrl () {
       return shortFormUrl(this.post, this.formatId)
     }
   },
   watch: {
-    permlink: 'load'
-  },
-  mounted () {
-    this.load()
+    permlink: {
+      immediate: true,
+      handler () {
+        this.load()
+      }
+    }
   },
   methods: {
     async load () {
       this.loading = true
       this.error = null
+      this.replyParent = null
       try {
         const result = await fetchShortFormPost(this.author, this.permlink, { observer: this.loggedInUser || '' })
         if (!result) {
@@ -210,13 +249,16 @@ export default {
     updateMeta () {
       if (!this.post) return
       const label = this.format ? this.format.label : 'Short post'
-      const images = this.post.json_metadata && Array.isArray(this.post.json_metadata.image) ? this.post.json_metadata.image : []
+      const media = shortMedia(this.post)
       setPageMeta({
         title: '@' + this.post.author + ' on ' + label + ' — Hive microblog',
         description: stripHtml(this.post.body, 180) || label + ' post by @' + this.post.author,
-        image: images[0] || undefined,
+        image: media.length ? media[0].url : undefined,
         url: '/shorts/' + this.formatId + '/@' + this.post.author + '/' + this.post.permlink
       })
+    },
+    replyMedia (reply) {
+      return shortMedia(reply, { limit: 2 })
     },
     indent (depth) {
       return Math.min(4, Math.max(0, Number(depth) - 1)) * 18 + 'px'
@@ -224,10 +266,40 @@ export default {
     replyAge (reply) {
       return reply.created ? moment.utc(reply.created).fromNow() : ''
     },
+    voteDirection (post) {
+      return postUserVoteDirection(post, this.loggedInUser)
+    },
     replyTo (reply) {
       this.replyParent = reply
-      const input = this.$el.querySelector('.sfp-reply__input')
-      if (input) input.focus()
+      this.$nextTick(() => {
+        const input = this.$refs.reply
+        if (input && input.focus) input.focus()
+      })
+    },
+    vote (post) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'info', message: 'Log in to vote.' })
+        return
+      }
+      try {
+        const percent = Number(this.$hiveStore.user.settings.voteWeightPost) || 100
+        this.$hiveStore.addToQueue(shortFormVoteQueueItem({ username: this.loggedInUser, post, percent }))
+        this.$q.notify({ type: 'positive', message: 'Queued a ' + percent + '% upvote', caption: 'Sign it from the queue.' })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the vote' })
+      }
+    },
+    reblog (post) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
+        return
+      }
+      try {
+        this.$hiveStore.addToQueue(shortFormReblogQueueItem({ username: this.loggedInUser, post }))
+        this.$q.notify({ type: 'positive', message: 'Queued a reblog', caption: 'Sign it from the queue.' })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
+      }
     },
     submitReply () {
       if (!this.post || !this.replyBody.trim() || this.replyBody.length > 1000) return
@@ -261,13 +333,13 @@ export default {
 }
 
 .sfp-wrap {
-  width: 100%;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-4) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-4) var(--space-6);
 }
 
 .sfp-back a {
@@ -287,26 +359,37 @@ export default {
 
 .sfp-post__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-2);
-  flex-wrap: wrap;
 }
 
 .sfp-author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: #e4eaed;
-  font-weight: 700;
   text-decoration: none;
 }
 
 .sfp-author:hover {
   color: #81d4fa;
+  text-decoration: none;
 }
 
-.sfp-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.sfp-avatar {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfd8dc;
+  font-weight: 700;
+}
+
+.sfp-author__name {
+  display: block;
+  font-weight: 700;
+}
+
+.sfp-author__time {
+  display: block;
   color: #78909c;
   font-size: 0.76rem;
 }
@@ -314,7 +397,7 @@ export default {
 .sfp-post__body {
   margin-top: var(--space-3);
   color: #e4eaed;
-  font-size: 0.98rem;
+  font-size: 1rem;
   line-height: var(--line-body);
   overflow-wrap: anywhere;
 }
@@ -322,13 +405,40 @@ export default {
 .sfp-post__foot {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: var(--space-3);
   padding-top: var(--space-2);
   border-top: 1px solid var(--border-subtle);
+}
+
+.sfp-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 32px;
+  padding: 0.2rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
   color: #90a4ae;
+  font: inherit;
   font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.sfp-action:hover {
+  background: rgba(79, 195, 247, 0.1);
+  color: #e4eaed;
+}
+
+.sfp-action--static {
+  cursor: default;
+}
+
+.sfp-action--static:hover {
+  background: transparent;
+  color: #90a4ae;
 }
 
 .sfp-flex {
@@ -375,14 +485,9 @@ export default {
 .sfp-reply__foot {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
   margin-top: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.sfp-reply__target {
-  color: #b0bec5;
-  font-size: 0.76rem;
 }
 
 .sfp-reply__count {
@@ -419,6 +524,20 @@ export default {
   flex-wrap: wrap;
 }
 
+.sfp-reply-author {
+  color: #e4eaed;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sfp-reply-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: #78909c;
+  font-size: 0.74rem;
+}
+
 .sfp-reply-item__body {
   margin-top: 0.35rem;
   color: #cfd8dc;
@@ -435,6 +554,12 @@ export default {
   padding: var(--space-5);
   color: #78909c;
   text-align: center;
+}
+
+.sfp-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .sfp-loading :deep(.q-skeleton) {

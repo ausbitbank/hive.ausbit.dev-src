@@ -269,6 +269,62 @@ export function shortImages (post) {
   return images.filter(url => typeof url === 'string' && /^https?:\/\//i.test(url))
 }
 
+const VIDEO_EXTENSION = /\.(?:mp4|webm|ogv|mov)(?:[?#]|$)/i
+
+function cleanUrl (value) {
+  const url = String(value || '').trim().replace(/^<|>$/g, '')
+  if (!/^https?:\/\//i.test(url)) return ''
+  return url.replace(/\|\d*x\d*$/, '')
+}
+
+/**
+ * Media a short post embeds, de-duplicated and capped.
+ *
+ * Three sources cover the formats in practice: `json_metadata.image` (what
+ * most front ends write), markdown `![alt](url)` and HTML `<img src>`.
+ * Kind is inferred from the extension; GIF hosts such as Giphy have no
+ * extension, so those are left as images. `count` is shared because bridge
+ * returns a single positional array (`image_ratios`) for every image.
+ */
+export function shortMedia (post, { limit = 4 } = {}) {
+  const metadata = postMetadata(post)
+  const body = asString(post && post.body)
+  const urls = []
+  const seen = new Set()
+  const add = value => {
+    const url = cleanUrl(value)
+    if (!url || seen.has(url) || urls.length >= limit * 2) return
+    seen.add(url)
+    urls.push(url)
+  }
+
+  const declared = Array.isArray(metadata.image) ? metadata.image : []
+  declared.forEach(add)
+  for (const match of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
+  for (const match of body.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) add(match[1])
+
+  const ratios = Array.isArray(metadata.image_ratios) ? metadata.image_ratios : []
+  const media = urls.slice(0, limit).map((url, index) => {
+    const kind = VIDEO_EXTENSION.test(url) ? 'video' : 'image'
+    const parsed = Number(ratios[index])
+    return {
+      url,
+      kind,
+      position: index,
+      count: Math.max(1, urls.length),
+      // width / height when the author's client recorded it (0 when unknown).
+      ratio: Number.isFinite(parsed) && parsed > 0 ? parsed : null
+    }
+  })
+  return media
+}
+
+/** True when the post body embeds something in an iframe-friendly way. */
+export function shortHasEmbed (post) {
+  const body = asString(post && post.body)
+  return /<iframe/i.test(body) || /(?:youtube\.com|youtu\.be|3speak\.tv|vimeo\.com)\//i.test(body)
+}
+
 /** Canonical web page for a short-form post, on its home front end. */
 export function shortFormUrl (post, formatId = null) {
   if (!isObject(post)) return ''
@@ -415,6 +471,44 @@ export function shortFormQueueSummary (item) {
     : 'Post to ' + (data.parent_permlink || 'Hive')
 }
 
+// -- Engagement queue items ---------------------------------------------------
+//
+// Short posts are ordinary Hive posts, so the same posting-key operations work.
+// These mirror the shapes used by components/vote.vue and components/reblog.vue.
+
+/**
+ * Vote queue item. `direction` is `up`, `down` or `clear`; `percent` is the
+ * 0..100 weight shown in the UI and is multiplied by 100 for the chain.
+ */
+export function shortFormVoteQueueItem ({ username, post, direction = 'up', percent = 100 } = {}) {
+  const voter = asString(username).trim().toLowerCase()
+  const author = asString(post && post.author).trim().toLowerCase()
+  const permlink = asString(post && post.permlink).trim()
+  if (!/^[a-z][a-z0-9.-]{2,15}$/.test(voter)) throw new Error('A valid Hive account is required to vote.')
+  if (!author || !permlink) throw new Error('A post is required to vote.')
+  const weight = direction === 'clear'
+    ? 0
+    : direction === 'down'
+      ? -Math.round(Math.abs(Number(percent) || 0) * 100)
+      : Math.round(Math.abs(Number(percent) || 0) * 100)
+  return [voter, 'posting', ['vote', { voter, weight, author, permlink }]]
+}
+
+/** Reblog or un-reblog a post (the `follow` custom_json convention). */
+export function shortFormReblogQueueItem ({ username, post, remove = false } = {}) {
+  const account = asString(username).trim().toLowerCase()
+  const author = asString(post && post.author).trim().toLowerCase()
+  const permlink = asString(post && post.permlink).trim()
+  if (!/^[a-z][a-z0-9.-]{2,15}$/.test(account)) throw new Error('A valid Hive account is required to reblog.')
+  if (!author || !permlink) throw new Error('A post is required to reblog.')
+  const payload = [remove ? 'unreblog' : 'reblog', { account, author, permlink }]
+  return [account, 'posting', ['custom_json', {
+    required_posting_auths: [account],
+    id: 'follow',
+    json: JSON.stringify(payload)
+  }]]
+}
+
 // -- Chain reads --------------------------------------------------------------
 //
 // Thin I/O wrappers over the shared JSON-RPC client. Each takes an optional
@@ -430,63 +524,13 @@ async function defaultRequest (method, params, options) {
 /** Hive's bridge rejects ranked-post limits outside 1..20. */
 const RANKED_LIMIT = 20
 
-/**
- * Collect enough ranked posts for a filtered feed, following `start_author` /
- * `start_permlink` so a densely mixed tag (e.g. `inleo` next to ordinary LEO
- * posts) still yields `wanted` matches. `accept` filters each post.
- */
-async function rankedUntil (request, tag, sort, wanted, accept, options) {
-  const accepted = []
-  let startAuthor = ''
-  let startPermlink = ''
-  for (let page = 0; page < 5 && accepted.length < wanted; page++) {
-    const params = { sort, tag, limit: RANKED_LIMIT }
-    if (startPermlink) {
-      params.start_author = startAuthor
-      params.start_permlink = startPermlink
-    }
-    const batch = await request('bridge.get_ranked_posts', params, options)
-    if (!Array.isArray(batch) || batch.length === 0) break
-    for (const post of batch) {
-      if (accept(post)) accepted.push(post)
-      if (accepted.length >= wanted) break
-    }
-    const last = batch[batch.length - 1]
-    if (!last || (last.author === startAuthor && last.permlink === startPermlink)) break
-    startAuthor = last.author
-    startPermlink = last.permlink
-  }
-  return accepted
-}
+
 
 async function containerPosts (request, profile, limit, options) {
   const posts = await request('bridge.get_account_posts', { sort: 'posts', account: profile.containerAuthor, limit }, options)
   return (Array.isArray(posts) ? posts : []).filter(post => String(post.permlink || '').startsWith(profile.containerPrefix))
 }
 
-/**
- * Newest containers with their direct comments as the timeline.
- * Reads `get_account_posts` for the containers, then one discussion per
- * container until `limit` items are collected.
- */
-async function containerFeed (request, profile, { limit = 20, containers = 3, observer = '' } = {}) {
-  const posts = await containerPosts(request, profile, containers)
-  const items = []
-  for (const container of posts) {
-    if (items.length >= limit) break
-    const discussion = await request('bridge.get_discussion', {
-      author: container.author,
-      permlink: container.permlink,
-      observer
-    })
-    const timeline = containerTimeline(discussion, container.author + '/' + container.permlink, { limit: limit - items.length })
-    items.push(...timeline.items.map(post => ({
-      ...post,
-      _container: { author: container.author, permlink: container.permlink, title: container.title }
-    })))
-  }
-  return items
-}
 
 function isThreadPost (post) {
   return detectShortForm(post, 'threads') === 'threads' && !String(post.parent_author || '')
@@ -510,19 +554,151 @@ function isDbuzzPost (post) {
  * read ranked posts directly; container formats read the newest containers.
  */
 export async function fetchShortFormFeed (format, { sort = 'new', limit = 20, observer = '', request = defaultRequest } = {}) {
+  const page = await fetchShortFormPage(format, { sort, limit, observer, request })
+  return page.items
+}
+
+/**
+ * One page of a short-form feed, with a cursor for the next page.
+ *
+ * Container formats walk containers newest-first, continuing inside the
+ * current container before opening the next. Ranked feeds (Threads, D.Buzz)
+ * page with `start_author` / `start_permlink`, skipping a boundary post that
+ * the previous page already returned.
+ *
+ * Returns `{ items, cursor, done }`. `cursor` is opaque JSON - pass it back as
+ * `cursor` to continue; `done` means no more items exist.
+ */
+export async function fetchShortFormPage (format, { sort = 'new', limit = 20, observer = '', request = defaultRequest, cursor = null } = {}) {
   const profile = getShortFormat(format)
   if (!profile) throw new Error('Unknown short-form format: ' + format)
+  const wanted = Math.max(1, Math.min(50, Number(limit) || 20))
+  const state = cursor ? parseCursor(cursor) : null
   const rankedSort = sort === 'top' ? 'trending' : 'created'
 
   if (profile.mode === 'container') {
-    return containerFeed(request, profile, { limit, observer })
+    return containerPage(request, profile, { wanted, observer, state, sort })
   }
 
-  if (profile.id === 'threads') {
-    return rankedUntil(request, 'inleo', rankedSort, limit, isThreadPost)
+  const accept = profile.id === 'threads'
+    ? isThreadPost
+    : post => isDbuzzPost(post) && !String(post.parent_author || '')
+  const tag = profile.id === 'threads' ? 'inleo' : profile.community
+  return rankedPage(request, tag, rankedSort, wanted, accept, state)
+}
+
+function parseCursor (cursor) {
+  try {
+    const parsed = typeof cursor === 'string' ? JSON.parse(cursor) : cursor
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+async function rankedPage (request, tag, sort, wanted, accept, state) {
+  const items = []
+  let startAuthor = (state && state.skip && state.startAuthor) || ''
+  let startPermlink = (state && state.skip && state.startPermlink) || ''
+  let skipFirst = Boolean(state && state.skip)
+
+  for (let page = 0; page < 4 && items.length < wanted; page++) {
+    const params = { sort, tag, limit: RANKED_LIMIT }
+    if (startPermlink) {
+      params.start_author = startAuthor
+      params.start_permlink = startPermlink
+    }
+    const batch = await request('bridge.get_ranked_posts', params)
+    if (!Array.isArray(batch) || batch.length === 0) {
+      return { items, cursor: null, done: true }
+    }
+    for (const post of batch) {
+      if (skipFirst) {
+        skipFirst = false
+        continue
+      }
+      if (accept(post)) items.push(post)
+    }
+    const last = batch[batch.length - 1]
+    const shortPage = batch.length < RANKED_LIMIT
+    if (!last || (last.author === startAuthor && last.permlink === startPermlink)) {
+      return { items, cursor: null, done: true }
+    }
+    startAuthor = last.author
+    startPermlink = last.permlink
+    if (items.length >= wanted) {
+      return {
+        items: items.slice(0, wanted),
+        cursor: JSON.stringify({ startAuthor: last.author, startPermlink: last.permlink, skip: true }),
+        done: false
+      }
+    }
+    if (shortPage) return { items, cursor: null, done: true }
   }
 
-  return rankedUntil(request, profile.community, rankedSort, limit, post => isDbuzzPost(post) && !String(post.parent_author || ''))
+  return {
+    items: items.slice(0, wanted),
+    cursor: startPermlink ? JSON.stringify({ startAuthor, startPermlink, skip: true }) : null,
+    done: items.length < wanted
+  }
+}
+
+/**
+ * Container formats: `state.containers` lists container permlinks seen and
+ * `state.current` is the container still being walked, with the created time
+ * of the last item returned so ordering survives a reload.
+ */
+async function containerPage (request, profile, { wanted, observer, state, sort }) {
+  const seen = new Set((state && state.containers) || [])
+  const items = []
+  let current = state && state.current ? state.current : null
+  let pages = 0
+  const maxContainers = 6
+
+  while (items.length < wanted && pages < maxContainers) {
+    pages++
+    if (!current) {
+      const containers = await containerPosts(request, profile, maxContainers + seen.size)
+      const next = containers.find(post => !seen.has(post.permlink))
+      if (!next) break
+      current = { author: next.author, permlink: next.permlink, title: next.title, cursor: '' }
+      seen.add(next.permlink)
+    }
+
+    const discussion = await request('bridge.get_discussion', {
+      author: current.author,
+      permlink: current.permlink,
+      observer
+    })
+    const key = current.author + '/' + current.permlink
+    const timeline = containerTimeline(discussion, key, { limit: 0 })
+    let ordered = timeline.items
+    if (sort === 'top') {
+      ordered = ordered.slice().sort((a, b) => Number(b.pending_payout_value && parseFloat(b.pending_payout_value) || 0) - Number(a.pending_payout_value && parseFloat(a.pending_payout_value) || 0))
+    }
+    const from = current.cursor ? ordered.findIndex(post => post.author + '/' + post.permlink === current.cursor) + 1 : 0
+    const slice = ordered.slice(from, from + (wanted - items.length))
+    const decorated = slice.map(post => ({
+      ...post,
+      _container: { author: current.author, permlink: current.permlink, title: current.title }
+    }))
+    items.push(...decorated)
+
+    if (slice.length > 0) {
+      const last = slice[slice.length - 1]
+      current = { ...current, cursor: last.author + '/' + last.permlink }
+    }
+    const exhausted = from + slice.length >= ordered.length || ordered.length === 0
+    if (exhausted) current = null
+    if (items.length >= wanted) break
+  }
+
+  const done = !current && items.length === 0 && seen.size > 0
+  return {
+    items,
+    cursor: done ? null : JSON.stringify({ containers: [...seen], current }),
+    done
+  }
 }
 
 /**

@@ -18,9 +18,9 @@
           toggle-color="primary"
           :options="sortOptions"
           aria-label="Sort the timeline"
-          @update:model-value="load()"
+          @update:model-value="reload()"
         />
-        <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="load()" />
+        <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="reload()" />
       </div>
     </header>
 
@@ -28,7 +28,7 @@
       <router-link
         v-for="profile in formats"
         :key="profile.id"
-        :to="{ name: 'short-form', params: { format: profile.id } }"
+        :to="{ name: 'short-form', params: { formatId: profile.id } }"
         class="sf-tab"
         :class="{ 'sf-tab--active': profile.id === format.id }"
         :style="profile.id === format.id ? { '--tab-color': profile.color } : null"
@@ -45,7 +45,7 @@
           variant="error"
           :message="'Could not load ' + format.label + ': ' + error"
           action-label="Retry"
-          @action="load()"
+          @action="reload()"
         />
 
         <template v-if="!loggedInUser">
@@ -90,22 +90,34 @@
           </div>
         </template>
 
-        <div v-if="loading && !items.length" class="sf-loading">
-          <q-skeleton v-for="n in 4" :key="n" type="rect" height="110px" class="sf-loading__row" />
+        <div v-if="loading && !items.length" class="sf-loading" aria-hidden="true">
+          <q-skeleton v-for="n in 4" :key="n" type="rect" height="150px" class="sf-loading__row" />
         </div>
 
         <template v-else>
-          <ol v-if="items.length" class="sf-list">
-            <li v-for="item in items" :key="item.author + '/' + item.permlink" class="sf-item home-card">
-              <short-form-card
-                :post="item"
-                :format="format"
-                :username="loggedInUser"
-                @open="openPost(item)"
-                @reply="startReply(item)"
-              />
-            </li>
-          </ol>
+          <infinite-scroll
+            v-if="items.length"
+            :can-load="!done"
+            :loading="loadingMore"
+            :disabled="loading"
+            @load="loadMore()"
+          >
+            <ol class="sf-list">
+              <li v-for="item in items" :key="item.author + '/' + item.permlink" class="sf-list__item">
+                <short-form-card
+                  :post="item"
+                  :format="format"
+                  :username="loggedInUser"
+                  @open="openPost(item)"
+                  @vote="vote(item)"
+                  @reblog="reblog(item)"
+                />
+              </li>
+            </ol>
+            <template #done>
+              <p class="sf-end">You're all caught up.</p>
+            </template>
+          </infinite-scroll>
           <div v-else-if="!error" class="sf-empty">
             <q-icon name="forum" size="28px" aria-hidden="true" />
             <p>No {{ format.label }} posts found right now.</p>
@@ -146,15 +158,25 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchShortFormFeed, getShortFormat, shortFormQueueItem, shortFormQueueSummary, shortFormatList } from 'src/services/shortForm'
+import {
+  fetchShortFormPage,
+  getShortFormat,
+  shortFormQueueItem,
+  shortFormQueueSummary,
+  shortFormReblogQueueItem,
+  shortFormVoteQueueItem,
+  shortFormatList
+} from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
+import InfiniteScroll from 'components/ui/InfiniteScroll.vue'
 
 const ShortFormCard = defineAsyncComponent(() => import('components/shortForm/ShortFormCard.vue'))
 const MAX_CHARS = 1000
+const PAGE_SIZE = 20
 
 export default {
   name: 'ShortFormTimeline',
-  components: { DataNotice, ShortFormCard },
+  components: { DataNotice, InfiniteScroll, ShortFormCard },
   props: {
     formatId: { type: String, required: true }
   },
@@ -164,7 +186,10 @@ export default {
       sort: 'new',
       items: [],
       container: null,
+      cursor: null,
+      done: false,
       loading: true,
+      loadingMore: false,
       posting: false,
       error: null,
       body: ''
@@ -197,7 +222,7 @@ export default {
     formatId: {
       immediate: true,
       handler () {
-        this.load()
+        this.reload()
       }
     }
   },
@@ -214,46 +239,88 @@ export default {
         url: '/shorts/' + format.id
       })
     },
-    async load () {
+    /** Start again from the first page (format or sort change, refresh). */
+    async reload () {
       if (!this.format) return
       this.loading = true
+      this.loadingMore = false
       this.error = null
+      this.cursor = null
+      this.done = false
+      this.items = []
       try {
-        const items = await fetchShortFormFeed(this.formatId, {
-          sort: this.sort,
-          limit: 30,
-          observer: this.loggedInUser || ''
-        })
-        this.items = items
-        this.container = items.find(item => item._container)?._container || (this.format.mode === 'container' ? await this.latestContainer() : null)
+        const page = await this.fetchPage(null)
+        this.items = page.items
+        this.cursor = page.cursor
+        this.done = page.done
+        this.container = this.items.find(item => item._container)?._container || null
       } catch (error) {
         this.error = error?.message || 'Unexpected error'
-        this.items = []
       } finally {
         this.loading = false
       }
     },
-    async latestContainer () {
-      // The feed already carries the container for each item; when it is empty
-      // the newest container is still needed so the composer can post.
+    async loadMore () {
+      if (this.loadingMore || this.done) return
+      this.loadingMore = true
       try {
-        const { rpcRequest } = await import('src/services/api')
-        const posts = await rpcRequest('bridge.get_account_posts', {
-          sort: 'posts',
-          account: this.format.containerAuthor,
-          limit: 1
-        })
-        const post = Array.isArray(posts) ? posts.find(item => String(item.permlink || '').startsWith(this.format.containerPrefix)) : null
-        return post ? { author: post.author, permlink: post.permlink, title: post.title } : null
-      } catch {
-        return null
+        const page = await this.fetchPage(this.cursor)
+        const seen = new Set(this.items.map(item => item.author + '/' + item.permlink))
+        const fresh = page.items.filter(item => !seen.has(item.author + '/' + item.permlink))
+        this.items = this.items.concat(fresh)
+        this.cursor = page.cursor
+        this.done = page.done || fresh.length === 0
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not load more' })
+      } finally {
+        this.loadingMore = false
       }
     },
-    openPost (item) {
-      this.$router.push({ name: 'short-form-post', params: { format: this.formatId, author: item.author, permlink: item.permlink } })
+    fetchPage (cursor) {
+      return fetchShortFormPage(this.formatId, {
+        sort: this.sort,
+        limit: PAGE_SIZE,
+        observer: this.loggedInUser || '',
+        cursor
+      })
     },
-    startReply (item) {
-      this.$router.push({ name: 'short-form-post', params: { format: this.formatId, author: item.author, permlink: item.permlink } })
+    openPost (item) {
+      this.$router.push({ name: 'short-form-post', params: { formatId: this.formatId, author: item.author, permlink: item.permlink } })
+    },
+    vote (post) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'info', message: 'Log in to vote.' })
+        return
+      }
+      try {
+        const percent = Number(this.$hiveStore.user.settings.voteWeightPost) || 100
+        const item = shortFormVoteQueueItem({ username: this.loggedInUser, post, percent })
+        this.$hiveStore.addToQueue(item)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Queued a ' + percent + '% upvote for @' + post.author,
+          caption: 'Sign it from the queue to publish on chain.'
+        })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the vote' })
+      }
+    },
+    reblog (post) {
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
+        return
+      }
+      try {
+        const item = shortFormReblogQueueItem({ username: this.loggedInUser, post })
+        this.$hiveStore.addToQueue(item)
+        this.$q.notify({
+          type: 'positive',
+          message: 'Queued a reblog of @' + post.author,
+          caption: 'Sign it from the queue to publish on chain.'
+        })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
+      }
     },
     submit () {
       if (!this.canPost) return
@@ -355,7 +422,7 @@ export default {
 
 @media (min-width: 1024px) {
   .sf-grid {
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 620px) 300px;
   }
 }
 
@@ -461,6 +528,13 @@ export default {
 
 .sf-loading__row {
   border-radius: var(--radius-card);
+}
+
+.sf-end {
+  margin: var(--space-3) 0 0;
+  color: #78909c;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 .sf-empty {

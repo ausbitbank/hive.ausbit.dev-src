@@ -5,6 +5,7 @@ import {
   containerTimeline,
   detectShortForm,
   fetchShortFormFeed,
+  fetchShortFormPage,
   fetchShortFormPost,
   getShortFormat,
   isShortFormContainer,
@@ -15,6 +16,10 @@ import {
   shortFormQueueSummary,
   shortFormUrl,
   shortImages,
+  shortMedia,
+  shortHasEmbed,
+  shortFormVoteQueueItem,
+  shortFormReblogQueueItem,
   shortPreview
 } from '../../src/services/shortForm'
 
@@ -237,6 +242,66 @@ describe('shortFormPermlink', () => {
   })
 })
 
+describe('media extraction', () => {
+  it('collects metadata, markdown and html images, de-duplicated', () => {
+    const media = shortMedia(post({
+      json_metadata: { image: ['https://a/1.jpg', 'https://a/2.png'], image_ratios: [0.75, 2] },
+      body: 'look ![alt](https://a/1.jpg) and <img src="https://a/3.gif">'
+    }))
+    expect(media.map(item => item.url)).toEqual(['https://a/1.jpg', 'https://a/2.png', 'https://a/3.gif'])
+    expect(media.map(item => item.ratio)).toEqual([0.75, 2, null])
+    expect(media.every(item => item.count === 3)).toBe(true)
+    expect(media.map(item => item.position)).toEqual([0, 1, 2])
+  })
+
+  it('marks video files and caps the list', () => {
+    const body = Array.from({ length: 6 }, (_, i) => '![x](https://a/v' + i + '.mp4)').join(' ')
+    const media = shortMedia(post({ body }), { limit: 2 })
+    expect(media).toHaveLength(2)
+    expect(media[0].kind).toBe('video')
+  })
+
+  it('ignores non-http sources', () => {
+    expect(shortMedia(post({ json_metadata: { image: ['javascript:alert(1)', 'ftp://a/b.png'] } }))).toEqual([])
+  })
+
+  it('detects embeds', () => {
+    expect(shortHasEmbed(post({ body: 'https://www.youtube.com/watch?v=abc' }))).toBe(true)
+    expect(shortHasEmbed(post({ body: 'just words' }))).toBe(false)
+  })
+})
+
+describe('engagement queue items', () => {
+  const target = post()
+
+  it('builds an upvote at the configured weight', () => {
+    const [owner, key, op] = shortFormVoteQueueItem({ username: 'alice', post: target, percent: 40 })
+    expect(owner).toBe('alice')
+    expect(key).toBe('posting')
+    expect(op).toEqual(['vote', { voter: 'alice', weight: 4000, author: 'alice', permlink: 'post-1' }])
+  })
+
+  it('builds a downvote and a vote clear', () => {
+    expect(shortFormVoteQueueItem({ username: 'alice', post: target, direction: 'down', percent: 25 })[2][1].weight).toBe(-2500)
+    expect(shortFormVoteQueueItem({ username: 'alice', post: target, direction: 'clear' })[2][1].weight).toBe(0)
+  })
+
+  it('builds reblog and unreblog custom_json', () => {
+    const [, , reblog] = shortFormReblogQueueItem({ username: 'alice', post: target })
+    expect(reblog[0]).toBe('custom_json')
+    expect(reblog[1].id).toBe('follow')
+    expect(JSON.parse(reblog[1].json)).toEqual(['reblog', { account: 'alice', author: 'alice', permlink: 'post-1' }])
+    const [, , undo] = shortFormReblogQueueItem({ username: 'alice', post: target, remove: true })
+    expect(JSON.parse(undo[1].json)[0]).toBe('unreblog')
+  })
+
+  it('rejects missing accounts or posts', () => {
+    expect(() => shortFormVoteQueueItem({ username: '', post: target })).toThrow(/account/)
+    expect(() => shortFormVoteQueueItem({ username: 'alice', post: {} })).toThrow(/post/)
+    expect(() => shortFormReblogQueueItem({ username: 'alice', post: null })).toThrow(/post/)
+  })
+})
+
 describe('feed readers', () => {
   it('reads container formats from the newest containers', async () => {
     const request = vi.fn(async (method) => {
@@ -268,7 +333,7 @@ describe('feed readers', () => {
     ))
     const threads = await fetchShortFormFeed('threads', { request: threadFeed, limit: 10 })
     expect(threads.map(item => item.permlink)).toEqual(['thread'])
-    expect(threadFeed).toHaveBeenCalledWith('bridge.get_ranked_posts', expect.objectContaining({ tag: 'inleo', limit: 20 }), undefined)
+    expect(threadFeed).toHaveBeenCalledWith('bridge.get_ranked_posts', expect.objectContaining({ tag: 'inleo', limit: 20 }))
 
     const buzzFeed = vi.fn(async (method, params) => (
       params.start_permlink ? [] : [buzz, post({ category: 'hive-193084', permlink: 'longform', json_metadata: { tags: ['dbuzz'] } })]
@@ -279,17 +344,20 @@ describe('feed readers', () => {
 
   it('pages ranked posts until enough matches are collected', async () => {
     const calls = []
+    const filler = n => Array.from({ length: n }, (_, i) => post({ permlink: 'skip-' + i, category: 'life' }))
     const request = vi.fn(async (method, params) => {
       calls.push(params)
-      if (params.start_permlink) return []
-      return [
-        post({ permlink: 'skip-1', category: 'life' }),
-        post({ permlink: 'thread-a', category: 'hive-167922', json_metadata: { app: 'leothreads/0.3', tags: ['inleo'] } })
-      ]
+      // Page 1 is full and holds one match; page 2 (after the cursor) is short.
+      if (params.start_permlink) {
+        return [post({ permlink: 'thread-b', category: 'hive-167922', json_metadata: { app: 'leothreads/0.3', tags: ['inleo'] } })]
+      }
+      return [...filler(20), post({ permlink: 'thread-a', category: 'hive-167922', json_metadata: { app: 'leothreads/0.3', tags: ['inleo'] } })]
     })
-    const items = await fetchShortFormFeed('threads', { request, limit: 5 })
-    expect(items.map(item => item.permlink)).toEqual(['thread-a'])
-    // One page of only 2 posts cannot supply 5 matches, so a second page is read.
+    const page = await fetchShortFormPage('threads', { request, limit: 5 })
+    expect(page.items.map(item => item.permlink)).toEqual(['thread-a', 'thread-b'])
+    expect(page.done).toBe(true)
+    // The second read continued from a cursor that re-reads the boundary post
+    // and skips it, so nothing repeats and no page is requested twice.
     expect(calls).toHaveLength(2)
     expect(calls[1]).toMatchObject({ start_author: 'alice', start_permlink: 'thread-a' })
   })

@@ -577,7 +577,7 @@ export default {
           title: 'Short posts',
           caption: 'snaps, waves, threads, D.Buzz',
           icon: 'bolt',
-          to: '/shorts/snaps'
+          to: '/shorts'
         },
         {
           title: 'Latest blocks',

@@ -39,7 +39,15 @@ const ROUTES = [
   '/create',
   '/hbdstabilizer',
   '/compose',
-  '/search'
+  '/search',
+  // Microblog index and the five formats. Their metadata is client-rendered,
+  // so they get real prerendered shells instead of the generic 404 shell.
+  '/shorts',
+  '/shorts/snaps',
+  '/shorts/waves',
+  '/shorts/threads',
+  '/shorts/dbuzz',
+  '/shorts/moments'
 ]
 const DIST = resolve(process.cwd(), 'dist/spa')
 const DEFAULT_TITLE = 'hive.ausbit.dev — Hive block explorer'
