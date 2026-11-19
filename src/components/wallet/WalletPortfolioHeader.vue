@@ -61,7 +61,6 @@
           :to="{ path: $route.path, hash: '#' + tab.section }"
           :aria-current="tab.section === activeSection ? 'location' : undefined"
         >{{ tab.label }}</router-link>
-        <router-link to="/tax" class="wallet-jump__link">Tax export</router-link>
       </nav>
       <span v-if="loggedIn" class="wallet-portfolio__note">
         <q-icon name="key" aria-hidden="true" />

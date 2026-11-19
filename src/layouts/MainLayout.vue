@@ -123,7 +123,7 @@
       </error-boundary>
       <footer class="site-footer" aria-label="Site footer">
         <nav class="site-footer__links" aria-label="Footer navigation">
-          <router-link to="/browse">Browse</router-link>
+          <router-link to="/created">Browse</router-link>
           <router-link to="/blocks">Blocks</router-link>
           <router-link to="/proposals">Proposals</router-link>
           <router-link to="/nodes">Nodes</router-link>
@@ -634,12 +634,6 @@ export default {
           caption: 'chain status',
           icon: 'monitor_heart',
           to: '/health'
-        },
-        {
-          title: 'Tax export',
-          caption: 'transaction CSV',
-          icon: 'receipt_long',
-          to: '/tax'
         },
         {
           title: 'Create an account',

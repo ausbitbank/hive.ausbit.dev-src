@@ -174,19 +174,13 @@
             <div class="hbd-get-item">
               <h3>Earn it</h3>
               <p>Publish original content and receive HBD as part of your post rewards.</p>
-              <router-link to="/browse">Browse posts</router-link>
+              <router-link to="/created">Browse posts</router-link>
             </div>
             <div class="hbd-get-item">
               <h3>Trade on-chain</h3>
               <p>Use the internal market or convert HIVE and HBD from your wallet.</p>
               <router-link to="/market">Internal market</router-link>
               <router-link :to="walletLink">Wallet conversions</router-link>
-            </div>
-            <div class="hbd-get-item">
-              <h3>External venues</h3>
-              <p>Buy HBD through established Hive ecosystem exchanges.</p>
-              <a href="https://blocktrades.us/en/?affiliate_id=24923543-4939-4ab2-b0d5-d190f4fb82dc" target="_blank" rel="noopener noreferrer">BlockTrades</a>
-              <a href="https://sg.upbit.com" target="_blank" rel="noopener noreferrer">Upbit</a>
             </div>
           </div>
           <q-card-section class="home-panel__footer">

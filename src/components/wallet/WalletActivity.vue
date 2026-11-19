@@ -5,11 +5,8 @@
         <div class="wallet-eyebrow">{{ eyebrow }}</div>
         <h2 :id="headingId" class="wallet-card__title">{{ title }}</h2>
       </div>
-      <div class="wallet-activity__head-actions">
-        <q-btn v-if="limit" flat dense no-caps color="primary" icon-right="arrow_forward" label="View all" @click="$emit('navigate', 'activity')" />
-        <router-link v-else to="/tax" class="wallet-activity__tax">
-          <q-icon name="archive" aria-hidden="true" /> Tax export
-        </router-link>
+      <div v-if="limit" class="wallet-activity__head-actions">
+        <q-btn flat dense no-caps color="primary" icon-right="arrow_forward" label="View all" @click="$emit('navigate', 'activity')" />
       </div>
     </q-card-section>
 
@@ -142,20 +139,6 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-}
-
-.wallet-activity__tax {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #4fc3f7;
-  font-size: 0.74rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.wallet-activity__tax:hover {
-  text-decoration: underline;
 }
 
 .wallet-activity__filters {
