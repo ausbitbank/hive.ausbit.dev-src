@@ -32,23 +32,59 @@
           <router-link class="home-link" to="/proposals">
             <q-icon name="account_balance" size="16px" aria-hidden="true" /> Proposals
           </router-link>
+          <button
+            v-if="!editing"
+            type="button"
+            class="home-customise"
+            @click="startEditing"
+          >
+            <q-icon name="dashboard_customize" size="16px" aria-hidden="true" />
+            Customise
+          </button>
         </nav>
       </header>
 
-      <div class="home-layout">
+      <dashboard-customise-bar
+        v-if="editing"
+        :changes="draftChanges"
+        :dirty="dirty"
+        :add-disabled="available === 0"
+        @save="saveDraft"
+        @cancel="cancelEditing"
+        @reset="resetToDefault"
+        @add="drawerOpen = true"
+      />
+
+      <dashboard-grid
+        v-if="editing"
+        class="home-editing"
+        :widgets="draft"
+        :signed-in="signedIn"
+        editing
+        @move-to="onMoveTo"
+        @remove="onRemove"
+        @width="onWidth"
+      />
+
+      <div v-else class="home-layout">
         <div class="home-main">
           <div class="home-top">
-            <home-block-card />
-            <home-market-card />
+            <dashboard-grid :widgets="mainTop" :signed-in="signedIn" pair />
           </div>
-          <home-trending-posts />
+          <dashboard-grid :widgets="mainRest" :signed-in="signedIn" />
         </div>
 
         <aside class="home-side">
-          <home-witness-card />
-          <home-recent-posts account="ausbitbank" />
+          <dashboard-grid :widgets="side" :signed-in="signedIn" />
         </aside>
       </div>
+
+      <add-widget-drawer
+        v-model="drawerOpen"
+        :layout="draft"
+        :signed-in="signedIn"
+        @add="addWidget"
+      />
     </div>
   </q-page>
 </template>
@@ -125,6 +161,29 @@
   color: #81d4fa;
 }
 
+.home-customise {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b0bec5;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.home-customise:hover,
+.home-customise:focus-visible {
+  border-color: rgba(79, 195, 247, 0.45);
+  background: rgba(79, 195, 247, 0.1);
+  color: #e1f5fe;
+}
+
+
+
 .home-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -139,11 +198,10 @@
   min-width: 0;
 }
 
+/* The grid inside owns the block/coin columns, so the wrapper is a plain
+   block with no gap (the grid supplies it). */
 .home-top {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--space-4);
+  display: block;
 }
 
 .home-side {
@@ -165,10 +223,6 @@
 }
 
 @media (max-width: 799px) {
-  .home-top {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .home-side {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -194,21 +248,72 @@
 </style>
 
 <script>
-import HomeBlockCard from 'components/HomeBlockCard.vue'
-import HomeMarketCard from 'components/HomeMarketCard.vue'
-import HomeWitnessCard from 'components/HomeWitnessCard.vue'
-import HomeTrendingPosts from 'components/HomeTrendingPosts.vue'
-import HomeRecentPosts from 'components/HomeRecentPosts.vue'
+import AddWidgetDrawer from 'components/dashboard/AddWidgetDrawer.vue'
+import DashboardCustomiseBar from 'components/dashboard/DashboardCustomiseBar.vue'
+import DashboardGrid from 'components/dashboard/DashboardGrid.vue'
+import { moveWidget, removeWidget, setWidgetWidth } from 'src/services/dashboardLayout'
+import {
+  addWidgetToLayout,
+  availableWidgetCount,
+  draftChanges,
+  draftWidgets,
+  isDefaultDraft,
+  isDirtyDraft
+} from 'src/services/dashboardEditing'
 import { setPageMeta } from 'src/utils/pageMeta'
+
+// Widget types that opened the pre-dashboard sidebar. Everything before them
+// is the main column; everything from them on is the sidebar.
+const SIDEBAR_TYPES = ['witnesses', 'accountPosts']
 
 export default {
   name: 'Home',
-  components: {
-    HomeBlockCard,
-    HomeMarketCard,
-    HomeWitnessCard,
-    HomeTrendingPosts,
-    HomeRecentPosts
+  components: { DashboardGrid, DashboardCustomiseBar, AddWidgetDrawer },
+  data () {
+    return {
+      // Edit mode works on a copy; Save applies it, Cancel throws it away.
+      draft: [],
+      // Layout the draft started from, for the change summary.
+      draftBase: [],
+      drawerOpen: false
+    }
+  },
+  computed: {
+    widgets () {
+      return this.$hiveStore.dashboard.widgets
+    },
+    sideStart () {
+      return this.widgets.findIndex(widget => SIDEBAR_TYPES.includes(widget.type))
+    },
+    mainWidgets () {
+      return this.sideStart === -1 ? this.widgets : this.widgets.slice(0, this.sideStart)
+    },
+    // The block/coin pair stays on one row in the main column above 800px.
+    mainTop () {
+      return this.mainWidgets.slice(0, 2)
+    },
+    mainRest () {
+      return this.mainWidgets.slice(2)
+    },
+    side () {
+      return this.sideStart === -1 ? [] : this.widgets.slice(this.sideStart)
+    },
+    editing () {
+      return this.$hiveStore.dashboard.editing
+    },
+    signedIn () {
+      return Boolean(this.$hiveStore.user.username)
+    },
+    draftChanges () {
+      return draftChanges(this.draft, this.draftBase)
+    },
+    dirty () {
+      return isDirtyDraft(this.draft, this.draftBase)
+    },
+    available () {
+      const base = this.editing ? this.draft : this.widgets
+      return availableWidgetCount(base, { signedIn: this.signedIn })
+    }
   },
   mounted () {
     setPageMeta({
@@ -216,6 +321,48 @@ export default {
       description: 'Explore the Hive blockchain: live blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.',
       url: '/'
     })
+  },
+  methods: {
+    startEditing () {
+      this.draftBase = draftWidgets(this.widgets)
+      this.draft = draftWidgets(this.widgets)
+      this.$hiveStore.setDashboardEditing(true)
+    },
+    saveDraft () {
+      this.$hiveStore.applyDashboardWidgets(this.draft, { customised: !isDefaultDraft(this.draft) })
+      this.finishEditing()
+    },
+    cancelEditing () {
+      this.draft = []
+      this.draftBase = []
+      this.$hiveStore.setDashboardEditing(false)
+    },
+    resetToDefault () {
+      this.$hiveStore.resetDashboard()
+      this.finishEditing()
+    },
+    finishEditing () {
+      this.draft = []
+      this.draftBase = []
+      this.drawerOpen = false
+      this.$hiveStore.setDashboardEditing(false)
+    },
+    onMoveTo ({ widget, to }) {
+      this.draft = moveWidget(this.draft, widget.id, to)
+    },
+    onRemove (widget) {
+      this.draft = removeWidget(this.draft, widget.id)
+    },
+    addWidget (type) {
+      this.draft = addWidgetToLayout(this.draft, type)
+    },
+    onWidth (widget) {
+      // Edit mode has "Change width" in each card's menu; the grid cycles the
+      // token so one click always changes something visible.
+      const order = ['quarter', 'third', 'half', 'twoThirds', 'full']
+      const next = order[(order.indexOf(widget.width) + 1) % order.length]
+      this.draft = setWidgetWidth(this.draft, widget.id, next)
+    }
   }
 }
 </script>
