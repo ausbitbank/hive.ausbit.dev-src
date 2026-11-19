@@ -19,6 +19,7 @@ import {
   widthChoicesFor
 } from './dashboardLayout'
 import { HOME_MARKET_CURRENCIES, MAX_HOME_MARKET_COINS } from './homeMarket'
+import { OPERATION_FILTER_CHOICES } from './operationsFeed'
 import { ACCOUNT_FEED_SORTS, FEED_REFERENCE_PLACEHOLDER } from './feedReference'
 
 /**
@@ -245,6 +246,26 @@ export function settingsFieldsFor (type) {
       return [ACCOUNT_FIELD]
     case 'notifications':
       return [LIMIT_FIELD(10, 'Notifications to show'), ACCOUNT_FIELD]
+    case 'operations':
+      return [
+        ACCOUNT_FIELD,
+        { key: 'filters', kind: 'multi', label: 'Operation types', options: OPERATION_FILTER_CHOICES },
+        { key: 'jsonIds', kind: 'text', label: 'custom_json ids', placeholder: 'follow, vote, reblog', hint: 'Only used for App actions. Blank means every custom_json id.' },
+        LIMIT_FIELD(20, 'Operations to show'),
+        {
+          key: 'pollSeconds',
+          kind: 'select',
+          label: 'Refresh interval',
+          options: [
+            { value: 0, label: 'Manual only' },
+            { value: 10, label: 'Every 10 seconds' },
+            { value: 15, label: 'Every 15 seconds' },
+            { value: 30, label: 'Every 30 seconds' },
+            { value: 60, label: 'Every minute' },
+            { value: 120, label: 'Every 2 minutes' }
+          ]
+        }
+      ]
     default:
       return []
   }
@@ -281,6 +302,13 @@ export function sanitiseWidgetSettings (type, settings = {}) {
       case 'select':
         if (field.options.some(option => option.value === raw)) result[field.key] = raw
         break
+      case 'multi': {
+        const allowed = new Set(field.options.map(option => option.value))
+        const values = (Array.isArray(raw) ? raw : [raw])
+          .filter(value => allowed.has(value))
+        result[field.key] = [...new Set(values)]
+        break
+      }
       case 'currency': {
         const currency = String(raw ?? '').trim().toLowerCase()
         if (CURRENCY_IDS.includes(currency)) result[field.key] = currency

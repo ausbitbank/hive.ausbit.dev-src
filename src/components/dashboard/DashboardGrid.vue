@@ -78,6 +78,10 @@
           v-else-if="entry.widget.type === 'notifications'"
           v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
         />
+        <widget-operations
+          v-else-if="entry.widget.type === 'operations'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, filters: entry.widget.settings?.filters, jsonIds: entry.widget.settings?.jsonIds, limit: entry.widget.settings?.limit, pollSeconds: entry.widget.settings?.pollSeconds })"
+        />
       </dashboard-widget-shell>
     </div>
 
@@ -207,6 +211,7 @@ import WidgetMyWitness from 'components/dashboard/WidgetMyWitness.vue'
 import WidgetWitnessHealth from 'components/dashboard/WidgetWitnessHealth.vue'
 import WidgetNetworkStats from 'components/dashboard/WidgetNetworkStats.vue'
 import WidgetNotifications from 'components/dashboard/WidgetNotifications.vue'
+import WidgetOperations from 'components/dashboard/WidgetOperations.vue'
 import WidgetWallet from 'components/dashboard/WidgetWallet.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
@@ -225,7 +230,7 @@ const SPANS = new Map(WIDGET_WIDTHS.map(entry => [entry.value, entry.columns]))
 
 // Types this grid renders today. Registry entries without a component are
 // still laid out and show the shell's "available shortly" placeholder.
-const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications']
+const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications', 'operations']
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
 // home/end keys jump to the ends of the layout.
@@ -244,6 +249,7 @@ export default {
     WidgetWitnessHealth,
     WidgetNetworkStats,
     WidgetNotifications,
+    WidgetOperations,
     WidgetWallet,
     HomeBlockCard,
     HomeMarketCard,

@@ -164,6 +164,18 @@ export const WIDGET_REGISTRY = [
     minWidth: 'third',
     defaultSettings: { limit: 5 },
     requiresAccount: true
+  },
+  {
+    type: 'operations',
+    component: 'WidgetOperations',
+    label: 'Live operations',
+    description: 'A live, filtered view of one account\'s operations or transactions.',
+    category: 'account',
+    icon: 'receipt_long',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', filters: ['all'], jsonIds: '', limit: 8, pollSeconds: 30 },
+    singleton: false
   }
 ]
 

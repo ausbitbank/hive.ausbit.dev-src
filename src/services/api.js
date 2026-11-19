@@ -374,6 +374,10 @@ export function apiGetFollowCount (account, options = {}) {
   return rpcRequest('condenser_api.get_follow_count', [account], options)
 }
 
+export function apiGetAccountHistory (account, from = -1, limit = 100, options = {}) {
+  return rpcRequest('condenser_api.get_account_history', [account, from, limit], options)
+}
+
 export function apiGetFollowers (account, start = '', limit = 100, options = {}) {
   return rpcRequest('condenser_api.get_followers', [account, start, 'blog', limit], options)
 }

@@ -80,6 +80,22 @@
               />
             </template>
 
+            <template v-else-if="field.kind === 'multi'">
+              <q-select
+                v-model="draft[field.key]"
+                :options="field.options"
+                emit-value
+                map-options
+                multiple
+                use-chips
+                dense
+                outlined
+                options-dense
+                :label="field.label"
+              />
+              <p v-if="field.hint" class="dw-settings__hint">{{ field.hint }}</p>
+            </template>
+
             <template v-else>
               <q-input
                 v-model="draft[field.key]"
