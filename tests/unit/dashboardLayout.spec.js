@@ -139,7 +139,7 @@ describe('widget instances', () => {
     expect(addWidget(layout, 'block')).toHaveLength(1)
     const next = addWidget(layout, 'wallet')
     expect(next).toHaveLength(2)
-    expect(next[1].settings).toEqual({ account: '', currency: 'usd', includeHiveEngine: true })
+    expect(next[1].settings).toEqual({ account: '', currency: 'usd', includeHiveEngine: true, includeMagi: true })
   })
 
   it('inserts after a chosen widget so the add drawer can place it locally', () => {

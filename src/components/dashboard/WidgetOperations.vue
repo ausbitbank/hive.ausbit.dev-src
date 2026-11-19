@@ -63,7 +63,7 @@
       </div>
 
       <ol v-else class="dw-ops__list">
-        <li v-for="entry in entries" :key="entry.index" class="dw-ops__row">
+        <li v-for="entry in entries" :key="entry.magi ? 'magi-' + entry.id : entry.index" class="dw-ops__row" :class="{ 'dw-ops__row--magi': entry.magi }">
           <q-icon :name="iconFor(entry.filter)" size="17px" class="dw-ops__icon" aria-hidden="true" />
           <div class="dw-ops__text">
             <span class="dw-ops__label">{{ entry.label }}</span>
@@ -119,6 +119,24 @@
 
 .dw-ops__row:first-child {
   border-top: 0;
+}
+
+.dw-ops__row--magi .dw-ops__icon {
+  color: #ba68c8;
+}
+
+.dw-ops__row--magi .dw-ops__label::after {
+  content: 'Magi';
+  margin-left: 0.35rem;
+  padding: 0.02rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(186, 104, 200, 0.16);
+  color: #ce93d8;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
 }
 
 .dw-ops__icon {
@@ -209,6 +227,7 @@
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { apiGetAccountHistory } from 'src/services/api'
 import { filterLabel, filterOperations } from 'src/services/operationsFeed'
+import { fetchMagiAccount } from 'src/services/magi'
 import moment from 'src/utils/time'
 
 const ICONS = {
@@ -237,13 +256,16 @@ export default {
     filters: { type: Array, default: () => [] },
     jsonIds: { type: [Array, String], default: () => [] },
     limit: { type: Number, default: 8 },
-    pollSeconds: { type: Number, default: 30 }
+    pollSeconds: { type: Number, default: 30 },
+    includeMagi: { type: Boolean, default: false }
   },
   data () {
     return {
       entries: [],
+      magiEntries: [],
       loading: false,
       error: '',
+      magiError: '',
       updatedAt: 0,
       accountName: '',
       pollTimer: null,
@@ -261,7 +283,8 @@ export default {
     filterSummary () {
       const label = filterLabel(this.filters)
       const ids = stringList(this.jsonIds)
-      return ids.length ? label + ' · ids: ' + ids.join(', ') : label
+      const base = ids.length ? label + ' · ids: ' + ids.join(', ') : label
+      return this.includeMagi ? base + ' · Magi' : base
     },
     pollingLabel () {
       const seconds = Number(this.pollSeconds)
@@ -291,6 +314,9 @@ export default {
     },
     pollSeconds () {
       this.restartPolling()
+    },
+    includeMagi () {
+      this.loadOperations()
     }
   },
   mounted () {
@@ -304,6 +330,11 @@ export default {
     iconFor (filter) {
       return ICONS[filter] || 'receipt_long'
     },
+    timeValue (timestamp) {
+      if (!timestamp) return 0
+      const time = new Date(timestamp).getTime()
+      return Number.isFinite(time) ? time : 0
+    },
     timeLabel (timestamp) {
       if (!timestamp) return ''
       return moment.utc(timestamp).fromNow()
@@ -316,14 +347,22 @@ export default {
       this.error = ''
       try {
         const pageSize = Math.max(100, Math.min(1000, Number(this.limit) * 8))
-        const history = await apiGetAccountHistory(name, -1, pageSize)
+        const [history, magi] = await Promise.all([
+          apiGetAccountHistory(name, -1, pageSize),
+          this.includeMagi ? fetchMagiAccount(name, { limit: 20 }).catch(() => null) : Promise.resolve(null)
+        ])
         if (token !== this.requestToken) return
         const filtered = filterOperations(history, {
           filters: this.filters,
           jsonIds: stringList(this.jsonIds)
         })
         this.accountName = name
-        this.entries = filtered.slice(0, Math.max(1, Math.min(50, Number(this.limit) || 8)))
+        this.magiEntries = magi?.transactions?.map(row => ({ ...row, magi: true })) || []
+        this.magiError = this.includeMagi && !magi ? 'Magi Network unavailable' : ''
+        const merged = this.includeMagi
+          ? filtered.concat(this.magiEntries).sort((a, b) => this.timeValue(b.timestamp) - this.timeValue(a.timestamp))
+          : filtered
+        this.entries = merged.slice(0, Math.max(1, Math.min(50, Number(this.limit) || 8)))
         this.updatedAt = Date.now()
       } catch (error) {
         if (token !== this.requestToken) return

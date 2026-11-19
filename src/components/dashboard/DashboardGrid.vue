@@ -67,7 +67,7 @@
         />
         <widget-wallet
           v-else-if="entry.widget.type === 'wallet'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, currency: entry.widget.settings?.currency, includeHiveEngine: entry.widget.settings?.includeHiveEngine })"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, currency: entry.widget.settings?.currency, includeHiveEngine: entry.widget.settings?.includeHiveEngine, includeMagi: entry.widget.settings?.includeMagi })"
         />
         <widget-witness-health
           v-else-if="entry.widget.type === 'witnessHealth'"
@@ -80,7 +80,7 @@
         />
         <widget-operations
           v-else-if="entry.widget.type === 'operations'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, filters: entry.widget.settings?.filters, jsonIds: entry.widget.settings?.jsonIds, limit: entry.widget.settings?.limit, pollSeconds: entry.widget.settings?.pollSeconds })"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, filters: entry.widget.settings?.filters, jsonIds: entry.widget.settings?.jsonIds, limit: entry.widget.settings?.limit, pollSeconds: entry.widget.settings?.pollSeconds, includeMagi: entry.widget.settings?.includeMagi })"
         />
       </dashboard-widget-shell>
     </div>

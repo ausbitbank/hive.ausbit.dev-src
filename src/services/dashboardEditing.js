@@ -239,6 +239,12 @@ export function settingsFieldsFor (type) {
           kind: 'toggle',
           label: 'Include Hive-Engine tokens',
           hint: 'Prices come from the Hive-Engine market and are shown in HIVE terms.'
+        },
+        {
+          key: 'includeMagi',
+          kind: 'toggle',
+          label: 'Include Magi Network balances',
+          hint: 'HIVE and HBD held on the Magi sidechain, read from its public GraphQL API.'
         }
       ]
     case 'myWitness':
@@ -252,6 +258,12 @@ export function settingsFieldsFor (type) {
         { key: 'filters', kind: 'multi', label: 'Operation types', options: OPERATION_FILTER_CHOICES },
         { key: 'jsonIds', kind: 'text', label: 'custom_json ids', placeholder: 'follow, vote, reblog', hint: 'Only used for App actions. Blank means every custom_json id.' },
         LIMIT_FIELD(20, 'Operations to show'),
+        {
+          key: 'includeMagi',
+          kind: 'toggle',
+          label: 'Include Magi Network transactions',
+          hint: 'Merges the account\'s recent Magi ledger transactions with Hive operations.'
+        },
         {
           key: 'pollSeconds',
           kind: 'select',

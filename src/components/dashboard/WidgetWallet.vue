@@ -52,6 +52,8 @@
         <router-link :to="walletPath">Open wallet</router-link>
         <span v-if="heLoading">Loading Hive-Engine…</span>
         <span v-else-if="heError" class="dw-wallet__note">{{ heError }}</span>
+        <span v-if="magiLoading">Loading Magi…</span>
+        <span v-else-if="magiError" class="dw-wallet__note">{{ magiError }}</span>
         <span>{{ pricesReady ? 'Prices from CoinGecko' : 'Prices unavailable' }}</span>
       </q-card-section>
     </template>
@@ -197,6 +199,7 @@ import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
 import { price, walletWidgetSummary } from 'src/services/dashboardWidgets'
 import { fetchHiveEnginePortfolio } from 'src/services/hiveEnginePortfolio'
+import { fetchMagiAccount } from 'src/services/magi'
 import { currencySymbol, isForexCurrency, loadForexRate } from 'src/services/homeMarket'
 
 export default {
@@ -206,7 +209,8 @@ export default {
   props: {
     account: { type: String, default: '' },
     currency: { type: String, default: 'usd' },
-    includeHiveEngine: { type: Boolean, default: true }
+    includeHiveEngine: { type: Boolean, default: true },
+    includeMagi: { type: Boolean, default: true }
   },
   data () {
     return {
@@ -215,7 +219,10 @@ export default {
       heTotalHive: 0,
       heValueUsd: 0,
       heLoading: false,
-      heError: ''
+      heError: '',
+      magi: null,
+      magiLoading: false,
+      magiError: ''
     }
   },
   computed: {
@@ -240,7 +247,17 @@ export default {
     },
     totalUsd () {
       const base = this.summary ? this.summary.portfolio.totalUsd : 0
-      return base + (this.includeHiveEngine ? this.heValueUsd : 0)
+      return base +
+        (this.includeHiveEngine ? this.heValueUsd : 0) +
+        (this.includeMagi ? this.magiValueUsd : 0)
+    },
+    magiValueUsd () {
+      if (!this.magi) return 0
+      const hiveUsd = Number(price(this.prices, 'hive')?.usd) || 0
+      const hbdUsd = Number(price(this.prices, 'hive_dollar')?.usd) || hiveUsd
+      const hive = this.magi.hive + this.magi.consensus + this.magi.unstaking
+      const hbd = this.magi.hbd + this.magi.hbdSavings + this.magi.pendingUnstaking
+      return hive * hiveUsd + hbd * hbdUsd
     },
     totalLabel () {
       return this.money(this.totalUsd)
@@ -256,6 +273,26 @@ export default {
           usd: this.money(this.heValueUsd)
         })
       }
+      if (this.includeMagi && this.magi) {
+        const hiveUsd = Number(price(this.prices, 'hive')?.usd) || 0
+        const hbdUsd = Number(price(this.prices, 'hive_dollar')?.usd) || hiveUsd
+        if (this.magi.hbd || this.magi.hbdSavings) {
+          rows.push({
+            id: 'magi-hbd',
+            label: 'Magi HBD',
+            amount: (this.magi.hbd + this.magi.hbdSavings).toFixed(3) + ' HBD',
+            usd: this.money((this.magi.hbd + this.magi.hbdSavings) * hbdUsd)
+          })
+        }
+        if (this.magi.hive || this.magi.consensus) {
+          rows.push({
+            id: 'magi-hive',
+            label: 'Magi HIVE',
+            amount: (this.magi.hive + this.magi.consensus).toFixed(3) + ' HIVE',
+            usd: this.money((this.magi.hive + this.magi.consensus) * hiveUsd)
+          })
+        }
+      }
       return rows
     },
     walletPath () {
@@ -268,6 +305,10 @@ export default {
     },
     includeHiveEngine (value) {
       if (value && this.accountName) this.loadHiveEngine(this.accountName)
+    },
+    includeMagi (value) {
+      if (value && this.accountName) this.loadMagi(this.accountName)
+      else if (!value) this.magi = null
     }
   },
   methods: {
@@ -283,6 +324,7 @@ export default {
     applyAccountData (result) {
       this.loadCurrencyRate()
       if (this.includeHiveEngine) this.loadHiveEngine(result.accountName || this.targetAccount)
+      if (this.includeMagi) this.loadMagi(result.accountName || this.targetAccount)
     },
     async loadCurrencyRate () {
       if (!isForexCurrency(this.currency)) {
@@ -293,6 +335,24 @@ export default {
         this.forexRate = await loadForexRate(this.currency)
       } catch {
         this.forexRate = 1
+      }
+    },
+    async loadMagi (name) {
+      if (!name || !this.includeMagi) {
+        this.magi = null
+        return
+      }
+      this.magiLoading = true
+      this.magiError = ''
+      try {
+        const result = await fetchMagiAccount(name, { limit: 20 })
+        this.magi = result?.balances || null
+      } catch (error) {
+        console.error('Failed to load Magi balances', error)
+        this.magiError = 'Magi Network unavailable'
+        this.magi = null
+      } finally {
+        this.magiLoading = false
       }
     },
     async loadHiveEngine (name) {

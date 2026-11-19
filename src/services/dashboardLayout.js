@@ -111,7 +111,7 @@ export const WIDGET_REGISTRY = [
     icon: 'account_balance_wallet',
     defaultWidth: 'half',
     minWidth: 'third',
-    defaultSettings: { account: '', currency: 'usd', includeHiveEngine: true },
+    defaultSettings: { account: '', currency: 'usd', includeHiveEngine: true, includeMagi: true },
     requiresAccount: true
   },
   {
@@ -174,7 +174,7 @@ export const WIDGET_REGISTRY = [
     icon: 'receipt_long',
     defaultWidth: 'half',
     minWidth: 'third',
-    defaultSettings: { account: '', filters: ['all'], jsonIds: '', limit: 8, pollSeconds: 30 },
+    defaultSettings: { account: '', filters: ['all'], jsonIds: '', limit: 8, pollSeconds: 30, includeMagi: false },
     singleton: false
   }
 ]
