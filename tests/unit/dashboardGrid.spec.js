@@ -85,7 +85,7 @@ describe('dashboard grid geometry', () => {
       { type: 'market', width: 'half', settings: {} },
       { type: 'posts', width: 'full', settings: {} },
       { type: 'witnesses', width: 'full', settings: {} },
-      { type: 'accountPosts', width: 'full', settings: {} }
+      { type: 'posts', width: 'full', settings: {} }
     ])
     const order = list => list.map(widget => widget.type)
 
@@ -93,10 +93,10 @@ describe('dashboard grid geometry', () => {
     expect(order(moveWidget(layout, layout[2].id, moveTargetFor(0, 5)))[0]).toBe('posts')
     // Drag posts to after the last widget.
     expect(order(moveWidget(layout, layout[2].id, moveTargetFor(5, 5))).at(-1)).toBe('posts')
-    // Drag witnesses (index 3) to just before accountPosts (visual 3 of 4).
-    expect(order(moveWidget(layout, layout[3].id, moveTargetFor(3, 4)))).toEqual(['block', 'market', 'posts', 'witnesses', 'accountPosts'])
-    // Drag accountPosts to the front.
-    expect(order(moveWidget(layout, layout[4].id, moveTargetFor(0, 5)))[0]).toBe('accountPosts')
+    // Drag witnesses (index 3) to just before the last widget (visual 3 of 4).
+    expect(order(moveWidget(layout, layout[3].id, moveTargetFor(3, 4)))).toEqual(['block', 'market', 'posts', 'witnesses', 'posts'])
+    // Drag the last content widget to the front.
+    expect(order(moveWidget(layout, layout[4].id, moveTargetFor(0, 5)))[0]).toBe('posts')
   })
 
   it('every registry width token maps to columns within the grid', () => {

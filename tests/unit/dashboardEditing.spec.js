@@ -146,7 +146,7 @@ describe('edit-mode drafts', () => {
 
 describe('widget settings', () => {
   it('offers fields for every configurable registry widget', () => {
-    for (const type of ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'notifications']) {
+    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations']) {
       expect(isConfigurableWidget(type)).toBe(true)
       expect(settingsFieldsFor(type).length).toBeGreaterThan(0)
     }
@@ -196,10 +196,10 @@ describe('widget settings', () => {
     expect(sanitiseWidgetSettings('posts', { reference: ' /@ausbitbank/feed ' })).toEqual({
       reference: '/@ausbitbank/feed'
     })
-    expect(sanitiseWidgetSettings('accountPosts', { reference: '#hive-dev' })).toEqual({
+    expect(sanitiseWidgetSettings('posts', { reference: '#hive-dev' })).toEqual({
       reference: '#hive-dev'
     })
-    expect(sanitiseWidgetSettings('accountPosts', { sort: 'feed' })).toEqual({ sort: 'feed' })
-    expect(sanitiseWidgetSettings('accountPosts', { sort: 'wallet' })).toEqual({})
+    expect(sanitiseWidgetSettings('posts', { feedSort: 'feed' })).toEqual({ feedSort: 'feed' })
+    expect(sanitiseWidgetSettings('posts', { feedSort: 'wallet' })).toEqual({})
   })
 })

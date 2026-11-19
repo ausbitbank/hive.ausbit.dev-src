@@ -13,6 +13,7 @@
 
     <div class="home-post-row__body">
       <router-link :to="postLink" class="home-post-row__title">{{ displayTitle }}</router-link>
+      <p v-if="showBody && bodyExcerpt" class="home-post-row__excerpt">{{ bodyExcerpt }}</p>
       <div class="home-post-row__meta">
         <router-link :to="'/@' + post.author">@{{ post.author }}</router-link>
         <span aria-hidden="true">·</span>
@@ -21,11 +22,14 @@
           <span aria-hidden="true">·</span>
           <span class="home-post-row__community">{{ communityTitle }}</span>
         </template>
+        <span v-if="votedByMe" class="home-post-row__voted" title="You voted on this post">
+          <q-icon name="thumb_up_alt" size="13px" aria-hidden="true" /> voted
+        </span>
       </div>
     </div>
 
     <div v-if="!compact" class="home-post-row__stats">
-      <span title="Votes"><q-icon name="thumb_up_alt" aria-hidden="true" />{{ votes }}</span>
+      <span title="Votes" :class="{ 'is-voted': votedByMe }"><q-icon name="thumb_up_alt" aria-hidden="true" />{{ votes }}</span>
       <span title="Comments"><q-icon name="comment" aria-hidden="true" />{{ comments }}</span>
       <span title="Payout"><q-icon name="monetization_on" aria-hidden="true" />{{ payout }}</span>
     </div>
@@ -112,6 +116,28 @@
   color: #4fc3f7;
 }
 
+.home-post-row__voted {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  color: #81c784;
+}
+
+.home-post-row__excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0.18rem 0 0;
+  color: #90a4ae;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.home-post-row__stats span.is-voted {
+  color: #81c784;
+}
+
 .home-post-row__stats {
   display: flex;
   flex: none;
@@ -173,9 +199,28 @@ export default {
   props: {
     post: { type: Object, required: true },
     rank: { type: Number, default: 0 },
-    compact: { type: Boolean, default: false }
+    compact: { type: Boolean, default: false },
+    /** Show a short, read-in-place excerpt of the post or comment body. */
+    showBody: { type: Boolean, default: false }
   },
   computed: {
+    bodyExcerpt () {
+      if (!this.showBody) return ''
+      const raw = String(this.post.body || '')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/[#*_>`]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (!raw) return ''
+      return raw.length > 220 ? raw.slice(0, 217).trimEnd() + '…' : raw
+    },
+    votedByMe () {
+      const user = this.$hiveStore.user.username
+      if (!user || !Array.isArray(this.post.active_votes)) return false
+      return this.post.active_votes.some(vote => vote.voter === user && Number(vote.percent) > 0)
+    },
     displayTitle () {
       return postDisplayTitle(this.post)
     },

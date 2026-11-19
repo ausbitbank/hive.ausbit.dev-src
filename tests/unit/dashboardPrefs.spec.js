@@ -18,7 +18,7 @@ import {
   setupPromptKey,
   shouldShowSetupPrompt
 } from '../../src/services/dashboardPrefs'
-import { buildLayout, widgetMeta } from '../../src/services/dashboardLayout'
+import { buildLayout, normaliseWidget, widgetMeta } from '../../src/services/dashboardLayout'
 
 function memoryStorage (initial = {}) {
   const data = new Map(Object.entries(initial))
@@ -62,6 +62,18 @@ describe('saving and reading dashboards', () => {
     expect(resolved.widgets.map(widget => widget.type)).toEqual(
       defaultDashboard().map(widget => widget.type)
     )
+  })
+
+  it('migrates the old account-posts widget into the content browser', () => {
+    const widget = normaliseWidget({
+      type: 'accountPosts',
+      width: 'full',
+      settings: { account: 'alice', sort: 'feed', limit: 4 }
+    })
+    expect(widget.type).toBe('posts')
+    expect(widget.settings.account).toBe('alice')
+    expect(widget.settings.feedSort).toBe('feed')
+    expect(widget.settings.limit).toBe(4)
   })
 
   it('round-trips a saved account layout', () => {

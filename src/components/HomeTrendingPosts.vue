@@ -21,6 +21,19 @@
             <span>{{ option.label }}</span>
           </button>
         </div>
+        <q-select
+          v-if="showAccountSort"
+          v-model="accountSort"
+          :options="accountSortOptions"
+          emit-value
+          map-options
+          dense
+          outlined
+          options-dense
+          label="Feed"
+          aria-label="Account feed type"
+          class="home-sort__select"
+        />
         <router-link :to="viewAllLink" class="home-panel__link home-panel__link--button">
           View all
           <q-icon name="arrow_forward" size="14px" aria-hidden="true" />
@@ -61,12 +74,24 @@
     </q-card-section>
 
     <q-card-section v-else class="home-panel__body home-post-list">
-      <home-post-row
-        v-for="(post, index) in posts"
-        :key="post.post_id || (post.author + '/' + post.permlink)"
-        :post="post"
-        :rank="index + 1"
-      />
+      <div v-if="view === 'cards'" class="home-post-cards">
+        <post-preview
+          v-for="post in posts"
+          :key="post.post_id || (post.author + '/' + post.permlink)"
+          :post="post"
+          style-type="cards"
+        />
+      </div>
+      <template v-else>
+        <home-post-row
+          v-for="(post, index) in posts"
+          :key="post.post_id || (post.author + '/' + post.permlink)"
+          :post="post"
+          :rank="view === 'list' ? index + 1 : 0"
+          :compact="view === 'compact'"
+          :show-body="showBody"
+        />
+      </template>
     </q-card-section>
   </q-card>
 </template>
@@ -87,12 +112,24 @@
 .home-post-skeleton__body {
   flex: 1;
 }
+
+.home-post-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-3);
+}
+
+.home-sort__select {
+  min-width: 150px;
+}
 </style>
 
 <script>
 import HomePostRow from 'components/HomePostRow.vue'
+import PostPreview from 'components/postPreview.vue'
 import DataNotice from 'components/ui/DataNotice.vue'
-import { RANKED_FEED_SORTS, fetchFeedPosts, resolvePostsFeed } from 'src/services/postFeed'
+import { RANKED_FEED_SORTS, fetchFeedPosts, resolveAccountFeed, resolvePostsFeed } from 'src/services/postFeed'
+import { ACCOUNT_FEED_SORTS } from 'src/services/feedReference'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 
 const SNAPSHOT_PREFIX = 'home:posts:feed:'
@@ -108,7 +145,7 @@ const SORT_OPTIONS = RANKED_FEED_SORTS
 
 export default {
   name: 'homeTrendingPosts',
-  components: { HomePostRow, DataNotice },
+  components: { HomePostRow, PostPreview, DataNotice },
   props: {
     // Initial global sort: trending | created | hot.
     source: { type: String, default: 'trending' },
@@ -116,19 +153,31 @@ export default {
     tag: { type: String, default: '' },
     // An exact Hive listing path: /@ausbitbank/feed, /c/hive-dev, /shorts/threads.
     reference: { type: String, default: '' },
+    // Account feed mode: browse one account's blog, posts, feed, replies or comments.
+    account: { type: String, default: '' },
+    // Account feed type when `account` is set.
+    feedSort: { type: String, default: 'blog' },
     // Number of posts to show.
     limit: { type: Number, default: 6 },
     // Show the Trending/New/Hot switcher. A reference hides it because the
     // path already names the filter.
-    showSortToggle: { type: Boolean, default: true }
+    showSortToggle: { type: Boolean, default: true },
+    // list | compact | cards
+    view: { type: String, default: 'list', validator: value => ['list', 'compact', 'cards'].includes(value) },
+    // Show a read-in-place body excerpt (comments and short posts).
+    showBody: { type: Boolean, default: false },
+    // Optional refresh interval in seconds (0 = off).
+    pollSeconds: { type: Number, default: 0 }
   },
   data () {
     return {
       sort: 'trending',
+      accountSort: this.feedSort,
       posts: [],
       loading: true,
       error: '',
-      staleAt: null
+      staleAt: null,
+      pollTimer: null
     }
   },
   computed: {
@@ -139,16 +188,31 @@ export default {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
     feed () {
+      if (this.isAccountFeed) {
+        return resolveAccountFeed(
+          { reference: this.reference, account: this.account, sort: this.accountSort },
+          { loggedInUser: this.loggedInUser || '' }
+        )
+      }
       return resolvePostsFeed(
         { reference: this.reference, source: this.sort, tag: this.tag },
         { loggedInUser: this.loggedInUser || '' }
       )
     },
+    isAccountFeed () {
+      return Boolean(String(this.account || '').trim())
+    },
+    showAccountSort () {
+      return this.isAccountFeed && !String(this.reference || '').trim()
+    },
+    accountSortOptions () {
+      return ACCOUNT_FEED_SORTS
+    },
     feedKey () {
       return this.feed.key + ':' + this.limit
     },
     showSort () {
-      return Boolean(this.showSortToggle && !String(this.reference || '').trim() && this.feed.sortable)
+      return Boolean(this.showSortToggle && !this.isAccountFeed && !String(this.reference || '').trim() && this.feed.sortable)
     },
     sortOptions () {
       return SORT_OPTIONS
@@ -164,14 +228,39 @@ export default {
     source (value) {
       if (QUICK_SORTS.includes(value)) this.sort = value
     },
+    feedSort (value) {
+      this.accountSort = value
+    },
     feedKey () {
       this.loadPosts()
+    },
+    pollSeconds () {
+      this.restartPolling()
     }
   },
   mounted () {
     this.loadPosts()
+    this.restartPolling()
+  },
+  beforeUnmount () {
+    this.stopPolling()
   },
   methods: {
+    restartPolling () {
+      this.stopPolling()
+      const seconds = Number(this.pollSeconds)
+      if (!seconds || seconds < 5) return
+      this.pollTimer = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return
+        this.loadPosts()
+      }, seconds * 1000)
+    },
+    stopPolling () {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer)
+        this.pollTimer = null
+      }
+    },
     changeSort (value) {
       if (value === this.sort) return
       this.sort = value

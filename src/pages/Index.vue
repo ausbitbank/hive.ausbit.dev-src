@@ -298,9 +298,10 @@ import {
 } from 'src/services/dashboardEditing'
 import { setPageMeta } from 'src/utils/pageMeta'
 
-// Widget types that opened the pre-dashboard sidebar. Everything before them
-// is the main column; everything from them on is the sidebar.
-const SIDEBAR_TYPES = ['witnesses', 'accountPosts']
+// Widget types that opened the pre-dashboard sidebar. The content browser used
+// to split into a second account-feed widget; the sidebar now starts at the
+// witness list.
+const SIDEBAR_TYPES = ['witnesses']
 
 export default {
   name: 'Home',

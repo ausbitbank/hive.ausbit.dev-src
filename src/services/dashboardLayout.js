@@ -81,25 +81,24 @@ export const WIDGET_REGISTRY = [
   {
     type: 'posts',
     component: 'HomeTrendingPosts',
-    label: 'Posts on Hive',
-    description: 'Trending, new or hot posts, or a community, tag, account feed or short-form timeline.',
+    label: 'Content browser',
+    description: 'Browse any Hive feed — trending, a tag, a community, an account — with list, compact or card views.',
     category: 'community',
     icon: 'article',
     defaultWidth: 'full',
     minWidth: 'half',
-    defaultSettings: { source: 'trending', tag: '', reference: '', limit: 6, showSortToggle: true },
-    singleton: false
-  },
-  {
-    type: 'accountPosts',
-    component: 'HomeRecentPosts',
-    label: 'Account posts',
-    description: 'Recent posts from one account or any feed reference — yours by default.',
-    category: 'community',
-    icon: 'person',
-    defaultWidth: 'full',
-    minWidth: 'third',
-    defaultSettings: { account: '', reference: '', sort: 'blog', limit: 4 },
+    defaultSettings: {
+      source: 'trending',
+      tag: '',
+      reference: '',
+      account: '',
+      feedSort: 'blog',
+      limit: 6,
+      showSortToggle: true,
+      view: 'list',
+      showBody: false,
+      pollSeconds: 0
+    },
     singleton: false
   },
   {
@@ -204,7 +203,7 @@ export const DEFAULT_LAYOUT = [
   { type: 'market', width: 'half', settings: {} },
   { type: 'posts', width: 'full', settings: { source: 'trending' } },
   { type: 'witnesses', width: 'full', settings: { limit: 6 } },
-  { type: 'accountPosts', width: 'full', settings: { account: 'ausbitbank' } }
+  { type: 'posts', width: 'full', settings: { account: 'ausbitbank', feedSort: 'blog', limit: 4 } }
 ]
 
 /** Suggested layout offered once when a known account is logged in. */
@@ -267,9 +266,17 @@ export function createWidgetId (type = 'widget', now = Date.now()) {
  */
 export function normaliseWidget (input) {
   if (!input || typeof input !== 'object') return null
-  const meta = registryEntry(String(input.type || ''))
+  // Older dashboards stored the account feed as a separate widget. Fold it into
+  // the general content browser without losing its account and feed type.
+  const rawType = String(input.type || '')
+  const alias = rawType === 'accountPosts' ? 'posts' : rawType
+  const meta = registryEntry(alias)
   if (!meta) return null
   const settings = input.settings && typeof input.settings === 'object' ? { ...input.settings } : {}
+  if (rawType === 'accountPosts') {
+    if (!settings.feedSort && settings.sort) settings.feedSort = settings.sort
+    delete settings.sort
+  }
   return {
     id: typeof input.id === 'string' && input.id ? input.id : createWidgetId(meta.type),
     type: meta.type,

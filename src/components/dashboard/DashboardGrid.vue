@@ -58,11 +58,7 @@
         />
         <home-trending-posts
           v-else-if="entry.widget.type === 'posts'"
-          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle })"
-        />
-        <home-recent-posts
-          v-else-if="entry.widget.type === 'accountPosts'"
-          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, account: entry.widget.settings?.account, sort: entry.widget.settings?.sort, limit: entry.widget.settings?.limit, showFeedLabel: true })"
+          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, account: entry.widget.settings?.account, feedSort: entry.widget.settings?.feedSort, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle, view: entry.widget.settings?.view, showBody: entry.widget.settings?.showBody, pollSeconds: entry.widget.settings?.pollSeconds })"
         />
         <widget-my-witness
           v-else-if="entry.widget.type === 'myWitness'"
@@ -231,7 +227,6 @@ import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
 import HomeTrendingPosts from 'components/HomeTrendingPosts.vue'
-import HomeRecentPosts from 'components/HomeRecentPosts.vue'
 import { GRID_COLUMNS, WIDGET_WIDTHS, packRows, widgetMeta } from 'src/services/dashboardLayout'
 import {
   dropTargetFor,
@@ -244,7 +239,7 @@ const SPANS = new Map(WIDGET_WIDTHS.map(entry => [entry.value, entry.columns]))
 
 // Types this grid renders today. Registry entries without a component are
 // still laid out and show the shell's "available shortly" placeholder.
-const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications', 'operations']
+const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications', 'operations']
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
 // home/end keys jump to the ends of the layout.
@@ -268,8 +263,7 @@ export default {
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,
-    HomeTrendingPosts,
-    HomeRecentPosts
+    HomeTrendingPosts
   },
   props: {
     widgets: { type: Array, default: () => [] },

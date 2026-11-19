@@ -207,18 +207,35 @@ export function settingsFieldsFor (type) {
       ]
     case 'posts':
       return [
-        referenceField('Paste a Hive path. When set, it overrides the sort and tag below.'),
-        { key: 'source', kind: 'select', label: 'Feed', options: POST_SOURCE_OPTIONS },
+        referenceField('Paste a Hive path. When set, it overrides the account, feed type, sort and tag below.'),
+        { key: 'account', kind: 'text', label: 'Account feed', placeholder: 'ausbitbank', hint: 'Leave empty for a network, tag or community feed. Set it to browse one account.', stripAt: true },
+        { key: 'feedSort', kind: 'select', label: 'Account feed type', options: ACCOUNT_FEED_SORTS },
+        { key: 'source', kind: 'select', label: 'Network feed', options: POST_SOURCE_OPTIONS },
         { key: 'tag', kind: 'text', label: 'Community or tag', placeholder: 'hive-dev', stripHash: true },
         { key: 'limit', kind: 'number', label: 'Posts to show', min: 1, max: 20 },
-        { key: 'showSortToggle', kind: 'toggle', label: 'Show the Trending/New/Hot switcher' }
-      ]
-    case 'accountPosts':
-      return [
-        ACCOUNT_FIELD,
-        { key: 'sort', kind: 'select', label: 'Feed type', options: ACCOUNT_FEED_SORTS },
-        referenceField('Paste a Hive path. When set, it overrides the account and feed type above.'),
-        LIMIT_FIELD(20, 'Posts to show')
+        {
+          key: 'view',
+          kind: 'select',
+          label: 'View style',
+          options: [
+            { value: 'list', label: 'List with rank and stats' },
+            { value: 'compact', label: 'Compact list' },
+            { value: 'cards', label: 'Cards' }
+          ]
+        },
+        { key: 'showBody', kind: 'toggle', label: 'Show post and comment text', hint: 'Read short posts and replies in the widget without opening them.' },
+        { key: 'showSortToggle', kind: 'toggle', label: 'Show the Trending/New/Hot switcher' },
+        {
+          key: 'pollSeconds',
+          kind: 'select',
+          label: 'Auto refresh',
+          options: [
+            { value: 0, label: 'Off' },
+            { value: 30, label: 'Every 30 seconds' },
+            { value: 60, label: 'Every minute' },
+            { value: 300, label: 'Every 5 minutes' }
+          ]
+        }
       ]
     case 'wallet':
       return [
