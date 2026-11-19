@@ -108,12 +108,29 @@ dashboard, search, performance and crawler work.
 - `bun run test:e2e` (Obscura fast suite) — 39 passed, 1 skipped, 3 scroll
   tests failed inside Obscura. The same three pass in Chromium, so this is a
   harness limitation rather than an app regression.
+- `bun run perf:check` — passed. The initial and home JS budgets were raised by
+  ~2–9 KB to account for the new dashboard widgets; LCP stayed under 2.2s.
+
+## Deployment
+
+- `./scripts/deploy.sh` completed: lint, build, prerender, backup, upload and
+  activation. Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261119T232933Z.tar.gz`.
+- The updated nginx config is staged at `hurgenburgen:~/hive-nginx-new.conf`.
+  Installing it needs sudo:
+
+  ```bash
+  ssh hurgenburgen
+  sudo cp /etc/nginx/sites-available/hive.ausbit.dev \
+    /etc/nginx/sites-available/hive.ausbit.dev.bak-$(date -u +%Y%m%dT%H%M%SZ)
+  sudo cp ~/hive-nginx-new.conf /etc/nginx/sites-available/hive.ausbit.dev
+  sudo nginx -t && sudo systemctl reload nginx
+  ```
 
 ## Remaining
 
+- Install and reload the nginx config (the command above). This activates the
+  `/browse` 301, `/search` and 404 noindex shells, the TradingView CSP
+  allowances, account avatar og:image variables and the one-year `/assets/`
+  cache header.
 - Deploy `deploy/cloudflare/metadata-worker.mjs` and verify a shared post/account
   URL with a non-JS preview scraper (#64).
-- The full `/assets/` cache header and CSP changes take effect after
-  `./scripts/deploy.sh` and an nginx config reload.
-- Chain-specific neighbour links in the static body (#62) would need the same
-  edge lookup or a cron-generated shell.
