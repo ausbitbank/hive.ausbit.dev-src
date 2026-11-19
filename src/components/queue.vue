@@ -410,6 +410,12 @@ export default {
           // 100000 HBD payout cap, which the chain rejects on an edit with
           // "A comment cannot accept a greater payout".
           result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
+        } else if (operation[1].parent_author) {
+          // Replies and container comments (Snaps, Waves, Moments) are plain
+          // comments. Send the exact operation through requestBroadcast:
+          // requestPost adds post-only comment_options that a comment cannot
+          // carry, and some Keychain versions reject the whole request.
+          result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
         } else {
           result = await keychain(
             window,
@@ -440,7 +446,7 @@ export default {
       if (result.cancel) return { success: false, error: 'Cancelled in Keychain.' }
       if (result.notInstalled) return { success: false, error: 'Hive Keychain extension is not installed.' }
       if (result.notActive) return { success: false, error: 'Allow Hive Keychain to access this site.' }
-      return { success: false, error: result.message || result.msg || 'Keychain did not approve the action.' }
+      return { success: false, error: result.message || result.msg || result.error || 'Keychain did not approve the action.' }
     },
     async sendWithSmartlock (user, keyType, operation, { auto }) {
       if (keyType === 'posting') {

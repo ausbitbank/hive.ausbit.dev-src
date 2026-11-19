@@ -19,6 +19,7 @@ const EMBED_HOSTS = [
   'vimeo.com',
   '3speak.tv',
   'www.3speak.tv',
+  'play.3speak.tv',
   'odysee.com',
   'rumble.com',
   'www.bitchute.com',
@@ -29,6 +30,23 @@ const EMBED_HOSTS = [
 
 function decodedImageUrl (url) {
   return String(url || '').replace(/&amp;/g, '&')
+}
+
+/** Convert a 3Speak watch URL into the Snapie player embed URL. */
+export function threeSpeakEmbedUrl (href) {
+  try {
+    const url = new URL(href, 'https://hive.ausbit.dev')
+    if (!['3speak.tv', 'www.3speak.tv', 'play.3speak.tv'].includes(url.hostname)) return ''
+    const video = url.searchParams.get('v') || (() => {
+      const parts = url.pathname.split('/').filter(Boolean)
+      if (parts[0] === 'watch' || parts[0] === 'embed') parts.shift()
+      return parts.length >= 2 ? parts[0] + '/' + parts[1] : ''
+    })()
+    if (!/^[a-z0-9.-]+\/[a-z0-9._-]+$/i.test(video)) return ''
+    return 'https://play.3speak.tv/embed?v=' + video + '&mode=iframe'
+  } catch {
+    return ''
+  }
 }
 
 let hooksInstalled = false
@@ -68,6 +86,9 @@ function installPurifyHooks () {
     if (node.tagName === 'A') {
       if (node.getAttribute('target') === '_blank') {
         node.setAttribute('rel', 'noopener noreferrer')
+      }
+      if ((node.getAttribute('class') || '').split(/\s+/).includes('markdown-video-link')) {
+        node.setAttribute('aria-label', 'Play video')
       }
       // Image-only links (a logo inside a heading, or an image wrapper) have no
       // text for assistive technology. Name them from the image alt text, or
@@ -125,6 +146,7 @@ export default {
         ADD_TAGS: ['iframe'],
         ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
       })
+      const enhanced = this.enhanceEmbeds(safe)
       // The page title is the only h1; post content headings start at h2.
       const normalizeHeadings = html => html
         .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
@@ -132,16 +154,37 @@ export default {
 
       const token = ++this.renderToken
       if (!this.preload) {
-        this.rendered = normalizeHeadings(safe)
+        this.rendered = normalizeHeadings(enhanced)
         return
       }
 
       if (!this.rendered) this.loading = true
-      this.preloadImages(safe).then(dimensions => {
+      this.preloadImages(enhanced).then(dimensions => {
         if (token !== this.renderToken) return
-        this.rendered = normalizeHeadings(this.applyImageDimensions(safe, dimensions))
+        this.rendered = normalizeHeadings(this.applyImageDimensions(enhanced, dimensions))
         this.loading = false
       })
+    },
+
+    /**
+     * render-helper turns YouTube links into a click-to-load thumbnail, but it
+     * does not recognise 3Speak. Add the same suspended-embed contract for
+     * 3Speak links so they can play inside the site.
+     */
+    enhanceEmbeds (html) {
+      if (typeof DOMParser === 'undefined' || !/3speak\.tv/i.test(html)) return html
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      for (const anchor of doc.querySelectorAll('a[href]')) {
+        const embed = threeSpeakEmbedUrl(anchor.getAttribute('href'))
+        if (!embed) continue
+        anchor.setAttribute('data-embed-src', embed)
+        const classes = (anchor.getAttribute('class') || '').split(/\s+/).filter(Boolean)
+        if (!classes.includes('markdown-video-link')) classes.push('markdown-video-link')
+        if (!anchor.querySelector('img')) classes.push('markdown-video-link--text')
+        anchor.setAttribute('class', classes.join(' '))
+        anchor.setAttribute('aria-label', 'Play video')
+      }
+      return doc.body.innerHTML
     },
 
     preloadImages (html) {
@@ -214,6 +257,7 @@ export default {
       const videoHref = anchor.getAttribute('data-video-href')
       const src = embedSrc || videoHref
       if (!src || !this.isAllowedEmbed(src)) return false
+      event.preventDefault()
 
       const wrapper = document.createElement('div')
       wrapper.style.cssText = 'position:relative;padding-top:56.25%;'
@@ -244,5 +288,93 @@ export default {
 .postbody-loading {
   display: block;
   min-height: 70vh;
+}
+</style>
+
+<style>
+/* Suspended video embeds render as a thumbnail until clicked. Make that
+   affordance explicit with a play badge over the image. */
+.markdown-video-link {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.markdown-video-link img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.markdown-video-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  transition: background-color 160ms ease;
+  pointer-events: none;
+}
+
+.markdown-video-link::after {
+  content: '▶';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 58px;
+  height: 58px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(8, 13, 17, 0.82);
+  color: #fff;
+  font-size: 20px;
+  line-height: 54px;
+  text-align: center;
+  padding-left: 4px;
+  box-sizing: border-box;
+  transform: translate(-50%, -50%);
+  transition: background-color 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.markdown-video-link:hover::before {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.markdown-video-link:hover::after,
+.markdown-video-link:focus-visible::after {
+  background: #4fc3f7;
+  color: #0b1014;
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.markdown-video-link--text {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: #4fc3f7 !important;
+  text-decoration: none;
+}
+
+.markdown-video-link--text::before {
+  content: '▶';
+  position: static;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: rgba(79, 195, 247, 0.16);
+  color: #4fc3f7;
+  font-size: 10px;
+  line-height: 20px;
+  text-align: center;
+  padding-left: 2px;
+  box-sizing: border-box;
+  vertical-align: -4px;
+  transform: none;
+}
+
+.markdown-video-link--text::after {
+  display: none;
 }
 </style>
