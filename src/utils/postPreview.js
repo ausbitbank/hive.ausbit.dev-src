@@ -9,6 +9,17 @@ import { safeJsonParse } from './safeHtml'
 
 const IMAGE_EXTENSION = /\.(?:tiff?|jpe?g|gif|png|svg|ico|heic|webp|arw)(?:[?#][^\s)"'<>]*)?/i
 const SAFE_IMAGE_URL = /^https?:\/\//i
+// Hosts that images.hive.blog is known to resize for us. Unknown hosts are left
+// alone so a broken proxy cannot replace an image that would otherwise load.
+const PROXY_HOSTS = [
+  'images.hive.blog',
+  'files.peakd.com',
+  'images.ecency.com',
+  'i.ecency.com',
+  'cdn.steemitimages.com',
+  'steemitimages.com',
+  'images.3speak.tv'
+]
 
 function decodeEntities (value) {
   return String(value || '')
@@ -52,11 +63,22 @@ export function previewImageUrl (url, width = 480) {
   if (typeof url !== 'string' || !url) return ''
   const youtube = url.match(/^(https?:\/\/i\.ytimg\.com\/vi\/[\w-]+\/)(?:maxresdefault|sddefault|hqdefault|mqdefault)(\.[a-z]+)$/i)
   if (youtube) return youtube[1] + 'hqdefault' + youtube[2]
-  const match = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/i)
-  if (!match) return url
-  const rest = match[2]
-  if (/^[a-z]{1,3}_[^/]+\//i.test(rest)) return url
-  return match[1] + 'w_' + Number(width) + ',q_auto:eco,f_auto/' + rest
+  const cloudinary = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/i)
+  if (cloudinary) {
+    const rest = cloudinary[2]
+    if (/^[a-z]{1,3}_[^/]+\//i.test(rest)) return url
+    return cloudinary[1] + 'w_' + Number(width) + ',q_auto:eco,f_auto/' + rest
+  }
+  try {
+    const parsed = new URL(url)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return url
+    if (!PROXY_HOSTS.includes(parsed.hostname)) return url
+    // images.hive.blog already serves a transformed copy.
+    if (parsed.pathname.startsWith('/p/')) return url
+    return 'https://images.hive.blog/' + Number(width) + 'x0/' + url
+  } catch {
+    return url
+  }
 }
 
 function firstBodyImage (body) {

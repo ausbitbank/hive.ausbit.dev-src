@@ -87,7 +87,7 @@
         <q-card v-else flat bordered class="witness-list-card">
           <ul class="witness-list">
             <witness-row
-              v-for="witness in filteredWitnesses"
+              v-for="witness in visibleWitnesses"
               :key="witness.owner"
               :witness="witness"
               :rank="witness.rank"
@@ -105,6 +105,17 @@
               @toggle="toggleDetails"
             />
           </ul>
+          <div v-if="visibleWitnesses.length < filteredWitnesses.length" class="witness-list__more">
+            <span>Showing {{ visibleWitnesses.length }} of {{ filteredWitnesses.length }} witnesses</span>
+            <q-btn
+              outline
+              no-caps
+              color="primary"
+              icon="expand_more"
+              :label="'Show ' + Math.min(pageSize, filteredWitnesses.length - visibleWitnesses.length) + ' more'"
+              @click="showMoreWitnesses"
+            />
+          </div>
         </q-card>
       </section>
 
@@ -213,6 +224,18 @@
   list-style: none;
 }
 
+.witness-list__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+  color: #90a4ae;
+  font-size: 0.74rem;
+}
+
 .witness-skeleton {
   display: flex;
   align-items: center;
@@ -309,6 +332,8 @@ export default {
       myVotesOnly: query.myVotes === '1',
       warningsOnly: query.warnings === '1',
       expanded: {},
+      visibleLimit: 60,
+      pageSize: 60,
       optimisticVotes: null,
       optimisticProxy: null,
       proxyDialog: false,
@@ -374,6 +399,9 @@ export default {
       })
       return sortWitnesses(rows, this.sort, this.direction)
     },
+    visibleWitnesses () {
+      return this.filteredWitnesses.slice(0, this.visibleLimit)
+    },
     accountHp () {
       if (!this.votingAccount) return null
       return formatHp(accountVoteWeight(this.votingAccount, this.globalProps).hp)
@@ -381,19 +409,24 @@ export default {
   },
   watch: {
     search (value) {
+      this.visibleLimit = this.pageSize
       this.syncQuery()
       if (value && this.myVotesOnly) this.myVotesOnly = false
     },
     sort () {
+      this.visibleLimit = this.pageSize
       this.syncQuery()
     },
     direction () {
+      this.visibleLimit = this.pageSize
       this.syncQuery()
     },
     myVotesOnly () {
+      this.visibleLimit = this.pageSize
       this.syncQuery()
     },
     warningsOnly () {
+      this.visibleLimit = this.pageSize
       this.syncQuery()
     },
     '$route.query.search' (value) {
@@ -460,6 +493,9 @@ export default {
     },
     toggleDetails (witness) {
       this.expanded = { ...this.expanded, [witness.owner]: !this.expanded[witness.owner] }
+    },
+    showMoreWitnesses () {
+      this.visibleLimit += this.pageSize
     },
     toggleVote (witness) {
       if (!this.loggedInUser) {

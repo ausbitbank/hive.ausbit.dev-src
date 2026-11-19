@@ -9,6 +9,7 @@ const EMBED_HOSTS = [
   'vimeo.com',
   '3speak.tv',
   'www.3speak.tv',
+  'play.3speak.tv',
   'odysee.com',
   'rumble.com',
   'www.bitchute.com',
@@ -99,6 +100,27 @@ export function safeJsonParse (value, fallback = {}) {
   } catch {
     return fallback
   }
+}
+
+/**
+ * Minimal, safe markdown for short metadata such as community descriptions.
+ * The output still goes through `sanitizeRichHtml`; this only avoids pulling
+ * the full render-helper (and its ~1 MB serializer) into the browse chunk.
+ */
+export function simpleMarkdownToHtml (value) {
+  if (value === null || value === undefined || typeof value !== 'string') return ''
+  const escaped = value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+  return escaped
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|\s)\*([^*\n]+)\*/g, '$1<em>$2</em>')
+    .split(/\n{2,}/)
+    .map(paragraph => '<p>' + paragraph.replace(/\n/g, '<br>') + '</p>')
+    .join('')
 }
 
 /**

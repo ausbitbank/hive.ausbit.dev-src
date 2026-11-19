@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useHiveStore } from '../../src/stores/hive'
 import PostPreview from '../../src/components/postPreview.vue'
-import { postImage, postSummary } from '../../src/utils/postPreview'
+import { postImage, postSummary, previewImageUrl } from '../../src/utils/postPreview'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
 describe('postImage', () => {
@@ -45,6 +45,18 @@ describe('postImage', () => {
         image: 'https://res.cloudinary.com/demo/image/upload/w_320,q_auto/v1234/photo.jpg'
       })
     })).toBe('https://res.cloudinary.com/demo/image/upload/w_320,q_auto/v1234/photo.jpg')
+  })
+
+  it('requests a resized copy through images.hive.blog for card images', () => {
+    expect(previewImageUrl('https://images.hive.blog/DQmExample/photo.png', 400))
+      .toBe('https://images.hive.blog/400x0/https://images.hive.blog/DQmExample/photo.png')
+    expect(previewImageUrl('https://files.peakd.com/file/peakd-hive/alice/photo.png', 480))
+      .toBe('https://images.hive.blog/480x0/https://files.peakd.com/file/peakd-hive/alice/photo.png')
+    // Already transformed URLs and unknown hosts are left untouched.
+    expect(previewImageUrl('https://images.hive.blog/p/abc?width=400', 400))
+      .toBe('https://images.hive.blog/p/abc?width=400')
+    expect(previewImageUrl('https://cdn.example/photo.png', 400))
+      .toBe('https://cdn.example/photo.png')
   })
 
   it('requests the compact YouTube thumbnail for card images', () => {

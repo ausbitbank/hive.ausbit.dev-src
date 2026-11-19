@@ -8,8 +8,16 @@
 </template>
 
 <script>
-import { renderPostBody } from '@ecency/render-helper'
 import DOMPurify from 'dompurify'
+
+// The render-helper bundle carries a very large serializer. Loading it lazily
+// keeps it out of the initial JavaScript for the home, block and account
+// surfaces; only post/proposal pages pay for it.
+let renderHelperPromise = null
+function loadRenderHelper () {
+  if (!renderHelperPromise) renderHelperPromise = import('@ecency/render-helper')
+  return renderHelperPromise
+}
 
 const EMBED_HOSTS = [
   'youtube.com',
@@ -141,29 +149,44 @@ export default {
   },
   methods: {
     render () {
-      const html = renderPostBody(this.input, false, false)
-      const safe = DOMPurify.sanitize(html, {
-        ADD_TAGS: ['iframe'],
-        ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
-      })
-      const enhanced = this.enhanceEmbeds(safe)
-      // The page title is the only h1; post content headings start at h2.
-      const normalizeHeadings = html => html
-        .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
-        .replace(/<\/h1>/gi, '</h2>')
-
       const token = ++this.renderToken
-      if (!this.preload) {
-        this.rendered = normalizeHeadings(enhanced)
-        return
-      }
+      this.loading = !this.preload || !this.rendered
+      loadRenderHelper()
+        .then(({ renderPostBody }) => {
+          if (token !== this.renderToken) return
+          const html = renderPostBody(this.input, false, false)
+          const safe = DOMPurify.sanitize(html, {
+            ADD_TAGS: ['iframe'],
+            ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
+          })
+          const enhanced = this.enhanceEmbeds(safe)
+          // The page title is the only h1; post content headings start at h2.
+          const normalizeHeadings = html => html
+            .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
+            .replace(/<\/h1>/gi, '</h2>')
 
-      if (!this.rendered) this.loading = true
-      this.preloadImages(enhanced).then(dimensions => {
-        if (token !== this.renderToken) return
-        this.rendered = normalizeHeadings(this.applyImageDimensions(enhanced, dimensions))
-        this.loading = false
-      })
+          if (!this.preload) {
+            this.rendered = normalizeHeadings(enhanced)
+            this.loading = false
+            return
+          }
+
+          this.preloadImages(enhanced).then(dimensions => {
+            if (token !== this.renderToken) return
+            this.rendered = normalizeHeadings(this.applyImageDimensions(enhanced, dimensions))
+            this.loading = false
+          })
+        })
+        .catch(error => {
+          if (token !== this.renderToken) return
+          console.error('Failed to load the post renderer', error)
+          this.rendered = '<p>' + String(this.input || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('\n', '<br>') + '</p>'
+          this.loading = false
+        })
     },
 
     /**

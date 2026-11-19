@@ -129,8 +129,7 @@
 </template>
 <script>
 import moment from 'src/utils/time'
-import { renderPostBody } from '@ecency/render-helper'
-import { sanitizeRichHtml, safeJsonParse } from 'src/utils/safeHtml'
+import { sanitizeRichHtml, safeJsonParse, simpleMarkdownToHtml } from 'src/utils/safeHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 // import { mapGetters } from 'vuex'
 export default {
@@ -236,7 +235,7 @@ export default {
     communityDescription: function () {
       if (this.communityInfo) {
         if (this.communityInfo.description) {
-          return sanitizeRichHtml(renderPostBody(this.communityInfo.description))
+          return sanitizeRichHtml(simpleMarkdownToHtml(this.communityInfo.description))
         } else {
           return null
         }
@@ -246,7 +245,7 @@ export default {
     },
     communityRules: function () {
       if (this.communityInfo.flag_text) {
-        return sanitizeRichHtml(renderPostBody(this.communityInfo.flag_text))
+        return sanitizeRichHtml(simpleMarkdownToHtml(this.communityInfo.flag_text))
       } else {
         return null
       }
