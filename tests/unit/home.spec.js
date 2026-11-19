@@ -5,6 +5,7 @@ import {
   blockSizeKb,
   blockTransactionCount,
   changeClass,
+  changeDirection,
   formatCompactNumber,
   formatMoney,
   formatPercent,
@@ -37,6 +38,10 @@ describe('home dashboard helpers', () => {
     expect(changeClass(1)).toBe('is-up')
     expect(changeClass(-1)).toBe('is-down')
     expect(changeClass(0)).toBe('is-flat')
+    expect(changeDirection(1)).toBe('up')
+    expect(changeDirection(-1)).toBe('down')
+    expect(changeDirection(0)).toBe('flat')
+    expect(changeDirection(null)).toBe('flat')
   })
 
   it('summarises operation types from tuples and objects', () => {

@@ -112,15 +112,24 @@
           <sparkline
             v-if="coin.sparkline"
             :data="coin.sparkline"
-            :width="64"
-            :height="22"
+            :width="160"
+            :height="30"
             :stroke="coin.stroke"
             fill="none"
+            animate
             class="home-market-row__spark"
           />
           <div class="home-market-row__quote">
             <span class="home-market-row__price">{{ coin.price }}</span>
-            <span class="home-market-row__change" :class="coin.changeClass">{{ coin.change }}</span>
+            <span class="home-market-row__change" :class="coin.changeClass">
+              <q-icon
+                :name="coin.changeIcon"
+                size="12px"
+                class="home-market-row__arrow"
+                aria-hidden="true"
+              />
+              {{ coin.change }}
+            </span>
           </div>
           <q-icon
             :name="coin.to ? 'chevron_right' : 'open_in_new'"
@@ -156,6 +165,7 @@
 }
 
 .home-market-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -163,6 +173,22 @@
   border-top: 1px solid var(--border-subtle);
   color: inherit;
   text-decoration: none;
+  transition: background-color 160ms ease;
+}
+
+.home-market-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: #4fc3f7;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.home-market-row:hover::before,
+.home-market-row:focus-visible::before {
+  opacity: 1;
 }
 
 .home-market-row:visited {
@@ -203,8 +229,16 @@
 }
 
 .home-market-row__spark {
-  flex: none;
+  flex: 1 1 auto;
+  min-width: 48px;
+  max-width: 220px;
+  height: 30px;
   opacity: 0.9;
+  transition: opacity 160ms ease;
+}
+
+.home-market-row:hover .home-market-row__spark {
+  opacity: 1;
 }
 
 .home-market-row__quote {
@@ -220,11 +254,20 @@
   color: #e4eaed;
   font-size: 0.82rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .home-market-row__change {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
   font-size: 0.68rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-market-row__arrow {
+  margin-right: -1px;
 }
 
 .home-market-row__external {
@@ -338,6 +381,12 @@
     display: none;
   }
 }
+
+@media (max-width: 479px) {
+  .home-market-row__spark {
+    display: none;
+  }
+}
 </style>
 
 <script>
@@ -345,6 +394,7 @@ import moment from 'src/utils/time'
 import Sparkline from 'components/Sparkline.vue'
 import {
   changeClass,
+  changeDirection,
   formatMoney,
   formatPercent,
   sortMarketCoins
@@ -438,6 +488,7 @@ export default {
           price: priceLabel,
           change: changeLabel,
           changeClass: changeClass(change),
+          changeIcon: changeDirection(change) === 'up' ? 'north_east' : changeDirection(change) === 'down' ? 'south_east' : 'remove',
           sparkline: coin.sparkline_in_7d && coin.sparkline_in_7d.price,
           stroke: change < 0 ? '#ef5350' : '#66bb6a',
           to: marketLink?.to || '',

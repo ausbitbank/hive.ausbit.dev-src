@@ -82,6 +82,13 @@ export function changeClass (value) {
   return number > 0 ? 'is-up' : 'is-down'
 }
 
+/** Direction for price changes, used for up/down arrows and colour accents. */
+export function changeDirection (value) {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number === 0) return 'flat'
+  return number > 0 ? 'up' : 'down'
+}
+
 /**
  * Count operation types for a compact activity summary. Accepts operation
  * tuples (`[type, data]`) or operation objects (`{ op: [type, data] }`).
