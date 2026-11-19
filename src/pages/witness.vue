@@ -761,8 +761,11 @@ export default {
       return relativeTime(this.witness?.last_hbd_exchange_update)
     },
     feedStatus () {
-      const fresh = this.witness?.last_hbd_exchange_update &&
-        (Date.now() - new Date(this.witness.last_hbd_exchange_update).getTime()) < 24 * 60 * 60 * 1000
+      const updated = this.witness?.last_hbd_exchange_update
+      if (!updated || Number.isNaN(new Date(updated).getTime()) || new Date(updated).getTime() <= 0) {
+        return { label: 'No feed', color: 'grey' }
+      }
+      const fresh = (Date.now() - new Date(updated).getTime()) < 24 * 60 * 60 * 1000
       return fresh ? { label: 'Fresh', color: 'green' } : { label: 'Stale', color: 'orange' }
     },
     feedRateLabel () {

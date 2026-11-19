@@ -80,6 +80,10 @@ describe('witness vote weight', () => {
     expect(relativeTime('2026-11-18T12:20:00Z', now)).toBe('in 20 minutes')
     expect(relativeTime('2026-11-18T11:59:40Z', now)).toBe('just now')
   })
+
+  it('treats the Unix epoch as no value instead of 57 years ago', () => {
+    expect(relativeTime('1970-01-01T00:00:00')).toBe('never')
+  })
 })
 
 describe('witnessHealth', () => {

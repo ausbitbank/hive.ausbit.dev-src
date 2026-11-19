@@ -81,6 +81,9 @@ export function relativeTime (timestamp, now = Date.now()) {
   if (!timestamp) return 'never'
   const parsed = moment.utc(timestamp)
   if (!parsed.isValid()) return 'never'
+  // Hive uses the Unix epoch as its "no value" sentinel, for example when a
+  // witness has never published an HBD price feed. It is not a 1970 date.
+  if (parsed.valueOf() <= 0) return 'never'
   const diffMs = Number(now) - parsed.valueOf()
   if (!Number.isFinite(diffMs)) return 'never'
   if (diffMs < 0) return 'in ' + moment.duration(-diffMs, 'ms').humanize()
