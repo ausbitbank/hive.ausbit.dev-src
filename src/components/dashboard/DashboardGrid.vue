@@ -57,6 +57,19 @@
           v-else-if="entry.widget.type === 'accountPosts'"
           v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
         />
+        <widget-my-witness
+          v-else-if="entry.widget.type === 'myWitness'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+        />
+        <widget-witness-health
+          v-else-if="entry.widget.type === 'witnessHealth'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+        />
+        <widget-network-stats v-else-if="entry.widget.type === 'network'" />
+        <widget-notifications
+          v-else-if="entry.widget.type === 'notifications'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
+        />
       </dashboard-widget-shell>
     </div>
 
@@ -172,6 +185,10 @@
 
 <script>
 import DashboardWidgetShell from 'components/dashboard/DashboardWidgetShell.vue'
+import WidgetMyWitness from 'components/dashboard/WidgetMyWitness.vue'
+import WidgetWitnessHealth from 'components/dashboard/WidgetWitnessHealth.vue'
+import WidgetNetworkStats from 'components/dashboard/WidgetNetworkStats.vue'
+import WidgetNotifications from 'components/dashboard/WidgetNotifications.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
@@ -189,7 +206,9 @@ const SPANS = new Map(WIDGET_WIDTHS.map(entry => [entry.value, entry.columns]))
 
 // Types this grid renders today. Registry entries without a component are
 // still laid out and show the shell's "available shortly" placeholder.
-const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts']
+// `wallet` is deliberately absent until its numbers are verified against the
+// wallet page; its registry entry renders the shell's "available shortly" state.
+const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'accountPosts', 'myWitness', 'witnessHealth', 'network', 'notifications']
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
 // home/end keys jump to the ends of the layout.
@@ -204,6 +223,10 @@ export default {
   name: 'DashboardGrid',
   components: {
     DashboardWidgetShell,
+    WidgetMyWitness,
+    WidgetWitnessHealth,
+    WidgetNetworkStats,
+    WidgetNotifications,
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,

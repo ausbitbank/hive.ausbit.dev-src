@@ -115,3 +115,24 @@ export function mergeNotifications (existing, incoming) {
     return String(b.id).localeCompare(String(a.id))
   })
 }
+
+/**
+ * Recent notifications for one account, using the bridge plugin.
+ * `items` are the raw bridge rows (newest first); `unread` is the bridge's
+ * unread count. Both requests run together so a slow inbox does not delay the
+ * count.
+ */
+export async function notifyAccountNotifications (account, { limit = 5, call = null } = {}) {
+  const invoke = call || (async (method, params) => {
+    const { hive } = await import('./hive')
+    return hive.api.callAsync(method, params)
+  })
+  const [items, unread] = await Promise.all([
+    invoke('bridge.account_notifications', { account, limit }),
+    invoke('bridge.unread_notifications', { account }).catch(() => null)
+  ])
+  return {
+    items: Array.isArray(items) ? items : [],
+    unread: Number(unread?.unread) || 0
+  }
+}

@@ -25,8 +25,8 @@ function getStorage () {
   return null
 }
 
-function dashboardState () {
-  const resolved = resolveDashboard(null)
+function dashboardState (username = null) {
+  const resolved = resolveDashboard(username)
   return {
     dashboard: {
       // The layout currently being shown. Guests always edit the shared guest

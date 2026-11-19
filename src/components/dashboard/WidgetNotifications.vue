@@ -1,0 +1,181 @@
+<template>
+  <div class="dw-notify">
+    <dashboard-widget-state
+      :state="state"
+      :error="loadError"
+      guest-title="Log in to see your notifications"
+      guest-text="Replies, votes and mentions for your own account."
+      @retry="reload"
+    />
+
+    <template v-if="state === 'ready' || state === 'stale'">
+      <q-card-section class="dw-notify__body">
+        <div v-if="loading && !items.length" class="dw-notify__list">
+          <div v-for="i in Math.min(limit, 4)" :key="i" class="dw-notify__skeleton">
+            <q-skeleton type="circle" size="24px" />
+            <q-skeleton type="text" width="70%" />
+          </div>
+        </div>
+
+        <p v-else-if="!items.length" class="dw-notify__empty">No notifications yet.</p>
+
+        <ul v-else class="dw-notify__list" role="list">
+          <li v-for="item in items" :key="item.id">
+            <router-link :to="item.to" class="dw-notify__row">
+              <span class="dw-notify__icon" :class="'is-' + item.category">
+                <q-icon :name="iconFor(item.category)" size="14px" aria-hidden="true" />
+              </span>
+              <span class="dw-notify__text" v-text="item.message"></span>
+              <span class="dw-notify__time">{{ item.time }}</span>
+            </router-link>
+          </li>
+        </ul>
+      </q-card-section>
+
+      <q-card-section class="home-panel__footer">
+        <router-link to="/notifications">Open notifications</router-link>
+        <span>{{ unreadLabel }}</span>
+      </q-card-section>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.dw-notify__body {
+  padding: 0.45rem 1rem 0.35rem;
+}
+
+.dw-notify__list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dw-notify__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.4rem 0.15rem;
+  border-top: 1px solid var(--border-subtle);
+  color: #cfd8dc;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.dw-notify__row:first-child {
+  border-top: 0;
+}
+
+.dw-notify__row:hover {
+  background: rgba(255, 255, 255, 0.035);
+  text-decoration: none;
+}
+
+.dw-notify__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #90a4ae;
+}
+
+.dw-notify__icon.is-votes {
+  color: #a5d6a7;
+}
+
+.dw-notify__icon.is-replies,
+.dw-notify__icon.is-mentions {
+  color: #81d4fa;
+}
+
+.dw-notify__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.dw-notify__time {
+  flex: none;
+  color: #78909c;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.dw-notify__empty {
+  margin: 0;
+  padding: 0.4rem 0;
+  color: #78909c;
+  font-size: 0.78rem;
+}
+
+.dw-notify__skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0;
+}
+</style>
+
+<script>
+import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
+import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
+import { notifyAccountNotifications } from 'src/services/notifications'
+import { notificationRows } from 'src/services/dashboardWidgets'
+
+const ICONS = {
+  votes: 'thumb_up',
+  replies: 'reply',
+  mentions: 'alternate_email',
+  other: 'notifications'
+}
+
+export default {
+  name: 'WidgetNotifications',
+  components: { DashboardWidgetState },
+  mixins: [accountWidgetMixin],
+  props: {
+    account: { type: String, default: '' },
+    limit: { type: Number, default: 5 }
+  },
+  data () {
+    return {
+      notifications: [],
+      unreadCount: 0
+    }
+  },
+  computed: {
+    items () {
+      return notificationRows(this.notifications, { limit: this.limit })
+    },
+    unreadLabel () {
+      return this.unreadCount > 0 ? this.unreadCount + ' unread' : 'All caught up'
+    }
+  },
+  watch: {
+    accountName () {
+      this.loadFeed()
+    }
+  },
+  methods: {
+    iconFor (category) {
+      return ICONS[category] || ICONS.other
+    },
+    async loadFeed () {
+      if (!this.accountName) return
+      try {
+        const feed = await notifyAccountNotifications(this.accountName, { limit: this.limit })
+        this.notifications = feed.items
+        this.unreadCount = feed.unread
+      } catch (error) {
+        console.error('Failed to load dashboard notifications', error)
+      }
+    }
+  }
+}
+</script>

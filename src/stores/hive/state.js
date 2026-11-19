@@ -132,6 +132,8 @@ export default function () {
     globalProps: {
       empty: true
     },
-    ...dashboardState()
+    // Resolved for the signed-in user (or the guest layout) at boot, so a
+    // returning user sees their own dashboard without a flash of the default.
+    ...dashboardState(SessionStorage.getItem('loggedInUser') || null)
   }
 }

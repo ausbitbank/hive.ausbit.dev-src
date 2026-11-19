@@ -9,8 +9,14 @@ function ensureQueueMeta (state) {
 }
 
 export function updateLoggedInUser (username) {
+  const previous = this.user.username
   this.user.username = username
   SessionStorage.set('loggedInUser', username)
+  // Each account has its own dashboard; reload when the identity changes so
+  // signing in shows the account layout and signing out returns to the guest's.
+  if (previous !== username && typeof this.loadDashboard === 'function') {
+    this.loadDashboard(username || null)
+  }
 }
 
 export function updateLoginType (type) {
