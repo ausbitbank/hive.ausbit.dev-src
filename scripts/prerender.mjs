@@ -23,7 +23,6 @@ const PORT = 4188
 const ROUTES = [
   '/',
   '/blocks',
-  '/browse',
   '/trending',
   '/created',
   '/hot',
