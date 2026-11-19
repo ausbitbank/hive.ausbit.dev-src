@@ -65,6 +65,14 @@ describe('setPageMeta', () => {
     expect(metaContent('meta[property="og:type"]')).toBe('website')
   })
 
+  it('marks noindex pages and drops the canonical', () => {
+    setPageMeta({ title: 'Search', url: '/search', noindex: true })
+
+    expect(metaContent('meta[name="robots"]')).toBe('noindex, follow')
+    expect(linkHref('link[rel="canonical"]')).toBeUndefined()
+    expect(metaContent('meta[property="og:title"]')).toBe('Search')
+  })
+
   it('normalises relative URLs against the site base', () => {
     setPageMeta({
       title: 'Post',
