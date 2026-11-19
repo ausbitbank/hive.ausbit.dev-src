@@ -44,6 +44,7 @@
 
         <button
           v-if="searchQuery"
+          id="command-result--1"
           type="button"
           class="command-result command-result--search"
           :class="{ 'command-result--active': selectedIndex === -1 }"
@@ -242,6 +243,37 @@ import { fetchAccount } from 'src/services/chainData'
 const RECENT_KEY = 'hive-command-recent'
 const MAX_RECENT = 5
 
+/**
+ * Next selection index for the command palette.
+ *
+ * Result rows use indices `0..total-1`; the trailing "Search for …" row uses
+ * `-1` and only exists when `hasSearchRow` is true. Navigation wraps in both
+ * directions and treats the search row as the last stop.
+ */
+export function nextSelection (current, total, delta, hasSearchRow) {
+  if (total <= 0 && !hasSearchRow) return -1
+  if (delta > 0) {
+    if (current === -1) return total ? 0 : -1
+    if (current >= total - 1) return hasSearchRow ? -1 : 0
+    return current + 1
+  }
+  if (current === -1) return total - 1
+  if (current <= 0) return hasSearchRow ? -1 : total - 1
+  return current - 1
+}
+
+/**
+ * The palette action for a pressed Enter key. `selectedIndex` of -1 means the
+ * "Search for …" row, which opens the full search page; otherwise a result row
+ * is selected, or the full search opens when there are no results.
+ */
+export function resolveEnterAction (selectedIndex, hasResult, hasSearchRow) {
+  if (selectedIndex === -1) return hasSearchRow ? 'search' : 'none'
+  if (hasResult) return 'select'
+  if (hasSearchRow) return 'search'
+  return 'none'
+}
+
 const COMMANDS = [
   { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
   { label: 'Browse posts', description: 'Trending, new and community posts', icon: 'explore', path: '/browse', keywords: 'posts feed content' },
@@ -410,23 +442,25 @@ export default {
     },
     onKeydown (event) {
       const total = this.flatResults.length
-      const withFullSearch = total + (this.searchQuery ? 1 : 0)
+      const hasSearchRow = this.searchQuery
       if (event.key === 'ArrowDown') {
         event.preventDefault()
-        if (withFullSearch) this.selectedIndex = this.selectedIndex >= total - 1 ? (this.searchQuery ? -1 : 0) : this.selectedIndex + 1
+        this.selectedIndex = nextSelection(this.selectedIndex, total, 1, hasSearchRow)
         this.scrollSelected()
       } else if (event.key === 'ArrowUp') {
         event.preventDefault()
-        if (withFullSearch) this.selectedIndex = this.selectedIndex <= 0 ? (this.searchQuery ? -1 : total - 1) : this.selectedIndex - 1
+        this.selectedIndex = nextSelection(this.selectedIndex, total, -1, hasSearchRow)
         this.scrollSelected()
       } else if (event.key === 'Enter') {
         event.preventDefault()
-        if ((event.metaKey || event.ctrlKey) && this.searchQuery) {
+        if ((event.metaKey || event.ctrlKey) && hasSearchRow) {
           this.openFullSearch()
           return
         }
-        const result = this.flatResults[this.selectedIndex]
-        if (result) this.select(result)
+        const result = this.selectedIndex >= 0 ? this.flatResults[this.selectedIndex] : null
+        const action = resolveEnterAction(this.selectedIndex, Boolean(result), hasSearchRow)
+        if (action === 'search') this.openFullSearch()
+        else if (action === 'select' && result) this.select(result)
       } else if (event.key === 'Escape') {
         event.preventDefault()
         this.open = false
