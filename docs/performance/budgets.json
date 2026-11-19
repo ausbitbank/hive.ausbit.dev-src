@@ -1,12 +1,12 @@
 {
-  "initialJsKb": 345,
+  "initialJsKb": 355,
   "cssKb": 55,
   "lcpMs": 8000,
   "cls": 0.5,
   "routes": {
     "/": {
-      "jsKb": 470,
-      "routeJsKb": 130,
+      "jsKb": 495,
+      "routeJsKb": 142,
       "totalKb": 720
     },
     "/browse": {
