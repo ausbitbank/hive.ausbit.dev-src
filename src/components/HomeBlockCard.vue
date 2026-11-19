@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <div v-if="mix.length" class="home-block__mix">
+      <div v-if="!compact && mix.length" class="home-block__mix">
         <span class="home-block__mix-label">Activity</span>
         <span v-for="item in mix" :key="item.type" class="home-block__mix-chip">{{ item.count }}× {{ item.label }}</span>
       </div>
@@ -242,6 +242,10 @@ const SNAPSHOT_KEY = 'home:block'
 export default {
   name: 'homeBlockCard',
   components: { DataNotice },
+  props: {
+    // Drop the operation-mix chips to keep the card short in a narrow slot.
+    compact: { type: Boolean, default: false }
+  },
   data () {
     return {
       block: null,

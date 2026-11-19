@@ -37,11 +37,26 @@
         @nudge="onNudge"
         @remove="$emit('remove', $event)"
       >
-        <home-block-card v-if="entry.widget.type === 'block'" />
-        <home-market-card v-else-if="entry.widget.type === 'market'" v-bind="entry.widget.settings" />
-        <home-witness-card v-else-if="entry.widget.type === 'witnesses'" />
-        <home-trending-posts v-else-if="entry.widget.type === 'posts'" />
-        <home-recent-posts v-else-if="entry.widget.type === 'accountPosts'" account="ausbitbank" />
+        <home-block-card
+          v-if="entry.widget.type === 'block'"
+          v-bind="settingsFor(entry.widget, { compact: entry.widget.settings?.compact })"
+        />
+        <home-market-card
+          v-else-if="entry.widget.type === 'market'"
+          v-bind="settingsFor(entry.widget, { coinIds: entry.widget.settings?.coinIds, currency: entry.widget.settings?.currency, compact: entry.widget.settings?.compact })"
+        />
+        <home-witness-card
+          v-else-if="entry.widget.type === 'witnesses'"
+          v-bind="settingsFor(entry.widget, { limit: entry.widget.settings?.limit, pinMine: entry.widget.settings?.pinMine, highlight: entry.widget.settings?.highlight, showHealth: entry.widget.settings?.showHealth })"
+        />
+        <home-trending-posts
+          v-else-if="entry.widget.type === 'posts'"
+          v-bind="settingsFor(entry.widget, { source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle })"
+        />
+        <home-recent-posts
+          v-else-if="entry.widget.type === 'accountPosts'"
+          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
+        />
       </dashboard-widget-shell>
     </div>
 
@@ -257,6 +272,19 @@ export default {
     window.removeEventListener('keydown', this.onKeyDown)
   },
   methods: {
+    /**
+     * The subset of a widget's settings that maps to the card's props. Only
+     * declared keys are passed: unknown ones would land as DOM attributes, and
+     * keys the card does not declare at all are not props it can accept.
+     */
+    settingsFor (widget, keys) {
+      const settings = widget.settings || {}
+      const props = {}
+      for (const [name, fallback] of Object.entries(keys)) {
+        props[name] = settings[name] !== undefined ? settings[name] : fallback
+      }
+      return Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))
+    },
     metaFor (widget) {
       return widgetMeta(widget.type) || { label: widget.type, category: '' }
     },

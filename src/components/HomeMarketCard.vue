@@ -6,7 +6,16 @@
         <h2 class="home-panel__title">Coin prices</h2>
       </div>
       <div class="home-panel__actions">
-        <q-btn flat dense round icon="tune" aria-label="Customise coins and currency" title="Customise coins and currency" @click="openSettings" />
+        <q-btn
+          v-if="!configured"
+          flat
+          dense
+          round
+          icon="tune"
+          aria-label="Customise coins and currency"
+          title="Customise coins and currency"
+          @click="openSettings"
+        />
         <q-btn flat dense round icon="refresh" aria-label="Refresh prices" title="Refresh prices" :loading="refreshing" @click="loadPrices" />
         <router-link to="/markets" class="home-panel__link">Markets</router-link>
       </div>
@@ -164,7 +173,7 @@
       <div class="home-market-list">
         <component
           :is="coin.to ? 'router-link' : 'a'"
-          v-for="coin in rows"
+          v-for="coin in visibleRows"
           :key="coin.id"
           v-bind="coin.linkProps"
           class="home-market-row"
@@ -220,7 +229,7 @@
         <span class="home-market__footer-links">
           <router-link to="/market">Internal market</router-link>
           <router-link to="/markets#hbd-tools">HBD peg</router-link>
-          <span>24h change · {{ currency.toUpperCase() }}<template v-if="isForex"> (via USD)</template></span>
+          <span>24h change · {{ activeCurrency.toUpperCase() }}<template v-if="isForex"> (via USD)</template></span>
         </span>
         <span>via CoinGecko<span v-if="updatedLabel"> · {{ updatedLabel }}</span></span>
       </q-card-section>
@@ -562,7 +571,17 @@ const MARKET_LINKS = {
 export default {
   name: 'homeMarketCard',
   components: { Sparkline, DataNotice },
+  props: {
+    // Widget-level coin list; falls back to the legacy homeMarketPrefs.
+    coinIds: { type: Array, default: () => [] },
+    // Widget-level quote currency; falls back to the legacy homeMarketPrefs.
+    currency: { type: String, default: '' },
+    // Limit the list to four rows for narrow slots.
+    compact: { type: Boolean, default: false }
+  },
   data () {
+    // Guests (and the front page) use the legacy per-browser preferences;
+    // a configured dashboard widget overrides them through props.
     const prefs = loadHomeMarketPrefs()
     return {
       coins: [],
@@ -571,8 +590,8 @@ export default {
       error: '',
       updatedAt: null,
       staleAt: null,
-      coinIds: prefs.coinIds,
-      currency: prefs.currency,
+      // Chosen coins/currency when the widget is not configured by settings.
+      selection: { coinIds: prefs.coinIds, currency: prefs.currency },
       settingsOpen: false,
       draftCoinIds: [...prefs.coinIds],
       draftCurrency: prefs.currency,
@@ -587,6 +606,17 @@ export default {
     }
   },
   computed: {
+    // A widget configured by its settings is read-only here: the dashboard's
+    // configure dialog owns it, so the in-card tune button is hidden.
+    configured () {
+      return (Array.isArray(this.coinIds) && this.coinIds.length > 0) || Boolean(this.currency)
+    },
+    activeCoinIds () {
+      return orderCoinIds(this.configured ? this.coinIds : this.selection.coinIds)
+    },
+    activeCurrency () {
+      return (this.configured && this.currency) || this.selection.currency
+    },
     offline () {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
@@ -597,16 +627,19 @@ export default {
       }))
     },
     symbol () {
-      return currencySymbol(this.currency)
+      return currencySymbol(this.activeCurrency)
     },
     isForex () {
-      return isForexCurrency(this.currency)
+      return isForexCurrency(this.activeCurrency)
     },
     draftIsForex () {
       return isForexCurrency(this.draftCurrency)
     },
+    visibleRows () {
+      return this.compact ? this.rows.slice(0, 4) : this.rows
+    },
     rows () {
-      return sortMarketCoins(this.coins, this.coinIds).map(coin => {
+      return sortMarketCoins(this.coins, this.activeCoinIds).map(coin => {
         const change = Number(coin.price_change_percentage_24h)
         const marketLink = MARKET_LINKS[coin.id]
         const priceLabel = formatMoney(coin.current_price, this.symbol)
@@ -647,11 +680,11 @@ export default {
   },
   methods: {
     prefs () {
-      return { coinIds: this.coinIds, currency: this.currency }
+      return { coinIds: this.activeCoinIds, currency: this.activeCurrency }
     },
     openSettings () {
-      this.draftCoinIds = [...this.coinIds]
-      this.draftCurrency = this.currency
+      this.draftCoinIds = [...this.activeCoinIds]
+      this.draftCurrency = this.activeCurrency
       this.searchQuery = ''
       this.searchResults = []
       this.searchError = ''
@@ -701,9 +734,11 @@ export default {
       this.draftCurrency = defaults.currency
     },
     async saveSettings () {
-      this.coinIds = orderCoinIds(this.draftCoinIds)
-      this.currency = this.draftCurrency
-      saveHomeMarketPrefs(this.prefs())
+      this.selection = {
+        coinIds: orderCoinIds(this.draftCoinIds),
+        currency: this.draftCurrency
+      }
+      saveHomeMarketPrefs({ coinIds: this.selection.coinIds, currency: this.selection.currency })
       this.settingsOpen = false
       // The previous mix is no longer relevant, so start from a clean slate.
       this.coins = []
@@ -722,7 +757,7 @@ export default {
       try {
         const [response, forex] = await Promise.all([
           fetch(buildMarketUrl(this.prefs())),
-          this.isForex ? loadForexRate(this.currency) : Promise.resolve(null)
+          this.isForex ? loadForexRate(this.activeCurrency) : Promise.resolve(null)
         ])
         if (!response.ok) throw new Error('HTTP ' + response.status)
         const data = await response.json()

@@ -6,7 +6,7 @@
         <h2 class="home-panel__title">Posts on Hive</h2>
       </div>
       <div class="home-panel__actions">
-        <div class="home-sort" role="group" aria-label="Post sort">
+        <div v-if="showSortToggle" class="home-sort" role="group" aria-label="Post sort">
           <button
             v-for="option in sortOptions"
             :key="option.value"
@@ -108,9 +108,22 @@ const ROUTES = {
   hot: '/hot'
 }
 
+const SOURCES = ['trending', 'created', 'hot']
+
 export default {
   name: 'homeTrendingPosts',
   components: { HomePostRow, DataNotice },
+  props: {
+    // Initial feed: trending | created | hot.
+    source: { type: String, default: 'trending' },
+    // Restrict to one community/tag ('' = the whole network).
+    tag: { type: String, default: '' },
+    // Number of posts to show.
+    limit: { type: Number, default: 6 },
+    // Show the Trending/New/Hot switcher. A widget configured for a source
+    // hides it; the front page keeps it.
+    showSortToggle: { type: Boolean, default: true }
+  },
   data () {
     return {
       sort: 'trending',
@@ -132,6 +145,14 @@ export default {
       return ROUTES[this.sort] || '/trending'
     }
   },
+  created () {
+    this.sort = SOURCES.includes(this.source) ? this.source : 'trending'
+  },
+  watch: {
+    tag () {
+      this.loadPosts()
+    }
+  },
   mounted () {
     this.loadPosts()
   },
@@ -142,7 +163,7 @@ export default {
       this.loadPosts()
     },
     snapshotKey () {
-      return SNAPSHOT_PREFIX + this.sort
+      return SNAPSHOT_PREFIX + (this.tag ? 'tag:' + this.tag + ':' : '') + this.sort
     },
     async loadPosts () {
       this.loading = true
@@ -150,8 +171,9 @@ export default {
       try {
         const response = await fetchRankedPosts({
           observer: this.loggedInUser || null,
-          limit: 6,
+          limit: this.limit,
           sort: this.sort,
+          tag: this.tag || '',
           start_author: null,
           start_permlink: null
         })

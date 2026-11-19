@@ -3,9 +3,9 @@
     <q-card-section class="home-panel__head">
       <div>
         <div class="home-eyebrow">From the author</div>
-        <h2 class="home-panel__title">@{{ account }}</h2>
+        <h2 class="home-panel__title">@{{ resolvedAccount }}</h2>
       </div>
-      <router-link :to="'/@' + account + '/blog'" class="home-panel__link">Blog</router-link>
+      <router-link :to="'/@' + resolvedAccount + '/blog'" class="home-panel__link">Blog</router-link>
     </q-card-section>
 
     <div v-if="staleAt" class="home-panel__notice">
@@ -19,7 +19,7 @@
     </div>
 
     <q-card-section v-if="loading" class="home-panel__body">
-      <div v-for="i in 4" :key="i" class="home-recent-skeleton">
+      <div v-for="i in Math.min(limit, 8)" :key="i" class="home-recent-skeleton">
         <q-skeleton type="rect" width="42px" height="38px" />
         <div class="home-recent-skeleton__body">
           <q-skeleton type="text" width="90%" />
@@ -69,7 +69,13 @@ export default {
   name: 'homeRecentPosts',
   components: { HomePostRow, DataNotice },
   props: {
-    account: { type: String, default: 'ausbitbank' }
+    // Whose recent posts to show. Empty means the signed-in user, falling back
+    // to the site author for guests.
+    account: { type: String, default: '' },
+    // Guest fallback when `account` is empty.
+    fallbackAccount: { type: String, default: 'ausbitbank' },
+    // Number of posts to show.
+    limit: { type: Number, default: 4 }
   },
   data () {
     return {
@@ -86,8 +92,18 @@ export default {
     offline () {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
+    // Resolve '' against the signed-in user so a dashboard widget shows "your"
+    // posts by default without the page passing anything.
+    resolvedAccount () {
+      return String(this.account || this.loggedInUser || this.fallbackAccount || '').replace(/^@/, '')
+    },
     snapshotKey () {
-      return SNAPSHOT_KEY + this.account
+      return SNAPSHOT_KEY + this.resolvedAccount
+    }
+  },
+  watch: {
+    resolvedAccount () {
+      this.loadPosts()
     }
   },
   mounted () {
@@ -100,9 +116,9 @@ export default {
       try {
         const response = await fetchAccountPosts({
           sort: 'blog',
-          account: this.account,
-          observer: this.loggedInUser || this.account,
-          limit: 4,
+          account: this.resolvedAccount,
+          observer: this.loggedInUser || this.resolvedAccount,
+          limit: this.limit,
           start_author: null,
           start_permlink: null
         })
