@@ -51,7 +51,7 @@
               <q-icon name="share" />
             </q-item-section>
             <q-item-section>
-              <reblog :author="post.author" :permlink="post.permlink" />
+              <reblog :author="post.author" :permlink="post.permlink" :reblogged="alreadyReblogged" />
             </q-item-section>
           </q-item>
           <template v-if="isOwnPost">
@@ -160,6 +160,10 @@ export default {
     },
     isOwnPost () {
       return Boolean(this.loggedInUser) && this.loggedInUser === this.post.author
+    },
+    alreadyReblogged () {
+      const list = Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by : []
+      return Boolean(this.loggedInUser) && list.includes(this.loggedInUser)
     },
     hasReplies () {
       return Number(this.post.children) > 0

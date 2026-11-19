@@ -501,7 +501,14 @@ export function shortFormReblogQueueItem ({ username, post, remove = false } = {
   const permlink = asString(post && post.permlink).trim()
   if (!/^[a-z][a-z0-9.-]{2,15}$/.test(account)) throw new Error('A valid Hive account is required to reblog.')
   if (!author || !permlink) throw new Error('A post is required to reblog.')
-  const payload = [remove ? 'unreblog' : 'reblog', { account, author, permlink }]
+  // Hivemind removes a reblog when the `reblog` command carries
+  // `delete: "delete"`; the account still has to match the signer.
+  const payload = ['reblog', {
+    account,
+    author,
+    permlink,
+    ...(remove ? { delete: 'delete' } : {})
+  }]
   return [account, 'posting', ['custom_json', {
     required_posting_auths: [account],
     id: 'follow',

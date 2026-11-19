@@ -1,40 +1,44 @@
 <template>
   <q-btn
     class="reblog-btn"
-    :class="{ 'reblog-btn--active': reblogged }"
+    :class="{ 'reblog-btn--active': isReblogged }"
     no-caps
     dense
     flat
-    :disable="reblogged"
-    :aria-label="reblogged ? 'You already reblogged this post' : 'Reblog this post'"
-    :title="reblogged ? 'You already reblogged this post' : 'Reblog this post'"
+    :aria-label="isReblogged ? 'Remove your reblog' : 'Reblog this post'"
+    :title="isReblogged ? 'Remove your reblog' : 'Reblog this post'"
   >
     <q-icon name="repeat" size="17px" aria-hidden="true" />
-    <span class="reblog-btn__label">{{ reblogged ? 'Reblogged' : (label || 'Reblog') }}</span>
-    <!-- A reblog is public on the chain, so it is only ever sent after this
-         explicit confirmation step. -->
-    <q-popup-proxy v-if="!reblogged && loggedInUser" @show="confirming = false">
+    <span class="reblog-btn__label">{{ isReblogged ? 'Reblogged' : (label || 'Reblog') }}</span>
+    <!-- A reblog is public on the chain, so both sharing and removing it are
+         only sent after this explicit confirmation step. -->
+    <q-popup-proxy v-if="loggedInUser" @show="confirming = false">
       <q-card flat class="reblog-card">
         <div class="reblog-card__head">
           <q-icon name="repeat" size="20px" class="reblog-card__icon" aria-hidden="true" />
           <div>
-            <div class="reblog-card__eyebrow">Share to your followers</div>
-            <h3 class="reblog-card__title">Reblog this post?</h3>
+            <div class="reblog-card__eyebrow">{{ isReblogged ? 'Remove from your blog' : 'Share to your followers' }}</div>
+            <h3 class="reblog-card__title">{{ isReblogged ? 'Remove this reblog?' : 'Reblog this post?' }}</h3>
           </div>
         </div>
         <p class="reblog-card__text">
-          @{{ author }}'s post will appear on your blog and feed. It shows publicly on your account, so reblog
-          only posts you are happy to share.
+          <template v-if="isReblogged">
+            @{{ author }}'s post will disappear from your blog and feed. The post itself is not deleted.
+          </template>
+          <template v-else>
+            @{{ author }}'s post will appear on your blog and feed. It shows publicly on your account, so reblog
+            only posts you are happy to share.
+          </template>
         </p>
         <div class="reblog-card__actions">
           <q-btn flat dense no-caps label="Cancel" color="grey" v-close-popup />
           <q-btn
             dense
             no-caps
-            color="primary"
-            label="Yes, reblog"
+            :color="isReblogged ? 'red' : 'primary'"
+            :label="isReblogged ? 'Yes, remove' : 'Yes, reblog'"
             :loading="busy"
-            @click="reblog(author, permlink)"
+            @click="submit"
           />
         </div>
       </q-card>
@@ -51,39 +55,65 @@ export default {
     permlink: { type: String, required: true },
     label: { type: String, default: '' },
     // Externally known state (e.g. `reblogged_by` from the chain). When true
-    // the control renders as already done instead of opening the confirm.
+    // the control offers to remove the reblog instead of creating one.
     reblogged: { type: Boolean, default: false }
   },
   emits: ['queued'],
   data () {
     return {
       busy: false,
-      confirming: false
+      confirming: false,
+      optimistic: null
     }
   },
   computed: {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
+    },
+    isReblogged () {
+      return this.optimistic === null ? this.reblogged : this.optimistic
+    }
+  },
+  watch: {
+    reblogged (value) {
+      // A fresh chain read wins over the optimistic queued state.
+      if (value === this.optimistic) this.optimistic = null
+    },
+    author () {
+      this.optimistic = null
+    },
+    permlink () {
+      this.optimistic = null
     }
   },
   methods: {
-    async reblog (author, permlink) {
+    async submit () {
       if (this.busy) return
       if (!this.loggedInUser) {
         this.$q.notify({ type: 'info', message: 'Log in to reblog.' })
         return
       }
+      const remove = this.isReblogged
       this.busy = true
       try {
         const item = shortFormReblogQueueItem({
           username: this.loggedInUser,
-          post: { author, permlink }
+          post: { author: this.author, permlink: this.permlink },
+          remove
         })
         this.$hiveStore.addToQueue(item)
-        this.$q.notify({ type: 'positive', message: 'Reblog queued for @' + author, position: 'top', timeout: 2500 })
-        this.$emit('queued', { author, permlink })
+        this.optimistic = !remove
+        this.$q.notify({
+          type: remove ? 'info' : 'positive',
+          message: remove
+            ? 'Reblog removal queued for @' + this.author
+            : 'Reblog queued for @' + this.author,
+          position: 'top',
+          timeout: 2500
+        })
+        this.$emit('queued', { author: this.author, permlink: this.permlink, reblogged: !remove })
       } catch (error) {
-        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog' })
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not queue the reblog change' })
       } finally {
         this.busy = false
       }
@@ -109,17 +139,18 @@ export default {
   font-size: 17px;
 }
 
-.reblog-btn.q-btn:hover:not(.disabled) {
+.reblog-btn.q-btn:hover {
   border-color: rgba(255, 255, 255, 0.22);
   background: rgba(255, 255, 255, 0.07);
   color: #fff;
 }
 
-.reblog-btn.q-btn.disabled {
-  opacity: 0.6;
+.reblog-btn--active.q-btn {
+  border-color: rgba(129, 199, 132, 0.4);
+  color: #a5d6a7;
 }
 
-.reblog-btn.q-btn.disabled .q-icon {
+.reblog-btn--active.q-btn .q-icon {
   color: #81c784;
 }
 

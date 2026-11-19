@@ -292,7 +292,7 @@ describe('engagement queue items', () => {
     expect(reblog[1].id).toBe('follow')
     expect(JSON.parse(reblog[1].json)).toEqual(['reblog', { account: 'alice', author: 'alice', permlink: 'post-1' }])
     const [, , undo] = shortFormReblogQueueItem({ username: 'alice', post: target, remove: true })
-    expect(JSON.parse(undo[1].json)[0]).toBe('unreblog')
+    expect(JSON.parse(undo[1].json)).toEqual(['reblog', { account: 'alice', author: 'alice', permlink: 'post-1', delete: 'delete' }])
   })
 
   it('rejects missing accounts or posts', () => {

@@ -113,7 +113,7 @@
                   />
                   <q-btn class="post-action-btn" v-if="loggedInUser" flat dense no-caps icon="comment" label="Reply" @click="showReply = true" />
                   <q-btn class="post-action-btn" flat dense no-caps icon="share" label="Share" @click="showShareDialog = true" />
-                  <reblog class="post-action-btn" v-if="loggedInUser" label="Reblog this post" :author="author" :permlink="permlink" />
+                  <reblog class="post-action-btn" v-if="loggedInUser" label="Reblog this post" :author="author" :permlink="permlink" :reblogged="alreadyReblogged" />
                 </div>
               </header>
 
@@ -1048,6 +1048,10 @@ export default {
     },
     isOwnPost () {
       return Boolean(this.loggedInUser) && this.loggedInUser === this.author
+    },
+    alreadyReblogged () {
+      const list = this.post && Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by : []
+      return Boolean(this.loggedInUser) && list.includes(this.loggedInUser)
     },
     hasReplies () {
       return Number(this.post && this.post.children) > 0
