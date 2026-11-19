@@ -7,13 +7,15 @@ export const HOME_MARKET_PREFS_KEY = 'homeMarketPrefs'
 export const MAX_HOME_MARKET_COINS = 8
 export const MIN_HOME_MARKET_COINS = 1
 
+export const DEFAULT_HOME_MARKET_COIN_IDS = ['hive', 'hive_dollar', 'bitcoin', 'ethereum']
+
 export const DEFAULT_HOME_MARKET_PREFS = {
-  coinIds: ['hive', 'hive_dollar', 'bitcoin', 'ethereum'],
+  coinIds: [...DEFAULT_HOME_MARKET_COIN_IDS],
   currency: 'usd'
 }
 
-/** Coin ids offered in the customise picker. `hive` and `hive_dollar` are always kept. */
-export const HOME_MARKET_COIN_CHOICES = [
+/** Quick picks shown before the user searches the full CoinGecko catalogue. */
+export const HOME_MARKET_COIN_SUGGESTIONS = [
   { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin' },
   { id: 'ethereum', symbol: 'ETH', name: 'Ethereum' },
   { id: 'hive', symbol: 'HIVE', name: 'Hive' },
@@ -29,6 +31,27 @@ export const HOME_MARKET_COIN_CHOICES = [
   { id: 'tether', symbol: 'USDT', name: 'Tether' },
   { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin' }
 ]
+
+export const HOME_MARKET_SEARCH_URL = 'https://api.coingecko.com/api/v3/search?query='
+
+/** Search CoinGecko's full coin catalogue. Returns normalised suggestions. */
+export async function searchCoins (query, { limit = 12 } = {}) {
+  const text = String(query || '').trim()
+  if (text.length < 2) return []
+  const response = await fetch(HOME_MARKET_SEARCH_URL + encodeURIComponent(text))
+  if (!response.ok) throw new Error('HTTP ' + response.status)
+  const data = await response.json()
+  const coins = Array.isArray(data?.coins) ? data.coins : []
+  return coins
+    .map(coin => ({
+      id: coin.id,
+      symbol: String(coin.symbol || '').toUpperCase(),
+      name: coin.name,
+      rank: Number.isFinite(coin.market_cap_rank) ? coin.market_cap_rank : Infinity
+    }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, limit)
+}
 
 /** Currencies with no native CoinGecko market; prices are quoted in USD then
  * converted with a forex rate so the widget never depends on a thin market. */
@@ -51,12 +74,17 @@ export function isForexCurrency (currency) {
   return HOME_MARKET_FOREX_CURRENCY_IDS.includes(currency)
 }
 
-/** Convert an AUD-per-BTC / USD-per-BTC pair into AUD per USD. */
+/** Convert CoinGecko's per-BTC rate table into `currency` per USD.
+ *
+ * `exchange_rates` prices everything against one BTC, but its `btc` entry has
+ * a literal value of 1, not Bitcoin's USD price, so the USD entry is the
+ * correct pivot.
+ */
 export function forexRateFromCoinGecko (payload, currency = 'aud') {
-  const btc = Number(payload?.rates?.btc?.value)
+  const pivot = Number(payload?.rates?.usd?.value)
   const target = Number(payload?.rates?.[currency]?.value)
-  if (!Number.isFinite(btc) || btc <= 0 || !Number.isFinite(target) || target <= 0) return null
-  return target / btc
+  if (!Number.isFinite(pivot) || pivot <= 0 || !Number.isFinite(target) || target <= 0) return null
+  return target / pivot
 }
 
 let forexCache = null

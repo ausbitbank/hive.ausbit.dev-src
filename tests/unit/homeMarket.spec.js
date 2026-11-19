@@ -18,6 +18,7 @@ import {
   orderCoinIds,
   resetForexCache,
   saveHomeMarketPrefs,
+  searchCoins,
   toggleCoinId
 } from '../../src/services/homeMarket'
 
@@ -72,6 +73,40 @@ describe('home market preferences', () => {
     expect(orderCoinIds(['solana', 'hive_dollar', 'hive'])).toEqual(['hive', 'hive_dollar', 'solana'])
   })
 
+  it('accepts any coin id, not just the quick picks', () => {
+    const saved = toggleCoinId(['hive'], 'some-obscure-coin')
+    expect(saved).toEqual(['hive', 'some-obscure-coin'])
+    saveHomeMarketPrefs({ coinIds: ['hive', 'pepe', 'bonk'], currency: 'usd' }, storage)
+    expect(loadHomeMarketPrefs(storage).coinIds).toEqual(['hive', 'pepe', 'bonk'])
+  })
+
+  it('searches the full CoinGecko catalogue and ranks by market cap', async () => {
+    const calls = []
+    globalThis.fetch = url => {
+      calls.push(url)
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          coins: [
+            { id: 'low-rank', name: 'Low Rank', symbol: 'low', market_cap_rank: 900 },
+            { id: 'cardano', name: 'Cardano', symbol: 'ada', market_cap_rank: 18 },
+            { id: 'no-rank', name: 'No Rank', symbol: 'nr', market_cap_rank: null }
+          ]
+        })
+      })
+    }
+    try {
+      const results = await searchCoins('card')
+      expect(calls[0]).toContain('api.coingecko.com/api/v3/search?query=card')
+      expect(results.map(coin => coin.id)).toEqual(['cardano', 'low-rank', 'no-rank'])
+      expect(results[0]).toEqual({ id: 'cardano', name: 'Cardano', symbol: 'ADA', rank: 18 })
+      expect(await searchCoins('c')).toEqual([])
+      expect(calls.length).toBe(1)
+    } finally {
+      delete globalThis.fetch
+    }
+  })
+
   it('builds a CoinGecko URL and snapshot key from the preferences', () => {
     const prefs = { coinIds: ['bitcoin', 'hive'], currency: 'gbp' }
     const url = buildMarketUrl(prefs)
@@ -108,11 +143,17 @@ describe('home market forex conversion', () => {
     expect(buildMarketUrl({ coinIds: ['hive'], currency: 'eur' })).toContain('vs_currency=eur')
   })
 
-  it('derives AUD per USD from per-BTC rates', () => {
-    const payload = { rates: { btc: { value: 63294.297 }, usd: { value: 63294.297 }, aud: { value: 94686.243 } } }
+  it('derives AUD per USD from the USD pivot entry', () => {
+    // Real shape: the `btc` entry is the unit (value 1), so USD is the pivot.
+    const payload = { rates: { btc: { value: 1 }, usd: { value: 63294.297 }, aud: { value: 94686.243 } } }
     expect(forexRateFromCoinGecko(payload, 'aud')).toBeCloseTo(1.4959, 3)
     expect(forexRateFromCoinGecko({ rates: {} }, 'aud')).toBeNull()
     expect(forexRateFromCoinGecko(null)).toBeNull()
+  })
+
+  it('never produces a nonsense rate when only the btc unit is present', () => {
+    const payload = { rates: { btc: { value: 1 }, aud: { value: 94686.243 } } }
+    expect(forexRateFromCoinGecko(payload, 'aud')).toBeNull()
   })
 
   it('converts coin prices and keeps percentage change untouched', () => {
@@ -128,14 +169,14 @@ describe('home market forex conversion', () => {
 
   it('caches forex rates within the TTL', async () => {
     const calls = []
-    let payload = { rates: { btc: { value: 100 }, aud: { value: 150 } } }
+    let payload = { rates: { btc: { value: 1 }, usd: { value: 100 }, aud: { value: 150 } } }
     globalThis.fetch = url => {
       calls.push(url)
       return Promise.resolve({ ok: true, json: async () => payload })
     }
     try {
       const first = await loadForexRate('aud', { now: 1000 })
-      payload = { rates: { btc: { value: 100 }, aud: { value: 200 } } }
+      payload = { rates: { btc: { value: 1 }, usd: { value: 100 }, aud: { value: 200 } } }
       const second = await loadForexRate('aud', { now: 1000 + 1000 })
       const third = await loadForexRate('aud', { now: 1000 + 60 * 60 * 1000 })
       expect(first).toBe(1.5)

@@ -42,17 +42,87 @@
             Coins
             <span class="home-market-settings__hint">{{ draftCoinIds.length }}/{{ maxCoins }}</span>
           </div>
-          <div class="home-market-settings__coins">
-            <q-toggle
-              v-for="coin in coinChoices"
-              :key="coin.id"
-              :model-value="draftCoinIds.includes(coin.id)"
-              :label="coin.symbol + ' · ' + coin.name"
-              :disable="draftCoinIds.includes(coin.id) && draftCoinIds.length <= minCoins"
+
+          <div v-if="draftCoinIds.length" class="home-market-settings__selected">
+            <q-chip
+              v-for="id in draftCoinIds"
+              :key="id"
               dense
-              class="home-market-settings__coin"
-              @update:model-value="toggleDraftCoin(coin.id)"
-            />
+              removable
+              :disable="draftCoinIds.length <= minCoins"
+              :aria-label="'Remove ' + coinLabel(id)"
+              class="home-market-settings__chip"
+              @remove="toggleDraftCoin(id)"
+            >
+              {{ coinLabel(id) }}
+            </q-chip>
+          </div>
+
+          <q-input
+            v-model="searchQuery"
+            dense
+            outlined
+            clearable
+            debounce="300"
+            placeholder="Search any CoinGecko coin or paste its id"
+            aria-label="Search coins"
+            class="home-market-settings__search"
+            @update:model-value="onSearchInput"
+          >
+            <template #prepend>
+              <q-icon name="search" size="18px" />
+            </template>
+            <template #append>
+              <q-spinner v-if="searching" size="16px" />
+            </template>
+          </q-input>
+
+          <div class="home-market-settings__coins">
+            <template v-if="searchResults.length">
+              <button
+                v-for="coin in searchResults"
+                :key="coin.id"
+                type="button"
+                class="home-market-settings__option"
+                :class="{ 'is-selected': draftCoinIds.includes(coin.id) }"
+                :disabled="isAddDisabled(coin.id)"
+                @click="toggleDraftCoin(coin.id)"
+              >
+                <span class="home-market-settings__option-symbol">{{ coin.symbol || '?' }}</span>
+                <span class="home-market-settings__option-name">{{ coin.name }}</span>
+                <q-icon
+                  :name="draftCoinIds.includes(coin.id) ? 'check' : 'add'"
+                  size="16px"
+                  aria-hidden="true"
+                />
+              </button>
+            </template>
+            <template v-else>
+              <button
+                v-for="coin in suggestedCoins"
+                :key="coin.id"
+                type="button"
+                class="home-market-settings__option"
+                :class="{ 'is-selected': draftCoinIds.includes(coin.id) }"
+                :disabled="isAddDisabled(coin.id)"
+                @click="toggleDraftCoin(coin.id)"
+              >
+                <span class="home-market-settings__option-symbol">{{ coin.symbol || '?' }}</span>
+                <span class="home-market-settings__option-name">{{ coin.name }}</span>
+                <q-icon
+                  :name="draftCoinIds.includes(coin.id) ? 'check' : 'add'"
+                  size="16px"
+                  aria-hidden="true"
+                />
+              </button>
+            </template>
+          </div>
+
+          <div v-if="searchError" class="home-market-settings__note">
+            {{ searchError }}
+          </div>
+          <div v-else-if="searchQuery.trim().length >= 2 && !searching && searchResults.length === 0 && !searchError" class="home-market-settings__note">
+            No CoinGecko coin found for “{{ searchQuery.trim() }}”.
           </div>
         </q-card-section>
 
@@ -333,16 +403,74 @@
   line-height: 1.3;
 }
 
+.home-market-settings__selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.home-market-settings__chip {
+  margin: 0;
+}
+
+.home-market-settings__search {
+  margin-top: 0.15rem;
+}
+
 .home-market-settings__coins {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  max-height: 46vh;
+  max-height: 34vh;
   overflow-y: auto;
 }
 
-.home-market-settings__coin {
-  justify-content: flex-start;
+.home-market-settings__option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.38rem 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #cfd8dc;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-market-settings__option:hover:not(:disabled),
+.home-market-settings__option:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.home-market-settings__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.home-market-settings__option.is-selected {
+  color: #81d4fa;
+}
+
+.home-market-settings__option-symbol {
+  flex: none;
+  width: 4.2rem;
+  overflow: hidden;
+  color: #90a4ae;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-market-settings__option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .home-market-settings__actions {
@@ -402,7 +530,7 @@ import {
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import {
-  HOME_MARKET_COIN_CHOICES,
+  HOME_MARKET_COIN_SUGGESTIONS,
   HOME_MARKET_CURRENCIES,
   MAX_HOME_MARKET_COINS,
   MIN_HOME_MARKET_COINS,
@@ -416,6 +544,7 @@ import {
   loadHomeMarketPrefs,
   orderCoinIds,
   saveHomeMarketPrefs,
+  searchCoins,
   toggleCoinId
 } from 'src/services/homeMarket'
 
@@ -447,7 +576,12 @@ export default {
       settingsOpen: false,
       draftCoinIds: [...prefs.coinIds],
       draftCurrency: prefs.currency,
-      coinChoices: HOME_MARKET_COIN_CHOICES,
+      suggestedCoins: HOME_MARKET_COIN_SUGGESTIONS,
+      searchQuery: '',
+      searchResults: [],
+      searching: false,
+      searchError: '',
+      searchToken: 0,
       maxCoins: MAX_HOME_MARKET_COINS,
       minCoins: MIN_HOME_MARKET_COINS
     }
@@ -518,10 +652,48 @@ export default {
     openSettings () {
       this.draftCoinIds = [...this.coinIds]
       this.draftCurrency = this.currency
+      this.searchQuery = ''
+      this.searchResults = []
+      this.searchError = ''
       this.settingsOpen = true
     },
     toggleDraftCoin (id) {
       this.draftCoinIds = toggleCoinId(this.draftCoinIds, id)
+    },
+    isAddDisabled (id) {
+      return !this.draftCoinIds.includes(id) && this.draftCoinIds.length >= this.maxCoins
+    },
+    /** Known display name for a stored id, falling back to the raw coin id. */
+    coinLabel (id) {
+      const known = this.suggestedCoins.find(coin => coin.id === id) ||
+        this.searchResults.find(coin => coin.id === id) ||
+        this.coins.find(coin => coin.id === id)
+      if (!known) return id
+      const symbol = String(known.symbol || '').toUpperCase()
+      return symbol ? symbol + ' · ' + known.name : known.name
+    },
+    async onSearchInput (value) {
+      const query = String(value || '').trim()
+      this.searchError = ''
+      if (query.length < 2) {
+        this.searchResults = []
+        this.searching = false
+        return
+      }
+      const token = ++this.searchToken
+      this.searching = true
+      try {
+        const results = await searchCoins(query)
+        if (token !== this.searchToken) return
+        this.searchResults = results
+      } catch (error) {
+        if (token !== this.searchToken) return
+        console.error('Coin search failed', error)
+        this.searchResults = []
+        this.searchError = 'Coin search is unavailable right now — try again shortly.'
+      } finally {
+        if (token === this.searchToken) this.searching = false
+      }
     },
     resetDraft () {
       const defaults = defaultHomeMarketPrefs()
