@@ -1,5 +1,6 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
+import dashboardState from './dashboard'
 
 export const DEFAULT_SETTINGS = {
   voteWeightPost: 100,
@@ -130,6 +131,7 @@ export default function () {
     communityInfo: {},
     globalProps: {
       empty: true
-    }
+    },
+    ...dashboardState()
   }
 }
