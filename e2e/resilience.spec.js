@@ -60,7 +60,7 @@ test.describe('network and data resilience', () => {
     await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false)
 
     await page.getByRole('button', { name: 'Reblog this post' }).click()
-    await page.getByRole('button', { name: 'Yes', exact: true }).click()
+    await page.getByRole('button', { name: 'Yes, reblog' }).click()
 
     await expect.poll(async () => {
       const queue = await readQueue(page)
