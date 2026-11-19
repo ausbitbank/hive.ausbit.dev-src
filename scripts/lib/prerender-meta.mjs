@@ -57,6 +57,11 @@ function replaceLink (html, rel, href, { raw = false } = {}) {
   return replaceTag(html, pattern, tag)
 }
 
+function removeLink (html, rel) {
+  const pattern = '<link\\b[^>]*' + attributePattern('rel', rel) + '[^>]*>'
+  return html.replace(new RegExp(pattern, 'gi'), '')
+}
+
 function replaceTitle (html, title, { raw = false } = {}) {
   if (!title) return html
   const value = raw ? title : escapeHtml(title)
@@ -76,6 +81,10 @@ export function applyMetadata (shell, metadata) {
   let html = replaceTitle(shell, metadata.title)
   html = replaceMeta(html, 'name', 'description', metadata.description)
   html = replaceLink(html, 'canonical', metadata.canonical)
+  html = replaceMeta(html, 'name', 'robots', metadata.robots)
+  if (String(metadata.robots || '').toLowerCase().includes('noindex')) {
+    html = removeLink(html, 'canonical')
+  }
   html = replaceMeta(html, 'property', 'og:title', metadata.ogTitle)
   html = replaceMeta(html, 'property', 'og:description', metadata.ogDescription)
   html = replaceMeta(html, 'property', 'og:url', metadata.ogUrl)

@@ -35,11 +35,11 @@ const ROUTES = [
   '/markets',
   '/health',
   '/nodes',
-  '/tax',
   '/create',
   '/hbdstabilizer',
   '/compose',
   '/search',
+  '/404',
   // Microblog index and the five formats. Their metadata is client-rendered,
   // so they get real prerendered shells instead of the generic 404 shell.
   '/shorts',
@@ -105,6 +105,7 @@ async function main () {
         return {
           title: document.title,
           description: content('meta[name="description"]'),
+          robots: content('meta[name="robots"]'),
           canonical: document.querySelector('link[rel="canonical"]')?.href || '',
           ogTitle: content('meta[property="og:title"]'),
           ogDescription: content('meta[property="og:description"]'),

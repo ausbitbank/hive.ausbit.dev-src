@@ -17,7 +17,7 @@
             @click="findDeletedPost(error.data)"
           />
           <div class="row q-gutter-sm justify-center">
-            <q-btn outline no-caps color="primary" icon="arrow_back" label="Back to browse" to="/browse" />
+            <q-btn outline no-caps color="primary" icon="arrow_back" label="Back to browse" to="/created" />
             <q-btn flat no-caps color="primary" icon="refresh" label="Retry" @click="init" />
           </div>
         </q-card>
@@ -1146,10 +1146,16 @@ export default {
         })
         .catch(error => {
           this.error = error
+          this.setNotFoundMeta()
           console.error(error)
         })
     },
     setPost (post) {
+      if (!post || !post.author || !post.permlink) {
+        this.post = null
+        this.setNotFoundMeta()
+        return
+      }
       this.post = post
       this.updatePageMeta(post)
       const category = post && post.category
@@ -1182,6 +1188,13 @@ export default {
     getPostMeta (post) {
       if (!post || !post.json_metadata) return {}
       return safeJsonParse(post.json_metadata)
+    },
+    setNotFoundMeta () {
+      setPageMeta({
+        title: 'Post @' + this.author + '/' + this.permlink + ' not found — hive.ausbit.dev',
+        description: 'This Hive post does not exist or has been removed.',
+        noindex: true
+      })
     },
     updatePageMeta (post) {
       const author = (post && post.author) || this.author

@@ -28,7 +28,7 @@
 
       <nav class="not-found-links" aria-label="Explorer quick links">
         <router-link to="/">Home</router-link>
-        <router-link to="/browse">Browse posts</router-link>
+        <router-link to="/created">Browse posts</router-link>
         <router-link to="/blocks">Blocks</router-link>
         <router-link to="/witnesses">Witnesses</router-link>
         <router-link to="/proposals">Proposals</router-link>
@@ -55,7 +55,7 @@ export default {
     setPageMeta({
       title: 'Page not found (404) — hive.ausbit.dev',
       description: 'The requested page could not be found. Search accounts, posts, tags, blocks and transactions on hive.ausbit.dev.',
-      url: '/404'
+      noindex: true
     })
   },
   methods: {

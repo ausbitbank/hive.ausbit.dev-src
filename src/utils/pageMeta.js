@@ -81,6 +81,27 @@ function setCanonical (href) {
   }, 'href', href)
 }
 
+// Pages that should not be indexed (search results, not-found states) ask for
+// `noindex`. Every other page clears a robots tag left by an earlier route.
+function setRobots (noindex) {
+  if (typeof document === 'undefined' || !document.head) return
+  const existing = document.head.querySelector('meta[name="robots"]')
+  if (!noindex) {
+    if (existing) existing.remove()
+    return
+  }
+  const meta = existing || document.createElement('meta')
+  meta.setAttribute('name', 'robots')
+  meta.setAttribute('content', 'noindex, follow')
+  if (!existing) document.head.appendChild(meta)
+}
+
+function removeCanonical () {
+  if (typeof document === 'undefined' || !document.head) return
+  const existing = document.head.querySelector('link[rel="canonical"]')
+  if (existing) existing.remove()
+}
+
 // Add, replace or (when called with no object) remove the page JSON-LD block.
 export function setJsonLd (jsonLd) {
   if (typeof document === 'undefined' || !document.head) return null
@@ -100,8 +121,9 @@ export function setJsonLd (jsonLd) {
 }
 
 // Apply page metadata. `url` and `image` may be site-relative; they are
-// normalised to absolute URLs against BASE_URL.
-export function setPageMeta ({ title, description, image, url, type = 'website', jsonLd = null } = {}) {
+// normalised to absolute URLs against BASE_URL. Pass `noindex` for thin or
+// not-found pages: they get a robots noindex tag and no canonical.
+export function setPageMeta ({ title, description, image, url, type = 'website', jsonLd = null, noindex = false } = {}) {
   if (typeof document === 'undefined' || !document.head) return null
 
   const pageTitle = stripHtml(title, 120) || SITE_NAME
@@ -112,7 +134,9 @@ export function setPageMeta ({ title, description, image, url, type = 'website',
   document.title = pageTitle
 
   setNamedMeta('description', pageDescription)
-  setCanonical(canonical)
+  setRobots(noindex)
+  if (noindex) removeCanonical()
+  else setCanonical(canonical)
 
   setPropertyMeta('og:site_name', SITE_NAME)
   setPropertyMeta('og:type', type)

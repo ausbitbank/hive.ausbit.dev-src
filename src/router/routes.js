@@ -44,7 +44,9 @@ const routes = [
       { path: 'markets', name: 'markets', component: () => import('pages/markets.vue') },
       { path: 'hbd', name: 'hbd', component: () => import('pages/hbd.vue') },
       { path: 'health', name: 'health', component: () => import('pages/health.vue') },
-      { path: 'browse', name: 'browse', component: () => import('pages/browse.vue') },
+      // /browse and /created render the same "new posts" page. Keep the old
+      // URL working but make /created the single canonical surface.
+      { path: 'browse', name: 'browse', redirect: to => ({ name: 'created', query: to.query, hash: to.hash }) },
       { path: 'search/:type(accounts|posts|tags|communities|blocks|transactions|proposals|witnesses)?/:term?', name: 'search', component: () => import('pages/search.vue') },      { path: 'browse/:sortMethod/:tag?', name: 'browse-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'trending/:tag?', name: 'trending', component: () => import('pages/browse.vue'), props: { defaultSort: 'trending' } },
       { path: 'created/:tag?', name: 'created', component: () => import('pages/browse.vue'), props: { defaultSort: 'created' } },
@@ -56,7 +58,6 @@ const routes = [
       { path: 'dao', name: 'dao', component: () => import('pages/proposals.vue') },
       { path: 'proposals/:proposalId', name: 'proposal-detail', component: () => import('pages/proposal.vue') },
       { path: 'hbdstabilizer', name: 'hbdstabilizer', component: () => import('pages/hbdstabilizer.vue') },
-      { path: 'tax', name: 'tax', component: () => import('pages/tax.vue') },
       { path: 'compose/:draftId?', name: 'compose', component: () => import('pages/compose.vue') },
       { path: 'drafts', redirect: { name: 'compose' } },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },

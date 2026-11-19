@@ -1220,7 +1220,8 @@ export default {
         description: text
           ? 'Hive search results for “' + text + '”: accounts, posts, tags, communities, blocks, transactions, proposals and witnesses.'
           : 'Search accounts, posts, tags, communities, blocks, transactions, proposals and witnesses on hive.ausbit.dev.',
-        url: this.currentUrl
+        url: '/search',
+        noindex: true
       })
     },
     hydrateFromRoute () {

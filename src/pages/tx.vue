@@ -810,7 +810,7 @@ export default {
       setPageMeta({
         title: 'Transaction ' + this.shortId + ' not found',
         description: 'Hive transaction ' + this.txId + ' could not be loaded.',
-        url: '/tx/' + this.txId
+        noindex: true
       })
     }
   }

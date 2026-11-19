@@ -4,7 +4,7 @@
       <q-icon name="error_outline" size="2.2em" color="orange" aria-hidden="true" />
       <h1 class="account-state__title">Account not found</h1>
       <p>{{ errorMessage || 'This account could not be loaded.' }}</p>
-      <q-btn outline no-caps color="primary" icon="arrow_back" label="Back to browse" to="/browse" />
+      <q-btn outline no-caps color="primary" icon="arrow_back" label="Back to browse" to="/created" />
     </q-card>
 
     <template v-else-if="account !== null && account !== undefined && globalProps !== null">
@@ -899,6 +899,13 @@ export default {
         return null
       }
     },
+    setNotFoundMeta (description) {
+      setPageMeta({
+        title: 'Account @' + this.username + ' not found — hive.ausbit.dev',
+        description: description || 'This Hive account does not exist.',
+        noindex: true
+      })
+    },
     updatePageMeta () {
       const name = this.username
       const profile = this.getProfileMeta() || {}
@@ -1057,6 +1064,7 @@ export default {
         if (!account || !account.name) {
           this.error = true
           this.errorMessage = 'Account @' + this.username + ' was not found.'
+          this.setNotFoundMeta('Account @' + this.username + ' was not found.')
           return
         }
         this.$hiveStore.updateAccountData(account)
@@ -1065,6 +1073,7 @@ export default {
       } catch {
         this.error = true
         this.errorMessage = 'Could not load @' + this.username + '.'
+        this.setNotFoundMeta(this.errorMessage)
       }
     },
     async fetchProfileReputation () {

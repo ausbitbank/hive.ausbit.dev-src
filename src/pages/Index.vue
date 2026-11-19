@@ -14,7 +14,7 @@
         </div>
 
         <nav class="home-links" aria-label="Quick links">
-          <router-link class="home-link" to="/browse">
+          <router-link class="home-link" to="/created">
             <q-icon name="explore" size="16px" aria-hidden="true" /> Browse posts
           </router-link>
           <router-link class="home-link" to="/shorts">

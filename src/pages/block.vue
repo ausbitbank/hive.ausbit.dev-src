@@ -273,7 +273,7 @@ export default {
         setPageMeta({
           title: 'Invalid block number',
           description: 'The requested Hive block number is not valid.',
-          url: '/b/' + (this.$route?.params?.blockNum || '')
+          noindex: true
         })
         return
       }
@@ -314,7 +314,7 @@ export default {
         setPageMeta({
           title: 'Block ' + blockNumber + ' not found',
           description: 'Hive block ' + blockNumber + ' could not be loaded.',
-          url: '/b/' + blockNumber
+          noindex: true
         })
       } finally {
         this.loading = false

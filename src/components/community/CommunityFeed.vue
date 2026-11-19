@@ -50,7 +50,7 @@
     <q-card v-else-if="!posts.length" flat bordered class="community-feed__state">
       <q-icon name="forum" size="24px" aria-hidden="true" />
       <p>{{ emptyMessage }}</p>
-      <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/browse" />
+      <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
     </q-card>
 
     <infinite-scroll
