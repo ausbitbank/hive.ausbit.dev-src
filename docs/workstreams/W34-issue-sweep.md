@@ -115,22 +115,15 @@ dashboard, search, performance and crawler work.
 
 - `./scripts/deploy.sh` completed: lint, build, prerender, backup, upload and
   activation. Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261119T232933Z.tar.gz`.
-- The updated nginx config is staged at `hurgenburgen:~/hive-nginx-new.conf`.
-  Installing it needs sudo:
-
-  ```bash
-  ssh hurgenburgen
-  sudo cp /etc/nginx/sites-available/hive.ausbit.dev \
-    /etc/nginx/sites-available/hive.ausbit.dev.bak-$(date -u +%Y%m%dT%H%M%SZ)
-  sudo cp ~/hive-nginx-new.conf /etc/nginx/sites-available/hive.ausbit.dev
-  sudo nginx -t && sudo systemctl reload nginx
-  ```
+- The updated nginx config is installed and reloaded. Verified live: `/browse`
+  301, search/404 noindex shells, TradingView CSP, account avatar `og:image`,
+  and origin `Cache-Control: max-age=31536000` for `/assets/*`.
+- Cloudflare still serves its previously cached 4-hour header for the hashed
+  asset requested before the reload; newly built assets receive the year-long
+  policy.
 
 ## Remaining
 
-- Install and reload the nginx config (the command above). This activates the
-  `/browse` 301, `/search` and 404 noindex shells, the TradingView CSP
-  allowances, account avatar og:image variables and the one-year `/assets/`
-  cache header.
 - Deploy `deploy/cloudflare/metadata-worker.mjs` and verify a shared post/account
-  URL with a non-JS preview scraper (#64).
+  URL with a non-JS preview scraper (#64). No wrangler install or Cloudflare
+  credentials are present on this machine.
