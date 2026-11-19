@@ -10,7 +10,7 @@ import {
   searchHiveSensePosts,
   fetchSimilarPosts
 } from '../../src/services/hiveSense'
-import { mergeSemanticPosts } from '../../src/services/unifiedSearch'
+import { mergeSemanticPosts, postMatchesQuery, rankPosts } from '../../src/services/unifiedSearch'
 
 function post (author, permlink, extra = {}) {
   return {
@@ -182,9 +182,35 @@ describe('mergeSemanticPosts', () => {
     expect(merged.map(p => p.author)).toEqual(['new'])
   })
 
+  it('does not pad semantic results with unrelated keyword posts', () => {
+    const semantic = [post('semantic', 'hive-development')]
+    const keyword = [post('gardener', 'tomatoes', { category: 'gardening' }), post('dev', 'hive-development-notes')]
+    const merged = mergeSemanticPosts(semantic, keyword, { query: 'hive development' })
+    expect(merged.map(p => p.author)).toEqual(['semantic', 'dev'])
+  })
+
   it('drops malformed posts and tolerates missing input', () => {
     expect(mergeSemanticPosts(null, null)).toEqual([])
     const merged = mergeSemanticPosts([{ author: 'a' }, post('b', 'c')], [])
     expect(merged).toHaveLength(1)
+  })
+})
+
+describe('relevance ranking', () => {
+  it('matches posts by any query token', () => {
+    expect(postMatchesQuery(post('alice', 'hive-development'), 'hive development')).toBe(true)
+    expect(postMatchesQuery(post('bob', 'tomatoes', { category: '' }), 'hive development')).toBe(false)
+    expect(postMatchesQuery(post('bob', 'tomatoes'), '')).toBe(true)
+  })
+
+  it('keeps only text matches for a relevance query', () => {
+    const posts = [
+      post('alice', 'hive-development', { title: 'Hive development notes' }),
+      post('bob', 'tomatoes', { title: 'Growing tomatoes', category: 'gardening' })
+    ]
+    expect(rankPosts(posts, { query: 'hive', sort: 'relevance' }).map(p => p.author)).toEqual(['alice'])
+    // If nothing matches the text, the original candidates are kept so a query
+    // never produces an empty page by accident.
+    expect(rankPosts(posts, { query: 'zebra', sort: 'relevance' })).toHaveLength(2)
   })
 })

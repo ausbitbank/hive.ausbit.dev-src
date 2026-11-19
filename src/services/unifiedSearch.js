@@ -206,6 +206,17 @@ function postText (post) {
   ].filter(Boolean).join(' ').toLowerCase()
 }
 
+/**
+ * True when at least one query token appears in the post's own text. Engagement
+ * signals alone must not keep an unrelated post in a relevance result set.
+ */
+export function postMatchesQuery (post, query = '') {
+  const tokens = tokenize(query)
+  if (!tokens.length) return true
+  const text = postText(post)
+  return tokens.some(token => text.includes(token))
+}
+
 function tokenScore (text, token) {
   if (!token) return 0
   const index = text.indexOf(token)
@@ -221,8 +232,7 @@ function tokenScore (text, token) {
  * then title/author matches, then body occurrences. Ties fall back to payout and
  * engagement so the order is stable and useful.
  */
-export function scorePost (post, query = '') {
-  if (!post) return 0
+export function scorePost (post, query = '') {  if (!post) return 0
   const tokens = tokenize(query)
   const text = postText(post)
   const rawQuery = String(query || '').trim().toLowerCase().replace(/^#/, '')
@@ -307,8 +317,17 @@ export function rankPosts (posts, { query = '', sort = 'relevance', period = 'al
     now
   )
 
-  const scored = filtered.map(post => ({ post, score: scorePost(post, query) }))
   const sortKey = POST_SORTS.includes(sort) ? sort : 'relevance'
+  // Relevance search must not pad the list with unrelated popular posts just
+  // because they have votes or payout. Keep the original list only when no
+  // candidate mentions the query at all.
+  let relevant = filtered
+  if (sortKey === 'relevance' && String(query || '').trim()) {
+    const matched = filtered.filter(post => postMatchesQuery(post, query))
+    if (matched.length) relevant = matched
+  }
+
+  const scored = relevant.map(post => ({ post, score: scorePost(post, query) }))
   scored.sort((a, b) => {
     if (sortKey === 'created') return postCreatedMs(b.post) - postCreatedMs(a.post) || b.score - a.score
     if (sortKey === 'trending' || sortKey === 'hot') {
@@ -330,7 +349,7 @@ export function rankPosts (posts, { query = '', sort = 'relevance', period = 'al
  * are not already present, ordered by the local ranking. Period/facet filters
  * are still applied so the tabs and sidebar keep working.
  */
-export function mergeSemanticPosts (semanticPosts, keywordPosts, { period = 'all', tags = [], communities = [], authors = [], now = Date.now() } = {}) {
+export function mergeSemanticPosts (semanticPosts, keywordPosts, { period = 'all', tags = [], communities = [], authors = [], query = '', now = Date.now() } = {}) {
   const facets = { tags, communities, authors }
   const seen = new Set()
   const merged = []
@@ -346,6 +365,9 @@ export function mergeSemanticPosts (semanticPosts, keywordPosts, { period = 'all
 
   for (const post of keywordPosts || []) {
     if (!post || !post.author || !post.permlink) continue
+    // Once semantic results exist, do not pad them with keyword candidates
+    // that never mention the query.
+    if (merged.length && query && !postMatchesQuery(post, query)) continue
     const key = post.author + '/' + post.permlink
     if (seen.has(key)) continue
     seen.add(key)

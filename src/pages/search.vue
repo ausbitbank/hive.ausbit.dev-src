@@ -109,6 +109,11 @@
                   <q-icon name="auto_awesome" size="13px" aria-hidden="true" />
                   Semantic
                 </span>
+                <span
+                  v-else-if="group.id === 'posts' && result?.semantic?.attempted && !loading"
+                  class="search-semantic-note"
+                  title="HiveSense did not answer, so these are keyword matches."
+                >Keyword only</span>
                 <router-link v-if="group.more" :to="group.more" class="home-panel__link">View all</router-link>
               </div>
             </div>
@@ -785,6 +790,12 @@
   border: 1px solid rgba(129, 212, 250, 0.35);
   border-radius: var(--radius-pill);
   color: #81d4fa;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.search-semantic-note {
+  color: #78909c;
   font-size: 0.68rem;
   white-space: nowrap;
 }

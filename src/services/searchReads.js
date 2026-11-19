@@ -176,7 +176,8 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
             period: filters.period,
             tags: filters.tags,
             communities: filters.communities,
-            authors: filters.authors
+            authors: filters.authors,
+            query: plan.query
           }).slice(0, RESULT_LIMITS.posts)
           if (result.posts.items.length) result.posts.error = ''
         })
