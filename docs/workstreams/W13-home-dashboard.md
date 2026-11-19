@@ -43,12 +43,17 @@ Status: complete
 
 `src/components/HomeMarketCard.vue`:
 
-- Replaced the carousel with a compact four-row market list.
-- HIVE and HBD are always first, followed by BTC and ETH.
+- Replaced the carousel with a compact market list.
+- HIVE and HBD are always first, followed by the other selected coins.
 - Each row shows logo, symbol/name, seven-day sparkline, price and 24h change.
 - Rows link to CoinGecko; “Markets” opens the internal markets page.
 - Refresh button, loading skeleton, error and stale-refresh states.
-- Prices are fixed to USD for a predictable front-page snapshot.
+- The tune button opens “Coins & currency”: pick up to eight coins and a quote
+  currency (USD, AUD, EUR, GBP, BTC, ETH). Preferences persist in `homeMarketPrefs`
+  and the price snapshot key includes the mix so stale coins never appear.
+- AUD has no reliable native CoinGecko market for every coin, so AUD is priced
+  in USD and converted with CoinGecko's forex rates (`exchange_rates`), cached
+  for 15 minutes. The footer and dialog note when a conversion is in use.
 
 ## Witnesses
 

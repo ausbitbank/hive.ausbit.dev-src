@@ -6,6 +6,7 @@ import {
   blockTransactionCount,
   changeClass,
   formatCompactNumber,
+  formatMoney,
   formatPercent,
   formatUsd,
   sortMarketCoins,
@@ -26,6 +27,10 @@ describe('home dashboard helpers', () => {
     expect(formatUsd(0.3123)).toBe('$0.3123')
     expect(formatUsd(0.000123)).toBe('$0.000123')
     expect(formatUsd(null)).toBe('—')
+    expect(formatMoney(1796.56, '€')).toBe('€1,796.56')
+    expect(formatMoney(0.42, '£')).toBe('£0.42')
+    expect(formatMoney(-1.5, '$')).toBe('$-1.50')
+    expect(formatMoney(null, '€')).toBe('—')
     expect(formatPercent(2.414)).toBe('+2.41%')
     expect(formatPercent(-2.637)).toBe('-2.64%')
     expect(formatPercent(0)).toBe('0.00%')

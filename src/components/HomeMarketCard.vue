@@ -6,10 +6,62 @@
         <h2 class="home-panel__title">Coin prices</h2>
       </div>
       <div class="home-panel__actions">
+        <q-btn flat dense round icon="tune" aria-label="Customise coins and currency" title="Customise coins and currency" @click="openSettings" />
         <q-btn flat dense round icon="refresh" aria-label="Refresh prices" title="Refresh prices" :loading="refreshing" @click="loadPrices" />
         <router-link to="/markets" class="home-panel__link">Markets</router-link>
       </div>
     </q-card-section>
+
+    <q-dialog v-model="settingsOpen">
+      <q-card class="home-market-settings">
+        <q-card-section class="home-market-settings__head">
+          <div>
+            <div class="home-eyebrow">Customise</div>
+            <div class="home-panel__title">Coins &amp; currency</div>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close" v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="home-market-settings__body">
+          <div class="home-market-settings__label">Quote currency</div>
+          <q-select
+            v-model="draftCurrency"
+            :options="currencyOptions"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            aria-label="Quote currency"
+          />
+          <div v-if="draftIsForex" class="home-market-settings__note">
+            Priced in USD and converted to {{ draftCurrency.toUpperCase() }} using the current forex rate.
+          </div>
+
+          <div class="home-market-settings__label">
+            Coins
+            <span class="home-market-settings__hint">{{ draftCoinIds.length }}/{{ maxCoins }}</span>
+          </div>
+          <div class="home-market-settings__coins">
+            <q-toggle
+              v-for="coin in coinChoices"
+              :key="coin.id"
+              :model-value="draftCoinIds.includes(coin.id)"
+              :label="coin.symbol + ' · ' + coin.name"
+              :disable="draftCoinIds.includes(coin.id) && draftCoinIds.length <= minCoins"
+              dense
+              class="home-market-settings__coin"
+              @update:model-value="toggleDraftCoin(coin.id)"
+            />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="home-market-settings__actions">
+          <q-btn flat no-caps label="Reset" @click="resetDraft" />
+          <q-btn color="primary" no-caps label="Save" @click="saveSettings" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <div v-if="staleAt" class="home-panel__notice">
       <data-notice
@@ -89,7 +141,7 @@
         <span class="home-market__footer-links">
           <router-link to="/market">Internal market</router-link>
           <router-link to="/markets#hbd-tools">HBD peg</router-link>
-          <span>24h change · USD</span>
+          <span>24h change · {{ currency.toUpperCase() }}<template v-if="isForex"> (via USD)</template></span>
         </span>
         <span>via CoinGecko<span v-if="updatedLabel"> · {{ updatedLabel }}</span></span>
       </q-card-section>
@@ -198,6 +250,62 @@
   flex-wrap: wrap;
 }
 
+.home-market-settings {
+  width: min(420px, 92vw);
+}
+
+.home-market-settings__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.home-market-settings__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.home-market-settings__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  color: #b0bec5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.home-market-settings__hint {
+  color: #78909c;
+  font-weight: 500;
+}
+
+.home-market-settings__note {
+  color: #78909c;
+  font-size: 0.7rem;
+  line-height: 1.3;
+}
+
+.home-market-settings__coins {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.home-market-settings__coin {
+  justify-content: flex-start;
+}
+
+.home-market-settings__actions {
+  padding: 0.35rem 0.75rem 0.6rem;
+}
+
 .home-market-skeleton {
   display: flex;
   align-items: center;
@@ -237,16 +345,30 @@ import moment from 'src/utils/time'
 import Sparkline from 'components/Sparkline.vue'
 import {
   changeClass,
+  formatMoney,
   formatPercent,
-  formatUsd,
   sortMarketCoins
 } from 'src/services/home'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import {
+  HOME_MARKET_COIN_CHOICES,
+  HOME_MARKET_CURRENCIES,
+  MAX_HOME_MARKET_COINS,
+  MIN_HOME_MARKET_COINS,
+  buildMarketUrl,
+  convertCoinPrices,
+  currencySymbol,
+  defaultHomeMarketPrefs,
+  homeMarketSnapshotKey,
+  isForexCurrency,
+  loadForexRate,
+  loadHomeMarketPrefs,
+  orderCoinIds,
+  saveHomeMarketPrefs,
+  toggleCoinId
+} from 'src/services/homeMarket'
 
-const SNAPSHOT_KEY = 'home:market'
-const API_URL = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=hive,hive_dollar,bitcoin,ethereum&order=market_cap_desc&per_page=4&page=1&sparkline=true&price_change_percentage=24h'
-const COIN_ORDER = ['hive', 'hive_dollar', 'bitcoin', 'ethereum']
 const MARKET_LINKS = {
   hive: {
     to: '/markets?pair=BINANCE:HIVEUSDT',
@@ -262,24 +384,48 @@ export default {
   name: 'homeMarketCard',
   components: { Sparkline, DataNotice },
   data () {
+    const prefs = loadHomeMarketPrefs()
     return {
       coins: [],
       loading: true,
       refreshing: false,
       error: '',
       updatedAt: null,
-      staleAt: null
+      staleAt: null,
+      coinIds: prefs.coinIds,
+      currency: prefs.currency,
+      settingsOpen: false,
+      draftCoinIds: [...prefs.coinIds],
+      draftCurrency: prefs.currency,
+      coinChoices: HOME_MARKET_COIN_CHOICES,
+      maxCoins: MAX_HOME_MARKET_COINS,
+      minCoins: MIN_HOME_MARKET_COINS
     }
   },
   computed: {
     offline () {
       return this.$online ? !this.$online.online : (typeof navigator !== 'undefined' && navigator.onLine === false)
     },
+    currencyOptions () {
+      return HOME_MARKET_CURRENCIES.map(entry => ({
+        value: entry.id,
+        label: entry.name + ' (' + entry.symbol + ')'
+      }))
+    },
+    symbol () {
+      return currencySymbol(this.currency)
+    },
+    isForex () {
+      return isForexCurrency(this.currency)
+    },
+    draftIsForex () {
+      return isForexCurrency(this.draftCurrency)
+    },
     rows () {
-      return sortMarketCoins(this.coins, COIN_ORDER).map(coin => {
+      return sortMarketCoins(this.coins, this.coinIds).map(coin => {
         const change = Number(coin.price_change_percentage_24h)
         const marketLink = MARKET_LINKS[coin.id]
-        const priceLabel = formatUsd(coin.current_price)
+        const priceLabel = formatMoney(coin.current_price, this.symbol)
         const changeLabel = formatPercent(change)
         const baseAria = coin.name + ' price ' + priceLabel + ', 24 hour change ' + changeLabel
 
@@ -302,7 +448,7 @@ export default {
                 target: '_blank',
                 rel: 'noopener noreferrer'
               },
-          title: marketLink?.title || coin.name + ' · market cap $' + Number(coin.market_cap || 0).toLocaleString('en-US') + ' · 24h volume $' + Number(coin.total_volume || 0).toLocaleString('en-US'),
+          title: marketLink?.title || coin.name + ' · market cap ' + formatMoney(coin.market_cap, this.symbol) + ' · 24h volume ' + formatMoney(coin.total_volume, this.symbol),
           ariaLabel: marketLink?.to ? baseAria + '. ' + marketLink.title : baseAria
         }
       })
@@ -315,23 +461,56 @@ export default {
     this.loadPrices()
   },
   methods: {
+    prefs () {
+      return { coinIds: this.coinIds, currency: this.currency }
+    },
+    openSettings () {
+      this.draftCoinIds = [...this.coinIds]
+      this.draftCurrency = this.currency
+      this.settingsOpen = true
+    },
+    toggleDraftCoin (id) {
+      this.draftCoinIds = toggleCoinId(this.draftCoinIds, id)
+    },
+    resetDraft () {
+      const defaults = defaultHomeMarketPrefs()
+      this.draftCoinIds = defaults.coinIds
+      this.draftCurrency = defaults.currency
+    },
+    async saveSettings () {
+      this.coinIds = orderCoinIds(this.draftCoinIds)
+      this.currency = this.draftCurrency
+      saveHomeMarketPrefs(this.prefs())
+      this.settingsOpen = false
+      // The previous mix is no longer relevant, so start from a clean slate.
+      this.coins = []
+      this.updatedAt = null
+      this.staleAt = null
+      await this.loadPrices()
+    },
     async loadPrices () {
       const hasCoins = this.coins.length > 0
       if (hasCoins) this.refreshing = true
       else this.loading = true
       this.error = ''
 
+      const snapshotKey = homeMarketSnapshotKey(this.prefs())
+
       try {
-        const response = await fetch(API_URL)
+        const [response, forex] = await Promise.all([
+          fetch(buildMarketUrl(this.prefs())),
+          this.isForex ? loadForexRate(this.currency) : Promise.resolve(null)
+        ])
         if (!response.ok) throw new Error('HTTP ' + response.status)
         const data = await response.json()
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('Empty price response')
         }
-        this.coins = data
+        const coins = this.isForex ? convertCoinPrices(data, forex) : data
+        this.coins = coins
         this.updatedAt = Date.now()
         this.staleAt = null
-        saveSnapshot(SNAPSHOT_KEY, { coins: data, updatedAt: this.updatedAt })
+        saveSnapshot(snapshotKey, { coins, updatedAt: this.updatedAt, forexRate: forex || null })
       } catch (error) {
         console.error('Failed to load home prices', error)
         if (this.coins.length) {
@@ -346,7 +525,7 @@ export default {
       }
     },
     restoreSnapshot () {
-      const snapshot = loadSnapshot(SNAPSHOT_KEY)
+      const snapshot = loadSnapshot(homeMarketSnapshotKey(this.prefs()))
       const data = snapshot?.data
       if (!Array.isArray(data?.coins) || !data.coins.length) return false
       this.coins = data.coins

@@ -41,23 +41,31 @@ export function formatCompactNumber (value, digits = 1) {
   return number.toLocaleString('en-US', { maximumFractionDigits: digits })
 }
 
-/** Format a USD price with sensible precision for large and sub-dollar values. */
-export function formatUsd (value) {
+/** Format a price with sensible precision for large and sub-unit values. */
+export function formatMoney (value, symbol = '$') {
   if (value === null || value === undefined) return '—'
   const number = Number(value)
   if (!Number.isFinite(number)) return '—'
   const abs = Math.abs(number)
 
-  if (abs >= 10000) {
-    return '$' + number.toLocaleString('en-US', { maximumFractionDigits: 0 })
+  const prefix = symbol + (number < 0 && abs > 0 ? '-' : '')
+  const absolute = Math.abs(number)
+
+  if (absolute >= 10000) {
+    return prefix + absolute.toLocaleString('en-US', { maximumFractionDigits: 0 })
   }
-  if (abs >= 1) {
-    return '$' + number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  if (absolute >= 1) {
+    return prefix + absolute.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
-  if (abs >= 0.01) {
-    return '$' + number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+  if (absolute >= 0.01) {
+    return prefix + absolute.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
   }
-  return '$' + number.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
+  return prefix + absolute.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 })
+}
+
+/** Format a USD price with sensible precision for large and sub-dollar values. */
+export function formatUsd (value) {
+  return formatMoney(value, '$')
 }
 
 /** Signed percentage label, e.g. +2.41% / -2.64%. */
