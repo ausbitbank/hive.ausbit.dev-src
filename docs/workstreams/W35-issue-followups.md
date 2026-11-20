@@ -73,6 +73,10 @@ assets exist. Verified on `@ausbitbank/wallet`: tab and section appear with
 - `bun run lint` — clean.
 - `bun run test` — 74 files, 684 tests passed.
 - `bun run build` — succeeded.
-- `./scripts/deploy.sh` — deployed. Backup:
-  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261120T004050Z.tar.gz`.
+- `./scripts/deploy.sh` — deployed. Backups:
+  `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261120T004050Z.tar.gz` and
+  `…005041Z.tar.gz`.
 - Live Playwright checks for all five reports passed.
+- `e2e/a11y.spec.js` exposed a contrast regression on the new content-browser
+  “View all” links (the global `a:link` rule outranked `.home-panel__link`).
+  Specificity fixed; live axe is clean on `/` at 1440 and 390px.
