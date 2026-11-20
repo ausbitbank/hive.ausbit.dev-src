@@ -459,17 +459,19 @@ export default {
 
         this.quoteSource = 'estimated'
         this.bridgeBlocked = !status || getBridgeState().state === 'blocked'
-        if (!quote.hbd && !quote.hive) {
-          this.quote = quote
-          this.quoteError = 'Could not read a Hive/HBD price to estimate the cost.'
-          return
-        }
 
+        // The bridge returns the authoritative HBD/HIVE cost. Prefer it over
+        // the market-price estimate, and use it on its own when the price feed
+        // is rate limited or unreachable.
         if (status) {
           try {
             const fixed = await getSatsToHive(quote.totalSats)
-            if (fixed && Number(fixed.HBD) > 0) {
-              quote = { ...quote, hbd: Number(fixed.HBD), hive: Number(fixed.HIVE) || quote.hive, source: 'bridge' }
+            const bridgeHbd = Number(fixed?.HBD)
+            const bridgeHive = Number(fixed?.HIVE)
+            const hbd = Number.isFinite(bridgeHbd) && bridgeHbd > 0 ? bridgeHbd : quote.hbd
+            const hive = Number.isFinite(bridgeHive) && bridgeHive > 0 ? bridgeHive : quote.hive
+            if (hbd || hive) {
+              quote = { ...quote, hbd, hive, source: 'bridge' }
               this.quoteSource = 'bridge'
               this.bridgeBlocked = false
             }
@@ -477,6 +479,12 @@ export default {
             this.bridgeBlocked = true
             this.quoteSource = 'estimated'
           }
+        }
+
+        if (!quote.hbd && !quote.hive) {
+          this.quote = quote
+          this.quoteError = 'Could not read a Hive/HBD price to estimate the cost.'
+          return
         }
 
         this.quote = quote
