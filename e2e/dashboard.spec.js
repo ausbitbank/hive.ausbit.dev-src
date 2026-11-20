@@ -319,6 +319,21 @@ test.describe('customisable dashboard', () => {
     expect(settings.reference).toBe('/@ausbitbank/feed')
   })
 
+  test('notifications widget names the account in its header', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/')
+    await waitForApp(page)
+    await openEditor(page)
+    await addWidget(page, 'Notifications')
+
+    const card = page.locator('[data-widget-type="notifications"]')
+    await expect(card.locator('.home-eyebrow')).toHaveText('Notifications')
+    await expect(card.locator('.home-panel__title')).toHaveText('@ausbitbank')
+
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(card.locator('.home-panel__title')).toHaveText('@ausbitbank')
+  })
+
   test('offers the starter layout once to a signed-in account', async ({ page }) => {
     await loginAs(page)
     await page.goto('/')
