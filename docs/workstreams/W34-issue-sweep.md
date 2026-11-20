@@ -111,6 +111,9 @@ dashboard, search, performance and crawler work.
   harness limitation rather than an app regression.
 - `bun run perf:check` — passed. The initial and home JS budgets were raised by
   ~2–9 KB to account for the new dashboard widgets; LCP stayed under 2.2s.
+- Cloudflare Worker live check — `x-hive-meta: hit` on a post and an account;
+  real title, description, cover image and JSON-LD returned to a Discordbot
+  user agent. Account subpages and unknown accounts fail open unchanged.
 
 ## Deployment
 
