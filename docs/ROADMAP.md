@@ -47,10 +47,11 @@ W34 (the 2026-11-19 issue sweep) and W35 (its five reopen follow-ups) are
 complete. See `docs/workstreams/W34-issue-sweep.md` and
 `docs/workstreams/W35-issue-followups.md`.
 
-W36 (Lightning receive and pay, v4vapp Phase 1–2) is implementation-complete:
-lint, unit tests, build and the targeted Lightning E2E are green. The full fast
-suite has four pre-existing live-data failures unrelated to this workstream.
-See `docs/workstreams/W36-lightning-bridge.md`. It ships with a documented CORS
+W36 (Lightning receive and pay, v4vapp Phase 1–2) is complete and deployed:
+lint, unit tests, build, performance budgets, the targeted Lightning E2E and a
+live browser smoke are green. The full fast suite has four pre-existing
+live-data failures unrelated to this workstream. See
+`docs/workstreams/W36-lightning-bridge.md`. It ships with a documented CORS
 fallback until v4v.app allowlists the production origin. Keepsats, POS and post
 zaps remain open follow-ups.
 

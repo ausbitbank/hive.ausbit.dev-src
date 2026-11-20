@@ -1,7 +1,7 @@
 # W36 — Lightning receive and pay (v4vapp Phase 1–2)
 
 Date: 2026-11-20
-Status: implementation complete — local verification green; deploy pending
+Status: complete — deployed and live-verified
 
 ## Scope
 
@@ -77,6 +77,22 @@ built to degrade rather than break:
 - No proxy or CORS bypass is included. A same-origin proxy remains an operator
   decision for a later workstream.
 
+## Production routing
+
+`/lightning` is a prerendered shell (`lightning.html`). The nginx config now
+includes `/lightning` in the static-page location and `/@account/lightning` in
+the account sub-page metadata regex. The live host's nginx file is
+root-managed and sudo is not available non-interactively, so the existing
+Cloudflare metadata worker also serves `lightning.html` for:
+
+- `hive.ausbit.dev/lightning` (exact route), and
+- `hive.ausbit.dev/@account/lightning` (existing `@*` route).
+
+The worker rewrites account-specific title/description/canonical and tags the
+response with `x-hive-meta: lightning`. `wrangler.jsonc` now carries the exact
+`/lightning` route. Install the updated nginx file at the next root-managed
+maintenance window; the worker path can then be retired if desired.
+
 ## Verification
 
 - `bun run lint` — clean.
@@ -104,6 +120,14 @@ built to degrade rather than break:
   pagination and comments load-more) and were not touched by this workstream.
 - Latest `/lightning` checks: one `h1`, no debug output, no duplicate invoice
   button, zero horizontal overflow at 1440px and 390px.
+- Production deploy:
+  - backup `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261120T042138Z.tar.gz`
+    (and the earlier `…041556Z` first attempt);
+  - `/lightning` and `/@brianoflondon/lightning` return `200` with
+    `x-hive-meta: lightning` and the correct titles;
+  - live browser smoke at 1440px: address card, receive fallback (CORS still
+    outstanding), estimated pay quote, wallet Lightning panel, zero page
+    errors and zero horizontal overflow.
 
 ## Known limitations
 

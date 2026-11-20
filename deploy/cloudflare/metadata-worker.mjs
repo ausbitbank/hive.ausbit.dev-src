@@ -242,12 +242,12 @@ async function lightningShell (request, account = '') {
 
 export default {
   async fetch (request) {
-    if (!hasHtml(request)) return fetch(request)
-
     const url = new URL(request.url)
-    const accountLightning = url.pathname.match(ACCOUNT_LIGHTNING_PATH)
+    const accountLightning = request.method === 'GET' ? url.pathname.match(ACCOUNT_LIGHTNING_PATH) : null
     if (accountLightning) return lightningShell(request, accountLightning[1])
-    if (LIGHTNING_PATH.test(url.pathname)) return lightningShell(request)
+    if (request.method === 'GET' && LIGHTNING_PATH.test(url.pathname)) return lightningShell(request)
+
+    if (!hasHtml(request)) return fetch(request)
 
     const post = RESERVED_SUBPATH.test(url.pathname) ? null : url.pathname.match(POST_PATH)
     const account = !post && url.pathname.match(ACCOUNT_PATH)
