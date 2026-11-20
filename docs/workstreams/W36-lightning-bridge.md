@@ -63,8 +63,10 @@ creation with Lightning, and MagiSats. Those remain later phases.
 
 ## CORS and fallback behaviour
 
-The production origin is not currently on v4v.app's CORS allowlist. The UI is
-built to degrade rather than break:
+The production origin was not on v4v.app's CORS allowlist when this workstream
+landed; v4vapp approved adding it on 2026-11-20 (propagating). The UI is built
+to degrade rather than break while that lands, and for preview origins or a
+bridge outage:
 
 - Address, QR (`<img>`), copy and open-in-wallet work without CORS.
 - If invoice creation is blocked, the receive dialog explains the limitation
@@ -139,8 +141,10 @@ maintenance window; the worker path can then be retired if desired.
   not been verified.
 - Refund tracking is on-chain only (the transfer/notification appears in Hive
   activity); there is no dedicated refund status API.
-- The production CORS allowlist is still outstanding. Until it is granted, live
-  invoice creation/status is degraded as described above.
+- The production CORS allowlist was approved on 2026-11-20 and was propagating
+  at close-out. Until the live header is verified, live invoice creation/status
+  may still be degraded as described above; the fallbacks and copy stay in
+  place until then.
 
 ## Next workstreams
 

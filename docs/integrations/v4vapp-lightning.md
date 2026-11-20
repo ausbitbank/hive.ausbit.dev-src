@@ -186,7 +186,7 @@ Consequences for the UI:
 
 | Constraint | Detail | Mitigation |
 | --- | --- | --- |
-| **CORS** | `https://hive.ausbit.dev` is **not** in the API allowlist (no `Access-Control-Allow-Origin`); `http://localhost:8080` is. | Ask v4vapp to allowlist the production + preview origins. A same-origin Cloudflare Worker proxy is a fallback for public endpoints, but does not fix third-party refresh cookies. |
+| **CORS** | At implementation time `https://hive.ausbit.dev` was **not** in the API allowlist (no `Access-Control-Allow-Origin`); `http://localhost:8080` was. v4vapp approved the production origin on 2026-11-20; the allowlist entry was propagating. | Keep the degraded-state fallbacks for preview/staging origins and bridge outages. A same-origin Cloudflare Worker proxy remains the fallback if the allowlist lapses, but does not fix third-party refresh cookies. |
 | **Refresh cookie** | v4v.app's httpOnly refresh cookie is first-party there; as a third-party cookie it may be blocked. | Use short-lived bearer tokens held in memory, re-auth on expiry. Do not build the product around silent refresh. |
 | **Custody** | Keepsats is an off-chain IOU. The on-chain `v4vapp_transfer` is an instruction/notification, not escrow. | Label "held by v4v.app (custodial)", default off, show operator + terms, never imply hive.ausbit.dev holds funds. |
 | **Single operator** | One bridge, one LND node, no SLA. `FAILURE_REASON_NO_ROUTE` is visible in public notifications. | Treat as best-effort, show pending/failed/refunded states, never claim success before settlement. |
@@ -705,9 +705,12 @@ are explicit; no new dependency in the main bundle.
 
 **Technical**
 
-- Can `https://hive.ausbit.dev` (and preview/staging origins) be added to the
-  API CORS allowlist? If not, is a same-origin Worker proxy acceptable for
-  public endpoints?
+- ~~Can `https://hive.ausbit.dev` be added to the API CORS allowlist?~~ Answered
+  2026-11-20: v4vapp approved the production origin; the entry was still
+  propagating. Verify the live `Access-Control-Allow-Origin` header before
+  softening user-facing degraded-state copy. Preview/staging origins are still
+  an open question; a same-origin Worker proxy remains acceptable for public
+  endpoints.
 - Does `/auth/validate` accept `scope=hive:posting`, or is active required?
   If active is required, can we get a read-only balance scope?
 - Is there a webhook/websocket or a batch status endpoint? Polling is the main
