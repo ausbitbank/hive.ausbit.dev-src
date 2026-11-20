@@ -99,6 +99,10 @@ and asset caching instead.
   or calling `lock()`/logout clears the key and requires the password again.
 - Keys are only used in the browser to sign the transactions the user queues.
   No private key is ever sent to a server operated by this site.
+- Lightning address display and receive invoices require no key. Paying a
+  Lightning invoice queues a normal Hive transfer to `@v4vapp` for active-key
+  review; the queue marks it manual-only and never auto-broadcasts it. No key
+  material or SmartLock payload is sent to v4v.app.
 - Because the ciphertext is in `localStorage`, any XSS on the origin can read the
   encrypted blobs and attempt an offline password attack. This makes the header
   policy above (especially CSP) part of the key-storage threat model, not just

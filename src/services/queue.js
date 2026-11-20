@@ -189,26 +189,30 @@ export function statusMeta (status) {
   }
 }
 
-export function createQueueMeta (now = Date.now()) {
-  return {
+export function createQueueMeta (now = Date.now(), { manualOnly = false } = {}) {
+  const meta = {
     status: QUEUE_STATUS.PENDING,
     error: '',
     txId: '',
     addedAt: now,
     updatedAt: now
   }
+  if (manualOnly) meta.manualOnly = true
+  return meta
 }
 
 export function normalizeQueueMetaEntry (entry, now = Date.now()) {
   if (!entry || typeof entry !== 'object') return createQueueMeta(now)
   const status = QUEUE_STATUSES.includes(entry.status) ? entry.status : QUEUE_STATUS.PENDING
-  return {
+  const normalized = {
     status,
     error: typeof entry.error === 'string' ? entry.error : '',
     txId: typeof entry.txId === 'string' ? entry.txId : '',
     addedAt: Number.isFinite(Number(entry.addedAt)) ? Number(entry.addedAt) : now,
     updatedAt: Number.isFinite(Number(entry.updatedAt)) ? Number(entry.updatedAt) : now
   }
+  if (entry.manualOnly === true) normalized.manualOnly = true
+  return normalized
 }
 
 /** Keep metadata aligned with queue items, including legacy queues with no meta. */
@@ -246,15 +250,19 @@ export function isComplete (status) {
   return status === QUEUE_STATUS.SENT
 }
 
-/** First item that may be broadcast. Auto-send skips failed items until retried. */
-export function nextActionableIndex (meta, { includeFailed = false, skip = [] } = {}) {
+/**
+ * First item that may be broadcast. Auto-send skips failed items until retried,
+ * and never auto-broadcasts `manualOnly` actions (Lightning payments).
+ */
+export function nextActionableIndex (meta, { includeFailed = false, skip = [], auto = false } = {}) {
   if (!Array.isArray(meta)) return -1
   const skipped = new Set(skip)
   for (let index = 0; index < meta.length; index++) {
     if (skipped.has(index)) continue
-    const status = normalizeQueueMetaEntry(meta[index]).status
-    if (status === QUEUE_STATUS.PENDING) return index
-    if (includeFailed && status === QUEUE_STATUS.FAILED) return index
+    const entry = normalizeQueueMetaEntry(meta[index])
+    if (auto && entry.manualOnly) continue
+    if (entry.status === QUEUE_STATUS.PENDING) return index
+    if (includeFailed && entry.status === QUEUE_STATUS.FAILED) return index
   }
   return -1
 }

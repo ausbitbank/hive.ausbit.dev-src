@@ -67,6 +67,21 @@ describe('queue helpers', () => {
     expect(invalid[0].error).toBe('')
   })
 
+  it('preserves manual-only Lightning actions and skips them for auto-send', () => {
+    const manual = createQueueMeta(1000, { manualOnly: true })
+    expect(manual.manualOnly).toBe(true)
+    const normalized = normalizeQueueMeta([transfer], [{ ...manual, status: QUEUE_STATUS.PENDING }], 2000)
+    expect(normalized[0].manualOnly).toBe(true)
+
+    const meta = [
+      { status: QUEUE_STATUS.PENDING, manualOnly: true },
+      { status: QUEUE_STATUS.PENDING, manualOnly: false }
+    ]
+    expect(nextActionableIndex(meta)).toBe(0)
+    expect(nextActionableIndex(meta, { auto: true })).toBe(1)
+    expect(nextActionableIndex([{ status: QUEUE_STATUS.PENDING, manualOnly: true }], { auto: true })).toBe(-1)
+  })
+
   it('counts queue states and chooses the next actionable item', () => {
     const meta = [
       { status: QUEUE_STATUS.SENT },

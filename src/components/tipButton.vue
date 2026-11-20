@@ -21,7 +21,7 @@ export default {
   },
   data () {
     return {
-      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin'],
+      supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin', 'lightning'],
       dialog: false
     }
   },
@@ -61,7 +61,7 @@ export default {
   },
   methods: {
     returnCoinSvg (coin) {
-      return 'img:/statics/' + coin + '.svg'
+      return 'img:/statics/' + coin + (coin === 'lightning' ? '.png' : '.svg')
     }
   },
   mounted () {

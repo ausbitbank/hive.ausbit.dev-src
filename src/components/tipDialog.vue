@@ -44,6 +44,30 @@
         <transfer-dialog tokenName="HBD" network="hive" :to="account" :username="$hiveStore.user.username" />
       </q-dialog>
     </q-item>
+    <q-item clickable>
+      <q-item-section avatar>
+        <q-avatar><q-icon name="img:/statics/lightning.png" title="Lightning" /></q-avatar>
+      </q-item-section>
+      <q-item-section>
+        <q-item-label>Lightning</q-item-label>
+        <q-item-label caption>{{ lightningAddress }}</q-item-label>
+      </q-item-section>
+      <q-item-section side>
+        <q-btn dense round icon="send" title="Tip with Lightning" color="amber-9" @click="showLightning = true" />
+      </q-item-section>
+      <q-item-section side>
+        <q-btn dense round icon="content_copy" title="Copy Lightning address" color="blue-grey" @click="copy(lightningAddress)" />
+      </q-item-section>
+      <q-dialog v-if="showLightning" v-model="showLightning">
+        <lightning-receive-dialog
+          :account="account"
+          v-model="showLightning"
+          default-currency="hbd"
+          :default-amount="5"
+          default-note="Lightning tip from hive.ausbit.dev"
+        />
+      </q-dialog>
+    </q-item>
     <q-item v-if="!accountData">
       <q-spinner-pie color="primary" size="sm" />
     </q-item>
@@ -68,21 +92,28 @@
 <style>
 </style>
 <script>
+import { defineAsyncComponent } from 'vue'
 import transferDialog from 'components/transferDialog.vue'
+const LightningReceiveDialog = defineAsyncComponent(() => import('components/lightning/LightningReceiveDialog.vue'))
 import { copyToClipboard } from 'quasar'
+import { lightningAddress } from 'src/services/lightning'
 export default {
   name: 'tipDialog',
-  components: { transferDialog }, // metamask
+  components: { transferDialog, LightningReceiveDialog }, // metamask
   data () {
     return {
       supportedCoins: ['bitcoin', 'litecoin', 'ethereum', 'dogecoin', 'lightning'],
       hivetransfer: false,
       hivedollartransfer: false,
+      showLightning: false,
       ethFromAddress: null
     }
   },
   props: ['account'],
   computed: {
+    lightningAddress: function () {
+      return lightningAddress(this.account, 'hive')
+    },
     accountData: function () {
       if (this.$hiveStore.accounts[this.account] !== undefined) {
         return this.$hiveStore.accounts[this.account]
@@ -105,7 +136,7 @@ export default {
       var userCoins = []
       if (this.accountMeta) {
         if ('profile' in this.accountMeta) {
-          Object.keys(this.accountMeta.profile).forEach(e => this.supportedCoins.includes(e) ? userCoins.push(e) : this.noop())
+          Object.keys(this.accountMeta.profile).forEach(e => (this.supportedCoins.includes(e) && e !== 'lightning') ? userCoins.push(e) : this.noop())
           return userCoins
         } else {
           return []

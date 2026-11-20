@@ -256,6 +256,7 @@ export default {
         { section: 'recent', label: 'Recent' },
         { section: 'activity', label: 'Activity' },
         { section: 'pending', label: 'Pending' },
+        { section: 'lightning', label: 'Lightning' },
         { section: 'tokens', label: 'Tokens' }
       ]
       if (this.hasMagi) tabs.push({ section: 'magi', label: 'Magi' })

@@ -79,8 +79,8 @@ export function updateSettings (settings) {
   LocalStorage.set('settings', settings)
 }
 
-export function addToQueue (newItem) {
-  const meta = createQueueMeta()
+export function addToQueue (newItem, options = {}) {
+  const meta = createQueueMeta(Date.now(), options)
   if (!isOnline()) {
     // Keep the intent, but mark it failed so nothing can be signed until the
     // connection returns. Send-all resets failed items when the user retries.

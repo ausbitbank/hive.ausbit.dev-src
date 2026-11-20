@@ -110,6 +110,9 @@
                     <q-badge :color="statusFor(metaFor(index).status).color" text-color="black">
                       {{ statusFor(metaFor(index).status).label }}
                     </q-badge>
+                    <q-badge v-if="metaFor(index).manualOnly" color="orange" text-color="black" title="This action must be reviewed and sent individually">
+                      Review
+                    </q-badge>
                   </div>
 
                   <div class="queue-item__summary">{{ operationSummary(action) }}</div>
@@ -232,7 +235,12 @@ export default {
       return queueBadgeCount(this.normalizedMeta)
     },
     canSendAll () {
-      return this.counts.pending + this.counts.failed > 0
+      return this.normalizedMeta.some((entry, index) => {
+        return !entry.manualOnly && canBroadcast(entry.status) && this.queue[index]
+      })
+    },
+    manualPendingCount () {
+      return this.normalizedMeta.filter(entry => entry.manualOnly && canBroadcast(entry.status)).length
     },
     queueButtonLabel () {
       const active = this.badgeCount
@@ -299,10 +307,21 @@ export default {
     scheduleNext () {
       this.clearBroadcastTimer()
       if (!this.timerEnabled && !this.bulkSending) return
-      if (nextActionableIndex(this.normalizedMeta) < 0) {
+      if (nextActionableIndex(this.normalizedMeta, { auto: true }) < 0) {
+        if (this.manualPendingCount > 0) {
+          this.$q.notify({
+            message: this.manualPendingCount + ' Lightning payment' + (this.manualPendingCount === 1 ? '' : 's') + ' need individual review. Open the queue and press send.',
+            color: 'orange',
+            icon: 'bolt',
+            position: 'top',
+            timeout: 5000
+          })
+        }
         if (this.bulkSending) {
           this.bulkSending = false
-          this.$q.notify({ message: 'All queued actions have been sent.', color: 'green', icon: 'done_all', timeout: 2500 })
+          if (this.manualPendingCount === 0) {
+            this.$q.notify({ message: 'All queued actions have been sent.', color: 'green', icon: 'done_all', timeout: 2500 })
+          }
         }
         return
       }
@@ -318,7 +337,7 @@ export default {
       }
     },
     broadcastNext () {
-      const index = nextActionableIndex(this.normalizedMeta)
+      const index = nextActionableIndex(this.normalizedMeta, { auto: true })
       if (index >= 0) this.broadcastAt(index, { auto: true })
     },
     manualBroadcast (index) {

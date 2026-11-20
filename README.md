@@ -46,6 +46,7 @@ Wallet:
 | `/markets` | External charts, HBD peg/premium, savings APR and HIVE/HBD conversion calculator |
 | `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |
 | `/tax` | Wallet history analysis and CSV export for accounting |
+| `/lightning`, `/@:account/lightning` | Lightning addresses, receive invoices and Hive/HBD → Lightning payments bridged by v4v.app |
 | `/create` | Hive account creation helpers |
 | `/market`, `/hbdstabilizer`, `/tax` | On-chain market, stabilizer and accounting tools |
 
@@ -55,7 +56,7 @@ Additional UX:
 - `f` opens the full search page; the search page supports arrow-key navigation
   and saved searches.
 - `?` opens the keyboard shortcut list.
-- `g` then `h/b/w/m/p/n/s/c` jumps to the main sections (including the composer).
+- `g` then `h/b/w/m/p/n/s/c/l` jumps to the main sections (including the composer and Lightning).
 - In the composer, `Ctrl/⌘ S` saves, `Ctrl/⌘ Enter` queues the post, and
   `Ctrl/⌘ B/I/K` formats text, italicises or inserts a link.
 - Back-to-top appears on long pages.
@@ -223,6 +224,8 @@ Override `REMOTE` and `REMOTE_DIR` for another host.
   and read-only contract inspection.
 - Magi token indexer: standard `magi_token` balances and token metadata.
 - CoinGecko: HIVE/HBD USD prices and 24h changes.
+- v4v.app: optional Hive ↔ Bitcoin Lightning bridge for Lightning addresses,
+  receive invoices, fee quotes and BOLT11 decoding.
 - TradingView: external price charts.
 
 The app caches chain reads locally and falls back across configured API nodes.
@@ -240,6 +243,10 @@ Prices and third-party charts can be delayed or temporarily unavailable.
   posting key in memory, auto-locks after an idle timeout, and asks for the
   password each time an active key is needed. The active key is never kept in
   memory.
+- **Lightning payments** are normal active-key transfers to `@v4vapp`, queued
+  for individual review and never auto-broadcast. Receiving and displaying a
+  Lightning address needs no key. The v4v.app bridge holds keepsats, not this
+  site; no key material is sent to it.
 - The signing queue stores operations, not private keys, and expires after 24
   hours.
 - External links use `noopener noreferrer`; post and community HTML is sanitized.

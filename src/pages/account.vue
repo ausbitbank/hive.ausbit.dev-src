@@ -21,6 +21,7 @@
                 <share-menu :title="'@' + account.name + ' on hive.ausbit.dev'" :path="'/@' + account.name" />
                 <nav class="account-quick-links" aria-label="Account quick links">
                   <router-link :to="linkWallet(username)">Wallet</router-link>
+                  <router-link :to="'/@' + username + '/lightning'">Lightning</router-link>
                   <router-link :to="'/@' + username + '/delegations'">Delegations</router-link>
                   <router-link :to="linkBlog(username)">Blog</router-link>
                   <router-link :to="linkPosts(username)">Posts</router-link>
@@ -150,6 +151,8 @@
             </q-card>
 
             <magi-account-summary :username="username" />
+
+            <lightning-address-card :account="username" compact :show-qr="true" />
 
             <q-card flat bordered class="account-card">
               <q-card-section>
@@ -644,6 +647,7 @@ import accountHeader from 'components/accountHeader.vue'
 import accountAuthorities from 'components/accountAuthorities.vue'
 import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
 import MagiAccountSummary from 'components/account/MagiAccountSummary.vue'
+import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 import rc from 'components/rc.vue'
@@ -664,6 +668,7 @@ export default {
     accountAuthorities,
     AuthorityRiskCard,
     MagiAccountSummary,
+    LightningAddressCard,
     withdrawRoutes,
     ShareMenu
     // recentVotedPostsCarousel

@@ -4,9 +4,17 @@
 // here makes the wallet components layout-only and lets the behaviour be unit
 // tested without mounting Quasar.
 
+import {
+  cleanV4vappMemo,
+  isV4vappAccount,
+  isV4vappTransfer,
+  parseV4vappMemo
+} from './lightning'
+
 export const WALLET_ACTIVITY_CATEGORIES = [
   { value: 'all', label: 'All activity' },
   { value: 'transfers', label: 'Transfers' },
+  { value: 'lightning', label: 'Lightning' },
   { value: 'staking', label: 'Power up' },
   { value: 'unstaking', label: 'Power down' },
   { value: 'savings', label: 'Savings' },
@@ -205,7 +213,8 @@ export function walletTransactionType (entry) {
 }
 
 export function walletTransactionCategory (entry) {
-  const type = walletTransactionType(entry)
+  const [type, data = {}] = walletTransactionOperation(entry)
+  if (type === 'transfer' && isV4vappTransfer(data)) return 'lightning'
   for (const category of Object.keys(CATEGORY_TYPES)) {
     if (CATEGORY_TYPES[category].includes(type)) return category
   }
@@ -299,11 +308,27 @@ export function walletOperationView (entry, { username, toHive } = {}) {
   switch (type) {
     case 'transfer': {
       const incoming = data.to === username
+      const v4vapp = isV4vappTransfer(data)
       view.label = incoming ? 'Received' : 'Sent'
       view.counterparty = incoming ? data.from : data.to
       view.parts = [part(data.amount, incoming ? '+' : '-')]
       view.memo = typeof data.memo === 'string' ? data.memo : ''
       view.tone = incoming ? 'in' : 'out'
+
+      if (v4vapp) {
+        const parsed = parseV4vappMemo(data.memo)
+        view.icon = 'bolt'
+        view.counterparty = isV4vappAccount(data.from) ? data.from : data.to
+        view.memo = cleanV4vappMemo(data.memo)
+        view.lightning = parsed
+        if (incoming) {
+          view.label = parsed?.kind === 'deposit' ? 'Keepsats deposit' : 'Lightning received'
+          view.tone = 'in'
+        } else {
+          view.label = parsed?.kind === 'deposit' ? 'Keepsats deposit' : 'Lightning payment'
+          view.tone = 'out'
+        }
+      }
       break
     }
     case 'transfer_to_vesting': {

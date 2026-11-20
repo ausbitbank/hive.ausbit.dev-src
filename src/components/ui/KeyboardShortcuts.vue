@@ -32,7 +32,8 @@ const GO_TARGETS = {
   p: { label: 'Proposals', path: '/proposals' },
   n: { label: 'API nodes', path: '/nodes' },
   s: { label: 'Network health', path: '/health' },
-  c: { label: 'Write a post', path: '/compose' }
+  c: { label: 'Write a post', path: '/compose' },
+  l: { label: 'Lightning', path: '/lightning' }
 }
 
 const TYPING_TAGS = ['INPUT', 'TEXTAREA', 'SELECT']
@@ -55,6 +56,7 @@ export default {
         { keys: 'g then n', label: 'Go to API nodes' },
         { keys: 'g then s', label: 'Go to network health' },
         { keys: 'g then c', label: 'Write a post' },
+        { keys: 'g then l', label: 'Go to Lightning' },
         { keys: 'Ctrl / ⌘ S', label: 'Save the current draft' },
         { keys: 'Ctrl / ⌘ ↵', label: 'Queue a post for signing' },
         { keys: 'Ctrl / ⌘ B', label: 'Bold (in the composer)' },

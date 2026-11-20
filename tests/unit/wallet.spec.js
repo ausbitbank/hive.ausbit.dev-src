@@ -116,6 +116,44 @@ describe('wallet helpers', () => {
     expect(walletTransactionDirection(entry('convert', {}), 'alice')).toBe('neutral')
   })
 
+  it('labels v4vapp transfers as Lightning activity', () => {
+    const received = entry('transfer', {
+      from: 'v4vapp',
+      to: 'alice',
+      amount: '0.421 HIVE',
+      memo: 'Converted 77 sats to 0.421 HIVE with fee: 52 sats for alice | ⚡ zapped by @bob | § abc123 | Thank you for using v4v.app'
+    })
+    const sent = entry('transfer', {
+      from: 'alice',
+      to: 'v4vapp',
+      amount: '1.000 HBD',
+      memo: 'lnbc1000u1pabc #v4vapp'
+    })
+    const deposit = entry('transfer', {
+      from: 'alice',
+      to: 'v4vapp',
+      amount: '5.000 HBD',
+      memo: 'alice Deposit to #SATS'
+    })
+
+    expect(walletTransactionCategory(received)).toBe('lightning')
+    expect(walletTransactionCategory(sent)).toBe('lightning')
+    expect(walletTransactionCategory(deposit)).toBe('lightning')
+
+    const receivedView = walletOperationView(received, { username: 'alice' })
+    expect(receivedView).toMatchObject({ label: 'Lightning received', icon: 'bolt', tone: 'in', counterparty: 'v4vapp' })
+    expect(receivedView.memo).toContain('Converted 77 sats')
+
+    const sentView = walletOperationView(sent, { username: 'alice' })
+    expect(sentView).toMatchObject({ label: 'Lightning payment', icon: 'bolt', tone: 'out' })
+    expect(sentView.memo).toBe('Lightning invoice payment')
+
+    const depositView = walletOperationView(deposit, { username: 'alice' })
+    expect(depositView.label).toBe('Keepsats deposit')
+
+    expect(filterWalletTransactions([received, sent, deposit], { username: 'alice', category: 'lightning' })).toHaveLength(3)
+  })
+
   it('filters by category, direction and search', () => {
     const entries = [
       entry('transfer', { from: 'bob', to: 'alice', memo: 'rent' }, '2026-11-17T10:00:00'),

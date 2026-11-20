@@ -282,6 +282,7 @@ const COMMANDS = [
   { label: 'Latest blocks', description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer' },  { label: 'Witnesses', description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes' },
   { label: 'Proposals', description: 'Decentralized Hive Fund', icon: 'account_balance', path: '/proposals', keywords: 'dhf dao governance' },
   { label: 'Markets', description: 'HIVE and HBD charts', icon: 'show_chart', path: '/markets', keywords: 'prices trading' },
+  { label: 'Lightning', description: 'Receive sats as HIVE/HBD or pay a Lightning invoice', icon: 'bolt', path: '/lightning', keywords: 'lightning sats bitcoin btc v4v bridge zap invoice' },
   { label: 'Internal market', description: 'Trade HIVE and HBD', icon: 'store', path: '/market', keywords: 'exchange order book' },
   { label: 'HBD monitor', description: 'Peg, savings and interest', icon: 'attach_money', path: '/hbd', keywords: 'stablecoin savings apr' },
   { label: 'API nodes', description: 'Latency and node health', icon: 'dns', path: '/nodes', keywords: 'api status layer 2 hive-engine magi' },

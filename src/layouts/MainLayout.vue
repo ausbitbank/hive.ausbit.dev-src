@@ -612,6 +612,12 @@ export default {
           to: '/compose'
         },
         {
+          title: 'Lightning',
+          caption: 'sats to Hive and back',
+          icon: 'bolt',
+          to: '/lightning'
+        },
+        {
           title: 'HBD monitor',
           caption: 'stability and interest',
           icon: 'attach_money',

@@ -177,6 +177,16 @@
           />
         </section>
 
+        <lightning-wallet-panel
+          :account="username"
+          :logged-in="isOwner"
+          :liquid-hive="portfolio.liquidHive"
+          :liquid-hbd="portfolio.liquidHbd"
+          @navigate="scrollTo('activity')"
+          @paid="refreshAll"
+          @queued="refreshAll"
+        />
+
         <section id="tokens" class="wallet-section" aria-labelledby="wallet-tokens-title">
           <hive-engine-tokens
             heading-id="wallet-tokens-title"
@@ -438,7 +448,8 @@ export default {
     WalletPendingPanel,
     WalletActivity,
     HiveEngineTokens,
-    MagiBalances
+    MagiBalances,
+    LightningWalletPanel: defineAsyncComponent(() => import('components/lightning/LightningWalletPanel.vue'))
   },
   mixins: [VueTimers],
   timers: {
