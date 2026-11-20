@@ -25,7 +25,9 @@ const CACHE_SECONDS = 300
 
 const POST_PATH = /^\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)\/?$/i
 const ACCOUNT_PATH = /^\/@([a-z0-9.-]+)\/?$/i
-const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|tip|trail)(?:\/|$)/i
+const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|tip|trail)(?:\/|$)/i
+const LIGHTNING_PATH = /^\/lightning\/?$/i
+const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
 
 function hasHtml (request) {
   const accept = request.headers.get('accept') || ''
@@ -191,11 +193,62 @@ function rewriteHead (html, meta) {
   return next
 }
 
+async function lightningShell (request, account = '') {
+  const url = new URL(request.url)
+  const cache = typeof caches !== 'undefined' ? caches.default : null
+  const cacheKey = new Request('https://hive.ausbit.dev/lightning.html?account=' + encodeURIComponent(account), { method: 'GET' })
+  if (cache) {
+    const cached = await cache.match(cacheKey)
+    if (cached) return cached
+  }
+
+  const response = await fetch(new URL('/lightning.html', url.origin), {
+    headers: { accept: 'text/html' }
+  })
+  if (!response.ok) return fetch(request)
+
+  let html = await response.text()
+  if (account) {
+    html = rewriteHead(html, {
+      title: '@' + account + ' Lightning — hive.ausbit.dev',
+      description: 'Receive sats as HIVE or HBD, or pay a Lightning invoice with Hive for @' + account + '.',
+      image: 'https://images.hive.blog/u/' + account + '/avatar',
+      type: 'website',
+      path: '/@' + account + '/lightning',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: '@' + account + ' Lightning',
+        url: 'https://hive.ausbit.dev/@' + account + '/lightning'
+      }
+    })
+  }
+
+  const headers = new Headers(response.headers)
+  headers.delete('content-length')
+  headers.delete('content-encoding')
+  headers.delete('etag')
+  headers.delete('last-modified')
+  const out = new Response(html, {
+    status: 200,
+    headers
+  })
+  out.headers.set('content-type', 'text/html; charset=utf-8')
+  out.headers.set('cache-control', 'public, max-age=' + CACHE_SECONDS)
+  out.headers.set('x-hive-meta', 'lightning')
+  if (cache) await cache.put(cacheKey, out.clone())
+  return out
+}
+
 export default {
   async fetch (request) {
     if (!hasHtml(request)) return fetch(request)
 
     const url = new URL(request.url)
+    const accountLightning = url.pathname.match(ACCOUNT_LIGHTNING_PATH)
+    if (accountLightning) return lightningShell(request, accountLightning[1])
+    if (LIGHTNING_PATH.test(url.pathname)) return lightningShell(request)
+
     const post = RESERVED_SUBPATH.test(url.pathname) ? null : url.pathname.match(POST_PATH)
     const account = !post && url.pathname.match(ACCOUNT_PATH)
     if (!post && !account) return fetch(request)

@@ -39,6 +39,7 @@ const ROUTES = [
   '/hbdstabilizer',
   '/compose',
   '/search',
+  '/lightning',
   '/404',
   // Microblog index and the five formats. Their metadata is client-rendered,
   // so they get real prerendered shells instead of the generic 404 shell.
