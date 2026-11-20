@@ -9,7 +9,7 @@
       'dw-grid--masonry': masonryReady,
       'dw-grid--dragging': dragging
     }"
-    :style="masonryReady && masonryHeight ? { height: masonryHeight + 'px' } : null"
+    :style="gridStyle"
   >
     <div
       v-for="entry in cells"
@@ -89,6 +89,7 @@
       type="button"
       class="dw-grid__end"
       :class="{ 'is-target': endMarker }"
+      :style="endStyle"
       @pointerenter="endMarker = true"
       @pointerleave="endMarker = false"
       @keydown.enter.prevent="moveToEndFromKeyboard"
@@ -305,6 +306,17 @@ export default {
     masonryReady () {
       return this.masonryActive() && Object.keys(this.masonryStyles).length > 0
     },
+    // The absolute masonry cells are out of flow, so the grid owns its height.
+    // In edit mode the "End of layout" target sits below the measured cards.
+    gridStyle () {
+      if (!this.masonryReady) return null
+      const extra = this.editing ? 60 : 0
+      return { height: (this.masonryHeight + extra) + 'px' }
+    },
+    endStyle () {
+      if (!this.masonryReady) return null
+      return { position: 'absolute', top: this.masonryHeight + 'px', left: '0', right: '0' }
+    },
     cells () {
       if (this.editing || this.packed) {
         const rows = packRows(this.widgets, GRID_COLUMNS)
@@ -363,7 +375,10 @@ export default {
   },
   methods: {
     masonryActive () {
-      return Boolean(this.masonry) && !this.editing && this.packed
+      // Edit mode uses the same absolute tiling when the saved dashboard is in
+      // masonry mode, so dragging/resizing previews the final arrangement
+      // instead of shifting after Save.
+      return Boolean(this.masonry) && (this.packed || this.editing)
     },
     cellStyle (entry) {
       if (this.masonryActive()) {

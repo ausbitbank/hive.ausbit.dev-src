@@ -411,6 +411,90 @@ export function stepWidgetWidth (layout, id, direction) {
   })
 }
 
+function widthForColumns (columns) {
+  const match = WIDGET_WIDTHS.find(entry => entry.columns === columns)
+  return match ? match.value : closestWidth(columns, 'quarter')
+}
+
+const ROW_SCORE = (a, b) => {
+  if (!a) return false
+  if (!b) return true
+  if (a.penalty !== b.penalty) return a.penalty < b.penalty
+  if (a.count !== b.count) return a.count > b.count
+  return a.order < b.order
+}
+
+/**
+ * Find the best subset of remaining widgets for one 12-column row. The row
+ * score is: use as many columns as possible, then change widths as little as
+ * possible, then fit more widgets, then keep the original order. Widths are
+ * limited to the tokens each widget already allows, so a widget never drops
+ * below its registry minimum.
+ */
+function bestRow (items, columns = GRID_COLUMNS) {
+  let dp = new Array(columns + 1).fill(null)
+  dp[0] = { penalty: 0, count: 0, order: 0, picks: [] }
+
+  for (const item of items) {
+    const next = dp.slice()
+    for (let sum = 0; sum <= columns; sum++) {
+      const entry = dp[sum]
+      if (!entry) continue
+      for (const width of item.choices) {
+        if (sum + width > columns) continue
+        const candidate = {
+          penalty: entry.penalty + Math.abs(width - item.current),
+          count: entry.count + 1,
+          order: entry.order + item.index,
+          picks: entry.picks.concat([{ item, columns: width }])
+        }
+        if (ROW_SCORE(candidate, next[sum + width])) next[sum + width] = candidate
+      }
+    }
+    dp = next
+  }
+
+  for (let sum = columns; sum > 0; sum--) {
+    if (dp[sum] && dp[sum].picks.length) return dp[sum]
+  }
+  return { picks: [] }
+}
+
+/**
+ * Reorder and resize a layout to fill 12-column rows with as little leftover
+ * space as possible. Used by the editor's auto-optimize action; the result is
+ * still a normal layout that can be previewed and cancelled.
+ */
+export function optimiseLayout (layout) {
+  const items = (Array.isArray(layout) ? layout : []).map((widget, index) => {
+    const current = widthColumns(widget.width)
+    const choices = [...new Set(widthChoicesFor(widget.type).map(widthColumns))]
+      .filter(width => width <= GRID_COLUMNS)
+    return {
+      widget,
+      index,
+      current,
+      choices: choices.length ? choices : [current]
+    }
+  })
+
+  const remaining = items.slice()
+  const result = []
+  while (remaining.length) {
+    const row = bestRow(remaining)
+    const picks = row.picks.length ? row.picks : [{ item: remaining[0], columns: remaining[0].current }]
+    picks.sort((a, b) => a.item.index - b.item.index)
+    for (const pick of picks) {
+      result.push({ ...pick.item.widget, width: widthForColumns(pick.columns) })
+    }
+    const used = new Set(picks.map(pick => pick.item))
+    for (let index = remaining.length - 1; index >= 0; index--) {
+      if (used.has(remaining[index])) remaining.splice(index, 1)
+    }
+  }
+  return result
+}
+
 /** Move a widget to a new index, keeping the others' relative order. */
 export function moveWidget (layout, id, toIndex) {
   const from = layout.findIndex(widget => widget.id === id)

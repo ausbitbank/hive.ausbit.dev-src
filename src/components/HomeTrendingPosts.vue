@@ -2,8 +2,13 @@
   <q-card flat bordered class="home-card home-panel">
     <q-card-section class="home-panel__head">
       <div>
-        <div class="home-eyebrow">{{ feed.eyebrow }}</div>
-        <h2 class="home-panel__title">{{ feed.heading }}</h2>
+        <div class="home-eyebrow">{{ header.eyebrow }}</div>
+        <h2 class="home-panel__title">
+          <q-avatar v-if="avatar" size="28px" class="home-panel__avatar" aria-hidden="true">
+            <img :src="avatar" alt="" @error="avatarFailed = true">
+          </q-avatar>
+          <span>{{ header.heading }}</span>
+        </h2>
       </div>
       <div class="home-panel__actions">
         <div v-if="showSort" class="home-sort" role="group" aria-label="Post sort">
@@ -33,6 +38,16 @@
           label="Feed"
           aria-label="Account feed type"
           class="home-sort__select"
+        />
+        <q-btn
+          flat
+          dense
+          round
+          icon="refresh"
+          aria-label="Refresh posts"
+          title="Refresh posts"
+          :loading="refreshing"
+          @click="refreshPosts"
         />
         <router-link :to="viewAllLink" class="home-panel__link home-panel__link--button">
           View all
@@ -93,6 +108,12 @@
         />
       </template>
     </q-card-section>
+
+    <q-card-section v-if="!loading && !error" class="home-panel__footer">
+      <span>{{ pollingLabel }}</span>
+      <span v-if="updatedLabel">Updated {{ updatedLabel }}</span>
+      <span v-else>&nbsp;</span>
+    </q-card-section>
   </q-card>
 </template>
 
@@ -119,6 +140,17 @@
   gap: var(--space-3);
 }
 
+.home-panel__avatar {
+  flex: none;
+  margin-right: 0.1rem;
+}
+
+.home-panel__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .home-sort__select {
   min-width: 150px;
 }
@@ -129,8 +161,11 @@ import HomePostRow from 'components/HomePostRow.vue'
 import PostPreview from 'components/postPreview.vue'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { RANKED_FEED_SORTS, fetchFeedPosts, resolveAccountFeed, resolvePostsFeed } from 'src/services/postFeed'
-import { ACCOUNT_FEED_SORTS } from 'src/services/feedReference'
+import { ACCOUNT_FEED_SORTS, feedAvatar, feedHeader } from 'src/services/feedReference'
+import { fetchCommunity } from 'src/services/chainData'
+import { pollWhileVisible } from 'src/services/polling'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import moment from 'src/utils/time'
 
 const SNAPSHOT_PREFIX = 'home:posts:feed:'
 const QUICK_SORTS = ['trending', 'created', 'hot']
@@ -175,9 +210,17 @@ export default {
       accountSort: this.feedSort,
       posts: [],
       loading: true,
+      refreshing: false,
       error: '',
       staleAt: null,
-      pollTimer: null
+      community: null,
+      avatarFailed: false,
+      updatedAt: 0,
+      nowTick: Date.now(),
+      poller: null,
+      clockTimer: null,
+      requestToken: 0,
+      communityToken: 0
     }
   },
   computed: {
@@ -211,6 +254,23 @@ export default {
     feedKey () {
       return this.feed.key + ':' + this.limit
     },
+    communityKey () {
+      return this.feed?.kind === 'community' ? this.feed.community : ''
+    },
+    header () {
+      return feedHeader(this.feed, this.community)
+    },
+    avatar () {
+      return this.avatarFailed ? '' : feedAvatar(this.feed)
+    },
+    pollingLabel () {
+      const seconds = Number(this.pollSeconds)
+      return seconds > 0 ? 'Refreshes every ' + seconds + 's' : 'Manual refresh'
+    },
+    updatedLabel () {
+      if (!this.updatedAt) return ''
+      return moment.utc(this.updatedAt).from(moment.utc(this.nowTick))
+    },
     showSort () {
       return Boolean(this.showSortToggle && !this.isAccountFeed && !String(this.reference || '').trim() && this.feed.sortable)
     },
@@ -232,33 +292,57 @@ export default {
       this.accountSort = value
     },
     feedKey () {
+      // Do not show the previous feed's rows under the new heading while the
+      // first page loads.
+      this.posts = []
+      this.updatedAt = 0
+      this.staleAt = null
       this.loadPosts()
+    },
+    communityKey () {
+      this.loadCommunity()
     },
     pollSeconds () {
       this.restartPolling()
+      if (Number(this.pollSeconds) > 0) this.refreshPosts()
     }
   },
   mounted () {
+    this.loadCommunity()
     this.loadPosts()
     this.restartPolling()
+    this.startClock()
   },
   beforeUnmount () {
+    this.requestToken += 1
+    this.communityToken += 1
     this.stopPolling()
+    this.stopClock()
   },
   methods: {
     restartPolling () {
       this.stopPolling()
       const seconds = Number(this.pollSeconds)
       if (!seconds || seconds < 5) return
-      this.pollTimer = setInterval(() => {
-        if (typeof document !== 'undefined' && document.hidden) return
-        this.loadPosts()
-      }, seconds * 1000)
+      this.poller = pollWhileVisible(() => this.loadPosts({ force: true }), seconds * 1000, { immediate: false })
+      this.poller.start()
     },
     stopPolling () {
-      if (this.pollTimer) {
-        clearInterval(this.pollTimer)
-        this.pollTimer = null
+      if (this.poller) {
+        this.poller.stop()
+        this.poller = null
+      }
+    },
+    startClock () {
+      this.stopClock()
+      this.clockTimer = setInterval(() => {
+        this.nowTick = Date.now()
+      }, 30000)
+    },
+    stopClock () {
+      if (this.clockTimer) {
+        clearInterval(this.clockTimer)
+        this.clockTimer = null
       }
     },
     changeSort (value) {
@@ -268,15 +352,42 @@ export default {
     snapshotKey () {
       return SNAPSHOT_PREFIX + this.feed.key + ':' + this.limit
     },
-    async loadPosts () {
-      this.loading = true
-      this.error = ''
+    async loadCommunity () {
+      const token = ++this.communityToken
+      this.community = null
+      this.avatarFailed = false
+      const name = this.feed?.kind === 'community' ? this.feed.community : ''
+      if (!name) return
       try {
-        const posts = await fetchFeedPosts(this.feed, { limit: this.limit, observer: this.loggedInUser || '' })
+        const info = await fetchCommunity(name)
+        if (token !== this.communityToken) return
+        this.community = info || null
+      } catch {
+        // The #hive-xxxxx heading is a useful fallback; metadata is optional.
+      }
+    },
+    refreshPosts () {
+      return this.loadPosts({ force: true })
+    },
+    async loadPosts ({ force = false } = {}) {
+      const token = ++this.requestToken
+      this.error = ''
+      if (this.posts.length) this.refreshing = true
+      else this.loading = true
+      try {
+        const posts = await fetchFeedPosts(this.feed, {
+          limit: this.limit,
+          observer: this.loggedInUser || '',
+          force
+        })
+        if (token !== this.requestToken) return
         this.posts = posts
         this.staleAt = null
+        this.updatedAt = Date.now()
+        this.nowTick = this.updatedAt
         saveSnapshot(this.snapshotKey(), { posts: this.posts })
       } catch (error) {
+        if (token !== this.requestToken) return
         console.error('Failed to load home posts', error)
         if (this.posts.length) {
           this.staleAt = this.staleAt || Date.now()
@@ -284,7 +395,10 @@ export default {
           this.error = 'Could not load posts.'
         }
       } finally {
-        this.loading = false
+        if (token === this.requestToken) {
+          this.loading = false
+          this.refreshing = false
+        }
       }
     },
     restoreSnapshot () {

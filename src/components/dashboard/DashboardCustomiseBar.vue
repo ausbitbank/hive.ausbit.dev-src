@@ -6,9 +6,74 @@
         <strong>Editing your dashboard</strong>
         <span class="dw-bar__summary">{{ summary }}</span>
       </div>
+      <div class="dw-bar__tiling" role="group" aria-label="Dashboard tiling">
+        <button
+          type="button"
+          class="dw-bar__tiling-btn"
+          :class="{ 'is-active': tiling !== 'masonry' }"
+          :aria-pressed="tiling !== 'masonry'"
+          @click="$emit('tiling', 'rows')"
+        >
+          <q-icon name="view_stream" size="15px" aria-hidden="true" /> Rows
+        </button>
+        <button
+          type="button"
+          class="dw-bar__tiling-btn"
+          :class="{ 'is-active': tiling === 'masonry' }"
+          :aria-pressed="tiling === 'masonry'"
+          @click="$emit('tiling', 'masonry')"
+        >
+          <q-icon name="view_quilt" size="15px" aria-hidden="true" /> Masonry
+        </button>
+      </div>
     </div>
 
     <div class="dw-bar__actions">
+      <q-btn-dropdown ref="layoutsMenu" no-caps flat dense icon="dashboard" label="Layouts" class="dw-bar__layouts">
+        <q-list style="min-width: 300px" aria-label="Saved layouts">
+          <q-item v-if="!layouts.length">
+            <q-item-section class="dw-bar__empty">No saved layouts yet.</q-item-section>
+          </q-item>
+          <q-item
+            v-for="entry in layouts"
+            :key="entry.id"
+            :active="entry.id === activeLayoutId"
+          >
+            <q-item-section avatar>
+              <q-icon :name="entry.tiling === 'masonry' ? 'view_quilt' : 'view_stream'" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ entry.label }}</q-item-label>
+              <q-item-label caption>{{ entry.widgets.length }} widgets · {{ entry.tiling === 'masonry' ? 'Masonry' : 'Rows' }}</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <div class="dw-bar__layout-actions">
+                <q-btn flat dense round icon="play_arrow" size="sm" :aria-label="'Load ' + entry.label" @click="loadLayout(entry)" />
+                <q-btn flat dense round icon="edit" size="sm" :aria-label="'Rename ' + entry.label" @click="openRenameDialog(entry)" />
+                <q-btn flat dense round icon="delete" size="sm" :aria-label="'Delete ' + entry.label" @click="confirmDelete(entry)" />
+              </div>
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item clickable @click="openSaveDialog">
+            <q-item-section avatar><q-icon name="bookmark_add" /></q-item-section>
+            <q-item-section>Save current as…</q-item-section>
+          </q-item>
+          <q-item v-if="activeEntry" clickable @click="$emit('save-layout', { id: activeEntry.id, label: activeEntry.label })">
+            <q-item-section avatar><q-icon name="sync" /></q-item-section>
+            <q-item-section>Update “{{ activeEntry.label }}”</q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
+      <q-btn
+        no-caps
+        flat
+        dense
+        icon="auto_fix_high"
+        label="Auto-optimize"
+        title="Rearrange and resize widgets to fill 12-column rows"
+        @click="$emit('optimise')"
+      />
       <q-btn
         no-caps
         flat
@@ -115,6 +180,82 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <q-dialog v-model="saveOpen">
+      <q-card class="dw-share">
+        <q-card-section class="dw-share__head">
+          <div>
+            <div class="home-eyebrow">Saved layouts</div>
+            <h2 class="dw-share__title">Save this layout</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close" v-close-popup />
+        </q-card-section>
+        <q-card-section class="dw-share__body">
+          <p class="dw-share__hint">Give the current widgets a name so you can switch back to them later.</p>
+          <q-input
+            v-model="saveLabel"
+            outlined
+            dense
+            label="Layout name"
+            maxlength="40"
+            aria-label="Layout name"
+            @keyup.enter="confirmSave"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn no-caps flat label="Cancel" v-close-popup />
+          <q-btn no-caps color="primary" icon="bookmark_add" label="Save" :disable="!saveLabel.trim()" @click="confirmSave" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="deleteOpen">
+      <q-card class="dw-share">
+        <q-card-section class="dw-share__head">
+          <div>
+            <div class="home-eyebrow">Saved layouts</div>
+            <h2 class="dw-share__title">Delete layout?</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close" v-close-popup />
+        </q-card-section>
+        <q-card-section class="dw-share__body">
+          <p class="dw-share__hint">
+            Delete “{{ deleteTarget?.label }}”? The dashboard itself stays as it is.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn no-caps flat label="Cancel" v-close-popup />
+          <q-btn no-caps color="negative" icon="delete" label="Delete" @click="confirmDeleteLayout" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="renameOpen">
+      <q-card class="dw-share">
+        <q-card-section class="dw-share__head">
+          <div>
+            <div class="home-eyebrow">Saved layouts</div>
+            <h2 class="dw-share__title">Rename layout</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close" v-close-popup />
+        </q-card-section>
+        <q-card-section class="dw-share__body">
+          <q-input
+            v-model="renameLabel"
+            outlined
+            dense
+            label="Layout name"
+            maxlength="40"
+            aria-label="New layout name"
+            @keyup.enter="confirmRename"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn no-caps flat label="Cancel" v-close-popup />
+          <q-btn no-caps color="primary" icon="edit" label="Rename" :disable="!renameLabel.trim()" @click="confirmRename" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -165,6 +306,51 @@
 .dw-bar__summary {
   color: #90a4ae;
   font-size: 0.74rem;
+}
+
+.dw-bar__tiling {
+  display: inline-flex;
+  flex: none;
+  gap: 0.15rem;
+  margin-left: 0.5rem;
+  padding: 0.12rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dw-bar__tiling-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: #90a4ae;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.dw-bar__tiling-btn:hover,
+.dw-bar__tiling-btn:focus-visible {
+  color: #e1f5fe;
+}
+
+.dw-bar__tiling-btn.is-active {
+  background: rgba(79, 195, 247, 0.18);
+  color: #e1f5fe;
+}
+
+.dw-bar__empty {
+  color: #78909c;
+  font-size: 0.78rem;
+}
+
+.dw-bar__layout-actions {
+  display: flex;
+  gap: 0.1rem;
 }
 
 .dw-bar__actions {
@@ -239,18 +425,33 @@ export default {
     // False when every widget is already on the dashboard or it is full.
     addDisabled: { type: Boolean, default: false },
     // The draft layout, so Share can include unsaved changes.
-    layout: { type: Array, default: () => [] }
+    layout: { type: Array, default: () => [] },
+    // Draft tiling mode: rows or masonry.
+    tiling: { type: String, default: 'rows' },
+    // Named snapshots stored beside the dashboard.
+    layouts: { type: Array, default: () => [] },
+    activeLayoutId: { type: String, default: '' }
   },
-  emits: ['save', 'cancel', 'reset', 'add', 'import'],
+  emits: ['save', 'cancel', 'reset', 'add', 'import', 'tiling', 'optimise', 'load-layout', 'save-layout', 'rename-layout', 'delete-layout'],
   data () {
     return {
       exportOpen: false,
       importOpen: false,
       importText: '',
-      importError: ''
+      importError: '',
+      saveOpen: false,
+      saveLabel: '',
+      renameOpen: false,
+      renameTarget: null,
+      renameLabel: '',
+      deleteOpen: false,
+      deleteTarget: null
     }
   },
   computed: {
+    activeEntry () {
+      return this.layouts.find(entry => entry.id === this.activeLayoutId) || null
+    },
     summary () {
       const changes = this.changes || {}
       const parts = []
@@ -273,6 +474,48 @@ export default {
       this.importText = ''
       this.importError = ''
       this.importOpen = true
+    },
+    closeLayoutsMenu () {
+      if (this.$refs.layoutsMenu?.hide) this.$refs.layoutsMenu.hide()
+    },
+    loadLayout (entry) {
+      this.closeLayoutsMenu()
+      this.$emit('load-layout', entry)
+    },
+    openSaveDialog () {
+      this.closeLayoutsMenu()
+      this.saveLabel = 'Layout ' + (this.layouts.length + 1)
+      this.saveOpen = true
+    },
+    confirmSave () {
+      const label = this.saveLabel.trim()
+      if (!label) return
+      this.$emit('save-layout', { label })
+      this.saveOpen = false
+    },
+    openRenameDialog (entry) {
+      this.closeLayoutsMenu()
+      this.renameTarget = entry
+      this.renameLabel = entry.label
+      this.renameOpen = true
+    },
+    confirmRename () {
+      const label = this.renameLabel.trim()
+      if (!label || !this.renameTarget) return
+      this.$emit('rename-layout', { layout: this.renameTarget, label })
+      this.renameOpen = false
+      this.renameTarget = null
+    },
+    confirmDelete (entry) {
+      this.closeLayoutsMenu()
+      this.deleteTarget = entry
+      this.deleteOpen = true
+    },
+    confirmDeleteLayout () {
+      if (!this.deleteTarget) return
+      this.$emit('delete-layout', this.deleteTarget)
+      this.deleteOpen = false
+      this.deleteTarget = null
     },
     async copyExport () {
       try {

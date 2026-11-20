@@ -192,11 +192,105 @@ test.describe('customisable dashboard', () => {
 
     await configure('/c/hive-174578')
     await expect(posts.locator('.home-eyebrow')).toHaveText('Community · Trending')
-    await expect(posts.locator('.home-panel__title')).toHaveText('#hive-174578')
+    // The live community record replaces the #hive-xxxxx chain name.
+    await expect(posts.locator('.home-panel__title')).not.toHaveText('#hive-174578')
+    await expect(posts.locator('.home-panel__title')).toHaveText(/\S+/)
+    await expect(posts.locator('.home-panel__avatar img')).toHaveAttribute('src', /hive-174578/)
 
     await configure('/shorts/threads')
     await expect(posts.locator('.home-eyebrow')).toHaveText('Short posts · InLeo')
     await expect(posts.locator('.home-panel__title')).toHaveText('Threads')
+  })
+
+  test('the tiling toggle lives in the editor and previews masonry before save', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'Masonry', exact: true })).toHaveCount(0)
+
+    await openEditor(page)
+    await expect(page.getByRole('button', { name: 'Masonry', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Masonry', exact: true }).click()
+    await expect(page.locator('.home-editing.dw-grid--masonry')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.locator('.dw-grid--packed.dw-grid--masonry')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Masonry', exact: true })).toHaveCount(0)
+
+    const stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.tiling).toBe('masonry')
+
+    await page.reload()
+    await waitForApp(page)
+    await expect(page.locator('.dw-grid--packed.dw-grid--masonry')).toBeVisible()
+  })
+
+  test('auto-optimize rearranges the draft without saving immediately', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Auto-optimize' }).click()
+    // Obscura can report Quasar notifications as hidden while they are in the
+    // DOM; presence is the meaningful assertion in both harnesses.
+    await expect(page.getByText('Layout optimized — review it, then press Save')).toHaveCount(1)
+    expect(await readDashboard(page, GUEST_KEY)).toBeNull()
+  })
+
+  test('saves, loads and deletes named layouts', async ({ page }) => {
+    const bar = page.getByRole('region', { name: 'Dashboard editing' })
+    const snapshot = async label => {
+      await page.getByRole('button', { name: /Layouts/ }).click()
+      await page.getByText('Save current as…').click()
+      const dialog = page.locator('.dw-share').filter({ hasText: 'Save this layout' })
+      await dialog.getByLabel('Layout name').fill(label)
+      await dialog.getByRole('button', { name: 'Save', exact: true }).click()
+      await expect(dialog).toBeHidden()
+    }
+
+    await openEditor(page)
+    await snapshot('Morning')
+    await bar.getByRole('button', { name: 'Save', exact: true }).click()
+    let stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.layouts).toHaveLength(1)
+    expect(stored.layouts[0].label).toBe('Morning')
+    const morningId = stored.layouts[0].id
+    expect(stored.activeLayoutId).toBe(morningId)
+
+    // A second snapshot with an extra widget, so loading the first one is a
+    // real change to the dashboard rather than a no-op.
+    await openEditor(page)
+    await addWidget(page, 'Network stats')
+    await snapshot('Evening')
+    await bar.getByRole('button', { name: 'Save', exact: true }).click()
+    stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.layouts.map(entry => entry.label)).toEqual(['Morning', 'Evening'])
+    expect(stored.widgets.map(widget => widget.type)).toContain('network')
+    expect(stored.activeLayoutId).toBe(stored.layouts[1].id)
+
+    // Load Morning back into the draft and save it.
+    await openEditor(page)
+    await page.getByRole('button', { name: /Layouts/ }).click()
+    await page.getByRole('button', { name: 'Load Morning', exact: true }).click()
+    await expect(page.getByText('Loaded "Morning" — press Save to apply')).toHaveCount(1)
+    await bar.getByRole('button', { name: 'Save', exact: true }).click()
+
+    stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.widgets.map(widget => widget.type)).not.toContain('network')
+    expect(stored.activeLayoutId).toBe(morningId)
+
+    // Rename, then delete the active snapshot. The dashboard itself stays put.
+    await openEditor(page)
+    await page.getByRole('button', { name: /Layouts/ }).click()
+    await page.getByRole('button', { name: 'Rename Morning', exact: true }).click()
+    const renameDialog = page.locator('.dw-share').filter({ hasText: 'Rename layout' })
+    await renameDialog.getByLabel('New layout name').fill('Compact')
+    await renameDialog.getByRole('button', { name: 'Rename', exact: true }).click()
+    await expect(renameDialog).toBeHidden()
+    stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.layouts.map(entry => entry.label)).toEqual(['Compact', 'Evening'])
+
+    await page.getByRole('button', { name: /Layouts/ }).click()
+    await page.getByRole('button', { name: 'Delete Compact', exact: true }).click()
+    const deleteDialog = page.locator('.dw-share').filter({ hasText: 'Delete layout?' })
+    await deleteDialog.getByRole('button', { name: 'Delete', exact: true }).click()
+    stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.layouts.map(entry => entry.label)).toEqual(['Evening'])
+    expect(stored.activeLayoutId).toBe('')
   })
 
   test('account posts accept a feed type and reference', async ({ page }) => {

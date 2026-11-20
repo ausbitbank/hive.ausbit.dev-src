@@ -138,6 +138,7 @@
               dense
               unelevated
               toggle-color="amber-9"
+              toggle-text-color="black"
               text-color="blue-grey-4"
               :options="assetOptions"
               :aria-label="'Choose the asset to spend'"

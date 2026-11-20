@@ -35,6 +35,28 @@ const ACCOUNT_SORT_VALUES = new Set(ACCOUNT_FEED_SORTS.map(entry => entry.value)
 
 export const FEED_REFERENCE_PLACEHOLDER = '/@ausbitbank/feed, /c/hive-dev, /shorts/threads'
 
+/**
+ * Header copy for a feed. Community feeds carry a numeric `hive-xxxxx` name on
+ * the chain, but readers know the community by its display title. `community`
+ * is the `bridge.get_community` record (or null while it loads/fails); until it
+ * arrives the descriptor's `#hive-xxxxx` heading is the honest fallback.
+ */
+export function feedHeader (feed, community = null) {
+  if (!feed) return { eyebrow: '', heading: '' }
+  const title = feed.kind === 'community' ? String(community?.title || '').trim() : ''
+  return {
+    eyebrow: feed.eyebrow,
+    heading: title || feed.heading
+  }
+}
+
+/** Avatar for a community feed, or '' for every other feed kind. */
+export function feedAvatar (feed) {
+  return feed && feed.kind === 'community' && feed.community
+    ? 'https://images.hive.blog/u/' + feed.community + '/avatar'
+    : ''
+}
+
 /** Trim a pasted URL or path down to the part the parser understands. */
 export function normaliseFeedReference (value) {
   let text = String(value ?? '').trim()

@@ -4,8 +4,12 @@ import {
   dashboardStorageKey,
   defaultDashboard,
   dismissSetupPrompt as dismissStoredPrompt,
+  findSavedLayout,
+  removeSavedLayout,
+  renameSavedLayout,
   resolveDashboard,
   saveDashboard as saveStoredDashboard,
+  saveNamedLayout,
   shouldShowSetupPrompt
 } from '../../services/dashboardPrefs'
 import {
@@ -41,6 +45,10 @@ function dashboardState (username = null) {
       savedAt: resolved.savedAt,
       // 'rows' packs widgets into horizontal rows; 'masonry' fills gaps.
       tiling: resolved.tiling || 'rows',
+      // Named snapshots stored beside the active layout, plus which one (if
+      // any) the current widgets came from.
+      layouts: resolved.layouts || [],
+      activeLayoutId: resolved.activeLayoutId || '',
       // Editor state lives in the store so widgets and the toolbar agree.
       editing: false,
       // Set when localStorage refused a write; the layout still works in memory.
@@ -63,6 +71,8 @@ export function loadDashboard (username) {
   this.dashboard.customised = resolved.customised
   this.dashboard.savedAt = resolved.savedAt
   this.dashboard.tiling = resolved.tiling || 'rows'
+  this.dashboard.layouts = resolved.layouts || []
+  this.dashboard.activeLayoutId = resolved.activeLayoutId || ''
   this.dashboard.storageFailed = false
   this.dashboard.setupPromptDismissed = false
   this.refreshSetupPrompt(username)
@@ -73,7 +83,9 @@ export function persistDashboard ({ customised = true } = {}) {
   const result = saveStoredDashboard(this.dashboard.scope, this.dashboard.widgets, {
     storage: getStorage(),
     customised,
-    tiling: this.dashboard.tiling
+    tiling: this.dashboard.tiling,
+    layouts: this.dashboard.layouts,
+    activeLayoutId: this.dashboard.activeLayoutId
   })
   this.dashboard.storageFailed = !result.ok
   if (result.ok) {
@@ -92,8 +104,10 @@ export function persistDashboard ({ customised = true } = {}) {
  * saving a layout that happens to be the default keeps the setup prompt and
  * the original page shell in play.
  */
-export function applyDashboardWidgets (widgets, { customised } = {}) {
+export function applyDashboardWidgets (widgets, { customised, tiling, activeLayoutId } = {}) {
   this.dashboard.widgets = normaliseLayout(widgets)
+  if (tiling !== undefined) this.dashboard.tiling = tiling === 'masonry' ? 'masonry' : 'rows'
+  if (activeLayoutId !== undefined) this.dashboard.activeLayoutId = String(activeLayoutId || '')
   return this.persistDashboard({
     customised: customised === undefined ? !isDefaultLayout(this.dashboard.widgets) : customised
   })
@@ -111,12 +125,61 @@ export function setDashboardTiling (tiling) {
 /** Replace the layout with a preset (`LOGGED_IN_STARTER_LAYOUT` etc). */
 export function applyDashboardPreset (preset) {
   this.dashboard.widgets = buildDashboardFromPreset(preset)
+  this.dashboard.activeLayoutId = ''
   return this.persistDashboard({ customised: true })
 }
 
 export function resetDashboard () {
   this.dashboard.widgets = defaultDashboard()
+  this.dashboard.tiling = 'rows'
+  this.dashboard.activeLayoutId = ''
   return this.persistDashboard({ customised: false })
+}
+
+/* --- named layout library ------------------------------------------------ */
+
+/**
+ * Save widgets under a label. Passing `id` updates that snapshot in place;
+ * otherwise a new one is created. The active id is left alone: the caller
+ * commits it with `applyDashboardWidgets()` when the draft is saved.
+ */
+export function saveDashboardLayout (label, { widgets = this.dashboard.widgets, tiling = this.dashboard.tiling, id = '' } = {}) {
+  const layoutId = id || createWidgetId('layout')
+  this.dashboard.layouts = saveNamedLayout(this.dashboard.layouts, {
+    id: layoutId,
+    label,
+    widgets,
+    tiling
+  })
+  this.persistDashboard({ customised: this.dashboard.customised })
+  return layoutId
+}
+
+/** Refresh an existing snapshot from the current (or supplied) widgets. */
+export function updateDashboardLayout (id, { widgets, tiling } = {}) {
+  const current = findSavedLayout(this.dashboard.layouts, id)
+  if (!current) return false
+  return this.saveDashboardLayout(current.label, {
+    id,
+    widgets: widgets === undefined ? this.dashboard.widgets : widgets,
+    tiling: tiling === undefined ? this.dashboard.tiling : tiling
+  })
+}
+
+export function renameDashboardLayout (id, label) {
+  this.dashboard.layouts = renameSavedLayout(this.dashboard.layouts, id, label)
+  return this.persistDashboard({ customised: this.dashboard.customised })
+}
+
+export function deleteDashboardLayout (id) {
+  this.dashboard.layouts = removeSavedLayout(this.dashboard.layouts, id)
+  if (this.dashboard.activeLayoutId === id) this.dashboard.activeLayoutId = ''
+  return this.persistDashboard({ customised: this.dashboard.customised })
+}
+
+/** Snapshot record for a named layout, or null. */
+export function dashboardLayoutById (id) {
+  return findSavedLayout(this.dashboard.layouts, id)
 }
 
 export function refreshSetupPrompt (username) {

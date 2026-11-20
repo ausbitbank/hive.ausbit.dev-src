@@ -33,16 +33,6 @@
             <q-icon name="account_balance" size="16px" aria-hidden="true" /> Proposals
           </router-link>
           <button
-            v-if="!editing && customisedLayout"
-            type="button"
-            class="home-customise"
-            :title="tiling === 'masonry' ? 'Switch back to row tiling' : 'Fill vertical gaps with masonry tiling'"
-            @click="toggleTiling"
-          >
-            <q-icon :name="tiling === 'masonry' ? 'view_quilt' : 'view_stream'" size="16px" aria-hidden="true" />
-            {{ tiling === 'masonry' ? 'Masonry' : 'Rows' }}
-          </button>
-          <button
             v-if="!editing"
             type="button"
             class="home-customise"
@@ -60,11 +50,20 @@
         :dirty="dirty"
         :add-disabled="available === 0"
         :layout="draft"
+        :tiling="draftTiling"
+        :layouts="savedLayouts"
+        :active-layout-id="draftLayoutId"
         @save="saveDraft"
         @cancel="cancelEditing"
         @reset="resetToDefault"
         @add="drawerOpen = true"
         @import="importLayout"
+        @tiling="setDraftTiling"
+        @optimise="optimiseDraft"
+        @load-layout="loadNamedLayout"
+        @save-layout="saveNamedLayout"
+        @rename-layout="renameNamedLayout"
+        @delete-layout="deleteNamedLayout"
       />
 
       <dashboard-setup-prompt
@@ -78,6 +77,7 @@
         class="home-editing"
         :widgets="draft"
         :signed-in="signedIn"
+        :masonry="draftTiling === 'masonry'"
         editing
         @move-to="onMoveTo"
         @remove="onRemove"
@@ -286,7 +286,14 @@ import DashboardCustomiseBar from 'components/dashboard/DashboardCustomiseBar.vu
 import DashboardGrid from 'components/dashboard/DashboardGrid.vue'
 import DashboardSetupPrompt from 'components/dashboard/DashboardSetupPrompt.vue'
 import WidgetSettingsDialog from 'components/dashboard/WidgetSettingsDialog.vue'
-import { LOGGED_IN_STARTER_LAYOUT, moveWidget, normaliseLayout, removeWidget, stepWidgetWidth } from 'src/services/dashboardLayout'
+import {
+  LOGGED_IN_STARTER_LAYOUT,
+  moveWidget,
+  normaliseLayout,
+  optimiseLayout,
+  removeWidget,
+  stepWidgetWidth
+} from 'src/services/dashboardLayout'
 import {
   addWidgetToLayout,
   availableWidgetCount,
@@ -312,6 +319,10 @@ export default {
       draft: [],
       // Layout the draft started from, for the change summary.
       draftBase: [],
+      // Tiling and named layout are part of the draft too, so Cancel reverts
+      // them along with the widgets.
+      draftTiling: 'rows',
+      draftLayoutId: '',
       drawerOpen: false,
       configureOpen: false,
       configureWidget: null
@@ -346,6 +357,9 @@ export default {
     tiling () {
       return this.$hiveStore.dashboard.tiling || 'rows'
     },
+    savedLayouts () {
+      return this.$hiveStore.dashboard.layouts || []
+    },
     setupPromptVisible () {
       const dashboard = this.$hiveStore.dashboard
       return Boolean(
@@ -362,7 +376,9 @@ export default {
       return draftChanges(this.draft, this.draftBase)
     },
     dirty () {
-      return isDirtyDraft(this.draft, this.draftBase)
+      return isDirtyDraft(this.draft, this.draftBase) ||
+        this.draftTiling !== this.tiling ||
+        this.draftLayoutId !== (this.$hiveStore.dashboard.activeLayoutId || '')
     },
     available () {
       const base = this.editing ? this.draft : this.widgets
@@ -380,18 +396,36 @@ export default {
     startEditing () {
       this.draftBase = draftWidgets(this.widgets)
       this.draft = draftWidgets(this.widgets)
+      this.draftTiling = this.tiling
+      this.draftLayoutId = this.$hiveStore.dashboard.activeLayoutId || ''
       this.$hiveStore.setDashboardEditing(true)
     },
-    toggleTiling () {
-      this.$hiveStore.setDashboardTiling(this.tiling === 'masonry' ? 'rows' : 'masonry')
+    setDraftTiling (value) {
+      this.draftTiling = value === 'masonry' ? 'masonry' : 'rows'
     },
     saveDraft () {
-      this.$hiveStore.applyDashboardWidgets(this.draft, { customised: !isDefaultDraft(this.draft) })
+      const customised = this.draftTiling !== 'rows' ||
+        Boolean(this.draftLayoutId) ||
+        !isDefaultDraft(this.draft)
+      this.$hiveStore.applyDashboardWidgets(this.draft, {
+        customised,
+        tiling: this.draftTiling,
+        activeLayoutId: this.draftLayoutId
+      })
+      // A layout that is already named follows edits made in the editor.
+      if (this.draftLayoutId) {
+        this.$hiveStore.updateDashboardLayout(this.draftLayoutId, {
+          widgets: this.draft,
+          tiling: this.draftTiling
+        })
+      }
       this.finishEditing()
     },
     cancelEditing () {
       this.draft = []
       this.draftBase = []
+      this.draftTiling = 'rows'
+      this.draftLayoutId = ''
       this.$hiveStore.setDashboardEditing(false)
     },
     resetToDefault () {
@@ -408,8 +442,41 @@ export default {
     finishEditing () {
       this.draft = []
       this.draftBase = []
+      this.draftTiling = 'rows'
+      this.draftLayoutId = ''
       this.drawerOpen = false
       this.$hiveStore.setDashboardEditing(false)
+    },
+    optimiseDraft () {
+      this.draft = optimiseLayout(this.draft)
+      this.$q.notify({ type: 'positive', message: 'Layout optimized — review it, then press Save' })
+    },
+    loadNamedLayout (layout) {
+      if (!layout) return
+      this.draft = draftWidgets(layout.widgets)
+      this.draftTiling = layout.tiling || 'rows'
+      this.draftLayoutId = layout.id
+      this.$q.notify({ type: 'info', message: 'Loaded "' + layout.label + '" — press Save to apply' })
+    },
+    saveNamedLayout ({ label = '', id = '' } = {}) {
+      const layoutId = this.$hiveStore.saveDashboardLayout(label, {
+        widgets: this.draft,
+        tiling: this.draftTiling,
+        id
+      })
+      this.draftLayoutId = layoutId
+      this.$q.notify({ type: 'positive', message: 'Saved layout "' + label + '"' })
+    },
+    renameNamedLayout ({ layout, label } = {}) {
+      if (!layout) return
+      this.$hiveStore.renameDashboardLayout(layout.id, label)
+      this.$q.notify({ type: 'positive', message: 'Renamed layout to "' + label + '"' })
+    },
+    deleteNamedLayout (layout) {
+      if (!layout) return
+      this.$hiveStore.deleteDashboardLayout(layout.id)
+      if (this.draftLayoutId === layout.id) this.draftLayoutId = ''
+      this.$q.notify({ type: 'info', message: 'Deleted layout "' + layout.label + '"' })
     },
     onMoveTo ({ widget, to }) {
       this.draft = moveWidget(this.draft, widget.id, to)

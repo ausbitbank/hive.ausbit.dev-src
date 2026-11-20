@@ -18,6 +18,7 @@ import {
   normaliseLayout,
   normaliseWidget,
   nudgeWidget,
+  optimiseLayout,
   packRows,
   removeWidget,
   serialiseLayout,
@@ -235,6 +236,49 @@ describe('portable layouts', () => {
     expect(parseLayoutText('hello').error).toMatch(/does not look like/)
     expect(parseLayoutText('HIVE-DASH-1.not-base64!').error).toBeTruthy()
     expect(parseLayoutText(JSON.stringify({ widgets: [{ type: 'wat' }] })).error).toMatch(/no recognisable/)
+  })
+})
+
+describe('auto-optimize', () => {
+  function wastedColumns (layout) {
+    return packRows(layout).reduce((total, row) => (
+      total + (GRID_COLUMNS - row.reduce((sum, item) => sum + item.columns, 0))
+    ), 0)
+  }
+
+  it('rearranges and resizes widgets to remove wasted row space', () => {
+    const layout = buildLayout([
+      { type: 'block', width: 'twoThirds', settings: {} },
+      { type: 'market', width: 'half', settings: {} },
+      { type: 'witnesses', width: 'half', settings: {} },
+      { type: 'market', width: 'third', settings: {} }
+    ])
+    const before = wastedColumns(layout)
+    const optimised = optimiseLayout(layout)
+
+    expect(optimised.map(widget => widget.id).sort()).toEqual(layout.map(widget => widget.id).sort())
+    expect(wastedColumns(optimised)).toBeLessThan(before)
+    expect(packRows(optimised)).toHaveLength(2)
+    for (const widget of optimised) {
+      expect(widthChoicesFor(widget.type)).toContain(widget.width)
+    }
+    expect(optimised.find(widget => widget.type === 'block').width).toBe('twoThirds')
+  })
+
+  it('keeps full-width widgets on their own rows and preserves settings', () => {
+    const layout = buildLayout([
+      { type: 'witnesses', width: 'full', settings: { limit: 10 } },
+      { type: 'posts', width: 'full', settings: { source: 'created' } }
+    ])
+    const optimised = optimiseLayout(layout)
+    expect(optimised.map(widget => widget.width)).toEqual(['full', 'full'])
+    expect(optimised[0].settings).toEqual({ limit: 10, pinMine: false, showHealth: true })
+    expect(optimised[1].settings.source).toBe('created')
+  })
+
+  it('handles an empty layout', () => {
+    expect(optimiseLayout([])).toEqual([])
+    expect(optimiseLayout(null)).toEqual([])
   })
 })
 

@@ -52,6 +52,7 @@
         dense
         unelevated
         toggle-color="amber-9"
+        toggle-text-color="black"
         text-color="blue-grey-4"
         :options="currencyOptions"
         class="lightning-address-card__currencies"

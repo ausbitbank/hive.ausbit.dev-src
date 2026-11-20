@@ -12,9 +12,13 @@ import {
   isUntouched,
   legacyMarketSettings,
   normaliseScope,
+  normaliseSavedLayouts,
   readDashboard,
+  removeSavedLayout,
+  renameSavedLayout,
   resolveDashboard,
   saveDashboard,
+  saveNamedLayout,
   setupPromptKey,
   shouldShowSetupPrompt
 } from '../../src/services/dashboardPrefs'
@@ -162,6 +166,77 @@ describe('saving and reading dashboards', () => {
     expect(clearDashboard('alice', broken)).toBe(false)
     expect(shouldShowSetupPrompt('alice', broken)).toBe(false)
     expect(dismissSetupPrompt('alice', broken)).toBe(false)
+  })
+})
+
+describe('named layouts', () => {
+  let storage
+
+  beforeEach(() => {
+    storage = memoryStorage()
+  })
+
+  it('round-trips named layouts and the active id', () => {
+    const widgets = layoutOf('wallet', 'posts')
+    const layouts = saveNamedLayout([], { label: 'Focus', widgets, tiling: 'masonry', now: 10 })
+    expect(layouts).toHaveLength(1)
+    expect(layouts[0]).toMatchObject({ label: 'Focus', tiling: 'masonry', savedAt: 10 })
+
+    saveDashboard('alice', widgets, {
+      storage,
+      layouts,
+      activeLayoutId: layouts[0].id
+    })
+    const resolved = resolveDashboard('alice', storage)
+    expect(resolved.layouts).toHaveLength(1)
+    expect(resolved.layouts[0].label).toBe('Focus')
+    expect(resolved.layouts[0].widgets.map(widget => widget.type)).toEqual(['wallet', 'posts'])
+    expect(resolved.activeLayoutId).toBe(layouts[0].id)
+  })
+
+  it('updates, renames and deletes a snapshot without touching the others', () => {
+    const first = saveNamedLayout([], { label: 'One', widgets: layoutOf('wallet') })
+    const second = saveNamedLayout(first, { label: 'Two', widgets: layoutOf('posts') })
+    expect(second.map(entry => entry.label)).toEqual(['One', 'Two'])
+
+    const updated = saveNamedLayout(second, {
+      id: first[0].id,
+      label: 'One updated',
+      widgets: layoutOf('network'),
+      tiling: 'rows'
+    })
+    expect(updated).toHaveLength(2)
+    expect(updated.find(entry => entry.id === first[0].id).widgets[0].type).toBe('network')
+
+    const renamed = renameSavedLayout(updated, second[1].id, 'Second')
+    expect(renamed.find(entry => entry.id === second[1].id).label).toBe('Second')
+    expect(removeSavedLayout(renamed, first[0].id).map(entry => entry.label)).toEqual(['Second'])
+  })
+
+  it('keeps existing named layouts when only the current dashboard is saved', () => {
+    const layouts = saveNamedLayout([], { label: 'Keep', widgets: layoutOf('wallet') })
+    saveDashboard('alice', layoutOf('wallet'), { storage, layouts, activeLayoutId: layouts[0].id })
+    saveDashboard('alice', layoutOf('posts'), { storage })
+
+    const resolved = resolveDashboard('alice', storage)
+    expect(resolved.widgets[0].type).toBe('posts')
+    expect(resolved.layouts.map(entry => entry.label)).toEqual(['Keep'])
+    expect(resolved.activeLayoutId).toBe(layouts[0].id)
+  })
+
+  it('drops corrupt snapshots and an active id that is no longer present', () => {
+    storage.setItem(dashboardStorageKey('alice'), JSON.stringify({
+      widgets: [{ type: 'wallet' }],
+      layouts: [
+        { label: 'Broken', widgets: [] },
+        { label: 'Good', widgets: [{ type: 'posts' }] }
+      ],
+      activeLayoutId: 'missing'
+    }))
+    const doc = readDashboard('alice', storage)
+    expect(doc.layouts.map(entry => entry.label)).toEqual(['Good'])
+    expect(doc.activeLayoutId).toBe('')
+    expect(normaliseSavedLayouts(null)).toEqual([])
   })
 })
 

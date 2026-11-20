@@ -63,7 +63,7 @@
       </div>
 
       <ol v-else class="dw-ops__list">
-        <li v-for="entry in entries" :key="entry.magi ? 'magi-' + entry.id : entry.index" class="dw-ops__row" :class="{ 'dw-ops__row--magi': entry.magi }">
+        <li v-for="entry in rows" :key="entry.magi ? 'magi-' + entry.id : entry.index" class="dw-ops__row" :class="{ 'dw-ops__row--magi': entry.magi }">
           <q-icon :name="iconFor(entry.filter)" size="17px" class="dw-ops__icon" aria-hidden="true" />
           <div class="dw-ops__text">
             <span class="dw-ops__label">{{ entry.label }}</span>
@@ -72,7 +72,7 @@
           <router-link v-if="entry.block" :to="'/b/' + entry.block" class="dw-ops__block" :aria-label="'Open block ' + entry.block">
             #{{ entry.block.toLocaleString('en-US') }}
           </router-link>
-          <time class="dw-ops__time" :datetime="entry.timestamp">{{ timeLabel(entry.timestamp) }}</time>
+          <time class="dw-ops__time" :datetime="entry.timestamp">{{ entry.time }}</time>
         </li>
       </ol>
 
@@ -228,6 +228,7 @@ import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { apiGetAccountHistory } from 'src/services/api'
 import { filterLabel, filterOperations } from 'src/services/operationsFeed'
 import { fetchMagiAccount } from 'src/services/magi'
+import { pollWhileVisible } from 'src/services/polling'
 import moment from 'src/utils/time'
 
 const ICONS = {
@@ -267,8 +268,10 @@ export default {
       error: '',
       magiError: '',
       updatedAt: 0,
+      nowTick: Date.now(),
       accountName: '',
-      pollTimer: null,
+      poller: null,
+      clockTimer: null,
       requestToken: 0
     }
   },
@@ -291,7 +294,17 @@ export default {
       return seconds > 0 ? 'Refreshes every ' + seconds + 's' : 'Manual refresh'
     },
     updatedLabel () {
-      return this.updatedAt ? moment.utc(this.updatedAt).fromNow() : ''
+      if (!this.updatedAt) return ''
+      return moment.utc(this.updatedAt).from(moment.utc(this.nowTick))
+    },
+    // Re-derive the relative times when the clock ticks so the footer and row
+    // labels keep moving instead of freezing at "a few seconds ago".
+    rows () {
+      const now = moment.utc(this.nowTick)
+      return this.entries.map(entry => ({
+        ...entry,
+        time: entry.timestamp ? moment.utc(entry.timestamp).from(now) : ''
+      }))
     },
     accountPath () {
       return '/@' + this.accountName + '?filter=all'
@@ -314,6 +327,7 @@ export default {
     },
     pollSeconds () {
       this.restartPolling()
+      if (Number(this.pollSeconds) > 0) this.loadOperations()
     },
     includeMagi () {
       this.loadOperations()
@@ -322,9 +336,12 @@ export default {
   mounted () {
     if (this.targetAccount) this.loadOperations()
     this.restartPolling()
+    this.startClock()
   },
   beforeUnmount () {
+    this.requestToken += 1
     this.stopPolling()
+    this.stopClock()
   },
   methods: {
     iconFor (filter) {
@@ -335,10 +352,6 @@ export default {
       const time = new Date(timestamp).getTime()
       return Number.isFinite(time) ? time : 0
     },
-    timeLabel (timestamp) {
-      if (!timestamp) return ''
-      return moment.utc(timestamp).fromNow()
-    },
     async loadOperations () {
       const name = this.targetAccount
       if (!name) return
@@ -348,7 +361,9 @@ export default {
       try {
         const pageSize = Math.max(100, Math.min(1000, Number(this.limit) * 8))
         const [history, magi] = await Promise.all([
-          apiGetAccountHistory(name, -1, pageSize),
+          // Account history is a live view: bypass any intermediary HTTP cache
+          // so the refresh button and poller always read the current page.
+          apiGetAccountHistory(name, -1, pageSize, { cache: 'no-store' }),
           this.includeMagi ? fetchMagiAccount(name, { limit: 20 }).catch(() => null) : Promise.resolve(null)
         ])
         if (token !== this.requestToken) return
@@ -364,6 +379,7 @@ export default {
           : filtered
         this.entries = merged.slice(0, Math.max(1, Math.min(50, Number(this.limit) || 8)))
         this.updatedAt = Date.now()
+        this.nowTick = this.updatedAt
       } catch (error) {
         if (token !== this.requestToken) return
         console.error('Failed to load account operations', error)
@@ -376,15 +392,25 @@ export default {
       this.stopPolling()
       const seconds = Number(this.pollSeconds)
       if (!seconds || seconds < 5) return
-      this.pollTimer = setInterval(() => {
-        if (typeof document !== 'undefined' && document.hidden) return
-        this.loadOperations()
-      }, seconds * 1000)
+      this.poller = pollWhileVisible(() => this.loadOperations(), seconds * 1000, { immediate: false })
+      this.poller.start()
     },
     stopPolling () {
-      if (this.pollTimer) {
-        clearInterval(this.pollTimer)
-        this.pollTimer = null
+      if (this.poller) {
+        this.poller.stop()
+        this.poller = null
+      }
+    },
+    startClock () {
+      this.stopClock()
+      this.clockTimer = setInterval(() => {
+        this.nowTick = Date.now()
+      }, 30000)
+    },
+    stopClock () {
+      if (this.clockTimer) {
+        clearInterval(this.clockTimer)
+        this.clockTimer = null
       }
     }
   }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   HiveApiError,
+  apiGetAccountHistory,
   apiGetAccounts,
   configureApi,
   getApiNode,
@@ -47,6 +48,15 @@ describe('central Hive API client', () => {
       params: [['alice']]
     })
     expect(getApiNode()).toBe('https://a.example')
+  })
+
+  it('forwards an explicit cache mode to fetch for live reads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiGetAccountHistory('alice', -1, 50, { cache: 'no-store' })
+
+    expect(fetchMock.mock.calls[0][1].cache).toBe('no-store')
   })
 
   it('fails over to the next node after a transport error', async () => {

@@ -55,6 +55,16 @@ live-data failures unrelated to this workstream. See
 fallback until v4v.app allowlists the production origin. Keepsats, POS and post
 zaps remain open follow-ups.
 
+W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
+#50, #77 and #78) are complete. W38 adds community headers, forced dashboard
+refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
+See `docs/workstreams/W37-dashboard-magi-tokens.md` and
+`docs/workstreams/W38-dashboard-followups.md`.
+
+Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
+Lightning workstream, and the optional #63 server-side existence check at the
+edge. There is no open issue backlog at the time of writing.
+
 ## Definition of done
 
 Every workstream must include:

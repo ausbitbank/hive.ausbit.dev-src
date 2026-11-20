@@ -180,7 +180,7 @@ function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function requestNode (node, method, params, { timeoutMs, signal }) {
+async function requestNode (node, method, params, { timeoutMs, signal, cache }) {
   const controller = new AbortController()
   let timedOut = false
   const timer = setTimeout(() => {
@@ -201,6 +201,7 @@ async function requestNode (node, method, params, { timeoutMs, signal }) {
         method,
         params
       }),
+      ...(cache ? { cache } : {}),
       signal: controller.signal
     })
 
@@ -242,6 +243,7 @@ export async function rpcRequest (method, params = [], options = {}) {
   if (typeof method !== 'string' || !method) throw new HiveApiError('A JSON-RPC method is required', { method })
   const signal = options.signal
   if (signal?.aborted) throw abortError()
+  const cache = options.cache
 
   const timeoutMs = Number(options.timeoutMs) || defaultTimeoutMs
   const retries = Number.isFinite(Number(options.retries)) ? Number(options.retries) : defaultRetries
@@ -284,7 +286,7 @@ export async function rpcRequest (method, params = [], options = {}) {
     const attemptStarted = Date.now()
 
     try {
-      const result = await requestNode(node, method, params, { timeoutMs, signal })
+      const result = await requestNode(node, method, params, { timeoutMs, signal, cache })
       const durationMs = Date.now() - attemptStarted
       noteNodeSuccess(node, durationMs)
       recordApiAttempt({ method, node, ok: true, durationMs })

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  feedAvatar,
+  feedHeader,
   parseFeedReference,
   resolveAccountFeed,
   resolvePostsFeed
@@ -146,6 +148,31 @@ describe('feed resolution', () => {
     expect(resolveAccountFeed({ account: '', sort: 'nonsense' }, { loggedInUser: '', fallbackAccount: 'ausbitbank' })).toMatchObject({
       account: 'ausbitbank',
       sort: 'blog'
+    })
+  })
+})
+
+describe('feed headers', () => {
+  it('uses the community title and avatar when the community record is known', () => {
+    const feed = parseFeedReference('/c/hive-174578')
+    expect(feedHeader(feed, { title: 'Hive Developers' })).toEqual({
+      eyebrow: 'Community · Trending',
+      heading: 'Hive Developers'
+    })
+    expect(feedAvatar(feed)).toBe('https://images.hive.blog/u/hive-174578/avatar')
+  })
+
+  it('falls back to the chain name while the community record loads or fails', () => {
+    const feed = parseFeedReference('/c/hive-174578')
+    expect(feedHeader(feed, null).heading).toBe('#hive-174578')
+    expect(feedHeader(feed, { title: '   ' }).heading).toBe('#hive-174578')
+  })
+
+  it('never shows a community avatar for other feed kinds', () => {
+    expect(feedAvatar(parseFeedReference('/@ausbitbank/feed'))).toBe('')
+    expect(feedHeader(parseFeedReference('/trending'), { title: 'ignored' })).toEqual({
+      eyebrow: 'Across Hive',
+      heading: 'Trending on Hive'
     })
   })
 })
