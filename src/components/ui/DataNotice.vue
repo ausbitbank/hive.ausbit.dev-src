@@ -13,7 +13,7 @@
       flat
       dense
       no-caps
-      color="primary"
+      color="light-blue-3"
       :label="actionLabel"
       :icon="actionIcon || undefined"
       class="data-notice__action"
