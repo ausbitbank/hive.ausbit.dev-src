@@ -3,6 +3,11 @@
 Date: 2026-11-19
 Status: complete
 
+> **Correction (W41):** the parameter names below (`limit`) were taken from the
+> marketing docs and are ignored by the deployed PostgREST service. The real
+> parameters are `result_limit` and `full_posts`. See
+> [W41 — HiveSense API contract](./W41-hivesense-api-contract.md).
+
 ## What HiveSense is
 
 [HiveSense](https://tools.openhive.network/hivesense) is a public semantic

@@ -8,6 +8,8 @@ import {
   hasActiveFilters,
   normalizeSearchState,
   parseSearchState,
+  periodStartTimestamp,
+  postMatchesQuery,
   rankAccounts,
   rankCommunities,
   rankPosts,
@@ -113,6 +115,24 @@ describe('search plan', () => {
     expect(buildSearchPlan('https://peakd.com/@alice/hello')).toMatchObject({ kind: 'post' })
   })
 
+  it('treats single-word free text as a keyword search, not an account jump', () => {
+    for (const term of ['photography', 'bitcoin', 'hive', 'climate']) {
+      expect(buildSearchPlan(term)).toMatchObject({
+        kind: 'keyword',
+        query: term,
+        accounts: term,
+        posts: term
+      })
+    }
+    // A bare tag-shaped word still exposes tag facets.
+    expect(buildSearchPlan('photography')).toMatchObject({ tags: 'photography', communities: 'photography' })
+  })
+
+  it('keeps an explicit @account as an account search', () => {
+    expect(buildSearchPlan('@ausbitbank')).toMatchObject({ kind: 'account', accounts: 'ausbitbank' })
+    expect(buildSearchPlan('https://peakd.com/@alice')).toMatchObject({ kind: 'account', accounts: 'alice' })
+  })
+
   it('treats free text as a post search without using it as a tag', () => {
     expect(buildSearchPlan('hive photography')).toMatchObject({
       kind: 'keyword',
@@ -147,6 +167,19 @@ describe('post ranking', () => {
     expect(filterByFacets([fresh, other], { tags: ['photography'] }).map(item => item.permlink)).toEqual(['fresh'])
     expect(filterByFacets([fresh, other], { communities: ['hive-1'] }).map(item => item.permlink)).toEqual(['other'])
     expect(filterByFacets([fresh, other], { authors: ['bob'] }).map(item => item.permlink)).toEqual(['other'])
+  })
+
+  it('ignores stopwords when deciding whether a post mentions the query', () => {
+    expect(postMatchesQuery(post({ title: 'Hello world', body: 'A post about hive and photography.' }), 'landing on the moon')).toBe(false)
+    expect(postMatchesQuery(post({ title: 'Moon landing', body: 'Apollo.' }), 'landing on the moon')).toBe(true)
+  })
+
+  it('formats a period start as the UTC timestamp HiveSense expects', () => {
+    const now = Date.parse('2026-11-20T15:30:45Z')
+    expect(periodStartTimestamp('day', now)).toBe('2026-11-19 15:30:45')
+    expect(periodStartTimestamp('week', now)).toBe('2026-11-13 15:30:45')
+    expect(periodStartTimestamp('month', now)).toBe('2026-10-20 15:30:45')
+    expect(periodStartTimestamp('all', now)).toBe('')
   })
 
   it('sorts chronologically, de-duplicates and keeps a stable fallback', () => {

@@ -3,14 +3,21 @@
 // HiveSense (https://tools.openhive.network/hivesense) runs an AI vector index
 // of Hive posts and exposes a small REST surface under `<node>/hivesense-api/`:
 //
-//   GET /posts/search?q=...&limit=...                 semantic post search
-//   GET /posts/{author}/{permlink}/similar?limit=...  nearest-neighbour posts
-//   GET /authors/search?topic=...&limit=...           topic expert discovery
+//   GET /posts/search?q=...&result_limit=...&full_posts=...
+//   GET /posts/{author}/{permlink}/similar?result_limit=...&full_posts=...
+//   GET /authors/search?topic=...&result_limit=...
 //
 // The endpoints are CORS-open and anonymous. Only some API nodes run the
 // service, so hosts are chosen from the beacon feature list (which advertises
 // `hivesense_api`) with a small static fallback list. Requests never throw;
 // callers get `{ ok: false }` so search can quietly fall back to local ranking.
+//
+// The public API is PostgREST. Its OpenAPI document is served from
+// `<node>/hivesense-api/` and is the source of truth for parameters: the
+// docs page's `limit` parameter is stale and silently ignored by the deployed
+// service. `result_limit` is the total number of rows (full posts plus stubs),
+// while `full_posts` is how many of the leading rows are hydrated. Rows beyond
+// `full_posts` contain only `author`/`permlink`.
 //
 // Note: post results carry no similarity score. HiveSense returns them in
 // relevance order, so callers must preserve array order rather than re-rank.
@@ -19,7 +26,8 @@ import { fetchBeaconNodes } from './beacon'
 import { BEACON_API_BASE } from './hiveNodes'
 
 export const HIVESENSE_PATH = '/hivesense-api'
-export const HIVESENSE_MAX_LIMIT = 100
+export const HIVESENSE_MAX_RESULTS = 1000
+export const HIVESENSE_MAX_FULL_POSTS = 50
 export const HIVESENSE_TIMEOUT_MS = 8000
 export const HIVESENSE_MIN_QUERY = 2
 
@@ -50,10 +58,31 @@ export function hiveSenseHostsFromBeacon (beaconMap) {
   return ordered.length ? ordered : [...HIVESENSE_HOSTS]
 }
 
-function clampLimit (value, fallback = 20) {
+function clampInt (value, min, max, fallback) {
   const number = Number(value)
   if (!Number.isFinite(number)) return fallback
-  return Math.max(1, Math.min(HIVESENSE_MAX_LIMIT, Math.floor(number)))
+  return Math.max(min, Math.min(max, Math.floor(number)))
+}
+
+/**
+ * Translate the caller's desired result count into the two values the API
+ * expects. `result_limit` is the total row count; `full_posts` is capped at 50,
+ * so larger requests return hydrated posts followed by sparse stubs.
+ */
+function resultShape (limit) {
+  const total = clampInt(limit, 1, HIVESENSE_MAX_RESULTS, 20)
+  return { total, full: Math.min(total, HIVESENSE_MAX_FULL_POSTS) }
+}
+
+function setOptional (params, key, value) {
+  if (value === undefined || value === null || value === '') return
+  const number = Number(value)
+  if (key === 'truncate') {
+    if (!Number.isFinite(number) || number < 0) return
+    params.set(key, String(Math.floor(number)))
+    return
+  }
+  params.set(key, String(value))
 }
 
 async function getJson (url, { timeoutMs, fetchImpl } = {}) {
@@ -126,13 +155,27 @@ function normalizePostList (data) {
 /**
  * Semantic post search. `q` is required and must clear the minimum length.
  * Returns `{ ok, posts, host }` with posts in HiveSense relevance order.
+ *
+ * `limit` is the number of posts the caller wants. The API returns at most 50
+ * hydrated posts per call (`full_posts`), and any rows beyond that are stubs
+ * which `normalizePostList` drops.
  */
-export async function searchHiveSensePosts (q, { limit = 20, hosts, timeoutMs, fetchImpl } = {}) {
+export async function searchHiveSensePosts (q, { limit = 20, truncate, observer, author, fromBlock, toBlock, hosts, timeoutMs, fetchImpl } = {}) {
   const query = String(q || '').trim()
   if (query.length < HIVESENSE_MIN_QUERY) {
     return { ok: false, posts: [], error: 'Query too short' }
   }
-  const params = new URLSearchParams({ q: query, limit: String(clampLimit(limit)) })
+  const shape = resultShape(limit)
+  const params = new URLSearchParams({
+    q: query,
+    result_limit: String(shape.total),
+    full_posts: String(shape.full)
+  })
+  setOptional(params, 'truncate', truncate)
+  setOptional(params, 'observer', observer)
+  setOptional(params, 'author', author)
+  setOptional(params, 'from-block', fromBlock)
+  setOptional(params, 'to-block', toBlock)
   const result = await requestAcrossHosts(
     '/posts/search?' + params.toString(),
     { hosts, timeoutMs, fetchImpl, validate: Array.isArray }
@@ -142,26 +185,38 @@ export async function searchHiveSensePosts (q, { limit = 20, hosts, timeoutMs, f
 }
 
 /** Posts semantically similar to one post. */
-export async function fetchSimilarPosts (author, permlink, { limit = 8, hosts, timeoutMs, fetchImpl } = {}) {
+export async function fetchSimilarPosts (author, permlink, { limit = 8, truncate, observer, hosts, timeoutMs, fetchImpl } = {}) {
   const cleanAuthor = String(author || '').trim().toLowerCase().replace(/^@/, '')
   const cleanPermlink = String(permlink || '').trim()
   if (!cleanAuthor || !cleanPermlink) {
     return { ok: false, posts: [], error: 'Missing post' }
   }
+  const shape = resultShape(limit)
+  const params = new URLSearchParams({
+    result_limit: String(shape.total),
+    full_posts: String(shape.full)
+  })
+  setOptional(params, 'truncate', truncate)
+  setOptional(params, 'observer', observer)
   const path = '/posts/' + encodeURIComponent(cleanAuthor) + '/' + encodeURIComponent(cleanPermlink) +
-    '/similar?' + new URLSearchParams({ limit: String(clampLimit(limit)) }).toString()
+    '/similar?' + params.toString()
   const result = await requestAcrossHosts(path, { hosts, timeoutMs, fetchImpl, validate: Array.isArray })
   if (!result.ok) return { ok: false, posts: [], error: result.error }
   return { ok: true, posts: normalizePostList(result.data), host: result.host }
 }
 
 /** Accounts who write about a topic, ranked by thematic specialisation. */
-export async function searchHiveSenseAuthors (topic, { limit = 6, hosts, timeoutMs, fetchImpl } = {}) {
+export async function searchHiveSenseAuthors (topic, { limit = 6, observer, hosts, timeoutMs, fetchImpl } = {}) {
   const needle = String(topic || '').trim()
   if (needle.length < HIVESENSE_MIN_QUERY) {
     return { ok: false, authors: [], error: 'Topic too short' }
   }
-  const path = '/authors/search?' + new URLSearchParams({ topic: needle, limit: String(clampLimit(limit)) }).toString()
+  const params = new URLSearchParams({
+    topic: needle,
+    result_limit: String(clampInt(limit, 1, 100, 6))
+  })
+  setOptional(params, 'observer', observer)
+  const path = '/authors/search?' + params.toString()
   const result = await requestAcrossHosts(path, { hosts, timeoutMs, fetchImpl, validate: Array.isArray })
   if (!result.ok) return { ok: false, authors: [], error: result.error }
   const authors = result.data

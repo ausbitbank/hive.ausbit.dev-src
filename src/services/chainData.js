@@ -491,35 +491,35 @@ async function hiveSenseHosts () {
 }
 
 /** Semantic post results for a free-text query, in HiveSense relevance order. */
-export function fetchHiveSenseSearch (query, { limit = 20, force = false } = {}) {
+export function fetchHiveSenseSearch (query, { limit = 20, truncate = 400, observer = '', fromBlock = '', toBlock = '', force = false } = {}) {
   const text = String(query || '').trim().toLowerCase()
   if (text.length < 2) return Promise.resolve({ ok: false, posts: [], error: 'Query too short' })
-  const key = 'search:hivesense:' + text + ':' + limit
+  const key = 'search:hivesense:' + text + ':' + limit + ':' + truncate + ':' + observer + ':' + fromBlock + ':' + toBlock
   return loadCached(key, async () => {
     const hosts = await hiveSenseHosts()
-    return searchHiveSensePosts(text, { limit, hosts })
+    return searchHiveSensePosts(text, { limit, truncate, observer, fromBlock, toBlock, hosts })
   }, { ttl: CACHE_TTL.searchPosts, force })
 }
 
 /** Posts semantically similar to one post. */
-export function fetchHiveSenseSimilar (author, permlink, { limit = 8, force = false } = {}) {
+export function fetchHiveSenseSimilar (author, permlink, { limit = 8, truncate = 400, observer = '', force = false } = {}) {
   const name = String(author || '').trim().toLowerCase().replace(/^@/, '')
   const slug = String(permlink || '').trim()
   if (!name || !slug) return Promise.resolve({ ok: false, posts: [], error: 'Missing post' })
-  const key = 'hivesense:similar:' + name + '/' + slug + ':' + limit
+  const key = 'hivesense:similar:' + name + '/' + slug + ':' + limit + ':' + truncate + ':' + observer
   return loadCached(key, async () => {
     const hosts = await hiveSenseHosts()
-    return fetchSimilarPosts(name, slug, { limit, hosts })
+    return fetchSimilarPosts(name, slug, { limit, truncate, observer, hosts })
   }, { ttl: CACHE_TTL.searchPosts, force })
 }
 
 /** Accounts who write about a topic, for the search expertise hint. */
-export function fetchHiveSenseAuthors (topic, { limit = 6, force = false } = {}) {
+export function fetchHiveSenseAuthors (topic, { limit = 6, observer = '', force = false } = {}) {
   const text = String(topic || '').trim().toLowerCase()
   if (text.length < 2) return Promise.resolve({ ok: false, authors: [], error: 'Topic too short' })
-  const key = 'search:hivesense:authors:' + text + ':' + limit
+  const key = 'search:hivesense:authors:' + text + ':' + limit + ':' + observer
   return loadCached(key, async () => {
     const hosts = await hiveSenseHosts()
-    return searchHiveSenseAuthors(text, { limit, hosts })
+    return searchHiveSenseAuthors(text, { limit, observer, hosts })
   }, { ttl: CACHE_TTL.searchPosts, force })
 }

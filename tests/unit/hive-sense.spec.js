@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   HIVESENSE_HOSTS,
-  HIVESENSE_MAX_LIMIT,
+  HIVESENSE_MAX_FULL_POSTS,
+  HIVESENSE_MAX_RESULTS,
   hiveSenseHostsFromBeacon,
   normalizeHiveSensePost,
   resetHiveSenseHosts,
@@ -63,9 +64,26 @@ describe('searchHiveSensePosts', () => {
     expect(result.posts.map(p => p.author)).toEqual(['alice', 'bob'])
     expect(result.host).toBe('https://n1')
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://n1/hivesense-api/posts/search?q=hive+dev&limit=20',
+      'https://n1/hivesense-api/posts/search?q=hive+dev&result_limit=20&full_posts=20',
       expect.objectContaining({ method: 'GET' })
     )
+  })
+
+  it('passes truncation, observer and time window through to the API', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(jsonResponse([]))
+    await searchHiveSensePosts('hive dev', {
+      limit: 40, truncate: 400, observer: 'alice', author: 'bob',
+      fromBlock: '2026-11-13 15:30:45', toBlock: '109000000',
+      hosts: ['https://n1'], fetchImpl
+    })
+    const url = fetchImpl.mock.calls[0][0]
+    expect(url).toContain('result_limit=40')
+    expect(url).toContain('full_posts=40')
+    expect(url).toContain('truncate=400')
+    expect(url).toContain('observer=alice')
+    expect(url).toContain('author=bob')
+    expect(url).toContain('from-block=2026-11-13+15%3A30%3A45')
+    expect(url).toContain('to-block=109000000')
   })
 
   it('fails over to the next host when the first is broken', async () => {
@@ -85,11 +103,12 @@ describe('searchHiveSensePosts', () => {
     expect(fetchImpl).not.toHaveBeenCalled()
   })
 
-  it('clamps the limit to the API maximum', async () => {
+  it('clamps the result limit and full post count to the API maximums', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(jsonResponse([]))
     await searchHiveSensePosts('query', { limit: 5000, hosts: ['https://n1'], fetchImpl })
     const url = fetchImpl.mock.calls[0][0]
-    expect(url).toContain('limit=' + HIVESENSE_MAX_LIMIT)
+    expect(url).toContain('result_limit=' + HIVESENSE_MAX_RESULTS)
+    expect(url).toContain('full_posts=' + HIVESENSE_MAX_FULL_POSTS)
   })
 
   it('reports failure when every host is down', async () => {
@@ -106,7 +125,7 @@ describe('fetchSimilarPosts and author search', () => {
     const result = await fetchSimilarPosts('@Alice', 'my post', { hosts: ['https://n1'], fetchImpl })
     expect(result.ok).toBe(true)
     expect(fetchImpl.mock.calls[0][0]).toBe(
-      'https://n1/hivesense-api/posts/alice/my%20post/similar?limit=8'
+      'https://n1/hivesense-api/posts/alice/my%20post/similar?result_limit=8&full_posts=8'
     )
   })
 
@@ -115,6 +134,7 @@ describe('fetchSimilarPosts and author search', () => {
     const result = await searchHiveSenseAuthors('photography', { hosts: ['https://n1'], fetchImpl })
     expect(result.ok).toBe(true)
     expect(result.authors).toEqual(['alice', 'bob', 'carol'])
+    expect(fetchImpl.mock.calls[0][0]).toContain('result_limit=6')
   })
 
   it('drops malformed posts when normalising', () => {

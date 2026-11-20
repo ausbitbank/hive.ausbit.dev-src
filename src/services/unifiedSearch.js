@@ -185,13 +185,26 @@ export function toggleFacet (list, value) {
   return current.includes(clean) ? current.filter(item => item !== clean) : [...current, clean].slice(0, 10)
 }
 
+// Very common English words carry no topical signal. Without this list a query
+// like "landing on the moon" matches almost every post through "on"/"the", which
+// lets unrelated popular posts pad relevance results when semantic results run
+// short (for example when a host is down or a facet filter removes them).
+const STOPWORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by', 'do', 'does', 'for',
+  'from', 'had', 'has', 'have', 'he', 'her', 'his', 'how', 'i', 'if', 'in',
+  'into', 'is', 'it', 'its', 'me', 'my', 'no', 'not', 'of', 'on', 'or', 'our',
+  'out', 'she', 'so', 'than', 'that', 'the', 'their', 'them', 'then', 'there',
+  'these', 'they', 'this', 'to', 'up', 'was', 'we', 'were', 'what', 'when',
+  'where', 'which', 'who', 'why', 'will', 'with', 'you', 'your'
+])
+
 function tokenize (value) {
   return String(value || '')
     .toLowerCase()
     .replace(/[#@]/g, ' ')
     .split(/[^a-z0-9.]/i)
     .map(token => token.trim())
-    .filter(token => token.length > 0)
+    .filter(token => token.length > 1 && !STOPWORDS.has(token))
 }
 
 function postText (post) {
@@ -277,6 +290,22 @@ export function filterByPeriod (posts, period, now = Date.now()) {
     const created = postCreatedMs(post)
     return created > 0 && now - created <= windowMs
   })
+}
+
+/**
+ * Start of a period filter as the `YYYY-MM-DD HH:MI:SS` UTC string HiveSense
+ * expects for `from-block`. Returns an empty string for "all time" so callers
+ * can omit the parameter.
+ */
+export function periodStartTimestamp (period, now = Date.now()) {
+  const windowMs = PERIOD_MS[period]
+  if (!windowMs) return ''
+  const date = new Date(now - windowMs)
+  const pad = value => String(value).padStart(2, '0')
+  return [
+    date.getUTCFullYear() + '-' + pad(date.getUTCMonth() + 1) + '-' + pad(date.getUTCDate()),
+    pad(date.getUTCHours()) + ':' + pad(date.getUTCMinutes()) + ':' + pad(date.getUTCSeconds())
+  ].join(' ')
 }
 
 export function filterByFacets (posts, state = {}) {
@@ -399,7 +428,15 @@ export function buildSearchPlan (query) {
   if (!text) return plan
 
   const route = parseSearchRoute(text)
-  if (route) {
+  // A bare word like "photography" or "bitcoin" is also a syntactically valid
+  // Hive account name, so parseSearchRoute() reports it as an account. Honouring
+  // that in the search box would skip post, tag and semantic results entirely
+  // and just show the generic trending feed. Only treat an account as an
+  // explicit target when the user typed `@` or pasted a URL; bare words fall
+  // through to the keyword branch and still get an account lookup there.
+  const explicitAccount = route && route.kind === 'account' &&
+    !text.startsWith('@') && !/^https?:\/\//i.test(text)
+  if (route && !explicitAccount) {
     plan.route = route
     plan.accounts = null
     plan.blocks = null

@@ -13,6 +13,7 @@ import {
   filterByFacets,
   mergeSemanticPosts,
   normalizeSearchState,
+  periodStartTimestamp,
   rankAccounts,
   rankCommunities,
   rankPosts,
@@ -156,7 +157,11 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   if (useSemantic) {
     result.semantic.attempted = true
     tasks.push(
-      Promise.allSettled([fetchHiveSenseSearch(plan.query, { limit: RESULT_LIMITS.posts * 3, force }), postsPromise])
+      Promise.allSettled([fetchHiveSenseSearch(plan.query, {
+        limit: RESULT_LIMITS.posts * 3,
+        fromBlock: periodStartTimestamp(filters.period),
+        force
+      }), postsPromise])
         .then(([response]) => {
           const data = response.status === 'fulfilled' ? response.value : null
           if (!data?.ok || !Array.isArray(data.posts) || !data.posts.length) return

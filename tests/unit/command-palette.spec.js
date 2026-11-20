@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nextSelection, resolveEnterAction } from '../../src/components/CommandPalette.vue'
+import { nextSelection, resolveEnterAction, resolveJumpResults } from '../../src/components/CommandPalette.vue'
 
 describe('command palette navigation', () => {
   it('walks results then lands on the search row going down', () => {
@@ -38,6 +38,34 @@ describe('command palette navigation', () => {
     expect(nextSelection(0, 0, 1, false)).toBe(-1)
     expect(nextSelection(0, 0, -1, false)).toBe(-1)
     expect(nextSelection(0, 0, 1, true)).toBe(-1)
+  })
+})
+
+describe('command palette jump results', () => {
+  it('offers topic destinations for a bare word, not an account jump', () => {
+    const paths = resolveJumpResults('photography').map(item => item.path)
+    expect(paths).toContain('/trending/photography')
+    expect(paths).not.toContain('/@photography')
+  })
+
+  it('reveals an account jump once a bare word matches a real account', () => {
+    const paths = resolveJumpResults('ausbitbank', { accountChecks: { ausbitbank: 'found' } }).map(item => item.path)
+    expect(paths).toContain('/@ausbitbank')
+    expect(paths).toContain('/@ausbitbank/wallet')
+  })
+
+  it('keeps explicit accounts, tags, blocks and URLs as direct jumps', () => {
+    expect(resolveJumpResults('@alice').map(item => item.path)).toContain('/@alice')
+    expect(resolveJumpResults('#photography').map(item => item.path)).toEqual(
+      expect.arrayContaining(['/trending/photography', '/created/photography', '/hot/photography'])
+    )
+    expect(resolveJumpResults('100000000').map(item => item.path)).toEqual(['/b/100000000'])
+    expect(resolveJumpResults('https://peakd.com/@alice').map(item => item.path)).toContain('/@alice')
+  })
+
+  it('returns nothing for empty or unrecognised input', () => {
+    expect(resolveJumpResults('')).toEqual([])
+    expect(resolveJumpResults('   ')).toEqual([])
   })
 })
 

@@ -238,6 +238,7 @@
 
 <script>
 import { parseSearchRoute } from 'src/services/search'
+import { buildSearchPlan } from 'src/services/unifiedSearch'
 import { fetchAccount } from 'src/services/chainData'
 
 const RECENT_KEY = 'hive-command-recent'
@@ -274,8 +275,72 @@ export function resolveEnterAction (selectedIndex, hasResult, hasSearchRow) {
   return 'none'
 }
 
-const COMMANDS = [
-  { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
+function accountJumps (user, { subpages = false } = {}) {
+  const base = {
+    path: '/@' + user,
+    label: '@' + user,
+    description: 'Hive account profile',
+    icon: 'person',
+    kind: 'account'
+  }
+  if (!subpages) return [base]
+  return [
+    base,
+    { path: '/@' + user + '/wallet', label: 'Wallet · @' + user, description: 'Balances and transactions', icon: 'account_balance_wallet' },
+    { path: '/@' + user + '/posts', label: 'Posts · @' + user, description: 'Published posts', icon: 'library_books' },
+    { path: '/@' + user + '/blog', label: 'Blog · @' + user, description: 'Posts and reblogs', icon: 'menu_book' },
+    { path: '/@' + user + '/followers', label: 'Followers · @' + user, description: 'Accounts following this user', icon: 'people' }
+  ]
+}
+
+function tagJumps (tag) {
+  const clean = String(tag || '').replace(/^#/, '').toLowerCase()
+  if (!clean) return []
+  return [
+    { path: '/trending/' + clean, label: '#' + clean, description: 'Trending posts tagged #' + clean, icon: 'tag', kind: 'tag' },
+    { path: '/created/' + clean, label: 'New posts in #' + clean, description: 'Newest first', icon: 'schedule' },
+    { path: '/hot/' + clean, label: 'Hot posts in #' + clean, description: 'Most active right now', icon: 'local_fire_department' }
+  ]
+}
+
+/**
+ * "Jump to" destinations for the palette. Mirrors `buildSearchPlan`: a bare
+ * word is not an explicit account jump (it is probably a topic), so it offers
+ * tag destinations and only shows an account once the async check confirms the
+ * account exists. Explicit `@name`, `#tag`, URLs and chain identifiers keep
+ * their direct destinations.
+ */
+export function resolveJumpResults (query, { knownAccounts = {}, accountChecks = {} } = {}) {
+  const text = String(query || '').trim()
+  if (!text) return []
+
+  const route = parseSearchRoute(text)
+  const bareAccount = route && route.kind === 'account' &&
+    !text.startsWith('@') && !/^https?:\/\//i.test(text)
+
+  if (route && !bareAccount) {
+    const results = [route]
+    const accountMatch = route.path.match(/^\/@([^/]+)$/)
+    if (route.kind === 'account' && accountMatch && knownAccounts[accountMatch[1]] !== undefined) {
+      results.push(...accountJumps(accountMatch[1], { subpages: true }).slice(1))
+    }
+    if (route.kind === 'tag') {
+      results.push(...tagJumps(route.label).slice(1))
+    }
+    return results
+  }
+
+  const plan = buildSearchPlan(text)
+  const results = []
+  if (plan.tags) results.push(...tagJumps(plan.tags))
+  const user = String(plan.accounts || '').toLowerCase()
+  if (user && (knownAccounts[user] !== undefined || accountChecks[user] === 'found')) {
+    results.push(...accountJumps(user, { subpages: true }))
+  }
+  return results
+}
+
+const COMMANDS = [  { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
   { label: 'Browse posts', description: 'Trending, new and community posts', icon: 'explore', path: '/browse', keywords: 'posts feed content' },
   { label: 'Short posts', description: 'Snaps, Waves, Threads, D.Buzz and Moments', icon: 'bolt', path: '/shorts', keywords: 'microblog snaps waves threads dbuzz moments short' },
   { label: 'Trending posts', description: 'What Hive is reading now', icon: 'trending_up', path: '/trending', keywords: 'hot popular' },
@@ -311,28 +376,10 @@ export default {
       return this.$hiveStore.user.username || null
     },
     dynamicResults () {
-      const base = parseSearchRoute(this.query)
-      if (!base) return []
-
-      const results = [base]
-      const accountMatch = base.path.match(/^\/@([^/]+)$/)
-      if (base.kind === 'account' && accountMatch && this.$hiveStore.accounts[accountMatch[1]] !== undefined) {
-        const user = accountMatch[1]
-        results.push(
-          { path: '/@' + user + '/wallet', label: 'Wallet · @' + user, description: 'Balances and transactions', icon: 'account_balance_wallet' },
-          { path: '/@' + user + '/posts', label: 'Posts · @' + user, description: 'Published posts', icon: 'library_books' },
-          { path: '/@' + user + '/blog', label: 'Blog · @' + user, description: 'Posts and reblogs', icon: 'menu_book' },
-          { path: '/@' + user + '/followers', label: 'Followers · @' + user, description: 'Accounts following this user', icon: 'people' }
-        )
-      }
-      if (base.kind === 'tag') {
-        const tag = base.label.slice(1)
-        results.push(
-          { path: '/created/' + tag, label: 'New posts in #' + tag, description: 'Newest first', icon: 'schedule' },
-          { path: '/hot/' + tag, label: 'Hot posts in #' + tag, description: 'Most active right now', icon: 'local_fire_department' }
-        )
-      }
-      return results
+      return resolveJumpResults(this.query, {
+        knownAccounts: this.$hiveStore.accounts || {},
+        accountChecks: this.accountChecks
+      })
     },
     commandResults () {
       const query = this.query.trim().toLowerCase()
@@ -397,11 +444,10 @@ export default {
   methods: {
     scheduleAccountCheck () {
       if (this.accountTimer) clearTimeout(this.accountTimer)
-      const base = parseSearchRoute(this.query)
-      if (!base || base.kind !== 'account') return
-      const match = base.path.match(/^\/@([^/]+)$/)
-      if (!match) return
-      const user = match[1]
+      const plan = buildSearchPlan(this.query)
+      if (plan.kind !== 'account' && plan.kind !== 'keyword') return
+      const user = String(plan.accounts || '').toLowerCase()
+      if (!/^[a-z][a-z0-9.-]{2,15}$/.test(user)) return
       if (this.$hiveStore.accounts[user] !== undefined || this.accountChecks[user]) return
       this.accountChecks[user] = 'pending'
       this.accountTimer = setTimeout(() => this.checkAccount(user), 300)
