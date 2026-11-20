@@ -32,3 +32,6 @@ blob-report/
 
 # Local browser binaries (Obscura fast E2E)
 .tools/
+
+# Wrangler local state
+.wrangler/

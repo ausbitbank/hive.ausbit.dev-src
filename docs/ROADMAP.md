@@ -43,9 +43,9 @@ workflows.
 
 ## Open work
 
-W34 (the 2026-11-19 issue sweep) is complete for the SPA and origin surface; see
-`docs/workstreams/W34-issue-sweep.md`. The only open follow-up is the Cloudflare
-metadata Worker for chain-derived link previews (#64).
+W34 (the 2026-11-19 issue sweep) is complete, including the Cloudflare
+metadata Worker for chain-derived link previews. See
+`docs/workstreams/W34-issue-sweep.md`.
 
 ## Definition of done
 

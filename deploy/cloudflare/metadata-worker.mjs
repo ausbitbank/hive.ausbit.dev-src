@@ -15,12 +15,17 @@
 //
 // This file is not bundled into the SPA and is not deployed by scripts/deploy.sh.
 
-const HIVE_RPC = 'https://api.hive.blog'
+const HIVE_RPCS = [
+  'https://api.hive.blog',
+  'https://api.openhive.network',
+  'https://rpc.mahdiyari.info'
+]
 const FETCH_TIMEOUT_MS = 2500
 const CACHE_SECONDS = 300
 
 const POST_PATH = /^\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)\/?$/i
 const ACCOUNT_PATH = /^\/@([a-z0-9.-]+)\/?$/i
+const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|tip|trail)(?:\/|$)/i
 
 function hasHtml (request) {
   const accept = request.headers.get('accept') || ''
@@ -28,23 +33,32 @@ function hasHtml (request) {
 }
 
 async function rpc (method, params) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-  try {
-    const response = await fetch(HIVE_RPC, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-      signal: controller.signal
-    })
-    if (!response.ok) return null
-    const json = await response.json()
-    return json && json.result
-  } catch {
-    return null
-  } finally {
-    clearTimeout(timer)
+  for (const endpoint of HIVE_RPCS) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'user-agent': 'hive.ausbit.dev link-preview (+https://hive.ausbit.dev)'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: controller.signal
+      })
+      if (!response.ok) {
+        continue
+      }
+      const json = await response.json()
+      if (json && json.result) return json.result
+    } catch {
+      // Try the next known node.
+    } finally {
+      clearTimeout(timer)
+    }
   }
+  return null
 }
 
 function stripMarkdown (value, length = 160) {
@@ -140,6 +154,13 @@ function escapeHtml (value) {
     .replaceAll('"', '&quot;')
 }
 
+/** Pass the origin response through with an observability tag. */
+function tagged (response, value) {
+  const copy = new Response(response.body, response)
+  copy.headers.set('x-hive-meta', value)
+  return copy
+}
+
 function rewriteHead (html, meta) {
   let next = html
   const title = escapeHtml(meta.title)
@@ -175,7 +196,7 @@ export default {
     if (!hasHtml(request)) return fetch(request)
 
     const url = new URL(request.url)
-    const post = url.pathname.match(POST_PATH)
+    const post = RESERVED_SUBPATH.test(url.pathname) ? null : url.pathname.match(POST_PATH)
     const account = !post && url.pathname.match(ACCOUNT_PATH)
     if (!post && !account) return fetch(request)
 
@@ -190,12 +211,13 @@ export default {
     if (!originResponse.ok || !(originResponse.headers.get('content-type') || '').includes('text/html')) {
       return originResponse
     }
+    const fallback = originResponse.clone()
 
     try {
       const meta = post
         ? await postMetadata(post[1], post[2])
         : await accountMetadata(account[1])
-      if (!meta) return originResponse
+      if (!meta) return tagged(fallback, 'miss')
 
       const html = rewriteHead(await originResponse.text(), meta)
       const response = new Response(html, {
@@ -204,10 +226,11 @@ export default {
       })
       response.headers.set('content-type', 'text/html; charset=utf-8')
       response.headers.set('cache-control', 'public, max-age=' + CACHE_SECONDS)
+      response.headers.set('x-hive-meta', 'hit')
       if (cache) await cache.put(cacheKey, response.clone())
       return response
     } catch {
-      return originResponse
+      return tagged(fallback, 'error')
     }
   }
 }

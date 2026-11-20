@@ -43,11 +43,12 @@ dashboard, search, performance and crawler work.
   summary and internal nav inside the mount element. Vue replaces it on mount;
   crawlers see real content and links. Partial by design: the links are the
   explorer sections, not chain-specific neighbours.
-- **#64** Partial. Account/post SSI shells now use the author avatar as
-  `og:image`. `deploy/cloudflare/metadata-worker.mjs` reads
-  `bridge.get_post`/`bridge.get_profile` at the edge and rewrites the full
-  title, description, image and JSON-LD. The Worker is documented but not
-  deployed by `scripts/deploy.sh`.
+- **#64** Fixed. Account/post SSI shells use the author avatar as `og:image`,
+  and `deploy/cloudflare/metadata-worker.mjs` reads
+  `bridge.get_post`/`bridge.get_profile` at the edge. It rewrites the title,
+  description, cover image, canonical and JSON-LD, caches for five minutes and
+  falls back to the origin on failure. Verified live: the `@gtg` post returns
+  its real title and cover image with `x-hive-meta: hit`.
 
 ## UX revamps
 
@@ -124,6 +125,6 @@ dashboard, search, performance and crawler work.
 
 ## Remaining
 
-- Deploy `deploy/cloudflare/metadata-worker.mjs` and verify a shared post/account
-  URL with a non-JS preview scraper (#64). No wrangler install or Cloudflare
-  credentials are present on this machine.
+None. #63's optional server-side existence check (returning 404 at the edge for
+impossible block numbers or malformed transaction ids) remains a future
+hardening idea, not a reported regression.
