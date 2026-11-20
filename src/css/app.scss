@@ -543,7 +543,9 @@ body {
   flex-wrap: wrap;
 }
 
-.home-panel__link {
+.home-panel__link,
+.home-panel__link:link,
+.home-panel__link:visited {
   color: #4fc3f7;
   font-size: 0.76rem;
   font-weight: 600;
@@ -551,7 +553,8 @@ body {
   white-space: nowrap;
 }
 
-.home-panel__link:hover {
+.home-panel__link:hover,
+.home-panel__link:focus-visible {
   color: #81d4fa;
   text-decoration: underline;
 }
