@@ -5,19 +5,28 @@
         <div>
           <div class="wallet-eyebrow">Sidechain</div>
           <h2 id="wallet-magi-title" class="wallet-card__title">Magi Network</h2>
-          <p class="wallet-magi__hint">
-            HIVE, HBD and standard magi_token balances held on Magi (formerly VSC). These are
-            separate from your Hive wallet and are used by Magi apps and contracts.
-          </p>
         </div>
         <div class="wallet-magi__actions">
+          <q-btn flat dense no-caps color="primary" icon="code" label="Contracts" to="/magi" />
+          <q-btn
+            flat
+            dense
+            no-caps
+            color="primary"
+            icon="open_in_new"
+            label="Altera"
+            href="https://alterawallet.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          />
           <q-btn flat round dense icon="refresh" aria-label="Refresh Magi balances" title="Refresh Magi balances" :loading="loading" @click="load" />
-          <router-link to="/magi" class="wallet-magi__link">Magi contracts</router-link>
-          <a href="https://alterawallet.com" target="_blank" rel="noopener noreferrer" class="wallet-magi__link">
-            Open Altera Wallet <q-icon name="open_in_new" size="13px" aria-hidden="true" />
-          </a>
         </div>
       </q-card-section>
+
+      <p class="wallet-magi__intro">
+        HIVE, HBD and standard magi_token balances held on Magi (formerly VSC).
+        These are separate from your Hive wallet and are used by Magi apps and contracts.
+      </p>
 
       <q-banner v-if="error" class="wallet-magi__banner" rounded>
         <template #avatar><q-icon name="cloud_off" aria-hidden="true" /></template>
@@ -31,7 +40,7 @@
       </div>
 
       <template v-else-if="balances">
-        <div class="wallet-magi__total">
+        <div class="wallet-magi__summary">
           <span>Magi portfolio value</span>
           <strong>{{ formatUsd(totalUsd) }}</strong>
         </div>
@@ -42,27 +51,29 @@
             <strong>{{ row.amount }}</strong>
             <small>{{ formatUsd(row.usd) }}</small>
           </div>
+          <template v-if="details">
+            <div class="wallet-magi__cell">
+              <span>Magi RC</span>
+              <strong>{{ rcLabel }}</strong>
+              <small>{{ rcPercent }}% available</small>
+            </div>
+            <div class="wallet-magi__cell">
+              <span>Nonce</span>
+              <strong>{{ details.nonce }}</strong>
+              <small>next tx {{ details.nonce + 1 }}</small>
+            </div>
+            <div class="wallet-magi__cell">
+              <span>Node mode</span>
+              <strong>{{ details.delegationMode || 'Not a node' }}</strong>
+              <small>{{ witnessStakeLabel }}</small>
+            </div>
+          </template>
         </div>
 
-        <div v-if="details" class="wallet-magi__details">
-          <div class="wallet-magi__detail">
-            <span>Magi RC</span>
-            <strong>{{ rcLabel }}</strong>
-            <small>{{ rcPercent }}% available</small>
+        <div class="wallet-magi__subsection">
+          <div class="wallet-magi__subhead">
+            <span>Consensus delegation</span>
           </div>
-          <div class="wallet-magi__detail">
-            <span>Nonce</span>
-            <strong>{{ details.nonce }}</strong>
-            <small>next tx {{ details.nonce + 1 }}</small>
-          </div>
-          <div class="wallet-magi__detail">
-            <span>Node mode</span>
-            <strong>{{ details.delegationMode || 'Not a node' }}</strong>
-            <small>{{ witnessStakeLabel }}</small>
-          </div>
-        </div>
-
-        <div class="wallet-magi__delegation">
           <q-input
             v-model.trim="delegationNode"
             label="Check delegation to node"
@@ -71,6 +82,7 @@
             outlined
             :loading="delegationLoading"
             aria-label="Magi node account to check delegation"
+            class="wallet-magi__delegation-input"
             @keyup.enter="checkDelegation"
           >
             <template #append>
@@ -84,39 +96,60 @@
           <div v-else-if="delegationError" class="wallet-magi__delegation-error">{{ delegationError }}</div>
         </div>
 
-        <div v-if="tokens.length || tokensError" class="wallet-magi__tokens">
-          <div class="wallet-magi__tokens-head">
+        <div v-if="tokens.length || tokensError" class="wallet-magi__subsection">
+          <div class="wallet-magi__subhead">
             <span>Magi tokens</span>
             <small v-if="tokens.length">{{ tokens.length }} token{{ tokens.length === 1 ? '' : 's' }}</small>
           </div>
           <div v-if="tokensError" class="wallet-magi__tokens-error">{{ tokensError }}</div>
-          <ul v-else>
-            <li v-for="token in tokens" :key="token.contractId" class="wallet-magi__token">
-              <a
-                :href="tokenExplorerUrl(token.contractId)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="wallet-magi__token-symbol"
-                :title="'Open ' + token.symbol + ' in Magi Blocks'"
-              >{{ token.symbol }}</a>
-              <span class="wallet-magi__token-amount" :title="token.raw + ' raw units'">{{ token.amountLabel }}</span>
-              <router-link
-                :to="{ name: 'magi', query: { contract: token.contractId } }"
-                class="wallet-magi__token-contract"
-                :title="token.contractId"
-              >{{ shortContract(token.contractId) }}</router-link>
+          <ul v-else class="wallet-magi-token-list">
+            <li v-for="token in tokens" :key="token.contractId" class="wallet-magi-token">
+              <q-avatar size="28px" class="wallet-magi-token__avatar">
+                <span>{{ token.symbol.slice(0, 2) }}</span>
+              </q-avatar>
+              <div class="wallet-magi-token__name">
+                <a
+                  :href="tokenExplorerUrl(token.contractId)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="wallet-magi-token__symbol"
+                  :title="'Open ' + token.symbol + ' in Magi Blocks'"
+                >{{ token.symbol }}</a>
+                <router-link
+                  :to="{ name: 'magi', query: { contract: token.contractId } }"
+                  class="wallet-magi-token__contract"
+                  :title="token.contractId"
+                >{{ shortContract(token.contractId) }}</router-link>
+              </div>
+              <span class="wallet-magi-token__amount" :title="token.raw + ' raw units'">{{ token.amountLabel }}</span>
             </li>
           </ul>
         </div>
 
-        <div v-if="transactions.length" class="wallet-magi__activity">
-          <div class="wallet-magi__activity-title">Recent Magi activity</div>
-          <ul>
-            <li v-for="entry in transactions.slice(0, 5)" :key="entry.id">
-              <q-icon :name="entry.direction === 'out' ? 'north_east' : 'south_west'" size="14px" aria-hidden="true" />
-              <span class="wallet-magi__activity-label">{{ entry.label }}</span>
-              <span class="wallet-magi__activity-amount" :class="entry.direction === 'out' ? 'is-out' : 'is-in'">{{ entry.amountLabel }}</span>
-              <time :datetime="entry.timestamp">{{ timeLabel(entry.timestamp) }}</time>
+        <div v-if="transactions.length" class="wallet-magi__subsection">
+          <div class="wallet-magi__subhead">
+            <span>Recent Magi activity</span>
+            <small>{{ activityLabel }}</small>
+          </div>
+          <ul class="wallet-magi-op-list">
+            <li
+              v-for="entry in recentTransactions"
+              :key="entry.id"
+              class="wallet-magi-op"
+              :class="'wallet-magi-op--' + entry.direction"
+            >
+              <div class="wallet-magi-op__icon" aria-hidden="true">
+                <q-icon :name="entry.direction === 'out' ? 'north_east' : 'south_west'" />
+              </div>
+              <div class="wallet-magi-op__main">
+                <div class="wallet-magi-op__title">{{ entry.label }}</div>
+                <div class="wallet-magi-op__meta">
+                  <time :datetime="entry.timestamp">{{ timeLabel(entry.timestamp) }}</time>
+                </div>
+              </div>
+              <div class="wallet-magi-op__amount" :class="entry.direction === 'out' ? 'is-out' : 'is-in'">
+                {{ entry.amountLabel }}
+              </div>
             </li>
           </ul>
         </div>
@@ -126,63 +159,88 @@
 </template>
 
 <style scoped>
-.wallet-magi__hint {
-  margin: 0.3rem 0 0;
-  max-width: 70ch;
-  color: #90a4ae;
-  font-size: 0.76rem;
-  line-height: 1.45;
+.wallet-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.wallet-eyebrow {
+  color: #78909c;
+  font-size: 0.66rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.wallet-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 0.9rem 1rem 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.wallet-card__title {
+  margin: 0.12rem 0 0;
+  color: #e4eaed;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .wallet-magi__actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   flex-wrap: wrap;
 }
 
-.wallet-magi__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  color: #4fc3f7;
-  font-size: 0.74rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.wallet-magi__link:hover {
-  text-decoration: underline;
+.wallet-magi__intro {
+  max-width: 78ch;
+  margin: 0.55rem 1rem 0;
+  color: #90a4ae;
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .wallet-magi__banner {
-  margin: 0 0.85rem 0.6rem;
+  margin: 0.65rem 1rem;
+  background: rgba(239, 83, 80, 0.12);
+  color: #ef9a9a;
 }
 
 .wallet-magi__state {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
-  padding: 1rem 0.9rem;
+  padding: 1.2rem 1rem;
   color: #90a4ae;
   font-size: 0.8rem;
 }
 
-.wallet-magi__total {
+.wallet-magi__summary {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0 0.9rem 0.6rem;
+  gap: 1rem;
+  margin: 0.7rem 1rem 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
   color: #90a4ae;
-  font-size: 0.72rem;
-  text-transform: uppercase;
+  font-size: 0.68rem;
   letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
-.wallet-magi__total strong {
+.wallet-magi__summary strong {
   color: #e4eaed;
-  font-size: 1.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
   font-variant-numeric: tabular-nums;
@@ -192,17 +250,18 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 0.5rem;
-  padding: 0 0.9rem 0.8rem;
+  padding: 0 1rem 0.85rem;
 }
 
 .wallet-magi__cell {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  padding: 0.5rem 0.6rem;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .wallet-magi__cell span {
@@ -214,62 +273,49 @@
 
 .wallet-magi__cell strong {
   color: #e4eaed;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 
 .wallet-magi__cell small {
   color: #78909c;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
 }
 
-.wallet-magi__details {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  padding: 0 0.9rem 0.8rem;
+.wallet-magi__subsection {
+  padding: 0.2rem 1rem 0.85rem;
+  border-top: 1px solid var(--border-subtle);
 }
 
-.wallet-magi__detail {
+.wallet-magi__subhead {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.wallet-magi__detail span {
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0 0.35rem;
   color: #90a4ae;
-  font-size: 0.66rem;
-  letter-spacing: 0.04em;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.wallet-magi__detail strong {
-  color: #e4eaed;
-  font-size: 0.82rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.wallet-magi__detail small {
+.wallet-magi__subhead small {
   color: #78909c;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-.wallet-magi__delegation {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0 0.9rem 0.8rem;
+.wallet-magi__delegation-input {
+  width: 100%;
 }
 
 .wallet-magi__delegation-result,
 .wallet-magi__delegation-error {
+  margin-top: 0.45rem;
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
   font-size: 0.72rem;
@@ -282,154 +328,193 @@
   color: #a5d6a7;
 }
 
-.wallet-magi__delegation-error {
+.wallet-magi__delegation-error,
+.wallet-magi__tokens-error {
   border: 1px solid rgba(255, 183, 77, 0.35);
   background: rgba(255, 183, 77, 0.08);
   color: #ffcc80;
 }
 
-.wallet-magi__tokens {
-  padding: 0.6rem 0.9rem 0.8rem;
-  border-top: 1px solid var(--border-subtle);
+.wallet-magi__tokens-error {
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
-.wallet-magi__tokens-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: #78909c;
-  font-size: 0.64rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.wallet-magi__tokens-head small {
-  color: #78909c;
-  font-size: 0.64rem;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.wallet-magi__tokens ul {
-  margin: 0.3rem 0 0;
+.wallet-magi-token-list {
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wallet-magi__token {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+.wallet-magi-token {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.28rem 0;
+  gap: 0.65rem;
+  padding: 0.55rem 0.25rem;
   border-top: 1px solid var(--border-subtle);
-  font-size: 0.74rem;
 }
 
-.wallet-magi__token:first-child {
+.wallet-magi-token:first-child {
   border-top: 0;
 }
 
-.wallet-magi__token-symbol {
+.wallet-magi-token__avatar {
+  flex: none;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.wallet-magi-token__name {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   min-width: 0;
+}
+
+.wallet-magi-token__symbol {
   overflow: hidden;
   color: #cfd8dc;
+  font-size: 0.84rem;
   font-weight: 600;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wallet-magi__token-symbol:hover {
+.wallet-magi-token__symbol:hover {
   color: #81d4fa;
   text-decoration: underline;
 }
 
-.wallet-magi__token-amount {
-  color: #a5d6a7;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.wallet-magi__token-contract {
+.wallet-magi-token__contract {
   color: #78909c;
   font-family: monospace;
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   text-decoration: none;
 }
 
-.wallet-magi__token-contract:hover {
+.wallet-magi-token__contract:hover {
   color: #4fc3f7;
   text-decoration: underline;
 }
 
-.wallet-magi__tokens-error {
-  margin-top: 0.3rem;
-  color: #ffcc80;
-  font-size: 0.7rem;
+.wallet-magi-token__amount {
+  flex: none;
+  color: #a5d6a7;
+  font-size: 0.86rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-.wallet-magi__activity {
-  padding: 0.6rem 0.9rem 0.9rem;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.wallet-magi__activity-title {
-  color: #78909c;
-  font-size: 0.64rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.wallet-magi__activity ul {
-  margin: 0.3rem 0 0;
+.wallet-magi-op-list {
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wallet-magi__activity li {
+.wallet-magi-op {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.25rem 0;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 0.25rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
-  font-size: 0.74rem;
 }
 
-.wallet-magi__activity li:first-child {
+.wallet-magi-op:first-child {
   border-top: 0;
 }
 
-.wallet-magi__activity-label {
-  color: #cfd8dc;
-}
-
-.wallet-magi__activity-amount {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-}
-
-.wallet-magi__activity-amount.is-in {
-  color: #a5d6a7;
-}
-
-.wallet-magi__activity-amount.is-out {
-  color: #ef9a9a;
-}
-
-.wallet-magi__activity time {
+.wallet-magi-op__icon {
   flex: none;
-  width: 6.5rem;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 0.05rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  color: #90a4ae;
+}
+
+.wallet-magi-op--in .wallet-magi-op__icon {
+  background: rgba(76, 175, 80, 0.12);
+  color: #81c784;
+}
+
+.wallet-magi-op--out .wallet-magi-op__icon {
+  background: rgba(239, 83, 80, 0.1);
+  color: #e57373;
+}
+
+.wallet-magi-op__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-magi-op__title {
+  color: #cfd8dc;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.wallet-magi-op__meta {
+  margin-top: 0.1rem;
   color: #78909c;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
+}
+
+.wallet-magi-op__amount {
+  flex: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
+.wallet-magi-op__amount.is-in {
+  color: #a5d6a7;
+}
+
+.wallet-magi-op__amount.is-out {
+  color: #ef9a9a;
+}
+
 @media (max-width: 599px) {
-  .wallet-magi__details {
-    grid-template-columns: minmax(0, 1fr);
+  .wallet-card__head {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  .wallet-magi__intro {
+    margin-left: 0.8rem;
+    margin-right: 0.8rem;
+  }
+
+  .wallet-magi__banner,
+  .wallet-magi__summary {
+    margin-left: 0.8rem;
+    margin-right: 0.8rem;
+  }
+
+  .wallet-magi__grid {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  .wallet-magi__subsection {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  .wallet-magi-token,
+  .wallet-magi-op {
+    padding-left: 0;
+    padding-right: 0;
   }
 }
 </style>
@@ -503,6 +588,15 @@ export default {
     witnessStakeLabel () {
       if (!this.details) return ''
       return this.amount(this.details.witnessStake) + ' HIVE consensus stake'
+    },
+    recentTransactions () {
+      return this.transactions.slice(0, 5)
+    },
+    activityLabel () {
+      const total = this.transactions.length
+      const shown = this.recentTransactions.length
+      if (!total) return ''
+      return total > shown ? 'Latest ' + shown + ' of ' + total : total + ' loaded'
     },
     rows () {
       if (!this.balances) return []
