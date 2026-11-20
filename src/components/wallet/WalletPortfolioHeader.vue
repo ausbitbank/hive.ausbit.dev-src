@@ -243,23 +243,24 @@ export default {
     hiveApr: { type: Number, default: null },
     hbdApr: { type: Number, default: 0 },
     loggedIn: { type: Boolean, default: false },
-    refreshing: { type: Boolean, default: false }
+    refreshing: { type: Boolean, default: false },
+    hasMagi: { type: Boolean, default: false }
   },
   emits: ['refresh', 'send-hive', 'send-hbd', 'power-up', 'navigate'],
-  data () {
-    return {
-      // Rendered in page order; each one is a #hash the wallet page scrolls
-      // to, so refresh and back keep the last navigation.
-      tabs: [
+  computed: {
+    // Rendered in page order; each one is a #hash the wallet page scrolls to,
+    // so refresh and back keep the last navigation.
+    tabs () {
+      const tabs = [
         { section: 'overview', label: 'Overview' },
         { section: 'recent', label: 'Recent' },
         { section: 'activity', label: 'Activity' },
         { section: 'pending', label: 'Pending' },
         { section: 'tokens', label: 'Tokens' }
       ]
-    }
-  },
-  computed: {
+      if (this.hasMagi) tabs.push({ section: 'magi', label: 'Magi' })
+      return tabs
+    },
     totalLabel () {
       return formatUsd(this.totalUsd)
     },

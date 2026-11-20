@@ -1017,6 +1017,7 @@ export default {
       deleteOpen: false,
       commentRefreshToken: 0,
       similarPosts: [],
+      rebloggers: [],
       error: null
     }
   },
@@ -1050,8 +1051,10 @@ export default {
       return Boolean(this.loggedInUser) && this.loggedInUser === this.author
     },
     alreadyReblogged () {
+      if (!this.loggedInUser) return false
+      if (this.rebloggers.length) return this.rebloggers.includes(this.loggedInUser)
       const list = this.post && Array.isArray(this.post.reblogged_by) ? this.post.reblogged_by : []
-      return Boolean(this.loggedInUser) && list.includes(this.loggedInUser)
+      return list.includes(this.loggedInUser)
     },
     hasReplies () {
       return Number(this.post && this.post.children) > 0
@@ -1142,9 +1145,17 @@ export default {
     }
   },
   methods: {
+    loadRebloggedBy () {
+      if (!this.loggedInUser || !this.author || !this.permlink) {
+        this.rebloggers = []
+        return
+      }
+      this.$hive.api.callAsync('condenser_api.get_reblogged_by', [this.author, this.permlink])
+        .then(list => { this.rebloggers = Array.isArray(list) ? list : [] })
+        .catch(() => { this.rebloggers = [] })
+    },
     getPost (author, permlink) {
-      this.$hive.api.getContentAsync(author, permlink)
-        .then(post => {
+      this.$hive.api.getContentAsync(author, permlink)        .then(post => {
           this.error = null
           this.setPost(post)
         })
@@ -1162,6 +1173,7 @@ export default {
       }
       this.post = post
       this.updatePageMeta(post)
+      this.loadRebloggedBy()
       const category = post && post.category
       if (category && category.startsWith('hive-') && !this.$hiveStore.$state.communityInfo[category]) {
         this.$hiveStore.getCommunityInfo(category)
@@ -1306,6 +1318,7 @@ export default {
     init () {
       this.post = null
       this.error = null
+      this.rebloggers = []
       this.author = this.$route.params.author
       this.permlink = this.$route.params.permlink
       this.updatePageMeta(null)

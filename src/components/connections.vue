@@ -67,9 +67,13 @@
 
     <infinite-scroll v-else :can-load="!exhausted" :loading="loading" :offset="500" @load="load">
       <div class="connections-grid">
-        <div v-for="person in visible" :key="person.name" class="connection-card">
-          <user-card :username="person.name" :show-cover="false" />
-        </div>
+        <user-card
+          v-for="person in visible"
+          :key="person.name"
+          :username="person.name"
+          :show-cover="false"
+          class="connection-card"
+        />
       </div>
     </infinite-scroll>
 
@@ -329,13 +333,13 @@ export default {
 
 .connections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 265px), 1fr));
   gap: var(--space-3);
 }
 
 .connection-card {
   min-width: 0;
-  padding: 0.75rem 0.7rem 0.35rem;
+  padding: 0.7rem 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.014);
@@ -345,10 +349,6 @@ export default {
 .connection-card:hover {
   border-color: rgba(79, 195, 247, 0.28);
   background: rgba(255, 255, 255, 0.03);
-}
-
-.connection-card :deep(.q-separator) {
-  display: none;
 }
 
 .connection-card--skeleton {

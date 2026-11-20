@@ -43,9 +43,9 @@ workflows.
 
 ## Open work
 
-W34 (the 2026-11-19 issue sweep) is complete, including the Cloudflare
-metadata Worker for chain-derived link previews. See
-`docs/workstreams/W34-issue-sweep.md`.
+W34 (the 2026-11-19 issue sweep) and W35 (its five reopen follow-ups) are
+complete. See `docs/workstreams/W34-issue-sweep.md` and
+`docs/workstreams/W35-issue-followups.md`.
 
 ## Definition of done
 

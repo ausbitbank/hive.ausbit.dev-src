@@ -1,153 +1,254 @@
 <template>
-  <div class="text-center" :style='coverImageStyle'>
-    <router-link :to="'/@' + username" v-if="profile"><q-avatar size="6rem" v-if="profile.profile_image" class="q-pt-xs hvr"><q-img :src="avatarSrc" @error="avatarFailed = true" :alt="'Avatar of @' + username" /></q-avatar></router-link>
-    <div v-if="!profile"><router-link :to="'/@' + username">@{{ username }}</router-link></div>
-    <div v-if="profile">
-      <div v-if="profile.name" class="text-title text-bold">{{ profile.name }}</div><router-link :to="'/@' + username">@{{username}}</router-link>
-      <div v-if="profile.about" class="text-caption">{{ profile.about }}</div>
-      <div v-if="profile.location" class="text-subtitle text-grey"><q-icon name="place" class="q-mr-xs" />{{ profile.location }}</div>
-      <div v-if="profile.website" class="text-caption"><q-icon name="open_in_browser" class="q-mr-xs" /><a v-if="safeWebsite" :href="safeWebsite" target="_blank" rel="noopener noreferrer" class="text-primary">{{ profile.website.replace('https://','').replace('http://','').replace('www.','') }}</a><span v-else>{{ profile.website.replace('https://','').replace('http://','').replace('www.','') }}</span></div>
-      <user-services :username="username" />
+  <article class="user-card">
+    <router-link :to="'/@' + username" class="user-card__avatar" :aria-label="'Open @' + username">
+      <q-avatar size="46px">
+        <q-img :src="avatarSrc" :alt="'Avatar of @' + username" @error="avatarFailed = true" />
+      </q-avatar>
+    </router-link>
+
+    <div class="user-card__body">
+      <div class="user-card__head">
+        <router-link :to="'/@' + username" class="user-card__name">{{ displayName }}</router-link>
+        <span v-if="displayName !== username" class="user-card__handle">@{{ username }}</span>
+      </div>
+
+      <p v-if="about" class="user-card__about">{{ about }}</p>
+
+      <div class="user-card__meta">
+        <span v-if="hpLabel" :title="'Hive Power: ' + hpLabel">
+          <q-icon name="bolt" size="12px" aria-hidden="true" /> {{ hpLabel }}
+        </span>
+        <span v-if="location" :title="'Location: ' + location">
+          <q-icon name="place" size="12px" aria-hidden="true" /> {{ location }}
+        </span>
+        <span v-if="lastActiveLabel" :title="'Last active ' + lastActiveLabel">
+          <q-icon name="schedule" size="12px" aria-hidden="true" /> {{ lastActiveLabel }}
+        </span>
+      </div>
     </div>
-    <div class="text-center">
-        <span v-if="account && roundedHPTidy !== '0' && roundedHPTidy !== null" title="Hive Power (rounded)" class="q-mr-md"><q-icon name="img:/statics/hive.svg" /> {{ roundedHPTidy }}</span>
-        <span class="q-mr-md text-caption" v-if="account && account.last_post !== '1970-01-01T00:00:00'">Posted: <router-link :to="linkPosts(account.name)"><span :title="account.last_post">{{ timeDelta(account.last_post) }}</span></router-link></span>
-        <span v-if="account && account.last_vote_time !== '1970-01-01T00:00:00'" class="text-caption">Voted: {{ timeDelta(account.last_vote_time) }}</span>
-        <q-fab flat dense v-if="loggedInUser && username !== loggedInUser" color="primary" icon="settings" aria-label="Follow options" title="Follow options" direction="left" :persistent="false" size="xs" @click="getRelationship(username)">
-            <q-spinner-grid v-if="relationship === null" color="primary" />
-            <span v-if="relationship">
-            <q-fab-action v-if="relationship.follows" no-caps push dense label="Following" color="primary" icon="star" @click="unfollowUser(account.name)" />
-            <q-fab-action v-if="!relationship.follows" no-caps push dense label="Follow" color="grey" icon="person_add" @click="followUser(account.name)" />
-            <q-fab-action v-if="relationship.ignores" no-caps push dense label="Ignored" color="red" @click="unignoreUser(account.name)" />
-            <q-fab-action v-if="!relationship.ignores && !relationship.follows" no-caps push dense label="Ignore" color="grey" icon="volume_off" @click="ignoreUser(account.name)" />
-            </span>
-        </q-fab>
-    </div>
-    <q-separator color="primary" />
-  </div>
+
+    <q-btn
+      v-if="canFollow"
+      class="user-card__follow"
+      dense
+      no-caps
+      outline
+      :color="isFollowing ? 'grey-6' : 'primary'"
+      :label="isFollowing ? 'Following' : 'Follow'"
+      :loading="followBusy"
+      :aria-label="(isFollowing ? 'Unfollow @' : 'Follow @') + username"
+      @click.prevent.stop="toggleFollow"
+    />
+  </article>
 </template>
+
 <script>
-import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
-import { safeExternalUrl } from 'src/utils/safeUrl'
+import { stripHtml } from 'src/utils/safeHtml'
+
 export default {
   name: 'userCard',
   props: {
     username: { type: String, required: true },
+    // Kept for callers that still pass it; the compact card never shows cover art.
     showCover: { type: Boolean, default: true }
   },
   data () {
     return {
       relationship: null,
-      avatarFailed: false
+      avatarFailed: false,
+      followBusy: false
     }
   },
-  components: {
-    userServices: defineAsyncComponent(() => import('components/userServices.vue'))
+  computed: {
+    account () {
+      return this.$hiveStore.accounts[this.username]
+    },
+    profile () {
+      if (!this.account || !this.account.posting_json_metadata) return null
+      try {
+        const metadata = JSON.parse(this.account.posting_json_metadata)
+        return metadata && metadata.profile ? metadata.profile : null
+      } catch {
+        return null
+      }
+    },
+    displayName () {
+      const name = this.profile && typeof this.profile.name === 'string' ? this.profile.name.trim() : ''
+      return stripHtml(name, 60) || '@' + this.username
+    },
+    about () {
+      return stripHtml(this.profile && this.profile.about, 180)
+    },
+    location () {
+      return stripHtml(this.profile && this.profile.location, 40)
+    },
+    avatarSrc () {
+      return this.avatarFailed ? '/statics/member.png' : 'https://images.hive.blog/u/' + this.username + '/avatar'
+    },
+    hpLabel () {
+      if (!this.account || !this.$hiveStore.globalProps) return ''
+      const vests = parseFloat(String(this.account.vesting_shares || '').split(' ')[0])
+      if (!Number.isFinite(vests)) return ''
+      const hp = this.$hive.formatter.vestToHive(
+        vests,
+        this.$hiveStore.globalProps.total_vesting_shares,
+        this.$hiveStore.globalProps.total_vesting_fund_hive
+      )
+      if (!Number.isFinite(hp) || hp <= 0) return ''
+      return Math.round(hp).toLocaleString('en-US') + ' HP'
+    },
+    lastActiveLabel () {
+      const stamp = this.account && (this.account.last_post || this.account.last_vote_time)
+      if (!stamp || stamp === '1970-01-01T00:00:00') return ''
+      return moment.utc(stamp).fromNow()
+    },
+    loggedInUser () {
+      return this.$hiveStore.user.username
+    },
+    canFollow () {
+      return Boolean(this.loggedInUser) && this.loggedInUser !== this.username
+    },
+    isFollowing () {
+      return Boolean(this.relationship && this.relationship.follows)
+    }
   },
   watch: {
-    username () { this.avatarFailed = false }
-  },
-  methods: {
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
-    timeDelta (timestamp) { var now = moment.utc(); var stamp = moment.utc(timestamp); var diff = stamp.diff(now, 'minutes'); return moment.duration(diff, 'minutes').humanize(true) },
-    linkPost (author, permlink) { return '/@' + author + '/' + permlink },
-    linkPosts (author) { return '/@' + author + '/posts' },
-    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
-    tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
-    getRelationshipBetweenAccounts (account1, account2) {
-      var method = 'bridge.get_relationship_between_accounts'
-      var params = [account1, account2]
-      this.$hive.api.callAsync(method, params)
-        .then(response => {
-          this.relationship = response
-        })
-    },
-    getRelationship (account) { this.getRelationshipBetweenAccounts(this.loggedInUser, account) },
-    followUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
-      this.relationship.follows = true
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
-    },
-    unfollowUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
-      this.relationship.follows = false
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
-    },
-    ignoreUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
-      this.relationship.ignores = true
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
-    },
-    unignoreUser (who) {
-      this.relationship.ignores = false
-      this.unfollowUser(who)
+    username () {
+      this.avatarFailed = false
+      this.relationship = null
     }
   },
-  mounted () {},
-  computed: {
-    account: function () { return this.$hiveStore.accounts[this.username] },
-    avatarSrc: function () {
-      return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.username)
+  methods: {
+    getRelationshipBetweenAccounts (account1, account2) {
+      return this.$hive.api.callAsync('bridge.get_relationship_between_accounts', [account1, account2])
+        .then(response => {
+          this.relationship = response || { follows: false }
+          return this.relationship
+        })
+        .catch(() => {
+          this.relationship = { follows: false }
+          return this.relationship
+        })
     },
-    loggedInUser: function () { return this.$hiveStore.user.username },
-    meta: function () {
-      if (this.account !== undefined) {
-        if (this.account.posting_json_metadata) {
-          return JSON.parse(this.account.posting_json_metadata)
-        } else if (this.account.json_metadata) {
-          return JSON.parse(this.account.json_metadata)
-        } else {
-          return null
+    async toggleFollow () {
+      if (this.followBusy || !this.canFollow) return
+      this.followBusy = true
+      try {
+        if (!this.relationship) {
+          await this.getRelationshipBetweenAccounts(this.loggedInUser, this.username)
         }
-      } else { return null }
-    },
-    profile: function () {
-      if (this.account !== undefined && this.meta) {
-        if (this.meta.profile) { return this.meta.profile } else { return null }
-      } else { return null }
-    },
-    safeWebsite: function () {
-      if (this.profile) { return safeExternalUrl(this.profile.website) }
-      return null
-    },
-    coverImage: function () {
-      if (!this.showCover) return ''
-      // var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
-      var defaultCover = ''
-      if (this.account === undefined) {
-        return defaultCover
-      } else {
-        if (this.account.posting_json_metadata) {
-          if (JSON.parse(this.account.posting_json_metadata).profile) {
-            if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-              return JSON.parse(this.account.posting_json_metadata).profile.cover_image
-            } else {
-              return defaultCover
-            }
-          } else {
-            return defaultCover
-          }
-        } else {
-          return defaultCover
-        }
+        if (this.relationship && this.relationship.follows) this.unfollowUser(this.username)
+        else this.followUser(this.username)
+      } finally {
+        this.followBusy = false
       }
     },
-    roundedHPTidy: function () {
-      if (this.account !== undefined) {
-        return this.tidyNumber(parseInt(this.vestToHive(this.account.vesting_shares.split(' ')[0])))
-      } else {
-        return null
-      }
+    followUser (who) {
+      const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
+      this.relationship = { ...(this.relationship || {}), follows: true }
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     },
-    coverImageStyle: function () {
-      if (this.coverImage) {
-        return { 'background-image': 'linear-gradient(rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 40%, rgba(10, 10, 10, 0.75) 100%), url(' + this.coverImage + ')', 'background-position': 'center, center', 'background-repeat': 'no-repeat', 'background-size': 'cover', 'background-clip': 'border-box, border-box', 'background-color': 'rgba(0, 0, 0, 0)', 'background-attachment': 'scroll, scroll' }
-      } else {
-        return null
-      }
-    },
-    globalProps: function () { return this.$hiveStore.globalProps }
+    unfollowUser (who) {
+      const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
+      this.relationship = { ...(this.relationship || {}), follows: false }
+      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
+    }
   }
 }
 </script>
+
+<style scoped>
+.user-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  height: 100%;
+  min-width: 0;
+}
+
+.user-card__avatar {
+  flex: none;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.user-card__avatar :deep(.q-avatar) {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #10181d;
+}
+
+.user-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.user-card__name {
+  overflow: hidden;
+  color: #e4eaed;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-card__name:hover {
+  color: #81d4fa;
+}
+
+.user-card__handle {
+  color: #78909c;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.user-card__about {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0.2rem 0 0;
+  color: #90a4ae;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.user-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+
+.user-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.user-card__follow {
+  flex: none;
+  align-self: flex-start;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+</style>

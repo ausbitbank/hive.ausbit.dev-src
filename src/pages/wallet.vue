@@ -13,6 +13,7 @@
           :hbd-apr="portfolio.hbdApr"
           :logged-in="isOwner"
           :refreshing="refreshing"
+          :has-magi="magiVisible"
           @refresh="refreshAll"
           @send-hive="transferHive = true"
           @send-hbd="transferHbd = true"
@@ -184,6 +185,14 @@
             :hive-price-usd="hivePriceUsd"
           />
         </section>
+
+        <magi-balances
+          :username="username"
+          :logged-in="isOwner"
+          :hive-price-usd="hivePriceUsd"
+          :hbd-price-usd="hbdPriceUsd"
+          @update:has-assets="magiVisible = $event"
+        />
       </div>
 
       <q-dialog v-model="transferHive">
@@ -392,6 +401,7 @@ import WalletPendingStrip from 'components/wallet/WalletPendingStrip.vue'
 import WalletPendingPanel from 'components/wallet/WalletPendingPanel.vue'
 import WalletActivity from 'components/wallet/WalletActivity.vue'
 import HiveEngineTokens from 'components/wallet/HiveEngineTokens.vue'
+import MagiBalances from 'components/wallet/MagiBalances.vue'
 
 const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
@@ -427,7 +437,8 @@ export default {
     WalletPendingStrip,
     WalletPendingPanel,
     WalletActivity,
-    HiveEngineTokens
+    HiveEngineTokens,
+    MagiBalances
   },
   mixins: [VueTimers],
   timers: {
@@ -462,6 +473,7 @@ export default {
       accountHistoryLimit: 50,
       historyLoading: false,
       historyDone: false,
+      magiVisible: false,
       bitmask: walletBitmask
     }
   },

@@ -27,12 +27,12 @@
           <user-services :username="account.name" />
         </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" v-if="showNavBar">
+      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" :class="{ 'account-tabs--overflow': tabsOverflow }" v-if="showNavBar">
         <q-tabs
           ref="tabs"
           :dense="$q.screen.lt.md"
-          :mobile-arrows="tabsOverflow"
-          :outside-arrows="tabsOverflow"
+          :mobile-arrows="$q.screen.lt.sm === false"
+          :outside-arrows="$q.screen.lt.sm === false"
           align="center"
           icons
           no-caps
@@ -206,6 +206,11 @@
 .account-tabs :deep(.q-tabs__arrow--faded) {
   opacity: 0;
 }
+/* Quasar keeps the arrow elements mounted even when the strip fits. Hide them
+   entirely until our measurement says there is real overflow. */
+.account-tabs:not(.account-tabs--overflow) :deep(.q-tabs__arrow) {
+  display: none !important;
+}
 .account-tabs :deep(.q-tabs__content) {
   scrollbar-width: none;
 }
@@ -342,6 +347,10 @@ export default {
       this.tabsObserver = new ResizeObserver(() => this.measureTabs(content))
       this.tabsObserver.observe(content)
       for (const child of content.children) this.tabsObserver.observe(child)
+      // Web fonts can change tab widths after the first measurement.
+      if (typeof document !== 'undefined' && document.fonts?.ready) {
+        document.fonts.ready.then(() => this.measureTabs(content)).catch(() => {})
+      }
     },
     measureTabs (content) {
       const overflow = content.scrollWidth - content.clientWidth > 2

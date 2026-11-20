@@ -95,13 +95,18 @@ function installPurifyHooks () {
       if (node.getAttribute('target') === '_blank') {
         node.setAttribute('rel', 'noopener noreferrer')
       }
-      if ((node.getAttribute('class') || '').split(/\s+/).includes('markdown-video-link')) {
+      const classes = (node.getAttribute('class') || '').split(/\s+/)
+      const isVideo = classes.includes('markdown-video-link')
+      if (isVideo) {
         node.setAttribute('aria-label', 'Play video')
+        node.setAttribute('role', 'button')
+        if (!node.hasAttribute('href')) node.setAttribute('tabindex', '0')
       }
       // Image-only links (a logo inside a heading, or an image wrapper) have no
       // text for assistive technology. Name them from the image alt text, or
-      // from the destination when the author did not provide any.
-      if (!node.textContent.trim()) {
+      // from the destination when the author did not provide any. Video links
+      // already carry their own label.
+      if (!isVideo && !node.textContent.trim()) {
         const image = node.querySelector('img')
         const alt = (image?.getAttribute('alt') || '').trim()
         if (alt) {
@@ -143,9 +148,11 @@ export default {
     installPurifyHooks()
     this.render()
     this.$refs.root.addEventListener('click', this.handleClick)
+    this.$refs.root.addEventListener('keydown', this.handleKeydown)
   },
   beforeUnmount () {
     this.$refs.root?.removeEventListener('click', this.handleClick)
+    this.$refs.root?.removeEventListener('keydown', this.handleKeydown)
   },
   methods: {
     render () {
@@ -272,6 +279,14 @@ export default {
       }
     },
 
+    handleKeydown (event) {
+      if (!['Enter', ' '].includes(event.key)) return
+      const anchor = event.target.closest?.('a.markdown-video-link')
+      if (!anchor) return
+      event.preventDefault()
+      this.handleClick(event)
+    },
+
     handleClick (event) {
       const anchor = event.target.closest?.('a.markdown-video-link')
       if (!anchor) return false
@@ -281,7 +296,6 @@ export default {
       const src = embedSrc || videoHref
       if (!src || !this.isAllowedEmbed(src)) return false
       event.preventDefault()
-
       const wrapper = document.createElement('div')
       wrapper.style.cssText = 'position:relative;padding-top:56.25%;'
 
@@ -399,5 +413,29 @@ export default {
 
 .markdown-video-link--text::after {
   display: none;
+}
+
+/* render-helper's 3Speak placeholder is an empty anchor: give it a real,
+   clickable 16:9 box so the play badge is not a floating speck. */
+.markdown-video-link:not([href]),
+.markdown-video-link-speak {
+  display: block;
+  width: 100%;
+  min-height: 200px;
+  aspect-ratio: 16 / 9;
+  margin: 0.6rem 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: #0b1014;
+  cursor: pointer;
+}
+
+.markdown-video-link-speak .markdown-video-play {
+  display: none;
+}
+
+.markdown-video-link:not([href]):focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
 }
 </style>
