@@ -45,6 +45,7 @@
 <script>
 import moment from 'src/utils/time'
 import { stripHtml } from 'src/utils/safeHtml'
+import { fetchFollowingNames, rememberFollowing } from 'src/services/chainData'
 
 export default {
   name: 'userCard',
@@ -56,6 +57,7 @@ export default {
   data () {
     return {
       relationship: null,
+      followingNames: null,
       avatarFailed: false,
       followBusy: false
     }
@@ -110,16 +112,34 @@ export default {
       return Boolean(this.loggedInUser) && this.loggedInUser !== this.username
     },
     isFollowing () {
-      return Boolean(this.relationship && this.relationship.follows)
+      if (this.relationship) return Boolean(this.relationship.follows)
+      if (Array.isArray(this.followingNames)) return this.followingNames.includes(this.username)
+      return false
     }
   },
   watch: {
     username () {
       this.avatarFailed = false
       this.relationship = null
+      this.followingNames = null
+      this.loadFollowingState()
     }
   },
+  created () {
+    this.loadFollowingState()
+  },
   methods: {
+    async loadFollowingState () {
+      if (!this.canFollow) return
+      try {
+        const names = await fetchFollowingNames(this.loggedInUser)
+        // A card can be retargeted while the shared read is in flight.
+        if (this.canFollow) this.followingNames = Array.isArray(names) ? names : []
+      } catch {
+        // The click handler still resolves the relationship on demand.
+        this.followingNames = null
+      }
+    },
     getRelationshipBetweenAccounts (account1, account2) {
       return this.$hive.api.callAsync('bridge.get_relationship_between_accounts', [account1, account2])
         .then(response => {
@@ -136,7 +156,11 @@ export default {
       this.followBusy = true
       try {
         if (!this.relationship) {
-          await this.getRelationshipBetweenAccounts(this.loggedInUser, this.username)
+          if (Array.isArray(this.followingNames)) {
+            this.relationship = { follows: this.followingNames.includes(this.username) }
+          } else {
+            await this.getRelationshipBetweenAccounts(this.loggedInUser, this.username)
+          }
         }
         if (this.relationship && this.relationship.follows) this.unfollowUser(this.username)
         else this.followUser(this.username)
@@ -147,11 +171,15 @@ export default {
     followUser (who) {
       const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
       this.relationship = { ...(this.relationship || {}), follows: true }
+      if (Array.isArray(this.followingNames) && !this.followingNames.includes(who)) this.followingNames.push(who)
+      rememberFollowing(this.loggedInUser, who, true)
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     },
     unfollowUser (who) {
       const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
       this.relationship = { ...(this.relationship || {}), follows: false }
+      if (Array.isArray(this.followingNames)) this.followingNames = this.followingNames.filter(name => name !== who)
+      rememberFollowing(this.loggedInUser, who, false)
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     }
   }

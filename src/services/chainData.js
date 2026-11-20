@@ -144,6 +144,61 @@ export function fetchConnections (account, type, { start = '', limit = 100, forc
   })
 }
 
+const FOLLOWING_PAGE_SIZE = 1000
+const FOLLOWING_MAX_PAGES = 10
+
+function followingKey (account) {
+  return 'following:' + String(account || '').toLowerCase()
+}
+
+/**
+ * Every account the viewer follows, as one cached snapshot. Grids of cards
+ * then answer "am I following this account?" with a local membership check
+ * instead of one `get_relationship_between_accounts` call per card.
+ */
+export function fetchFollowingNames (account, { force = false } = {}) {
+  if (!account) return Promise.resolve([])
+  return loadCached(followingKey(account), async () => {
+    const names = []
+    const seen = new Set()
+    let start = ''
+    for (let page = 0; page < FOLLOWING_MAX_PAGES; page++) {
+      const rows = await apiGetFollowing(account, start, FOLLOWING_PAGE_SIZE)
+      if (!Array.isArray(rows) || rows.length === 0) break
+      for (const row of rows) {
+        const name = typeof row === 'string' ? row : row?.following
+        if (!name || typeof name !== 'string' || seen.has(name)) continue
+        seen.add(name)
+        names.push(name)
+      }
+      if (rows.length < FOLLOWING_PAGE_SIZE) break
+      const last = rows[rows.length - 1]
+      const cursor = typeof last === 'string' ? last : last?.following
+      if (!cursor || cursor === start) break
+      start = cursor
+    }
+    return names
+  }, {
+    ttl: CACHE_TTL.connections,
+    force
+  })
+}
+
+/**
+ * Keep the cached snapshot in step with an optimistic follow/unfollow so the
+ * next card render and the next page visit agree with the queued action.
+ */
+export function rememberFollowing (account, target, follows) {
+  if (!account || !target) return false
+  const entry = apiCache.get(followingKey(account))
+  const names = entry && entry.value
+  if (!Array.isArray(names)) return false
+  const index = names.indexOf(target)
+  if (follows && index === -1) names.push(target)
+  else if (!follows && index !== -1) names.splice(index, 1)
+  return true
+}
+
 export function fetchMedianHistoryPrice ({ force = false } = {}) {
   return loadCached('medianHistory', () => apiGetMedianHistoryPrice(), {
     ttl: CACHE_TTL.median,
@@ -292,6 +347,10 @@ export function invalidateCommunityCache (name = null) {
 
 export function invalidateFollowCountCache (account = null) {
   return invalidateCache(account ? 'followCount:' + account : 'followCount:')
+}
+
+export function invalidateFollowingCache (account = null) {
+  return invalidateCache(account ? followingKey(account) : 'following:')
 }
 
 export function invalidateTickerCache () {

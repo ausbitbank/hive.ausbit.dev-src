@@ -106,6 +106,35 @@ describe('chain data cache', () => {
     expect(apiGetFollowing).toHaveBeenCalledWith('carol', '', 10)
   })
 
+  it('pages the viewer following snapshot once and caches it', async () => {
+    const first = Array.from({ length: 1000 }, (_, index) => ({ following: 'user' + String(index).padStart(4, '0') }))
+    apiGetFollowing
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce([{ following: 'zebra' }])
+    const data = await chainData()
+
+    const names = await data.fetchFollowingNames('alice')
+    expect(names).toHaveLength(1001)
+    expect(names[1001 - 1]).toBe('zebra')
+    expect(apiGetFollowing).toHaveBeenNthCalledWith(1, 'alice', '', 1000)
+    expect(apiGetFollowing).toHaveBeenNthCalledWith(2, 'alice', 'user0999', 1000)
+
+    expect(await data.fetchFollowingNames('alice')).toHaveLength(1001)
+    expect(apiGetFollowing).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the cached following snapshot in step with follow and unfollow', async () => {
+    apiGetFollowing.mockResolvedValue([{ following: 'bob' }])
+    const data = await chainData()
+
+    const names = await data.fetchFollowingNames('alice')
+    expect(data.rememberFollowing('alice', 'carol', true)).toBe(true)
+    expect(data.rememberFollowing('alice', 'bob', false)).toBe(true)
+    expect(names).toEqual(['carol'])
+    expect(await data.fetchFollowingNames('alice')).toEqual(['carol'])
+    expect(data.rememberFollowing('nobody', 'carol', true)).toBe(false)
+  })
+
   it('clears every chain-data cache entry', async () => {
     apiGetAccounts.mockImplementation(async names => names.map(name => ({ name })))
     apiGetGlobalProps.mockResolvedValue({ head_block_number: 1 })

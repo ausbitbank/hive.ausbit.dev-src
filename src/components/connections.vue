@@ -90,7 +90,7 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
-import { fetchConnections } from 'src/services/chainData'
+import { fetchConnections, fetchFollowingNames } from 'src/services/chainData'
 import { vestToHive } from 'src/services/wallet'
 
 const SORTS = [
@@ -243,12 +243,19 @@ export default {
       this.loading = true
       this.error = ''
       const start = this.entries.length ? this.entries[this.entries.length - 1] : ''
+      // Warm the viewer's follow snapshot before the cards mount so their
+      // Follow/Following buttons render in the right state straight away.
+      const viewer = this.$hiveStore.user.username
+      const followState = viewer ? fetchFollowingNames(viewer).catch(() => []) : Promise.resolve([])
       try {
-        const response = await fetchConnections(this.username, this.type, {
-          start,
-          limit: this.limit,
-          force
-        })
+        const [response] = await Promise.all([
+          fetchConnections(this.username, this.type, {
+            start,
+            limit: this.limit,
+            force
+          }),
+          followState
+        ])
         const rows = Array.isArray(response) ? response : []
         const next = rows
           .map(row => (this.type === 'following' ? row.following : row.follower))
