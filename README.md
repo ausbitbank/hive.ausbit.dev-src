@@ -139,6 +139,7 @@ The dev server opens at <http://localhost:8080>.
 | `bun run perf:check` | Run the measured performance budgets |
 | `bun run prerender` | Write metadata-only crawler snapshots into `dist/spa` |
 | `bun run serve:dist` | Serve the built SPA with history fallback and compression |
+| `bun run devlog` | Collect, screenshot, draft and validate a development blog post |
 
 ## Performance
 
@@ -256,6 +257,7 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current state and next priorities
 - [`docs/workstreams/`](docs/workstreams/) — implementation records for W1–W27
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
+- [`docs/DEVLOG.md`](docs/DEVLOG.md) — development-blog pipeline, editorial rules and screenshot recipes
 - [`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) — 2026 migration notes
 
 ## History

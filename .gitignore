@@ -35,3 +35,6 @@ blob-report/
 
 # Wrangler local state
 .wrangler/
+
+# Devlog working data (drafts, briefs, shot plans)
+.devlog/

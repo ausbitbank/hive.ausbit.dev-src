@@ -22,7 +22,8 @@
     "perf": "node scripts/perf-baseline.mjs",
     "perf:check": "node scripts/perf-baseline.mjs --check",
     "prerender": "node scripts/prerender.mjs",
-    "serve:dist": "node scripts/serve-dist.mjs"
+    "serve:dist": "node scripts/serve-dist.mjs",
+    "devlog": "node scripts/devlog.mjs"
   },
   "dependencies": {
     "@ecency/render-helper": "^2.5.47",
