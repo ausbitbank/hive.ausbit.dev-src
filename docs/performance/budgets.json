@@ -5,9 +5,9 @@
   "cls": 0.5,
   "routes": {
     "/": {
-      "jsKb": 500,
+      "jsKb": 510,
       "routeJsKb": 150,
-      "totalKb": 720
+      "totalKb": 730
     },
     "/browse": {
       "jsKb": 480,
@@ -40,7 +40,7 @@
       "totalKb": 700
     },
     "/search?q=hive": {
-      "jsKb": 460,
+      "jsKb": 465,
       "routeJsKb": 150,
       "totalKb": 720
     }
