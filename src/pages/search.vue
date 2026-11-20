@@ -114,6 +114,12 @@
                   class="search-semantic-note"
                   title="HiveSense did not answer, so these are keyword matches."
                 >Keyword only</span>
+                <button
+                  v-if="group.id === 'posts' && group.moreRows"
+                  type="button"
+                  class="search-more"
+                  @click="showMorePosts"
+                >{{ group.moreLabel }}</button>
                 <router-link v-if="group.more" :to="group.more" class="home-panel__link">View all</router-link>
               </div>
             </div>
@@ -800,6 +806,27 @@
   white-space: nowrap;
 }
 
+.search-more {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid rgba(129, 212, 250, 0.35);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: #81d4fa;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.search-more:hover {
+  background: rgba(129, 212, 250, 0.08);
+}
+
+.search-more:focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 1px;
+}
+
 .search-authors__body {
   display: flex;
   flex-direction: column;
@@ -954,6 +981,7 @@ import { formatHbd } from 'src/services/proposals'
 import { runUnifiedSearch } from 'src/services/searchReads'
 import {
   PERIOD_OPTIONS,
+  POSTS_PAGE_SIZE,
   SEARCH_TYPE_LABELS,
   SEARCH_TYPES,
   SORT_OPTIONS,
@@ -1004,7 +1032,8 @@ export default {
       periodOptions: PERIOD_OPTIONS,
       examples: EXAMPLES,
       savedSearches: [],
-      searchToken: 0
+      searchToken: 0,
+      postsVisible: POSTS_PAGE_SIZE
     }
   },
   computed: {
@@ -1054,7 +1083,7 @@ export default {
         type: 'posts',
         label: 'Posts',
         eyebrow: 'Content',
-        rows: (result.posts.items || []).map((post, index) => ({
+        rows: (result.posts.items || []).slice(0, this.postsVisible).map((post, index) => ({
           key: rowKey('post', post, index),
           title: post.title || 'Untitled post',
           description: '@' + post.author + ' · ' + moment.utc(post.created).fromNow() + ' · ' + (post.community_title || post.category || 'Hive'),
@@ -1062,6 +1091,8 @@ export default {
           icon: post.semantic ? 'auto_awesome' : 'article',
           path: '/@' + post.author + '/' + post.permlink
         })),
+        moreRows: Math.max(0, (result.posts.items || []).length - this.postsVisible),
+        moreLabel: 'Show ' + Math.min(POSTS_PAGE_SIZE, Math.max(0, (result.posts.items || []).length - this.postsVisible)) + ' more',
         error: result.posts.error
       })
 
@@ -1267,6 +1298,7 @@ export default {
       }
       const token = ++this.searchToken
       this.submittedQuery = text
+      this.postsVisible = POSTS_PAGE_SIZE
       if (!text) {
         this.result = null
         this.loading = false
@@ -1303,7 +1335,7 @@ export default {
       }
       const counts = {
         accounts: this.result.accounts.items.length,
-        posts: this.result.posts.items.length,
+        posts: Math.min(this.result.posts.items.length, this.postsVisible),
         tags: this.result.tags.items.length,
         communities: this.result.communities.items.length,
         blocks: this.result.blocks.items.length,
@@ -1333,6 +1365,12 @@ export default {
     },
     setSmart (smart) {
       this.pushState({ ...this.filters, smart: Boolean(smart) })
+    },
+    showMorePosts () {
+      const total = (this.result?.posts?.items || []).length
+      this.postsVisible = Math.min(total, this.postsVisible + POSTS_PAGE_SIZE)
+      this.activeKey = ''
+      this.updateTypeCounts()
     },
     filterTag (tag, { toggle = false } = {}) {
       const tags = toggle ? toggleFacet(this.filters.tags, tag) : [String(tag).replace(/^#/, '').toLowerCase()]

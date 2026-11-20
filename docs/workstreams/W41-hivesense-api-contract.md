@@ -66,6 +66,9 @@ Key consequences:
   single-character tokens. Previously a query like "landing on the moon" matched
   almost every post through "on"/"the", so the keyword-padding guard let
   unrelated popular posts into the results whenever semantic results were short.
+- The Posts group now fetches up to 50 hydrated results and starts with 20,
+  with a **Show more** control that reveals 20 at a time. `full_posts` is capped
+  at 50 per request, so going deeper needs `/posts/by-ids-query` hydration.
 - `src/components/CommandPalette.vue`: `resolveJumpResults` now mirrors the
   search-page classification. A bare word offers tag destinations and only
   reveals an account jump after the async check confirms that account exists;
@@ -76,9 +79,9 @@ Key consequences:
 - `bun run lint` — clean.
 - `bun run test` — 79 files / 760 tests passing.
 - Live `runUnifiedSearch` checks:
-  - `photography`, `bitcoin`, `hive` now report `kind: keyword` and return 20
-    semantic rows (50 hydrated posts fetched).
-  - `landing on the moon`, `hive development` return 20 semantic rows with no
+  - `photography`, `bitcoin`, `hive` now report `kind: keyword` and return 50
+    semantic rows (the API's full hydration cap).
+  - `landing on the moon`, `hive development` return 50 semantic rows with no
     keyword padding.
   - `period: 'week'` for `hive development` returns recent, on-topic posts
     instead of an empty semantic set.

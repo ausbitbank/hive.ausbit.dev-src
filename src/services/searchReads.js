@@ -158,7 +158,7 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
     result.semantic.attempted = true
     tasks.push(
       Promise.allSettled([fetchHiveSenseSearch(plan.query, {
-        limit: RESULT_LIMITS.posts * 3,
+        limit: RESULT_LIMITS.posts,
         fromBlock: periodStartTimestamp(filters.period),
         force
       }), postsPromise])

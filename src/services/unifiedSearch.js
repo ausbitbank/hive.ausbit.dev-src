@@ -38,7 +38,9 @@ export const POST_PERIOD_LABELS = {
 
 export const RESULT_LIMITS = {
   accounts: 11,
-  posts: 20,
+  // HiveSense hydrates at most 50 posts per search request. Fetch that many so
+  // the page can reveal more without another network call.
+  posts: 50,
   tags: 12,
   communities: 6,
   witnesses: 8,
@@ -46,6 +48,9 @@ export const RESULT_LIMITS = {
   blocks: 5,
   transactions: 5
 }
+
+/** Posts revealed per "Show more" step on the search page. */
+export const POSTS_PAGE_SIZE = 20
 
 export const MIN_QUERY_LENGTH = 2
 export const BLOCK_NUMBER_RE = /^\d{1,10}$/
