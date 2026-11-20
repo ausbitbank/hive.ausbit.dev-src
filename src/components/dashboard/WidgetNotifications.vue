@@ -1,5 +1,15 @@
 <template>
   <div class="dw-notify">
+    <q-card-section class="home-panel__head dw-notify__head">
+      <div>
+        <div class="home-eyebrow">Notifications</div>
+        <h2 class="home-panel__title">
+          <template v-if="targetAccount">@{{ targetAccount }}</template>
+          <template v-else>Notifications</template>
+        </h2>
+      </div>
+    </q-card-section>
+
     <dashboard-widget-state
       :state="state"
       :error="loadError"
