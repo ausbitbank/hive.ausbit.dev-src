@@ -5,8 +5,9 @@
 An open-source block explorer, wallet and toolkit for the [Hive](https://hive.io) blockchain.
 
 hive.ausbit.dev reads directly from public Hive APIs and lets you explore blocks,
-transactions, accounts, posts, governance, witnesses, markets and Hive-Engine
-tokens. Signing is handled by Hive Keychain or the built-in encrypted SmartLock.
+transactions, accounts, posts, governance, witnesses, markets and layer-2 data
+from Hive-Engine and Magi (formerly VSC). Signing is handled by Hive Keychain or
+the built-in encrypted SmartLock.
 
 ## Screenshots
 
@@ -29,7 +30,7 @@ Wallet:
 | `/` | Live block card, prices, top witnesses, trending posts and recent author posts |
 | `/blocks`, `/b/:blockNum`, `/tx/:txId` | Latest blocks, block detail with grouped operations, transaction detail and raw JSON |
 | `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
-| `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens and transfers |
+| `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens, Magi balances/tokens and transfers |
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
@@ -39,7 +40,8 @@ Wallet:
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |
 | `/proposals`, `/proposals/:id` | DHF proposals, funding status, votes, funding outlook, creator/receiver/topic mix and voter overlap |
-| `/health`, `/nodes` | Network health, witness participation, HBD backing and API node latency, beacon reliability, feature coverage and failover |
+| `/health`, `/nodes` | Network health and node latency/failover for Hive L1, Hive-Engine and Magi, including beacon reliability, feature coverage and Magi consensus/witness data |
+| `/magi` | Read-only Magi contract viewer: metadata, timelocked updates, recent outputs, state keys and call simulation |
 | `/market` | Hive internal market: order book, trades, open orders, balances, fees and limit orders |
 | `/markets` | External charts, HBD peg/premium, savings APR and HIVE/HBD conversion calculator |
 | `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |
@@ -70,7 +72,7 @@ Additional UX:
 - `@hiveio/keychain` for Keychain signing
 - `sjcl` + `bs58` for SmartLock encrypted local key storage
 - `dompurify` for sanitized post/community HTML
-- Hive-Engine Hive RPC and CoinGecko for token and market data
+- Hive-Engine RPC, Magi GraphQL and CoinGecko for tokens, layer-2 data and market data
 - Vitest for unit tests
 - Playwright + axe-core for end-to-end and accessibility checks, with Obscura for the fast functional loop and Chromium for the full release gate
 
@@ -215,7 +217,11 @@ Override `REMOTE` and `REMOTE_DIR` for another host.
   witnesses, proposals, market ticker and account history.
 - Hive bridge/Hivemind: ranked/account posts, profiles, discussions and
   notifications.
-- Hive-Engine RPC and history APIs: token balances, markets and history.
+- Hive-Engine RPC and history APIs: token balances, markets, node status and
+  history.
+- Magi GraphQL: balances, ledger activity, node/witness state, resource credits
+  and read-only contract inspection.
+- Magi token indexer: standard `magi_token` balances and token metadata.
 - CoinGecko: HIVE/HBD USD prices and 24h changes.
 - TradingView: external price charts.
 

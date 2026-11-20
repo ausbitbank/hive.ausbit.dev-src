@@ -368,6 +368,10 @@ export const NODE_SORT_OPTIONS = [
   { label: 'Version', value: 'version' }
 ]
 
+// Layer-2 nodes have no beacon score, so keep the same ordering without the
+// Hive-only metric.
+export const LAYER2_SORT_OPTIONS = NODE_SORT_OPTIONS.filter(option => option.value !== 'score')
+
 export const NODE_FILTER_OPTIONS = [
   { label: 'All nodes', value: 'all' },
   { label: 'Healthy only', value: 'healthy' },

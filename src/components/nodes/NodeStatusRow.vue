@@ -29,7 +29,7 @@
           watch
         </q-badge>
         <q-badge
-          v-if="node.beacon"
+          v-if="network === 'hive' && node.beacon"
           :color="beaconState.key === 'ok' ? 'green-9' : (beaconState.key === 'critical' ? 'red-9' : 'orange-9')"
           :text-color="beaconState.key === 'warning' || beaconState.key === 'watch' ? 'black' : 'white'"
           class="node-row__badge"
@@ -55,15 +55,23 @@
           head {{ formatCount(node.head) }}
         </span>
         <span v-if="node.ok" :class="{ 'node-row__lag': node.lag > 0 }">
-          {{ node.lag > 0 ? node.lag + ' blocks behind' : 'at chain head' }}
+          {{ node.lag > 0 ? node.lag + ' blocks behind' : 'at network head' }}
         </span>
-        <span v-if="node.ok && features.length" class="node-row__features">
-          <q-icon name="extension" size="14px" aria-hidden="true" />
-          {{ features.length }} API feature{{ features.length === 1 ? '' : 's' }}
-        </span>
-        <span v-if="node.beacon" class="node-row__uptime">
-          {{ formatPercent(node.beacon.uptime) }} uptime
-        </span>
+        <template v-if="network === 'hive'">
+          <span v-if="node.ok && features.length" class="node-row__features">
+            <q-icon name="extension" size="14px" aria-hidden="true" />
+            {{ features.length }} API feature{{ features.length === 1 ? '' : 's' }}
+          </span>
+          <span v-if="node.beacon" class="node-row__uptime">
+            {{ formatPercent(node.beacon.uptime) }} uptime
+          </span>
+        </template>
+        <template v-else>
+          <span v-for="detail in details" :key="detail.label" class="node-row__detail">
+            <q-icon v-if="detail.icon" :name="detail.icon" size="14px" aria-hidden="true" />
+            {{ detail.label }}
+          </span>
+        </template>
         <span v-if="!node.ok" class="node-row__error">{{ node.error || 'Unreachable' }}</span>
       </div>
 
@@ -180,7 +188,8 @@
 }
 
 .node-row__uptime,
-.node-row__features {
+.node-row__features,
+.node-row__detail {
   color: #78909c;
 }
 
@@ -239,12 +248,21 @@ import {
   versionStatus
 } from 'src/services/network'
 
+function disabledMethodLabel (disabledMethods) {
+  const groups = Object.entries(disabledMethods || {})
+    .filter(([, methods]) => Array.isArray(methods) && methods.length)
+  const count = groups.reduce((total, [, methods]) => total + methods.length, 0)
+  if (!count) return 'all methods enabled'
+  return count + ' method' + (count === 1 ? '' : 's') + ' disabled'
+}
+
 export default {
   name: 'NodeStatusRow',
   components: { Sparkline },
   props: {
     node: { type: Object, required: true },
     active: { type: Boolean, default: false },
+    network: { type: String, default: 'hive' },
     expectedVersion: { type: String, default: '' },
     samples: { type: Array, default: () => [] }
   },
@@ -261,6 +279,30 @@ export default {
     },
     features () {
       return Array.isArray(this.node.beacon?.features) ? this.node.beacon.features : []
+    },
+    details () {
+      if (this.network === 'hiveEngine') {
+        return [
+          this.node.hiveHead ? { icon: 'link', label: 'Hive block ' + formatCount(this.node.hiveHead) } : null,
+          this.node.chainId ? { icon: 'hub', label: this.node.chainId } : null,
+          this.node.lightNode ? { icon: 'bolt', label: 'light node' } : null,
+          this.node.disabledMethods
+            ? { icon: 'settings', label: disabledMethodLabel(this.node.disabledMethods) }
+            : null
+        ].filter(Boolean)
+      }
+      if (this.network === 'magi') {
+        return [
+          this.node.epoch ? { icon: 'autorenew', label: 'epoch ' + formatCount(this.node.epoch) } : null,
+          this.node.consensusVersion ? { icon: 'verified', label: 'consensus ' + this.node.consensusVersion } : null,
+          this.node.consensusLine ? { icon: 'account_tree', label: this.node.consensusLine } : null,
+          this.node.processingSuspended
+            ? { icon: 'pause_circle', label: 'processing suspended' }
+            : null,
+          this.node.gitCommit ? { icon: 'commit', label: String(this.node.gitCommit).slice(0, 8) } : null
+        ].filter(Boolean)
+      }
+      return []
     },
     typical () {
       const summary = this.summary

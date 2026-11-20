@@ -81,7 +81,8 @@ const SEO_LINKS = [
   ['/proposals', 'Proposals'],
   ['/markets', 'Markets'],
   ['/health', 'Network health'],
-  ['/nodes', 'API nodes']
+  ['/nodes', 'API nodes'],
+  ['/magi', 'Magi contracts']
 ]
 
 /**

@@ -19,7 +19,7 @@
       <slot name="empty" />
     </div>
 
-    <div v-else class="ui-table__scroll">
+    <div v-else class="ui-table__scroll" tabindex="0" role="region" :aria-label="caption || 'Data table'">
       <table class="ui-table">
         <caption class="sr-only">{{ caption || 'Data table' }}</caption>
         <thead>

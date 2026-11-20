@@ -19,7 +19,43 @@ export const HIVE_API_NODES = [
 
 export const DEFAULT_HIVE_NODE = HIVE_API_NODES[0]
 export const DEFAULT_ACCOUNT_HISTORY_NODE = 'https://api.hive.blog'
-export const DEFAULT_HIVE_ENGINE_NODE = 'https://herpc.dtools.dev'
+
+// Hive-Engine public RPC nodes. The first four are the automatic candidates
+// used by the failover client and the node selector. The watched list is
+// seeded from the public Hive-Engine benchmark reports and is probed on the
+// /nodes page, but never selected automatically.
+export const HIVE_ENGINE_NODES = [
+  'https://herpc.dtools.dev',
+  'https://api.hive-engine.com/rpc',
+  'https://api.primersion.com',
+  'https://enginerpc.com'
+]
+
+export const WATCHED_HIVE_ENGINE_NODES = [
+  'https://herpc.filoz.info',
+  'https://engine.hive.pizza',
+  'https://he.c0ff33a.uk',
+  'https://heapi.c0ff33a.uk',
+  'https://herpc.actifit.io',
+  'https://herpc.kanibot.com',
+  'https://api2.hive-engine.com/rpc',
+  'https://herpc.liotes.com',
+  'https://he.atexoras.com:2083',
+  'https://light.primersion.com'
+]
+
+export const DEFAULT_HIVE_ENGINE_NODE = HIVE_ENGINE_NODES[0]
+
+// Magi (formerly VSC) GraphQL endpoints. These are the public endpoints
+// published by the Magi/Aioha documentation. There is no public Magi node
+// registry, so the roster is curated and users can override it in Settings.
+export const MAGI_NODES = [
+  'https://vsc.techcoderx.com/api/v1/graphql',
+  'https://api.vsc.eco/api/v1/graphql',
+  'https://vsc.atexoras.com:2087/api/v1/graphql'
+]
+
+export const DEFAULT_MAGI_NODE = MAGI_NODES[0]
 
 // Beacon also tracks nodes that were flaky or limited at review time. They are
 // probed from the /nodes page but are not used as automatic fallbacks, since a
@@ -48,4 +84,16 @@ export function allHiveNodes () {
 
 export function isFallbackNode (url) {
   return HIVE_API_NODES.includes(url)
+}
+
+export function allHiveEngineNodes () {
+  return [...new Set([...HIVE_ENGINE_NODES, ...WATCHED_HIVE_ENGINE_NODES])]
+}
+
+export function isHiveEngineFallbackNode (url) {
+  return HIVE_ENGINE_NODES.includes(url)
+}
+
+export function isMagiNode (url) {
+  return MAGI_NODES.includes(url)
 }

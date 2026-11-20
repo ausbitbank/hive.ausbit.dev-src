@@ -1,8 +1,11 @@
 import { LocalStorage } from 'quasar'
-import { DEFAULT_HIVE_ENGINE_NODE } from './hiveNodes'
+import { DEFAULT_HIVE_ENGINE_NODE, HIVE_ENGINE_NODES } from './hiveNodes'
+import { pickFastestHealthy } from './network'
 
 let client = null
 let clientUrl = null
+
+export const HIVE_ENGINE_PROBE_TIMEOUT_MS = 4000
 
 // Hive-Engine rate-limits bursts with responses that lack CORS headers, which
 // browsers surface as CORS errors. Keep request concurrency low and retry
@@ -108,6 +111,78 @@ function createClient (baseUrl) {
       })
     }
   }
+}
+
+function probeErrorMessage (error) {
+  return error?.name === 'AbortError' ? 'Timed out' : (error?.message || 'Unreachable')
+}
+
+/**
+ * Hive-Engine exposes a small status document at the root of every RPC host.
+ * It is much cheaper than a contract query and includes both the sidechain head
+ * and the Hive block the node has parsed.
+ */
+export async function probeHiveEngineNode (url, timeoutMs = HIVE_ENGINE_PROBE_TIMEOUT_MS) {
+  const base = String(url || '').trim().replace(/\/+$/, '')
+  if (!base) return { url, ok: false, latency: Infinity, error: 'No node URL' }
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const started = Date.now()
+
+  try {
+    const response = await fetch(base + '/', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal
+    })
+    const latency = Date.now() - started
+    if (!response.ok) return { url: base, ok: false, latency, error: 'HTTP ' + response.status }
+
+    const data = await response.json()
+    const head = Number(data?.lastBlockNumber)
+    if (!Number.isFinite(head) || head <= 0) {
+      return { url: base, ok: false, answered: true, latency, error: 'Invalid status response' }
+    }
+
+    return {
+      url: base,
+      ok: true,
+      latency,
+      head,
+      hiveHead: Number(data?.lastBlockRefHiveBlockNumber) || null,
+      lastParsedHiveBlock: Number(data?.lastParsedHiveBlockNumber) || null,
+      version: data?.SSCnodeVersion || null,
+      chainId: data?.chainId || null,
+      lightNode: Boolean(data?.lightNode),
+      disabledMethods: data?.disabledMethods || null,
+      lastVerifiedBlock: Number(data?.lastVerifiedBlockNumber) || null
+    }
+  } catch (error) {
+    return {
+      url: base,
+      ok: false,
+      latency: Date.now() - started,
+      error: probeErrorMessage(error)
+    }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+/**
+ * Pick a usable Hive-Engine primary node. The configured node wins when it is
+ * healthy; otherwise the fastest healthy candidate is returned. All probes run
+ * in parallel so a dead network delays startup by at most one timeout.
+ */
+export async function selectHiveEngineNode (configuredUrl, timeoutMs = HIVE_ENGINE_PROBE_TIMEOUT_MS) {
+  const configured = configuredUrl || DEFAULT_HIVE_ENGINE_NODE
+  const candidates = [...new Set([configured, ...HIVE_ENGINE_NODES].filter(Boolean))]
+  const probes = await Promise.all(candidates.map(url => probeHiveEngineNode(url, timeoutMs)))
+  const configuredProbe = probes.find(probe => probe.url === configured.replace(/\/+$/, ''))
+  if (configuredProbe?.ok) return configuredProbe.url
+  const fastest = pickFastestHealthy(probes)
+  return fastest?.url || configured
 }
 
 export function getHiveEngine () {

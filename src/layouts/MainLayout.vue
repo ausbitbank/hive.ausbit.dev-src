@@ -630,6 +630,12 @@ export default {
           to: '/nodes'
         },
         {
+          title: 'Magi contracts',
+          caption: 'layer-2 explorer',
+          icon: 'hub',
+          to: '/magi'
+        },
+        {
           title: 'Health',
           caption: 'chain status',
           icon: 'monitor_heart',

@@ -149,6 +149,8 @@
               </q-card-section>
             </q-card>
 
+            <magi-account-summary :username="username" />
+
             <q-card flat bordered class="account-card">
               <q-card-section>
                 <h2 class="account-card__title account-card__title--small">Withdraw routes</h2>
@@ -641,6 +643,7 @@ import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
 import accountAuthorities from 'components/accountAuthorities.vue'
 import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
+import MagiAccountSummary from 'components/account/MagiAccountSummary.vue'
 import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
 const op = ChainTypes.operations
 import rc from 'components/rc.vue'
@@ -660,6 +663,7 @@ export default {
     rc,
     accountAuthorities,
     AuthorityRiskCard,
+    MagiAccountSummary,
     withdrawRoutes,
     ShareMenu
     // recentVotedPostsCarousel

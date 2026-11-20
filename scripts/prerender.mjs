@@ -34,6 +34,7 @@ const ROUTES = [
   '/markets',
   '/health',
   '/nodes',
+  '/magi',
   '/create',
   '/hbdstabilizer',
   '/compose',

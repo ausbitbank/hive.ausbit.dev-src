@@ -38,6 +38,7 @@ const routes = [
       { path: 'blocks', name: 'blocks', component: () => import('pages/blocks.vue') },
       { path: 'tx/:txId', name: 'tx', component: () => import('pages/tx.vue') },
       { path: 'nodes', name: 'nodes', component: () => import('pages/nodes.vue') },
+      { path: 'magi', name: 'magi', component: () => import('pages/magi.vue') },
       { path: 'witnesses', name: 'witnesses', component: () => import('pages/witnesses.vue') },
       { path: 'witness', name: 'witness', component: () => import('pages/witness.vue') },
       { path: 'market', name: 'market', component: () => import('pages/market.vue') },

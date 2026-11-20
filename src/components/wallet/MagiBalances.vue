@@ -6,14 +6,15 @@
           <div class="wallet-eyebrow">Sidechain</div>
           <h2 id="wallet-magi-title" class="wallet-card__title">Magi Network</h2>
           <p class="wallet-magi__hint">
-            HIVE and HBD held on Magi (formerly VSC). These balances are separate from your
-            Hive wallet and are used by Magi apps and contracts.
+            HIVE, HBD and standard magi_token balances held on Magi (formerly VSC). These are
+            separate from your Hive wallet and are used by Magi apps and contracts.
           </p>
         </div>
         <div class="wallet-magi__actions">
           <q-btn flat round dense icon="refresh" aria-label="Refresh Magi balances" title="Refresh Magi balances" :loading="loading" @click="load" />
-          <a href="https://altera.magi.eco" target="_blank" rel="noopener noreferrer" class="wallet-magi__link">
-            Open Altera <q-icon name="open_in_new" size="13px" aria-hidden="true" />
+          <router-link to="/magi" class="wallet-magi__link">Magi contracts</router-link>
+          <a href="https://alterawallet.com" target="_blank" rel="noopener noreferrer" class="wallet-magi__link">
+            Open Altera Wallet <q-icon name="open_in_new" size="13px" aria-hidden="true" />
           </a>
         </div>
       </q-card-section>
@@ -41,6 +42,71 @@
             <strong>{{ row.amount }}</strong>
             <small>{{ formatUsd(row.usd) }}</small>
           </div>
+        </div>
+
+        <div v-if="details" class="wallet-magi__details">
+          <div class="wallet-magi__detail">
+            <span>Magi RC</span>
+            <strong>{{ rcLabel }}</strong>
+            <small>{{ rcPercent }}% available</small>
+          </div>
+          <div class="wallet-magi__detail">
+            <span>Nonce</span>
+            <strong>{{ details.nonce }}</strong>
+            <small>next tx {{ details.nonce + 1 }}</small>
+          </div>
+          <div class="wallet-magi__detail">
+            <span>Node mode</span>
+            <strong>{{ details.delegationMode || 'Not a node' }}</strong>
+            <small>{{ witnessStakeLabel }}</small>
+          </div>
+        </div>
+
+        <div class="wallet-magi__delegation">
+          <q-input
+            v-model.trim="delegationNode"
+            label="Check delegation to node"
+            placeholder="techcoderx.vsc"
+            dense
+            outlined
+            :loading="delegationLoading"
+            aria-label="Magi node account to check delegation"
+            @keyup.enter="checkDelegation"
+          >
+            <template #append>
+              <q-btn flat round dense icon="search" aria-label="Check Magi delegation" @click="checkDelegation" />
+            </template>
+          </q-input>
+          <div v-if="delegation" class="wallet-magi__delegation-result">
+            To <strong>{{ delegation.to }}</strong>: {{ amount(delegation.delegated) }} HIVE delegated,
+            {{ amount(delegation.claimable) }} HIVE claimable now.
+          </div>
+          <div v-else-if="delegationError" class="wallet-magi__delegation-error">{{ delegationError }}</div>
+        </div>
+
+        <div v-if="tokens.length || tokensError" class="wallet-magi__tokens">
+          <div class="wallet-magi__tokens-head">
+            <span>Magi tokens</span>
+            <small v-if="tokens.length">{{ tokens.length }} token{{ tokens.length === 1 ? '' : 's' }}</small>
+          </div>
+          <div v-if="tokensError" class="wallet-magi__tokens-error">{{ tokensError }}</div>
+          <ul v-else>
+            <li v-for="token in tokens" :key="token.contractId" class="wallet-magi__token">
+              <a
+                :href="tokenExplorerUrl(token.contractId)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="wallet-magi__token-symbol"
+                :title="'Open ' + token.symbol + ' in Magi Blocks'"
+              >{{ token.symbol }}</a>
+              <span class="wallet-magi__token-amount" :title="token.raw + ' raw units'">{{ token.amountLabel }}</span>
+              <router-link
+                :to="{ name: 'magi', query: { contract: token.contractId } }"
+                class="wallet-magi__token-contract"
+                :title="token.contractId"
+              >{{ shortContract(token.contractId) }}</router-link>
+            </li>
+          </ul>
         </div>
 
         <div v-if="transactions.length" class="wallet-magi__activity">
@@ -158,6 +224,152 @@
   font-variant-numeric: tabular-nums;
 }
 
+.wallet-magi__details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.8rem;
+}
+
+.wallet-magi__detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wallet-magi__detail span {
+  color: #90a4ae;
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wallet-magi__detail strong {
+  color: #e4eaed;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.wallet-magi__detail small {
+  color: #78909c;
+  font-size: 0.66rem;
+}
+
+.wallet-magi__delegation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0 0.9rem 0.8rem;
+}
+
+.wallet-magi__delegation-result,
+.wallet-magi__delegation-error {
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.wallet-magi__delegation-result {
+  border: 1px solid rgba(129, 199, 132, 0.35);
+  background: rgba(129, 199, 132, 0.08);
+  color: #a5d6a7;
+}
+
+.wallet-magi__delegation-error {
+  border: 1px solid rgba(255, 183, 77, 0.35);
+  background: rgba(255, 183, 77, 0.08);
+  color: #ffcc80;
+}
+
+.wallet-magi__tokens {
+  padding: 0.6rem 0.9rem 0.8rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.wallet-magi__tokens-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.wallet-magi__tokens-head small {
+  color: #78909c;
+  font-size: 0.64rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.wallet-magi__tokens ul {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wallet-magi__token {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.74rem;
+}
+
+.wallet-magi__token:first-child {
+  border-top: 0;
+}
+
+.wallet-magi__token-symbol {
+  min-width: 0;
+  overflow: hidden;
+  color: #cfd8dc;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wallet-magi__token-symbol:hover {
+  color: #81d4fa;
+  text-decoration: underline;
+}
+
+.wallet-magi__token-amount {
+  color: #a5d6a7;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.wallet-magi__token-contract {
+  color: #78909c;
+  font-family: monospace;
+  font-size: 0.66rem;
+  text-decoration: none;
+}
+
+.wallet-magi__token-contract:hover {
+  color: #4fc3f7;
+  text-decoration: underline;
+}
+
+.wallet-magi__tokens-error {
+  margin-top: 0.3rem;
+  color: #ffcc80;
+  font-size: 0.7rem;
+}
+
 .wallet-magi__activity {
   padding: 0.6rem 0.9rem 0.9rem;
   border-top: 1px solid var(--border-subtle);
@@ -214,11 +426,17 @@
   font-size: 0.68rem;
   text-align: right;
 }
+
+@media (max-width: 599px) {
+  .wallet-magi__details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 </style>
 
 <script>
 import moment from 'src/utils/time'
-import { fetchMagiAccount } from 'src/services/magi'
+import { fetchMagiAccount, fetchMagiAccountDetails, fetchMagiDelegation, fetchMagiTokens } from 'src/services/magi'
 import { formatUsd } from 'src/services/wallet'
 
 function amount (value, digits = 3) {
@@ -240,13 +458,21 @@ export default {
   data () {
     return {
       balances: null,
+      details: null,
+      tokens: [],
       transactions: [],
       loading: false,
-      error: ''
+      error: '',
+      tokensError: '',
+      delegationNode: '',
+      delegation: null,
+      delegationLoading: false,
+      delegationError: ''
     }
   },
   computed: {
     hasAssets () {
+      if (this.tokens.length > 0) return true
       if (!this.balances) return false
       const b = this.balances
       return (b.hive + b.hbd + b.consensus + b.hbdSavings + b.unstaking + b.pendingUnstaking) > 0
@@ -262,6 +488,21 @@ export default {
     totalUsd () {
       return this.hiveTotal * (Number(this.hivePriceUsd) || 0) +
         this.hbdTotal * (Number(this.hbdPriceUsd) || 0)
+    },
+    rcLabel () {
+      if (!this.details) return '—'
+      const rc = this.details.rc || {}
+      const format = value => Number(value || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
+      return rc.max > 0 ? format(rc.amount) + ' / ' + format(rc.max) : format(rc.amount)
+    },
+    rcPercent () {
+      const rc = this.details?.rc
+      if (!rc?.max) return 0
+      return Math.max(0, Math.min(100, Math.round((Number(rc.amount) / Number(rc.max)) * 100)))
+    },
+    witnessStakeLabel () {
+      if (!this.details) return ''
+      return this.amount(this.details.witnessStake) + ' HIVE consensus stake'
     },
     rows () {
       if (!this.balances) return []
@@ -287,7 +528,12 @@ export default {
   watch: {
     username () {
       this.balances = null
+      this.details = null
+      this.tokens = []
       this.transactions = []
+      this.tokensError = ''
+      this.delegation = null
+      this.delegationError = ''
       this.load()
     },
     hasAssets (value) {
@@ -299,20 +545,67 @@ export default {
   },
   methods: {
     formatUsd,
+    amount,
     timeLabel (timestamp) {
       return timestamp ? moment.utc(timestamp).fromNow() : ''
+    },
+    tokenExplorerUrl (contractId) {
+      return 'https://vsc.techcoderx.com/token/' + encodeURIComponent(contractId)
+    },
+    shortContract (contractId) {
+      const value = String(contractId || '')
+      return value.length > 14 ? value.slice(0, 7) + '…' + value.slice(-5) : value
+    },
+    async checkDelegation () {
+      const node = this.delegationNode.trim()
+      if (!node) {
+        this.delegationError = 'Enter a Magi node account to check.'
+        return
+      }
+      this.delegationLoading = true
+      this.delegationError = ''
+      this.delegation = null
+      try {
+        const result = await fetchMagiDelegation(this.username, node, { force: true })
+        if (!result) {
+          this.delegationError = 'No consensus delegation found to ' + node + '.'
+          return
+        }
+        this.delegation = result
+      } catch {
+        this.delegationError = 'Magi delegation lookup failed.'
+      } finally {
+        this.delegationLoading = false
+      }
     },
     async load () {
       if (!this.username) return
       this.loading = true
       this.error = ''
       try {
-        const data = await fetchMagiAccount(this.username, { limit: 10, force: true })
+        const [accountResult, detailsResult, tokensResult] = await Promise.allSettled([
+          fetchMagiAccount(this.username, { limit: 10, force: true }),
+          fetchMagiAccountDetails(this.username, { force: true }),
+          fetchMagiTokens(this.username, { force: true })
+        ])
+        if (accountResult.status !== 'fulfilled') throw accountResult.reason
+        const data = accountResult.value
         this.balances = data?.balances || null
         this.transactions = data?.transactions || []
+        this.details = detailsResult.status === 'fulfilled' ? detailsResult.value : null
+        if (tokensResult.status === 'fulfilled') {
+          this.tokens = tokensResult.value?.tokens || []
+          this.tokensError = ''
+        } else {
+          this.tokens = []
+          this.tokensError = 'Magi token index is unavailable right now.'
+        }
       } catch {
         this.error = 'Magi Network is unavailable right now.'
         this.balances = null
+        this.details = null
+        this.tokens = []
+        this.tokensError = ''
         this.transactions = []
       } finally {
         this.loading = false

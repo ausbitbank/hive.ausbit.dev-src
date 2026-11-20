@@ -131,6 +131,19 @@
           <q-input v-model.trim="apiNode" label="Hive API node" dense outlined aria-label="Hive API node" />
           <q-input v-model.trim="ahNode" label="Account history node" dense outlined aria-label="Hive account history node" />
           <q-input v-model.trim="heApiNode" label="Hive-Engine API node" dense outlined aria-label="Hive-Engine API node" />
+          <q-select
+            v-model="magiApiNode"
+            :options="magiNodeOptions"
+            label="Magi API node"
+            hint="Known Magi GraphQL endpoints. Type a custom URL to override."
+            use-input
+            hide-selected
+            fill-input
+            new-value-mode="add-unique"
+            dense
+            outlined
+            aria-label="Magi API node"
+          />
         </div>
       </section>
 
@@ -394,6 +407,7 @@
 </style>
 <script>
 import { setHiveNode } from 'src/services/hive'
+import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE, MAGI_NODES } from 'src/services/hiveNodes'
 
 function weightToPercent (weight) {
   const value = Number(weight)
@@ -412,7 +426,9 @@ export default {
       newBeneAccount: '',
       newBenePercent: 10,
       apiNode: this.$hiveStore.user.settings.apiNode || 'https://api.hive.blog',
-      heApiNode: this.$hiveStore.user.settings.heApiNode || 'https://herpc.dtools.dev',
+      heApiNode: this.$hiveStore.user.settings.heApiNode || DEFAULT_HIVE_ENGINE_NODE,
+      magiApiNode: this.$hiveStore.user.settings.magiApiNode || DEFAULT_MAGI_NODE,
+      magiNodeOptions: [...MAGI_NODES],
       ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog',
       smartlockSessionMinutes: Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15,
       smartlockTimeoutOptions: [
@@ -480,7 +496,8 @@ export default {
         })),
         apiNode: this.apiNode.trim() || 'https://api.hive.blog',
         ahNode: this.ahNode.trim() || 'https://api.hive.blog',
-        heApiNode: this.heApiNode.trim() || 'https://herpc.dtools.dev',
+        heApiNode: this.heApiNode.trim() || DEFAULT_HIVE_ENGINE_NODE,
+        magiApiNode: String(this.magiApiNode || '').trim() || DEFAULT_MAGI_NODE,
         smartlockSessionMinutes: Number(this.smartlockSessionMinutes) || 15
       }
       this.$hiveStore.updateSettings(settings)

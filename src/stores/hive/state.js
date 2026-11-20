@@ -1,5 +1,6 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
+import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE } from '../../services/hiveNodes'
 import dashboardState from './dashboard'
 
 export const DEFAULT_SETTINGS = {
@@ -7,7 +8,8 @@ export const DEFAULT_SETTINGS = {
   beneficiary: [{ account: 'ausbitbank', weight: 1000 }],
   apiNode: 'https://api.hive.blog',
   ahNode: 'https://api.hive.blog',
-  heApiNode: 'https://herpc.dtools.dev',
+  heApiNode: DEFAULT_HIVE_ENGINE_NODE,
+  magiApiNode: DEFAULT_MAGI_NODE,
   smartlockSessionMinutes: 15
 }
 
