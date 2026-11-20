@@ -3,7 +3,6 @@
   "compatibility_date": "2026-11-18",
   "main": "deploy/cloudflare/metadata-worker.mjs",
   "routes": [
-    "hive.ausbit.dev/lightning",
     "hive.ausbit.dev/@*"
   ]
 }
