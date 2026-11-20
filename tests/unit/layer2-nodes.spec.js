@@ -5,6 +5,7 @@ import {
   fetchMagiAccountDetails,
   fetchMagiContract,
   fetchMagiContractState,
+  fetchMagiTokenPrices,
   fetchMagiTokens,
   fetchMagiWitnesses,
   magiEndpointOrder,
@@ -259,6 +260,26 @@ describe('Magi node probes', () => {
         amountLabel: '2.42857'
       }]
     })
+    expect(fetchMock.mock.calls[0][0]).toContain('indexer.magi.milohpr.com')
+  })
+
+  it('reads Magi DEX pool prices from the indexer', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({
+      data: {
+        dex_pool_registry: [
+          { pool_contract: 'pool', asset0: 'hbd', asset1: 'starpro' }
+        ],
+        dex_pool_liquidity: [
+          { pool_contract: 'pool', reserve0: 17000, reserve1: 242857 }
+        ],
+        magi_token_overview: [
+          { contract_id: 'vsc1starpro', symbol: 'STARPRO', decimals: 5 }
+        ]
+      }
+    }))
+
+    const result = await fetchMagiTokenPrices({ force: true })
+    expect(result.pricesBySymbol.starpro.priceHbd).toBeCloseTo(7, 4)
     expect(fetchMock.mock.calls[0][0]).toContain('indexer.magi.milohpr.com')
   })
 

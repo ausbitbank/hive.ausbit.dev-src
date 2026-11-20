@@ -78,6 +78,24 @@ const TOKENS_QUERY = `query ($account: String!) {
   }
 }`
 
+const TOKEN_PRICES_QUERY = `query {
+  dex_pool_registry {
+    pool_contract
+    asset0
+    asset1
+  }
+  dex_pool_liquidity {
+    pool_contract
+    reserve0
+    reserve1
+  }
+  magi_token_overview {
+    contract_id
+    symbol
+    decimals
+  }
+}`
+
 const DELEGATION_QUERY = `query ($from: String!, $to: String!) {
   getConsensusDelegation(from: $from, to: $to) {
     from
@@ -260,11 +278,13 @@ export function magiTokenRows (balances, overview) {
       const contractId = row.contract_id
       const info = meta.get(contractId) || {}
       const decimals = Number.isFinite(Number(info.decimals)) ? Number(info.decimals) : 0
+      const amount = Number(row.balance ?? 0) / Math.pow(10, decimals)
       return {
         contractId,
         symbol: info.symbol || 'Token',
         decimals,
         raw: String(row.balance ?? 0),
+        amount: Number.isFinite(amount) ? amount : 0,
         amountLabel: formatMagiTokenAmount(row.balance, decimals)
       }
     })
@@ -272,6 +292,90 @@ export function magiTokenRows (balances, overview) {
       const symbol = a.symbol.localeCompare(b.symbol)
       return symbol !== 0 ? symbol : a.contractId.localeCompare(b.contractId)
     })
+}
+
+const NATIVE_MARKET_ASSETS = new Set(['hive', 'hbd', 'btc'])
+
+/**
+ * Derive token prices from Magi DEX pools. Pools quote tokens against HBD or
+ * HIVE; HBD prices are treated as the common denominator and token/HIVE pools
+ * are converted through the HBD/HIVE pool when available.
+ */
+export function magiTokenPrices (registry, liquidity, overview) {
+  const decimalsBySymbol = new Map()
+  for (const token of Array.isArray(overview) ? overview : []) {
+    const symbol = String(token?.symbol || '').trim().toLowerCase()
+    if (!symbol || decimalsBySymbol.has(symbol)) continue
+    const decimals = Number(token.decimals)
+    decimalsBySymbol.set(symbol, Number.isFinite(decimals) ? decimals : 0)
+  }
+
+  const liquidityByPool = new Map()
+  for (const row of Array.isArray(liquidity) ? liquidity : []) {
+    if (row?.pool_contract) liquidityByPool.set(row.pool_contract, row)
+  }
+
+  const priced = new Map()
+  const hiveQuoted = []
+  let hbdPerHive = null
+
+  for (const pool of Array.isArray(registry) ? registry : []) {
+    if (!pool?.pool_contract) continue
+    const liq = liquidityByPool.get(pool.pool_contract)
+    if (!liq) continue
+
+    const assetA = String(pool.asset0 || '').toLowerCase()
+    const assetB = String(pool.asset1 || '').toLowerCase()
+    const reserveA = Number(liq.reserve0)
+    const reserveB = Number(liq.reserve1)
+    if (!Number.isFinite(reserveA) || !Number.isFinite(reserveB) || reserveA <= 0 || reserveB <= 0) continue
+
+    if ((assetA === 'hbd' && assetB === 'hive') || (assetA === 'hive' && assetB === 'hbd')) {
+      const hive = (assetA === 'hive' ? reserveA : reserveB) / 1000
+      const hbd = (assetA === 'hbd' ? reserveA : reserveB) / 1000
+      if (hive > 0) hbdPerHive = hbd / hive
+      continue
+    }
+
+    const aIsNative = NATIVE_MARKET_ASSETS.has(assetA)
+    const bIsNative = NATIVE_MARKET_ASSETS.has(assetB)
+    if (aIsNative === bIsNative) continue
+
+    const tokenSymbol = aIsNative ? assetB : assetA
+    if (NATIVE_MARKET_ASSETS.has(tokenSymbol)) continue
+    const decimals = decimalsBySymbol.get(tokenSymbol)
+    if (!Number.isFinite(decimals)) continue
+
+    const tokenReserve = (aIsNative ? reserveB : reserveA) / Math.pow(10, decimals)
+    const nativeReserve = (aIsNative ? reserveA : reserveB) / 1000
+    if (!(tokenReserve > 0) || !(nativeReserve > 0)) continue
+
+    const quote = aIsNative ? assetA : assetB
+    if (quote === 'hbd') {
+      const existing = priced.get(tokenSymbol)
+      if (!existing || nativeReserve > existing.depth) {
+        priced.set(tokenSymbol, { priceHbd: nativeReserve / tokenReserve, depth: nativeReserve })
+      }
+    } else if (quote === 'hive') {
+      hiveQuoted.push({ symbol: tokenSymbol, priceHive: nativeReserve / tokenReserve, depth: nativeReserve })
+    }
+  }
+
+  if (hbdPerHive > 0) {
+    for (const row of hiveQuoted) {
+      const priceHbd = row.priceHive * hbdPerHive
+      const existing = priced.get(row.symbol)
+      if (!existing || row.depth > existing.depth) {
+        priced.set(row.symbol, { priceHbd, depth: row.depth })
+      }
+    }
+  }
+
+  const pricesBySymbol = {}
+  for (const [symbol, row] of priced) {
+    pricesBySymbol[symbol] = { priceHbd: row.priceHbd, poolDepthHbd: row.depth }
+  }
+  return { pricesBySymbol, hbdPerHive }
 }
 
 function preferredMagiNode () {
@@ -420,6 +524,17 @@ export async function fetchMagiTokens (name, { force = false } = {}) {
     return {
       endpoint: MAGI_TOKEN_INDEXER,
       tokens: magiTokenRows(data?.magi_token_balances, data?.magi_token_overview)
+    }
+  }, { ttl: MAGI_TTL, force })
+}
+
+/** HBD-denominated token prices derived from Magi DEX pools. */
+export async function fetchMagiTokenPrices ({ force = false } = {}) {
+  return loadCached('magi:token-prices', async () => {
+    const data = await queryEndpoint(MAGI_TOKEN_INDEXER, TOKEN_PRICES_QUERY)
+    return {
+      endpoint: MAGI_TOKEN_INDEXER,
+      ...magiTokenPrices(data?.dex_pool_registry, data?.dex_pool_liquidity, data?.magi_token_overview)
     }
   }, { ttl: MAGI_TTL, force })
 }

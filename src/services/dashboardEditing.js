@@ -260,8 +260,8 @@ export function settingsFieldsFor (type) {
         {
           key: 'includeMagi',
           kind: 'toggle',
-          label: 'Include Magi Network balances',
-          hint: 'HIVE and HBD held on the Magi sidechain, read from its public GraphQL API.'
+          label: 'Include Magi balances and tokens',
+          hint: 'HIVE, HBD and standard magi_token balances read from Magi. Token values use DEX pools where available.'
         }
       ]
     case 'myWitness':

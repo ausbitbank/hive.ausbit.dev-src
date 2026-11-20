@@ -5,6 +5,7 @@ import {
   magiAmount,
   magiBalances,
   magiLedgerRows,
+  magiTokenPrices,
   magiTokenRows
 } from '../../src/services/magi'
 
@@ -75,12 +76,47 @@ describe('magi', () => {
     expect(rows[0]).toMatchObject({
       contractId: 'vsc1dup-a',
       symbol: 'LASSECASH',
+      amount: 314.06299067,
       amountLabel: '314.06299067'
     })
     expect(rows[1]).toMatchObject({
       contractId: 'vsc1dup-b',
       symbol: 'LASSECASH',
+      amount: 1,
       amountLabel: '1'
     })
+  })
+
+  it('derives HBD token prices from DEX pool reserves', () => {
+    const prices = magiTokenPrices([
+      { pool_contract: 'pool-hbd-hive', asset0: 'hbd', asset1: 'hive' },
+      { pool_contract: 'pool-hbd-lassecash', asset0: 'hbd', asset1: 'lassecash' },
+      { pool_contract: 'pool-hbd-starpro', asset0: 'hbd', asset1: 'starpro' }
+    ], [
+      { pool_contract: 'pool-hbd-hive', reserve0: 2300434, reserve1: 60252425 },
+      { pool_contract: 'pool-hbd-lassecash', reserve0: 31470, reserve1: 4744068444024 },
+      { pool_contract: 'pool-hbd-starpro', reserve0: 17000, reserve1: 242857 }
+    ], [
+      { contract_id: 'vsc1lassecash', symbol: 'LASSECASH', decimals: 8 },
+      { contract_id: 'vsc1starpro', symbol: 'STARPRO', decimals: 5 }
+    ])
+
+    expect(prices.hbdPerHive).toBeCloseTo(0.03818, 4)
+    expect(prices.pricesBySymbol.lassecash.priceHbd).toBeCloseTo(31470 / 1000 / (4744068444024 / 1e8), 8)
+    expect(prices.pricesBySymbol.starpro.priceHbd).toBeCloseTo(17000 / 1000 / (242857 / 1e5), 6)
+  })
+
+  it('converts token/HIVE pools through the HBD/HIVE pool', () => {
+    const prices = magiTokenPrices([
+      { pool_contract: 'pool-hbd-hive', asset0: 'hbd', asset1: 'hive' },
+      { pool_contract: 'pool-token-hive', asset0: 'hive', asset1: 'token' }
+    ], [
+      { pool_contract: 'pool-hbd-hive', reserve0: 1000000, reserve1: 2000000 },
+      { pool_contract: 'pool-token-hive', reserve0: 500000, reserve1: 25000 }
+    ], [
+      { contract_id: 'vsc1token', symbol: 'TOKEN', decimals: 0 }
+    ])
+
+    expect(prices.pricesBySymbol.token.priceHbd).toBeCloseTo(0.01, 8)
   })
 })

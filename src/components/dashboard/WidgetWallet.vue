@@ -54,7 +54,11 @@
         <span v-else-if="heError" class="dw-wallet__note">{{ heError }}</span>
         <span v-if="magiLoading">Loading Magi…</span>
         <span v-else-if="magiError" class="dw-wallet__note">{{ magiError }}</span>
-        <span>{{ pricesReady ? 'Prices from CoinGecko' : 'Prices unavailable' }}</span>
+        <span v-if="magiTokenNote" class="dw-wallet__note">{{ magiTokenNote }}</span>
+        <span>
+          {{ pricesReady ? 'Prices from CoinGecko' : 'Prices unavailable' }}
+          <template v-if="magiPricedTokenCount"> · Magi token prices from DEX pools</template>
+        </span>
       </q-card-section>
     </template>
   </div>
@@ -199,7 +203,7 @@ import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
 import { price, walletWidgetSummary } from 'src/services/dashboardWidgets'
 import { fetchHiveEnginePortfolio } from 'src/services/hiveEnginePortfolio'
-import { fetchMagiAccount } from 'src/services/magi'
+import { fetchMagiAccount, fetchMagiTokenPrices, fetchMagiTokens } from 'src/services/magi'
 import { currencySymbol, isForexCurrency, loadForexRate } from 'src/services/homeMarket'
 
 export default {
@@ -221,8 +225,12 @@ export default {
       heLoading: false,
       heError: '',
       magi: null,
+      magiTokens: [],
+      magiTokenPrices: {},
       magiLoading: false,
-      magiError: ''
+      magiError: '',
+      magiTokensError: '',
+      magiPricesError: ''
     }
   },
   computed: {
@@ -249,7 +257,7 @@ export default {
       const base = this.summary ? this.summary.portfolio.totalUsd : 0
       return base +
         (this.includeHiveEngine ? this.heValueUsd : 0) +
-        (this.includeMagi ? this.magiValueUsd : 0)
+        (this.includeMagi ? this.magiValueUsd + this.magiTokenValueUsd : 0)
     },
     magiValueUsd () {
       if (!this.magi) return 0
@@ -258,6 +266,36 @@ export default {
       const hive = this.magi.hive + this.magi.consensus + this.magi.unstaking
       const hbd = this.magi.hbd + this.magi.hbdSavings + this.magi.pendingUnstaking
       return hive * hiveUsd + hbd * hbdUsd
+    },
+    magiPricedTokenCount () {
+      if (!this.includeMagi) return 0
+      return this.magiTokens.filter(token => {
+        const market = this.magiTokenPrices[String(token.symbol || '').toLowerCase()]
+        return market && Number.isFinite(Number(market.priceHbd))
+      }).length
+    },
+    magiTokenValueUsd () {
+      if (!this.includeMagi || !this.magiTokens.length) return 0
+      const hiveUsd = Number(price(this.prices, 'hive')?.usd) || 0
+      const hbdUsd = Number(price(this.prices, 'hive_dollar')?.usd) || hiveUsd
+      return this.magiTokens.reduce((sum, token) => {
+        const market = this.magiTokenPrices[String(token.symbol || '').toLowerCase()]
+        if (!market || !Number.isFinite(Number(market.priceHbd))) return sum
+        return sum + Number(token.amount || 0) * Number(market.priceHbd) * hbdUsd
+      }, 0)
+    },
+    magiTokenValueLabel () {
+      return this.pricesReady && this.magiPricedTokenCount ? this.money(this.magiTokenValueUsd) : '—'
+    },
+    magiTokenNote () {
+      if (this.magiTokensError) return this.magiTokensError
+      if (!this.magiTokens.length) return ''
+      if (this.magiPricesError) return 'Magi token prices unavailable'
+      const unpriced = this.magiTokens.length - this.magiPricedTokenCount
+      if (unpriced > 0) {
+        return unpriced + ' Magi token' + (unpriced === 1 ? '' : 's') + ' unpriced'
+      }
+      return ''
     },
     totalLabel () {
       return this.money(this.totalUsd)
@@ -293,6 +331,14 @@ export default {
           })
         }
       }
+      if (this.includeMagi && this.magiTokens.length) {
+        rows.push({
+          id: 'magi-tokens',
+          label: 'Magi tokens',
+          amount: this.magiTokens.length + (this.magiTokens.length === 1 ? ' token' : ' tokens'),
+          usd: this.magiTokenValueLabel
+        })
+      }
       return rows
     },
     walletPath () {
@@ -307,8 +353,15 @@ export default {
       if (value && this.accountName) this.loadHiveEngine(this.accountName)
     },
     includeMagi (value) {
-      if (value && this.accountName) this.loadMagi(this.accountName)
-      else if (!value) this.magi = null
+      if (value && this.accountName) {
+        this.loadMagi(this.accountName)
+      } else if (!value) {
+        this.magi = null
+        this.magiTokens = []
+        this.magiTokenPrices = {}
+        this.magiTokensError = ''
+        this.magiPricesError = ''
+      }
     }
   },
   methods: {
@@ -340,17 +393,46 @@ export default {
     async loadMagi (name) {
       if (!name || !this.includeMagi) {
         this.magi = null
+        this.magiTokens = []
+        this.magiTokenPrices = {}
+        this.magiTokensError = ''
+        this.magiPricesError = ''
         return
       }
       this.magiLoading = true
       this.magiError = ''
+      this.magiTokensError = ''
+      this.magiPricesError = ''
       try {
-        const result = await fetchMagiAccount(name, { limit: 20 })
-        this.magi = result?.balances || null
-      } catch (error) {
-        console.error('Failed to load Magi balances', error)
-        this.magiError = 'Magi Network unavailable'
-        this.magi = null
+        const [accountResult, tokensResult, pricesResult] = await Promise.allSettled([
+          fetchMagiAccount(name, { limit: 20 }),
+          fetchMagiTokens(name),
+          fetchMagiTokenPrices()
+        ])
+
+        if (accountResult.status === 'fulfilled') {
+          this.magi = accountResult.value?.balances || null
+        } else {
+          console.error('Failed to load Magi balances', accountResult.reason)
+          this.magiError = 'Magi Network unavailable'
+          this.magi = null
+        }
+
+        if (tokensResult.status === 'fulfilled') {
+          this.magiTokens = tokensResult.value?.tokens || []
+        } else {
+          console.error('Failed to load Magi token balances', tokensResult.reason)
+          this.magiTokens = []
+          this.magiTokensError = 'Magi tokens unavailable'
+        }
+
+        if (pricesResult.status === 'fulfilled') {
+          this.magiTokenPrices = pricesResult.value?.pricesBySymbol || {}
+        } else {
+          console.error('Failed to load Magi token prices', pricesResult.reason)
+          this.magiTokenPrices = {}
+          this.magiPricesError = 'Magi token prices unavailable'
+        }
       } finally {
         this.magiLoading = false
       }
