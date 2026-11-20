@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   filterLabel,
   filterOperations,
+  latestOperations,
   normaliseHistoryEntry,
   operationFilterFor
 } from '../../src/services/operationsFeed'
@@ -56,5 +57,17 @@ describe('operations feed', () => {
     expect(filterLabel([])).toBe('All operations')
     expect(filterLabel(['all'])).toBe('All operations')
     expect(filterLabel(['votes', 'transfers'])).toBe('Transfers & staking · Votes')
+  })
+
+  it('takes the newest operations from an ascending history page', () => {
+    const rows = Array.from({ length: 10 }, (_, index) => ({
+      index,
+      timestamp: '2026-11-20T0' + index + ':00:00',
+      block: 100 + index,
+      type: 'producer_reward'
+    }))
+    const latest = latestOperations(rows, { limit: 3 })
+    expect(latest.map(row => row.index)).toEqual([9, 8, 7])
+    expect(latestOperations(rows, { limit: 50 })).toHaveLength(10)
   })
 })

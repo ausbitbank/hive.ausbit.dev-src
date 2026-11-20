@@ -226,7 +226,7 @@
 <script>
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { apiGetAccountHistory } from 'src/services/api'
-import { filterLabel, filterOperations } from 'src/services/operationsFeed'
+import { filterLabel, filterOperations, latestOperations } from 'src/services/operationsFeed'
 import { fetchMagiAccount } from 'src/services/magi'
 import { pollWhileVisible } from 'src/services/polling'
 import moment from 'src/utils/time'
@@ -347,11 +347,6 @@ export default {
     iconFor (filter) {
       return ICONS[filter] || 'receipt_long'
     },
-    timeValue (timestamp) {
-      if (!timestamp) return 0
-      const time = new Date(timestamp).getTime()
-      return Number.isFinite(time) ? time : 0
-    },
     async loadOperations () {
       const name = this.targetAccount
       if (!name) return
@@ -374,10 +369,10 @@ export default {
         this.accountName = name
         this.magiEntries = magi?.transactions?.map(row => ({ ...row, magi: true })) || []
         this.magiError = this.includeMagi && !magi ? 'Magi Network unavailable' : ''
-        const merged = this.includeMagi
-          ? filtered.concat(this.magiEntries).sort((a, b) => this.timeValue(b.timestamp) - this.timeValue(a.timestamp))
-          : filtered
-        this.entries = merged.slice(0, Math.max(1, Math.min(50, Number(this.limit) || 8)))
+        const merged = filtered.concat(this.includeMagi ? this.magiEntries : [])
+        // Account history arrives oldest-to-newest; the widget wants the latest
+        // operations, so sort before slicing rather than showing the page head.
+        this.entries = latestOperations(merged, { limit: this.limit })
         this.updatedAt = Date.now()
         this.nowTick = this.updatedAt
       } catch (error) {

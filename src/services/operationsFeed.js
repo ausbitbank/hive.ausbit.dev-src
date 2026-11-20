@@ -103,6 +103,30 @@ export function filterOperations (entries, { filters = [], jsonIds = [] } = {}) 
     })
 }
 
+function timestampMs (value) {
+  const text = String(value || '').trim()
+  if (!text) return 0
+  const time = Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(text) ? text : text + 'Z')
+  return Number.isFinite(time) ? time : 0
+}
+
+/**
+ * Newest-first slice for the widget. `get_account_history` returns a page in
+ * ascending order, so taking the first N rows before reversing shows the
+ * oldest operations in the page — the bug behind "2 hours ago" reports.
+ */
+export function latestOperations (entries, { limit = 8 } = {}) {
+  const size = Math.max(1, Math.min(50, Number(limit) || 8))
+  return (Array.isArray(entries) ? entries : [])
+    .slice()
+    .sort((a, b) => (
+      timestampMs(b?.timestamp) - timestampMs(a?.timestamp) ||
+      (Number(b?.block) || 0) - (Number(a?.block) || 0) ||
+      (Number(b?.index) || 0) - (Number(a?.index) || 0)
+    ))
+    .slice(0, size)
+}
+
 /** Human label for the active filters, shown in the widget header. */
 export function filterLabel (filters = []) {
   const selected = (Array.isArray(filters) ? filters : []).filter(Boolean)

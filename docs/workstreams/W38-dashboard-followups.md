@@ -49,6 +49,13 @@ The three issues still open after W37:
   - re-derives row timestamps and the footer from a 30-second clock instead of
     freezing the last computed relative label;
   - reloads immediately when the refresh interval is changed.
+- **#77 reopen root cause:** `condenser_api.get_account_history` returns its
+  page oldest-to-newest. The widget filtered the page and then took the *first*
+  N rows, so a busy account showed the oldest operations in the latest 100
+  (about two hours behind) and each refresh merely walked the old window
+  forward. `latestOperations()` in `services/operationsFeed.js` now sorts the
+  merged Hive/Magi rows newest-first before slicing, with a regression test
+  covering an ascending history page.
 - `services/api.js` forwards an optional `cache` mode to `fetch`, which the
   operations widget uses to keep intermediary/browser caches out of the live
   account-history path.
