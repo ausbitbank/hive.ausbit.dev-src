@@ -204,8 +204,15 @@ describe('layout normalisation', () => {
   })
 
   it('recognises an untouched default layout', () => {
-    expect(isDefaultLayout(normaliseLayout(DEFAULT_LAYOUT.map(entry => ({ type: entry.type, width: entry.width }))))).toBe(true)
+    expect(isDefaultLayout(buildLayout(DEFAULT_LAYOUT))).toBe(true)
     expect(isDefaultLayout(buildLayout([{ type: 'wallet' }]))).toBe(false)
+  })
+
+  it('treats a settings-only change as a customisation', () => {
+    const layout = buildLayout(DEFAULT_LAYOUT)
+    expect(isDefaultLayout(layout)).toBe(true)
+    layout[2].settings.limit = 25
+    expect(isDefaultLayout(layout)).toBe(false)
   })
 })
 

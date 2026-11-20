@@ -7,8 +7,8 @@
 // can be unit tested without mounting Vue.
 //
 // Order matters: rows are filled left-to-right, and a widget moves to the next
-// row when it would overflow the 12 columns. That is what keeps the built-in
-// default layout identical to the old hard-coded page.
+// row when it would overflow the 12 columns. The built-in default layout and
+// every saved layout are rendered the same way.
 
 /** Columns available to widget widths. */
 export const GRID_COLUMNS = 12
@@ -187,23 +187,47 @@ export const WIDGET_CATEGORIES = [
 ]
 
 /**
- * The built-in default layout. This intentionally reproduces the pre-dashboard
- * front page so an unconfigured visitor sees exactly what they saw before:
+ * The built-in default layout. Every visitor starts here until they save a
+ * customisation of their own:
  *
- *   ┌──────────────────────┬───────────────┐
- *   │ block (half) │ market │ witnesses     │
- *   │ posts on Hive (full) │ account posts │
- *   └──────────────────────┴───────────────┘
+ *   ┌─────────┬─────────┬─────────┐
+ *   │ block   │ market  │witnesses│
+ *   ├─────────┴───┬─────┴─────────┤
+ *   │ trending    │ @ausbitbank   │
+ *   ├─────────────┴───────────────┤
+ *   │ HiveDevs community          │
+ *   └─────────────────────────────┘
  *
- * The two-column shell is provided by the page, not the grid: the grid's first
- * two widgets share a row and the last two do too.
+ * The first row is three thirds (12 columns), the next two post feeds are
+ * halves, and the community feed spans the full width.
  */
 export const DEFAULT_LAYOUT = [
-  { type: 'block', width: 'half', settings: {} },
-  { type: 'market', width: 'half', settings: {} },
-  { type: 'posts', width: 'full', settings: { source: 'trending' } },
-  { type: 'witnesses', width: 'full', settings: { limit: 6 } },
-  { type: 'posts', width: 'full', settings: { account: 'ausbitbank', feedSort: 'blog', limit: 4 } }
+  { type: 'block', width: 'third', settings: {} },
+  { type: 'market', width: 'third', settings: {} },
+  { type: 'witnesses', width: 'third', settings: { limit: 10 } },
+  {
+    type: 'posts',
+    width: 'half',
+    settings: { source: 'trending', limit: 6, view: 'cards', showBody: true }
+  },
+  {
+    type: 'posts',
+    width: 'half',
+    settings: { account: 'ausbitbank', feedSort: 'blog', limit: 6, view: 'cards', showBody: true }
+  },
+  {
+    type: 'posts',
+    width: 'full',
+    settings: {
+      source: 'trending',
+      tag: 'hive-139531',
+      reference: '/c/hive-139531',
+      limit: 8,
+      view: 'cards',
+      showBody: true,
+      pollSeconds: 300
+    }
+  }
 ]
 
 /** Suggested layout offered once when a known account is logged in. */
@@ -542,12 +566,51 @@ export function packRows (widgets, columns = GRID_COLUMNS) {
   return rows
 }
 
+function stableSettings (value) {
+  if (Array.isArray(value)) return value.map(stableSettings)
+  if (!value || typeof value !== 'object') return value
+  return Object.keys(value).sort().reduce((result, key) => {
+    result[key] = stableSettings(value[key])
+    return result
+  }, {})
+}
+
+/**
+ * Default layouts shipped by earlier releases. They are recognised only so a
+ * stored dashboard that was never customised can follow the current default
+ * after an update.
+ */
+const LEGACY_DEFAULT_LAYOUTS = [
+  [
+    { type: 'block', width: 'half', settings: {} },
+    { type: 'market', width: 'half', settings: {} },
+    { type: 'posts', width: 'full', settings: { source: 'trending' } },
+    { type: 'witnesses', width: 'full', settings: { limit: 6 } },
+    { type: 'posts', width: 'full', settings: { account: 'ausbitbank', feedSort: 'blog', limit: 4 } }
+  ]
+]
+
+function matchesPreset (layout, preset) {
+  if (!Array.isArray(layout) || layout.length !== preset.length) return false
+  return layout.every((widget, index) => {
+    const expected = preset[index]
+    if (widget.type !== expected.type || widget.width !== expected.width) return false
+    // Merge registry defaults so a widget that simply omitted a setting still
+    // matches; a changed setting is a real customisation.
+    const actual = { ...defaultSettingsFor(widget.type), ...widget.settings }
+    const target = { ...defaultSettingsFor(expected.type), ...expected.settings }
+    return JSON.stringify(stableSettings(actual)) === JSON.stringify(stableSettings(target))
+  })
+}
+
 /** True when the stored layout is the built-in default (nothing customised). */
 export function isDefaultLayout (layout) {
-  if (!Array.isArray(layout)) return false
-  const shape = widget => widget.type + ':' + widget.width
-  return layout.length === DEFAULT_LAYOUT.length &&
-    layout.every((widget, index) => shape(widget) === shape({ ...DEFAULT_LAYOUT[index] }))
+  return matchesPreset(layout, DEFAULT_LAYOUT)
+}
+
+/** True when the layout is an untouched default from an earlier release. */
+export function isLegacyDefaultLayout (layout) {
+  return LEGACY_DEFAULT_LAYOUTS.some(preset => matchesPreset(layout, preset))
 }
 
 // -- Portable layouts --------------------------------------------------------

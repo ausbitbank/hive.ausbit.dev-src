@@ -68,6 +68,42 @@ describe('saving and reading dashboards', () => {
     )
   })
 
+  it('shows the current built-in default to a stored but never-customised layout', () => {
+    storage.setItem(dashboardStorageKey('alice'), JSON.stringify({
+      version: 1,
+      savedAt: 123,
+      customised: false,
+      widgets: [
+        { type: 'block', width: 'half' },
+        { type: 'market', width: 'half' },
+        { type: 'posts', width: 'full' },
+        { type: 'witnesses', width: 'full' },
+        { type: 'posts', width: 'full', settings: { account: 'ausbitbank', feedSort: 'blog', limit: 4 } }
+      ],
+      layouts: [{ id: 'keep', label: 'Keep', widgets: [{ type: 'wallet' }] }]
+    }))
+
+    const resolved = resolveDashboard('alice', storage)
+    expect(resolved.source).toBe('builtin')
+    expect(resolved.customised).toBe(false)
+    expect(resolved.savedAt).toBe(123)
+    expect(resolved.widgets.map(widget => widget.type + ':' + widget.width)).toEqual(
+      defaultDashboard().map(widget => widget.type + ':' + widget.width)
+    )
+    expect(resolved.layouts.map(entry => entry.label)).toEqual(['Keep'])
+  })
+
+  it('keeps a settings-only customisation saved with a stale flag', () => {
+    const layout = defaultDashboard()
+    layout[2].settings.limit = 25
+    saveDashboard('alice', layout, { storage, customised: false })
+
+    const resolved = resolveDashboard('alice', storage)
+    expect(resolved.source).toBe('account')
+    expect(resolved.customised).toBe(true)
+    expect(resolved.widgets[2].settings.limit).toBe(25)
+  })
+
   it('migrates the old account-posts widget into the content browser', () => {
     const widget = normaliseWidget({
       type: 'accountPosts',

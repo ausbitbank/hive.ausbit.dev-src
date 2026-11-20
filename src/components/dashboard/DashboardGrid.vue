@@ -3,7 +3,6 @@
     ref="grid"
     class="dw-grid"
     :class="{
-      'dw-grid--pair': pair && !editing,
       'dw-grid--packed': packed && !editing,
       'dw-grid--editing': editing,
       'dw-grid--masonry': masonryReady,
@@ -131,18 +130,6 @@
   position: relative;
 }
 
-/* The block/coin pair in view mode: two equal columns stacking below 800px. */
-.dw-grid--pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: var(--space-4);
-}
-
-.dw-grid--pair > .dw-grid__cell {
-  min-width: 0;
-}
-
 .dw-grid--dragging,
 .dw-grid--dragging .dw-widget {
   cursor: grabbing;
@@ -194,10 +181,6 @@
 }
 
 @media (max-width: 799px) {
-  .dw-grid--pair {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .dw-grid--editing {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -272,10 +255,7 @@ export default {
     editing: { type: Boolean, default: false },
     // Signed-in user; account widgets show a log-in state when false.
     signedIn: { type: Boolean, default: false },
-    // Render two widgets side by side when not editing (the block/coin row).
-    pair: { type: Boolean, default: false },
-    // View mode for a customised layout: one packed 12-column grid instead of
-    // the page's main/sidebar shell.
+    // View mode: one packed 12-column grid for the saved (or built-in) layout.
     packed: { type: Boolean, default: false },
     // View mode tiling: fill vertical gaps by measuring widget heights.
     masonry: { type: Boolean, default: false }

@@ -86,25 +86,12 @@
       />
 
       <dashboard-grid
-        v-else-if="customisedLayout"
+        v-else
         :widgets="widgets"
         :signed-in="signedIn"
         :masonry="tiling === 'masonry'"
         packed
       />
-
-      <div v-else class="home-layout">
-        <div class="home-main">
-          <div class="home-top">
-            <dashboard-grid :widgets="mainTop" :signed-in="signedIn" pair />
-          </div>
-          <dashboard-grid :widgets="mainRest" :signed-in="signedIn" />
-        </div>
-
-        <aside class="home-side">
-          <dashboard-grid :widgets="side" :signed-in="signedIn" />
-        </aside>
-      </div>
 
       <add-widget-drawer
         v-model="drawerOpen"
@@ -215,52 +202,6 @@
   color: #e1f5fe;
 }
 
-
-
-.home-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  align-items: start;
-  gap: var(--space-4);
-}
-
-.home-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-/* The grid inside owns the block/coin columns, so the wrapper is a plain
-   block with no gap (the grid supplies it). */
-.home-top {
-  display: block;
-}
-
-.home-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-@media (max-width: 1023px) {
-  .home-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .home-side {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 799px) {
-  .home-side {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 599px) {
   .home-shell {
     padding: var(--space-3) var(--space-2) var(--space-5);
@@ -305,11 +246,6 @@ import {
 } from 'src/services/dashboardEditing'
 import { setPageMeta } from 'src/utils/pageMeta'
 
-// Widget types that opened the pre-dashboard sidebar. The content browser used
-// to split into a second account-feed widget; the sidebar now starts at the
-// witness list.
-const SIDEBAR_TYPES = ['witnesses']
-
 export default {
   name: 'Home',
   components: { DashboardGrid, DashboardCustomiseBar, AddWidgetDrawer, DashboardSetupPrompt, WidgetSettingsDialog },
@@ -332,27 +268,8 @@ export default {
     widgets () {
       return this.$hiveStore.dashboard.widgets
     },
-    sideStart () {
-      return this.widgets.findIndex(widget => SIDEBAR_TYPES.includes(widget.type))
-    },
-    mainWidgets () {
-      return this.sideStart === -1 ? this.widgets : this.widgets.slice(0, this.sideStart)
-    },
-    // The block/coin pair stays on one row in the main column above 800px.
-    mainTop () {
-      return this.mainWidgets.slice(0, 2)
-    },
-    mainRest () {
-      return this.mainWidgets.slice(2)
-    },
-    side () {
-      return this.sideStart === -1 ? [] : this.widgets.slice(this.sideStart)
-    },
     editing () {
       return this.$hiveStore.dashboard.editing
-    },
-    customisedLayout () {
-      return Boolean(this.$hiveStore.dashboard.customised)
     },
     tiling () {
       return this.$hiveStore.dashboard.tiling || 'rows'

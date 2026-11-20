@@ -33,9 +33,13 @@ test.describe('customisable dashboard', () => {
   })
 
   test('starts on the built-in layout with the Customise button', async ({ page }) => {
-    await expect(page.locator('.home-layout')).toBeVisible()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Customise', exact: true })).toBeVisible()
-    await expect(page.locator('.dw-grid--packed')).toHaveCount(0)
+
+    const types = await page
+      .locator('.dw-grid--packed [data-widget-type]')
+      .evaluateAll(nodes => nodes.map(node => node.dataset.widgetType))
+    expect(types).toEqual(['block', 'market', 'witnesses', 'posts', 'posts', 'posts'])
   })
 
   test('adds a widget, saves it and keeps it after a reload', async ({ page }) => {
@@ -62,7 +66,7 @@ test.describe('customisable dashboard', () => {
     await addWidget(page, 'Network stats')
     await page.getByRole('button', { name: 'Cancel' }).click()
 
-    await expect(page.locator('.home-layout')).toBeVisible()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
     expect(await readDashboard(page, GUEST_KEY)).toBeNull()
   })
 
@@ -75,7 +79,7 @@ test.describe('customisable dashboard', () => {
     await openEditor(page)
     await page.getByRole('button', { name: 'Reset to default' }).click()
 
-    await expect(page.locator('.home-layout')).toBeVisible()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
     const stored = await readDashboard(page, GUEST_KEY)
     expect(stored.customised).toBe(false)
     expect(stored.widgets.map(widget => widget.type)).not.toContain('network')
@@ -95,14 +99,14 @@ test.describe('customisable dashboard', () => {
     await openEditor(page)
     const block = page.locator('[data-widget-type="block"]')
     const label = block.locator('.dw-widget__width-label')
-    await expect(label).toHaveText('Half')
+    await expect(label).toHaveText('Third')
 
     await block.getByRole('button', { name: 'Make Live block wider' }).click()
-    await expect(label).toHaveText('Two thirds')
+    await expect(label).toHaveText('Half')
     await expect(page.getByText('1 width change')).toBeVisible()
 
     await block.getByRole('button', { name: 'Make Live block narrower' }).click()
-    await expect(label).toHaveText('Half')
+    await expect(label).toHaveText('Third')
     await expect(page.getByText('width change')).toHaveCount(0)
   })
 
@@ -344,12 +348,12 @@ test.describe('customisable dashboard', () => {
 
     await page.getByRole('button', { name: 'Not now' }).dispatchEvent('click')
     await expect(page.getByRole('heading', { name: 'Make this dashboard yours' })).toBeHidden()
-    await expect(page.locator('.home-layout')).toBeVisible()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
     expect(await page.evaluate(key => localStorage.getItem(key), SETUP_KEY)).toBeTruthy()
 
     await page.reload()
     await waitForApp(page)
     await expect(page.getByRole('heading', { name: 'Make this dashboard yours' })).toBeHidden()
-    await expect(page.locator('.home-layout')).toBeVisible()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
   })
 })

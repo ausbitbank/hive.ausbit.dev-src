@@ -91,10 +91,11 @@ describe('add-widget catalogue', () => {
 describe('edit-mode drafts', () => {
   it('copies widgets so edits do not touch the saved layout', () => {
     const layout = defaultLayout()
+    const originalWidth = layout[0].width
     const draft = draftWidgets(layout)
     draft[0].width = 'full'
     draft[0].settings.theme = 'x'
-    expect(layout[0].width).toBe('half')
+    expect(layout[0].width).toBe(originalWidth)
     expect(layout[0].settings.theme).toBeUndefined()
     expect(draft).not.toBe(layout)
   })

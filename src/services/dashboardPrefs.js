@@ -18,6 +18,7 @@ import {
   buildLayout,
   createWidgetId,
   isDefaultLayout,
+  isLegacyDefaultLayout,
   normaliseLayout
 } from './dashboardLayout'
 
@@ -186,9 +187,30 @@ export function readDashboard (scope, storage) {
   }
 }
 
+/** The current built-in default, carrying over a stored layout library. */
+function builtinDashboard (scope, stored = null) {
+  return {
+    widgets: defaultDashboard(),
+    source: 'builtin',
+    scope,
+    savedAt: stored?.savedAt ?? null,
+    customised: false,
+    tiling: 'rows',
+    // Named layouts are independent of the active widgets; keep them even when
+    // the stored layout itself was never customised.
+    layouts: stored?.layouts || [],
+    activeLayoutId: ''
+  }
+}
+
 /**
  * Resolve the layout to render for `username`:
  *   account document -> guest document -> built-in default.
+ * A stored document that was never customised resolves to the current
+ * built-in default, so changing the default also reaches users who never
+ * arranged their own dashboard (including anyone who pressed "Reset to
+ * default" before the change).
+ *
  * `source` says where the layout came from so the page can show the right
  * empty state or "customise" affordances.
  */
@@ -197,12 +219,17 @@ export function resolveDashboard (username, storage) {
   if (account && account !== GUEST_SCOPE) {
     const own = readDashboard(account, storage)
     if (own && !own.corrupt && own.widgets.length) {
+      // Only an untouched default (current or an older release) follows the new
+      // default; a settings-only customisation stored with a stale flag stays.
+      if (!own.customised && (isDefaultLayout(own.widgets) || isLegacyDefaultLayout(own.widgets))) {
+        return builtinDashboard(account, own)
+      }
       return {
         widgets: own.widgets,
         source: 'account',
         scope: account,
         savedAt: own.savedAt,
-        customised: own.customised,
+        customised: true,
         tiling: own.tiling,
         layouts: own.layouts,
         activeLayoutId: own.activeLayoutId
@@ -211,27 +238,21 @@ export function resolveDashboard (username, storage) {
   }
   const guest = readDashboard(GUEST_SCOPE, storage)
   if (guest && !guest.corrupt && guest.widgets.length) {
+    if (!guest.customised && (isDefaultLayout(guest.widgets) || isLegacyDefaultLayout(guest.widgets))) {
+      return builtinDashboard(GUEST_SCOPE, guest)
+    }
     return {
       widgets: guest.widgets,
       source: 'guest',
       scope: GUEST_SCOPE,
       savedAt: guest.savedAt,
-      customised: guest.customised,
+      customised: true,
       tiling: guest.tiling,
       layouts: guest.layouts,
       activeLayoutId: guest.activeLayoutId
     }
   }
-  return {
-    widgets: defaultDashboard(),
-    source: 'builtin',
-    scope: account && account !== GUEST_SCOPE ? account : GUEST_SCOPE,
-    savedAt: null,
-    customised: false,
-    tiling: 'rows',
-    layouts: [],
-    activeLayoutId: ''
-  }
+  return builtinDashboard(account && account !== GUEST_SCOPE ? account : GUEST_SCOPE)
 }
 
 /**
