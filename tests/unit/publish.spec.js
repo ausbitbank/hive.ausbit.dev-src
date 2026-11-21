@@ -30,7 +30,7 @@ describe('post construction', () => {
     expect(resolveCategory(draft)).toBe('hive-174578')
     expect(resolveCategory({ tags: ['blog'] })).toBe('blog')
     expect(resolveCategory({})).toBe('')
-    expect(resolvedTags({ tags: ['a', 'b', 'c', 'd', 'e', 'f'] })).toHaveLength(5)
+    expect(resolvedTags({ tags: ['a', 'b', 'c', 'd', 'e', 'f'] })).toHaveLength(6)
   })
 
   it('normalises payout values and permlinks', () => {
@@ -230,6 +230,103 @@ describe('Hive post URLs', () => {
     expect(parseHivePostUrl('alice/hello-world')).toEqual({ author: 'alice', permlink: 'hello-world' })
     expect(parseHivePostUrl('not a post')).toBeNull()
     expect(parseHivePostUrl('@al/hello')).toBeNull()
+  })
+})
+
+describe('composer metadata', () => {
+  const richDraft = {
+    title: 'A rich post',
+    body: 'Hello @alice and @bob.\n\n![First](https://images.hive.blog/body.jpg)\n\nA second paragraph.',
+    tags: ['hive', 'dev', 'writing'],
+    community: 'hive-174578',
+    description: '',
+    coverImage: 'https://images.hive.blog/cover.jpg',
+    aiTools: { media_generation: true, research: true, translation: false },
+    countdown: '2026-12-01T10:00:00.000Z',
+    portfolio: true,
+    collection: true,
+    authorDisplay: 'Jane Doe',
+    beneficiaries: [],
+    rewards: { maxAcceptedPayout: '100000.000 HBD', percentHbd: 10000, allowVotes: true, allowCurationRewards: true }
+  }
+
+  it('writes cover, body images, mentions, description, AI, countdown and flags', () => {
+    const metadata = buildPostMetadata(richDraft)
+    expect(metadata.app).toBe('hive.ausbit.dev')
+    expect(metadata.format).toBe('markdown')
+    expect(metadata.tags[0]).toBe('c-c-c')
+    expect(metadata.tags).toContain('hive-174578')
+    expect(metadata.image).toEqual([
+      'https://images.hive.blog/cover.jpg',
+      'https://images.hive.blog/body.jpg'
+    ])
+    expect(metadata.users).toEqual(['alice', 'bob'])
+    expect(metadata.description).toContain('Hello @alice and @bob')
+    expect(metadata.ai_tools).toEqual({ media_generation: true, research: true })
+    expect(metadata.countdown).toBe('2026-12-01T10:00:00.000Z')
+    expect(metadata.portfolio).toBe(true)
+    expect(metadata.collection).toBe(true)
+    expect(metadata.author).toBe('Jane Doe')
+  })
+
+  it('uses the first body image as the cover when none is set', () => {
+    const metadata = buildPostMetadata({ ...richDraft, coverImage: '', collection: false })
+    expect(metadata.image[0]).toBe('https://images.hive.blog/body.jpg')
+    expect(metadata.tags[0]).toBe('hive-174578')
+  })
+
+  it('declines rewards by writing a zero payout cap', () => {
+    const options = buildCommentOptions({
+      username: 'alice',
+      permlink: 'post',
+      beneficiaries: [],
+      rewards: { maxAcceptedPayout: '50.000 HBD', decline: true }
+    })
+    expect(options.max_accepted_payout).toBe('0.000 HBD')
+  })
+
+  it('drops managed metadata on edit but preserves unknown keys', () => {
+    const operation = buildPostOperation({
+      username: 'alice',
+      draft: {
+        ...richDraft,
+        body: 'No images in this body.',
+        coverImage: '',
+        aiTools: {},
+        countdown: '',
+        collection: false,
+        portfolio: false,
+        authorDisplay: ''
+      },
+      permlink: 'existing',
+      parentPermlink: 'hive-174578',
+      commentOptions: false,
+      previousMetadata: {
+        ai_tools: { research: true },
+        countdown: '2020-01-01T00:00:00.000Z',
+        custom_key: 'keep me',
+        image: ['https://images.hive.blog/old.jpg']
+      }
+    })
+    const metadata = JSON.parse(operation[1].json_metadata)
+    expect(metadata.ai_tools).toBeUndefined()
+    expect(metadata.countdown).toBeUndefined()
+    expect(metadata.custom_key).toBe('keep me')
+    expect(metadata.image).toEqual(['https://images.hive.blog/old.jpg'])
+  })
+
+  it('checks countdown and preview description in the publish checklist', () => {
+    const invalid = publishChecklist({ ...richDraft, countdown: 'not-a-date' }, { username: 'alice' })
+    expect(invalid.find(item => item.id === 'countdown').status).toBe('error')
+
+    const past = publishChecklist({ ...richDraft, countdown: '2020-01-01T00:00:00.000Z' }, { username: 'alice' })
+    expect(past.find(item => item.id === 'countdown').status).toBe('warn')
+
+    const rich = publishChecklist(richDraft, { username: 'alice' })
+    expect(rich.find(item => item.id === 'description').status).toBe('ok')
+    expect(rich.find(item => item.id === 'ai').status).toBe('ok')
+    expect(rich.find(item => item.id === 'collection').status).toBe('ok')
+    expect(checklistErrors(rich)).toEqual([])
   })
 })
 

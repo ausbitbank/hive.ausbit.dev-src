@@ -6,34 +6,78 @@
 // queue item cannot drift apart.
 
 import {
+  AI_TOOL_KEYS,
+  COLLECTION_TAG,
+  DESCRIPTION_MAX,
   MAX_ACCEPTED_PAYOUT,
   MAX_BENEFICIARIES,
   MAX_BODY_BYTES,
   MAX_TAGS,
   MAX_TITLE_CHARS,
+  normalizeAiTools,
+  normalizeAuthorDisplay,
   normalizeBeneficiaries,
+  normalizeCountdown,
+  normalizeCoverImage,
   normalizeCrossPost,
+  normalizeDescription,
   normalizeRewards,
   normalizeTag,
-  normalizeTags
+  normalizeTags,
+  hasAiTools
 } from './drafts'
 import { byteLength } from '../utils/markdownEditor'
+import { collectImageUrls, deriveDescription, extractMentionedUsers, normalizeImageUrl } from '../utils/media'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 
-/** Combine the community and free tags into the metadata tag order. */
+/* json_metadata keys this app owns. On edit they are replaced from the draft
+ * so clearing an option removes the old value instead of leaving it behind. */
+const MANAGED_METADATA_KEYS = [
+  'app',
+  'format',
+  'tags',
+  'image',
+  'users',
+  'description',
+  'ai_tools',
+  'countdown',
+  'portfolio',
+  'collection',
+  'author',
+  'cross_post',
+  'original_author',
+  'original_permlink'
+]
+
+export const AI_TOOL_LABELS = {
+  media_generation: 'AI-generated media',
+  translation: 'AI-assisted translation',
+  post_draft: 'AI-written draft',
+  writing_edit: 'AI grammar or editing',
+  research: 'AI-assisted research',
+  other: 'Other AI assistance'
+}
+
+/** Combine the community, collection tag and free tags into metadata order. */
 export function resolvedTags (draft) {
   const tags = normalizeTags(draft && draft.tags)
   const community = normalizeTag(draft && draft.community)
-  if (!community) return tags.slice(0, MAX_TAGS)
-  return [community, ...tags.filter(tag => tag !== community)].slice(0, MAX_TAGS)
+  const collection = draft && draft.collection ? [COLLECTION_TAG] : []
+  const ordered = [
+    ...collection,
+    ...(community ? [community] : []),
+    ...tags.filter(tag => tag !== community && tag !== COLLECTION_TAG)
+  ]
+  return [...new Set(ordered)].slice(0, MAX_TAGS)
 }
 
 /** The primary category, which is also `parent_permlink` for a top-level post. */
 export function resolveCategory (draft) {
   const community = normalizeTag(draft && draft.community)
   if (community) return community
-  return resolvedTags(draft)[0] || ''
+  const tags = resolvedTags(draft).filter(tag => tag !== COLLECTION_TAG)
+  return tags[0] || ''
 }
 
 /** Accept `100`, `100.000 HBD` and numbers; return chain-ready HBD text. */
@@ -104,7 +148,9 @@ export function buildCommentOptions ({ username, permlink, beneficiaries, reward
   const options = {
     author: username,
     permlink,
-    max_accepted_payout: normalizeMaxPayout(normalizedRewards.maxAcceptedPayout) || MAX_ACCEPTED_PAYOUT,
+    max_accepted_payout: normalizedRewards.decline
+      ? '0.000 HBD'
+      : (normalizeMaxPayout(normalizedRewards.maxAcceptedPayout) || MAX_ACCEPTED_PAYOUT),
     percent_hbd: normalizedRewards.percentHbd,
     allow_votes: normalizedRewards.allowVotes,
     allow_curation_rewards: normalizedRewards.allowCurationRewards
@@ -136,14 +182,49 @@ export function readCrossPostMetadata (metadata) {
   return null
 }
 
-/** Metadata for a post, including tags and an optional cross-post reference. */
+/** Metadata for a post, including tags, media and optional interoperability flags. */
 export function buildPostMetadata (draft) {
+  const source = draft && typeof draft === 'object' ? draft : {}
   const metadata = {
     app: 'hive.ausbit.dev',
     format: 'markdown',
-    tags: resolvedTags(draft)
+    tags: resolvedTags(source)
   }
-  const crossPost = normalizeCrossPost(draft && draft.crossPost)
+
+  const images = []
+  const cover = normalizeCoverImage(source.coverImage)
+  if (cover) images.push(cover)
+  for (const raw of collectImageUrls(source.body)) {
+    const url = normalizeImageUrl(raw)
+    if (url && !images.includes(url)) images.push(url)
+  }
+  if (images.length) metadata.image = images.slice(0, 20)
+
+  const users = extractMentionedUsers(source.body)
+  if (users.length) metadata.users = users
+
+  const description = normalizeDescription(source.description) ||
+    deriveDescription(source.body, DESCRIPTION_MAX)
+  if (description) metadata.description = description
+
+  const aiTools = normalizeAiTools(source.aiTools)
+  const enabledAiTools = AI_TOOL_KEYS.filter(key => aiTools[key])
+  if (enabledAiTools.length) {
+    metadata.ai_tools = enabledAiTools.reduce((tools, key) => {
+      tools[key] = true
+      return tools
+    }, {})
+  }
+
+  const countdown = normalizeCountdown(source.countdown)
+  if (countdown) metadata.countdown = countdown
+  if (source.portfolio === true) metadata.portfolio = true
+  if (source.collection === true) metadata.collection = true
+
+  const author = normalizeAuthorDisplay(source.authorDisplay)
+  if (author) metadata.author = author
+
+  const crossPost = normalizeCrossPost(source.crossPost)
   if (crossPost) {
     // Write the interoperable flags used by other cross-post tools, plus the
     // legacy object so older drafts round-trip through this app unchanged.
@@ -152,6 +233,14 @@ export function buildPostMetadata (draft) {
     metadata.original_permlink = crossPost.permlink
   }
   return metadata
+}
+
+/** Drop the keys this composer owns before merging in a fresh set. */
+export function stripManagedMetadata (metadata) {
+  const source = metadata && typeof metadata === 'object' ? metadata : {}
+  const out = { ...source }
+  for (const key of MANAGED_METADATA_KEYS) delete out[key]
+  return out
 }
 
 /**
@@ -189,16 +278,26 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
   if (!/^[a-z0-9][a-z0-9-]{0,254}$/.test(postPermlink)) throw new Error('The post permlink is not valid.')
 
   // Merge onto the original metadata so an edit does not silently drop keys a
-  // different client wrote (images, description, app-specific data).
+  // different client wrote (images, description, app-specific data). Keys this
+  // composer owns are replaced from the draft so clearing an option removes it.
+  const previous = previousMetadata && typeof previousMetadata === 'object'
+    ? stripManagedMetadata(previousMetadata)
+    : {}
+  const next = isComment ? null : buildPostMetadata(draft)
+  // Keep an existing cover when the draft has no images of its own, unless the
+  // editor loaded and cleared them.
+  if (next && !next.image && Array.isArray(previousMetadata?.image) && previousMetadata.image.length) {
+    next.image = previousMetadata.image
+  }
   const metadata = isComment
     ? {
-        ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
+        ...previous,
         app: 'hive.ausbit.dev',
         format: 'markdown'
       }
     : {
-        ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
-        ...buildPostMetadata(draft)
+        ...previous,
+        ...next
       }
 
   const operation = {
@@ -290,12 +389,16 @@ export function publishChecklist (draft, { username = null } = {}) {
   } else if (!tags.length) {
     items.push(checklistItem('tags', 'Tags and community', 'error', 'Add a community or at least one tag.'))
   } else {
+    const displayTags = tags.filter(tag => tag !== community)
+    const primary = displayTags.slice(0, 5)
+    const extra = displayTags.slice(5)
+    const tagList = primary.map(tag => '#' + tag).join(' ') +
+      (extra.length ? ' · ' + extra.map(tag => '#' + tag).join(' ') + ' (extra discovery)' : '')
     items.push(checklistItem(
       'tags',
       'Tags and community',
       'ok',
-      (community ? 'Posted in #' + community + ' · ' : 'Category #' + tags[0] + ' · ') +
-        tags.slice(0, MAX_TAGS).map(tag => '#' + tag).join(' ')
+      (community ? 'Posted in #' + community + ' · ' : 'Category #' + tags[0] + ' · ') + tagList
     ))
   }
 
@@ -330,6 +433,8 @@ export function publishChecklist (draft, { username = null } = {}) {
   const payout = normalizeMaxPayout(rewards.maxAcceptedPayout)
   if (isCommentEdit) {
     items.push(checklistItem('rewards', 'Reward settings', 'ok', 'Comment edits do not resend comment_options.'))
+  } else if (rewards.decline) {
+    items.push(checklistItem('rewards', 'Reward settings', 'ok', 'Rewards declined — max_accepted_payout will be 0.000 HBD.'))
   } else if (!payout) {
     items.push(checklistItem('rewards', 'Reward settings', 'error', 'Enter a valid maximum accepted payout in HBD.'))
   } else {
@@ -344,6 +449,67 @@ export function publishChecklist (draft, { username = null } = {}) {
       'ok',
       payout + ' cap · ' + split + (rewards.allowVotes ? ' · votes on' : ' · votes off')
     ))
+  }
+
+  const images = collectImageUrls(body)
+  const cover = normalizeCoverImage(source.coverImage)
+  const missingAlt = /!\[\s*\]\(/.test(body)
+  if (!images.length && !cover) {
+    items.push(checklistItem('images', 'Images', 'warn', 'No images found. Feed cards will be text-only.'))
+  } else if (missingAlt) {
+    items.push(checklistItem('images', 'Images', 'warn', images.length + ' image(s) found, but some have no alt text.'))
+  } else {
+    items.push(checklistItem(
+      'images',
+      'Images',
+      'ok',
+      images.length + ' image(s)' + (cover ? ' · cover set' : ' · first image used as cover')
+    ))
+  }
+
+  const rawDescription = String(source.description || '').trim()
+  const derivedDescription = deriveDescription(body, DESCRIPTION_MAX)
+  const description = normalizeDescription(source.description) || derivedDescription
+  if (rawDescription.length > DESCRIPTION_MAX) {
+    items.push(checklistItem('description', 'Preview description', 'warn', 'The description is longer than ' + DESCRIPTION_MAX + ' characters and will be truncated.'))
+  } else if (!description) {
+    items.push(checklistItem('description', 'Preview description', 'warn', 'Add a short description for cards and link previews.'))
+  } else {
+    items.push(checklistItem('description', 'Preview description', 'ok', description))
+  }
+
+  const rawCountdown = String(source.countdown || '').trim()
+  if (rawCountdown) {
+    const countdown = normalizeCountdown(rawCountdown)
+    if (!countdown) {
+      items.push(checklistItem('countdown', 'Countdown timer', 'error', 'Enter a valid date and time for the countdown.'))
+    } else if (Date.parse(countdown) <= Date.now()) {
+      items.push(checklistItem('countdown', 'Countdown timer', 'warn', 'The countdown date is in the past.'))
+    } else {
+      items.push(checklistItem('countdown', 'Countdown timer', 'ok', 'Counts down to ' + countdown + '.'))
+    }
+  }
+
+  const aiTools = normalizeAiTools(source.aiTools)
+  if (hasAiTools(aiTools)) {
+    items.push(checklistItem(
+      'ai',
+      'AI disclosure',
+      'ok',
+      AI_TOOL_KEYS.filter(key => aiTools[key]).map(key => AI_TOOL_LABELS[key]).join(' · ')
+    ))
+  }
+
+  const authorDisplay = normalizeAuthorDisplay(source.authorDisplay)
+  if (authorDisplay) {
+    items.push(checklistItem('author', 'Display author', 'ok', authorDisplay + ' (credited to @' + (user || source.owner || 'the author') + ').'))
+  }
+
+  if (source.portfolio === true) {
+    items.push(checklistItem('portfolio', 'Portfolio', 'ok', 'The cover image will be flagged for the profile portfolio.'))
+  }
+  if (source.collection === true) {
+    items.push(checklistItem('collection', 'Collection', 'ok', 'The collection flag and #' + COLLECTION_TAG + ' tag will be added.'))
   }
 
   const crossPost = normalizeCrossPost(source.crossPost)

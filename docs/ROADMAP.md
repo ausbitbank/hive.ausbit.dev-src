@@ -61,9 +61,18 @@ refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
 See `docs/workstreams/W37-dashboard-magi-tokens.md` and
 `docs/workstreams/W38-dashboard-followups.md`.
 
+W46 is the first composer slice from issue #82: image upload with Keychain and
+SmartLock signing, drag/drop and paste, cover-image selection, an allow/decline
+rewards choice, community subscription suggestions, and interoperable metadata
+for descriptions, mentions, AI disclosure, countdowns, portfolio, collections
+and display authors. It also renders that metadata on post pages and feed cards.
+See `docs/workstreams/W46-post-composer-media.md`. Media embeds, a split live
+preview, snippets, templates and the visual editor remain follow-ups.
+
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
-Lightning workstream, and the optional #63 server-side existence check at the
-edge. There is no open issue backlog at the time of writing.
+Lightning workstream, the optional #63 server-side existence check at the edge,
+and the remaining composer roadmap phases. There is no other open issue backlog
+at the time of writing.
 
 ## Definition of done
 

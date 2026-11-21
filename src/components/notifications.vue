@@ -329,7 +329,9 @@ export default {
         this.$hiveStore.updateUnreadNotificationCount(unread)
         if (response?.lastread) this.$hiveStore.updateNotificationsLastRead(response.lastread)
       } catch (error) {
-        console.error('Failed to load unread notification count', error)
+        // A background unread-count refresh is allowed to fail; the header
+        // simply keeps the last known count instead of surfacing an error.
+        console.warn('Failed to load unread notification count', error)
       }
     },
     async loadNotifications ({ reset = false } = {}) {

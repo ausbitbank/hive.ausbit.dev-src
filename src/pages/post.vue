@@ -71,6 +71,26 @@
                   </router-link>
                 </div>
 
+                <div v-if="hasAiDisclosure || isPortfolio || isCollection || countdownLabel" class="post-badges">
+                  <span v-if="hasAiDisclosure" class="post-badge post-badge--ai" tabindex="0">
+                    <q-icon name="smart_toy" size="14px" aria-hidden="true" />
+                    AI-assisted
+                    <q-tooltip>{{ aiToolLabels.join(' · ') }}</q-tooltip>
+                  </span>
+                  <span v-if="isPortfolio" class="post-badge">
+                    <q-icon name="collections" size="14px" aria-hidden="true" />
+                    Portfolio
+                  </span>
+                  <span v-if="isCollection" class="post-badge">
+                    <q-icon name="library_books" size="14px" aria-hidden="true" />
+                    Collection
+                  </span>
+                  <span v-if="countdownLabel" class="post-badge post-badge--countdown">
+                    <q-icon name="timer" size="14px" aria-hidden="true" />
+                    {{ countdownLabel }}
+                  </span>
+                </div>
+
                 <div class="post-hero__meta">
                   <router-link :to="linkAccount(author)" class="post-author">
                     <q-avatar size="32px">
@@ -139,6 +159,7 @@
                   <q-img :src="GetHiveAvatarUrl(author)" :alt="'Avatar of @' + author" />
                 </q-avatar>
                 <div class="post-author-card__ident">
+                  <span v-if="displayAuthor" class="post-author-card__display">{{ displayAuthor }}</span>
                   <router-link :to="linkAccount(author)" class="post-author-card__name" :title="'@' + author">@{{ author }}</router-link>
                   <span class="post-author-card__rep">Reputation <strong>{{ reputation }}</strong></span>
                 </div>
@@ -479,6 +500,41 @@
   overflow-wrap: anywhere;
 }
 
+.post-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+
+.post-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b0bec5;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.post-badge--ai {
+  border-color: rgba(129, 212, 250, 0.35);
+  background: rgba(79, 195, 247, 0.08);
+  color: #81d4fa;
+  cursor: help;
+}
+
+.post-badge--countdown {
+  border-color: rgba(255, 183, 77, 0.3);
+  background: rgba(255, 183, 77, 0.08);
+  color: #ffcc80;
+  font-variant-numeric: tabular-nums;
+}
+
 .post-tags {
   display: flex;
   flex-wrap: wrap;
@@ -579,6 +635,17 @@
   font-weight: 600;
   line-height: 1.25;
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-author-card__display {
+  display: block;
+  overflow: hidden;
+  color: #e4eaed;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -989,7 +1056,7 @@ import tipButton from 'components/tipButton.vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
 import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
-import { readCrossPostMetadata } from 'src/services/publish'
+import { AI_TOOL_LABELS, readCrossPostMetadata } from 'src/services/publish'
 import { fetchHiveSenseSimilar } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 
@@ -1018,7 +1085,9 @@ export default {
       commentRefreshToken: 0,
       similarPosts: [],
       rebloggers: [],
-      error: null
+      error: null,
+      nowMs: Date.now(),
+      countdownTimer: null
     }
   },
   watch: {
@@ -1073,6 +1142,39 @@ export default {
     },
     postMeta () {
       return this.getPostMeta(this.post)
+    },
+    aiTools () {
+      const tools = this.postMeta && this.postMeta.ai_tools
+      return tools && typeof tools === 'object' ? tools : {}
+    },
+    aiToolLabels () {
+      return Object.keys(this.aiTools)
+        .filter(key => this.aiTools[key])
+        .map(key => AI_TOOL_LABELS[key] || key.replace(/_/g, ' '))
+    },
+    hasAiDisclosure () {
+      return this.aiToolLabels.length > 0
+    },
+    countdownAt () {
+      const time = Date.parse(this.postMeta && this.postMeta.countdown)
+      return Number.isFinite(time) ? time : 0
+    },
+    countdownLabel () {
+      if (!this.countdownAt) return ''
+      const remaining = this.countdownAt - this.nowMs
+      return remaining > 0 ? this.formatCountdown(remaining) : 'Countdown ended'
+    },
+    isPortfolio () {
+      return this.postMeta && this.postMeta.portfolio === true
+    },
+    isCollection () {
+      if (this.postMeta && this.postMeta.collection === true) return true
+      const tags = this.postMeta && this.postMeta.tags
+      return Array.isArray(tags) && tags.includes('c-c-c')
+    },
+    displayAuthor () {
+      const value = this.postMeta && this.postMeta.author
+      return typeof value === 'string' ? value.trim().slice(0, 80) : ''
     },
     authorMeta () {
       return safeJsonParse(this.account && this.account.posting_json_metadata)
@@ -1173,6 +1275,7 @@ export default {
       }
       this.post = post
       this.updatePageMeta(post)
+      this.startCountdownTimer()
       this.loadRebloggedBy()
       const category = post && post.category
       if (category && category.startsWith('hive-') && !this.$hiveStore.$state.communityInfo[category]) {
@@ -1219,7 +1322,10 @@ export default {
       const title = post && post.title ? stripHtmlForMeta(post.title, 120) : ''
       const pageTitle = title || ('Hive post by @' + author)
       const body = post && post.body ? stripHtmlForMeta(post.body.slice(0, 4000), 160) : ''
-      const description = body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at hive.ausbit.dev.")
+      const metaDescription = typeof metadata.description === 'string'
+        ? stripHtmlForMeta(metadata.description, 160)
+        : ''
+      const description = metaDescription || body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at hive.ausbit.dev.")
       const image = Array.isArray(metadata.image) ? metadata.image[0] : metadata.image
       const pageUrl = BASE_URL + '/@' + author + '/' + permlink
       const jsonLd = post
@@ -1279,6 +1385,29 @@ export default {
     formatDate (timestamp) {
       return moment.utc(timestamp).format('D MMM YYYY')
     },
+    formatCountdown (remainingMs) {
+      const total = Math.max(0, Math.floor(remainingMs / 1000))
+      const days = Math.floor(total / 86400)
+      const hours = Math.floor((total % 86400) / 3600)
+      const minutes = Math.floor((total % 3600) / 60)
+      const seconds = total % 60
+      if (days > 0) return days + 'd ' + hours + 'h ' + minutes + 'm'
+      if (hours > 0) return hours + 'h ' + minutes + 'm ' + seconds + 's'
+      return minutes + 'm ' + seconds + 's'
+    },
+    startCountdownTimer () {
+      this.stopCountdownTimer()
+      if (!this.countdownAt) return
+      this.nowMs = Date.now()
+      this.countdownTimer = setInterval(() => {
+        this.nowMs = Date.now()
+        if (this.countdownAt <= this.nowMs) this.stopCountdownTimer()
+      }, 1000)
+    },
+    stopCountdownTimer () {
+      if (this.countdownTimer) clearInterval(this.countdownTimer)
+      this.countdownTimer = null
+    },
     tidyNumber (value) {
       const number = Number(value)
       if (!Number.isFinite(number)) return '0'
@@ -1316,6 +1445,7 @@ export default {
       }
     },
     init () {
+      this.stopCountdownTimer()
       this.post = null
       this.error = null
       this.rebloggers = []
@@ -1332,6 +1462,9 @@ export default {
   },
   mounted () {
     this.init()
+  },
+  beforeUnmount () {
+    this.stopCountdownTimer()
   }
 }
 </script>

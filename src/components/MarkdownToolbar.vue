@@ -8,7 +8,9 @@
     <q-btn flat dense round size="sm" icon="format_list_numbered" aria-label="Numbered list" title="Numbered list" @click="emitAction('numberList')" />
     <q-separator vertical class="q-mx-xs" />
     <q-btn flat dense round size="sm" icon="link" aria-label="Insert link" title="Insert link (Ctrl+K)" @click="openLink" />
-    <q-btn flat dense round size="sm" icon="image" aria-label="Insert image" title="Insert image" @click="openImage" />
+    <q-btn flat dense round size="sm" icon="add_photo_alternate" aria-label="Upload image" title="Upload image" @click="$emit('upload')" />
+    <q-btn flat dense round size="sm" icon="image" aria-label="Insert image URL" title="Insert image URL" @click="openImage" />
+    <q-btn flat dense round size="sm" icon="format_align_center" aria-label="Center image or text" title="Center image or text" @click="emitAction('center')" />
     <q-btn flat dense round size="sm" icon="table_chart" aria-label="Insert table" title="Insert table" @click="emitAction('table')" />
     <q-btn flat dense round size="sm" icon="code" aria-label="Inline code" title="Inline code" @click="emitAction('inlineCode')" />
     <q-btn flat dense round size="sm" icon="data_object" aria-label="Code block" title="Code block" @click="emitAction('codeBlock')" />
@@ -133,7 +135,7 @@ import { safeExternalUrl } from 'src/utils/safeUrl'
 
 export default {
   name: 'MarkdownToolbar',
-  emits: ['action'],
+  emits: ['action', 'upload'],
   data () {
     return {
       linkOpen: false,

@@ -176,6 +176,22 @@ describe('post card vote indicator', () => {
     const wrapper = mountCard(0)
     expect(wrapper.find('.post-card__play').exists()).toBe(false)
   })
+
+  it('surfaces AI disclosure, collection and countdown metadata', () => {
+    const wrapper = mountCard(0, {
+      json_metadata: {
+        ai_tools: { research: true, media_generation: true },
+        countdown: new Date(Date.now() + 2 * 86400000).toISOString(),
+        collection: true,
+        portfolio: true
+      }
+    })
+    expect(wrapper.find('.post-card__badge--ai').exists()).toBe(true)
+    expect(wrapper.find('.post-card__badge--ai').attributes('title')).toContain('AI-assisted research')
+    expect(wrapper.find('.post-card__badge--countdown').text()).toContain('Ends')
+    expect(wrapper.text()).toContain('Collection')
+    expect(wrapper.text()).toContain('Portfolio')
+  })
 })
 
 describe('prefetchRoute', () => {

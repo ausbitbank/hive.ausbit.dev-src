@@ -66,20 +66,28 @@
           </div>
 
           <div v-if="mode === 'write'" class="compose-write">
-            <markdown-toolbar @action="applyAction">
+            <markdown-toolbar @action="applyAction" @upload="openImageUpload()">
               <template #end>
                 <span class="compose-toolbar__count" :title="guidance.words + ' words'">{{ guidance.words }} words</span>
               </template>
             </markdown-toolbar>
-            <textarea
-              ref="body"
-              v-model="draft.body"
-              class="compose-textarea"
-              rows="18"
-              aria-label="Post body in Markdown"
-              placeholder="Write in Markdown. Headings, lists, tables, links and images are supported."
-              @keydown="onEditorKeydown"
-            />
+            <div class="compose-editor-wrap" @dragover.prevent="onEditorDragOver" @dragleave="onEditorDragLeave" @drop="onEditorDrop">
+              <textarea
+                ref="body"
+                v-model="draft.body"
+                class="compose-textarea"
+                :class="{ 'compose-textarea--drag': dragActive }"
+                rows="18"
+                aria-label="Post body in Markdown"
+                placeholder="Write in Markdown. Paste or drop images to upload them."
+                @keydown="onEditorKeydown"
+                @paste="onEditorPaste"
+              />
+              <div v-if="dragActive" class="compose-drop-hint" aria-hidden="true">
+                <q-icon name="cloud_upload" size="22px" />
+                <span>Drop images to upload</span>
+              </div>
+            </div>
           </div>
 
           <div v-else class="compose-preview">
@@ -158,6 +166,7 @@
             <q-select
               :model-value="draft.community"
               :options="communityOptions"
+              :loading="communityLoading"
               use-input
               fill-input
               hide-selected
@@ -167,7 +176,7 @@
               dense
               label="Community or category"
               aria-label="Community or category"
-              hint="Becomes parent_permlink and the first tag"
+              hint="Your subscribed communities appear first. Becomes parent_permlink and the first tag."
               @update:model-value="setCommunity"
               @new-value="addCommunity"
             />
@@ -181,7 +190,7 @@
               dense
               label="Tags"
               aria-label="Post tags"
-              hint="Up to 5 tags. Lowercase; spaces become hyphens."
+              :hint="tagCountLabel + ' tags. The first 5 are primary discovery tags.'"
               @update:model-value="setTags"
               @new-value="addTag"
             />
@@ -194,6 +203,112 @@
                 </router-link>
               </div>
               <q-btn flat dense round size="sm" icon="close" aria-label="Remove cross-post source" title="Remove cross-post" @click="clearCrossPost" />
+            </div>
+          </div>
+        </section>
+
+        <section class="compose-panel home-card home-panel" aria-labelledby="compose-details-title">
+          <div class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">Presentation</div>
+              <h2 id="compose-details-title" class="home-panel__title">Post details</h2>
+            </div>
+            <span class="compose-pill" :class="descriptionCount > descriptionMax ? 'compose-pill--error' : 'compose-pill--muted'">
+              {{ descriptionCount }}/{{ descriptionMax }}
+            </span>
+          </div>
+          <div class="home-panel__body compose-fields">
+            <div class="compose-cover">
+              <div class="compose-cover__preview" :class="{ 'is-empty': !coverImage }">
+                <img v-if="coverImage" :src="coverImage" alt="Current cover image" />
+                <div v-else class="compose-cover__empty">
+                  <q-icon name="image_not_supported" size="18px" aria-hidden="true" />
+                  <span>No cover image</span>
+                </div>
+              </div>
+              <div class="compose-cover__body">
+                <div class="compose-cover__label">Cover image</div>
+                <div class="compose-cover__meta">
+                  {{ coverIsCustom ? 'Custom cover selected' : (coverImage ? 'Using the first body image' : 'Add an image or choose one') }}
+                </div>
+                <div class="compose-inline-actions">
+                  <q-btn outline dense no-caps color="primary" icon="photo_library" label="Choose" @click="openCoverPicker" />
+                  <q-btn v-if="coverIsCustom" flat dense no-caps icon="undo" label="Reset" @click="clearCover" />
+                </div>
+              </div>
+            </div>
+
+            <q-input
+              v-model="draft.description"
+              outlined
+              dense
+              label="Short description"
+              aria-label="Post description"
+              :maxlength="descriptionMax"
+              counter
+              hint="Used for cards and link previews. Aim for 120 characters."
+            >
+              <template #append>
+                <q-btn flat dense round icon="auto_fix_high" aria-label="Fill description from the opening paragraph" title="Fill from the opening paragraph" @click="fillDescription" />
+              </template>
+            </q-input>
+
+            <q-input
+              v-model="draft.authorDisplay"
+              outlined
+              dense
+              label="Display author (optional)"
+              aria-label="Display author name"
+              maxlength="80"
+              hint="Shown as the byline while @account remains the on-chain author."
+            />
+
+            <q-expansion-item
+              icon="smart_toy"
+              label="AI usage disclosure"
+              :caption="aiToolSummary"
+              dense-toggle
+              class="compose-disclosure"
+            >
+              <div class="compose-ai-grid">
+                <q-checkbox
+                  v-for="option in aiToolOptions"
+                  :key="option.key"
+                  v-model="draft.aiTools[option.key]"
+                  :label="option.label"
+                  :aria-label="option.label"
+                  dense
+                />
+              </div>
+              <p class="compose-hint">
+                Optional. Stored in <code>json_metadata.ai_tools</code> so readers and communities can see how AI helped.
+              </p>
+            </q-expansion-item>
+
+            <q-input
+              v-model="countdownLocal"
+              type="datetime-local"
+              outlined
+              dense
+              label="Countdown end (optional)"
+              aria-label="Countdown end date and time"
+              :error="Boolean(countdownError)"
+              :error-message="countdownError"
+            >
+              <template #append>
+                <q-btn v-if="draft.countdown" flat dense round icon="close" aria-label="Clear countdown" title="Clear countdown" @click="clearCountdown" />
+              </template>
+            </q-input>
+
+            <div class="compose-toggle-row">
+              <q-toggle v-model="draft.portfolio" label="Show in portfolio" aria-label="Show in portfolio" dense />
+              <span class="compose-hint">Flags the cover image for a profile portfolio.</span>
+            </div>
+            <div class="compose-toggle-row">
+              <q-toggle v-model="draft.collection" label="Collection of posts" aria-label="Collection of posts" dense />
+              <span class="compose-hint">
+                Adds the <code>collection</code> flag and <code>#{{ collectionTag }}</code> tag. Only use for a real collection.
+              </span>
             </div>
           </div>
         </section>
@@ -251,75 +366,97 @@
               <div class="home-eyebrow">Rewards</div>
               <h2 id="compose-rewards-title" class="home-panel__title">Beneficiaries and payout</h2>
             </div>
-            <span class="compose-pill" :class="beneTotal > 100 ? 'compose-pill--error' : 'compose-pill--muted'">
-              Author {{ Math.max(0, 100 - beneTotal) }}%
+            <span class="compose-pill" :class="!allowRewards ? 'compose-pill--muted' : beneTotal > 100 ? 'compose-pill--error' : 'compose-pill--muted'">
+              {{ !allowRewards ? 'Rewards declined' : 'Author ' + Math.max(0, 100 - beneTotal) + '%' }}
             </span>
           </div>
           <div class="home-panel__body compose-fields">
-            <div v-if="draft.beneficiaries.length" class="compose-bene-list">
-              <div v-for="(bene, index) in draft.beneficiaries" :key="bene.account + '-' + index" class="compose-bene-row">
-                <q-input
-                  v-model.trim="bene.account"
-                  outlined
-                  dense
-                  label="Account"
-                  :aria-label="'Beneficiary account ' + (index + 1)"
-                />
-                <q-input
-                  :model-value="bene.weight / 100"
-                  type="number"
-                  min="0"
-                  max="100"
-                  suffix="%"
-                  outlined
-                  dense
-                  :aria-label="'Beneficiary share for ' + (bene.account || 'row ' + (index + 1))"
-                  @update:model-value="value => setBeneficiaryPercent(index, value)"
-                  @blur="clampBeneficiary(index)"
-                />
-                <q-btn flat dense round icon="delete_outline" color="red-4" :aria-label="'Remove beneficiary ' + bene.account" @click="removeBeneficiary(index)" />
+            <div class="compose-toggle-row">
+              <q-toggle v-model="allowRewards" label="Allow rewards" aria-label="Allow rewards" dense />
+              <span class="compose-hint">Turn this off to decline the Hive reward pool for this post.</span>
+            </div>
+
+            <div v-if="!allowRewards" class="compose-rewards-off">
+              <q-icon name="money_off" size="17px" aria-hidden="true" />
+              <span>Rewards declined. The post will use <code>0.000 HBD</code> as its maximum accepted payout.</span>
+            </div>
+
+            <template v-if="allowRewards">
+              <div v-if="draft.beneficiaries.length" class="compose-bene-list">
+                <div v-for="(bene, index) in draft.beneficiaries" :key="bene.account + '-' + index" class="compose-bene-row">
+                  <q-input
+                    v-model.trim="bene.account"
+                    outlined
+                    dense
+                    label="Account"
+                    :aria-label="'Beneficiary account ' + (index + 1)"
+                  />
+                  <q-input
+                    :model-value="bene.weight / 100"
+                    type="number"
+                    min="0"
+                    max="100"
+                    suffix="%"
+                    outlined
+                    dense
+                    :aria-label="'Beneficiary share for ' + (bene.account || 'row ' + (index + 1))"
+                    @update:model-value="value => setBeneficiaryPercent(index, value)"
+                    @blur="clampBeneficiary(index)"
+                  />
+                  <q-btn flat dense round icon="delete_outline" color="red-4" :aria-label="'Remove beneficiary ' + bene.account" @click="removeBeneficiary(index)" />
+                </div>
               </div>
-            </div>
-            <div v-else class="compose-empty-line">
-              <q-icon name="person_off" size="17px" aria-hidden="true" />
-              <span>No beneficiaries. You receive 100% of post rewards.</span>
-            </div>
+              <div v-else class="compose-empty-line">
+                <q-icon name="person_off" size="17px" aria-hidden="true" />
+                <span>No beneficiaries. You receive 100% of post rewards.</span>
+              </div>
 
-            <div class="compose-bene-add">
-              <q-input v-model.trim="newBeneAccount" outlined dense label="Account" aria-label="New beneficiary account" maxlength="16" @keyup.enter="addBeneficiary" />
-              <q-input v-model.number="newBenePercent" type="number" min="0" max="100" suffix="%" outlined dense label="Share" aria-label="New beneficiary share" @keyup.enter="addBeneficiary" />
-              <q-btn unelevated no-caps color="primary" icon="add" label="Add" :disable="!canAddBeneficiary" @click="addBeneficiary" />
-            </div>
-            <div v-if="beneTotal > 100" class="compose-warning" role="alert">
-              <q-icon name="warning" size="16px" aria-hidden="true" />
-              <span>Beneficiary shares cannot total more than 100%.</span>
-            </div>
-            <div v-else-if="draft.beneficiaries.length" class="compose-total">
-              {{ beneTotal }}% shared · {{ Math.max(0, 100 - beneTotal) }}% to you
-            </div>
+              <div class="compose-bene-add">
+                <q-input v-model.trim="newBeneAccount" outlined dense label="Account" aria-label="New beneficiary account" maxlength="16" @keyup.enter="addBeneficiary" />
+                <q-input v-model.number="newBenePercent" type="number" min="0" max="100" suffix="%" outlined dense label="Share" aria-label="New beneficiary share" @keyup.enter="addBeneficiary" />
+                <q-btn unelevated no-caps color="primary" icon="add" label="Add" :disable="!canAddBeneficiary" @click="addBeneficiary" />
+              </div>
+              <div v-if="beneTotal > 100" class="compose-warning" role="alert">
+                <q-icon name="warning" size="16px" aria-hidden="true" />
+                <span>Beneficiary shares cannot total more than 100%.</span>
+              </div>
+              <div v-else-if="draft.beneficiaries.length" class="compose-total">
+                {{ beneTotal }}% shared · {{ Math.max(0, 100 - beneTotal) }}% to you
+              </div>
 
-            <q-input
-              v-model.trim="draft.rewards.maxAcceptedPayout"
-              outlined
-              dense
-              label="Maximum accepted payout"
-              aria-label="Maximum accepted payout in HBD"
-              hint="HBD cap. Use 0.000 to decline payouts."
-            />
-            <q-select
-              v-model.number="draft.rewards.percentHbd"
-              :options="payoutSplitOptions"
-              emit-value
-              map-options
-              outlined
-              dense
-              label="Reward split"
-              aria-label="Reward split between HBD and Hive Power"
-            />
-            <div class="compose-toggles">
-              <q-toggle v-model="draft.rewards.allowVotes" label="Allow votes" dense />
-              <q-toggle v-model="draft.rewards.allowCurationRewards" label="Curation rewards" dense />
-            </div>
+              <q-select
+                v-model.number="draft.rewards.percentHbd"
+                :options="payoutSplitOptions"
+                emit-value
+                map-options
+                outlined
+                dense
+                label="Reward split"
+                aria-label="Reward split between HBD and Hive Power"
+              />
+
+              <q-expansion-item
+                icon="tune"
+                label="Advanced reward settings"
+                dense-toggle
+                class="compose-disclosure"
+              >
+                <div class="compose-fields">
+                  <q-input
+                    v-model.trim="draft.rewards.maxAcceptedPayout"
+                    outlined
+                    dense
+                    label="Maximum accepted payout"
+                    aria-label="Maximum accepted payout in HBD"
+                    hint="HBD cap. Leave at the default unless the post should stop earning sooner."
+                  />
+                  <div class="compose-toggles">
+                    <q-toggle v-model="draft.rewards.allowVotes" label="Allow votes" dense />
+                    <q-toggle v-model="draft.rewards.allowCurationRewards" label="Curation rewards" dense />
+                  </div>
+                </div>
+              </q-expansion-item>
+            </template>
           </div>
         </section>
 
@@ -374,6 +511,168 @@
         </section>
       </aside>
     </div>
+
+    <q-dialog v-model="uploadDialogOpen">
+      <q-card class="compose-media-dialog">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">{{ uploadTarget === 'cover' ? 'Cover image' : 'Post media' }}</div>
+            <h2 class="home-panel__title">{{ uploadTarget === 'cover' ? 'Upload a cover image' : 'Upload images' }}</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close upload dialog" title="Close" @click="uploadDialogOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-media-dialog__body">
+          <div v-if="!canUpload" class="compose-warning" role="alert">
+            <q-icon name="lock" size="16px" aria-hidden="true" />
+            <span>Log in with Keychain or SmartLock to upload images.</span>
+          </div>
+
+          <q-file
+            :model-value="uploadFiles"
+            :multiple="uploadTarget !== 'cover'"
+            outlined
+            dense
+            accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml,image/avif,image/bmp"
+            label="Choose images"
+            aria-label="Choose images to upload"
+            :disable="uploadBusy"
+            @update:model-value="setUploadFiles"
+          >
+            <template #prepend>
+              <q-icon name="cloud_upload" aria-hidden="true" />
+            </template>
+          </q-file>
+
+          <q-input
+            v-if="uploadFiles.length === 1"
+            v-model="uploadAlt"
+            outlined
+            dense
+            label="Alt text"
+            aria-label="Image alt text"
+            hint="Describe the image for screen readers."
+            @keyup.enter="uploadSelectedImages"
+          />
+
+          <p class="compose-hint">{{ uploadLimitLabel }}</p>
+          <q-toggle v-model="centerImages" label="Center uploaded images" aria-label="Center uploaded images" dense />
+          <div v-if="uploadStatus" class="compose-upload-status" role="status">{{ uploadStatus }}</div>
+          <div v-if="uploadError" class="compose-upload-error" role="alert">
+            <q-icon name="error_outline" size="16px" aria-hidden="true" />
+            <span>{{ uploadError }}</span>
+          </div>
+
+          <div class="compose-upload-actions">
+            <q-btn flat no-caps label="Cancel" @click="uploadDialogOpen = false" />
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              icon="cloud_upload"
+              label="Upload"
+              :loading="uploadBusy"
+              :disable="!canUpload || !uploadFiles.length"
+              @click="uploadSelectedImages"
+            />
+          </div>
+
+          <div v-if="recentUploads.length" class="compose-upload-recent">
+            <div class="compose-upload-recent__head">
+              <span>Recent uploads</span>
+              <q-btn flat dense no-caps icon="delete_sweep" label="Clear" @click="clearUploads" />
+            </div>
+            <div class="compose-media-grid">
+              <button
+                v-for="entry in recentUploads"
+                :key="entry.url"
+                type="button"
+                class="compose-media-tile"
+                @click="useRecentUpload(entry)"
+              >
+                <img :src="entry.url" :alt="entry.alt || 'Uploaded image'" loading="lazy" />
+                <span>{{ uploadTarget === 'cover' ? 'Use as cover' : 'Insert' }}</span>
+              </button>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="coverDialogOpen">
+      <q-card class="compose-media-dialog">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Presentation</div>
+            <h2 class="home-panel__title">Choose a cover image</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close cover dialog" title="Close" @click="coverDialogOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-media-dialog__body">
+          <p class="compose-hint compose-hint--top">
+            The first body image is used by default. Choose another image for cards, link previews and the portfolio.
+          </p>
+          <div v-if="coverCandidates.length" class="compose-media-grid">
+            <button
+              v-for="candidate in coverCandidates"
+              :key="candidate.url"
+              type="button"
+              class="compose-media-tile"
+              :class="{ 'is-selected': coverImage === candidate.url }"
+              @click="setCover(candidate)"
+            >
+              <img :src="candidate.url" :alt="candidate.alt || 'Cover candidate'" loading="lazy" />
+              <span>{{ coverImage === candidate.url ? 'Current cover' : 'Use as cover' }}</span>
+            </button>
+          </div>
+          <div v-else class="compose-empty-line">
+            <q-icon name="image_not_supported" size="17px" aria-hidden="true" />
+            <span>No images yet. Upload one first.</span>
+          </div>
+          <div class="compose-inline-actions">
+            <q-btn outline no-caps color="primary" icon="cloud_upload" label="Upload cover" @click="openCoverUpload" />
+            <q-btn v-if="coverIsCustom" flat no-caps icon="undo" label="Use first body image" @click="resetCover" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="reviewOpen">
+      <q-card class="compose-review">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Review</div>
+            <h2 class="home-panel__title">{{ isEditing ? 'Queue this edit?' : 'Queue this post?' }}</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close review dialog" title="Close" @click="reviewOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-review__body">
+          <dl class="compose-review__list">
+            <div v-for="row in reviewSummary" :key="row.label" class="compose-review__row">
+              <dt>{{ row.label }}</dt>
+              <dd>{{ row.value }}</dd>
+            </div>
+          </dl>
+          <p class="compose-hint">
+            Queuing adds a posting-key <code>comment</code> operation to the action queue.
+            Nothing is broadcast until you sign it.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right" class="compose-review__actions">
+          <q-btn flat no-caps label="Back" @click="reviewOpen = false" />
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            icon="send"
+            :label="isEditing ? 'Queue edit for signing' : 'Queue for signing'"
+            @click="confirmPublish"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <q-dialog v-model="discardOpen">
       <q-card class="compose-confirm">
@@ -514,6 +813,30 @@
 
 .compose-write {
   margin-top: 0.65rem;
+}
+
+.compose-editor-wrap {
+  position: relative;
+}
+
+.compose-drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 2px dashed rgba(79, 195, 247, 0.7);
+  border-radius: var(--radius-sm);
+  background: rgba(13, 20, 25, 0.88);
+  color: #81d4fa;
+  font-size: 0.85rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.compose-textarea--drag {
+  border-color: rgba(79, 195, 247, 0.7);
 }
 
 .compose-toolbar__count {
@@ -704,6 +1027,263 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+.compose-cover {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compose-cover__preview {
+  flex: none;
+  width: 92px;
+  height: 68px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #0d1419;
+}
+
+.compose-cover__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.compose-cover__preview.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-subtle);
+}
+
+.compose-cover__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  color: #78909c;
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.compose-cover__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose-cover__label {
+  color: #cfd8dc;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.compose-cover__meta {
+  margin: 0.1rem 0 0.35rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.compose-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.compose-toggle-row .compose-hint {
+  flex: 1;
+  min-width: 120px;
+  margin: 0.2rem 0 0;
+}
+
+.compose-rewards-off {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(255, 183, 77, 0.3);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 183, 77, 0.07);
+  color: #ffcc80;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.compose-disclosure {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compose-disclosure :deep(.q-item) {
+  padding: 0.35rem 0.5rem;
+}
+
+.compose-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.15rem 0.5rem;
+  padding: 0.25rem 0.55rem 0.1rem;
+}
+
+.compose-media-dialog {
+  width: 560px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow: auto;
+  background: #1d1d1d;
+}
+
+.compose-review {
+  width: 600px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow: auto;
+  background: #1d1d1d;
+}
+
+.compose-review__body {
+  padding: 0.9rem 1rem 0.6rem;
+}
+
+.compose-review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.compose-review__row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compose-review__row dt {
+  color: #78909c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.compose-review__row dd {
+  margin: 0;
+  color: #cfd8dc;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.compose-review__actions {
+  padding: 0.6rem 0.9rem 0.8rem;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compose-media-dialog__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0.8rem 1rem 0.7rem;
+}
+
+.compose-media-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.compose-upload-status {
+  color: #90caf9;
+  font-size: 0.74rem;
+}
+
+.compose-upload-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  color: #ff8a80;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.compose-upload-recent {
+  margin-top: 0.3rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.compose-upload-recent__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #b0bec5;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.compose-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.compose-media-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  color: #90a4ae;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.62rem;
+  text-align: left;
+}
+
+.compose-media-tile img {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.compose-media-tile:hover,
+.compose-media-tile:focus-visible {
+  border-color: rgba(79, 195, 247, 0.55);
+  color: #e4eaed;
+}
+
+.compose-media-tile:focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+}
+
+.compose-media-tile.is-selected {
+  border-color: #4fc3f7;
+  background: rgba(79, 195, 247, 0.1);
+  color: #e4eaed;
 }
 
 .compose-source {
@@ -954,12 +1534,19 @@
 <script>
 import { LocalStorage, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
+import { keychain } from '@hiveio/keychain'
+import smartlock from 'components/smartlock/index.js'
 import moment from 'src/utils/time'
 import { applyMarkdownAction, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
+import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
 import {
+  AI_TOOL_KEYS,
+  COLLECTION_TAG,
+  DESCRIPTION_MAX,
   MAX_BENEFICIARIES,
   MAX_TAGS,
   createDraft,
+  defaultAiTools,
   defaultRewards,
   draftDisplayTitle,
   draftExportFileName,
@@ -967,6 +1554,7 @@ import {
   draftLengthGuidance,
   mergeImportedDrafts,
   normalizeBeneficiaries,
+  normalizeCoverImage,
   normalizeDraft,
   normalizeTag,
   normalizeTags,
@@ -978,13 +1566,27 @@ import {
   writeDrafts
 } from 'src/services/drafts'
 import {
+  appendUploadHistory,
+  buildImageSigningPayload,
+  clearUploadHistory,
+  imageHostErrorMessage,
+  MAX_IMAGE_BYTES,
+  readImageBytes,
+  readUploadHistory,
+  RECOMMENDED_IMAGE_BYTES,
+  uploadImage,
+  validateImageFile
+} from 'src/services/imageHost'
+import {
+  AI_TOOL_LABELS,
   canPublish as canPublishDraft,
   checklistErrors as collectChecklistErrors,
   createPostPermlink,
   parseHivePostUrl,
   postQueueItem,
   publishChecklist,
-  readCrossPostMetadata
+  readCrossPostMetadata,
+  resolvedTags
 } from 'src/services/publish'
 import { isOnline } from 'src/services/connectivity'
 import { setPageMeta } from 'src/utils/pageMeta'
@@ -1000,6 +1602,26 @@ function parseJsonMetadata (value) {
   } catch {
     return null
   }
+}
+
+function pad2 (value) {
+  return String(value).padStart(2, '0')
+}
+
+/** ISO timestamp -> the local value a datetime-local input expects. */
+function toLocalDateTimeInput (value) {
+  const time = Date.parse(value || '')
+  if (!Number.isFinite(time)) return ''
+  const date = new Date(time)
+  return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate()) +
+    'T' + pad2(date.getHours()) + ':' + pad2(date.getMinutes())
+}
+
+/** datetime-local value -> ISO timestamp for json_metadata.countdown. */
+function fromLocalDateTimeInput (value) {
+  if (!value) return ''
+  const time = Date.parse(value)
+  return Number.isFinite(time) ? new Date(time).toISOString() : ''
 }
 
 export default {
@@ -1030,6 +1652,29 @@ export default {
       newBenePercent: 10,
       discardOpen: false,
       discardTarget: null,
+      communityLoading: false,
+      communityLoadedFor: null,
+      uploadDialogOpen: false,
+      uploadFiles: [],
+      uploadAlt: '',
+      uploadError: '',
+      uploadTarget: 'body',
+      uploadBusy: false,
+      uploadStatus: '',
+      recentUploads: [],
+      dragActive: false,
+      savedSelection: { start: 0, end: 0 },
+      coverDialogOpen: false,
+      centerImages: LocalStorage.getItem('composeCenterImages') === true,
+      reviewOpen: false,
+      aiToolOptions: [
+        { key: 'media_generation', label: 'Generating media on the post' },
+        { key: 'translation', label: 'Language translation' },
+        { key: 'post_draft', label: 'Writing the text' },
+        { key: 'writing_edit', label: "Editing the author's text" },
+        { key: 'research', label: 'Researching' },
+        { key: 'other', label: 'Other AI assistance' }
+      ],
       modeOptions: [
         { label: 'Write', value: 'write', icon: 'edit' },
         { label: 'Preview', value: 'preview', icon: 'visibility' }
@@ -1045,6 +1690,90 @@ export default {
   computed: {
     loggedInUser () {
       return this.$hiveStore.user.username || null
+    },
+    loginType () {
+      return this.$hiveStore.user.loginType || null
+    },
+    allowRewards: {
+      get () {
+        return !(this.draft && this.draft.rewards && this.draft.rewards.decline)
+      },
+      set (value) {
+        if (!this.draft) return
+        const rewards = this.draft.rewards
+        rewards.decline = !value
+        if (value && (!rewards.maxAcceptedPayout || /^0(?:\.0+)?\s*(?:HBD)?$/i.test(rewards.maxAcceptedPayout))) {
+          rewards.maxAcceptedPayout = '100000.000 HBD'
+        }
+      }
+    },
+    bodyImages () {
+      return this.draft ? extractBodyImages(this.draft.body) : []
+    },
+    coverImage () {
+      if (!this.draft) return ''
+      const custom = normalizeCoverImage(this.draft.coverImage)
+      if (custom) return custom
+      return this.bodyImages[0]?.url || ''
+    },
+    coverIsCustom () {
+      return Boolean(this.draft && normalizeCoverImage(this.draft.coverImage))
+    },
+    coverCandidates () {
+      const options = []
+      const seen = new Set()
+      const push = (url, alt, source) => {
+        const safe = normalizeCoverImage(url)
+        if (!safe || seen.has(safe)) return
+        seen.add(safe)
+        options.push({ url: safe, alt: String(alt || ''), source })
+      }
+      if (this.coverIsCustom) push(this.draft.coverImage, 'Current cover', 'cover')
+      for (const image of this.bodyImages) push(image.url, image.alt, 'body')
+      for (const entry of this.recentUploads) push(entry.url, entry.alt, 'upload')
+      return options
+    },
+    aiToolSummary () {
+      if (!this.draft || !this.draft.aiTools) return 'Not declared'
+      const labels = AI_TOOL_KEYS
+        .filter(key => this.draft.aiTools[key])
+        .map(key => AI_TOOL_LABELS[key] || key)
+      return labels.length ? labels.join(' · ') : 'Not declared'
+    },
+    descriptionCount () {
+      return String(this.draft?.description || '').length
+    },
+    descriptionMax () {
+      return DESCRIPTION_MAX
+    },
+    collectionTag () {
+      return COLLECTION_TAG
+    },
+    countdownLocal: {
+      get () {
+        return toLocalDateTimeInput(this.draft?.countdown)
+      },
+      set (value) {
+        if (!this.draft) return
+        this.draft.countdown = value ? fromLocalDateTimeInput(value) : ''
+      }
+    },
+    countdownError () {
+      if (!this.draft?.countdown) return ''
+      const time = Date.parse(this.draft.countdown)
+      if (!Number.isFinite(time)) return 'Enter a valid date and time.'
+      if (time <= Date.now()) return 'Choose a future date and time.'
+      return ''
+    },
+    tagCountLabel () {
+      return (this.draft?.tags?.length || 0) + ' / ' + MAX_TAGS
+    },
+    uploadLimitLabel () {
+      return 'Up to ' + Math.round(MAX_IMAGE_BYTES / (1024 * 1024)) + ' MB per image. Files over ' +
+        Math.round(RECOMMENDED_IMAGE_BYTES / (1024 * 1024)) + ' MB may be slow to upload.'
+    },
+    canUpload () {
+      return Boolean(this.loggedInUser)
     },
     guidance () {
       return draftLengthGuidance(this.draft && this.draft.body)
@@ -1063,6 +1792,40 @@ export default {
     },
     checklistErrors () {
       return collectChecklistErrors(this.checklist)
+    },
+    reviewSummary () {
+      if (!this.draft) return []
+      const draft = this.draft
+      const tags = resolvedTags(draft)
+      const split = draft.rewards.decline
+        ? 'Rewards declined · 0.000 HBD cap'
+        : ((draft.rewards.percentHbd === 10000
+            ? '100% HBD'
+            : draft.rewards.percentHbd === 0
+              ? '100% HP'
+              : (draft.rewards.percentHbd / 100) + '% HBD / ' + ((10000 - draft.rewards.percentHbd) / 100) + '% HP') +
+          ' · cap ' + draft.rewards.maxAcceptedPayout)
+      const rows = [
+        { label: 'Title', value: draft.title.trim() || 'Untitled' },
+        { label: 'Destination', value: draft.community ? '#' + draft.community : (tags[0] ? '#' + tags[0] : 'None') },
+        { label: 'Tags', value: tags.length ? tags.map(tag => '#' + tag).join(' ') : 'None' },
+        { label: 'Cover', value: this.coverImage ? (this.coverIsCustom ? 'Custom image' : 'First body image') : 'No image' },
+        { label: 'Description', value: draft.description || '(auto from the opening paragraph)' },
+        { label: 'Rewards', value: split },
+        {
+          label: 'Beneficiaries',
+          value: draft.beneficiaries.length
+            ? draft.beneficiaries.map(item => '@' + item.account + ' ' + (item.weight / 100) + '%').join(' · ')
+            : 'None'
+        },
+        { label: 'AI disclosure', value: this.aiToolSummary }
+      ]
+      if (draft.countdown) rows.push({ label: 'Countdown', value: new Date(draft.countdown).toLocaleString() })
+      if (draft.portfolio) rows.push({ label: 'Portfolio', value: 'Shown' })
+      if (draft.collection) rows.push({ label: 'Collection', value: 'Flagged' })
+      if (draft.authorDisplay) rows.push({ label: 'Display author', value: draft.authorDisplay })
+      if (draft.crossPost) rows.push({ label: 'Cross-post', value: '@' + draft.crossPost.author + '/' + draft.crossPost.permlink })
+      return rows
     },
     canPublish () {
       return Boolean(this.draft) && canPublishDraft(this.draft, { username: this.loggedInUser })
@@ -1089,8 +1852,13 @@ export default {
         options.set(tag, { label: label || tag, value: tag })
       }
       for (const item of this.$hiveStore.user.communities || []) {
-        if (typeof item === 'string') add(item)
-        else if (item && item.name) add(item.name, item.title ? item.title + ' · ' + item.name : item.name)
+        if (typeof item === 'string') {
+          add(item)
+        } else if (Array.isArray(item)) {
+          add(item[0], item[1] ? item[1] + ' · ' + item[0] : item[0])
+        } else if (item && item.name) {
+          add(item.name, item.title ? item.title + ' · ' + item.name : item.name)
+        }
       }
       for (const info of Object.values(this.$hiveStore.communityInfo || {})) {
         if (info && info.name) add(info.name, info.title ? info.title + ' · ' + info.name : info.name)
@@ -1127,6 +1895,15 @@ export default {
         if (!this.draft) return
         this.scheduleAutosave()
       }
+    },
+    loggedInUser (value, previous) {
+      if (value === previous) return
+      this.communityLoadedFor = null
+      this.loadCommunitySubscriptions()
+      this.loadUploadHistory()
+    },
+    centerImages (value) {
+      LocalStorage.set('composeCenterImages', value === true)
     }
   },
   created () {
@@ -1135,9 +1912,11 @@ export default {
   mounted () {
     setPageMeta({
       title: 'Write a Hive post — drafts, preview and publishing',
-      description: 'Compose a Hive post with local drafts, markdown preview, community selection, beneficiaries, a publish checklist and posting-key signing.',
+      description: 'Compose a Hive post with local drafts, markdown preview, media uploads, community selection, beneficiaries, a publish checklist and posting-key signing.',
       url: '/compose'
     })
+    this.loadCommunitySubscriptions()
+    this.loadUploadHistory()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.flushAutosave)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
@@ -1152,9 +1931,243 @@ export default {
     wordCount,
     draftDisplayTitle,
     draftHasContent,
+    async loadCommunitySubscriptions () {
+      const user = this.loggedInUser
+      if (!user || this.communityLoadedFor === user) return
+      this.communityLoading = true
+      try {
+        await this.$hiveStore.getCommunitySubscriptions(user)
+        this.communityLoadedFor = user
+      } catch (error) {
+        console.error('Failed to load community subscriptions', error)
+      } finally {
+        this.communityLoading = false
+      }
+    },
+    loadUploadHistory () {
+      this.recentUploads = readUploadHistory(LocalStorage, this.loggedInUser)
+    },
+    captureSelection () {
+      const element = this.$refs.body
+      const fallback = this.draft ? this.draft.body.length : 0
+      this.savedSelection = element
+        ? { start: element.selectionStart ?? fallback, end: element.selectionEnd ?? fallback }
+        : { start: fallback, end: fallback }
+    },
+    openImageUpload (target = 'body', files = null) {
+      if (!this.canUpload) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Log in to upload images',
+          caption: 'You can still insert an image URL from the toolbar.'
+        })
+        return
+      }
+      this.uploadTarget = target
+      this.uploadError = ''
+      this.uploadStatus = ''
+      this.uploadAlt = ''
+      this.uploadFiles = files ? Array.from(files) : []
+      if (this.uploadFiles.length === 1) this.uploadAlt = altFromFileName(this.uploadFiles[0].name)
+      this.captureSelection()
+      this.uploadDialogOpen = true
+    },
+    openCoverUpload () {
+      this.coverDialogOpen = false
+      this.openImageUpload('cover')
+    },
+    setUploadFiles (value) {
+      this.uploadFiles = Array.isArray(value) ? value : value ? [value] : []
+      this.uploadAlt = this.uploadFiles.length === 1 ? altFromFileName(this.uploadFiles[0].name) : ''
+      this.uploadError = ''
+    },
+    async ensureSmartlockUnlocked () {
+      const user = this.loggedInUser
+      if (!user) throw new Error('Log in to upload images.')
+      const minutes = Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15
+      if (smartlock.isAccountUnlocked(user, minutes * 60 * 1000)) return
+      const password = await new Promise(resolve => {
+        this.$q.dialog({
+          title: 'Unlock SmartLock',
+          message: 'Enter the SmartLock password to sign the image upload.',
+          prompt: { model: '', type: 'password', outlined: true, label: 'Password' },
+          cancel: true,
+          persistent: true
+        }).onOk(resolve).onCancel(() => resolve(''))
+      })
+      if (!password) throw new Error('SmartLock is locked. Unlock it to upload images.')
+      await smartlock.unlockAccount(user, password, false)
+    },
+    async signImagePayload (payload) {
+      const user = this.loggedInUser
+      if (!user) throw new Error('Log in with Keychain or SmartLock to upload images.')
+      if (this.loginType === 'keychain') {
+        const result = await keychain(window, 'requestSignBuffer', user, payload, 'Posting')
+        if (!result?.success) {
+          throw new Error(result?.cancel ? 'Cancelled in Keychain.' : (result?.msg || 'Keychain did not sign the upload.'))
+        }
+        return result.msg || result.result
+      }
+      if (this.loginType === 'smartlock') {
+        await this.ensureSmartlockUnlocked()
+        try {
+          return smartlock.api.signBuffer(user, payload)
+        } catch (error) {
+          throw new Error(error?.message || 'SmartLock could not sign the upload.', { cause: error })
+        }
+      }
+      throw new Error('Log in with Keychain or SmartLock to upload images.')
+    },
+    async uploadSelectedImages () {
+      if (this.uploadBusy) return
+      if (!this.uploadFiles.length) {
+        this.uploadError = 'Choose at least one image.'
+        return
+      }
+      if (!this.canUpload) {
+        this.uploadError = 'Log in with Keychain or SmartLock to upload images.'
+        return
+      }
+      this.uploadBusy = true
+      this.uploadError = ''
+      const uploaded = []
+      const files = this.uploadTarget === 'cover' ? this.uploadFiles.slice(0, 1) : this.uploadFiles
+      try {
+        for (const file of files) {
+          const validation = validateImageFile(file)
+          if (!validation.ok) throw new Error(file.name + ': ' + validation.error)
+          this.uploadStatus = 'Signing ' + file.name + '…'
+          const bytes = await readImageBytes(file)
+          const signature = await this.signImagePayload(buildImageSigningPayload(bytes))
+          this.uploadStatus = 'Uploading ' + file.name + '…'
+          const url = await uploadImage({ username: this.loggedInUser, signature, file })
+          const alt = files.length === 1 ? (this.uploadAlt.trim() || altFromFileName(file.name)) : altFromFileName(file.name)
+          uploaded.push({ url, alt, name: file.name, size: file.size, type: file.type })
+          this.recentUploads = appendUploadHistory(LocalStorage, this.loggedInUser, {
+            url,
+            alt,
+            name: file.name,
+            size: file.size,
+            type: file.type
+          })
+        }
+        if (this.uploadTarget === 'cover' && uploaded[0]) {
+          this.draft.coverImage = uploaded[0].url
+          this.$q.notify({ type: 'positive', message: 'Cover image uploaded' })
+        } else {
+          this.insertUploadedImages(uploaded)
+          this.$q.notify({
+            type: 'positive',
+            message: uploaded.length > 1 ? uploaded.length + ' images uploaded' : 'Image uploaded',
+            caption: 'Inserted into the post.'
+          })
+        }
+        this.uploadDialogOpen = false
+        this.uploadFiles = []
+        this.uploadAlt = ''
+        this.uploadStatus = ''
+      } catch (error) {
+        this.uploadError = imageHostErrorMessage(error)
+        this.uploadStatus = ''
+      } finally {
+        this.uploadBusy = false
+      }
+    },
+    insertUploadedImages (images) {
+      if (!images.length || !this.draft) return
+      const block = images
+        .map(image => {
+          const markdown = markdownImage({ alt: image.alt, url: image.url })
+          return this.centerImages ? '<center>' + markdown + '</center>' : markdown
+        })
+        .join('\n\n')
+      const start = Math.min(this.savedSelection.start, this.draft.body.length)
+      const end = Math.min(Math.max(this.savedSelection.end, start), this.draft.body.length)
+      const before = this.draft.body.slice(0, start)
+      const after = this.draft.body.slice(end)
+      const lead = before && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : ''
+      const trail = after && !after.startsWith('\n\n') ? (after.startsWith('\n') ? '\n' : '\n\n') : ''
+      const inserted = lead + block + trail
+      if (this.mode !== 'write') this.mode = 'write'
+      this.draft.body = before + inserted + after
+      this.$nextTick(() => {
+        const element = this.$refs.body
+        if (!element) return
+        const cursor = start + inserted.length
+        element.focus()
+        element.setSelectionRange(cursor, cursor)
+      })
+    },
+    onEditorPaste (event) {
+      const files = Array.from(event.clipboardData?.files || []).filter(file => file.type.startsWith('image/'))
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.openImageUpload('body', files)
+    },
+    onEditorDragOver () {
+      this.dragActive = true
+    },
+    onEditorDragLeave () {
+      this.dragActive = false
+    },
+    onEditorDrop (event) {
+      this.dragActive = false
+      const files = Array.from(event.dataTransfer?.files || []).filter(file => file.type.startsWith('image/'))
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.openImageUpload('body', files)
+    },
+    useRecentUpload (entry) {
+      if (!entry) return
+      if (this.uploadTarget === 'cover') {
+        this.draft.coverImage = entry.url
+        this.uploadDialogOpen = false
+      } else {
+        this.captureSelection()
+        this.insertUploadedImages([{ url: entry.url, alt: entry.alt || altFromFileName(entry.name) }])
+        this.uploadDialogOpen = false
+      }
+    },
+    openCoverPicker () {
+      this.coverDialogOpen = true
+    },
+    setCover (candidate) {
+      if (!this.draft || !candidate) return
+      this.draft.coverImage = normalizeCoverImage(candidate.url) || ''
+      this.coverDialogOpen = false
+    },
+    resetCover () {
+      if (!this.draft) return
+      this.draft.coverImage = ''
+      this.coverDialogOpen = false
+    },
+    clearCover () {
+      if (!this.draft) return
+      this.draft.coverImage = ''
+    },
+    fillDescription () {
+      if (!this.draft) return
+      this.draft.description = deriveDescription(this.draft.body, DESCRIPTION_MAX)
+    },
+    clearCountdown () {
+      if (!this.draft) return
+      this.draft.countdown = ''
+    },
+    clearUploads () {
+      this.recentUploads = clearUploadHistory(LocalStorage, this.loggedInUser)
+    },
     blankDraft () {
       return createDraft({
         owner: this.loggedInUser || null,
+        description: '',
+        coverImage: '',
+        aiTools: defaultAiTools(),
+        countdown: '',
+        portfolio: false,
+        collection: false,
+        authorDisplay: '',
         beneficiaries: normalizeBeneficiaries((this.$hiveStore.user.settings.beneficiary || []).map(item => ({
           account: item.account,
           weight: item.weight
@@ -1197,13 +2210,22 @@ export default {
 
         const metadata = parseJsonMetadata(post.json_metadata) || {}
         const tags = Array.isArray(metadata.tags) ? metadata.tags : []
+        const metadataImage = Array.isArray(metadata.image) ? metadata.image[0] : metadata.image
         const draft = createDraft({
           owner: parsed.author,
           title: post.title || '',
           body: post.body || '',
+          description: metadata.description || '',
+          coverImage: typeof metadataImage === 'string' ? metadataImage : '',
           community: post.parent_permlink || post.category || '',
-          tags: tags.filter(tag => tag !== post.parent_permlink),
+          tags: tags.filter(tag => tag !== post.parent_permlink && tag !== COLLECTION_TAG),
           crossPost: readCrossPostMetadata(metadata),
+          aiTools: metadata.ai_tools || {},
+          countdown: metadata.countdown || '',
+          portfolio: metadata.portfolio === true,
+          collection: metadata.collection === true ||
+            tags.map(tag => normalizeTag(tag)).includes(COLLECTION_TAG),
+          authorDisplay: metadata.author || '',
           beneficiaries: (post.beneficiaries || []).map(item => ({ account: item.account, weight: Number(item.weight) })),
           rewards: {
             maxAcceptedPayout: post.max_accepted_payout || defaultRewards().maxAcceptedPayout,
@@ -1236,6 +2258,11 @@ export default {
       this.crossPostTitle = ''
       this.crossPostLoaded = Boolean(this.draft.crossPost)
       this.crossPostOriginal = null
+      this.uploadDialogOpen = false
+      this.coverDialogOpen = false
+      this.uploadFiles = []
+      this.uploadError = ''
+      this.uploadStatus = ''
       this.mode = 'write'
       this.lastSavedSnapshot = this.snapshotDraft(this.draft)
       if (!this.drafts.some(item => item.id === this.draft.id)) {
@@ -1252,11 +2279,18 @@ export default {
       return JSON.stringify({
         title: draft.title,
         body: draft.body,
+        description: draft.description,
+        coverImage: draft.coverImage,
         tags: draft.tags,
         community: draft.community,
         crossPost: draft.crossPost,
         beneficiaries: draft.beneficiaries,
-        rewards: draft.rewards
+        rewards: draft.rewards,
+        aiTools: draft.aiTools,
+        countdown: draft.countdown,
+        portfolio: draft.portfolio,
+        collection: draft.collection,
+        authorDisplay: draft.authorDisplay
       })
     },
     scheduleAutosave () {
@@ -1533,6 +2567,20 @@ export default {
     },
     publish () {
       if (!this.draft) return
+      if (!this.loggedInUser) {
+        this.$q.notify({ type: 'negative', message: 'Log in with Keychain or SmartLock to publish.' })
+        return
+      }
+      const errors = collectChecklistErrors(this.checklist)
+      if (errors.length) {
+        this.$q.notify({ type: 'negative', message: 'Fix the publish checklist first', caption: errors[0].detail })
+        return
+      }
+      this.reviewOpen = true
+    },
+    confirmPublish () {
+      if (!this.draft) return
+      this.reviewOpen = false
       if (!this.loggedInUser) {
         this.$q.notify({ type: 'negative', message: 'Log in with Keychain or SmartLock to publish.' })
         return

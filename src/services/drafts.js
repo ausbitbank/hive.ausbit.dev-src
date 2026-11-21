@@ -5,18 +5,32 @@
 // normalisation and quota handling.
 
 import { byteLength, readingMinutes, wordCount } from '../utils/markdownEditor'
+import { safeExternalUrl } from '../utils/safeUrl'
 
 export const DRAFT_STORAGE_KEY = 'composeDrafts'
 export const DRAFT_EXPORT_TYPE = 'hive-drafts'
-export const DRAFT_VERSION = 1
+export const DRAFT_VERSION = 2
 export const MAX_DRAFTS = 40
 export const MAX_TITLE_CHARS = 255
 export const MAX_BODY_BYTES = 65535
-export const MAX_TAGS = 5
+export const MAX_TAGS = 10
 export const MAX_BENEFICIARIES = 8
+export const DESCRIPTION_MAX = 160
+export const AUTHOR_DISPLAY_MAX = 80
+export const COLLECTION_TAG = 'c-c-c'
+
+export const AI_TOOL_KEYS = [
+  'media_generation',
+  'translation',
+  'post_draft',
+  'writing_edit',
+  'research',
+  'other'
+]
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 const TAG_RE = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/
+const ZERO_PAYOUT_RE = /^0(?:\.0+)?\s*(?:HBD)?$/i
 
 export const MAX_ACCEPTED_PAYOUT = '100000.000 HBD'
 
@@ -25,13 +39,56 @@ export function defaultRewards () {
     maxAcceptedPayout: MAX_ACCEPTED_PAYOUT,
     percentHbd: 10000,
     allowVotes: true,
-    allowCurationRewards: true
+    allowCurationRewards: true,
+    decline: false
+  }
+}
+
+export function defaultAiTools () {
+  return {
+    media_generation: false,
+    translation: false,
+    post_draft: false,
+    writing_edit: false,
+    research: false,
+    other: false
   }
 }
 
 function cleanString (value, maxLength = 100000) {
   if (value === null || value === undefined) return ''
   return String(value).slice(0, maxLength)
+}
+
+export function normalizeAiTools (value) {
+  const source = value && typeof value === 'object' ? value : {}
+  return AI_TOOL_KEYS.reduce((tools, key) => {
+    tools[key] = source[key] === true
+    return tools
+  }, {})
+}
+
+export function hasAiTools (value) {
+  return AI_TOOL_KEYS.some(key => Boolean(value && value[key]))
+}
+
+export function normalizeDescription (value) {
+  return cleanString(value, DESCRIPTION_MAX).replace(/\s+/g, ' ').trim()
+}
+
+export function normalizeCoverImage (value) {
+  return safeExternalUrl(cleanString(value, 2000)) || ''
+}
+
+export function normalizeCountdown (value) {
+  const text = cleanString(value, 60).trim()
+  if (!text) return ''
+  const time = Date.parse(text)
+  return Number.isFinite(time) ? new Date(time).toISOString() : ''
+}
+
+export function normalizeAuthorDisplay (value) {
+  return cleanString(value, AUTHOR_DISPLAY_MAX).replace(/\s+/g, ' ').trim()
 }
 
 export function normalizeTag (value) {
@@ -116,11 +173,15 @@ export function normalizeEditing (value, editedBy = null) {
 export function normalizeRewards (value) {
   const rewards = value && typeof value === 'object' ? value : {}
   const percent = Number(rewards.percentHbd)
+  const maxAcceptedPayout = cleanString(rewards.maxAcceptedPayout, 40).trim() || MAX_ACCEPTED_PAYOUT
   return {
-    maxAcceptedPayout: cleanString(rewards.maxAcceptedPayout, 40).trim() || MAX_ACCEPTED_PAYOUT,
+    maxAcceptedPayout,
     percentHbd: Number.isFinite(percent) ? Math.min(10000, Math.max(0, Math.round(percent))) : 10000,
     allowVotes: rewards.allowVotes !== false,
-    allowCurationRewards: rewards.allowCurationRewards !== false
+    allowCurationRewards: rewards.allowCurationRewards !== false,
+    // A zero payout cap means rewards are declined. Keep the two in sync so a
+    // draft written by an older version still opens in the right state.
+    decline: rewards.decline === true || ZERO_PAYOUT_RE.test(maxAcceptedPayout)
   }
 }
 
@@ -138,12 +199,19 @@ export function normalizeDraft (raw, now = Date.now()) {
     owner: typeof source.owner === 'string' && ACCOUNT_RE.test(source.owner) ? source.owner : null,
     title: cleanString(source.title, MAX_TITLE_CHARS),
     body: cleanString(source.body, MAX_BODY_BYTES * 2),
+    description: normalizeDescription(source.description),
+    coverImage: normalizeCoverImage(source.coverImage),
     tags: normalizeTags(source.tags),
     community: normalizeTag(source.community),
     crossPost: normalizeCrossPost(source.crossPost),
     editing: normalizeEditing(source.editing, typeof source.owner === 'string' ? source.owner : null),
     beneficiaries: normalizeBeneficiaries(source.beneficiaries),
     rewards: normalizeRewards(source.rewards),
+    aiTools: normalizeAiTools(source.aiTools),
+    countdown: normalizeCountdown(source.countdown),
+    portfolio: source.portfolio === true,
+    collection: source.collection === true,
+    authorDisplay: normalizeAuthorDisplay(source.authorDisplay),
     createdAt: Number.isFinite(createdAt) && createdAt > 0 ? createdAt : now,
     updatedAt: Number.isFinite(updatedAt) && updatedAt > 0 ? updatedAt : now
   }

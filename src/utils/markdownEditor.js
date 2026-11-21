@@ -147,6 +147,8 @@ export function applyMarkdownAction (text, start, end, action = {}) {
       return insertLink(text, start, end, action)
     case 'image':
       return insertImage(text, start, end, action)
+    case 'center':
+      return wrapSelection(text, start, end, '<center>', '</center>', action.placeholder || '![image description](https://)')
     case 'table':
       return insertTable(text, start, end, action)
     case 'divider':

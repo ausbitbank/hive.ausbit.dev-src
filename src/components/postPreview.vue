@@ -72,6 +72,14 @@
         <time :datetime="post.created" :title="absoluteTime">{{ timeLabel }}</time>
         <span v-if="isPinned" class="post-card__badge">Pinned</span>
         <span v-if="isComment" class="post-card__badge post-card__badge--comment">Comment</span>
+        <span v-if="hasAiDisclosure" class="post-card__badge post-card__badge--ai" :title="aiToolLabels.join(' · ')">
+          <q-icon name="smart_toy" size="12px" aria-hidden="true" />AI
+        </span>
+        <span v-if="isPortfolio" class="post-card__badge" title="Shown in the author's portfolio">Portfolio</span>
+        <span v-if="isCollection" class="post-card__badge" title="Collection of posts">Collection</span>
+        <span v-if="countdownLabel" class="post-card__badge post-card__badge--countdown">
+          <q-icon name="timer" size="12px" aria-hidden="true" />{{ countdownLabel }}
+        </span>
         <span v-if="isComment && post.parent_author" class="post-card__reply-to">to @{{ post.parent_author }}</span>
         <q-space />
         <router-link
@@ -304,6 +312,9 @@
 }
 
 .post-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
   padding: 0 0.32rem;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.08);
@@ -316,6 +327,18 @@
 .post-card__badge--comment {
   background: rgba(0, 188, 212, 0.14);
   color: #4dd0e1;
+}
+
+.post-card__badge--ai {
+  background: rgba(79, 195, 247, 0.12);
+  color: #81d4fa;
+}
+
+.post-card__badge--countdown {
+  background: rgba(255, 183, 77, 0.12);
+  color: #ffcc80;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .post-card__reply-to {
@@ -550,6 +573,36 @@ export default {
     },
     isVideo () {
       return postIsThreeSpeakVideo(this.post)
+    },
+    aiToolLabels () {
+      const labels = {
+        media_generation: 'AI-generated media',
+        translation: 'AI-assisted translation',
+        post_draft: 'AI-written draft',
+        writing_edit: 'AI grammar or editing',
+        research: 'AI-assisted research',
+        other: 'Other AI assistance'
+      }
+      const tools = this.postMeta && this.postMeta.ai_tools
+      if (!tools || typeof tools !== 'object') return []
+      return Object.keys(tools).filter(key => tools[key]).map(key => labels[key] || key.replace(/_/g, ' '))
+    },
+    hasAiDisclosure () {
+      return this.aiToolLabels.length > 0
+    },
+    isPortfolio () {
+      return Boolean(this.postMeta && this.postMeta.portfolio === true)
+    },
+    isCollection () {
+      if (this.postMeta && this.postMeta.collection === true) return true
+      const tags = this.postMeta && this.postMeta.tags
+      return Array.isArray(tags) && tags.includes('c-c-c')
+    },
+    countdownLabel () {
+      const iso = this.postMeta && this.postMeta.countdown
+      const time = Date.parse(iso)
+      if (!Number.isFinite(time)) return ''
+      return time > Date.now() ? 'Ends ' + moment.utc(iso).fromNow() : 'Ended'
     },
     openLabel () {
       return (this.isVideo ? 'Open video: ' : 'Open post: ') + this.displayTitle

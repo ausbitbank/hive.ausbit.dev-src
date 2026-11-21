@@ -64,9 +64,48 @@ describe('draft normalization', () => {
     expect(normalizeTag('hive-174578')).toBe('hive-174578')
     expect(normalizeTag('bad tag!')).toBe('bad-tag')
     expect(normalizeTag('!!!')).toBe('')
-    expect(normalizeTags(['#Hive', 'hive', 'My Post', 'a', 'b', 'c', 'd'])).toEqual(['hive', 'my-post', 'a', 'b', 'c'])
+    expect(normalizeTags(['#Hive', 'hive', 'My Post', 'a', 'b', 'c', 'd'])).toEqual(['hive', 'my-post', 'a', 'b', 'c', 'd'])
     expect(normalizeTags('one, two three')).toEqual(['one', 'two', 'three'])
     expect(normalizeTags(Array.from({ length: 10 }, (_, index) => 'tag' + index))).toHaveLength(MAX_TAGS)
+  })
+
+  it('normalises media, AI, countdown and advanced presentation fields', () => {
+    const draft = createDraft({
+      description: '  A short   description ',
+      coverImage: 'https://images.hive.blog/cover.jpg',
+      aiTools: { media_generation: true, translation: true, bogus: true },
+      countdown: '2026-12-01T10:00:00.000Z',
+      portfolio: true,
+      collection: true,
+      authorDisplay: '  Jane   Doe ',
+      rewards: { maxAcceptedPayout: '0.000 HBD' }
+    }, 1000)
+
+    expect(draft.description).toBe('A short description')
+    expect(draft.coverImage).toBe('https://images.hive.blog/cover.jpg')
+    expect(draft.aiTools).toEqual({
+      media_generation: true,
+      translation: true,
+      post_draft: false,
+      writing_edit: false,
+      research: false,
+      other: false
+    })
+    expect(draft.countdown).toBe('2026-12-01T10:00:00.000Z')
+    expect(draft.portfolio).toBe(true)
+    expect(draft.collection).toBe(true)
+    expect(draft.authorDisplay).toBe('Jane Doe')
+    expect(draft.rewards.decline).toBe(true)
+    expect(draft.rewards.maxAcceptedPayout).toBe('0.000 HBD')
+  })
+
+  it('drops unsafe cover URLs and invalid countdown values', () => {
+    const draft = createDraft({
+      coverImage: 'javascript:alert(1)',
+      countdown: 'not-a-date'
+    }, 1000)
+    expect(draft.coverImage).toBe('')
+    expect(draft.countdown).toBe('')
   })
 
   it('validates beneficiaries, deduplicates accounts and caps the list', () => {
@@ -148,7 +187,7 @@ describe('draft export and import', () => {
     const text = serializeDraftExport(draft, { now: 3000 })
     const envelope = JSON.parse(text)
     expect(envelope.type).toBe('hive-drafts')
-    expect(envelope.version).toBe(1)
+    expect(envelope.version).toBe(2)
     expect(envelope.exportedAt).toBe(new Date(3000).toISOString())
 
     const parsed = parseDraftExport(text, { owner: 'alice', now: 4000 })

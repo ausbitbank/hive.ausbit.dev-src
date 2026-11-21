@@ -48,7 +48,10 @@ describe('markdown editing helpers', () => {
 
   it('dispatches toolbar actions', () => {
     expect(applyMarkdownAction('text', 0, 4, { type: 'bold' }).text).toBe('**text**')
+    const imageSource = '![alt](https://x/y.png)'
     expect(applyMarkdownAction('text', 0, 4, { type: 'heading' }).text).toBe('## text')
+    expect(applyMarkdownAction(imageSource, 0, imageSource.length, { type: 'center' }).text)
+      .toBe('<center>![alt](https://x/y.png)</center>')
     expect(applyMarkdownAction('', 0, 0, { type: 'table' }).text).toContain('Column 1')
     expect(applyMarkdownAction('a', 0, 1, { type: 'divider' }).text).toContain('---')
     expect(applyMarkdownAction('a', 0, 1, { type: 'unknown' }).text).toBe('a')
