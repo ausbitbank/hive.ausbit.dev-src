@@ -1,48 +1,48 @@
 {
-  "initialJsKb": 356,
+  "initialJsKb": 160,
   "cssKb": 55,
-  "lcpMs": 8000,
-  "cls": 0.5,
+  "lcpMs": 5000,
+  "cls": 0.1,
   "routes": {
     "/": {
-      "jsKb": 510,
-      "routeJsKb": 154,
-      "totalKb": 730
+      "jsKb": 300,
+      "routeJsKb": 165,
+      "totalKb": 560
     },
     "/browse": {
-      "jsKb": 480,
-      "routeJsKb": 145,
-      "totalKb": 900
+      "jsKb": 280,
+      "routeJsKb": 140,
+      "totalKb": 560
     },
-    "/block/1": {
-      "jsKb": 465,
-      "routeJsKb": 130,
-      "totalKb": 710
+    "/b/1": {
+      "jsKb": 265,
+      "routeJsKb": 125,
+      "totalKb": 520
     },
     "/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more": {
-      "jsKb": 636,
-      "routeJsKb": 280,
-      "totalKb": 860
+      "jsKb": 440,
+      "routeJsKb": 300,
+      "totalKb": 700
     },
     "/@ausbitbank/wallet": {
-      "jsKb": 510,
+      "jsKb": 300,
       "routeJsKb": 165,
-      "totalKb": 760
+      "totalKb": 560
     },
     "/market": {
-      "jsKb": 468,
-      "routeJsKb": 125,
-      "totalKb": 710
+      "jsKb": 255,
+      "routeJsKb": 115,
+      "totalKb": 500
     },
     "/compose": {
-      "jsKb": 508,
-      "routeJsKb": 152,
-      "totalKb": 720
+      "jsKb": 300,
+      "routeJsKb": 160,
+      "totalKb": 540
     },
     "/search?q=hive": {
-      "jsKb": 465,
-      "routeJsKb": 150,
-      "totalKb": 720
+      "jsKb": 260,
+      "routeJsKb": 120,
+      "totalKb": 500
     }
   }
 }

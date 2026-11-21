@@ -129,7 +129,8 @@
 </template>
 <script>
 import moment from 'src/utils/time'
-import { sanitizeRichHtml, safeJsonParse, simpleMarkdownToHtml } from 'src/utils/safeHtml'
+import { safeJsonParse, simpleMarkdownToHtml } from 'src/utils/safeHtml'
+import { sanitizeRichHtml } from 'src/utils/safeRichHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 // import { mapGetters } from 'vuex'
 export default {

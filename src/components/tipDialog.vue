@@ -46,7 +46,7 @@
     </q-item>
     <q-item clickable>
       <q-item-section avatar>
-        <q-avatar><q-icon name="img:/statics/lightning.png" title="Lightning" /></q-avatar>
+        <q-avatar><q-icon name="img:/statics/lightning.webp" title="Lightning" /></q-avatar>
       </q-item-section>
       <q-item-section>
         <q-item-label>Lightning</q-item-label>
@@ -148,7 +148,7 @@ export default {
   },
   methods: {
     returnCoinSvg (coin) {
-      if (coin === 'lightning') { return 'img:/statics/' + coin + '.png' } else { return 'img:/statics/' + coin + '.svg' }
+      if (coin === 'lightning') { return 'img:/statics/' + coin + '.webp' } else { return 'img:/statics/' + coin + '.svg' }
     },
     returnCoinLink (coin) {
       return coin + ':' + this.accountMeta.profile[coin]

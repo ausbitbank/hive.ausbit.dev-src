@@ -72,7 +72,7 @@ export default {
   computed: {
     avatarSrc () {
       return this.avatarFailed
-        ? '/statics/member.png'
+        ? '/statics/member.webp'
         : 'https://images.hive.blog/u/' + this.card.name + '/avatar'
     }
   },

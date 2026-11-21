@@ -8,7 +8,7 @@
       <q-card-section class="lightning-pay__head">
         <div class="lightning-pay__title-wrap">
           <q-avatar size="32px" class="lightning-pay__icon">
-            <img src="/statics/lightning.png" alt="" aria-hidden="true" />
+            <img src="/statics/lightning.webp" alt="" aria-hidden="true" />
           </q-avatar>
           <div>
             <div class="lightning-eyebrow">Lightning</div>

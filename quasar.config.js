@@ -11,9 +11,10 @@ const src = (...parts) => resolve(root, 'src', ...parts)
 export default defineConfig(() => ({
   boot: ['hivejs', 'hiveStore', 'smartlock', 'pwa', 'prefetch'],
 
-  css: ['app.scss'],
-
-  extras: ['material-icons'],
+  // The Material Icons font is self-hosted and subset to the icons the app
+  // uses; see scripts/subset-icons.mjs and src/css/material-icons.scss.
+  // Animate.css is vendored too, so @quasar/extras is not a dependency.
+  css: ['material-icons.scss', 'animations.css', 'app.scss'],
 
   build: {
     vueRouterMode: 'history',
@@ -37,10 +38,15 @@ export default defineConfig(() => ({
       [
         nodePolyfills,
         {
-          globals: {
-            // SmartLock (sjcl), the block size helper and dashboard layout
-            // helpers still expect a global Buffer in the browser.
-            Buffer: true
+          // No Node globals are injected into the initial shell. The signing
+          // stack imports and installs Buffer just before it lazily imports
+          // hive-tx (the plugin default would inject it everywhere).
+          globals: { Buffer: false },
+          // sjcl probes Node's `crypto.randomBytes`, which would otherwise pull
+          // the entire crypto-browserify tree into the SmartLock chunk. The
+          // shim keeps sjcl on the browser's WebCrypto path.
+          overrides: {
+            crypto: resolve(root, 'src/shims/crypto.js')
           },
           protocolImports: true
         }
@@ -60,18 +66,5 @@ export default defineConfig(() => ({
     config: {
       dark: true
     }
-  },
-
-  // Only the Animate.css classes used by <transition> in src are bundled.
-  animations: [
-    'bounceInDown',
-    'bounceInUp',
-    'bounceOutDown',
-    'bounceOutUp',
-    'fadeIn',
-    'fadeInDown',
-    'fadeOut',
-    'fadeOutUp',
-    'zoomInDown'
-  ]
+  }
 }))

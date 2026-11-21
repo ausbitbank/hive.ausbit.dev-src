@@ -159,7 +159,7 @@
         </q-item>
         <q-item v-if="username !== '' && username !== null">
           <q-item-section>
-            <q-btn icon="img:/statics/member.png" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
+            <q-btn icon="img:/statics/member.webp" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
             <div class="text-caption text-grey-5">Saves only your username on this device. It never stores your posting, active or memo keys; SmartLock needs your password again after a reload.</div>

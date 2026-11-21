@@ -45,13 +45,13 @@ mark with the same 9.8px menu gap.
 
 | Before | After |
 | --- | --- |
-| ![Header before, 1440px](../screenshots/w27/before-header-1440.png) | ![Header after, 1440px](../screenshots/w27/after-header-1440.png) |
+| ![Header before, 1440px](../screenshots/w27/before-header-1440.webp) | ![Header after, 1440px](../screenshots/w27/after-header-1440.webp) |
 
 ### 390px
 
 | Before | After |
 | --- | --- |
-| ![Header before, 390px](../screenshots/w27/before-header-390.png) | ![Header after, 390px](../screenshots/w27/after-header-390.png) |
+| ![Header before, 390px](../screenshots/w27/before-header-390.webp) | ![Header after, 390px](../screenshots/w27/after-header-390.webp) |
 
 ## Post page and sidebar
 
@@ -86,21 +86,21 @@ metadata content without removing any information:
 
 | Before | After |
 | --- | --- |
-| ![Post page before, 1440px](../screenshots/w27/before-post-1440.png) | ![Post page after, 1440px](../screenshots/w27/after-post-1440.png) |
+| ![Post page before, 1440px](../screenshots/w27/before-post-1440.webp) | ![Post page after, 1440px](../screenshots/w27/after-post-1440.webp) |
 
 ### Post page, 390px
 
 | Before | After |
 | --- | --- |
-| ![Post page before, 390px](../screenshots/w27/before-post-390.png) | ![Post page after, 390px](../screenshots/w27/after-post-390.png) |
+| ![Post page before, 390px](../screenshots/w27/before-post-390.webp) | ![Post page after, 390px](../screenshots/w27/after-post-390.webp) |
 
 ### Sidebar detail
 
 | Before, 1440px | After, 1440px |
 | --- | --- |
-| ![Sidebar before, 1440px](../screenshots/w27/before-sidebar-1440.png) | ![Sidebar after, 1440px](../screenshots/w27/after-sidebar-1440.png) |
+| ![Sidebar before, 1440px](../screenshots/w27/before-sidebar-1440.webp) | ![Sidebar after, 1440px](../screenshots/w27/after-sidebar-1440.webp) |
 
-![Sidebar after, 390px](../screenshots/w27/after-sidebar-390.png)
+![Sidebar after, 390px](../screenshots/w27/after-sidebar-390.webp)
 
 ## Broader polish audit
 

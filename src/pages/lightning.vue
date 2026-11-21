@@ -11,7 +11,7 @@
         </p>
       </div>
       <div class="lightning-hero__mark" aria-hidden="true">
-        <img src="/statics/lightning.png" alt="" />
+        <img src="/statics/lightning.webp" alt="" />
       </div>
     </header>
 
@@ -19,7 +19,7 @@
       <q-icon name="bolt" size="20px" aria-hidden="true" />
       <div>
         <strong>A Lightning payment link is ready.</strong>
-        <p>Log in with Keychain or SmartLock from the header to review and pay it with HBD or HIVE.</p>
+        <p>Log in with Keychain, SmartLock or HiveAuth from the header to review and pay it with HBD or HIVE.</p>
         <code>{{ payQueryLabel }}</code>
       </div>
     </section>

@@ -411,7 +411,7 @@ export default {
   },
   computed: {
     avatarSrc: function () {
-      return this.avatarFailed ? '/statics/member.png' : this.getHiveAvatarUrl(this.account.name)
+      return this.avatarFailed ? '/statics/member.webp' : this.getHiveAvatarUrl(this.account.name)
     },
     // Kept just above the eight default tabs so the narrow-screen spacer
     // lands before the fifth one; the extra tip tab only exists on /tip.

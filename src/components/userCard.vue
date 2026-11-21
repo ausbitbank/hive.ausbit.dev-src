@@ -87,7 +87,7 @@ export default {
       return stripHtml(this.profile && this.profile.location, 40)
     },
     avatarSrc () {
-      return this.avatarFailed ? '/statics/member.png' : 'https://images.hive.blog/u/' + this.username + '/avatar'
+      return this.avatarFailed ? '/statics/member.webp' : 'https://images.hive.blog/u/' + this.username + '/avatar'
     },
     hpLabel () {
       if (!this.account || !this.$hiveStore.globalProps) return ''

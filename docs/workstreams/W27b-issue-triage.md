@@ -58,7 +58,7 @@ The failing requests were legacy `profile.cover_image` backgrounds
 endpoint. Follower/following cards no longer request profile cover art
 (`:show-cover="false"`), which removes ~20 failed requests per 100 followers and
 shortens the settle time. Both `userCard` and `accountHeader` now fall back to
-`/statics/member.png` on an avatar error. The body count uses the same
+`/statics/member.webp` on an avatar error. The body count uses the same
 `tidyNumber` helper as the badge: “followed by 19,352 accounts”.
 
 ### #41 Home vs block-page operation counts

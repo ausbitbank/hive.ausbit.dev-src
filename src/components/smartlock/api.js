@@ -18,11 +18,11 @@ const signBuffer = async (username, data) => {
   try {
     const o = JSON.parse(buf, (k, v) => {
       if (v !== null && typeof v === 'object' && 'type' in v && v.type === 'Buffer' && 'data' in v && Array.isArray(v.data)) {
-        return Buffer.from(v.data)
+        return Uint8Array.from(v.data)
       }
       return v
     })
-    if (Buffer.isBuffer(o)) {
+    if (o instanceof Uint8Array) {
       buf = o
     }
   } catch {}

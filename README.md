@@ -6,22 +6,22 @@ An open-source block explorer, wallet and toolkit for the [Hive](https://hive.io
 
 hive.ausbit.dev reads directly from public Hive APIs and lets you explore blocks,
 transactions, accounts, posts, governance, witnesses, markets and layer-2 data
-from Hive-Engine and Magi (formerly VSC). Signing is handled by Hive Keychain or
-the built-in encrypted SmartLock.
+from Hive-Engine and Magi (formerly VSC). Signing is handled by Hive Keychain,
+HiveAuth through a mobile wallet, or the built-in encrypted SmartLock.
 
 ## Screenshots
 
 Home dashboard:
 
-![Home dashboard](docs/screenshots/home.png)
+![Home dashboard](docs/screenshots/home.webp)
 
 Markets and HBD tools:
 
-![Markets](docs/screenshots/markets.png)
+![Markets](docs/screenshots/markets.webp)
 
 Wallet:
 
-![Wallet](docs/screenshots/wallet.png)
+![Wallet](docs/screenshots/wallet.webp)
 
 ## Feature tour
 
@@ -72,6 +72,7 @@ Additional UX:
 - `hive-tx` for signing, keys, memos and legacy chain calls
 - `@hiveio/keychain` for Keychain signing
 - `sjcl` + `bs58` for SmartLock encrypted local key storage
+- `@noble/hashes` + Web Crypto for the HiveAuth client-side AES envelope
 - `dompurify` for sanitized post/community HTML
 - Hive-Engine RPC, Magi GraphQL and CoinGecko for tokens, layer-2 data and market data
 - Vitest for unit tests
@@ -103,7 +104,7 @@ src/
   accounts, witnesses, posts, follow counts, median price, ticker and open orders.
 - `src/mixins/timers.js` and `src/services/polling.js` pause polling while the tab
   is hidden.
-- Signing/broadcast actions use hive-tx, Keychain or SmartLock.
+- Signing/broadcast actions use hive-tx, Keychain, SmartLock or HiveAuth.
 
 ## Requirements
 
@@ -240,6 +241,11 @@ Prices and third-party charts can be delayed or temporarily unavailable.
   proposal votes and authority changes.
 - **Hive Keychain** keeps keys in the browser extension and asks for approval per
   action.
+- **HiveAuth** shows a QR code or deep link; the user approves in a mobile wallet
+  (Hive Keychain Mobile or HiveAuth Mobile) and keys never enter this origin.
+  HiveAuth is manual-only: each action needs phone approval, so the queue does
+  not auto-send it. The HAS relay sees the account, app name and timing, never
+  keys or plaintext operations.
 - **SmartLock** stores keys encrypted in local storage, keeps only the unlocked
   posting key in memory, auto-locks after an idle timeout, and asks for the
   password each time an active key is needed. The active key is never kept in

@@ -25,8 +25,18 @@ export function setHiveTxNode (node) {
   if (hiveTx) applyConfig(hiveTx)
 }
 
+// hive-tx expects a global Buffer. Install the polyfill in this lazy chunk
+// rather than injecting it into the initial shell on every page.
+let bufferPromise = null
+async function ensureBuffer () {
+  if (typeof globalThis.Buffer !== 'undefined') return
+  const { Buffer } = await (bufferPromise ||= import('buffer'))
+  globalThis.Buffer = Buffer
+}
+
 async function getHiveTx () {
   if (!hiveTx) {
+    await ensureBuffer()
     hiveTx = await (hiveTxPromise ||= import('hive-tx'))
     applyConfig(hiveTx)
   }

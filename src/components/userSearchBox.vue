@@ -2,7 +2,7 @@
   <q-select clearable new-value-mode="add-unique" filled use-input hide-selected fill-input input-debounce="100" v-model="input" :label="label" :options="usernameSuggestions" @filter="filterFn" @filter-abort="abortFilterFn" style="max-width: 200px;" @update:model-value="onUpdate" />
 </template>
 <script>
-import badActorList from '@hiveio/hivescript/bad-actors.json'
+import badActorList from 'src/data/badActors.json'
 export default {
   name: 'userSearchBox',
   emits: ['selectUsername'],

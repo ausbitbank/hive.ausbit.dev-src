@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeRichHtml } from '../../src/utils/safeHtml'
+import { sanitizeRichHtml } from '../../src/utils/safeRichHtml'
 
 describe('sanitizeRichHtml', () => {
   it('keeps normal rich-text markup', () => {

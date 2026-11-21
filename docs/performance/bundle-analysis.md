@@ -128,6 +128,80 @@ home 0.008, browse 0.028, block 0, post 0, wallet 0.037 and market 0.023.
 The slow-4G smoke also keeps post at effectively zero by reserving each image's
 intrinsic dimensions before the body enters the DOM.
 
+## Optimisation pass (2026-11-22)
+
+A repo, dependency and bundle pass after the hive-tx migration removed the
+remaining legacy weight without changing app behaviour.
+
+| Metric | Before | After | Change |
+| --- | ---: | ---: | ---: |
+| SmartLock chunk (raw) | 794 KB | 33.8 KB | −95.7% |
+| SmartLock chunk (Brotli) | 107.0 KB | 11.3 KB | −89.4% |
+| Initial JS (raw) | 407 KB | 352.0 KB | −13.5% |
+| Initial JS (Brotli) | 131 KB | 113.8 KB | −13.1% |
+| Total JS (raw) | 3,473 KB | 2,721 KB | −21.6% |
+| Total JS (Brotli) | 915 KB | 819 KB | −10.5% |
+| `dist/spa` | 5.5 MB | 4.2 MB | −24% |
+| `public/` | 774 KB | 274 KB | −65% |
+| Tracked repo | 14.0 MB | 7.6 MB | −46% |
+
+### Bundle
+
+- **crypto-browserify removed from SmartLock.** `sjcl` probes Node's
+  `require('crypto').randomBytes` inside a try/catch. The Node polyfill plugin
+  resolved that probe and bundled `bn.js`, `elliptic`, `readable-stream` and
+  friends (about 700 KB raw). A tiny `src/shims/crypto.js` override leaves
+  `randomBytes` undefined, so sjcl stays on `window.crypto.getRandomValues`.
+- **Buffer moved out of the shell.** Only the lazy `hive-tx` path needs a
+  global `Buffer`. `src/services/hiveTx.js` now imports the polyfill just
+  before `import('hive-tx')`; SmartLock uses `TextEncoder`/`TextDecoder` and
+  `Uint8Array`.
+- **DOMPurify split from text helpers.** `src/utils/safeHtml.js` keeps the
+  text-only helpers used by home/account/browse. DOMPurify moved to
+  `src/utils/safeRichHtml.js`, which is only loaded by community headers.
+- **Dead code removed.** `components/block.vue` (replaced by `pages/block.vue`),
+  its `animInt.vue` helper, and five unreferenced components
+  (`coingecko`, `recentPostsCarousel`, `savingsWithdrawalsInProgress`,
+  `convertRequests`, `ui/FilterBar`).
+- **Dependencies removed.** `gsap` (only used by the dead `animInt`) and
+  `@hiveio/hivescript` (only its 16 KB `bad-actors.json` was used; now vendored
+  at `src/data/badActors.json`).
+
+### Assets and repo size
+
+- `palnet.svg` 362 KB → `palnet.webp` 2.2 KB; `leofinance.svg` 32 KB → 3.1 KB;
+  `member.png` 77 KB → 4.0 KB; `lightning.png` 17 KB → 4.0 KB.
+- Removed nine unreferenced PWA icon sizes and the legacy root
+  `app-icon.png`/`app-splashscreen.png`.
+- 50 documentation screenshots converted from PNG to WebP (9.1 MB → 3.2 MB)
+  with their Markdown references updated.
+
+### Follow-up: icon font, budgets and the renderer probe
+
+- **Material Icons subset.** The full font is 128.6 KB and only 367 of its 2,234
+  ligatures are referenced. `bun run icons:subset` regenerates a 20.5 KB subset
+  (**−84%**), and `tests/unit/icon-font.spec.js` fails if a new icon is added
+  without regenerating it. The font is self-hosted from
+  `public/statics/material-icons-subset.woff2`.
+- **`@quasar/extras` removed.** The 36 MB package was only supplying the full
+  icon font and nine Animate.css transitions. The font is subset above and the
+  transitions are vendored in `src/css/animations.css`, dropping the dependency
+  entirely. The upstream font and its license are kept in `scripts/assets/` for
+  the generator.
+- **Budgets tightened.** `docs/performance/budgets.json` now guards the gains:
+  initial JS 356 → 160 KB, per-route JS/transfer budgets cut to roughly 10–15%
+  above the current measurements, LCP 8,000 → 5,000 ms and CLS 0.5 → 0.1.
+- **Home transfer 486.2 → 383.8 KB** after the font subset, with initial JS
+  unchanged at **126.3 KB** encoded.
+- **Renderer DOM parser stays.** Replacing `@xmldom/xmldom` with the browser's
+  native `DOMParser`/`XMLSerializer` was prototyped. On a 54-case corpus it
+  changed malformed-HTML recovery, CDATA, `<template>`/`<noscript>` and table
+  serialization. render-helper's security boundary explicitly assumes xmldom's
+  parsing/serialization, so the 270 KB parser stays.
+
+`bun run perf:check` passes. The heaviest remaining lazy chunk is still the post
+renderer (`@ecency/render-helper`, 126 KB Brotli).
+
 ## Remaining opportunities
 
 1. **hive-js in the initial chunk.** Done in #88: signing/keys/memos use a
@@ -136,14 +210,18 @@ intrinsic dimensions before the body enters the DOM.
 2. **Quasar component graph.** The framework share of the entry chunk is still
    significant. Route-level Quasar component imports are already tree-shaken,
    but a component-usage audit may remove more.
-3. **Material Icons.** The icon font is ~128 KB. An SVG icon subset would remove
-   it, at the cost of a larger icon migration.
+3. **Material Icons.** Done: the font is now a 20.5 KB subset with a guard test
+   (`bun run icons:subset`).
 4. **CLS on wallet and post.** Wallet remains ~0.23 CLS and post ~0.18 CLS from
    asynchronous data landing. The dashboard now measures it; W24 owns the
    skeleton/loading-transition work.
 5. **HTTP/2 request count.** The app still makes ~100 requests on first load
    because Quasar/Rolldown emits many small shared chunks. HTTP/2 handles this
    well in production, but chunk consolidation may help weak networks.
+6. **Post renderer DOM parser.** `@xmldom/xmldom` is 270 KB of the lazy post
+   chunk. A native-DOM swap was prototyped and rejected (see above); reducing
+   it further needs render-helper's own differential fuzz plus a browser-native
+   serializer that preserves its nonce boundary.
 
 ## How this was measured
 

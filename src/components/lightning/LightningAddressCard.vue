@@ -3,7 +3,7 @@
     <q-card-section class="lightning-address-card__head">
       <div class="lightning-address-card__title-wrap">
         <q-avatar size="28px" class="lightning-address-card__icon">
-          <img src="/statics/lightning.png" alt="" aria-hidden="true" />
+          <img src="/statics/lightning.webp" alt="" aria-hidden="true" />
         </q-avatar>
         <div>
           <div class="lightning-eyebrow">Lightning</div>

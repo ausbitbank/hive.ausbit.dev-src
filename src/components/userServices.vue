@@ -13,7 +13,7 @@
     <span v-if="profile.discord" title="Discord"><a :href="returnServiceLink('discord', profile.discord)" target="_blank" rel="noopener noreferrer" aria-label="Discord"><q-avatar><q-icon name="img:/statics/discord.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.telegram" title="Telegram"><a :href="returnServiceLink('telegram', profile.telegram)" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><q-avatar><q-icon name="img:/statics/telegram.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
     <span v-if="profile.bitcoin" title="Bitcoin"><a :href="returnServiceLink('bitcoin', profile.bitcoin)" aria-label="Bitcoin"><q-avatar><q-icon name="img:/statics/bitcoin.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
-    <span v-if="profile.lightning" title="Lightning"><a :href="returnServiceLink('lightning', profile.lightning)" aria-label="Lightning"><q-avatar><q-icon name="img:/statics/lightning.png" class="hvr" aria-hidden="true"/></q-avatar></a></span>
+    <span v-if="profile.lightning" title="Lightning"><a :href="returnServiceLink('lightning', profile.lightning)" aria-label="Lightning"><q-avatar><q-icon name="img:/statics/lightning.webp" class="hvr" aria-hidden="true"/></q-avatar></a></span>
     <span v-if="profile.litecoin" title="Litecoin"><a :href="returnServiceLink('litecoin', profile.litecoin)" aria-label="Litecoin"><q-avatar><q-icon name="img:/statics/litecoin.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.ethereum" title="Ethereum"><a :href="returnServiceLink('ethereum', profile.ethereum)" aria-label="Ethereum"><q-avatar><q-icon name="img:/statics/ethereum.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.dogecoin" title="Dogecoin"><a :href="returnServiceLink('dogecoin', profile.dogecoin)" aria-label="Dogecoin"><q-avatar><q-icon name="img:/statics/dogecoin.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
@@ -44,8 +44,8 @@
     <span v-if="profile.dbuzz" title="dBuzz"><a :href="returnServiceLink('dbuzz', profile.dbuzz)" aria-label="dBuzz"><q-avatar><q-icon name="img:/statics/dbuzz.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
     <span v-if="profile.wordpress" title="Wordpress"><a :href="returnServiceLink('wordpress', profile.wordpress)" aria-label="Wordpress"><q-avatar><q-icon name="img:/statics/wordpress.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
     <span v-if="profile.nftshowroom" title="NFTShowroom"><a :href="returnServiceLink('nftshowroom', profile.nftshowroom)" aria-label="NFTShowroom"><q-avatar><q-icon name="img:/statics/nftshowroom.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
-    <span v-if="profile.palnet" title="PALnet"><a :href="returnServiceLink('palnet', profile.palnet)" aria-label="PALnet"><q-avatar><q-icon name="img:/statics/palnet.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
-    <span v-if="profile.leofinance" title="LEOFinance"><a :href="returnServiceLink('leofinance', profile.leofinance)" aria-label="LEOFinance"><q-avatar><q-icon name="img:/statics/leofinance.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
+    <span v-if="profile.palnet" title="PALnet"><a :href="returnServiceLink('palnet', profile.palnet)" aria-label="PALnet"><q-avatar><q-icon name="img:/statics/palnet.webp" class="hvr" aria-hidden="true"/></q-avatar></a></span>
+    <span v-if="profile.leofinance" title="LEOFinance"><a :href="returnServiceLink('leofinance', profile.leofinance)" aria-label="LEOFinance"><q-avatar><q-icon name="img:/statics/leofinance.webp" class="hvr" aria-hidden="true"/></q-avatar></a></span>
     <span v-if="profile.pgp" title="PGP / GPG Key"><a :href="returnServiceLink('pgp', profile.pgp)" aria-label="PGP / GPG Key"><q-avatar><q-icon name="img:/statics/pgp.svg" class="hvr" aria-hidden="true"/></q-avatar></a></span>
   </div>
 </template>

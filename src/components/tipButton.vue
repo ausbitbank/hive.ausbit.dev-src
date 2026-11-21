@@ -61,7 +61,7 @@ export default {
   },
   methods: {
     returnCoinSvg (coin) {
-      return 'img:/statics/' + coin + (coin === 'lightning' ? '.png' : '.svg')
+      return 'img:/statics/' + coin + (coin === 'lightning' ? '.webp' : '.svg')
     }
   },
   mounted () {

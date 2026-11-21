@@ -143,7 +143,7 @@ export const SURFACES = [
   {
     key: 'blocks',
     label: 'Blocks and transactions',
-    patterns: ['src/pages/block', 'src/pages/blocks.vue', 'src/pages/tx.vue', 'src/components/block', 'src/components/tx'],
+    patterns: ['src/pages/block', 'src/pages/blocks.vue', 'src/pages/tx.vue', 'src/components/tx'],
     routes: ['/blocks', '/b/{{block}}'],
     docs: ['W21', 'W22', 'W34'],
     shots: ['block']
