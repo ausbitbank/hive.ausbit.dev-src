@@ -4,11 +4,19 @@
 // means a same-origin proxy can be swapped in with an env var, and a CORS or
 // outage failure is reported consistently instead of leaking raw fetch errors
 // into components.
+//
+// CORS was the original blocker: https://hive.ausbit.dev is now on v4v.app's
+// allowlist (verified 2026-11-21, API 6.6.1). Keep the failure states below
+// distinct anyway — an offline browser, a slow bridge, a rate limit and a
+// lapsed allowlist need different copy, and only the last one is a browser
+// restriction.
 
-import { loadCached } from './cache'
+import { loadCached, invalidateCache } from './cache'
 import {
   V4VAPP_API,
   V4VAPP_APP_NAME,
+  V4VAPP_AUTH_APP_ID,
+  V4VAPP_AUTH_SCOPE,
   invoiceStatus,
   lightningAddressQrUrl,
   normalizeFeePolicy
@@ -21,41 +29,57 @@ const DEFAULT_TIMEOUT_MS = 8000
 const STATUS_TTL_MS = 30000
 const QUOTE_TTL_MS = 45000
 const ADDRESS_TTL_MS = 60 * 60 * 1000
+const PROBE_TTL_MS = 5 * 60 * 1000
 
-let bridgeState = 'unknown'
-let lastBridgeError = ''
+export const BRIDGE_STATES = Object.freeze({
+  UNKNOWN: 'unknown',
+  AVAILABLE: 'available',
+  DEGRADED: 'degraded',
+  OFFLINE: 'offline',
+  TIMEOUT: 'timeout',
+  BLOCKED: 'blocked',
+  UNAUTHORIZED: 'unauthorized'
+})
+
+let bridge = { state: BRIDGE_STATES.UNKNOWN, error: '', checkedAt: 0 }
+let probe = { at: 0, state: BRIDGE_STATES.UNKNOWN, error: '', status: null }
 
 export class V4vappError extends Error {
-  constructor (message, { status = 0, code = '', detail = null, path = '' } = {}) {
+  constructor (message, { status = 0, code = '', detail = null, path = '', state = '' } = {}) {
     super(message)
     this.name = 'V4vappError'
     this.status = status
     this.code = code
     this.detail = detail
     this.path = path
+    this.state = state
   }
 
   get isNetwork () {
-    return this.code === 'network' || this.code === 'timeout'
+    return this.code === 'network' || this.code === 'timeout' || this.code === 'offline'
   }
 
   get isCors () {
-    return this.code === 'network' && /failed to fetch|networkerror|load failed/i.test(this.message)
+    return this.state === BRIDGE_STATES.BLOCKED
   }
 }
 
 export function getBridgeState () {
-  return { state: bridgeState, error: lastBridgeError }
+  return { ...bridge }
 }
 
 function markBridge (state, error = '') {
-  bridgeState = state
-  lastBridgeError = error
+  bridge = { state, error, checkedAt: Date.now() }
 }
 
 export function resetBridgeState () {
-  bridgeState = 'unknown'
-  lastBridgeError = ''
+  bridge = { state: BRIDGE_STATES.UNKNOWN, error: '', checkedAt: 0 }
+  probe = { at: 0, state: BRIDGE_STATES.UNKNOWN, error: '', status: null }
+  invalidateCache('v4vapp:')
+}
+
+function browserOffline () {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
 }
 
 function errorMessage (status, data, fallback) {
@@ -64,6 +88,8 @@ function errorMessage (status, data, fallback) {
   if (typeof detail === 'string') return detail
   if (detail && typeof detail === 'object' && typeof detail.message === 'string') return detail.message
   if (typeof data?.message === 'string') return data.message
+  if (status === 401) return 'The Lightning bridge needs a signed-in session for that request.'
+  if (status === 403) return 'The Lightning bridge refused this request.'
   if (status === 429) return 'The Lightning bridge is rate-limiting requests. Try again shortly.'
   if (status === 503) return 'Lightning bridge pricing is temporarily unavailable.'
   return fallback
@@ -73,7 +99,8 @@ async function request (path, {
   method = 'GET',
   body,
   signal = null,
-  timeout = DEFAULT_TIMEOUT_MS
+  timeout = DEFAULT_TIMEOUT_MS,
+  token = ''
 } = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeout)
@@ -85,7 +112,8 @@ async function request (path, {
       method,
       headers: {
         accept: 'application/json',
-        ...(body ? { 'content-type': 'application/json' } : {})
+        ...(body ? { 'content-type': 'application/json' } : {}),
+        ...(token ? { authorization: 'Bearer ' + token } : {})
       },
       body: body ? JSON.stringify(body) : undefined,
       credentials: 'omit',
@@ -95,29 +123,51 @@ async function request (path, {
     })
     const data = await response.json().catch(() => null)
     if (!response.ok) {
+      const state = response.status === 401 || response.status === 403
+        ? BRIDGE_STATES.UNAUTHORIZED
+        : response.status === 429 || response.status >= 500
+          ? BRIDGE_STATES.DEGRADED
+          : BRIDGE_STATES.AVAILABLE
+      markBridge(state, state === BRIDGE_STATES.AVAILABLE ? '' : errorMessage(response.status, data, ''))
       throw new V4vappError(errorMessage(response.status, data, 'Lightning bridge request failed.'), {
         status: response.status,
         code: response.status === 429 ? 'rate-limit' : response.status >= 500 ? 'upstream' : 'http',
         detail: data,
+        path,
+        state
+      })
+    }
+    markBridge(BRIDGE_STATES.AVAILABLE)
+    return data
+  } catch (error) {
+    if (error instanceof V4vappError) throw error
+
+    // A caller aborting the request (dialog closed, invoice replaced) is not a
+    // bridge failure and must not change the capability state.
+    if (signal?.aborted) {
+      throw new V4vappError('Lightning bridge request cancelled.', {
+        code: 'aborted',
+        detail: error,
         path
       })
     }
-    markBridge('available')
-    return data
-  } catch (error) {
-    if (error instanceof V4vappError) {
-      if (error.status >= 500 || error.code === 'rate-limit') markBridge('degraded', error.message)
-      throw error
-    }
+
     const timedOut = error?.name === 'AbortError'
-    const message = timedOut
-      ? 'The Lightning bridge did not respond in time.'
-      : 'Could not reach the Lightning bridge from this browser.'
-    markBridge('blocked', message)
+    const offline = browserOffline()
+    const state = offline
+      ? BRIDGE_STATES.OFFLINE
+      : timedOut ? BRIDGE_STATES.TIMEOUT : BRIDGE_STATES.BLOCKED
+    const message = offline
+      ? 'You are offline. The Lightning bridge cannot be reached.'
+      : timedOut
+        ? 'The Lightning bridge did not respond in time.'
+        : 'Could not reach the Lightning bridge from this browser.'
+    markBridge(state, message)
     throw new V4vappError(message, {
-      code: timedOut ? 'timeout' : 'network',
+      code: offline ? 'offline' : timedOut ? 'timeout' : 'network',
       detail: error,
-      path
+      path,
+      state
     })
   } finally {
     clearTimeout(timer)
@@ -149,6 +199,39 @@ function normalizeInvoice (invoice) {
 
 export async function getBridgeStatus ({ force = false } = {}) {
   return loadCached('v4vapp:status', () => request('/v1'), { ttl: STATUS_TTL_MS, force })
+}
+
+/**
+ * Capability probe used by the Lightning screens and the health page.
+ *
+ * `GET /v1` is the cheapest read that proves the browser can reach the bridge
+ * and exposes the live fee/limit config. It never creates an invoice and never
+ * throws: the UI needs a state, not an exception. The result is cached so a
+ * page with several Lightning cards makes one request.
+ */
+export async function probeBridge ({ force = false } = {}) {
+  if (!force && probe.at && Date.now() - probe.at < PROBE_TTL_MS) return { ...probe }
+  try {
+    const status = await getBridgeStatus({ force })
+    probe = {
+      at: Date.now(),
+      state: bridge.state,
+      error: '',
+      status
+    }
+  } catch (error) {
+    probe = {
+      at: Date.now(),
+      state: bridge.state,
+      error: error?.message || 'The Lightning bridge could not be reached.',
+      status: null
+    }
+  }
+  return { ...probe }
+}
+
+export function getBridgeProbe () {
+  return { ...probe }
 }
 
 export async function getBridgeQuote ({ force = false } = {}) {
@@ -251,6 +334,51 @@ export async function decodeInvoiceRemote (invoice, { signal = null } = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// Read-only account session (keepsats)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask v4v.app for a posting-scope challenge. `clientId` is a stable random id,
+ * not a secret; it is 10–100 characters because the API rejects shorter ones.
+ */
+export async function getAuthChallenge (account, { clientId, signal = null } = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  const id = String(clientId || '').trim()
+  if (!name) throw new V4vappError('Choose a Hive account to connect.')
+  if (id.length < 10 || id.length > 100) throw new V4vappError('The Lightning session id is invalid.')
+  const query = [
+    'clientId=' + encodeURIComponent(id),
+    'appId=' + encodeURIComponent(V4VAPP_AUTH_APP_ID),
+    'scope=' + encodeURIComponent(V4VAPP_AUTH_SCOPE)
+  ].join('&')
+  const data = await request('/auth/' + encodeURIComponent(name) + '?' + query, { signal })
+  return { challenge: String(data?.challenge || '').trim(), raw: data }
+}
+
+/** Exchange a signed challenge for a short-lived bearer token. */
+export async function validateAuthSignature (body, { clientId, signal = null } = {}) {
+  const id = String(clientId || '').trim()
+  if (!id) throw new V4vappError('The Lightning session id is missing.')
+  if (!body || typeof body !== 'object') throw new V4vappError('The signed challenge is missing.')
+  return request('/auth/validate/?clientId=' + encodeURIComponent(id), {
+    method: 'POST',
+    body,
+    signal
+  })
+}
+
+/** Read the keepsats balance and (when present) recent activity. */
+export async function getKeepsats (account, token, { signal = null } = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  if (!name) throw new V4vappError('Choose a Hive account to read the balance.')
+  if (!token) throw new V4vappError('The Lightning session has expired. Reconnect to read the balance.')
+  return request('/v2/v4vapp/keepsats?hive_accname=' + encodeURIComponent(name), {
+    token,
+    signal
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -259,5 +387,17 @@ export function bridgeFeePolicy (status) {
 }
 
 export function isBridgeBlocked (error) {
-  return error instanceof V4vappError && (error.isNetwork || error.isCors)
+  return error instanceof V4vappError && error.state === BRIDGE_STATES.BLOCKED
+}
+
+/** Offline, slow, rate-limited or blocked by the browser — any case where a
+ * live invoice or quote cannot be read but the address/QR and the on-chain
+ * fallback still work. */
+export function isBridgeUnavailable (error) {
+  return error instanceof V4vappError && [
+    BRIDGE_STATES.BLOCKED,
+    BRIDGE_STATES.OFFLINE,
+    BRIDGE_STATES.TIMEOUT,
+    BRIDGE_STATES.DEGRADED
+  ].includes(error.state)
 }

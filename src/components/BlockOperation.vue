@@ -26,7 +26,13 @@
           <router-link :to="'/@' + opData.from" class="text-bold">@{{ opData.from }}</router-link>
           sent <q-badge color="teal" class="block-op__amount">{{ opData.amount }}</q-badge>
           to <router-link :to="'/@' + opData.to" class="text-bold">@{{ opData.to }}</router-link>
-          <span v-if="opData.memo" class="block-op__muted">· memo: {{ opData.memo }}</span>
+          <span v-if="opData.memo" class="block-op__muted">
+            <template v-if="transferLightning">
+              · <q-badge color="amber-9" text-color="black">⚡ Lightning</q-badge>
+              {{ transferLightningLabel }}
+            </template>
+            <template v-else>· memo: {{ truncate(opData.memo, 90) }}</template>
+          </span>
         </template>
 
         <template v-else-if="type === 'transfer_to_vesting'">
@@ -41,10 +47,25 @@
         </template>
 
         <template v-else-if="type === 'custom_json'">
-          <span class="block-op__muted">custom JSON</span>
-          <q-badge color="blue-grey-9" class="block-op__amount">{{ opData.id || 'unknown id' }}</q-badge>
-          <span v-if="firstAuth">by <router-link :to="'/@' + firstAuth">@{{ firstAuth }}</router-link></span>
-          <span class="block-op__muted">· open JSON for payload</span>
+          <template v-if="keepsats">
+            <q-badge color="amber-9" text-color="black">⚡ {{ keepsats.notification ? 'v4vapp notice' : 'Keepsats' }}</q-badge>
+            <span class="block-op__muted">{{ keepsatsLabel }}</span>
+            <q-badge v-if="keepsats.sats" color="amber-9" text-color="black" class="block-op__amount">{{ formatSats(keepsats.sats) }}</q-badge>
+            <span v-if="keepsats.from" class="block-op__muted">· from</span>
+            <router-link v-if="keepsats.from" :to="'/@' + keepsats.from">@{{ keepsats.from }}</router-link>
+            <template v-if="keepsats.to && !keepsats.notification">
+              <span class="block-op__muted">to</span>
+              <router-link :to="'/@' + keepsats.to">@{{ keepsats.to }}</router-link>
+            </template>
+            <span v-if="keepsats.parentId" class="block-op__muted">· ref {{ keepsats.parentId }}</span>
+            <span v-if="keepsats.notification && keepsats.memo" class="block-op__muted">· {{ truncate(keepsats.memo, 100) }}</span>
+          </template>
+          <template v-else>
+            <span class="block-op__muted">custom JSON</span>
+            <q-badge color="blue-grey-9" class="block-op__amount">{{ opData.id || 'unknown id' }}</q-badge>
+            <span v-if="firstAuth">by <router-link :to="'/@' + firstAuth">@{{ firstAuth }}</router-link></span>
+            <span class="block-op__muted">· open JSON for payload</span>
+          </template>
         </template>
 
         <template v-else-if="type === 'claim_reward_balance'">
@@ -259,6 +280,8 @@
 
 <script>
 import { defineAsyncComponent } from 'vue'
+import { cleanV4vappMemo, formatSats, parseV4vappMemo } from 'src/services/lightning'
+import { describeKeepsatsCustomJson, parseKeepsatsCustomJson } from 'src/services/keepsats'
 const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 
 const COLORS = {
@@ -325,7 +348,31 @@ export default {
       return this.operation?.op?.[1] || {}
     },
     opColor () {
+      if (this.keepsats || this.transferLightning) return 'amber-9'
+      if (this.type === 'custom_json' && this.opData.id === 'v4vapp_transfer') return 'amber-9'
+      if (this.type === 'custom_json' && this.opData.id === 'v4vapp_notification') return 'orange-9'
       return COLORS[this.type] || 'grey'
+    },
+    keepsats () {
+      return this.type === 'custom_json' ? parseKeepsatsCustomJson(this.opData) : null
+    },
+    keepsatsLabel () {
+      return this.keepsats ? describeKeepsatsCustomJson(this.opData) : ''
+    },
+    transferLightning () {
+      if (this.type !== 'transfer') return null
+      const memo = String(this.opData.memo || '')
+      if (!memo) return null
+      const parsed = parseV4vappMemo(memo)
+      if (parsed) return parsed
+      if (/lnbc[0-9a-z]+/i.test(memo)) return { kind: 'payment', invoice: true, raw: memo }
+      return null
+    },
+    transferLightningLabel () {
+      const parsed = this.transferLightning
+      if (!parsed) return ''
+      if (parsed.invoice) return 'Lightning invoice payment'
+      return cleanV4vappMemo(parsed.raw || this.opData.memo)
     },
     humanType () {
       return this.type.replace(/_/g, ' ')
@@ -335,6 +382,11 @@ export default {
     }
   },
   methods: {
+    formatSats,
+    truncate (value, max = 100) {
+      const text = String(value || '')
+      return text.length > max ? text.slice(0, max - 1) + '…' : text
+    },
     avatarUrl (user) {
       return 'https://images.hive.blog/u/' + user + '/avatar'
     },

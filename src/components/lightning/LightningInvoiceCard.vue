@@ -48,6 +48,9 @@
       <div class="lightning-invoice__qr" v-if="qrSrc">
         <img :src="qrSrc" :alt="'QR code for ' + amountLabel + ' Lightning invoice'" width="190" height="190" />
       </div>
+      <div v-else-if="qrLoading" class="lightning-invoice__qr lightning-invoice__qr--empty" aria-label="Generating QR code">
+        <q-spinner-dots size="34px" />
+      </div>
       <div v-else class="lightning-invoice__qr lightning-invoice__qr--empty" aria-hidden="true">
         <q-icon name="qr_code_2" size="54px" />
       </div>
@@ -63,7 +66,7 @@
     </div>
     <div v-else-if="displayStatus === 'unknown'" class="lightning-invoice__notice">
       <q-icon name="cloud_off" size="18px" aria-hidden="true" />
-      Payment status could not be checked from this browser. Check the destination wallet for the Hive transfer.
+      Payment status could not be checked just now. The invoice may still be paid; check the destination wallet for the Hive transfer.
     </div>
   </div>
 </template>
@@ -81,7 +84,10 @@ export default {
   emits: ['expired'],
   data () {
     return {
-      now: Date.now()
+      now: Date.now(),
+      generatedQr: '',
+      qrLoading: false,
+      qrError: false
     }
   },
   computed: {
@@ -120,7 +126,8 @@ export default {
     },
     qrSrc () {
       const data = this.invoice.qrCodeBase64
-      return data ? (data.startsWith('data:') ? data : 'data:image/png;base64,' + data) : ''
+      if (data) return data.startsWith('data:') ? data : 'data:image/png;base64,' + data
+      return this.generatedQr
     },
     invoiceUri () {
       return this.invoice.paymentRequest ? 'lightning:' + this.invoice.paymentRequest : '#'
@@ -134,9 +141,11 @@ export default {
   watch: {
     'invoice.paymentRequest' () {
       this.now = Date.now()
+      this.ensureQr()
     }
   },
   mounted () {
+    this.ensureQr()
     this.timer = setInterval(() => {
       this.now = Date.now()
       if (this.expiresAt && this.expiresAt <= this.now && this.status === 'open') this.$emit('expired')
@@ -146,6 +155,30 @@ export default {
     if (this.timer) clearInterval(this.timer)
   },
   methods: {
+    async ensureQr () {
+      if (this.invoice.qrCodeBase64 || !this.invoice.paymentRequest) {
+        this.generatedQr = ''
+        return
+      }
+      this.qrLoading = true
+      this.qrError = false
+      this.generatedQr = ''
+      try {
+        // The live API does not always return qr_code_base64, so generate the
+        // same `lightning:` URI locally. Lazy-loaded; only invoice cards pay for it.
+        const { renderSVG } = await import('uqr')
+        const svg = renderSVG('lightning:' + this.invoice.paymentRequest, {
+          ecc: 'M',
+          pixelSize: 6,
+          border: 2
+        })
+        this.generatedQr = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+      } catch {
+        this.qrError = true
+      } finally {
+        this.qrLoading = false
+      }
+    },
     copyInvoice () {
       if (!this.invoice.paymentRequest) return
       Promise.resolve(copyToClipboard(this.invoice.paymentRequest)).then(() => {
@@ -240,7 +273,7 @@ export default {
 }
 
 .lightning-invoice__raw code {
-  color: #546e7a;
+  color: #90a4ae;
   font-size: 0.62rem;
   overflow-wrap: anywhere;
 }

@@ -51,9 +51,8 @@ W36 (Lightning receive and pay, v4vapp Phase 1–2) is complete and deployed:
 lint, unit tests, build, performance budgets, the targeted Lightning E2E and a
 live browser smoke are green. The full fast suite has four pre-existing
 live-data failures unrelated to this workstream. See
-`docs/workstreams/W36-lightning-bridge.md`. It ships with a documented CORS
-fallback until v4v.app allowlists the production origin. Keepsats, POS and post
-zaps remain open follow-ups.
+`docs/workstreams/W36-lightning-bridge.md`. Its keepsats, POS and zap follow-ups
+are now covered by W52–W56.
 
 W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
 #50, #77 and #78) are complete. W38 adds community headers, forced dashboard
@@ -104,10 +103,43 @@ ordering dialog that marks the first five primary tags. See
 `docs/workstreams/W51-composer-publishing-polish.md`. The optional visual
 editor remains the last major composer item.
 
-Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
-Lightning workstream, the optional #63 server-side existence check at the edge,
-and the remaining composer roadmap phases. There is no other open issue backlog
-at the time of writing.
+W52 (issue #87, Lightning CORS-live hardening) is complete. The production
+origin is on v4v.app's CORS allowlist (verified 2026-11-21, API 6.6.1); the
+bridge client separates offline, timeout, rate-limited, blocked and
+unauthorized states, the health page shows an advisory bridge row, and a daily
+read-only contract check fails if the allowlist or the public API shape drifts.
+See `docs/workstreams/W52-lightning-cors.md`.
+
+W53 (issue #87, Keepsats read-only session) is complete. The posting-key
+v4v.app session is verified live; the wallet's Lightning section gains an
+opt-in, secondary keepsats panel with a memory-only token, custody disclosure
+and no write actions. See `docs/workstreams/W53-keepsats-read-only.md`.
+
+W54 (issue #87, Keepsats on-chain actions) is complete. Deposit `#sats`,
+conversion to HBD/HIVE, and Lightning invoice/address payments from keepsats are
+built as `manualOnly` queue actions with the active key; wallet activity labels
+`v4vapp_transfer`/`v4vapp_notification`. See
+`docs/workstreams/W54-keepsats-onchain-actions.md`. A live operator smoke of a
+small deposit/conversion/payment remains.
+
+W55 (issue #87, POS and zaps) is complete. `/@account/pos` is a public keypad
+that creates a fresh invoice per sale with local session totals; posts and short
+posts gain a Zap button with 1k/5k/10k/21k sats presets. See
+`docs/workstreams/W55-pos-zaps.md`. The nginx `pos` metadata line still needs a
+root-managed install; the page works without it.
+
+W56 (issue #87, explorer/markets/tax) is complete. Bridge custom JSON and
+Lightning-style transfer memos are legible in block/transaction views,
+`/markets` gains a live sats quote card, and wallet activity exports a
+tax-friendly CSV with sats, fee, reference and parent id. See
+`docs/workstreams/W56-explorer-markets-tax.md`. Search decoding for invoices and
+creator sats analytics remain.
+
+Remaining follow-ups with no open workstream: search decoding for Lightning
+invoices/addresses and creator sats analytics from the Lightning study (issue
+#87), the optional keepsats user-transfer and on-chain balance fallback, the
+optional #63 server-side existence check at the edge, and the optional visual
+editor from the composer roadmap. There is otherwise no open issue backlog.
 
 ## Definition of done
 

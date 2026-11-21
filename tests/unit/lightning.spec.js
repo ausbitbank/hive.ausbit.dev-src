@@ -84,6 +84,25 @@ describe('Fees and quotes', () => {
     })
   })
 
+  it('uses the larger of the two published minimums', () => {
+    // Live on 2026-11-21: minimum_invoice_payment_sats reported 1 while the
+    // conversion floor (min_max.min.sats) was still 50.
+    expect(normalizeFeePolicy({
+      conv_fee_percent: 0.029,
+      conv_fee_sats: 50,
+      minimum_invoice_payment_sats: 1,
+      min_max: { min: { sats: 50 } }
+    }).minSats).toBe(50)
+    expect(normalizeFeePolicy({
+      minimum_invoice_payment_sats: 100,
+      min_max: { min: { sats: 50 } }
+    }).minSats).toBe(100)
+    expect(normalizeFeePolicy({
+      minimum_invoice_payment_sats: 1,
+      min_max: { min: { sats: 1 } }
+    }).minSats).toBe(1)
+  })
+
   it('reproduces the observed 180,000 sat fee', () => {
     expect(feeSats(180000, { conv_fee_percent: 0.029, conv_fee_sats: 50 })).toBe(5270)
     expect(feeSats(1000, { conv_fee_percent: 0.029, conv_fee_sats: 50 })).toBe(79)
@@ -140,11 +159,14 @@ describe('v4vapp memos', () => {
       reference: 'woVqr/s6PX'
     })
     expect(cleanV4vappMemo(received)).toContain('Converted 77 sats')
+    expect(cleanV4vappMemo(received)).toContain('fee 52 sats')
   })
 
   it('parses a keepsats deposit', () => {
-    const parsed = parseV4vappMemo('Deposit 21.999 HBD to 34,082 sats with fee: 1,069 for hivemodular2 | § 0600_fc89fd_1')
+    const memo = 'Deposit 21.999 HBD to 34,082 sats with fee: 1,069 for hivemodular2 | § 0600_fc89fd_1'
+    const parsed = parseV4vappMemo(memo)
     expect(parsed).toMatchObject({ kind: 'deposit', sats: 34082, feeSats: 1069, amount: 21.999, asset: 'HBD' })
+    expect(cleanV4vappMemo(memo)).toBe('Deposit of 34,082 sats (fee 1,069 sats)')
   })
 
   it('hides long invoices from the activity label', () => {

@@ -44,6 +44,8 @@
             @refresh="loadMarketData()"
           />
 
+          <sats-quote-card />
+
           <q-card flat bordered class="home-card home-panel markets-cta">
             <q-card-section class="home-panel__head">
               <div>
@@ -131,6 +133,7 @@ import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
 import MarketChartCard from 'components/market/MarketChartCard.vue'
 import MarketSnapshotCard from 'components/market/MarketSnapshotCard.vue'
+import SatsQuoteCard from 'components/market/SatsQuoteCard.vue'
 import HbdPegCard from 'components/market/HbdPegCard.vue'
 import SavingsAprCard from 'components/market/SavingsAprCard.vue'
 import HbdConversionCalculator from 'components/market/HbdConversionCalculator.vue'
@@ -149,6 +152,7 @@ export default {
   components: {
     MarketChartCard,
     MarketSnapshotCard,
+    SatsQuoteCard,
     HbdPegCard,
     SavingsAprCard,
     HbdConversionCalculator

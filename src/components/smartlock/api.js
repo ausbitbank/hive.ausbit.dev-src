@@ -21,6 +21,17 @@ const signBuffer = (username, data) => {
   return signature.Signature.signBuffer(buf, getPosting(username)).toHex()
 }
 
+// Sign a plain text challenge and return the matching public key. Used by the
+// read-only v4v.app session, which needs both halves of the proof.
+const signBufferWithPublicKey = (username, data) => {
+  const wif = getPosting(username)
+  if (!wif) throw new Error('SmartLock is locked. Unlock it to connect to v4v.app.')
+  return {
+    signature: signature.Signature.signBuffer(data, wif).toHex(),
+    publicKey: hive.auth.wifToPublic(wif)
+  }
+}
+
 const broadcastAsync = async (username, operations, role = 'posting', password) => {
   if (operations[0][0] === 'comment' && operations[0][1]._edit) {
     // Queue-only marker used to label edits; the chain rejects unknown fields.
@@ -81,5 +92,6 @@ const broadcastAsync = async (username, operations, role = 'posting', password) 
 
 export default {
   broadcastAsync,
-  signBuffer
+  signBuffer,
+  signBufferWithPublicKey
 }

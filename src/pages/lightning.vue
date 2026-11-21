@@ -86,14 +86,13 @@
           <section class="lightning-card lightning-card--fees" aria-labelledby="lightning-fees-title">
             <h2 id="lightning-fees-title" class="lightning-card__title">Fees and limits</h2>
             <ul class="lightning-fees">
-              <li>Hive → Lightning: about <strong>2.9% + 50 sats</strong>.</li>
-              <li>Small incoming invoices lose the fixed ~50 sat fee. Prefer 1,000 sats or more.</li>
-              <li>Maximum <strong>180,000 sats</strong> per invoice. Bridge limits change; the live quote wins.</li>
+              <li>Hive → Lightning: about <strong>{{ feePercentLabel }} + {{ feeFixedLabel }} sats</strong>.</li>
+              <li>Small incoming invoices lose the fixed {{ feeFixedLabel }} sat fee. Prefer {{ preferredSatsLabel }} sats or more.</li>
+              <li>Maximum <strong>{{ feeMaxLabel }} sats</strong> per invoice. Bridge limits change; the live quote wins.</li>
               <li>If a Lightning payment fails, v4vapp refunds the Hive/HBD deposit, minus its fee.</li>
             </ul>
             <p class="lightning-card__note">
-              These values are the bridge's defaults at the time of writing. The payment dialog
-              reads the live configuration when the bridge is reachable and labels estimates.
+              {{ feeSourceNote }}
             </p>
           </section>
 
@@ -138,7 +137,8 @@
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { isValidHiveAccount, lightningAddress } from 'src/services/lightning'
+import { isValidHiveAccount, lightningAddress, normalizeFeePolicy } from 'src/services/lightning'
+import { bridgeFeePolicy, getBridgeStatus } from 'src/services/v4vapp'
 import UserSearchBox from 'components/userSearchBox.vue'
 import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
 const LightningReceiveDialog = defineAsyncComponent(() => import('components/lightning/LightningReceiveDialog.vue'))
@@ -156,10 +156,30 @@ export default {
     return {
       account: '',
       receiveOpen: false,
-      payOpen: false
+      payOpen: false,
+      feePolicy: normalizeFeePolicy({}),
+      feePolicyLive: false
     }
   },
   computed: {
+    feePercentLabel () {
+      return (Math.round(this.feePolicy.percent * 1000) / 10) + '%'
+    },
+    feeFixedLabel () {
+      return Number(this.feePolicy.fixed || 0).toLocaleString('en-US')
+    },
+    feeMaxLabel () {
+      return Number(this.feePolicy.maxSats || 0).toLocaleString('en-US')
+    },
+    preferredSatsLabel () {
+      return Math.max(1000, Number(this.feePolicy.minSats) || 0).toLocaleString('en-US')
+    },
+    feeSourceNote () {
+      if (this.feePolicyLive) {
+        return 'Values read from the bridge on this visit. The payment dialog refreshes them and labels every estimate.'
+      }
+      return 'These are the bridge defaults because its live configuration could not be read. The payment dialog prefers the live values whenever the bridge is reachable.'
+    },
     loggedInUser () {
       return this.$hiveStore.user.username || ''
     },
@@ -195,8 +215,19 @@ export default {
   },
   mounted () {
     if (this.loggedInUser) this.$hiveStore.getAccount(this.loggedInUser)
+    this.loadFeePolicy()
   },
   methods: {
+    async loadFeePolicy () {
+      try {
+        const status = await getBridgeStatus()
+        if (!status?.config) return
+        this.feePolicy = bridgeFeePolicy(status)
+        this.feePolicyLive = true
+      } catch {
+        // Defaults stay visible and are labelled as such.
+      }
+    },
     syncFromRoute () {
       const fromRoute = this.$route.params.account || this.$route.query.account || ''
       if (fromRoute && fromRoute !== this.account) {

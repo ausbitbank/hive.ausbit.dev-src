@@ -1,0 +1,34 @@
+name: v4vapp contract
+
+# Read-only alarm for the external v4v.app Lightning bridge. It asserts the
+# CORS allowlist entry for https://hive.ausbit.dev, the POST preflight, the
+# fee/limit config shape and the quote/address endpoints. It never creates an
+# invoice or authenticates, so it is safe to run unattended.
+#
+# Keep this out of the PR gate: a third-party outage must not block a merge.
+# A red scheduled run means the allowlist lapsed or the API drifted; see
+# docs/integrations/v4vapp-lightning.md §3.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4vapp-contract
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Bridge contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check the v4vapp contract
+        run: node scripts/v4vapp-contract-check.mjs

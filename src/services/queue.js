@@ -90,6 +90,31 @@ export function postMetadataArgument (value) {
   }
 }
 
+// A tiny duplicate of the keepsats label rules keeps the keepsats parser out of
+// the main bundle; the operation builders live in services/keepsats.js.
+function keepsatsSummary (data = {}) {
+  if (data.id !== 'v4vapp_transfer' && data.id !== 'v4vapp_notification') return ''
+  let json = data.json
+  if (typeof json === 'string') {
+    try {
+      json = JSON.parse(json)
+    } catch {
+      json = null
+    }
+  }
+  if (!json || typeof json !== 'object') return 'Keepsats action'
+  if (data.id === 'v4vapp_notification') {
+    return 'v4vapp notification' + (json.parent_id ? ' · ' + json.parent_id : '')
+  }
+  const memo = String(json.memo || '')
+  if (/^lnbc[0-9a-z]+$/i.test(memo)) return 'Pay Lightning invoice with keepsats'
+  if (/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(memo)) return 'Send keepsats to ' + memo
+  if (/^#HBD\b/i.test(memo)) return 'Convert keepsats to HBD'
+  if (/^#HIVE\b/i.test(memo)) return 'Convert keepsats to HIVE'
+  if (json.to_account && json.to_account !== 'v4vapp') return 'Send keepsats to @' + json.to_account
+  return 'Keepsats action'
+}
+
 function shorten (value, max = 70) {
   const text = String(value || '')
   return text.length > max ? text.slice(0, max - 1) + '…' : text
@@ -122,6 +147,12 @@ export function operationSummary (action) {
     case 'delete_comment':
       return 'Delete ' + mention(data.author, data.permlink)
     case 'transfer':
+      if (data.to === 'v4vapp' && /#sats\b/i.test(String(data.memo || ''))) {
+        return 'Deposit ' + (data.amount || '') + ' to keepsats'
+      }
+      if (data.to === 'v4vapp' && /lnbc[0-9a-z]+/i.test(String(data.memo || ''))) {
+        return 'Pay Lightning invoice with ' + String(data.amount || '').split(/\s+/)[1]
+      }
       return (data.amount || 'Transfer') + ' to @' + (data.to || 'unknown')
     case 'transfer_to_vesting':
       return 'Power up ' + (data.amount || 'HIVE') + (data.to ? ' to @' + data.to : '')
@@ -154,8 +185,10 @@ export function operationSummary (action) {
       return 'Update account settings'
     case 'delegate_vesting_shares':
       return 'Delegate ' + (data.vesting_shares || 'HP') + ' to @' + (data.delegatee || '')
-    case 'custom_json':
-      return (data.id || 'custom') + ' app action'
+    case 'custom_json': {
+      const keepsats = keepsatsSummary(data)
+      return keepsats || ((data.id || 'custom') + ' app action')
+    }
     case 'update_proposal_votes':
       return 'Update proposal votes'
     default:

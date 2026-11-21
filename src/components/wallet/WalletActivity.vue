@@ -5,8 +5,20 @@
         <div class="wallet-eyebrow">{{ eyebrow }}</div>
         <h2 :id="headingId" class="wallet-card__title">{{ title }}</h2>
       </div>
-      <div v-if="limit" class="wallet-activity__head-actions">
-        <q-btn flat dense no-caps color="primary" icon-right="arrow_forward" label="View all" @click="$emit('navigate', 'activity')" />
+      <div class="wallet-activity__head-actions">
+        <q-btn
+          v-if="entries.length"
+          flat
+          dense
+          no-caps
+          color="primary"
+          icon="download"
+          label="CSV"
+          aria-label="Export loaded activity as CSV"
+          title="Export loaded activity as CSV"
+          @click="exportCsv"
+        />
+        <q-btn v-if="limit" flat dense no-caps color="primary" icon-right="arrow_forward" label="View all" @click="$emit('navigate', 'activity')" />
       </div>
     </q-card-section>
 
@@ -266,6 +278,7 @@
 import moment from 'src/utils/time'
 import WalletOperationRow from 'components/wallet/WalletOperationRow.vue'
 import { WALLET_ACTIVITY_CATEGORIES, filterWalletTransactions, groupWalletTransactions } from 'src/services/wallet'
+import { buildWalletCsv, walletCsvName } from 'src/services/walletExport'
 
 export default {
   name: 'WalletActivity',
@@ -334,6 +347,24 @@ export default {
       this.category = 'all'
       this.direction = 'all'
       this.search = ''
+    },
+    exportCsv () {
+      if (!this.entries.length) return
+      const csv = buildWalletCsv(this.filtered, { username: this.username })
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = walletCsvName(this.username)
+      link.click()
+      URL.revokeObjectURL(url)
+      this.$q.notify({
+        message: 'Wallet CSV exported (' + this.filtered.length + ' loaded rows).',
+        color: 'primary',
+        icon: 'download',
+        timeout: 3000,
+        position: 'top'
+      })
     },
   }
 }

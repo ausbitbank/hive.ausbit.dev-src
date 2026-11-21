@@ -51,6 +51,11 @@ Closing the remaining first-slice publishing gaps:
 - Performance budgets — pass after a small compose route/total increase.
 - Visual smoke: the beneficiary actions and topic-order dialog fit the sidebar
   without horizontal overflow.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T134019Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: Use defaults is visible, the topic
+  order dialog opens, moving alpha down makes beta the first topic, and the
+  browser reported no page errors.
 
 ## Follow-ups
 

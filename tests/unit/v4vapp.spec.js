@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  BRIDGE_STATES,
   V4vappError,
   checkInvoice,
   createInvoice,
   decodeInvoiceRemote,
+  getBridgeProbe,
   getBridgeState,
   getBridgeStatus,
   getSatsToHive,
   isBridgeBlocked,
+  isBridgeUnavailable,
   lightningAddressQrUrl,
+  probeBridge,
   resetBridgeState
 } from '../../src/services/v4vapp'
 
@@ -96,13 +100,99 @@ describe('v4vapp client', () => {
       .rejects.toMatchObject({ status: 422, message: 'Amount is below the bridge minimum' })
   })
 
-  it('marks the bridge blocked on a network/CORS failure', async () => {
+  it('marks the bridge blocked when the browser cannot reach it while online', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     const error = await createInvoice({ account: 'alice', amount: 1, currency: 'hbd' }).catch(err => err)
     expect(error).toBeInstanceOf(V4vappError)
     expect(error.code).toBe('network')
+    expect(error.state).toBe(BRIDGE_STATES.BLOCKED)
     expect(isBridgeBlocked(error)).toBe(true)
-    expect(getBridgeState()).toMatchObject({ state: 'blocked' })
+    expect(isBridgeUnavailable(error)).toBe(true)
+    expect(getBridgeState()).toMatchObject({ state: BRIDGE_STATES.BLOCKED })
+  })
+
+  it('separates an offline browser from a CORS or intermediary block', async () => {
+    vi.stubGlobal('navigator', { onLine: false })
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
+    const error = await createInvoice({ account: 'alice', amount: 1, currency: 'hbd' }).catch(err => err)
+    expect(error).toMatchObject({ code: 'offline', state: BRIDGE_STATES.OFFLINE })
+    expect(isBridgeBlocked(error)).toBe(false)
+    expect(isBridgeUnavailable(error)).toBe(true)
+    expect(error.message).toMatch(/offline/i)
+    expect(getBridgeState()).toMatchObject({ state: BRIDGE_STATES.OFFLINE })
+    vi.unstubAllGlobals()
+  })
+
+  it('reports a timeout without calling it a CORS block', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new DOMException('aborted', 'AbortError') }))
+    const error = await createInvoice({ account: 'alice', amount: 1, currency: 'hbd' }).catch(err => err)
+    expect(error).toMatchObject({ code: 'timeout', state: BRIDGE_STATES.TIMEOUT })
+    expect(isBridgeBlocked(error)).toBe(false)
+    expect(isBridgeUnavailable(error)).toBe(true)
+  })
+
+  it('marks rate limits and server errors as degraded, not blocked', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({ detail: 'slow down' }, { ok: false, status: 429 })))
+    const error = await checkInvoice('hash').catch(err => err)
+    expect(error.state).toBe(BRIDGE_STATES.DEGRADED)
+    expect(isBridgeBlocked(error)).toBe(false)
+    expect(isBridgeUnavailable(error)).toBe(true)
+    expect(getBridgeState()).toMatchObject({ state: BRIDGE_STATES.DEGRADED, error: 'slow down' })
+
+    vi.stubGlobal('fetch', vi.fn(async () => response({}, { ok: false, status: 503 })))
+    await expect(checkInvoice('hash')).rejects.toMatchObject({ state: BRIDGE_STATES.DEGRADED })
+  })
+
+  it('reports an authenticated endpoint as unauthorized rather than offline', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({
+      detail: 'Could not validate credentials'
+    }, { ok: false, status: 401 })))
+    const error = await checkInvoice('hash').catch(err => err)
+    expect(error).toMatchObject({ state: BRIDGE_STATES.UNAUTHORIZED, status: 401 })
+    expect(isBridgeUnavailable(error)).toBe(false)
+    expect(getBridgeState()).toMatchObject({ state: BRIDGE_STATES.UNAUTHORIZED })
+  })
+
+  it('keeps a successful validation response from looking degraded', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response(
+      { detail: [{ msg: 'Amount is below the bridge minimum' }] },
+      { ok: false, status: 422 }
+    )))
+    await createInvoice({ account: 'alice', amount: 1, currency: 'hbd' }).catch(() => {})
+    expect(getBridgeState()).toMatchObject({ state: BRIDGE_STATES.AVAILABLE, error: '' })
+  })
+
+  it('caches the capability probe and refreshes it on demand', async () => {
+    const fetchMock = vi.fn(async () => response({
+      message: 'alive',
+      version: '6.6.1',
+      config: { conv_fee_percent: 0.029 }
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const first = await probeBridge()
+    expect(first).toMatchObject({ state: BRIDGE_STATES.AVAILABLE, error: '' })
+    expect(first.status?.version).toBe('6.6.1')
+
+    await probeBridge()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(getBridgeProbe()).toMatchObject({ state: BRIDGE_STATES.AVAILABLE })
+
+    await probeBridge({ force: true })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns a probe result instead of throwing when the bridge is unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
+    const result = await probeBridge({ force: true })
+    expect(result).toMatchObject({ state: BRIDGE_STATES.BLOCKED, status: null })
+    expect(result.error).toMatch(/could not reach/i)
+  })
+
+  it('records when the bridge state was last checked', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => response({ message: 'alive' })))
+    await getBridgeStatus({ force: true })
+    expect(getBridgeState().checkedAt).toBeGreaterThan(0)
   })
 
   it('marks the bridge available after a successful read', async () => {
