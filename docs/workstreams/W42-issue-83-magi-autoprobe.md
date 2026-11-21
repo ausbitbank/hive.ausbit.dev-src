@@ -1,7 +1,7 @@
 # W42 — Issue #83 Magi node auto-probe
 
 Date: 2026-11-21
-Status: implemented
+Status: implemented and deployed
 
 ## Scope
 
@@ -62,3 +62,11 @@ watchdog no longer leaves `loading` stuck.
     renders the witness table.
 - Production spot-check before the change confirmed the same page auto-probes
   when every endpoint answers, matching the issue's "refresh fills it" state.
+- `./scripts/deploy.sh` — deployed to `hurgenburgen:/var/www/hive.ausbit.dev`.
+  - Backup: `~/hive-backups/hive.ausbit.dev-20261121T055050Z.tar.gz`
+  - Live smoke on `https://hive.ausbit.dev/nodes?network=magi`: shows
+    **Checking nodes…** immediately, then `2 / 3` with witness rows without a
+    manual refresh.
+  - Live stall test (all three GraphQL requests paused): resolves at 8 seconds
+    to `0 / 3` with three **Timed out** rows; the panel shows "No Magi node is
+    available to read witnesses from."
