@@ -70,6 +70,10 @@ after broadcast. The existing notification and queue flow are unchanged.
   dialogs and draft controls.
 - Visual smoke at 1440px: the snippets dialog fits without overflow and the
   toolbar snippet button is reachable.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T104735Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: the snippets dialog opens, the
+  templates dialog shows five starters, and the browser reported no page errors.
 
 ## Follow-ups
 

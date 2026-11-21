@@ -81,8 +81,10 @@ visual editor remain.
 
 W48 is the third composer phase: local snippets, post templates with a starter
 library, draft search/sort/pinning/duplication, and a post-publish success
-panel. See `docs/workstreams/W48-composer-snippets-templates.md`. Draft version
-history, snippet/template import/export, and the optional visual editor remain.
+panel. It is complete and deployed; the live smoke covered the snippets and
+templates dialogs and reported no page errors. See
+`docs/workstreams/W48-composer-snippets-templates.md`. Draft version history,
+snippet/template import/export, and the optional visual editor remain.
 
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
 Lightning workstream, the optional #63 server-side existence check at the edge,
