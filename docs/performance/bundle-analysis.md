@@ -226,6 +226,12 @@ remaining legacy weight without changing app behaviour.
   original (often multi-megapixel) file as a CSS background.
 - **Fewer preconnects.** The shell keeps preconnects for the landing, market
   and wallet origins and relies on DNS prefetch for the rest.
+- **Lighter post linkifier.** `remarkable/linkify`'s Autolinker dependency is
+  replaced with `linkify-it` plus the IANA TLD list
+  (`src/utils/remarkableLinkify.js`). The rendered output matched the old
+  renderer on 60 real Hive posts plus crafted URL/email cases. The post chunk
+  drops **125.2 → 119.8 KB Brotli**, and `remarkable`'s unused `autolinker`
+  dependency is stubbed out of the install (~3 MB).
 - **Initial JS 352.0 → 348.5 KB raw / 113.8 → 112.8 KB Brotli.** The post
   renderer remains the largest lazy chunk; removing its `autolinker` dependency
   would save ~15 KB Brotli but changes fuzzy-domain linkification, so it was

@@ -5,7 +5,11 @@
 // and its guard test use this one extractor.
 
 import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
+
+// Generated data, not icon usage: the IANA TLD list contains words such as
+// `android`, `apple` and `abc` that also happen to be Material icon names.
+const SKIP = new Set(['src/utils/tlds.js'])
 
 function walk (dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -27,6 +31,7 @@ export function extractIconNames (known, extraNames = []) {
   const used = new Set()
   const literal = /(['"`])([a-zA-Z0-9_]+)\1/g
   for (const file of walk('src')) {
+    if (SKIP.has(relative(process.cwd(), file))) continue
     const text = readFileSync(file, 'utf8')
     let match
     while ((match = literal.exec(text))) {

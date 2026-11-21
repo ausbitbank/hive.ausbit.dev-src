@@ -36,7 +36,8 @@ export default defineConfig(() => ({
       // the build off vite-plugin-node-polyfills and its crypto-browserify tree.
       buffer: 'buffer/',
       crypto: src('shims/crypto.js'),
-      querystring: src('shims/querystring.js')
+      querystring: src('shims/querystring.js'),
+      'remarkable/linkify': src('utils/remarkableLinkify.js')
     }
   },
 
