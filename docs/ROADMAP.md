@@ -79,6 +79,11 @@ keyboard shortcuts. See `docs/workstreams/W47-composer-embeds-preview.md`.
 Snippets, templates, draft recovery, the post-publish panel and an optional
 visual editor remain.
 
+W48 is the third composer phase: local snippets, post templates with a starter
+library, draft search/sort/pinning/duplication, and a post-publish success
+panel. See `docs/workstreams/W48-composer-snippets-templates.md`. Draft version
+history, snippet/template import/export, and the optional visual editor remain.
+
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
 Lightning workstream, the optional #63 server-side existence check at the edge,
 and the remaining composer roadmap phases. There is no other open issue backlog

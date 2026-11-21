@@ -14,10 +14,13 @@ import {
   parseDraftExport,
   readDraftState,
   readDrafts,
+  readPinnedDraftIds,
   removeDraftById,
   serializeDraftExport,
+  togglePinnedDraftId,
   upsertDraft,
-  writeDrafts
+  writeDrafts,
+  writePinnedDraftIds
 } from '../../src/services/drafts'
 
 function memoryStorage () {
@@ -178,6 +181,19 @@ describe('draft storage', () => {
   it('removes one draft without touching others', () => {
     const drafts = [createDraft({ id: 'a', title: 'A' }), createDraft({ id: 'b', title: 'B' })]
     expect(removeDraftById(drafts, 'a').map(item => item.id)).toEqual(['b'])
+  })
+})
+
+describe('pinned drafts', () => {
+  it('toggles draft ids per account and ignores duplicates', () => {
+    const storage = memoryStorage()
+    expect(togglePinnedDraftId(storage, 'alice', 'draft-a')).toEqual(['draft-a'])
+    expect(togglePinnedDraftId(storage, 'alice', 'draft-b')).toEqual(['draft-b', 'draft-a'])
+    expect(togglePinnedDraftId(storage, 'alice', 'draft-a')).toEqual(['draft-b'])
+    expect(readPinnedDraftIds(storage, 'alice')).toEqual(['draft-b'])
+    expect(readPinnedDraftIds(storage, 'bob')).toEqual([])
+    writePinnedDraftIds(storage, 'alice', ['draft-b', 'draft-b', 'draft-c'])
+    expect(readPinnedDraftIds(storage, 'alice')).toEqual(['draft-b', 'draft-c'])
   })
 })
 

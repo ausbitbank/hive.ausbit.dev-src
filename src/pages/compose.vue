@@ -89,6 +89,16 @@
               </div>
               <markdown-toolbar v-if="!isHtmlMode" @action="applyAction" @upload="openImageUpload()">
                 <template #end>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="content_paste"
+                    aria-label="Insert snippet"
+                    title="Insert snippet"
+                    @click="openSnippets"
+                  />
                   <span class="compose-toolbar__count" :title="guidance.words + ' words'">{{ guidance.words }} words</span>
                 </template>
               </markdown-toolbar>
@@ -490,24 +500,73 @@
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Local drafts</div>
-              <h2 id="compose-drafts-title" class="home-panel__title">Drafts ({{ visibleDrafts.length }})</h2>
+              <h2 id="compose-drafts-title" class="home-panel__title">Drafts ({{ filteredDrafts.length }})</h2>
             </div>
             <div class="home-panel__actions">
+              <q-btn flat dense round icon="dashboard_customize" aria-label="Post templates" title="Templates" @click="openTemplates" />
               <q-btn flat dense round icon="add" aria-label="Create a new draft" title="New draft" @click="startNewDraft" />
             </div>
           </div>
           <div class="home-panel__body compose-drafts">
-            <div v-if="visibleDrafts.length" class="compose-draft-list">
+            <div class="compose-draft-filters">
+              <q-input
+                v-model="draftSearch"
+                dense
+                outlined
+                clearable
+                label="Search drafts"
+                aria-label="Search drafts"
+              >
+                <template #prepend>
+                  <q-icon name="search" aria-hidden="true" />
+                </template>
+              </q-input>
+              <q-select
+                v-model="draftSort"
+                :options="draftSortOptions"
+                emit-value
+                map-options
+                dense
+                outlined
+                label="Sort"
+                aria-label="Sort drafts"
+              />
+            </div>
+            <div v-if="filteredDrafts.length" class="compose-draft-list">
               <div
-                v-for="item in visibleDrafts"
+                v-for="item in filteredDrafts"
                 :key="item.id"
                 class="compose-draft"
                 :class="{ 'compose-draft--active': item.id === draft.id }"
               >
                 <button type="button" class="compose-draft__open" @click="selectDraft(item.id)">
                   <span class="compose-draft__title">{{ draftDisplayTitle(item) }}</span>
-                  <span class="compose-draft__meta">{{ draftTime(item.updatedAt) }} · {{ wordCount(item.body) }} words</span>
+                  <span class="compose-draft__meta">
+                    <q-icon v-if="isPinnedDraft(item.id)" name="push_pin" size="11px" aria-hidden="true" />
+                    {{ draftTime(item.updatedAt) }} · {{ wordCount(item.body) }} words
+                  </span>
                 </button>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="push_pin"
+                  :color="isPinnedDraft(item.id) ? 'primary' : undefined"
+                  :aria-label="(isPinnedDraft(item.id) ? 'Unpin' : 'Pin') + ' draft ' + draftDisplayTitle(item)"
+                  :title="isPinnedDraft(item.id) ? 'Unpin draft' : 'Pin draft'"
+                  @click="toggleDraftPin(item)"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  icon="content_copy"
+                  :aria-label="'Duplicate draft ' + draftDisplayTitle(item)"
+                  title="Duplicate draft"
+                  @click="duplicateDraft(item)"
+                />
                 <q-btn
                   flat
                   dense
@@ -520,6 +579,10 @@
                   @click="requestDiscard(item)"
                 />
               </div>
+            </div>
+            <div v-else-if="draftSearch" class="compose-empty-line">
+              <q-icon name="search_off" size="17px" aria-hidden="true" />
+              <span>No drafts match “{{ draftSearch }}”.</span>
             </div>
             <div v-else class="compose-empty-line">
               <q-icon name="description" size="17px" aria-hidden="true" />
@@ -725,6 +788,8 @@
             <q-toggle v-model="fullscreenEditor" aria-label="Fullscreen editor" dense />
           </div>
           <div class="compose-settings__actions">
+            <q-btn flat no-caps icon="content_paste" label="Snippets" @click="settingsOpen = false; openSnippets()" />
+            <q-btn flat no-caps icon="dashboard_customize" label="Templates" @click="settingsOpen = false; openTemplates()" />
             <q-btn flat no-caps icon="content_copy" label="Copy Markdown" @click="copyDraft" />
             <q-btn flat no-caps icon="refresh" label="Refresh preview" @click="refreshPreview" />
             <q-btn flat no-caps icon="help_outline" label="Markdown help" @click="openEditorHelp" />
@@ -762,6 +827,146 @@
             Keyboard: Ctrl/⌘ B bold, I italic, U underline, K link, Shift+X strikethrough,
             Alt+1/2/3 headings, Tab indent, Shift+Tab outdent, Ctrl+Enter publish.
           </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="snippetsOpen">
+      <q-card class="compose-snippets">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Reusable text</div>
+            <h2 class="home-panel__title">{{ snippetId ? 'Edit snippet' : 'Snippets' }}</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close snippets" title="Close" @click="snippetsOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-snippets__body">
+          <div class="compose-snippets__form">
+            <q-input
+              v-model="snippetName"
+              outlined
+              dense
+              label="Snippet name"
+              aria-label="Snippet name"
+              :maxlength="snippetNameMax"
+            />
+            <q-input
+              v-model="snippetBody"
+              type="textarea"
+              outlined
+              dense
+              rows="4"
+              label="Snippet text"
+              aria-label="Snippet text"
+            />
+            <div v-if="snippetError" class="compose-upload-error" role="alert">
+              <q-icon name="error_outline" size="16px" aria-hidden="true" />
+              <span>{{ snippetError }}</span>
+            </div>
+            <div class="compose-snippets__form-actions">
+              <q-btn v-if="snippetId" flat no-caps label="Cancel edit" @click="resetSnippetForm" />
+              <q-btn unelevated no-caps color="primary" :icon="snippetId ? 'save' : 'add'" :label="snippetId ? 'Save changes' : 'Save snippet'" @click="saveSnippet" />
+            </div>
+          </div>
+
+          <div class="compose-snippets__list">
+            <div v-if="!snippets.length" class="compose-empty-line">
+              <q-icon name="content_paste" size="17px" aria-hidden="true" />
+              <span>No snippets yet. Save a signature, a series footer or a reusable intro.</span>
+            </div>
+            <div v-for="snippet in snippets" :key="snippet.id" class="compose-snippet">
+              <div class="compose-snippet__body">
+                <div class="compose-snippet__name">{{ snippet.name }}</div>
+                <div class="compose-snippet__preview">{{ snippet.body }}</div>
+              </div>
+              <div class="compose-snippet__actions">
+                <q-btn flat dense no-caps color="primary" label="Insert" @click="insertSnippet(snippet)" />
+                <q-btn flat dense round icon="edit" :aria-label="'Edit snippet ' + snippet.name" title="Edit snippet" @click="editSnippet(snippet)" />
+                <q-btn flat dense round icon="delete_outline" color="red-4" :aria-label="'Delete snippet ' + snippet.name" title="Delete snippet" @click="deleteSnippet(snippet)" />
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="templatesOpen">
+      <q-card class="compose-templates">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Reusable posts</div>
+            <h2 class="home-panel__title">Post templates</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close templates" title="Close" @click="templatesOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-templates__body">
+          <div class="compose-template-save">
+            <div class="compose-setting__label">Save this draft as a template</div>
+            <q-input v-model="templateName" outlined dense label="Template name" aria-label="Template name" :maxlength="templateNameMax" />
+            <q-input v-model="templateSummary" outlined dense label="Short summary (optional)" aria-label="Template summary" :maxlength="200" />
+            <div v-if="templateError" class="compose-upload-error" role="alert">
+              <q-icon name="error_outline" size="16px" aria-hidden="true" />
+              <span>{{ templateError }}</span>
+            </div>
+            <q-btn unelevated no-caps color="primary" icon="bookmark_add" label="Save current draft" @click="saveCurrentAsTemplate" />
+          </div>
+
+          <div v-if="templates.length" class="compose-template-group">
+            <div class="compose-template-group__title">Your templates</div>
+            <div v-for="template in templates" :key="template.id" class="compose-template">
+              <div class="compose-snippet__body">
+                <div class="compose-snippet__name">{{ template.name }}</div>
+                <div class="compose-snippet__preview">{{ template.summary || template.draft.title || 'Saved template' }}</div>
+              </div>
+              <div class="compose-snippet__actions">
+                <q-btn flat dense no-caps color="primary" label="Apply" @click="applyTemplate(template)" />
+                <q-btn flat dense round icon="delete_outline" color="red-4" :aria-label="'Delete template ' + template.name" title="Delete template" @click="deleteTemplate(template)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="compose-template-group">
+            <div class="compose-template-group__title">Starter templates</div>
+            <div v-for="template in starterTemplates" :key="template.id" class="compose-template">
+              <div class="compose-snippet__body">
+                <div class="compose-snippet__name">{{ template.name }}</div>
+                <div class="compose-snippet__preview">{{ template.summary }}</div>
+              </div>
+              <div class="compose-snippet__actions">
+                <q-btn flat dense no-caps color="primary" label="Apply" @click="applyTemplate(template)" />
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="publishedOpen">
+      <q-card class="compose-published">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Action queue</div>
+            <h2 class="home-panel__title">{{ publishedInfo?.editing ? 'Edit queued' : 'Post queued' }}</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close queued post panel" title="Close" @click="publishedOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-published__body">
+          <p class="compose-published__text">
+            The action is in the signing queue. Nothing is published until you sign it with your posting key.
+          </p>
+          <p v-if="publishedInfo" class="compose-published__link">
+            <a :href="publishedInfo.url" target="_blank" rel="noopener noreferrer">{{ publishedInfo.url }}</a>
+          </p>
+          <p class="compose-hint">
+            The link starts working after the queued action is signed and broadcast.
+          </p>
+          <div class="compose-published__actions">
+            <q-btn flat no-caps icon="content_copy" label="Copy link" @click="copyPublishedLink" />
+            <q-btn unelevated no-caps color="primary" icon="edit_note" label="Write another" @click="publishedOpen = false" />
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -1463,6 +1668,125 @@
   position: static;
 }
 
+.compose-snippets,
+.compose-templates,
+.compose-published {
+  width: 620px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow: auto;
+  background: #1d1d1d;
+}
+
+.compose-snippets__body,
+.compose-templates__body,
+.compose-published__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-snippets__form,
+.compose-template-save {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.compose-snippets__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+}
+
+.compose-snippets__list,
+.compose-template-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.compose-snippet,
+.compose-template {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.compose-snippet__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose-snippet__name {
+  color: #e4eaed;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.compose-snippet__preview {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 0.1rem;
+  color: #90a4ae;
+  font-size: 0.69rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.compose-snippet__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex: none;
+}
+
+.compose-template-group__title {
+  color: #90a4ae;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.compose-published__text {
+  margin: 0;
+  color: #cfd8dc;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.compose-published__link {
+  margin: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+
+.compose-published__link a {
+  color: #81d4fa;
+}
+
+.compose-published__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
 .compose-media-dialog__head {
   display: flex;
   align-items: flex-start;
@@ -1664,6 +1988,17 @@
   gap: 0.55rem;
 }
 
+.compose-draft-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.compose-draft-filters :deep(.q-field__control) {
+  min-height: 34px;
+}
+
 .compose-draft-list {
   display: flex;
   flex-direction: column;
@@ -1817,6 +2152,10 @@
     align-items: stretch;
   }
 
+  .compose-draft-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .compose-help__list > div {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.1rem;
@@ -1854,9 +2193,12 @@ import {
   normalizeTags,
   parseDraftExport,
   readDrafts,
+  readPinnedDraftIds,
   removeDraftById,
   serializeDraftExport,
+  togglePinnedDraftId,
   upsertDraft,
+  writePinnedDraftIds,
   writeDrafts
 } from 'src/services/drafts'
 import {
@@ -1871,6 +2213,24 @@ import {
   uploadImage,
   validateImageFile
 } from 'src/services/imageHost'
+import {
+  createSnippet,
+  MAX_SNIPPET_NAME,
+  readSnippets,
+  removeSnippetById,
+  upsertSnippet,
+  writeSnippets
+} from 'src/services/snippets'
+import {
+  applyTemplateToDraft,
+  MAX_TEMPLATE_NAME,
+  readTemplates,
+  removeTemplateById,
+  STARTER_TEMPLATES,
+  templateFromDraft,
+  upsertTemplate,
+  writeTemplates
+} from 'src/services/templates'
 import {
   AI_TOOL_LABELS,
   canPublish as canPublishDraft,
@@ -1928,6 +2288,29 @@ export default {
     return {
       drafts: [],
       draft: null,
+      draftSearch: '',
+      draftSort: 'updated',
+      draftSortOptions: [
+        { label: 'Recently updated', value: 'updated' },
+        { label: 'Title', value: 'title' }
+      ],
+      pinnedDraftIds: [],
+      snippets: [],
+      snippetsOpen: false,
+      snippetId: null,
+      snippetName: '',
+      snippetBody: '',
+      snippetError: '',
+      snippetNameMax: MAX_SNIPPET_NAME,
+      templates: [],
+      templatesOpen: false,
+      templateName: '',
+      templateSummary: '',
+      templateError: '',
+      templateNameMax: MAX_TEMPLATE_NAME,
+      starterTemplates: STARTER_TEMPLATES,
+      publishedOpen: false,
+      publishedInfo: null,
       mode: 'write',
       saveState: 'idle',
       editingLoading: false,
@@ -2158,6 +2541,25 @@ export default {
       if (!this.loggedInUser) return this.drafts
       return this.drafts.filter(item => !item.owner || item.owner === this.loggedInUser)
     },
+    filteredDrafts () {
+      const query = this.draftSearch.trim().toLowerCase()
+      const source = query
+        ? this.visibleDrafts.filter(item =>
+            (item.title || '').toLowerCase().includes(query) ||
+            (item.body || '').toLowerCase().includes(query)
+          )
+        : [...this.visibleDrafts]
+      const pinned = new Set(this.pinnedDraftIds)
+      source.sort((a, b) => {
+        const pinDiff = Number(pinned.has(b.id)) - Number(pinned.has(a.id))
+        if (pinDiff) return pinDiff
+        if (this.draftSort === 'title') {
+          return draftDisplayTitle(a).localeCompare(draftDisplayTitle(b))
+        }
+        return Number(b.updatedAt) - Number(a.updatedAt)
+      })
+      return source
+    },
     communityOptions () {
       const options = new Map()
       const add = (value, label) => {
@@ -2215,6 +2617,9 @@ export default {
       this.communityLoadedFor = null
       this.loadCommunitySubscriptions()
       this.loadUploadHistory()
+      this.loadSnippets()
+      this.loadTemplates()
+      this.loadPinnedDrafts()
     },
     'draft.body' () {
       this.schedulePreview()
@@ -2250,6 +2655,9 @@ export default {
     })
     this.loadCommunitySubscriptions()
     this.loadUploadHistory()
+    this.loadSnippets()
+    this.loadTemplates()
+    this.loadPinnedDrafts()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.flushAutosave)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
@@ -2280,6 +2688,194 @@ export default {
     },
     loadUploadHistory () {
       this.recentUploads = readUploadHistory(LocalStorage, this.loggedInUser)
+    },
+    loadSnippets () {
+      this.snippets = readSnippets(LocalStorage, this.loggedInUser)
+    },
+    loadTemplates () {
+      this.templates = readTemplates(LocalStorage, this.loggedInUser)
+    },
+    loadPinnedDrafts () {
+      this.pinnedDraftIds = readPinnedDraftIds(LocalStorage, this.loggedInUser)
+    },
+    openSnippets () {
+      this.loadSnippets()
+      this.resetSnippetForm()
+      this.snippetsOpen = true
+    },
+    resetSnippetForm () {
+      this.snippetId = null
+      this.snippetName = ''
+      this.snippetBody = ''
+      this.snippetError = ''
+    },
+    editSnippet (snippet) {
+      if (!snippet) return
+      this.snippetId = snippet.id
+      this.snippetName = snippet.name
+      this.snippetBody = snippet.body
+      this.snippetError = ''
+    },
+    saveSnippet () {
+      const name = this.snippetName.trim()
+      const body = this.snippetBody.trim()
+      if (!name) {
+        this.snippetError = 'Give the snippet a name.'
+        return
+      }
+      if (!body) {
+        this.snippetError = 'Write the snippet text.'
+        return
+      }
+      const existing = this.snippetId ? this.snippets.find(item => item.id === this.snippetId) : null
+      const snippet = existing
+        ? { ...existing, name, body }
+        : createSnippet({ owner: this.loggedInUser || null, name, body })
+      this.snippets = upsertSnippet(this.snippets, snippet)
+      if (!writeSnippets(LocalStorage, this.loggedInUser, this.snippets)) {
+        this.snippetError = 'Could not save the snippet. Browser storage is unavailable.'
+        return
+      }
+      this.resetSnippetForm()
+      this.$q.notify({ type: 'positive', message: existing ? 'Snippet updated' : 'Snippet saved' })
+    },
+    deleteSnippet (snippet) {
+      if (!snippet) return
+      this.$q.dialog({
+        dark: true,
+        title: 'Delete this snippet?',
+        message: '“' + snippet.name + '” will be removed from this browser.',
+        cancel: { label: 'Cancel', flat: true },
+        ok: { label: 'Delete snippet', color: 'negative', unelevated: true },
+        persistent: true
+      }).onOk(() => {
+        this.snippets = removeSnippetById(this.snippets, snippet.id)
+        writeSnippets(LocalStorage, this.loggedInUser, this.snippets)
+        if (this.snippetId === snippet.id) this.resetSnippetForm()
+        this.$q.notify({ message: 'Snippet deleted' })
+      })
+    },
+    insertSnippet (snippet) {
+      if (!snippet) return
+      this.snippetsOpen = false
+      this.insertTextAtSelection(snippet.body)
+    },
+    insertTextAtSelection (text) {
+      if (!this.draft || !text) return
+      const element = this.$refs.body
+      const start = element ? element.selectionStart : this.draft.body.length
+      const end = element ? element.selectionEnd : this.draft.body.length
+      const before = this.draft.body.slice(0, start)
+      const after = this.draft.body.slice(end)
+      const lead = before && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : ''
+      const trail = after && !after.startsWith('\n\n') ? (after.startsWith('\n') ? '\n' : '\n\n') : ''
+      const inserted = lead + text + trail
+      if (this.mode === 'preview') this.mode = 'write'
+      this.replaceBody({
+        text: before + inserted + after,
+        start: start + inserted.length,
+        end: start + inserted.length
+      })
+    },
+    openTemplates () {
+      this.loadTemplates()
+      this.templateName = ''
+      this.templateSummary = ''
+      this.templateError = ''
+      this.templatesOpen = true
+    },
+    saveCurrentAsTemplate () {
+      if (!this.draft) return
+      const name = this.templateName.trim()
+      if (!name) {
+        this.templateError = 'Give the template a name.'
+        return
+      }
+      if (!this.draft.title.trim() && !this.draft.body.trim()) {
+        this.templateError = 'Write a title or body before saving a template.'
+        return
+      }
+      const template = templateFromDraft(this.draft, {
+        name,
+        summary: this.templateSummary,
+        owner: this.loggedInUser || null
+      })
+      this.templates = upsertTemplate(this.templates, template)
+      if (!writeTemplates(LocalStorage, this.loggedInUser, this.templates)) {
+        this.templateError = 'Could not save the template. Browser storage is unavailable.'
+        return
+      }
+      this.templateName = ''
+      this.templateSummary = ''
+      this.templateError = ''
+      this.$q.notify({ type: 'positive', message: 'Template saved' })
+    },
+    applyTemplate (template) {
+      if (!template || !this.draft) return
+      const apply = () => {
+        this.draft = applyTemplateToDraft(template, this.draft)
+        this.previewBody = this.draft.body
+        this.mode = 'write'
+        this.templatesOpen = false
+        this.$q.notify({ type: 'positive', message: 'Template applied', caption: template.name })
+      }
+      if (this.draft.title.trim() || this.draft.body.trim()) {
+        this.$q.dialog({
+          dark: true,
+          title: 'Replace this draft?',
+          message: 'Applying “' + template.name + '” replaces the current title, body and publishing options.',
+          cancel: { label: 'Cancel', flat: true },
+          ok: { label: 'Apply template', color: 'primary', unelevated: true },
+          persistent: true
+        }).onOk(apply)
+        return
+      }
+      apply()
+    },
+    deleteTemplate (template) {
+      if (!template) return
+      this.$q.dialog({
+        dark: true,
+        title: 'Delete this template?',
+        message: '“' + template.name + '” will be removed from this browser.',
+        cancel: { label: 'Cancel', flat: true },
+        ok: { label: 'Delete template', color: 'negative', unelevated: true },
+        persistent: true
+      }).onOk(() => {
+        this.templates = removeTemplateById(this.templates, template.id)
+        writeTemplates(LocalStorage, this.loggedInUser, this.templates)
+        this.$q.notify({ message: 'Template deleted' })
+      })
+    },
+    isPinnedDraft (id) {
+      return this.pinnedDraftIds.includes(id)
+    },
+    toggleDraftPin (draft) {
+      if (!draft) return
+      this.pinnedDraftIds = togglePinnedDraftId(LocalStorage, this.loggedInUser, draft.id)
+      writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
+    },
+    duplicateDraft (draft) {
+      if (!draft) return
+      const copy = createDraft({
+        ...draft,
+        id: null,
+        owner: this.loggedInUser || draft.owner || null,
+        title: (draft.title || draftDisplayTitle(draft)) + ' (copy)',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        editing: null
+      })
+      this.drafts = upsertDraft(this.drafts, copy)
+      writeDrafts(LocalStorage, this.drafts)
+      this.selectDraft(copy.id)
+      this.$q.notify({ type: 'positive', message: 'Draft duplicated' })
+    },
+    copyPublishedLink () {
+      if (!this.publishedInfo) return
+      copyToClipboard(this.publishedInfo.url)
+        .then(() => this.$q.notify({ type: 'positive', message: 'Post link copied' }))
+        .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the link' }))
     },
     schedulePreview () {
       if (!this.draft) return
@@ -2778,6 +3374,8 @@ export default {
       if (!target) return
       this.drafts = removeDraftById(this.drafts, target.id)
       writeDrafts(LocalStorage, this.drafts)
+      this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== target.id)
+      writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
       if (this.draft && this.draft.id === target.id) {
         this.setActiveDraft(this.drafts[0] || this.blankDraft())
         this.$router.replace({ name: 'compose', params: this.drafts[0] ? { draftId: this.drafts[0].id } : {} }).catch(() => {})
@@ -3021,6 +3619,13 @@ export default {
           previousMetadata: editing ? editing.previousMetadata : null
         })
         this.$hiveStore.addToQueue(item)
+        this.publishedInfo = {
+          author: this.loggedInUser,
+          permlink,
+          editing: Boolean(editing),
+          url: 'https://hive.ausbit.dev/@' + this.loggedInUser + '/' + permlink
+        }
+        this.publishedOpen = true
 
         if (editing) {
           // Keep the local draft around so a failed edit can be retried, but
@@ -3029,6 +3634,8 @@ export default {
         } else {
           this.drafts = removeDraftById(this.drafts, this.draft.id)
           writeDrafts(LocalStorage, this.drafts)
+          this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== this.draft.id)
+          writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
           this.lastSavedSnapshot = ''
           this.setActiveDraft(this.blankDraft())
           this.$router.replace({ name: 'compose', params: {} }).catch(() => {})

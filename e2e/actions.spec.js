@@ -62,6 +62,7 @@ test.describe('action flows', () => {
 
     await page.getByRole('button', { name: 'Queue post for signing' }).click()
     await page.getByRole('button', { name: 'Queue for signing' }).click()
+    await expect(page.getByRole('heading', { name: 'Post queued' })).toBeVisible()
     await expect.poll(async () => {
       const queue = await readQueue(page)
       return queue?.items?.some(item =>
@@ -199,6 +200,94 @@ test.describe('action flows', () => {
     await expect(page.getByLabel('Post body in Markdown')).toHaveCount(0)
   })
 
+  test('compose saves and inserts a snippet', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByLabel('Post body in Markdown').fill('Intro')
+    await page.getByRole('button', { name: 'Insert snippet' }).click()
+    await expect(page.getByRole('heading', { name: 'Snippets' })).toBeVisible()
+    await page.getByLabel('Snippet name').fill('Signature')
+    await page.getByLabel('Snippet text').fill('Thanks for reading.')
+    await page.getByRole('button', { name: 'Save snippet' }).click()
+    await expect(page.getByText('Signature', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Insert', exact: true }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue(/Thanks for reading\./)
+  })
+
+  test('compose saves a draft as a template and applies it', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByLabel('Post title').fill('Template source')
+    await page.getByLabel('Post body in Markdown').fill('Template body')
+    await page.getByRole('button', { name: 'Post templates' }).dispatchEvent('click')
+    await expect(page.getByRole('heading', { name: 'Post templates' })).toBeVisible()
+    await page.getByLabel('Template name').fill('My saved template')
+    await page.getByRole('button', { name: 'Save current draft' }).click()
+    await expect(page.getByText('My saved template')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Close templates' }).click()
+    await page.getByLabel('Post body in Markdown').fill('Changed body')
+    await page.getByRole('button', { name: 'Post templates' }).dispatchEvent('click')
+    await page.locator('.compose-template').filter({ hasText: 'My saved template' })
+      .getByRole('button', { name: 'Apply' }).dispatchEvent('click')
+    await page.getByRole('button', { name: 'Apply template' }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue('Template body')
+  })
+
+  test('compose draft search, pinning and duplication work', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await seedDrafts(page, [
+      {
+        id: 'e2e-search-first',
+        owner: 'ausbitbank',
+        title: 'First draft',
+        body: 'First body',
+        tags: ['hive'],
+        community: '',
+        createdAt: Date.now() - 1000,
+        updatedAt: Date.now() - 1000
+      },
+      {
+        id: 'e2e-search-second',
+        owner: 'ausbitbank',
+        title: 'Second draft',
+        body: 'Second body',
+        tags: ['hive'],
+        community: '',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
+    ])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.locator('.compose-draft__title')).toHaveCount(2)
+
+    await page.getByLabel('Search drafts').fill('Second')
+    await expect(page.locator('.compose-draft__title')).toHaveCount(1)
+    await expect(page.locator('.compose-draft__title')).toHaveText('Second draft')
+    await page.getByLabel('Search drafts').fill('')
+    await expect(page.locator('.compose-draft__title')).toHaveCount(2)
+
+    await page.locator('.compose-draft').first().getByRole('button', { name: /Pin draft/ }).dispatchEvent('click')
+    const pinned = await page.evaluate(() => {
+      const raw = localStorage.getItem('composePinned:ausbitbank')
+      if (!raw) return null
+      return JSON.parse(raw.replace(/^__q_objt\|/, ''))
+    })
+    expect(pinned?.ids?.length).toBe(1)
+
+    await page.locator('.compose-draft').first().getByRole('button', { name: /Duplicate draft/ }).dispatchEvent('click')
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.title.endsWith(' (copy)'))
+    }).toBe(true)
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)
@@ -246,6 +335,7 @@ test.describe('action flows', () => {
 
     await page.getByRole('button', { name: 'Queue post for signing' }).click()
     await page.getByRole('button', { name: 'Queue for signing' }).click()
+    await expect(page.getByRole('heading', { name: 'Post queued' })).toBeVisible()
     await expect.poll(async () => {
       const queue = await readQueue(page)
       return queue?.items?.some(item =>

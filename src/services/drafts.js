@@ -290,6 +290,49 @@ export function sortDrafts (drafts) {
     .sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt))
 }
 
+export const PINNED_STORAGE_PREFIX = 'composePinned:'
+
+function pinnedKey (owner) {
+  const account = String(owner || '').trim().toLowerCase()
+  return PINNED_STORAGE_PREFIX + (ACCOUNT_RE.test(account) ? account : 'guest')
+}
+
+function parsePinned (raw) {
+  if (!raw) return []
+  let list = []
+  if (typeof raw === 'object') {
+    list = Array.isArray(raw.ids) ? raw.ids : []
+  } else {
+    try {
+      const parsed = JSON.parse(String(raw).replace(/^__q_objt\|/, ''))
+      list = Array.isArray(parsed?.ids) ? parsed.ids : []
+    } catch {
+      // Keep the empty default.
+    }
+  }
+  return [...new Set(list.filter(id => typeof id === 'string' && id.trim()).map(id => id.trim()))]
+}
+
+export function readPinnedDraftIds (storage, owner = null) {
+  return parsePinned(storageGet(storage, pinnedKey(owner)))
+}
+
+export function writePinnedDraftIds (storage, owner, ids) {
+  const list = [...new Set((Array.isArray(ids) ? ids : []).filter(id => typeof id === 'string' && id.trim()))]
+  if (!list.length) {
+    storageRemove(storage, pinnedKey(owner))
+    return true
+  }
+  return storageSet(storage, pinnedKey(owner), { version: 1, ids: list })
+}
+
+export function togglePinnedDraftId (storage, owner, id) {
+  const list = readPinnedDraftIds(storage, owner)
+  const next = list.includes(id) ? list.filter(item => item !== id) : [id, ...list]
+  writePinnedDraftIds(storage, owner, next)
+  return next
+}
+
 /** Insert or replace a draft, stamping updatedAt and enforcing the list limit. */
 export function upsertDraft (drafts, draft, now = Date.now()) {
   const normalized = normalizeDraft({ ...draft, updatedAt: now }, now)
