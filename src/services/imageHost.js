@@ -2,7 +2,7 @@
 //
 // Uploading to images.hive.blog requires a signature over
 // sha256("ImageSigningChallenge" + file). The signature is produced by
-// Keychain or SmartLock; this module never sees a private key.
+// Keychain, SmartLock or HiveAuth; this module never sees a private key.
 
 import { safeExternalUrl } from '../utils/safeUrl'
 

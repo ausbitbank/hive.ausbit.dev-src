@@ -108,6 +108,33 @@ and asset caching instead.
   policy above (especially CSP) part of the key-storage threat model, not just
   general hardening.
 
+## HiveAuth key model
+
+- HiveAuth is an out-of-band signer. The site opens a WebSocket to
+  `wss://hive-auth.arcange.eu/`, shows a `has://auth_req/...` QR/deep link, and
+  the user approves in a mobile wallet (PKSA). Private keys stay in the wallet
+  and are never sent to this origin or to the HAS relay.
+- The app holds a per-session relay token and an AES key shared with the PKSA.
+  They are stored in `sessionStorage` under `hiveauth:session:<account>` (or an
+  in-memory fallback when storage is unavailable), never in `localStorage`.
+  They can request signatures but cannot sign without the phone; logout and
+  session expiry clear them.
+- Every broadcast is approved in the wallet. HiveAuth is deliberately excluded
+  from auto-send and "send all"; the queue shows why and keeps manual send
+  available. PKSA-side whitelisting may reduce prompts, but the site does not
+  rely on it.
+- The relay sees the account name, app metadata, request timing, the encrypted
+  payloads and (in protocol 0.8) the session token on signing requests. It does
+  not see keys, plaintext operations or the shared AES key (the key is delivered
+  to the PKSA through the QR/deep link). It cannot sign without the PKSA; the
+  site does not enable or rely on PKSA-side whitelisting.
+- The app name in `APP_META` is self-asserted by the protocol, not bound to the
+  web origin. Users must check the operation details in the wallet before
+  approving. This is a protocol limitation, not a site-specific one.
+- `connect-src` already allows `wss:`; if the policy is narrowed later, add
+  `wss://hive-auth.arcange.eu` explicitly. QR images use a `data:` URI, which
+  `img-src` already allows.
+
 ## General rules for contributors
 
 - Never pass chain metadata (profiles, community descriptions, token metadata)

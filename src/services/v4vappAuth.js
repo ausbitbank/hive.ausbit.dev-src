@@ -104,10 +104,35 @@ async function signWithSmartlock ({ account, challenge }) {
   return { signature: result.signature, publicKey: result.publicKey }
 }
 
+async function signWithHiveauth ({ account, challenge }) {
+  let hiveauth
+  try {
+    hiveauth = (await import('./hiveauth')).default
+  } catch {
+    throw new V4vappAuthError('HiveAuth is not available in this browser.', { code: 'unavailable' })
+  }
+  try {
+    const result = await hiveauth.signChallenge(account, { keyType: 'posting', challenge })
+    return { signature: result.signature, publicKey: result.publicKey }
+  } catch (error) {
+    if (error?.code === 'cancelled') {
+      throw new V4vappAuthError('Signature cancelled in HiveAuth.', { code: 'cancelled' })
+    }
+    if (error?.code === 'login' || error?.code === 'expired') {
+      throw new V4vappAuthError('HiveAuth session expired. Sign in again.', { code: 'login' })
+    }
+    if (error?.code === 'unavailable') {
+      throw new V4vappAuthError('HiveAuth is not available in this browser.', { code: 'unavailable' })
+    }
+    throw new V4vappAuthError(error?.message || 'HiveAuth did not sign the challenge.')
+  }
+}
+
 export async function signAuthChallenge ({ account, challenge, loginType }) {
   if (loginType === 'keychain') return signWithKeychain({ account, challenge })
   if (loginType === 'smartlock') return signWithSmartlock({ account, challenge })
-  throw new V4vappAuthError('Log in with Keychain or SmartLock to read a keepsats balance.', { code: 'login' })
+  if (loginType === 'hiveauth') return signWithHiveauth({ account, challenge })
+  throw new V4vappAuthError('Log in with Keychain, SmartLock or HiveAuth to read a keepsats balance.', { code: 'login' })
 }
 
 /**

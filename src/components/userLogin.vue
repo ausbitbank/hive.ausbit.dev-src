@@ -21,6 +21,9 @@
               <q-icon v-if="loginType === 'keychain'" name="info_outline" size="13px" class="account-menu__meta-info" aria-label="How Hive Keychain signing works">
                 <q-tooltip class="account-menu__tooltip">Keys stay in the extension. Approve each posting or active action in Keychain.</q-tooltip>
               </q-icon>
+              <q-icon v-else-if="loginType === 'hiveauth'" name="info_outline" size="13px" class="account-menu__meta-info" aria-label="How HiveAuth signing works">
+                <q-tooltip class="account-menu__tooltip">Keys stay in your phone wallet. Approve each posting or active action there.</q-tooltip>
+              </q-icon>
             </span>
           </div>
         </div>
@@ -79,6 +82,13 @@
             <q-item-section avatar><q-icon name="key" color="primary" /></q-item-section>
             <q-item-section>Hive Keychain</q-item-section>
           </q-item>
+          <q-item v-else-if="loginType === 'hiveauth'" class="account-menu__provider account-menu__provider--compact">
+            <q-item-section avatar><q-icon name="smartphone" color="primary" /></q-item-section>
+            <q-item-section>
+              <q-item-label>HiveAuth</q-item-label>
+              <q-item-label caption>Approved in your mobile wallet</q-item-label>
+            </q-item-section>
+          </q-item>
 
           <q-item-label header class="account-menu__heading">Your Hive</q-item-label>
           <q-item v-for="link in menuLinks" :key="link.title" clickable :to="link.to" class="account-menu__item" @click="closeMenu">
@@ -105,7 +115,7 @@
         <div class="account-menu__head account-menu__head--guest">
           <div class="account-menu__ident">
             <span class="account-menu__name">Log in to Hive</span>
-            <span class="account-menu__meta">Use Keychain or SmartLock</span>
+            <span class="account-menu__meta">Use Keychain, SmartLock or HiveAuth</span>
           </div>
         </div>
         <q-item class="login-key-guide">
@@ -122,6 +132,10 @@
             <div class="login-key-guide__row">
               <q-icon name="key" color="primary" size="16px" aria-hidden="true" />
               <span><strong>Keychain</strong> keeps keys in the browser extension and asks for approval on each action.</span>
+            </div>
+            <div class="login-key-guide__row">
+              <q-icon name="smartphone" color="primary" size="16px" aria-hidden="true" />
+              <span><strong>HiveAuth</strong> keeps keys in your phone wallet and asks you to approve each action there.</span>
             </div>
           </q-item-section>
         </q-item>
@@ -147,6 +161,11 @@
                 <q-btn flat glossy dense no-caps label="Save and log in" icon="save" color="primary" @click="smartLockImportAccount()"/>
               </q-card>
             </q-popup-proxy>
+          </q-btn>
+        </q-item>
+        <q-item dense v-if="username !== '' && username !== null" class="login-method">
+          <q-btn flat no-caps class="login-method__btn" label="HiveAuth" icon="smartphone" @click="checkLoginHiveAuth(username)">
+            <q-tooltip>Approve in Hive Keychain Mobile. Keys stay on your phone.</q-tooltip>
           </q-btn>
         </q-item>
         <q-item dense v-if="username !== '' && username !== null" class="login-timeout-item">
@@ -186,6 +205,41 @@
       <settings />
     </q-dialog>
   </q-btn>
+  <q-dialog v-model="hiveauthDialog" persistent @before-hide="cancelHiveAuth">
+    <q-card class="login-hiveauth-card">
+      <q-card-section>
+        <div class="login-hiveauth-title">HiveAuth</div>
+        <div class="login-hiveauth-subtitle">
+          Approve with Hive Keychain Mobile. Your keys never leave your phone.
+        </div>
+      </q-card-section>
+      <q-card-section class="login-hiveauth-body">
+        <div v-if="hiveauthError" class="login-hiveauth-error" role="alert">{{ hiveauthError }}</div>
+        <template v-else-if="!hiveauthQr && !hiveauthQrError">
+          <div class="login-hiveauth-wait">
+            <q-spinner color="primary" size="32px" />
+            <span>Connecting to the HiveAuth relay…</span>
+          </div>
+        </template>
+        <template v-else>
+          <img v-if="hiveauthQr" :src="hiveauthQr" :alt="'HiveAuth QR code for @' + hiveauthAccount" class="login-hiveauth-qr" />
+          <p class="login-hiveauth-copy">
+            {{ hiveauthQr ? 'Scan this QR code with Hive Keychain Mobile, or open the link on this phone.' : 'Open the link on this phone with Hive Keychain Mobile.' }}
+          </p>
+          <p class="login-hiveauth-expiry" aria-live="polite">Request expires in {{ hiveauthSecondsLeft }}s.</p>
+          <p v-if="hiveauthQrError" class="login-hiveauth-hint">{{ hiveauthQrError }}</p>
+          <div class="login-hiveauth-actions">
+            <a class="login-hiveauth-link" :href="hiveauthUri">Open Hive Keychain</a>
+            <q-btn flat dense no-caps icon="content_copy" label="Copy link" @click="copyHiveAuthLink" />
+          </div>
+        </template>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn v-if="hiveauthError" flat no-caps color="primary" label="Try again" @click="checkLoginHiveAuth(hiveauthAccount)" />
+        <q-btn flat no-caps label="Cancel" @click="cancelHiveAuth" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
   </span>
 </template>
 <style scoped>
@@ -506,6 +560,103 @@ a.account-menu__name:hover {
   font-size: 0.76rem;
 }
 
+.login-hiveauth-card {
+  width: 380px;
+  max-width: 92vw;
+}
+
+.login-hiveauth-title {
+  color: #e4eaed;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.login-hiveauth-subtitle {
+  margin-top: 0.2rem;
+  color: #90a4ae;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.login-hiveauth-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.login-hiveauth-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.2rem 0;
+  color: #b0bec5;
+  font-size: 0.8rem;
+}
+
+.login-hiveauth-qr {
+  width: 240px;
+  height: 240px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.login-hiveauth-copy,
+.login-hiveauth-expiry,
+.login-hiveauth-hint {
+  margin: 0;
+  color: #b0bec5;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.login-hiveauth-expiry {
+  color: #90a4ae;
+  font-variant-numeric: tabular-nums;
+}
+
+.login-hiveauth-hint {
+  color: #ffb74d;
+}
+
+.login-hiveauth-error {
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(244, 67, 54, 0.12);
+  color: #ef9a9a;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.login-hiveauth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.login-hiveauth-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-pill);
+  color: #e4eaed;
+  font-size: 0.76rem;
+  text-decoration: none;
+}
+
+.login-hiveauth-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 @media (max-width: 599px) {
   .account-trigger {
     padding: 0;
@@ -517,10 +668,12 @@ a.account-menu__name:hover {
 }
 </style>
 <script>
+import { copyToClipboard } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
 import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
+import { clearSession as clearHiveAuthSession, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
 import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
 
 // SmartLock pulls in sjcl and the signing stack. Keep it out of the initial
@@ -528,6 +681,13 @@ import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSecond
 let smartlockPromise = null
 function loadSmartlock () {
   return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+}
+
+// HiveAuth pulls in the Web Crypto/MD5 signing adapter. Load it only when the
+// user actually chooses HiveAuth.
+let hiveauthPromise = null
+function loadHiveAuth () {
+  return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
 }
 
 export default {
@@ -548,7 +708,18 @@ export default {
       postkey: '',
       activekey: '',
       memokey: '',
-      password: ''
+      password: '',
+      hiveauthDialog: false,
+      hiveauthAccount: '',
+      hiveauthBusy: false,
+      hiveauthError: '',
+      hiveauthQr: '',
+      hiveauthQrError: '',
+      hiveauthUri: '',
+      hiveauthExpiresAt: 0,
+      hiveauthClock: Date.now(),
+      hiveauthTimer: null,
+      hiveauthController: null
     }
   },
   computed: {
@@ -607,7 +778,12 @@ export default {
     loginTypeLabel () {
       if (this.loginType === 'smartlock') return 'Signed in with SmartLock'
       if (this.loginType === 'keychain') return 'Signed in with Hive Keychain'
+      if (this.loginType === 'hiveauth') return 'Signed in with HiveAuth'
       return 'Hive account'
+    },
+    hiveauthSecondsLeft () {
+      if (!this.hiveauthExpiresAt) return 0
+      return Math.max(0, Math.ceil((this.hiveauthExpiresAt - this.hiveauthClock) / 1000))
     },
     menuLinks () {
       const user = this.loggedInUser
@@ -783,6 +959,124 @@ export default {
         }
       }
     },
+    async checkLoginHiveAuth (user) {
+      if (!user || this.hiveauthBusy) return
+      this.hiveauthAccount = user
+      this.hiveauthError = ''
+      this.hiveauthQr = ''
+      this.hiveauthQrError = ''
+      this.hiveauthUri = ''
+      this.hiveauthExpiresAt = 0
+      this.hiveauthDialog = true
+      this.hiveauthBusy = true
+      this.startHiveAuthClock()
+      const controller = new AbortController()
+      this.hiveauthController = controller
+      try {
+        const hiveauth = await loadHiveAuth()
+        if (!hiveauth.isAvailable()) {
+          throw new Error('HiveAuth needs WebSocket and Web Crypto support in this browser.')
+        }
+        // HAS already validates key ownership during registration. The signed
+        // challenge is kept in the response for future local verification
+        // without adding another approval step.
+        const challenge = 'hive.ausbit.dev login for ' + user + ' at ' + new Date().toISOString()
+        await hiveauth.authenticate(user, {
+          signal: controller.signal,
+          challenge,
+          onPayload: payload => this.prepareHiveAuthPayload(payload)
+        })
+        this.loggedInUser = user
+        this.loginType = 'hiveauth'
+        this.hiveauthDialog = false
+        this.$q.notify({
+          type: 'positive',
+          message: 'Signed in with HiveAuth. Approve each action in your mobile wallet.',
+          icon: 'smartphone',
+          position: 'top',
+          timeout: 6000
+        })
+      } catch (error) {
+        if (error?.code === 'cancelled') return
+        this.hiveauthError = error?.message || 'HiveAuth login failed.'
+        this.$q.notify({
+          type: 'negative',
+          message: this.hiveauthError,
+          position: 'top'
+        })
+      } finally {
+        this.hiveauthBusy = false
+        if (this.hiveauthController === controller) this.hiveauthController = null
+        this.stopHiveAuthClock()
+      }
+    },
+    prepareHiveAuthPayload (payload) {
+      this.hiveauthExpiresAt = Number(payload.expire) || Date.now() + 60000
+      this.hiveauthUri = payload.uri || ''
+      this.hiveauthQrError = ''
+      import('uqr').then(({ renderSVG }) => {
+        if (!this.hiveauthDialog || this.hiveauthUri !== payload.uri) return
+        this.hiveauthQr = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+          renderSVG(payload.uri, { ecc: 'M', pixelSize: 6, border: 2 })
+        )
+      }).catch(() => {
+        if (this.hiveauthDialog) {
+          this.hiveauthQrError = 'Could not render the QR code. Use the link below.'
+        }
+      })
+    },
+    startHiveAuthClock () {
+      this.stopHiveAuthClock()
+      this.hiveauthClock = Date.now()
+      this.hiveauthTimer = setInterval(() => {
+        this.hiveauthClock = Date.now()
+      }, 1000)
+    },
+    stopHiveAuthClock () {
+      if (this.hiveauthTimer) clearInterval(this.hiveauthTimer)
+      this.hiveauthTimer = null
+    },
+    async copyHiveAuthLink () {
+      try {
+        await copyToClipboard(this.hiveauthUri)
+        this.$q.notify({
+          message: 'Copied HiveAuth link',
+          color: 'primary',
+          icon: 'content_copy',
+          position: 'top',
+          timeout: 2000
+        })
+      } catch {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Could not copy the HiveAuth link.',
+          position: 'top'
+        })
+      }
+    },
+    cancelHiveAuth () {
+      this.hiveauthController?.abort()
+      this.hiveauthController = null
+      this.hiveauthDialog = false
+      this.hiveauthQr = ''
+      this.hiveauthQrError = ''
+      this.hiveauthUri = ''
+      this.hiveauthError = ''
+      this.hiveauthExpiresAt = 0
+      this.stopHiveAuthClock()
+    },
+    restoreHiveAuthSession () {
+      if (this.loginType !== 'hiveauth' || !this.loggedInUser) return
+      if (loadHiveAuthSession(this.loggedInUser)) return
+      this.loggedInUser = ''
+      this.loginType = ''
+      this.$q.notify({
+        type: 'warning',
+        message: 'HiveAuth session expired. Sign in again.',
+        position: 'top',
+        timeout: 6000
+      })
+    },
     openKeychainInstallPage () {
       const installUrl = 'https://hive-keychain.com/'
       const openInstallPage = () => window.open(installUrl, '_blank', 'noopener,noreferrer')
@@ -806,7 +1100,10 @@ export default {
       this.$hiveStore.getAccount(this.loggedInUser, { force: true })
     },
     logout () {
-      this.smartLockLockAccount(this.loggedInUser)
+      const account = this.loggedInUser
+      this.cancelHiveAuth()
+      if (account) clearHiveAuthSession(account)
+      this.smartLockLockAccount(account)
       this.smartlockUnlocked = false
       this.loggedInUser = ''
       this.loginType = ''
@@ -817,10 +1114,17 @@ export default {
     }
   },
   mounted () {
-    if (this.$q.sessionStorage.getItem('loggedInUser')) {
-      this.login(this.$q.sessionStorage.getItem('loggedInUser'))
+    const savedUser = this.$q.sessionStorage.getItem('loggedInUser')
+    if (savedUser) {
+      this.login(savedUser)
       this.refreshSmartlockStatus()
+      this.restoreHiveAuthSession()
     }
+  },
+  beforeUnmount () {
+    this.stopHiveAuthClock()
+    this.hiveauthController?.abort()
+    this.hiveauthController = null
   }
 }
 </script>

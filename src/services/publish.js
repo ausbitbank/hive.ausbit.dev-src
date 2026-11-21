@@ -353,7 +353,7 @@ export function publishChecklist (draft, { username = null, imageHealth = null }
   const user = String(username || '').trim().toLowerCase()
 
   if (!ACCOUNT_RE.test(user)) {
-    items.push(checklistItem('login', 'Sign in with a posting key', 'error', 'Log in with Keychain or SmartLock from the header, then publish.'))
+    items.push(checklistItem('login', 'Sign in with a posting key', 'error', 'Log in with Keychain, SmartLock or HiveAuth from the header, then publish.'))
   } else {
     items.push(checklistItem('login', 'Sign in with a posting key', 'ok', 'Will be queued for @' + user + ' and signed with the posting key.'))
   }

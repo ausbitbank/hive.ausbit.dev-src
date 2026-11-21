@@ -82,7 +82,7 @@
           </div>
           <div v-if="!loggedInUser" class="sfp-reply__locked">
             <q-icon name="lock" size="16px" aria-hidden="true" />
-            Log in with Keychain or SmartLock to reply.
+            Log in with Keychain, SmartLock or HiveAuth to reply.
           </div>
           <form v-else class="sfp-reply__form" @submit.prevent="submitReply()">
             <textarea

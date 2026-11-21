@@ -14,11 +14,11 @@
                 flat
                 dense
                 round
-                :icon="timerEnabled ? 'pause_circle' : 'play_circle'"
-                :color="timerEnabled ? 'green' : 'orange'"
-                :aria-label="timerEnabled ? 'Pause auto-send' : 'Resume auto-send'"
-                :title="timerEnabled ? 'Pause auto-send' : 'Resume auto-send'"
-                :disable="offline"
+                :icon="autoSigningAvailable && timerEnabled ? 'pause_circle' : 'play_circle'"
+                :color="autoSigningAvailable && timerEnabled ? 'green' : 'orange'"
+                :aria-label="autoSendLabel"
+                :title="autoSendLabel"
+                :disable="offline || !autoSigningAvailable"
                 @click="toggleTimer"
               />
               <q-btn
@@ -38,10 +38,14 @@
             <span class="queue-chip queue-chip--pending">Queued {{ counts.pending }}</span>
             <span v-if="counts.failed" class="queue-chip queue-chip--failed">Failed {{ counts.failed }}</span>
             <span v-if="counts.sent" class="queue-chip queue-chip--sent">Sent {{ counts.sent }}</span>
-            <span class="queue-auto" :class="{ 'queue-auto--paused': !timerEnabled }">
-              <q-icon :name="timerEnabled ? 'bolt' : 'pause'" size="13px" aria-hidden="true" />
-              Auto-send {{ timerEnabled ? 'on' : 'paused' }}
+            <span class="queue-auto" :class="{ 'queue-auto--paused': !timerEnabled || !autoSigningAvailable }">
+              <q-icon :name="autoSigningAvailable && timerEnabled ? 'bolt' : 'pause'" size="13px" aria-hidden="true" />
+              Auto-send {{ !autoSigningAvailable ? 'off' : (timerEnabled ? 'on' : 'paused') }}
             </span>
+          </div>
+
+          <div v-if="loginType === 'hiveauth'" class="queue-auto-note">
+            HiveAuth asks for phone approval for each action. Use Keychain or SmartLock for auto-send.
           </div>
 
           <div v-if="offline" class="queue-offline">
@@ -201,6 +205,11 @@ import {
 import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
 import DataNotice from 'components/ui/DataNotice.vue'
 
+let hiveauthPromise = null
+function loadHiveAuth () {
+  return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
+}
+
 export default {
   name: 'queue',
   components: { jsonViewer, DataNotice },
@@ -234,7 +243,15 @@ export default {
     badgeCount () {
       return queueBadgeCount(this.normalizedMeta)
     },
+    autoSigningAvailable () {
+      return this.loginType !== 'hiveauth'
+    },
+    autoSendLabel () {
+      if (!this.autoSigningAvailable) return 'Auto-send unavailable with HiveAuth'
+      return this.timerEnabled ? 'Pause auto-send' : 'Resume auto-send'
+    },
     canSendAll () {
+      if (!this.autoSigningAvailable) return false
       return this.normalizedMeta.some((entry, index) => {
         return !entry.manualOnly && canBroadcast(entry.status) && this.queue[index]
       })
@@ -250,9 +267,17 @@ export default {
   watch: {
     'queue.length' () {
       this.scheduleNext()
+    },
+    loginType (value) {
+      if (value === 'hiveauth') {
+        this.timerEnabled = false
+        this.bulkSending = false
+        this.clearBroadcastTimer()
+      }
     }
   },
   mounted () {
+    if (this.loginType === 'hiveauth') this.timerEnabled = false
     if (this.$hiveStore.queueRestored) {
       const count = this.$hiveStore.restoredQueueCount || this.queue.length
       this.$q.notify({
@@ -306,6 +331,7 @@ export default {
     },
     scheduleNext () {
       this.clearBroadcastTimer()
+      if (!this.autoSigningAvailable) return
       if (!this.timerEnabled && !this.bulkSending) return
       if (nextActionableIndex(this.normalizedMeta, { auto: true }) < 0) {
         if (this.manualPendingCount > 0) {
@@ -328,6 +354,16 @@ export default {
       this.broadcastTimer = setTimeout(() => this.broadcastNext(), this.timerStart)
     },
     toggleTimer () {
+      if (!this.autoSigningAvailable) {
+        this.$q.notify({
+          message: 'HiveAuth needs phone approval for each action. Use Keychain or SmartLock for auto-send.',
+          color: 'orange',
+          icon: 'pause',
+          position: 'top',
+          timeout: 4000
+        })
+        return
+      }
       this.timerEnabled = !this.timerEnabled
       if (this.timerEnabled) {
         this.scheduleNext()
@@ -337,6 +373,7 @@ export default {
       }
     },
     broadcastNext () {
+      if (!this.autoSigningAvailable) return
       const index = nextActionableIndex(this.normalizedMeta, { auto: true })
       if (index >= 0) this.broadcastAt(index, { auto: true })
     },
@@ -410,7 +447,10 @@ export default {
       if (this.loginType === 'smartlock') {
         return this.sendWithSmartlock(user, keyType, operation, { auto })
       }
-      return { success: false, error: 'Log in with Keychain or SmartLock before broadcasting.' }
+      if (this.loginType === 'hiveauth') {
+        return this.sendWithHiveAuth(user, keyType, operation, { auto })
+      }
+      return { success: false, error: 'Log in with Keychain, SmartLock or HiveAuth before broadcasting.' }
     },
     async sendWithKeychain (user, keyType, operation) {
       let result
@@ -466,6 +506,25 @@ export default {
       if (result.notInstalled) return { success: false, error: 'Hive Keychain extension is not installed.' }
       if (result.notActive) return { success: false, error: 'Allow Hive Keychain to access this site.' }
       return { success: false, error: result.message || result.msg || result.error || 'Keychain did not approve the action.' }
+    },
+    async sendWithHiveAuth (user, keyType, operation, { auto } = {}) {
+      if (auto) {
+        return {
+          success: false,
+          error: 'HiveAuth needs phone approval for each action. Pause auto-send, or use Keychain/SmartLock.'
+        }
+      }
+      try {
+        const hiveauth = await loadHiveAuth()
+        const operations = hiveauth.normalizeBroadcastOperation(operation)
+        const result = await hiveauth.broadcast(user, keyType, operations)
+        return { success: true, txId: result?.txId || '' }
+      } catch (error) {
+        return {
+          success: false,
+          error: error?.message || 'HiveAuth did not broadcast the action.'
+        }
+      }
     },
     async sendWithSmartlock (user, keyType, operation, { auto }) {
       if (keyType === 'posting') {
@@ -616,6 +675,13 @@ export default {
 
 .queue-auto--paused {
   color: #ffb74d;
+}
+
+.queue-auto-note {
+  padding: 0.35rem 0.9rem 0;
+  color: #ffb74d;
+  font-size: 0.7rem;
+  line-height: 1.4;
 }
 
 .queue-offline {

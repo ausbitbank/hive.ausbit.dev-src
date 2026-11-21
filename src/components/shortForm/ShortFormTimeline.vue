@@ -51,7 +51,7 @@
         <template v-if="!loggedInUser">
           <div class="sf-composer sf-composer--locked">
             <q-icon name="lock" size="18px" aria-hidden="true" />
-            <span>Log in with Keychain or SmartLock from the header to post a {{ format.label }}.</span>
+            <span>Log in with Keychain, SmartLock or HiveAuth from the header to post a {{ format.label }}.</span>
           </div>
         </template>
         <template v-else>

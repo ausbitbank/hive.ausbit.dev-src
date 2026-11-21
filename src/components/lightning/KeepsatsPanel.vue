@@ -91,7 +91,7 @@
         </div>
         <p class="keepsats__hint">
           <template v-if="!canConnect">
-            Log in with Keychain or SmartLock to read a keepsats balance.
+            Log in with Keychain, SmartLock or HiveAuth to read a keepsats balance.
           </template>
           <template v-else>
             Signing a read-only challenge is not a Hive transaction and does not
@@ -150,7 +150,9 @@ export default {
       return Boolean(this.auth && this.auth.expiresAt <= this.clock)
     },
     canConnect () {
-      return this.loginType === 'keychain' || this.loginType === 'smartlock'
+      return this.loginType === 'keychain' ||
+        this.loginType === 'smartlock' ||
+        this.loginType === 'hiveauth'
     },
     expiresLabel () {
       if (!this.auth?.expiresAt) return '—'

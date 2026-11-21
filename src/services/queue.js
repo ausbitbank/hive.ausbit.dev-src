@@ -30,7 +30,7 @@ export const KEY_REQUIREMENTS = {
     color: 'orange',
     icon: 'lock',
     summary: 'Transfers, market orders, savings, power and authority changes.',
-    detail: 'SmartLock asks for your password and does not keep the active key in memory.'
+    detail: 'Keychain, SmartLock or HiveAuth asks for approval and does not keep the active key in this page.'
   }
 }
 

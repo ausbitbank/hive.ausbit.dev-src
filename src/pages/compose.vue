@@ -804,7 +804,7 @@
         <q-card-section class="compose-media-dialog__body">
           <div v-if="!canUpload" class="compose-warning" role="alert">
             <q-icon name="lock" size="16px" aria-hidden="true" />
-            <span>Log in with Keychain or SmartLock to upload images.</span>
+            <span>Log in with Keychain, SmartLock or HiveAuth to upload images.</span>
           </div>
 
           <q-file
@@ -3006,11 +3006,16 @@ import { defineAsyncComponent } from 'vue'
 import { keychain } from '@hiveio/keychain'
 import moment from 'src/utils/time'
 
-// Image uploads are the only compose feature that needs SmartLock. Load the
+// Image uploads are the only compose feature that needs a signer. Load the
 // signing stack when the user actually signs, not when the page opens.
 let smartlockPromise = null
 function loadSmartlock () {
   return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+}
+
+let hiveauthPromise = null
+function loadHiveAuth () {
+  return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
 }
 import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
@@ -4458,7 +4463,16 @@ export default {
     },
     async signImagePayload (payload) {
       const user = this.loggedInUser
-      if (!user) throw new Error('Log in with Keychain or SmartLock to upload images.')
+      if (!user) throw new Error('Log in with Keychain, SmartLock or HiveAuth to upload images.')
+      if (this.loginType === 'hiveauth') {
+        try {
+          const hiveauth = await loadHiveAuth()
+          const result = await hiveauth.signChallenge(user, { keyType: 'posting', challenge: payload })
+          return result.signature
+        } catch (error) {
+          throw new Error(error?.message || 'HiveAuth could not sign the upload.', { cause: error })
+        }
+      }
       if (this.loginType === 'keychain') {
         const result = await keychain(window, 'requestSignBuffer', user, payload, 'Posting')
         if (!result?.success) {
@@ -4475,7 +4489,7 @@ export default {
           throw new Error(error?.message || 'SmartLock could not sign the upload.', { cause: error })
         }
       }
-      throw new Error('Log in with Keychain or SmartLock to upload images.')
+      throw new Error('Log in with Keychain, SmartLock or HiveAuth to upload images.')
     },
     async uploadSelectedImages () {
       if (this.uploadBusy) return
@@ -4484,7 +4498,7 @@ export default {
         return
       }
       if (!this.canUpload) {
-        this.uploadError = 'Log in with Keychain or SmartLock to upload images.'
+        this.uploadError = 'Log in with Keychain, SmartLock or HiveAuth to upload images.'
         return
       }
       const items = createUploadQueue(this.uploadFiles, { target: this.uploadTarget })
@@ -5205,7 +5219,7 @@ export default {
     publish () {
       if (!this.draft) return
       if (!this.loggedInUser) {
-        this.$q.notify({ type: 'negative', message: 'Log in with Keychain or SmartLock to publish.' })
+        this.$q.notify({ type: 'negative', message: 'Log in with Keychain, SmartLock or HiveAuth to publish.' })
         return
       }
       const errors = collectChecklistErrors(this.checklist)
@@ -5219,7 +5233,7 @@ export default {
       if (!this.draft) return
       this.reviewOpen = false
       if (!this.loggedInUser) {
-        this.$q.notify({ type: 'negative', message: 'Log in with Keychain or SmartLock to publish.' })
+        this.$q.notify({ type: 'negative', message: 'Log in with Keychain, SmartLock or HiveAuth to publish.' })
         return
       }
       const errors = collectChecklistErrors(this.checklist)
