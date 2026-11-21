@@ -106,3 +106,16 @@ page reload drops it; the user must connect again.
 > Implemented as W48: `docs/workstreams/W48-keepsats-onchain-actions.md` covers
 > deposit, conversion and invoice/address payment. Balance-request UI and user
 > transfers are still open.
+
+## Deploy
+
+Deployed with W46 and W48 on 2026-11-21 (backup
+`hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`).
+
+- The deployed `KeepsatsPanel` chunk contains the read-only panel and actions.
+- Live wallet smoke with a temporary logged-in session at 1440px and 390px:
+  panel renders, actions expand, conversion quote resolves from the bridge,
+  zero page errors and zero horizontal overflow.
+- No live balance read was performed during deployment because that needs a
+  real Keychain prompt; the flow is covered by the mocked E2E and the earlier
+  live spike.

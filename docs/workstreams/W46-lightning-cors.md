@@ -128,3 +128,14 @@ Phase 2 is the keepsats read-only session. The spike is **done and positive**:
 `GET /v2/v4vapp/keepsats` with `200` (verified with `@ausbit.vsc`). Build it
 with memory-only tokens, posting key only, no writes, and keep the panel
 opt-in and secondary. If an action needs active authority, keep it on-chain.
+
+## Deploy
+
+W46–W48 deployed together on 2026-11-21 via `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`
+- Live `https://hive.ausbit.dev/health`: "Bridge reachable", API `6.6.1`,
+  `legion · SERVER_ACTIVE`, `2.9% + 50 sats`, `50 – 180,000 sats`, fresh quote.
+- Live `/lightning?account=ausbitbank`: fee card reads the bridge values and the
+  address card resolves; zero page errors and zero horizontal overflow at
+  1440px and 390px.

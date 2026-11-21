@@ -132,3 +132,14 @@ conversion, address and invoice payments.
 - Optional: keepsats transfer to another Hive user (`to_account` + sats) and the
   on-chain balance-request fallback.
 - Then POS/post zaps and explorer/tax work remain in issue #87.
+
+## Deploy
+
+Deployed with W46 and W47 on 2026-11-21 via `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`
+- Live wallet smoke at 1440px and 390px: the keepsats panel and the collapsed
+  actions render, the conversion quote resolves against the live bridge
+  (`1,234 sats ≈ 0.803 HBD` at the time), zero page errors and zero horizontal
+  overflow.
+- No live queue signing or broadcast was performed during deployment.
