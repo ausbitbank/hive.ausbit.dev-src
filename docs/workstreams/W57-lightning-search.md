@@ -59,3 +59,15 @@ validation, expiry and fee quotes.
   dialog.
 - The target appears in the URL and is public; never paste a private invoice
   into a shared link.
+
+## Deploy
+
+Deployed on 2026-11-21 via `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T140100Z.tar.gz`
+- Live `/search?q=alice%40getalby.com`: Lightning address card with the target
+  and **Open payment**, zero page errors and zero overflow.
+- Live logged-out `/lightning?pay=alice%40getalby.com`: "A Lightning payment
+  link is ready" banner with the login hint; no dialog.
+- Live logged-in deep link: pay dialog at review for `alice@getalby.com` with a
+  live `1,079 sats` all-in quote for 1,000 sats.
