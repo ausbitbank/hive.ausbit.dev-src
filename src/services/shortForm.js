@@ -242,15 +242,23 @@ export function containerTimeline (discussion, containerKey, { limit = 40 } = {}
   return { container, items: limit ? sorted.slice(0, limit) : sorted }
 }
 
+// Bare media URLs (no markdown/HTML wrapper) are common in InLeo threads and
+// older clients. Keep this extension list in sync with VIDEO_EXTENSION.
+const BARE_MEDIA_URL = /https?:\/\/[^\s<>()"']+\.(?:png|jpe?g|gif|webp|avif|bmp|svg|mp4|webm|ogv|mov)(?:[?#][^\s<>()"']*)?/gi
+const VIDEO_EXTENSION = /\.(?:mp4|webm|ogv|mov)(?:[?#]|$)/i
+
 /**
  * Strip HTML and collapse whitespace for a one-line card preview.
  * Images are dropped first so alt text and URLs do not leak into previews.
+ * Bare image/video URLs are removed too: InLeo and older clients often paste
+ * the upload URL on its own line instead of using markdown image syntax.
  */
 export function shortPreview (body, max = 220) {
   const text = asString(body)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(BARE_MEDIA_URL, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -268,8 +276,6 @@ export function shortImages (post) {
   const images = Array.isArray(metadata.image) ? metadata.image : []
   return images.filter(url => typeof url === 'string' && /^https?:\/\//i.test(url))
 }
-
-const VIDEO_EXTENSION = /\.(?:mp4|webm|ogv|mov)(?:[?#]|$)/i
 
 function cleanUrl (value) {
   const url = String(value || '').trim().replace(/^<|>$/g, '')
@@ -302,6 +308,9 @@ export function shortMedia (post, { limit = 4 } = {}) {
   declared.forEach(add)
   for (const match of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
   for (const match of body.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) add(match[1])
+  // Clients that paste the upload URL as plain text (common on InLeo) still
+  // get an inline image instead of a line of raw URL.
+  for (const match of body.matchAll(BARE_MEDIA_URL)) add(match[0])
 
   const ratios = Array.isArray(metadata.image_ratios) ? metadata.image_ratios : []
   const media = urls.slice(0, limit).map((url, index) => {

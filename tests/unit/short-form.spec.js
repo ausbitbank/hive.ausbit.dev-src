@@ -129,6 +129,11 @@ describe('preview, images and urls', () => {
     expect(shortPreview(body)).toBe('Title Hello world bold')
   })
 
+  it('drops bare media urls pasted into a body', () => {
+    const body = 'Morning walk\nhttps://img.leopedia.io/a/IMG_1.jpeg\nhttps://cdn.example/b.png?w=900'
+    expect(shortPreview(body)).toBe('Morning walk')
+  })
+
   it('truncates long previews with an ellipsis', () => {
     const preview = shortPreview('a'.repeat(300), 20)
     expect(preview).toHaveLength(20)
@@ -259,6 +264,28 @@ describe('media extraction', () => {
     const media = shortMedia(post({ body }), { limit: 2 })
     expect(media).toHaveLength(2)
     expect(media[0].kind).toBe('video')
+  })
+
+  it('collects bare image and video urls pasted as text', () => {
+    const body = [
+      'Saturday walk',
+      'https://img.leopedia.io/a/IMG_3963.jpeg',
+      '<center>https://cdn.example/Portada%20-%20cover.png</center>',
+      'https://cdn.example/clip.mp4?download=1'
+    ].join('\n')
+    const media = shortMedia(post({ body }))
+    expect(media.map(item => item.url)).toEqual([
+      'https://img.leopedia.io/a/IMG_3963.jpeg',
+      'https://cdn.example/Portada%20-%20cover.png',
+      'https://cdn.example/clip.mp4?download=1'
+    ])
+    expect(media.map(item => item.kind)).toEqual(['image', 'image', 'video'])
+  })
+
+  it('de-duplicates a bare url already declared in metadata', () => {
+    const body = '![x](https://a/1.jpg)\nhttps://a/1.jpg'
+    expect(shortMedia(post({ json_metadata: { image: ['https://a/1.jpg'] }, body })).map(item => item.url))
+      .toEqual(['https://a/1.jpg'])
   })
 
   it('ignores non-http sources', () => {
