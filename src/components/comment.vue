@@ -39,6 +39,7 @@ import { defineAsyncComponent } from 'vue'
 import render from 'components/render.vue'
 import moment from 'src/utils/time'
 import { formatReputation } from 'src/services/comments'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'comment',
@@ -62,7 +63,7 @@ export default {
   methods: {
     linkAccount (author) { return '/@' + author },
     linkPost (author, permlink) { return '/@' + author + '/' + permlink },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     timeDelta (timestamp) {
       const now = moment.utc()
       const stamp = moment.utc(timestamp)

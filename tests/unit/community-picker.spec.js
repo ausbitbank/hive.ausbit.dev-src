@@ -78,8 +78,8 @@ describe('community picker options', () => {
   })
 
   it('builds avatars and rules links only for community names', () => {
-    expect(communityAvatarUrl('hive-174578')).toBe('https://images.hive.blog/u/hive-174578/avatar')
-    expect(communityAvatarUrl('', 'alice')).toBe('https://images.hive.blog/u/alice/avatar')
+    expect(communityAvatarUrl('hive-174578')).toBe('https://images.hive.blog/u/hive-174578/avatar/small')
+    expect(communityAvatarUrl('', 'alice')).toBe('https://images.hive.blog/u/alice/avatar/small')
     expect(communityAvatarUrl('not a tag')).toBe('')
     expect(communityRulesLink('hive-174578')).toBe('/c/hive-174578?tab=about')
     expect(communityRulesLink('')).toBe('')

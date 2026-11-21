@@ -57,6 +57,7 @@
 <script>
 import moment from 'src/utils/time'
 import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 const voteBitmask = makeBitMaskFilter([
   op.vote
 ])
@@ -164,7 +165,7 @@ export default {
       return '/@' + author + '/' + permlink
     },
     getHiveAvatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     timeDelta (timestamp) {
       var now = moment.utc()

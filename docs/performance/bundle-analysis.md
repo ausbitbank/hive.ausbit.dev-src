@@ -215,6 +215,12 @@ remaining legacy weight without changing app behaviour.
   The icon font is now preloaded alongside Roboto.
 - **Post LCP hint.** The first body image on a post page is marked
   `fetchpriority="high" loading="eager"`; every other image stays lazy.
+- **Smaller avatars.** Avatars now use the image service's 64px `small`
+  variant (8.6 KB) instead of the default 128px image (30.6 KB); only the
+  88px account header keeps `medium`. A witness page with 50 avatars drops
+  about 1.1 MB of image transfer.
+- **SVGs optimised.** The remaining service icons were run through SVGO
+  (`--multipass`), saving another ~8.8 KB of static assets.
 - **Initial JS 352.0 → 348.5 KB raw / 113.8 → 112.8 KB Brotli.** The post
   renderer remains the largest lazy chunk; removing its `autolinker` dependency
   would save ~15 KB Brotli but changes fuzzy-domain linkification, so it was

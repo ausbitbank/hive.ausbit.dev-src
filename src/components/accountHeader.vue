@@ -275,6 +275,7 @@ import { defineAsyncComponent } from 'vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import { vestToHive } from 'src/services/wallet'
 import { safeExternalUrl } from 'src/utils/safeUrl'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'accountHeader',
   data () {
@@ -357,7 +358,7 @@ export default {
       const overflow = content.scrollWidth - content.clientWidth > 2
       if (this.tabsOverflow !== overflow) this.tabsOverflow = overflow
     },
-    getUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getUrl (user) { return hiveAvatarUrl(user, 'medium') },
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
     vestToHive (vests) {
@@ -385,7 +386,7 @@ export default {
           this.relationship = response
         })
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user, 'medium') },
     getFollowCount (who) {
       this.$hiveStore.getFollowCount(who)
     },

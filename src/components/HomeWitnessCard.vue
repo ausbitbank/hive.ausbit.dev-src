@@ -179,6 +179,7 @@ import { formatCompactNumber, witnessVotesHp } from 'src/services/home'
 import { fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 // The card fetches the full ranked list so `limit`/`pinMine` can select from it;
 // the cached response is shared with the witnesses page.
@@ -261,7 +262,7 @@ export default {
       return String(this.highlight || this.signedInUser || '').replace(/^@/, '')
     },
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     async loadWitnesses () {
       this.loading = true

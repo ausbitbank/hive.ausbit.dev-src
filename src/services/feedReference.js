@@ -7,6 +7,7 @@
 // unit tested without touching the network.
 
 import { getShortFormat } from './shortForm'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export const DEFAULT_RANKED_SORT = 'trending'
 export const DEFAULT_ACCOUNT_SORT = 'blog'
@@ -53,7 +54,7 @@ export function feedHeader (feed, community = null) {
 /** Avatar for a community feed, or '' for every other feed kind. */
 export function feedAvatar (feed) {
   return feed && feed.kind === 'community' && feed.community
-    ? 'https://images.hive.blog/u/' + feed.community + '/avatar'
+    ? hiveAvatarUrl(feed.community)
     : ''
 }
 

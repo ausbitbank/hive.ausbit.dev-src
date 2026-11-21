@@ -53,6 +53,7 @@
 </template>
 
 <script>
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'CommunityCard',
   props: {
@@ -73,7 +74,7 @@ export default {
     avatarSrc () {
       return this.avatarFailed
         ? '/statics/member.webp'
-        : 'https://images.hive.blog/u/' + this.card.name + '/avatar'
+        : hiveAvatarUrl(this.card.name)
     }
   },
   methods: {

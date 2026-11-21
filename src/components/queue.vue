@@ -204,6 +204,7 @@ import {
 } from 'src/services/queue'
 import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
 import DataNotice from 'components/ui/DataNotice.vue'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 let hiveauthPromise = null
 function loadHiveAuth () {
@@ -310,7 +311,7 @@ export default {
       return (action?.[0] || 'action') + '-' + index
     },
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + encodeURIComponent(user || 'null') + '/avatar'
+      return hiveAvatarUrl(user || 'null')
     },
     shortTx (txId) {
       const text = String(txId || '')

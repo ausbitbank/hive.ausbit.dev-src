@@ -360,6 +360,7 @@ import {
   versionMatches,
   witnessVotesHp
 } from 'src/services/witnesses'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'WitnessRow',
@@ -380,7 +381,7 @@ export default {
   emits: ['vote', 'unvote', 'toggle'],
   computed: {
     avatarUrl () {
-      return 'https://images.hive.blog/u/' + this.witness.owner + '/avatar'
+      return hiveAvatarUrl(this.witness.owner)
     },
     detailsId () {
       return 'witness-details-' + String(this.witness.owner || '').replace(/[^a-z0-9-]/gi, '-')

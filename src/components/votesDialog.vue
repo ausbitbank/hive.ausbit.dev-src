@@ -117,6 +117,7 @@
 <script>
 import moment from 'src/utils/time'
 import { formatReputation } from 'src/services/comments'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'votesDialog',
@@ -157,7 +158,7 @@ export default {
   },
   methods: {
     sortByRshares (a, b) { return Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0) },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     linkAccount (username) { return '/@' + username },
     tidyNumber (value) {
       return Number(value || 0).toLocaleString('en-US')

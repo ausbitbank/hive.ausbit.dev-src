@@ -235,6 +235,7 @@ import {
 } from 'src/services/home'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 const POLL_INTERVAL = 15000
 const SNAPSHOT_KEY = 'home:block'
@@ -318,7 +319,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     async loadLatest () {
       this.followHead = true

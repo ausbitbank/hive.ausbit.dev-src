@@ -47,6 +47,7 @@ import moment from 'src/utils/time'
 import { stripHtml } from 'src/utils/safeHtml'
 import { fetchFollowingNames, rememberFollowing } from 'src/services/chainData'
 import { vestToHive } from 'src/services/wallet'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'userCard',
@@ -87,7 +88,7 @@ export default {
       return stripHtml(this.profile && this.profile.location, 40)
     },
     avatarSrc () {
-      return this.avatarFailed ? '/statics/member.webp' : 'https://images.hive.blog/u/' + this.username + '/avatar'
+      return this.avatarFailed ? '/statics/member.webp' : hiveAvatarUrl(this.username)
     },
     hpLabel () {
       if (!this.account || !this.$hiveStore.globalProps) return ''

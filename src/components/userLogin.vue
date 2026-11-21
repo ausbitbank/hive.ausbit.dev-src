@@ -675,6 +675,7 @@ import userSearchBox from 'components/userSearchBox.vue'
 import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
 import { clearSession as clearHiveAuthSession, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
 import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 // SmartLock pulls in sjcl and the signing stack. Keep it out of the initial
 // shell; the account menu is the first surface that needs it.
@@ -745,9 +746,9 @@ export default {
     },
     userAvatar: function () {
       if (this.loggedInUser !== '') {
-        return 'https://images.hive.blog/u/' + this.loggedInUser + '/avatar'
+        return hiveAvatarUrl(this.loggedInUser)
       } else {
-        return 'https://images.hive.blog/u/null/avatar'
+        return hiveAvatarUrl('null')
       }
     },
     votePower: function () {
@@ -891,7 +892,7 @@ export default {
         smartlock.lockAccount(user)
       } catch {}
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
     removeSavedUser (user) {

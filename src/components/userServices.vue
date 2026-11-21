@@ -63,6 +63,7 @@
 </style>
 <script>
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'userServices',
   props: ['username'],
@@ -72,7 +73,7 @@ export default {
   },
   components: {},
   methods: {
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     returnServiceLink (service, data) {
       var d = stripHtml(data)
       switch (service) {

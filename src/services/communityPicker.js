@@ -6,6 +6,7 @@
 // treating a free-form tag as a community.
 
 import { normalizeTag } from './drafts'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 const COMMUNITY_RE = /^[a-z][a-z0-9.-]{2,15}$/
 
@@ -44,9 +45,9 @@ export function subscribedCommunityNames (subscriptions) {
 
 export function communityAvatarUrl (name, owner = null) {
   const tag = String(name || '').trim().toLowerCase()
-  if (COMMUNITY_RE.test(tag)) return 'https://images.hive.blog/u/' + tag + '/avatar'
+  if (COMMUNITY_RE.test(tag)) return hiveAvatarUrl(tag)
   const account = String(owner || '').trim().toLowerCase()
-  return COMMUNITY_RE.test(account) ? 'https://images.hive.blog/u/' + account + '/avatar' : ''
+  return COMMUNITY_RE.test(account) ? hiveAvatarUrl(account) : ''
 }
 
 /** The community About tab renders the rules text. */

@@ -203,6 +203,7 @@ import BlockOperation from 'components/BlockOperation.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchGlobalProps } from 'src/services/chainData'
 import ShareMenu from 'components/ui/ShareMenu.vue'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'blockViewPage',
@@ -352,7 +353,7 @@ export default {
       return number.toLocaleString('en-US')
     },
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     copy (value, message) {
       if (!value) return

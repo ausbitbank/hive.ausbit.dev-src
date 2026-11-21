@@ -68,6 +68,7 @@
 <script>
 import { listProposalVotes } from 'src/services/proposals'
 import { voteOverlap } from 'src/services/governance'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'VoterOverlapCard',
@@ -97,7 +98,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     formatPercent (value) {
       const number = Number(value)

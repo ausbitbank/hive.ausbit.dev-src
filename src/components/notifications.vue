@@ -167,6 +167,7 @@ import {
   plainNotificationMessage,
   unreadNotificationIds
 } from 'src/services/notifications'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'notifications',
@@ -272,7 +273,7 @@ export default {
       this.initialRefreshHandle = null
     },
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + encodeURIComponent(user || 'null') + '/avatar'
+      return hiveAvatarUrl(user || 'null')
     },
     actorFor (notification) {
       return notificationActor(notification?.msg)

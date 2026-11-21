@@ -132,6 +132,7 @@ import moment from 'src/utils/time'
 import { safeJsonParse, simpleMarkdownToHtml } from 'src/utils/safeHtml'
 import { sanitizeRichHtml } from 'src/utils/safeRichHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 // import { mapGetters } from 'vuex'
 export default {
   name: 'accountHeader',
@@ -176,7 +177,7 @@ export default {
     }
   },
   methods: {
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     getAccountLink (user) { return '/@' + user },
     getWalletLink (user) { return '/@' + user + '/wallet' },
     getUserFromMention (mention) { return mention.split(' ')[0].substr(1) },

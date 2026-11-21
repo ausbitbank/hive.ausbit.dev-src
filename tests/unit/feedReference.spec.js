@@ -159,7 +159,7 @@ describe('feed headers', () => {
       eyebrow: 'Community · Trending',
       heading: 'Hive Developers'
     })
-    expect(feedAvatar(feed)).toBe('https://images.hive.blog/u/hive-174578/avatar')
+    expect(feedAvatar(feed)).toBe('https://images.hive.blog/u/hive-174578/avatar/small')
   })
 
   it('falls back to the chain name while the community record loads or fails', () => {

@@ -131,6 +131,7 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { deleteCommentQueueItem } from 'src/services/comments'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'postFooter',
   props: {
@@ -205,7 +206,7 @@ export default {
     linkAccount (account) { return '/@' + account },
     linkCommunity (community) { return '/c/' + community + '/created' },
     filterMyVote (op) { return op.voter === this.loggedInUser },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     timeDelta (timestamp) {
       var now = moment.utc()
       var stamp = moment.utc(timestamp)

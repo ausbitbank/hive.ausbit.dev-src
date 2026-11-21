@@ -153,6 +153,7 @@ import {
   formatHbd,
   formatHp
 } from 'src/services/proposals'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'proposal-card',
@@ -220,7 +221,7 @@ export default {
     formatHbd,
     formatHp,
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     formatDate (timestamp) {
       return moment(timestamp).format('D MMM YYYY')

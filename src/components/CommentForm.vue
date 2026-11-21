@@ -238,6 +238,7 @@
 <script>
 import render from 'components/render.vue'
 import { commentPermlink, commentQueueItem } from 'src/services/comments'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'commentForm',
@@ -293,7 +294,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     wrapSelection (before, after, placeholder) {
       const textarea = this.$refs.textarea

@@ -144,6 +144,7 @@
 </style>
 
 <script>
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'WitnessHealthList',
   props: {
@@ -152,7 +153,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     }
   }
 }

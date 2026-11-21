@@ -1061,6 +1061,7 @@ import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
 import { AI_TOOL_LABELS, readCrossPostMetadata } from 'src/services/publish'
 import { fetchHiveSenseSimilar } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'postView',
@@ -1416,7 +1417,7 @@ export default {
       if (!Number.isFinite(number)) return '0'
       return number.toLocaleString('en-US')
     },
-    GetHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    GetHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     stripHtml,
     scrollToComments () {
       document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' })

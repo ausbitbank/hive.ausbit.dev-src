@@ -408,6 +408,7 @@
 <script>
 import { setHiveNode } from 'src/services/hive'
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE, MAGI_NODES } from 'src/services/hiveNodes'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 function weightToPercent (weight) {
   const value = Number(weight)
@@ -462,7 +463,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     addBene () {
       if (!this.canAddBene) return

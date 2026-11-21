@@ -546,6 +546,7 @@ import {
   postUserVoteDirection,
   postVotes
 } from 'src/services/posts'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 export default {
   name: 'postPreview',
@@ -695,7 +696,7 @@ export default {
   },
   methods: {
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     linkAccount (user) {
       return '/@' + user

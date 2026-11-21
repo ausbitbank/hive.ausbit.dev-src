@@ -36,6 +36,7 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { vestToHive } from 'src/services/wallet'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'delegations',
   props: ['username'],
@@ -89,7 +90,7 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     onlyUnique (value, index, self) { return self.indexOf(value) === index },
     tidyNumber (x) {
       var parts = x.toString().split('.')

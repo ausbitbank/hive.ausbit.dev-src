@@ -656,6 +656,7 @@ import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
 import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'accountPage',
   components: {
@@ -922,7 +923,7 @@ export default {
       const displayName = stripHtml(profile.name, 80)
       const about = stripHtml(profile.about, 200)
       const pageUrl = BASE_URL + '/@' + name
-      const avatar = 'https://images.hive.blog/u/' + name + '/avatar'
+      const avatar = hiveAvatarUrl(name, 'medium')
       const image = [profile.profile_image, profile.cover_image]
         .find(value => typeof value === 'string' && /^(https?:\/\/|\/)/.test(value)) || avatar
       const description = about || ('Hive account @' + name + ' — profile, wallet balances, reputation, witness votes and recent activity on the Hive blockchain.')
@@ -1106,7 +1107,7 @@ export default {
         })
         .catch(() => console.log('Failed to load witness data'))
     },
-    getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
+    getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     getGlobalProps () {
       if (this.globalProps.empty) {
         this.$hiveStore.getGlobalProps()

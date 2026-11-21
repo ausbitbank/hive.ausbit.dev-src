@@ -182,6 +182,7 @@ import HomeRecentPosts from 'components/HomeRecentPosts.vue'
 import { buildCommunityCards } from 'src/services/community'
 import { fetchAccountSubscriptions, fetchCommunityInfoBatch } from 'src/services/chainData'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 
 const ROLE_ORDER = ['owner', 'admin', 'mod', 'member', 'guest']
 
@@ -390,7 +391,7 @@ export default {
         title,
         description,
         url: '/@' + name + '/communities',
-        image: 'https://images.hive.blog/u/' + name + '/avatar',
+        image: hiveAvatarUrl(name, 'medium'),
         jsonLd: {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',

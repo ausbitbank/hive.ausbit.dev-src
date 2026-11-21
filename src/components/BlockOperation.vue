@@ -282,6 +282,7 @@
 import { defineAsyncComponent } from 'vue'
 import { cleanV4vappMemo, formatSats, parseV4vappMemo } from 'src/services/lightning'
 import { describeKeepsatsCustomJson, parseKeepsatsCustomJson } from 'src/services/keepsats'
+import { hiveAvatarUrl } from 'src/utils/avatar'
 const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 
 const COLORS = {
@@ -388,7 +389,7 @@ export default {
       return text.length > max ? text.slice(0, max - 1) + '…' : text
     },
     avatarUrl (user) {
-      return 'https://images.hive.blog/u/' + user + '/avatar'
+      return hiveAvatarUrl(user)
     },
     postLink (author, permlink) {
       return '/@' + author + '/' + permlink
