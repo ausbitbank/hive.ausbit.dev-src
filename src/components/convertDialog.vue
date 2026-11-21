@@ -30,6 +30,8 @@
   </q-card>
 </template>
 <script>
+import { vestToHive } from 'src/services/wallet'
+
 export default {
   name: 'savingsDepositDialog',
   data () {
@@ -75,7 +77,7 @@ export default {
   },
   methods: {
     doTheThing () { if (this.tokenName === 'HIVE') { this.convertHiveToHbd() } else { this.convertHbdToHive() } },
-    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
+    vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
     tidyNumber (x) {
       var parts = x.toString().split('.')
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')

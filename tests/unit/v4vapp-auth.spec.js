@@ -24,8 +24,7 @@ vi.mock('@hiveio/keychain', () => ({
 
 vi.mock('src/services/hive', () => ({
   hive: {
-    api: { getAccountsAsync: vi.fn() },
-    auth: { wifToPublic: vi.fn() }
+    api: { getAccountsAsync: vi.fn() }
   }
 }))
 

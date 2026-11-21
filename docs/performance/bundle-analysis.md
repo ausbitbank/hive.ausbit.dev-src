@@ -3,6 +3,14 @@
 Date: 2026-11-18
 Baseline: W27 (`a1da1e1`) plus the W22 changes in this workstream
 
+> **Post-migration note (2026-11-22, #88):** `@hiveio/hive-js` has been
+> replaced. The preloaded JS set is now 31 files, 407 KB raw / 148 KB gzip /
+> 131 KB Brotli; total JS is 3,474 KB raw / 1,135 KB gzip / 915 KB Brotli
+> (down from 3,866 KB / 1,249 KB / 979 KB). The signing/SmartLock chunk is
+> 794 KB raw / 219 KB gzip / 107 KB Brotli and still loads during boot through
+> `boot/smartlock.js`; lazy-loading the login/signing surface is the remaining
+> opportunity.
+
 ## Headline
 
 The initial shell is still dominated by `@hiveio/hive-js` and the Quasar
@@ -121,9 +129,9 @@ intrinsic dimensions before the body enters the DOM.
 
 ## Remaining opportunities
 
-1. **hive-js in the initial chunk.** Continue the W20 migration for the
-   remaining `$hive.api` reads, then load hive-js/SmartLock only for signing.
-   This is the single largest remaining initial-JS opportunity.
+1. **hive-js in the initial chunk.** Done in #88: signing/keys/memos use a
+   lazy-loaded `hive-tx`, reads use `src/services/api.js`, and the hive-js
+   serializer chunks are no longer in the preload set.
 2. **Quasar component graph.** The framework share of the entry chunk is still
    significant. Route-level Quasar component imports are already tree-shaken,
    but a component-usage audit may remove more.

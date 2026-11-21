@@ -1,4 +1,4 @@
-import hive from '@hiveio/hive-js'
+import { hive } from 'src/services/hive'
 import {
   fetchAccount,
   fetchAccounts,

@@ -24,12 +24,12 @@ components, polling that continued in hidden tabs, and legacy pages still using
 - Failures carry method, node, code and attempt count in `HiveApiError`.
 - Cancellation is supported through an external `AbortSignal`; timeouts abort
   the underlying fetch.
-- `setHiveNode()` now synchronises the hive-js node and the central client, so
+- `setHiveNode()` now synchronises the read client and the signing stack, so
   settings and node auto-selection keep reads and writes on the same endpoint.
 - Helpers cover accounts, global properties, witnesses, follow counts, median
   price, ticker, open orders and generic bridge calls.
 
-Writes still go through hive-js/Keychain/SmartLock because they require the
+Writes still go through hive-tx/Keychain/SmartLock because they require the
 signing stack.
 
 ## TTL cache and stale-while-revalidate
@@ -163,8 +163,8 @@ patterns, and `noopener noreferrer` on external links.
 
 ## Notes
 
-- The central client is used for chain reads. Signing/broadcast paths remain on
-  hive-js and the existing Keychain/SmartLock queue implementation.
+- The central client is used for chain reads. Signing/broadcast paths use
+  lazy-loaded hive-tx and the existing Keychain/SmartLock queue implementation.
 - Account cache entries are short-lived, but mutations force a fresh read after
   a broadcast so wallet and market balances do not appear stale.
 - Stale-while-revalidate keeps navigation fast while refreshing background data.

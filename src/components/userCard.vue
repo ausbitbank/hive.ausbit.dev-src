@@ -46,6 +46,7 @@
 import moment from 'src/utils/time'
 import { stripHtml } from 'src/utils/safeHtml'
 import { fetchFollowingNames, rememberFollowing } from 'src/services/chainData'
+import { vestToHive } from 'src/services/wallet'
 
 export default {
   name: 'userCard',
@@ -92,11 +93,7 @@ export default {
       if (!this.account || !this.$hiveStore.globalProps) return ''
       const vests = parseFloat(String(this.account.vesting_shares || '').split(' ')[0])
       if (!Number.isFinite(vests)) return ''
-      const hp = this.$hive.formatter.vestToHive(
-        vests,
-        this.$hiveStore.globalProps.total_vesting_shares,
-        this.$hiveStore.globalProps.total_vesting_fund_hive
-      )
+      const hp = vestToHive(vests, this.$hiveStore.globalProps)
       if (!Number.isFinite(hp) || hp <= 0) return ''
       return Math.round(hp).toLocaleString('en-US') + ' HP'
     },

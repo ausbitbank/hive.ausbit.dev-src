@@ -1,10 +1,19 @@
-import signature from '@hiveio/hive-js/lib/auth/ecc'
-import { getPosting, getActive, getMemo } from './store'
 import { Notify } from 'quasar'
 import { hive } from 'src/services/hive'
+import {
+  broadcastOperations,
+  encodeMemo,
+  signBufferData,
+  toPublicKey
+} from 'src/services/hiveTx'
+import { getPosting, getActive, getMemo } from './store'
 
-const signBuffer = (username, data) => {
-  // try to parse Buffer
+const signBuffer = async (username, data) => {
+  const wif = getPosting(username)
+  if (!wif) throw new Error('SmartLock is locked. Unlock it to sign this request.')
+
+  // Some callers pass a JSON-serialised Node Buffer. Preserve that shape and
+  // sign the bytes, matching Keychain's requestSignBuffer behaviour.
   let buf = data
   try {
     const o = JSON.parse(buf, (k, v) => {
@@ -18,17 +27,17 @@ const signBuffer = (username, data) => {
     }
   } catch {}
 
-  return signature.Signature.signBuffer(buf, getPosting(username)).toHex()
+  return signBufferData(buf, wif)
 }
 
 // Sign a plain text challenge and return the matching public key. Used by the
 // read-only v4v.app session, which needs both halves of the proof.
-const signBufferWithPublicKey = (username, data) => {
+const signBufferWithPublicKey = async (username, data) => {
   const wif = getPosting(username)
   if (!wif) throw new Error('SmartLock is locked. Unlock it to connect to v4v.app.')
   return {
-    signature: signature.Signature.signBuffer(data, wif).toHex(),
-    publicKey: hive.auth.wifToPublic(wif)
+    signature: await signBufferData(data, wif),
+    publicKey: await toPublicKey(wif)
   }
 }
 
@@ -55,38 +64,38 @@ const broadcastAsync = async (username, operations, role = 'posting', password) 
         if (!senderMemoKey) { throw new Error('Failed to load own memo key') }
         var encoded = ''
         if (senderMemoKey) {
-          encoded = hive.memo.encode(senderMemoKey, receiverMemoKey, memo)
+          encoded = await encodeMemo(senderMemoKey, receiverMemoKey, memo)
         } else {
-          encoded = hive.memo.encode(getPosting(username), receiverMemoKey, memo)
+          encoded = await encodeMemo(getPosting(username), receiverMemoKey, memo)
         }
         operations[0][1].memo = encoded
       } catch {
       }
     }
   }
-  let auth = {}
-  if (role.toLowerCase() === 'posting') {
-    const postingKey = getPosting(username)
-    auth = { posting: postingKey }
-  } else if (role.toLowerCase() === 'active') {
+
+  const normalizedRole = String(role || '').toLowerCase()
+  let wif = null
+  if (normalizedRole === 'posting') {
+    wif = getPosting(username)
+  } else if (normalizedRole === 'active') {
     if (password) {
-      const activeKey = getActive(username, password)
-      auth = { active: activeKey }
+      wif = getActive(username, password)
     }
   }
 
-  if (!auth[role]) {
+  if (!wif) {
     Notify.create({
       type: 'negative',
       message: 'The key required to sign this transaction is not available'
     })
     return Promise.reject(new Error('The key required to sign this transaction is not available!!'))
   }
-  // if (operations.length === 1) { operations = [operations] }
-  const result = await hive.broadcast.sendAsync({ extensions: [], operations: operations }, auth)
+
+  const { tx_id } = await broadcastOperations(operations, wif)
   return {
-    success: result.id && result.id.length > 0,
-    result: result
+    success: Boolean(tx_id),
+    result: { id: tx_id }
   }
 }
 

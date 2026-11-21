@@ -19,7 +19,7 @@ a usable state, and makes offline behaviour explicit:
 
 It does not redo W22 or W27, does not change the signing authorities, and does
 not start W24–W26 or W28. The central API client remains the read path; writes
-continue to use hive-js/Keychain/SmartLock through the action queue.
+continue to use hive-tx/Keychain/SmartLock through the action queue.
 
 ## Authorities and signing
 

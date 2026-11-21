@@ -132,15 +132,16 @@ rule set.
 
 ### Data layer
 
-- `src/services/hive.js` is the single hive-js instance and API-node
-  configurator; `src/services/hiveNodes.js` holds the reviewed live node list.
+- `src/services/hive.js` is the API-node configurator and read facade;
+  `src/services/hiveTx.js` owns the signing/key/memo stack. `src/services/hiveNodes.js`
+  holds the reviewed live node list.
 - `src/services/hiveEngine.js` replaces sscjs's bundled axios (which sent an
   invalid `Access-Control-Allow-Origin` header and broke CORS preflights) with a
   throttled `fetch` transport, retrying across fallback Hive-Engine nodes.
 - `src/services/prices.js` uses CoinGecko and falls back to the on-chain median
   price when the public CoinGecko API is rate-limited or unavailable.
 - Account, transaction, Hive-Engine and CoinGecko reads are no longer affected
-  by mutating the global hive-js node mid-request.
+  by mutating the global API node mid-request.
 
 ### Removed features
 
@@ -180,9 +181,9 @@ rule set.
 
 ## 5. Follow-ups (not in this branch)
 
-1. Replace `@hiveio/hive-js` with `@hiveio/dhive` (or `@hiveio/wax`). It is
-   still threaded through ~50 files; doing it now would have doubled the
-   migration. The new `src/services/hive.js` is the seam to replace later.
+1. ~~Replace `@hiveio/hive-js` with `@hiveio/dhive` (or `@hiveio/wax`).~~
+   Done in #88: signing/keys/memos use lazy-loaded `hive-tx`, reads use
+   `src/services/api.js`, and `@hiveio/hive-js` is removed.
 2. Host a small server-side proxy for Hive-Engine / CoinGecko if public rate
    limits remain a problem in production.
 3. Replace `moment` with `dayjs` (30 files) and remove the remaining large

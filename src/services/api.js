@@ -1,8 +1,8 @@
 // Central JSON-RPC client with timeouts, retries, cancellation and node failover.
 //
 // Components and stores should use this client (directly or through
-// `chainData.js`) for read requests. Writes continue to use hive-js/Keychain/
-// SmartLock because they need the signing stack.
+// `chainData.js`) for read requests. Writes use the action queue with
+// hive-tx/Keychain/SmartLock because they need the signing stack.
 
 import { DEFAULT_HIVE_NODE, HIVE_API_NODES } from './hiveNodes'
 import {

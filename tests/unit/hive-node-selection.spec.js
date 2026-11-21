@@ -1,20 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { hiveMock } = vi.hoisted(() => ({
-  hiveMock: {
-    config: { set: vi.fn() },
-    api: {
-      setOptions: vi.fn(),
-      getDynamicGlobalPropertiesAsync: vi.fn(),
-      getAccountsAsync: vi.fn()
-    }
-  }
-}))
-
-vi.mock('@hiveio/hive-js', () => ({
-  default: hiveMock
-}))
-
 vi.mock('../../src/services/hiveNodes', () => ({
   DEFAULT_HIVE_NODE: 'https://api.hive.blog',
   HIVE_API_NODES: [
@@ -63,8 +48,6 @@ describe('probeHiveNode', () => {
   let originalFetch
 
   beforeEach(() => {
-    hiveMock.config.set.mockClear()
-    hiveMock.api.setOptions.mockClear()
     originalFetch = globalThis.fetch
     fetchMock = vi.fn()
     globalThis.fetch = fetchMock

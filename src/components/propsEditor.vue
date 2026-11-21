@@ -81,7 +81,7 @@ export default {
   methods: {
     submitChanges () {
       if (this.type === 'postingMeta') {
-        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson }]])
+        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson, extensions: [] }]])
         this.$emit('editedProps')
       }
       if (this.type === 'jsonMeta') {

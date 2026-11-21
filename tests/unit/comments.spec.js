@@ -133,7 +133,7 @@ describe('comment queue item', () => {
       allow_votes: true,
       allow_curation_rewards: true
     })
-    expect(item[2][1].comment_options.extensions).toBeUndefined()
+    expect(item[2][1].comment_options.extensions).toEqual([])
   })
 
   it('builds an edit without comment options and preserves metadata', () => {

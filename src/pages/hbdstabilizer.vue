@@ -128,9 +128,7 @@ import { fetchAccounts, fetchMedianHistoryPrice, fetchOpenOrders } from 'src/ser
 import { normalizeOpenOrders, formatAmount, formatPrice } from 'src/services/market'
 import { medianPrice, parseAsset } from 'src/services/network'
 import { vestToHive as vestToHiveValue } from 'src/services/wallet'
-import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
-
-const op = ChainTypes.operations
+import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
 const stabilizerBitmask = makeBitMaskFilter([
   op.transfer,
   op.withdraw_vesting,

@@ -38,7 +38,8 @@ describe('proposal helpers', () => {
       ['update_proposal_votes', {
         voter: 'alice',
         proposal_ids: [373],
-        approve: true
+        approve: true,
+        extensions: []
       }]
     ])
     expect(proposalVoteQueueItem('alice', 373, false)[2][1].approve).toBe(false)

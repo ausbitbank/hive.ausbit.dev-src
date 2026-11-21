@@ -4462,7 +4462,7 @@ export default {
       if (this.loginType === 'smartlock') {
         await this.ensureSmartlockUnlocked()
         try {
-          return smartlock.api.signBuffer(user, payload)
+          return await smartlock.api.signBuffer(user, payload)
         } catch (error) {
           throw new Error(error?.message || 'SmartLock could not sign the upload.', { cause: error })
         }

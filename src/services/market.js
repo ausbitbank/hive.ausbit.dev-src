@@ -303,7 +303,7 @@ export function buildLimitOrder ({
   const totalValue = roundAmount(total ?? Number(price) * Number(amount), 3)
   const expiration = new Date(
     Math.floor(now / 1000 + 60 * 60 * 24 * expiryDays) * 1000
-  ).toISOString().split('.')[0]
+  ).toISOString().replace(/\.\d{3}Z$/, '')
 
   const payload = side === 'buy'
     ? { owner, orderid: orderid ?? Math.floor(now / 1000), amount_to_sell: totalValue.toFixed(3) + ' HBD', min_to_receive: amountValue.toFixed(3) + ' HIVE' }
