@@ -54,3 +54,11 @@ Tests (`tests/unit/post-preview.spec.js`):
   use the tag, e.g. `@manexperiment`'s music article and two Ecency photo
   posts). Screenshot reviewed at 1400px: the badge is centred and clear on
   every video thumbnail.
+
+## Deploy
+
+`./scripts/deploy.sh` — deployed to `hurgenburgen:/var/www/hive.ausbit.dev`.
+
+- Backup: `~/hive-backups/hive.ausbit.dev-20261121T063347Z.tar.gz`
+- Live `https://hive.ausbit.dev/created/3speak`: same result as local — 17 of
+  20 cards show the play badge and **Watch**; the three without are not videos.
