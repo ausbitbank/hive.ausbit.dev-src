@@ -464,6 +464,12 @@ per sale; never reuse a QR.
 
 **What:** classify bridge activity in the wallet and CSV export.
 
+**Implemented (W50):** wallet activity classifies the bridge transfers and both
+custom JSON ids; the activity header exports the loaded rows as CSV with rail,
+direction, asset, amount, sats, fee, reference, parent id, txid and status. The
+`§` reference is exported in `invoice_hash` because the memo does not carry the
+payment hash.
+
 **Rows to add:**
 
 - `transfer` to `@v4vapp` with an invoice memo → "Lightning payment".
@@ -487,6 +493,11 @@ and the notification). Use `parent_id`/`§ id` where available and de-duplicate.
 
 **What:** interpret v4vapp operations instead of showing raw JSON.
 
+**Implemented (W50) for operations and memos:** block/transaction views render
+keepsats custom JSON as human-readable cards, label Lightning transfer memos and
+hide the raw invoice from the summary. Invoice/address search decoding is still
+open.
+
 - `BlockOperation.vue` / account activity: render `v4vapp_transfer` and
   `v4vapp_notification` as human-readable cards: from/to, sats, memo, parent id,
   link to `v4v.app`.
@@ -509,6 +520,10 @@ transparency users cannot get elsewhere.
 
 **What:** display HIVE/HBD in sats, sats in Hive/HBD, and a fee-inclusive
 "pay this invoice" calculator.
+
+**Implemented (W50):** `/markets` has a sats quote card (1 HIVE, 1 HBD, 1,000
+sats) with quote age, a converter and a live/stale badge. The wallet pay dialog
+already shows the fee-inclusive HBD/HIVE cost before signing.
 
 - `/markets`: add a sats row/card using `/v1/cryptoprices/` (BTC/USD, sats per
   Hive/HBD) and show quote age/staleness.

@@ -82,17 +82,24 @@ posts gain a Zap button with 1k/5k/10k/21k sats presets. See
 `docs/workstreams/W49-pos-zaps.md`. The nginx `pos` metadata line still needs a
 root-managed install; the page works without it.
 
+W50 (issue #87, explorer/markets/tax) is complete. Bridge custom JSON and
+Lightning-style transfer memos are legible in block/transaction views,
+`/markets` gains a live sats quote card, and wallet activity exports a
+tax-friendly CSV with sats, fee, reference and parent id. See
+`docs/workstreams/W50-explorer-markets-tax.md`. Search decoding for invoices and
+creator sats analytics remain.
+
 W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
 #50, #77 and #78) are complete. W38 adds community headers, forced dashboard
 refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
 See `docs/workstreams/W37-dashboard-magi-tokens.md` and
 `docs/workstreams/W38-dashboard-followups.md`.
 
-Remaining follow-ups with no open workstream: the explorer/tax legibility work
-and creator sats analytics from the Lightning study (issue #87 tracks the
-phases), the optional keepsats user-transfer and on-chain balance fallback, and
-the optional #63 server-side existence check at the edge. Issue #82 (post
-composer) is the active in-progress workstream.
+Remaining follow-ups with no open workstream: search decoding for Lightning
+invoices/addresses and creator sats analytics from the Lightning study (issue
+#87 tracks the phases), the optional keepsats user-transfer and on-chain balance
+fallback, and the optional #63 server-side existence check at the edge. Issue
+#82 (post composer) is the active in-progress workstream.
 
 ## Definition of done
 
