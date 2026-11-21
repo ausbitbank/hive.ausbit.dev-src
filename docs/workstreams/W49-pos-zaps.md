@@ -107,3 +107,20 @@ integration, global zap counts, creator analytics and POS offline mode.
 - W50: explorer bridge legibility (custom JSON cards, invoice memo decoding,
   search for invoices/addresses), markets sats quotes and wallet/tax CSV.
 - Later: creator sats analytics, POS persistence if a ledger is acceptable.
+
+## Deploy
+
+Deployed on 2026-11-21 via `./scripts/deploy.sh` (twice: the first release was
+missing the client-side QR fallback).
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T130039Z.tar.gz`
+  (the earlier `…125435Z` backup covers the pre-W49 release).
+- Live `https://hive.ausbit.dev/@ausbitbank/pos`: created a real 1,000 sat
+  invoice, QR image rendered as a generated SVG (150×150), status "Waiting for
+  payment", zero page errors and zero horizontal overflow at 1440px and 390px.
+- Live post zap dialog: title "Zap @ausbitbank", presets 1k/5k/10k/21k,
+  default 1,000 sats, zero errors.
+- The live nginx metadata still says "@ausbitbank: pos — Hive post" for a
+  crawler because the `pos` regex line is not installed (no non-interactive
+  sudo). The SPA sets the correct title client-side; the repo config is ready
+  for the next root-managed maintenance window.
