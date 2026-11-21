@@ -69,7 +69,7 @@ Additional UX:
 - Vue 3 (Options API) and Quasar 2 / Quasar CLI (Vite)
 - Pinia
 - Vue Router
-- `@hiveio/hive-js` for signing and legacy chain calls
+- `hive-tx` for signing, keys, memos and legacy chain calls
 - `@hiveio/keychain` for Keychain signing
 - `sjcl` + `bs58` for SmartLock encrypted local key storage
 - `dompurify` for sanitized post/community HTML
@@ -103,7 +103,7 @@ src/
   accounts, witnesses, posts, follow counts, median price, ticker and open orders.
 - `src/mixins/timers.js` and `src/services/polling.js` pause polling while the tab
   is hidden.
-- Signing/broadcast actions still use hive-js, Keychain or SmartLock.
+- Signing/broadcast actions use hive-tx, Keychain or SmartLock.
 
 ## Requirements
 

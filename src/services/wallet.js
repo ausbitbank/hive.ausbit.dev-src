@@ -100,12 +100,16 @@ export function formatUsd (value, maximumFractionDigits = 2) {
   })
 }
 
-export function vestToHive (vests, globalProps) {
-  if (!globalProps || globalProps.empty) return 0
-  const totalShares = toNumber(globalProps.total_vesting_shares)
-  const totalFund = toNumber(globalProps.total_vesting_fund_hive)
+export function vestsToHive (vests, totalVestingShares, totalVestingFund) {
+  const totalShares = toNumber(totalVestingShares)
+  const totalFund = toNumber(totalVestingFund)
   if (!totalShares || !totalFund) return 0
   return toNumber(vests) * totalFund / totalShares
+}
+
+export function vestToHive (vests, globalProps) {
+  if (!globalProps || globalProps.empty) return 0
+  return vestsToHive(vests, globalProps.total_vesting_shares, globalProps.total_vesting_fund_hive)
 }
 
 export function hivePowerApr (globalProps) {

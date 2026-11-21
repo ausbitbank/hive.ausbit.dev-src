@@ -11,7 +11,7 @@
       <q-card flat bordered>
         <q-card-section>
           <q-form @submit="keys=null;checkUsernameAvailable(newUsername)">
-          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="$hive.utils.validateAccountName(newUsername)" :error="$hive.utils.validateAccountName(newUsername) !== null" v-if="availableUsername === false || availableUsername === null" clearable />
+          <q-input label="New account username" v-model="newUsername" bottom-slots :error-message="validateUsername(newUsername)" :error="validateUsername(newUsername) !== null" v-if="availableUsername === false || availableUsername === null" clearable />
           </q-form>
           <div v-if="availableUsername === false" class="text-h5 text-center">
             <q-icon name="error" color="red" size="md" /> Account <router-link :to="linkAccount(newUsername)">{{ newUsername }}</router-link> is already registered</div>
@@ -23,7 +23,7 @@
         <q-separator />
         <q-card-actions class="text-center">
           <q-btn flat label="Choose another username" icon="arrow_back" color="primary" @click="newUsername='';keys=null;confirmedSaved=false" v-if="availableUsername === true" />
-          <q-btn flat label="Check username availability" icon="search" color="primary" @click="keys=null;checkUsernameAvailable(newUsername)" v-if="!availableUsername && !keys" :disable="$hive.utils.validateAccountName(newUsername) !== null" />
+          <q-btn flat label="Check username availability" icon="search" color="primary" @click="keys=null;checkUsernameAvailable(newUsername)" v-if="!availableUsername && !keys" :disable="validateUsername(newUsername) !== null" />
           <q-btn flat label="Generate Keys" icon="enhanced_encryption" color="orange" v-if="availableUsername && !keys" @click="genKeys()" />
         </q-card-actions>
       </q-card>
@@ -57,6 +57,8 @@ import { defineAsyncComponent } from 'vue'
 import { copyToClipboard, exportFile } from 'quasar'
 import { keychain } from '@hiveio/keychain'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { validateAccountName } from 'src/services/hiveNames'
+import { createPassword, generateKeys } from 'src/services/hiveTx'
 export default {
   name: 'createAccountPage',
   components: {
@@ -68,6 +70,7 @@ export default {
       newUsername: '',
       availableUsername: null,
       keys: null,
+      generatedAuthorities: null,
       roles: ['active', 'owner', 'posting', 'memo'],
       confirmedSaved: false,
       chainProperties: null
@@ -75,7 +78,8 @@ export default {
   },
   watch: {
     newUsername: function () { this.availableUsername = null },
-    loggedInUser: function () { this.init() }
+    loggedInUser: function () { this.init() },
+    keys: function (value) { if (!value) this.generatedAuthorities = null }
   },
   computed: {
     globalProps: function () { return this.$hiveStore.globalProps },
@@ -102,13 +106,18 @@ export default {
         .then(response => { if (response.length === 0) { this.availableUsername = true } else { this.availableUsername = false } })
         .catch(err => { this.availableUsername = null; console.error(err?.cause?.data || err) })
     },
-    genKeys () {
-      var password = this.$hive.formatter.createSuggestedPassword()
-      this.keys = { username: this.newUsername, password: password }
-      this.keys.owner = this.$hive.auth.toWif(this.newUsername, password, 'owner')
-      this.keys.active = this.$hive.auth.toWif(this.newUsername, password, 'active')
-      this.keys.posting = this.$hive.auth.toWif(this.newUsername, password, 'posting')
-      this.keys.memo = this.$hive.auth.toWif(this.newUsername, password, 'memo')
+    validateUsername (username) {
+      return validateAccountName(username)
+    },
+    async genKeys () {
+      const password = await createPassword()
+      const generated = await generateKeys(this.newUsername, password)
+      this.generatedAuthorities = generated
+      this.keys = {
+        username: this.newUsername,
+        password,
+        ...generated.privateKeys
+      }
     },
     copy (i) { copyToClipboard(i); this.$q.notify('Copied keys to clipboard') },
     linkAccount (account) { return '/@' + account },
@@ -132,13 +141,15 @@ export default {
         .catch(err => { console.error('Failed to load chain properties', err?.cause?.data || err) })
     },
     claimAccountWithToken () {
+      if (!this.generatedAuthorities) return
+      const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
       var op = {
         creator: this.loggedInUser,
         new_account_name: this.newUsername,
-        owner: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.owner), 1]] },
-        active: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.active), 1]] },
-        posting: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.posting), 1]] },
-        memo_key: this.$hive.auth.wifToPublic(this.keys.memo),
+        owner,
+        active,
+        posting,
+        memo_key: memoKey,
         json_metadata: '',
         extensions: []
       }
@@ -146,14 +157,16 @@ export default {
       this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
     },
     claimAccountWithHive () {
+      if (!this.generatedAuthorities) return
+      const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
       var op = {
         fee: this.accountCreationFee,
         creator: this.loggedInUser,
         new_account_name: this.newUsername,
-        owner: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.owner), 1]] },
-        active: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.active), 1]] },
-        posting: { weight_threshold: 1, account_auths: [], key_auths: [[this.$hive.auth.wifToPublic(this.keys.posting), 1]] },
-        memo_key: this.$hive.auth.wifToPublic(this.keys.memo),
+        owner,
+        active,
+        posting,
+        memo_key: memoKey,
         json_metadata: '',
         extensions: []
       }

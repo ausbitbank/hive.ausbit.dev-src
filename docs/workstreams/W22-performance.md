@@ -121,10 +121,10 @@ render-helper out of preview routes and deferred non-critical work:
 - removed the unused TradingView preconnect;
 - added intent-based prefetch on internal link hover/focus.
 
-Remaining opportunities are documented in the bundle analysis. The largest is
-finishing the W20 read-path migration so hive-js/SmartLock can load only for
-signing. CLS on wallet/post is still above the 0.1 target; W24 owns skeleton and
-loading-transition work.
+Remaining opportunities are documented in the bundle analysis. The hive-js
+chunks have since been removed in #88 (signing is lazy-loaded hive-tx; reads use
+the central client). CLS on wallet/post is still above the 0.1 target; W24 owns
+skeleton and loading-transition work.
 
 ## Budgets and CI
 

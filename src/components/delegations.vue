@@ -35,6 +35,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
+import { vestToHive } from 'src/services/wallet'
 export default {
   name: 'delegations',
   props: ['username'],
@@ -79,7 +80,7 @@ export default {
           if (last !== '') { response.shift() }
           this.delegations.push.apply(this.delegations, response)
         })
-        .error(err => { this.error = err.cause.data })
+        .catch(err => { this.error = err?.cause?.data || err?.data || err })
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -87,7 +88,7 @@ export default {
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
-    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
+    vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     onlyUnique (value, index, self) { return self.indexOf(value) === index },
     tidyNumber (x) {

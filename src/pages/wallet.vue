@@ -402,7 +402,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { keychain } from '@hiveio/keychain'
-import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
+import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
 import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
 import { getHivePrices } from 'src/services/prices'
@@ -418,7 +418,6 @@ import LightningReceivedCard from 'components/lightning/LightningReceivedCard.vu
 import HiveEngineTokens from 'components/wallet/HiveEngineTokens.vue'
 import MagiBalances from 'components/wallet/MagiBalances.vue'
 
-const op = ChainTypes.operations
 const walletBitmask = makeBitMaskFilter([
   op.transfer,
   op.transfer_to_vesting,

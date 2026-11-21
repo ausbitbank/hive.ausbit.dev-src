@@ -116,6 +116,7 @@
 </template>
 <script>
 import moment from 'src/utils/time'
+import { formatReputation } from 'src/services/comments'
 
 export default {
   name: 'votesDialog',
@@ -182,7 +183,7 @@ export default {
       // bridge/condenser expose reputation as an offset log score.
       const raw = Number(value)
       if (!Number.isFinite(raw) || raw === 0) return '—'
-      return this.$hive.formatter.reputation(raw)
+      return formatReputation(raw)
     }
   }
 }

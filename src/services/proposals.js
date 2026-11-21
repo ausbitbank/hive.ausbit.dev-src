@@ -5,6 +5,7 @@
 // (apart from the API wrappers) and are shared by the list card and the
 // proposal detail page.
 import hive from './hive'
+import { vestsToHive } from './wallet'
 import moment from '../utils/time'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -49,7 +50,7 @@ export function voteValueHp (proposal, globalProps) {
   const totalVestingFund = assetAmount(globalProps.total_vesting_fund_hive)
   if (!totalVestingShares || !totalVestingFund) return 0
 
-  return hive.formatter.vestToHive(votes, totalVestingShares, totalVestingFund) / 1e6
+  return vestsToHive(votes, totalVestingShares, totalVestingFund) / 1e6
 }
 
 function toTime (value) {
@@ -273,7 +274,8 @@ export function proposalVoteQueueItem (username, proposalId, approve) {
     ['update_proposal_votes', {
       voter: username,
       proposal_ids: [Number(proposalId)],
-      approve: Boolean(approve)
+      approve: Boolean(approve),
+      extensions: []
     }]
   ]
 }

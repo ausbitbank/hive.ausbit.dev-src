@@ -44,6 +44,7 @@
 <script>
 import { h } from 'vue'
 import VueJsonPretty from 'vue-json-pretty'
+import { vestToHive } from 'src/services/wallet'
 import 'vue-json-pretty/lib/styles.css'
 
 export default {
@@ -160,11 +161,7 @@ export default {
 
     vestToHive (vests) {
       if (this.globalProps?.total_vesting_fund_hive) {
-        return this.$hive.formatter.vestToHive(
-          vests,
-          this.globalProps.total_vesting_shares,
-          this.globalProps.total_vesting_fund_hive
-        ).toFixed(3)
+        return vestToHive(vests, this.globalProps).toFixed(3)
       }
       return null
     },

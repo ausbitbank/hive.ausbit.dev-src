@@ -38,8 +38,8 @@ export default defineConfig(() => ({
         nodePolyfills,
         {
           globals: {
-            // `hive-js` picks its transport with detect-node; exposing a
-            // global `process` makes it take the Node path in the browser.
+            // SmartLock (sjcl), the block size helper and dashboard layout
+            // helpers still expect a global Buffer in the browser.
             Buffer: true
           },
           protocolImports: true

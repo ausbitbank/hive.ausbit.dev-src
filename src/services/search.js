@@ -1,4 +1,4 @@
-import hive from '@hiveio/hive-js'
+import { validateAccountName } from './hiveNames'
 
 const URL_HOSTS = ['hive.ausbit.dev', 'hive.blog', 'peakd.com', 'ecency.com']
 const ACCOUNT_SUBPAGES = [
@@ -10,7 +10,7 @@ const SORT_ROUTES = ['trending', 'created', 'hot', 'payout', 'payout_comments', 
 function isValidAccount (name) {
   if (!name) return false
   try {
-    return hive.utils.validateAccountName(String(name).toLowerCase()) === null
+    return validateAccountName(String(name).toLowerCase()) === null
   } catch {
     return false
   }

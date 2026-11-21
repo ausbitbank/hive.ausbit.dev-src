@@ -1,15 +1,13 @@
-import hive from '@hiveio/hive-js'
 import { DEFAULT_HIVE_NODE, HIVE_API_NODES } from './hiveNodes'
-import { configureApi } from './api'
-
-hive.config.set('alternative_api_endpoints', HIVE_API_NODES)
+import { configureApi, rpcRequest } from './api'
+import { setHiveTxNode } from './hiveTx'
 
 export const HIVE_NODE_PROBE_TIMEOUT_MS = 2000
 
 export function setHiveNode (url) {
   const node = url || DEFAULT_HIVE_NODE
-  hive.api.setOptions({ url: node })
   configureApi({ node })
+  setHiveTxNode(node)
 }
 
 function probeErrorMessage (error) {
@@ -199,6 +197,86 @@ export async function selectHiveNode (configuredUrl) {
 
   return healthy.length > 0 ? healthy[0].url : configured
 }
+
+// Compatibility facade for the old `hive.api` surface.
+//
+// The read path has always been `src/services/api.js`; this object keeps the
+// existing call sites working while the last hive-js reads are migrated. New
+// code should import the named helpers from `api.js`/`chainData.js` instead.
+const api = {
+  setOptions ({ url }) {
+    setHiveNode(url)
+  },
+  callAsync (method, params = []) {
+    if (method === 'call') {
+      const [apiName, apiMethod, apiParams] = params
+      return rpcRequest(apiName + '.' + apiMethod, apiParams)
+    }
+    return rpcRequest(method, params)
+  },
+  getBlockAsync (blockNum) {
+    return rpcRequest('block_api.get_block', { block_num: blockNum })
+  },
+  getBlockHeaderAsync (blockNum) {
+    return rpcRequest('condenser_api.get_block_header', [blockNum])
+  },
+  getOpsInBlockAsync (blockNum, onlyVirtual = false) {
+    return rpcRequest('account_history_api.get_ops_in_block', {
+      block_num: blockNum,
+      only_virtual: onlyVirtual
+    })
+  },
+  getContentAsync (author, permlink) {
+    return rpcRequest('condenser_api.get_content', [author, permlink])
+  },
+  getAccountsAsync (names) {
+    return rpcRequest('condenser_api.get_accounts', [Array.isArray(names) ? names : [names]])
+  },
+  getCurrentMedianHistoryPriceAsync () {
+    return rpcRequest('condenser_api.get_current_median_history_price', [])
+  },
+  getTickerAsync () {
+    return rpcRequest('market_history_api.get_ticker', [])
+  },
+  getOrderBookAsync (limit = 200) {
+    return rpcRequest('market_history_api.get_order_book', [limit])
+  },
+  getRecentTradesAsync (limit = 100) {
+    return rpcRequest('market_history_api.get_recent_trades', [limit])
+  },
+  getOpenOrdersAsync (owner) {
+    return rpcRequest('condenser_api.get_open_orders', [owner])
+  },
+  getSavingsWithdrawFromAsync (account) {
+    return rpcRequest('condenser_api.get_savings_withdraw_from', [account])
+  },
+  getConversionRequestsAsync (account) {
+    return rpcRequest('condenser_api.get_conversion_requests', [account])
+  },
+  lookupAccountsAsync (lowerBound, limit = 10) {
+    return rpcRequest('condenser_api.lookup_accounts', [String(lowerBound || '').toLowerCase(), limit])
+  },
+  getWithdrawRoutesAsync (account, type) {
+    return rpcRequest('condenser_api.get_withdraw_routes', [account, type])
+  },
+  getTransactionAsync (trxId) {
+    return rpcRequest('condenser_api.get_transaction', [trxId])
+  },
+  getRewardFund (name = 'post') {
+    return rpcRequest('condenser_api.get_reward_fund', [name])
+  },
+  getHardforkVersionAsync () {
+    return rpcRequest('condenser_api.get_hardfork_version', [])
+  },
+  getAccountCountAsync () {
+    return rpcRequest('condenser_api.get_account_count', [])
+  },
+  getAccountHistory (account, from = -1, limit = 100) {
+    return rpcRequest('account_history_api.get_account_history', { account, from, limit })
+  }
+}
+
+const hive = { api }
 
 export default hive
 export { hive }

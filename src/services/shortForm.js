@@ -463,7 +463,8 @@ export function shortFormQueueItem ({
       max_accepted_payout: '1000000.000 HBD',
       percent_hbd: 10000,
       allow_votes: true,
-      allow_curation_rewards: true
+      allow_curation_rewards: true,
+      extensions: []
     }
   }
 

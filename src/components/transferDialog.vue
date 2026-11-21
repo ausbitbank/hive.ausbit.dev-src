@@ -176,7 +176,7 @@ export default {
       }
     },
     recurrentTransfer () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes, extensions: [] }]])
     },
     transfer () {
       if (this.network === 'hive') {

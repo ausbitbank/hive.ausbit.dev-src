@@ -517,12 +517,18 @@ a.account-menu__name:hover {
 }
 </style>
 <script>
-import smartlock from 'components/smartlock/index.js'
 import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
 import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
 import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
+
+// SmartLock pulls in sjcl and the signing stack. Keep it out of the initial
+// shell; the account menu is the first surface that needs it.
+let smartlockPromise = null
+function loadSmartlock () {
+  return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+}
 
 export default {
   name: 'userLogin',
@@ -532,7 +538,7 @@ export default {
     return {
       username: '',
       savedUsers: this.$q.localStorage.getItem('savedUsers') || [],
-      savedUsersSmartLock: smartlock.allAccounts(),
+      savedUsersSmartLock: [],
       rememberLogin: false,
       settingsDialog: false,
       smartlockUnlocked: false,
@@ -625,9 +631,18 @@ export default {
     }
   },
   methods: {
-    onMenuOpen () {
+    async onMenuOpen () {
+      await this.loadSmartlockUsers()
       this.refreshSmartlockStatus()
       this.refreshVotingStats()
+    },
+    async loadSmartlockUsers () {
+      try {
+        const smartlock = await loadSmartlock()
+        this.savedUsersSmartLock = smartlock.allAccounts()
+      } catch (error) {
+        console.error('Failed to load SmartLock accounts', error)
+      }
     },
     async refreshVotingStats () {
       if (!this.loggedInUser) return
@@ -649,28 +664,37 @@ export default {
       this.$refs.menu?.hide?.()
       this.settingsDialog = true
     },
-    smartLockRemoveAccount (user) {
-      smartlock.removeAccount(user)
+    async smartLockRemoveAccount (user) {
+      const smartlock = await loadSmartlock()
+      await smartlock.removeAccount(user)
       this.savedUsersSmartLock = smartlock.allAccounts()
       if (this.loggedInUser === user) this.smartlockUnlocked = false
     },
-    smartLockImportAccount () {
-      smartlock.importAccount(this.username, this.password, this.postkey, this.activekey, this.memokey)
-        .then(() => {
-          this.savedUsersSmartLock = smartlock.allAccounts()
-          this.checkLoginSmartLock(this.username)
-        })
-        .catch(error => {
-          this.$q.notify({ type: 'negative', message: error?.message || 'Could not import the SmartLock account' })
-        })
+    async smartLockImportAccount () {
+      try {
+        const smartlock = await loadSmartlock()
+        await smartlock.importAccount(this.username, this.password, this.postkey, this.activekey, this.memokey)
+        this.savedUsersSmartLock = smartlock.allAccounts()
+        this.checkLoginSmartLock(this.username)
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: error?.message || 'Could not import the SmartLock account' })
+      }
     },
-    refreshSmartlockStatus () {
-      this.smartlockUnlocked = this.loggedInUser && this.loginType === 'smartlock'
-        ? smartlock.isAccountUnlocked(this.loggedInUser, this.smartlockTimeoutMs)
-        : false
+    async refreshSmartlockStatus () {
+      if (!this.loggedInUser || this.loginType !== 'smartlock') {
+        this.smartlockUnlocked = false
+        return
+      }
+      try {
+        const smartlock = await loadSmartlock()
+        this.smartlockUnlocked = smartlock.isAccountUnlocked(this.loggedInUser, this.smartlockTimeoutMs)
+      } catch {
+        this.smartlockUnlocked = false
+      }
     },
-    lockSmartlock () {
+    async lockSmartlock () {
       if (!this.loggedInUser) return
+      const smartlock = await loadSmartlock()
       smartlock.lockAccount(this.loggedInUser)
       this.smartlockUnlocked = false
       this.$q.notify({
@@ -680,15 +704,16 @@ export default {
         position: 'top'
       })
     },
-    unlockSmartlock () {
+    async unlockSmartlock () {
       if (!this.loggedInUser) return
-      this.getPasswordPrompt(this.loggedInUser)
+      await this.getPasswordPrompt(this.loggedInUser)
     },
-    smartLockLockAccount (user) {
-      smartlock.lockAccount(user)
-    },
-    smartLockUnlockStatus (user) {
-      return smartlock.isAccountUnlocked(user)
+    async smartLockLockAccount (user) {
+      if (!user) return
+      try {
+        const smartlock = await loadSmartlock()
+        smartlock.lockAccount(user)
+      } catch {}
     },
     getHiveAvatarUrl (user) { return 'https://images.hive.blog/u/' + user + '/avatar' },
     getAccountLink (user) { return '/@' + user },
@@ -697,7 +722,8 @@ export default {
       this.savedUsers.splice(this.savedUsers.indexOf(user), 1)
       this.$q.localStorage.set('savedUsers', this.savedUsers)
     },
-    checkLoginSmartLock (user) {
+    async checkLoginSmartLock (user) {
+      const smartlock = await loadSmartlock()
       if (smartlock.isAccountUnlocked(user, this.smartlockTimeoutMs)) {
         this.loggedInUser = user
         this.$q.sessionStorage.set('loggedInUser', user)
@@ -708,7 +734,8 @@ export default {
         this.getPasswordPrompt(user)
       }
     },
-    getPasswordPrompt (user) {
+    async getPasswordPrompt (user) {
+      const smartlock = await loadSmartlock()
       this.$q.dialog({
         dark: true,
         title: 'Account ' + user + ' is locked',
@@ -719,13 +746,14 @@ export default {
         },
         cancel: true,
         persistent: true
-      }).onOk(data => {
-        smartlock.unlockAccount(user, data, false)
-          .then(() => {
-            this.smartlockUnlocked = true
-            this.checkLoginSmartLock(user)
-          })
-          .catch(() => this.$q.notify({ type: 'negative', message: 'Could not unlock ' + user }))
+      }).onOk(async data => {
+        try {
+          await smartlock.unlockAccount(user, data, false)
+          this.smartlockUnlocked = true
+          this.checkLoginSmartLock(user)
+        } catch {
+          this.$q.notify({ type: 'negative', message: 'Could not unlock ' + user })
+        }
       }).onCancel(() => {
         // cancel
       }).onDismiss(() => {

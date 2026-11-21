@@ -56,8 +56,7 @@
 </style>
 <script>
 import moment from 'src/utils/time'
-import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
-const op = ChainTypes.operations
+import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
 const voteBitmask = makeBitMaskFilter([
   op.vote
 ])

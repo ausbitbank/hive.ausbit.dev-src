@@ -1,6 +1,8 @@
 // Code kindly provided by Asgarth of peakd.com and probably butchered by ausbit
 
-import hive from '@hiveio/hive-js'
+import { hive } from 'src/services/hive'
+import { validateAccountName } from 'src/services/hiveNames'
+import { isValidWif, toPublicKey } from 'src/services/hiveTx'
 import {
   getPosting,
   unlock,
@@ -33,7 +35,7 @@ const isAccountUnlocked = (username, timeoutMs = DEFAULT_SESSION_TIMEOUT_MS) => 
 
 const unlockAccount = async (username, password, keepUnlocked = false) => {
   // validate params
-  if (!username || typeof username !== 'string' || hive.utils.validateAccountName(username)) {
+  if (!username || typeof username !== 'string' || validateAccountName(username)) {
     throw new Error('Invalid username')
   }
   // Existing accounts may have shorter passwords; accept any non-empty value.
@@ -50,7 +52,7 @@ const lockAccount = async username => {
 
 const importAccount = async (username, password, posting, active, memo) => {
   // validate params
-  if (!username || typeof username !== 'string' || hive.utils.validateAccountName(username)) {
+  if (!username || typeof username !== 'string' || validateAccountName(username)) {
     throw new Error('Invalid account name')
   }
   if (!password || typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
@@ -68,13 +70,13 @@ const importAccount = async (username, password, posting, active, memo) => {
 
   // validate keys
   const account = accounts[0]
-  if (!hive.auth.isWif(posting) || !validateKey(account, 'posting', posting)) {
+  if (!(await isValidWif(posting)) || !(await validateKey(account, 'posting', posting))) {
     throw new Error('Posting key not valid or not matching the current key for this account')
   }
-  if (active && (!hive.auth.isWif(active) || !validateKey(account, 'active', active))) {
+  if (active && (!(await isValidWif(active)) || !(await validateKey(account, 'active', active)))) {
     throw new Error('Active key not valid or not matching the current key for this account')
   }
-  if (memo && (!hive.auth.isWif(memo) || !validateKey(account, 'memo', memo))) {
+  if (memo && (!(await isValidWif(memo)) || !(await validateKey(account, 'memo', memo)))) {
     throw new Error('Memo key not valid or not matching the current key for this account')
   }
   return save(username, password, { posting: posting, active: active, memo: memo })
@@ -84,16 +86,15 @@ const removeAccount = async username => {
   return remove(username)
 }
 
-const validateKey = (account, role, privateKey) => {
+const validateKey = async (account, role, privateKey) => {
   try {
+    const publicKey = await toPublicKey(privateKey)
     // if memo look in account.memo_key otherwise carry on
     if (role === 'memo') {
-      if (hive.auth.wifIsValid(privateKey, account.memo_key)) {
-        return true
-      }
+      return publicKey === account.memo_key
     }
     for (const pubKey of account[role].key_auths) {
-      if (hive.auth.wifIsValid(privateKey, pubKey[0])) {
+      if (publicKey === pubKey[0]) {
         return true
       }
     }

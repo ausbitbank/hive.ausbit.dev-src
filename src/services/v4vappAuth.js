@@ -96,11 +96,11 @@ async function signWithKeychain ({ account, challenge }) {
   return { signature: response.result, publicKey: response.publicKey || '' }
 }
 
-function signWithSmartlock ({ account, challenge }) {
+async function signWithSmartlock ({ account, challenge }) {
   if (!smartlock.isAccountUnlocked(account)) {
     throw new V4vappAuthError('SmartLock is locked. Unlock it to read the Lightning balance.', { code: 'locked' })
   }
-  const result = smartlock.api.signBufferWithPublicKey(account, challenge)
+  const result = await smartlock.api.signBufferWithPublicKey(account, challenge)
   return { signature: result.signature, publicKey: result.publicKey }
 }
 

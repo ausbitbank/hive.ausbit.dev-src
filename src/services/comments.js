@@ -102,6 +102,13 @@ export function formatReputation (raw) {
   return String(Math.max(25, rounded))
 }
 
+/** Build a reply permlink in the same shape the old hive-js formatter used. */
+export function commentPermlink (parentAuthor, parentPermlink) {
+  const timeStr = new Date().toISOString().replace(/[^a-zA-Z0-9]+/g, '').toLowerCase()
+  const parent = String(parentPermlink || '').replace(/(-\d{8}t\d{9}z)/g, '')
+  return ('re-' + parentAuthor + '-' + parent + '-' + timeStr).replace('.', '')
+}
+
 /**
  * Build the queue item for a comment or reply. The queue's Keychain/SmartLock
  * paths expect `comment_options` inside the comment operation; they split it
@@ -161,7 +168,8 @@ function createCommentQueueItem ({
     max_accepted_payout: '100000.000 HBD',
     percent_hbd: 10000,
     allow_votes: true,
-    allow_curation_rewards: true
+    allow_curation_rewards: true,
+    extensions: []
   }
 
   const list = Array.isArray(beneficiaries)

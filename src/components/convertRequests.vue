@@ -39,10 +39,10 @@ export default {
     getConversions () {
       this.$hive.api.callAsync('condenser_api.get_collateralized_conversion_requests', [this.username])
         .then(response => { this.collateralized_conversions = response })
-        .error(err => { this.error = err.cause.data })
+        .catch(err => { this.error = err?.cause?.data || err?.data || err })
       this.$hive.api.getConversionRequestsAsync(this.username)
         .then(response => { this.conversions = response })
-        .error(err => { this.error = err.cause.data })
+        .catch(err => { this.error = err?.cause?.data || err?.data || err })
     },
     timeDelta (timestamp) {
       var now = moment.utc()

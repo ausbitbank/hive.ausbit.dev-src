@@ -33,6 +33,7 @@
 </template>
 <script>
 import moment from 'src/utils/time'
+import { vestToHive } from 'src/services/wallet'
 export default {
   name: 'savingsDepositDialog',
   data () {
@@ -54,7 +55,7 @@ export default {
     loggedInUser: function () { return this.$hiveStore.user.username }
   },
   methods: {
-    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
+    vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
     tidyNumber (x) {
       var parts = x.toString().split('.')
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')

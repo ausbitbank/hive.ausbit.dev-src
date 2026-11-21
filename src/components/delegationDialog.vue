@@ -22,6 +22,7 @@
 </template>
 <script>
 import moment from 'src/utils/time'
+import { vestToHive } from 'src/services/wallet'
 export default {
   name: 'delegationDialog',
   data () {
@@ -126,7 +127,7 @@ export default {
   methods: {
     setUsername (u) { this.toAccount = u },
     delegateHive () { this.$hiveStore.addToQueue([this.username, 'active', ['delegate_vesting_shares', { delegator: this.username, delegatee: this.to, vesting_shares: parseFloat(this.amountVests).toFixed(6) + ' VESTS' }]]) },
-    vestToHive (vests) { if (this.globalProps) { return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3) } else { return null } },
+    vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
     tidyNumber (x) {
       var parts = x.toString().split('.')
       parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')

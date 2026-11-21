@@ -273,6 +273,7 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
+import { vestToHive } from 'src/services/wallet'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 export default {
   name: 'accountHeader',
@@ -361,7 +362,7 @@ export default {
     getWalletLink (user) { return '/@' + user + '/wallet' },
     vestToHive (vests) {
       if (this.globalProps) {
-        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return vestToHive(vests, this.globalProps).toFixed(3)
       } else {
         return null
       }

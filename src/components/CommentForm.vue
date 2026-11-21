@@ -237,7 +237,7 @@
 
 <script>
 import render from 'components/render.vue'
-import { commentQueueItem } from 'src/services/comments'
+import { commentPermlink, commentQueueItem } from 'src/services/comments'
 
 export default {
   name: 'commentForm',
@@ -346,7 +346,7 @@ export default {
       try {
         const permlink = this.isEdit
           ? this.permlink
-          : this.$hive.formatter.commentPermlink(this.parentAuthor, this.parentPermlink)
+          : commentPermlink(this.parentAuthor, this.parentPermlink)
 
         this.$hiveStore.addToQueue(commentQueueItem({
           username,

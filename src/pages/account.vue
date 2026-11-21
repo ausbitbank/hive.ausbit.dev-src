@@ -648,12 +648,13 @@ import accountAuthorities from 'components/accountAuthorities.vue'
 import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
 import MagiAccountSummary from 'components/account/MagiAccountSummary.vue'
 import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
-import { ChainTypes, makeBitMaskFilter } from '@hiveio/hive-js/lib/auth/serializer'
-const op = ChainTypes.operations
+import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
 import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
+import { vestToHive } from 'src/services/wallet'
+import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
 export default {
   name: 'accountPage',
@@ -966,21 +967,24 @@ export default {
       }
     },
     async getRewardFundPost () {
-      this.$hive.api.getRewardFund('post', function (err, result) {
-        if (err) { console.log(err) }
-        this.rewardFundPost = result
-      }.bind(this))
+      try {
+        this.rewardFundPost = await this.$hive.api.getRewardFund('post')
+      } catch (err) {
+        console.log(err)
+      }
     },
     async getMedianPrice () {
-      this.$hive.api.getCurrentMedianHistoryPrice(function (err, result) {
-        if (err) { console.error(err) }
+      try {
+        const result = await this.$hive.api.getCurrentMedianHistoryPriceAsync()
         if (result) { this.medianPrice = result }
-      }.bind(this))
+      } catch (err) {
+        console.error(err)
+      }
     },
     async getAccountHistoryFiltered () {
       this.accountOperations = []
       if (this.operationsBitmask === null) {
-        this.getAccountHistory(this.username)
+        await this.getAccountHistory()
       } else {
         var limit = this.accountOperationsLimit
         var page = this.$route.query.page || 1
@@ -1013,17 +1017,19 @@ export default {
       }
     },
     filterOpsVotes (op) { if (op[1].op[0] === 'vote') { return true } else { return false } },
-    getAccountHistory () {
+    async getAccountHistory () {
       var limit = this.accountOperationsLimit
       var page = this.$route.query.page || 1
       var pageReq = this.accountOperationsMarker - (limit * page)
       pageReq = pageReq + limit
       if (pageReq <= (limit - 1)) { pageReq = limit - 1 } // Catch the last (first) page results
       if (page === null || page === 1) { pageReq = -1 } // Get most recent activities on page 1
-      this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit, function (err, response) {
-        if (err) { console.log(err) }
+      try {
+        const response = await this.$hive.api.getAccountHistory(this.username, pageReq, this.accountOperationsLimit)
         this.accountOperations = response.reverse()
-      }.bind(this))
+      } catch (err) {
+        console.log(err)
+      }
     },
     async getAccountHistoryMarker () {
       var prev = this.accountOperationsMarker
@@ -1065,7 +1071,7 @@ export default {
       return '/tx/' + txid
     },
     getReputation (rep) {
-      return this.$hive.formatter.reputation(rep)
+      return formatReputation(rep)
     },
     async loadAccount () {
       try {
@@ -1108,7 +1114,7 @@ export default {
     },
     vestToHive (vests) {
       if (this.globalProps) {
-        return this.$hive.formatter.vestToHive(vests, this.globalProps.total_vesting_shares, this.globalProps.total_vesting_fund_hive).toFixed(3)
+        return vestToHive(vests, this.globalProps).toFixed(3)
       } else {
         return null
       }
