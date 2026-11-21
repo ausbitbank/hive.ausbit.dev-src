@@ -107,6 +107,54 @@
       />
     </template>
 
+    <template v-else-if="action === 'send'">
+      <div class="keepsats-actions__row">
+        <q-input
+          v-model="sendAccount"
+          dense
+          outlined
+          label="Hive account"
+          aria-label="Hive account to send keepsats to"
+          placeholder="name"
+          class="keepsats-actions__amount"
+        />
+        <q-input
+          v-model.number="sendSats"
+          type="number"
+          min="1"
+          step="1"
+          dense
+          outlined
+          label="Sats"
+          aria-label="Sats to send to another account"
+          class="keepsats-actions__amount"
+        />
+      </div>
+      <q-input
+        v-model="sendMemo"
+        dense
+        outlined
+        maxlength="80"
+        label="Memo (public on Hive)"
+        aria-label="Keepsats transfer memo"
+        hint="Optional. Do not put personal information here."
+      />
+      <p class="keepsats-actions__hint">
+        Moves sats inside v4v.app's ledger. The recipient must already have a
+        keepsats balance. This is not a Hive transfer.
+      </p>
+      <q-btn
+        unelevated
+        no-caps
+        color="orange-9"
+        text-color="black"
+        icon="playlist_add"
+        label="Queue keepsats transfer"
+        :disable="!canSend"
+        @click="queueSend"
+      />
+    </template>
+
     <template v-else>
       <q-input
         v-model="payTarget"
@@ -165,6 +213,7 @@
 import { decodeBolt11 } from 'src/services/bolt11'
 import {
   formatSats,
+  isValidHiveAccount,
   parseLightningTarget,
   satsRatesFromPrices
 } from 'src/services/lightning'
@@ -191,6 +240,7 @@ export default {
       actionOptions: [
         { label: 'Deposit', value: 'deposit' },
         { label: 'Convert', value: 'convert' },
+        { label: 'Send', value: 'send' },
         { label: 'Pay', value: 'pay' }
       ],
       assetOptions: [
@@ -203,6 +253,9 @@ export default {
       convertSats: null,
       convertQuote: null,
       convertQuoteBusy: false,
+      sendAccount: '',
+      sendSats: null,
+      sendMemo: '',
       payTarget: '',
       paySats: null,
       payDecoded: null,
@@ -248,6 +301,10 @@ export default {
     payNeedsAmount () {
       return this.payTargetParsed.type === 'address' ||
         (this.payTargetParsed.type === 'invoice' && this.payDecoded?.hasAmount === false)
+    },
+    canSend () {
+      const target = String(this.sendAccount || '').trim().replace(/^@/, '').toLowerCase()
+      return isValidHiveAccount(target) && target !== 'v4vapp' && Number(this.sendSats) > 0
     },
     canPay () {
       if (!this.account || this.payError) return false
@@ -409,6 +466,24 @@ export default {
         })
         this.$hiveStore.addToQueue([this.account, 'active', operation], { manualOnly: true })
         this.notifyQueued('Keepsats conversion queued for review. It will not auto-send.')
+        this.$emit('queued')
+      } catch (error) {
+        this.$q.notify({ message: error.message, color: 'negative', timeout: 4000, position: 'top' })
+      }
+    },
+    async queueSend () {
+      if (!this.canSend) return
+      if (!(await this.ensureConsent())) return
+      const target = String(this.sendAccount || '').trim().replace(/^@/, '').toLowerCase()
+      try {
+        const operation = buildKeepsatsTransfer({
+          from: this.account,
+          to: target,
+          sats: Number(this.sendSats),
+          memo: this.sendMemo
+        })
+        this.$hiveStore.addToQueue([this.account, 'active', operation], { manualOnly: true })
+        this.notifyQueued('Keepsats transfer queued for review. It will not auto-send.')
         this.$emit('queued')
       } catch (error) {
         this.$q.notify({ message: error.message, color: 'negative', timeout: 4000, position: 'top' })

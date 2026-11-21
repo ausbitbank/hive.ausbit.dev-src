@@ -187,6 +187,10 @@
           @queued="refreshAll"
         />
 
+        <section v-if="hiveTransactions.length" id="lightning-received" class="wallet-section">
+          <lightning-received-card :entries="hiveTransactions" :username="username" />
+        </section>
+
         <section id="tokens" class="wallet-section" aria-labelledby="wallet-tokens-title">
           <hive-engine-tokens
             heading-id="wallet-tokens-title"
@@ -410,6 +414,7 @@ import WalletAssetCard from 'components/wallet/WalletAssetCard.vue'
 import WalletPendingStrip from 'components/wallet/WalletPendingStrip.vue'
 import WalletPendingPanel from 'components/wallet/WalletPendingPanel.vue'
 import WalletActivity from 'components/wallet/WalletActivity.vue'
+import LightningReceivedCard from 'components/lightning/LightningReceivedCard.vue'
 import HiveEngineTokens from 'components/wallet/HiveEngineTokens.vue'
 import MagiBalances from 'components/wallet/MagiBalances.vue'
 
@@ -447,6 +452,7 @@ export default {
     WalletPendingStrip,
     WalletPendingPanel,
     WalletActivity,
+    LightningReceivedCard,
     HiveEngineTokens,
     MagiBalances,
     LightningWalletPanel: defineAsyncComponent(() => import('components/lightning/LightningWalletPanel.vue'))

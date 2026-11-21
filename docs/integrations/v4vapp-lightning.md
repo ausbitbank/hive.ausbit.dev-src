@@ -394,13 +394,14 @@ transfers. It also enables a "sats wallet" experience without leaving the site.
 **Why not default:** the balance is an IOU from v4vapp. It needs explicit
 disclosure, a feature flag, and a clear "withdraw to Hive" escape hatch.
 
-**Implemented (W53 + W54):** the read-only half of option 2 and the complete
+**Implemented (W53 + W54 + W58):** the read-only half of option 2 and the
 on-chain action set of option 1. A posting-key challenge yields a ~50 minute
 bearer token held in memory; the wallet shows balance, in-progress sats, last
 activity and (when present) history. Deposits (`#sats`), conversions
-(`v4vapp_transfer` + `#HBD`/`#HIVE`) and Lightning invoice/address payments from
-keepsats are queued as `manualOnly` active-key actions. No writes go through the
-API session; no tokens are stored; no active key is held.
+(`v4vapp_transfer` + `#HBD`/`#HIVE`), Lightning invoice/address payments and
+keepsats transfers to another Hive account are queued as `manualOnly` active-key
+actions. No writes go through the API session; no tokens are stored; no active
+key is held.
 
 **Two implementation options:**
 
@@ -562,6 +563,10 @@ separate research task. The receive flow itself (invoice tagged `#magisats
 #v4vapp`) is straightforward; the balance display is the hard part.
 
 ### L. Creator dashboard / zap analytics
+
+**Partial (W58):** the wallet shows a local sats-received summary (total, count,
+fees, latest) from the rows already loaded. Weekly/top-zap/unique-supporter
+analytics still needs an indexer or a bounded history scan.
 
 If the site wants creator tooling: show sats received this week, top zaps,
 unique supporters, average tip, and fee drag. Source it from the creator's own

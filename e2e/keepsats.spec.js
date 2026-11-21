@@ -260,3 +260,45 @@ test.describe('Keepsats on-chain actions', () => {
     })
   })
 })
+
+test.describe('Keepsats user transfer', () => {
+  test('queues a keepsats transfer to another Hive account', async ({ page }) => {
+    test.setTimeout(120000)
+    await mockBridge(page)
+    const panel = await openKeepsats(page)
+
+    await panel.getByText('Keepsats actions (on-chain)').click()
+    await panel.getByRole('button', { name: 'Send', exact: true }).click()
+    await panel.getByLabel('Hive account to send keepsats to').fill('bob')
+    await panel.getByLabel('Sats to send to another account').fill('500')
+    await panel.getByLabel('Keepsats transfer memo').fill('thanks')
+    await panel.getByRole('button', { name: 'Queue keepsats transfer' }).click()
+    await page.getByRole('button', { name: 'I understand' }).click()
+
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      const item = queue?.items?.[0]
+      const json = item?.[2]?.[1]?.json
+      return {
+        keyType: item?.[1],
+        type: item?.[2]?.[0],
+        id: item?.[2]?.[1]?.id,
+        auths: item?.[2]?.[1]?.required_auths,
+        body: json ? JSON.parse(json) : null,
+        manualOnly: queue?.meta?.[0]?.manualOnly
+      }
+    }).toEqual({
+      keyType: 'active',
+      type: 'custom_json',
+      id: 'v4vapp_transfer',
+      auths: ['ausbitbank'],
+      body: {
+        from_account: 'ausbitbank',
+        to_account: 'bob',
+        sats: '500',
+        memo: 'thanks'
+      },
+      manualOnly: true
+    })
+  })
+})

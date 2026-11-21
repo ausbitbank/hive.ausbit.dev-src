@@ -138,13 +138,18 @@ W57 (issue #87, Lightning search and payment links) is complete. Search
 recognises mainnet invoices, `lightning:` prefixes and Lightning addresses; the
 search page offers an Open payment action, and `/lightning?pay=…` prefills the
 pay dialog for logged-in users or shows a login hint. See
-`docs/workstreams/W57-lightning-search.md`. Creator sats analytics remain.
+`docs/workstreams/W57-lightning-search.md`.
 
-Remaining follow-ups with no open workstream: creator sats analytics from the
-Lightning study (issue #87), the optional keepsats user-transfer and on-chain
-balance fallback, the optional #63 server-side existence check at the edge, and
-the optional visual editor from the composer roadmap. There is otherwise no
-open issue backlog.
+W58 (issue #87, keepsats send and local summary) is complete. Keepsats actions
+gain Send to another Hive account, and the wallet shows a local sats-received
+summary from the loaded rows with fees and latest date. See
+`docs/workstreams/W58-keepsats-send-summary.md`.
+
+Remaining follow-ups with no open workstream: creator analytics beyond the
+loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
+on-chain balance-request UI, the optional #63 server-side existence check at the
+edge, and the optional visual editor from the composer roadmap. There is
+otherwise no open issue backlog.
 
 ## Definition of done
 
