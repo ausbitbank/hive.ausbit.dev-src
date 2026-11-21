@@ -4,7 +4,7 @@
     <span v-if="profile.email" title="Email"><a :href="returnServiceLink('email', profile.email)" aria-label="Email"><q-avatar><q-icon name="email" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.protonmail" title="Protonmail"><a :href="returnServiceLink('protonmail', profile.protonmail)" aria-label="Protonmail"><q-avatar><q-icon name="img:/statics/protonmail.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.ipfs" title="Inter Planetary File System"><a :href="returnServiceLink('ipfs', profile.ipfs)" aria-label="Inter Planetary File System"><q-avatar><q-icon name="img:/statics/ipfs.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
-    <span v-if="profile.twitter" title="Twitter"><a :href="returnServiceLink('twitter', profile.twitter)" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><q-avatar><q-icon name="img:/statics/twitter.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
+    <span v-if="profile.twitter" title="X"><a :href="returnServiceLink('twitter', profile.twitter)" target="_blank" rel="noopener noreferrer" aria-label="X"><q-avatar><q-icon name="img:/statics/x.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.twitch" title="Twitch"><a :href="returnServiceLink('twitch', profile.twitch)" target="_blank" rel="noopener noreferrer" aria-label="Twitch"><q-avatar><q-icon name="img:/statics/twitch.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.steam" title="Steam"><a :href="returnServiceLink('steam', profile.steam)" target="_blank" rel="noopener noreferrer" aria-label="Steam"><q-avatar><q-icon name="img:/statics/steam.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
     <span v-if="profile.xbox" title="Xbox"><a :href="returnServiceLink('xbox', profile.xbox)" target="_blank" rel="noopener noreferrer" aria-label="Xbox"><q-avatar><q-icon name="img:/statics/xbox.svg" class="hvr" aria-hidden="true" /></q-avatar></a></span>
@@ -77,7 +77,7 @@ export default {
       var d = stripHtml(data)
       switch (service) {
         case 'twitter':
-          return 'https://twitter.com/' + d
+          return 'https://x.com/' + d
         case 'twitch':
           return 'https://twitch.tv/' + d
         case 'github':

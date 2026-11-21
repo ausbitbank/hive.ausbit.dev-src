@@ -172,7 +172,7 @@ export default {
     returnServiceLink (service, data) {
       const d = encodeURIComponent(data)
       switch (service) {
-        case 'twitter': return 'https://twitter.com/' + d
+        case 'twitter': return 'https://x.com/' + d
         case 'twitch': return 'https://twitch.tv/' + d
         case 'github': return 'https://github.com/' + d
         case 'discord': return isNaN(data) ? 'https://discord.gg/' + d : 'https://discordapp.com/users/' + d

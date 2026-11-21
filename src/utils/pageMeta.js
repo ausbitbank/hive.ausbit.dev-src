@@ -1,5 +1,5 @@
 // Page-level document metadata (title, description, canonical, Open Graph,
-// Twitter cards and optional JSON-LD).
+// X/Twitter cards and optional JSON-LD).
 //
 // Every tag is looked up by a stable selector and updated in place, so client
 // side navigation replaces the existing tags instead of appending duplicates.

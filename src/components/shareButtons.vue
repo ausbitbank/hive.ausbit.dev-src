@@ -1,6 +1,6 @@
 <template>
   <span>
-    <q-btn v-for="service in services" :key="service" dense push no-caps size="md" class="hvr" @click="share(service)" :icon="returnServiceIcon(service)" :label="service" />
+    <q-btn v-for="service in services" :key="service" dense push no-caps size="md" class="hvr" @click="share(service)" :icon="returnServiceIcon(service)" :label="returnServiceLabel(service)" />
     <q-btn size="md" class="hvr" no-caps @click="copy()" dense push icon="content_copy" label="Copy URL" />
   </span>
 </template>
@@ -10,19 +10,20 @@ export default {
   name: 'shareButtons',
   data () {
     return {
-      services: ['dbuzz', 'twitter', 'facebook', 'reddit']
+      services: ['dbuzz', 'x', 'facebook', 'reddit']
     }
   },
   props: ['title'],
   methods: {
     returnServiceIcon (service) { return 'img:/statics/' + service + '.svg' },
+    returnServiceLabel (service) { return service === 'x' ? 'X' : service },
     returnCurrentUrl () { return 'https://hive.ausbit.dev' + this.$route.path },
     copy () { var i = this.returnCurrentUrl(); copyToClipboard(i); this.$q.notify('Copied to clipboard: ' + i) },
     returnServiceUrl (service) {
       var url = this.returnCurrentUrl()
       switch (service) {
-        case 'twitter':
-          return 'https://twitter.com/intent/tweet?text="' + encodeURI(this.title) + '"&url=' + encodeURI(url) + ''
+        case 'x':
+          return 'https://x.com/intent/post?text=' + encodeURIComponent(this.title) + '&url=' + encodeURIComponent(url)
         case 'facebook':
           return 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURI(url) + 'title=&description=&quote=' + encodeURI(this.title) + '&hashtag='
         case 'dbuzz':
