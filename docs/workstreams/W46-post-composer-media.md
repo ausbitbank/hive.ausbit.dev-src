@@ -115,17 +115,21 @@ AI-disclosure, display-author, portfolio and collection rows.
 - `bun run build` — succeeded.
 - Fast E2E against Obscura — compose flows pass; the file-input upload test is
   skipped there because Obscura has no `DataTransfer`.
-- Full Chromium E2E — 79 of 80 passed on the first run; the single failure was a
-  live notification fetch logged as a console error. The background unread-count
-  refresh now logs a warning, and the test passes.
-- Axe at 1440px and 390px for `/compose` and the post page — clean.
+- Full Chromium E2E — 80/80 passing, including axe at 1440px and 390px, the
+  Keychain upload flow with a stubbed extension and mocked image host, review
+  dialog, rewards decline, metadata, cards and post display.
 - Performance budgets — pass after raising the compose route/total budgets and
   the post/home ceilings by the measured feature cost.
 - Upload signing payload verified with a unit test against the exact
-  `sha256("ImageSigningChallenge" + file)` digest. Keychain upload is exercised
-  end-to-end in Chromium with a stubbed extension and a mocked image host.
+  `sha256("ImageSigningChallenge" + file)` digest.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T084254Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: composer loads, Post details and
+  Allow rewards are visible, the upload dialog opens for a logged-in session,
+  the AI badge renders on the latest dev post, and the browser reported no page
+  errors.
 - SmartLock upload uses the existing signer and unlock flow; a live SmartLock
-  upload should be included in the deployment smoke.
+  upload should still be included in a follow-up smoke.
 
 ## Follow-ups
 

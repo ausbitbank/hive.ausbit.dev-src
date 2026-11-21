@@ -66,7 +66,9 @@ SmartLock signing, drag/drop and paste, cover-image selection, an allow/decline
 rewards choice, community subscription suggestions, and interoperable metadata
 for descriptions, mentions, AI disclosure, countdowns, portfolio, collections
 and display authors. It also renders that metadata on post pages and feed cards.
-See `docs/workstreams/W46-post-composer-media.md`. Media embeds, a split live
+It is complete and deployed; the live smoke covered the composer, upload dialog,
+post badges and the absence of page errors. See
+`docs/workstreams/W46-post-composer-media.md`. Media embeds, a split live
 preview, snippets, templates and the visual editor remain follow-ups.
 
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
