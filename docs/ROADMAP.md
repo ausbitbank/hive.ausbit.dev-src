@@ -87,9 +87,10 @@ templates dialogs and reported no page errors. See
 snippet/template import/export, and the optional visual editor remain.
 
 W49 is the fourth composer phase: draft version history with restore, plus
-snippet and template JSON import/export. See
-`docs/workstreams/W49-composer-history-backup.md`. The optional visual editor
-and scheduled-draft reminders remain.
+snippet and template JSON import/export. It is complete and deployed; the live
+smoke covered the history, snippets and templates dialogs with no page errors.
+See `docs/workstreams/W49-composer-history-backup.md`. The optional visual
+editor and scheduled-draft reminders remain.
 
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
 Lightning workstream, the optional #63 server-side existence check at the edge,

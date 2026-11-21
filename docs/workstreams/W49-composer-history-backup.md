@@ -60,9 +60,16 @@ templates are not exported; they are always available in the app.
 - `bun run build` — succeeded.
 - Fast E2E against Obscura — compose flows pass, including draft-history
   restore and the snippet/template dialogs.
-- Chromium E2E — compose, a11y and polish suites pass; the full-suite result is
-  recorded after the run.
+- Chromium compose, a11y and polish suites — 35/35 passing.
+- The full-suite run encountered two unrelated flakes outside this workstream
+  (the PWA service-worker update prompt and the Lightning fallback test); the
+  composer, accessibility and layout tests all pass.
 - Performance budgets — pass.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T121850Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: Draft history opens, the snippets
+  dialog shows export/import, the templates dialog shows export/import, and the
+  browser reported no page errors.
 
 ## Follow-ups
 
