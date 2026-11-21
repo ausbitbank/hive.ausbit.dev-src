@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { threeSpeakEmbedUrl } from '../../src/components/render.vue'
+import render, { threeSpeakEmbedUrl } from '../../src/components/render.vue'
 
 describe('threeSpeakEmbedUrl', () => {
   it('converts legacy and player watch URLs to the Snapie embed', () => {
@@ -20,5 +20,13 @@ describe('threeSpeakEmbedUrl', () => {
     expect(threeSpeakEmbedUrl('https://example.com/watch?v=alice/my-video')).toBe('')
     expect(threeSpeakEmbedUrl('https://3speak.tv/watch?v=nope')).toBe('')
     expect(threeSpeakEmbedUrl('not a url')).toBe('')
+  })
+
+  it('prioritises only the first body image', () => {
+    const html = render.methods.prioritizeFirstImage(
+      '<p><img src="a.png" loading="lazy"><img src="b.png" loading="lazy"></p>'
+    )
+    expect(html).toContain('<img fetchpriority="high" loading="eager" src="a.png">')
+    expect(html).toContain('<img src="b.png" loading="lazy">')
   })
 })

@@ -21,12 +21,14 @@ export default defineConfig({
       pages: src('pages'),
       stores: src('stores'),
       // Outside an SSR app Vitest resolves Quasar's server build; the client
-      // build is required for mounting components under jsdom.
+      // build is required for mounting components under a DOM environment.
       quasar: 'quasar/dist/quasar.client.js'
     }
   },
   test: {
     environment: 'jsdom',
+    pool: 'vmThreads',
+    setupFiles: ['tests/setup.js'],
     globals: true,
     include: ['tests/unit/**/*.spec.js'],
     coverage: {

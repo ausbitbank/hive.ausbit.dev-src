@@ -3,7 +3,6 @@
 import { defineConfig } from '#q-app'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 const root = dirname(fileURLToPath(import.meta.url))
 const src = (...parts) => resolve(root, 'src', ...parts)
@@ -32,26 +31,20 @@ export default defineConfig(() => ({
       components: src('components'),
       layouts: src('layouts'),
       pages: src('pages'),
-      stores: src('stores')
-    },
-    vitePlugins: [
-      [
-        nodePolyfills,
-        {
-          // No Node globals are injected into the initial shell. The signing
-          // stack imports and installs Buffer just before it lazily imports
-          // hive-tx (the plugin default would inject it everywhere).
-          globals: { Buffer: false },
-          // sjcl probes Node's `crypto.randomBytes`, which would otherwise pull
-          // the entire crypto-browserify tree into the SmartLock chunk. The
-          // shim keeps sjcl on the browser's WebCrypto path.
-          overrides: {
-            crypto: resolve(root, 'src/shims/crypto.js')
-          },
-          protocolImports: true
-        }
-      ]
-    ]
+      stores: src('stores'),
+      // The app only needs these three Node built-ins. Explicit aliases keep
+      // the build off vite-plugin-node-polyfills and its crypto-browserify tree.
+      buffer: 'buffer/',
+      crypto: src('shims/crypto.js'),
+      querystring: src('shims/querystring.js')
+    }
+  },
+
+  extendViteConf () {
+    // The browser target already supports modulepreload; the injected
+    // polyfill is dead weight in the initial shell. Merging tiny shared
+    // chunks also trims the request count on first load.
+    return { build: { modulePreload: { polyfill: false } } }
   },
 
   devServer: {
@@ -62,7 +55,7 @@ export default defineConfig(() => ({
   framework: {
     iconSet: 'material-icons',
     lang: 'en-US',
-    plugins: ['LocalStorage', 'SessionStorage', 'Meta', 'Notify', 'LoadingBar', 'Dialog'],
+    plugins: ['LocalStorage', 'SessionStorage', 'Meta', 'Notify', 'Dialog'],
     config: {
       dark: true
     }

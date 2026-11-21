@@ -166,7 +166,9 @@ export default {
 
           this.preloadImages(enhanced).then(dimensions => {
             if (token !== this.renderToken) return
-            this.rendered = normalizeHeadings(this.applyImageDimensions(enhanced, dimensions))
+            this.rendered = normalizeHeadings(
+              this.prioritizeFirstImage(this.applyImageDimensions(enhanced, dimensions))
+            )
             this.loading = false
           })
         })
@@ -286,6 +288,19 @@ export default {
           }
         }
         return dimensions
+      })
+    },
+
+    /** The first body image is usually the post's LCP. Let it fetch eagerly. */
+    prioritizeFirstImage (html) {
+      let seen = false
+      return html.replace(/<img\b[^>]*>/gi, tag => {
+        if (seen) return tag
+        seen = true
+        return tag
+          .replace(/\sloading="[^"]*"/i, '')
+          .replace(/\sfetchpriority="[^"]*"/i, '')
+          .replace(/^<img/i, '<img fetchpriority="high" loading="eager"')
       })
     },
 

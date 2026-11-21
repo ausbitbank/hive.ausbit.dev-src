@@ -1,5 +1,4 @@
-import { test as base, expect } from '@playwright/test'
-import { chromium } from 'playwright-core'
+import { test as base, expect, chromium } from '@playwright/test'
 
 // The Chromium suite uses the stock Playwright fixtures. The Obscura fast suite
 // sets OBSCURA_CDP to a CDP websocket endpoint; in that mode the browser

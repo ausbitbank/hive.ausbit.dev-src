@@ -137,8 +137,8 @@ remaining legacy weight without changing app behaviour.
 | --- | ---: | ---: | ---: |
 | SmartLock chunk (raw) | 794 KB | 33.8 KB | −95.7% |
 | SmartLock chunk (Brotli) | 107.0 KB | 11.3 KB | −89.4% |
-| Initial JS (raw) | 407 KB | 352.0 KB | −13.5% |
-| Initial JS (Brotli) | 131 KB | 113.8 KB | −13.1% |
+| Initial JS (raw) | 407 KB | 348.5 KB | −14.4% |
+| Initial JS (Brotli) | 131 KB | 112.8 KB | −13.9% |
 | Total JS (raw) | 3,473 KB | 2,721 KB | −21.6% |
 | Total JS (Brotli) | 915 KB | 819 KB | −10.5% |
 | `dist/spa` | 5.5 MB | 4.2 MB | −24% |
@@ -198,6 +198,27 @@ remaining legacy weight without changing app behaviour.
   changed malformed-HTML recovery, CDATA, `<template>`/`<noscript>` and table
   serialization. render-helper's security boundary explicitly assumes xmldom's
   parsing/serialization, so the 270 KB parser stays.
+
+### Follow-up: dev loop and shell polish
+
+- **Node polyfill plugin removed.** `vite-plugin-node-polyfills` was only
+  resolving `buffer`, `crypto` and render-helper's `querystring` import. Three
+  explicit aliases (`buffer/`, `src/shims/crypto.js`,
+  `src/shims/querystring.js`) replace it, removing about 9 MB of build-time
+  dependencies. A unit test checks the querystring shim against Node's.
+- **Vitest runs ~5× faster.** `pool: 'vmThreads'` reuses one jsdom environment
+  per worker and `tests/setup.js` exposes Node WebCrypto to the signing tests.
+  The suite dropped from ~30 s to ~6 s. Happy DOM was evaluated and rejected:
+  DOMPurify's security tests returned unsanitised HTML under it.
+- **Smaller shell.** Quasar 2.35.6 (patch), the unused `LoadingBar` plugin
+  removed, and Vite's `modulePreload` polyfill disabled for the modern target.
+  The icon font is now preloaded alongside Roboto.
+- **Post LCP hint.** The first body image on a post page is marked
+  `fetchpriority="high" loading="eager"`; every other image stays lazy.
+- **Initial JS 352.0 → 348.5 KB raw / 113.8 → 112.8 KB Brotli.** The post
+  renderer remains the largest lazy chunk; removing its `autolinker` dependency
+  would save ~15 KB Brotli but changes fuzzy-domain linkification, so it was
+  left alone.
 
 `bun run perf:check` passes. The heaviest remaining lazy chunk is still the post
 renderer (`@ecency/render-helper`, 126 KB Brotli).
