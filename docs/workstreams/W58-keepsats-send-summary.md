@@ -72,3 +72,13 @@ unique supporters) still needs an indexer decision and is not in this pass.
 - Creator analytics (weekly sats, top zaps, unique supporters) if an indexer or
   a bounded history scan is acceptable.
 - Optional on-chain `#balance_request` UI.
+
+## Deploy
+
+Deployed on 2026-11-22 via `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T141200Z.tar.gz`
+- Live wallet (temporary logged-in session): **Send** tab renders, and the
+  **Sats received** card shows `3 payments · +184,810 sats`, `5,511 sats` fees
+  and a latest date from the loaded rows.
+- 1440px and 390px: zero horizontal overflow, zero page errors.
