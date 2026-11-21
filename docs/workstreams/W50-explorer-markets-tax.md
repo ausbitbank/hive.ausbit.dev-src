@@ -97,3 +97,20 @@ counterparty, invoice_hash, parent_id, txid, status`.
 
 Remaining from the study: search integration for invoices/addresses, creator
 sats analytics, and optional keepsats user-transfer/balance-request UI.
+
+## Deploy
+
+Deployed on 2026-11-21 via `./scripts/deploy.sh` (one follow-up release for the
+duplicated "sats sats" suffix and the markets fallback).
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T131725Z.tar.gz`
+- Live `/tx/24ff0eb2…`: `v4vapp_notification` renders as **⚡ v4vapp notice**
+  with its reference and human memo.
+- Live `/tx/f4044255…`: the v4vapp transfer renders **⚡ Lightning · Deposit of
+  6 sats (fee 52 sats)** instead of raw memo text.
+- Live `/markets`: sats card shows `1 HIVE ≈ 57 sats`, `1 HBD ≈ 1,544 sats`,
+  `1,000 sats ≈ 0.648 HBD · 17.458 HIVE`, quote age and Live badge, with the
+  converter using the same quote.
+- Live wallet CSV download: `hive-wallet-ausbitbank-2026-11-21.csv`, expected
+  header and 7 loaded rows, including `lightning` and `keepsats` rails.
+- Zero page errors and zero horizontal overflow in all checks.
