@@ -229,12 +229,14 @@ export default {
     modelValue: { type: Boolean, default: false },
     account: { type: String, required: true },
     liquidHive: { type: Number, default: 0 },
-    liquidHbd: { type: Number, default: 0 }
+    liquidHbd: { type: Number, default: 0 },
+    initialInput: { type: String, default: '' },
+    initialSats: { type: Number, default: 0 }
   },
   emits: ['update:modelValue', 'queued'],
   data () {
     return {
-      input: '',
+      input: this.initialInput || '',
       target: null,
       decoded: null,
       decodeError: '',
@@ -333,8 +335,17 @@ export default {
   },
   watch: {
     modelValue (open) {
-      if (open) this.reset()
+      if (open) this.openWithInput()
+    },
+    initialInput (value) {
+      if (!this.modelValue) return
+      this.reset()
+      this.input = value || ''
+      if (this.input) this.$nextTick(() => this.review())
     }
+  },
+  mounted () {
+    if (this.modelValue) this.openWithInput()
   },
   beforeUnmount () {
     if (this.quoteTimer) clearTimeout(this.quoteTimer)
@@ -346,12 +357,16 @@ export default {
       if (!Number.isFinite(number)) return '—'
       return number.toLocaleString('en-US', { maximumFractionDigits: 3, minimumFractionDigits: 3 }) + ' ' + this.asset
     },
+    openWithInput () {
+      this.reset()
+      if (this.input) this.$nextTick(() => this.review())
+    },
     reset () {
-      this.input = ''
+      this.input = this.initialInput || ''
+      this.manualSats = this.initialSats > 0 ? String(this.initialSats) : ''
       this.target = null
       this.decoded = null
       this.decodeError = ''
-      this.manualSats = ''
       this.step = 'input'
       this.busy = false
       this.quote = null

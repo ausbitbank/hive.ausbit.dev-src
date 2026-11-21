@@ -40,6 +40,28 @@ describe('search route parser', () => {
     expect(parseSearchRoute('https://ecency.com/trending/photography')).toMatchObject({ path: '/trending/photography' })
   })
 
+  it('parses Lightning invoices and addresses into a payment link', () => {
+    const invoice = 'lnbc1000u1p' + 'a'.repeat(40)
+    expect(parseSearchRoute(invoice)).toMatchObject({
+      kind: 'lightning',
+      lightning: 'invoice',
+      path: '/lightning?pay=' + encodeURIComponent(invoice)
+    })
+    expect(parseSearchRoute('lightning:' + invoice)).toMatchObject({
+      kind: 'lightning',
+      lightning: 'invoice'
+    })
+    expect(parseSearchRoute('alice@getalby.com')).toMatchObject({
+      kind: 'lightning',
+      lightning: 'address',
+      path: '/lightning?pay=alice%40getalby.com'
+    })
+    expect(parseSearchRoute('@ausbitbank/pos')).toMatchObject({
+      path: '/@ausbitbank/pos',
+      kind: 'account'
+    })
+  })
+
   it('rejects empty and unsupported input', () => {
     expect(parseSearchRoute('')).toBe(null)
     expect(parseSearchRoute('https://example.com/thing')).toBe(null)

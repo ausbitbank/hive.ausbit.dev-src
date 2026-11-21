@@ -3,7 +3,7 @@ import hive from '@hiveio/hive-js'
 const URL_HOSTS = ['hive.ausbit.dev', 'hive.blog', 'peakd.com', 'ecency.com']
 const ACCOUNT_SUBPAGES = [
   'wallet', 'posts', 'blog', 'feed', 'replies', 'comments', 'communities',
-  'followers', 'following', 'tip', 'transfers', 'trail'
+  'followers', 'following', 'tip', 'transfers', 'trail', 'lightning', 'pos'
 ]
 const SORT_ROUTES = ['trending', 'created', 'hot', 'payout', 'payout_comments', 'muted']
 
@@ -34,6 +34,25 @@ function safeDecode (value) {
     return decodeURIComponent(value)
   } catch {
     return value
+  }
+}
+
+const LIGHTNING_INVOICE_RE = /^lnbc[0-9a-z]{20,}$/i
+const LIGHTNING_ADDRESS_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i
+
+function lightningResult (value, kind) {
+  const clean = String(value || '').trim()
+  if (!clean) return null
+  return {
+    path: '/lightning?pay=' + encodeURIComponent(clean),
+    label: kind === 'invoice' ? 'Lightning invoice' : 'Lightning address',
+    description: kind === 'invoice'
+      ? 'Open the invoice in the Hive ↔ Lightning pay dialog'
+      : 'Send sats or pay with Hive/HBD',
+    icon: 'bolt',
+    kind: 'lightning',
+    lightning: kind,
+    value: clean
   }
 }
 
@@ -167,6 +186,10 @@ function proposalResult (value) {
 export function parseSearchRoute (raw) {
   const input = String(raw || '').trim()
   if (!input) return null
+
+  const lightning = input.replace(/^lightning:/i, '').trim()
+  if (LIGHTNING_INVOICE_RE.test(lightning)) return lightningResult(lightning, 'invoice')
+  if (LIGHTNING_ADDRESS_RE.test(lightning)) return lightningResult(lightning, 'address')
 
   if (/^https?:\/\//i.test(input)) return parseUrl(input)
   if (input.startsWith('//')) return null

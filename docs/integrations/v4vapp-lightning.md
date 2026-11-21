@@ -493,10 +493,11 @@ and the notification). Use `parent_id`/`§ id` where available and de-duplicate.
 
 **What:** interpret v4vapp operations instead of showing raw JSON.
 
-**Implemented (W56) for operations and memos:** block/transaction views render
-keepsats custom JSON as human-readable cards, label Lightning transfer memos and
-hide the raw invoice from the summary. Invoice/address search decoding is still
-open.
+**Implemented (W56/W57):** block/transaction views render keepsats custom JSON
+as human-readable cards, label Lightning transfer memos and hide the raw invoice
+from the summary. Search recognises `lnbc…` invoices, `lightning:` prefixes and
+Lightning addresses and links to `/lightning?pay=…`, where the dialog validates
+and quotes the payment.
 
 - `BlockOperation.vue` / account activity: render `v4vapp_transfer` and
   `v4vapp_notification` as human-readable cards: from/to, sats, memo, parent id,

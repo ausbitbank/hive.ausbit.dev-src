@@ -132,14 +132,19 @@ W56 (issue #87, explorer/markets/tax) is complete. Bridge custom JSON and
 Lightning-style transfer memos are legible in block/transaction views,
 `/markets` gains a live sats quote card, and wallet activity exports a
 tax-friendly CSV with sats, fee, reference and parent id. See
-`docs/workstreams/W56-explorer-markets-tax.md`. Search decoding for invoices and
-creator sats analytics remain.
+`docs/workstreams/W56-explorer-markets-tax.md`.
 
-Remaining follow-ups with no open workstream: search decoding for Lightning
-invoices/addresses and creator sats analytics from the Lightning study (issue
-#87), the optional keepsats user-transfer and on-chain balance fallback, the
-optional #63 server-side existence check at the edge, and the optional visual
-editor from the composer roadmap. There is otherwise no open issue backlog.
+W57 (issue #87, Lightning search and payment links) is complete. Search
+recognises mainnet invoices, `lightning:` prefixes and Lightning addresses; the
+search page offers an Open payment action, and `/lightning?pay=…` prefills the
+pay dialog for logged-in users or shows a login hint. See
+`docs/workstreams/W57-lightning-search.md`. Creator sats analytics remain.
+
+Remaining follow-ups with no open workstream: creator sats analytics from the
+Lightning study (issue #87), the optional keepsats user-transfer and on-chain
+balance fallback, the optional #63 server-side existence check at the edge, and
+the optional visual editor from the composer roadmap. There is otherwise no
+open issue backlog.
 
 ## Definition of done
 

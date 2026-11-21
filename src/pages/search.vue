@@ -92,6 +92,31 @@
           <template v-else>No results for “{{ submittedQuery }}”. Try a shorter or differently spelled query.</template>
         </section>
 
+        <section v-if="lightningRoute" class="search-lightning home-card home-panel" aria-labelledby="search-lightning-title">
+          <div class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">Lightning</div>
+              <h2 id="search-lightning-title" class="home-panel__title">{{ lightningRoute.label }}</h2>
+            </div>
+            <q-badge color="amber-9" text-color="black">v4v.app bridge</q-badge>
+          </div>
+          <div class="search-lightning__body">
+            <div>
+              <p>{{ lightningRoute.description }}. The invoice or address stays public on chain.</p>
+              <code>{{ lightningValueLabel }}</code>
+            </div>
+            <q-btn
+              unelevated
+              no-caps
+              color="amber-9"
+              text-color="black"
+              icon="bolt"
+              label="Open payment"
+              :to="lightningRoute.path"
+            />
+          </div>
+        </section>
+
         <div ref="groupsEl" class="search-groups" @keydown="onGroupsKeydown">
           <section
             v-for="group in visibleGroups"
@@ -533,6 +558,33 @@
 .search-status {
   color: #90a4ae;
   font-size: 0.8rem;
+}
+
+.search-lightning {
+  border-color: rgba(255, 193, 7, 0.3);
+  background: rgba(255, 193, 7, 0.04);
+}
+
+.search-lightning__body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: 0.2rem 1rem 0.9rem;
+}
+
+.search-lightning__body p {
+  margin: 0 0 0.25rem;
+  color: #90a4ae;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.search-lightning__body code {
+  color: #ffe082;
+  font-size: 0.66rem;
+  overflow-wrap: anywhere;
 }
 
 .search-groups {
@@ -1002,6 +1054,7 @@ import {
   serializeSavedSearches,
   writeSavedSearches
 } from 'src/services/savedSearches'
+import { parseSearchRoute } from 'src/services/search'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const EXAMPLES = [
@@ -1039,6 +1092,14 @@ export default {
   computed: {
     loggedInUser () {
       return this.$hiveStore.user.username || null
+    },
+    lightningRoute () {
+      const route = parseSearchRoute(this.submittedQuery)
+      return route?.kind === 'lightning' ? route : null
+    },
+    lightningValueLabel () {
+      const value = String(this.lightningRoute?.value || '')
+      return value.length > 78 ? value.slice(0, 54) + '…' + value.slice(-18) : value
     },
     canSave () {
       return Boolean(String(this.query || '').trim() && this.$route.query.q)

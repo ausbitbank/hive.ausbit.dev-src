@@ -15,6 +15,15 @@
       </div>
     </header>
 
+    <section v-if="payQuery && !loggedInUser" class="lightning-link-banner" role="status">
+      <q-icon name="bolt" size="20px" aria-hidden="true" />
+      <div>
+        <strong>A Lightning payment link is ready.</strong>
+        <p>Log in with Keychain or SmartLock from the header to review and pay it with HBD or HIVE.</p>
+        <code>{{ payQueryLabel }}</code>
+      </div>
+    </section>
+
     <section class="lightning-account-bar" aria-label="Choose a Hive account">
       <div class="lightning-account-bar__label">Hive account</div>
       <user-search-box :username="account" label="Search accounts" @selectUsername="selectAccount" />
@@ -128,6 +137,8 @@
       :account="loggedInUser"
       :liquid-hive="liquidHive"
       :liquid-hbd="liquidHbd"
+      :initial-input="payPrefill"
+      :initial-sats="1000"
       @queued="onQueued"
     />
   </q-page>
@@ -157,11 +168,19 @@ export default {
       account: '',
       receiveOpen: false,
       payOpen: false,
+      payPrefill: '',
       feePolicy: normalizeFeePolicy({}),
       feePolicyLive: false
     }
   },
   computed: {
+    payQuery () {
+      return String(this.$route.query.pay || '').trim()
+    },
+    payQueryLabel () {
+      const value = this.payQuery
+      return value.length > 80 ? value.slice(0, 54) + '…' + value.slice(-18) : value
+    },
     feePercentLabel () {
       return (Math.round(this.feePolicy.percent * 1000) / 10) + '%'
     },
@@ -199,9 +218,15 @@ export default {
     '$route.query.account' () {
       this.syncFromRoute()
     },
+    '$route.query.pay' () {
+      this.preparePayLink()
+    },
     loggedInUser (value) {
       if (!this.account && value) this.selectAccount(value)
-      if (value) this.$hiveStore.getAccount(value)
+      if (value) {
+        this.$hiveStore.getAccount(value)
+        if (this.payQuery) this.preparePayLink()
+      }
     }
   },
   created () {
@@ -215,6 +240,7 @@ export default {
   },
   mounted () {
     if (this.loggedInUser) this.$hiveStore.getAccount(this.loggedInUser)
+    this.preparePayLink()
     this.loadFeePolicy()
   },
   methods: {
@@ -226,6 +252,15 @@ export default {
         this.feePolicyLive = true
       } catch {
         // Defaults stay visible and are labelled as such.
+      }
+    },
+    preparePayLink () {
+      const value = this.payQuery
+      if (!value) return
+      this.payPrefill = value
+      if (this.loggedInUser) {
+        if (!this.account) this.selectAccount(this.loggedInUser, { replace: true })
+        this.payOpen = true
       }
     },
     syncFromRoute () {
@@ -320,6 +355,36 @@ export default {
   width: clamp(72px, 10vw, 120px);
   height: auto;
   filter: drop-shadow(0 0 18px rgba(255, 193, 7, 0.28));
+}
+
+.lightning-link-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: var(--space-3);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(255, 193, 7, 0.35);
+  border-radius: var(--radius-card);
+  background: rgba(255, 193, 7, 0.06);
+  color: #ffcc80;
+}
+
+.lightning-link-banner strong {
+  display: block;
+  color: #ffe082;
+  font-size: 0.82rem;
+}
+
+.lightning-link-banner p {
+  margin: 0.15rem 0 0.3rem;
+  color: #b0bec5;
+  font-size: 0.72rem;
+}
+
+.lightning-link-banner code {
+  color: #90a4ae;
+  font-size: 0.66rem;
+  overflow-wrap: anywhere;
 }
 
 .lightning-account-bar {
