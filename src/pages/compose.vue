@@ -181,9 +181,23 @@
                 <div class="compose-checklist__body">
                   <div class="compose-checklist__label">{{ item.label }}</div>
                   <div class="compose-checklist__detail">{{ item.detail }}</div>
+                  <q-btn
+                    v-if="item.status === 'warn' && item.dismissKey"
+                    flat
+                    dense
+                    no-caps
+                    class="compose-checklist__dismiss"
+                    label="Don't warn again"
+                    :aria-label="'Hide the ' + item.label + ' warning'"
+                    @click="dismissChecklistItem(item)"
+                  />
                 </div>
               </li>
             </ul>
+            <div v-if="dismissedWarningCount" class="compose-checklist__restore">
+              <span>{{ dismissedWarningCount }} hidden warning{{ dismissedWarningCount === 1 ? '' : 's' }}</span>
+              <q-btn flat dense no-caps label="Restore warnings" @click="restoreChecklistWarnings" />
+            </div>
             <div class="compose-reminder-action">
               <q-btn
                 outline
@@ -1704,6 +1718,29 @@
   overflow-wrap: anywhere;
 }
 
+.compose-checklist__dismiss {
+  min-height: 20px;
+  margin: 0.15rem 0 0 -0.35rem;
+  padding: 0 0.35rem;
+  color: #78909c;
+  font-size: 0.68rem;
+}
+
+.compose-checklist__dismiss:hover,
+.compose-checklist__dismiss:focus-visible {
+  color: #81d4fa;
+}
+
+.compose-checklist__restore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin: -0.35rem 0 0.7rem;
+  color: #78909c;
+  font-size: 0.68rem;
+}
+
 .compose-publish {
   width: 100%;
 }
@@ -2855,6 +2892,14 @@ import {
   writeTemplates
 } from 'src/services/templates'
 import {
+  dismissWarning,
+  readDismissedWarnings,
+  restoreDismissedWarnings
+} from 'src/services/checklistPrefs'
+import {
+  probeImageHealth
+} from 'src/services/imageHealth'
+import {
   AI_TOOL_LABELS,
   canPublish as canPublishDraft,
   checklistErrors as collectChecklistErrors,
@@ -2979,6 +3024,10 @@ export default {
       uploadAbort: null,
       uploadRunCancelled: false,
       recentUploads: [],
+      imageHealth: null,
+      imageProbeTimer: null,
+      imageProbeRun: 0,
+      dismissedChecklistWarnings: [],
       dragActive: false,
       savedSelection: { start: 0, end: 0 },
       coverDialogOpen: false,
@@ -3045,6 +3094,12 @@ export default {
       const custom = normalizeCoverImage(this.draft.coverImage)
       if (custom) return custom
       return this.bodyImages[0]?.url || ''
+    },
+    imageProbeKey () {
+      if (!this.draft) return ''
+      return [this.coverImage, ...this.bodyImages.map(image => image.url)]
+        .filter(Boolean)
+        .join('\n')
     },
     coverIsCustom () {
       return Boolean(this.draft && normalizeCoverImage(this.draft.coverImage))
@@ -3142,10 +3197,21 @@ export default {
       }
     },
     checklist () {
-      return this.draft ? publishChecklist(this.draft, { username: this.loggedInUser }) : []
+      if (!this.draft) return []
+      const items = publishChecklist(this.draft, {
+        username: this.loggedInUser,
+        imageHealth: this.imageHealth
+      })
+      return items.filter(item => {
+        if (!item.dismissKey || item.status !== 'warn') return true
+        return !this.dismissedChecklistWarnings.includes(item.dismissKey)
+      })
     },
     checklistErrors () {
       return collectChecklistErrors(this.checklist)
+    },
+    dismissedWarningCount () {
+      return this.dismissedChecklistWarnings.length
     },
     reviewSummary () {
       if (!this.draft) return []
@@ -3320,6 +3386,13 @@ export default {
       this.loadTemplates()
       this.loadPinnedDrafts()
       this.loadRecentValues()
+      this.loadChecklistWarnings()
+    },
+    imageProbeKey: {
+      immediate: true,
+      handler () {
+        this.scheduleImageProbe()
+      }
     },
     'draft.body' () {
       this.schedulePreview()
@@ -3359,6 +3432,7 @@ export default {
     this.loadTemplates()
     this.loadPinnedDrafts()
     this.loadRecentValues()
+    this.loadChecklistWarnings()
     this.refreshStorageUsage()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.flushAutosave)
@@ -3368,6 +3442,7 @@ export default {
   beforeUnmount () {
     this.flushAutosave()
     if (this.previewTimer) clearTimeout(this.previewTimer)
+    if (this.imageProbeTimer) clearTimeout(this.imageProbeTimer)
     window.removeEventListener('keydown', this.onGlobalKeydown)
     window.removeEventListener('beforeunload', this.flushAutosave)
     window.removeEventListener('storage', this.onStorageChange)
@@ -3405,6 +3480,47 @@ export default {
     loadRecentValues () {
       this.recentCommunities = readRecentValues(LocalStorage, 'communities', this.loggedInUser, 8)
       this.recentTags = readRecentValues(LocalStorage, 'tags', this.loggedInUser, 12)
+    },
+    loadChecklistWarnings () {
+      this.dismissedChecklistWarnings = readDismissedWarnings(LocalStorage, this.loggedInUser)
+    },
+    scheduleImageProbe () {
+      if (this.imageProbeTimer) clearTimeout(this.imageProbeTimer)
+      if (!this.imageProbeKey) {
+        this.imageProbeRun += 1
+        this.imageProbeTimer = null
+        this.imageHealth = null
+        return
+      }
+      this.imageProbeTimer = setTimeout(() => {
+        this.imageProbeTimer = null
+        this.runImageProbe()
+      }, 500)
+    },
+    async runImageProbe () {
+      const key = this.imageProbeKey
+      if (!key) {
+        this.imageHealth = null
+        return
+      }
+      const run = ++this.imageProbeRun
+      const health = await probeImageHealth(key.split('\n'), { coverUrl: this.coverImage })
+      if (run !== this.imageProbeRun || key !== this.imageProbeKey) return
+      this.imageHealth = health
+    },
+    dismissChecklistItem (item) {
+      const key = item && item.dismissKey
+      if (!key) return
+      this.dismissedChecklistWarnings = dismissWarning(LocalStorage, this.loggedInUser, key)
+      this.$q.notify({
+        type: 'info',
+        message: 'Warning hidden',
+        caption: 'Use Restore hidden warnings in the checklist to show it again.'
+      })
+    },
+    restoreChecklistWarnings () {
+      this.dismissedChecklistWarnings = restoreDismissedWarnings(LocalStorage, this.loggedInUser)
+      this.$q.notify({ type: 'positive', message: 'Checklist warnings restored' })
     },
     rememberCommunity (value) {
       const tag = normalizeTag(value)

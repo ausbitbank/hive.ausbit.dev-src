@@ -28,6 +28,7 @@ import {
 } from './drafts'
 import { byteLength } from '../utils/markdownEditor'
 import { collectImageUrls, deriveDescription, extractMentionedUsers, normalizeImageUrl } from '../utils/media'
+import { coverIssueDetail } from './imageHealth'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 
@@ -335,15 +336,18 @@ export function postQueueItem ({ username, draft, permlink, now = new Date(), pa
   ]
 }
 
-function checklistItem (id, label, status, detail) {
-  return { id, label, status, detail }
+function checklistItem (id, label, status, detail, options = {}) {
+  return { id, label, status, detail, ...options }
 }
 
 /**
  * Pre-publish checklist shared by the UI and tests. `error` blocks publishing,
  * `warn` is advisory and `ok` confirms the requirement.
+ *
+ * `imageHealth` is optional probe output from `src/services/imageHealth.js`.
+ * It only adds advisory warnings; images are never required to publish.
  */
-export function publishChecklist (draft, { username = null } = {}) {
+export function publishChecklist (draft, { username = null, imageHealth = null } = {}) {
   const source = draft && typeof draft === 'object' ? draft : {}
   const items = []
   const user = String(username || '').trim().toLowerCase()
@@ -402,6 +406,22 @@ export function publishChecklist (draft, { username = null } = {}) {
     ))
   }
 
+  if (!isCommentEdit && community) {
+    const otherCommunityTags = normalizeTags(source.tags)
+      .filter(tag => tag !== community && /^hive-\d+$/.test(tag))
+    if (otherCommunityTags.length) {
+      items.push(checklistItem(
+        'tagsMismatch',
+        'Community tag',
+        'warn',
+        'This post goes to #' + community + ', but the tags also include ' +
+          otherCommunityTags.map(tag => '#' + tag).join(', ') +
+          '. Remove the extra community tag unless you mean to reference it.',
+        { dismissKey: 'tags-mismatch' }
+      ))
+    }
+  }
+
   const rawBeneficiaries = Array.isArray(source.beneficiaries) ? source.beneficiaries : []
   const share = beneficiaryShare(source.beneficiaries)
   const invalidBene = rawBeneficiaries.find(item => {
@@ -454,8 +474,16 @@ export function publishChecklist (draft, { username = null } = {}) {
   const images = collectImageUrls(body)
   const cover = normalizeCoverImage(source.coverImage)
   const missingAlt = /!\[\s*\]\(/.test(body)
-  if (!images.length && !cover) {
-    items.push(checklistItem('images', 'Images', 'warn', 'No images found. Feed cards will be text-only.'))
+  if (isCommentEdit) {
+    items.push(checklistItem('images', 'Images', 'ok', 'Comments have no cover image.'))
+  } else if (!images.length && !cover) {
+    items.push(checklistItem(
+      'images',
+      'Images and cover',
+      'warn',
+      'No images found. Add a cover image so cards and link previews are not text-only.',
+      { dismissKey: 'cover-missing' }
+    ))
   } else if (missingAlt) {
     items.push(checklistItem('images', 'Images', 'warn', images.length + ' image(s) found, but some have no alt text.'))
   } else {
@@ -465,6 +493,33 @@ export function publishChecklist (draft, { username = null } = {}) {
       'ok',
       images.length + ' image(s)' + (cover ? ' · cover set' : ' · first image used as cover')
     ))
+  }
+
+  if (!isCommentEdit && imageHealth && typeof imageHealth === 'object') {
+    const broken = Array.isArray(imageHealth.broken) ? imageHealth.broken : []
+    const coverIssues = Array.isArray(imageHealth.coverIssues) ? imageHealth.coverIssues : []
+    if (broken.length) {
+      items.push(checklistItem(
+        'imagesBroken',
+        'Image links',
+        'warn',
+        broken.length + (broken.length === 1 ? ' image could' : ' images could') +
+          ' not be loaded. Check the URL' + (broken.length === 1 ? '' : 's') + ' before publishing.',
+        { dismissKey: 'images-broken' }
+      ))
+    }
+    const coverIsBroken = Boolean(
+      cover && broken.some(item => normalizeCoverImage(item && item.url) === cover)
+    )
+    if (coverIssues.length && !coverIsBroken) {
+      items.push(checklistItem(
+        'coverQuality',
+        'Cover image quality',
+        'warn',
+        coverIssueDetail(coverIssues),
+        { dismissKey: 'cover-quality' }
+      ))
+    }
   }
 
   const rawDescription = String(source.description || '').trim()

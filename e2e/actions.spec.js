@@ -622,6 +622,101 @@ test.describe('action flows', () => {
     expect(item[2][1].comment_options.max_accepted_payout).toBe('0.000 HBD')
   })
 
+  test('compose missing-cover warning can be hidden and restored locally', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    const coverItem = page.locator('.compose-checklist__item').filter({ hasText: 'Images and cover' })
+    await expect(coverItem).toContainText('No images found')
+    await coverItem.getByRole('button', { name: /Hide the Images and cover warning/ }).click()
+    await expect(coverItem).toHaveCount(0)
+    await expect.poll(async () => {
+      const stored = await page.evaluate(() => localStorage.getItem('composeDismissedWarnings:ausbitbank'))
+      return stored ? JSON.parse(stored.replace(/^__q_objt\|/, '')).warnings : []
+    }).toEqual(['cover-missing'])
+    await expect(page.getByRole('button', { name: 'Restore warnings' })).toBeVisible()
+
+    await page.reload()
+    await waitForApp(page)
+    await expect(page.getByText('No images found')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Restore warnings' }).click()
+    await expect(page.getByText('No images found')).toBeVisible()
+  })
+
+  test('compose probes broken images and warns about a portrait cover', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.route('https://images.hive.blog/**', route => {
+      if (route.request().url().endsWith('portrait.svg')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'image/svg+xml',
+          body: '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="300"><rect width="100" height="300" fill="#444"/></svg>'
+        })
+      }
+      return route.fulfill({ status: 404, body: 'not found' })
+    })
+    await seedDrafts(page, [{
+      id: 'e2e-image-health',
+      owner: 'ausbitbank',
+      title: 'Image health draft',
+      body: '![Portrait](https://images.hive.blog/portrait.svg)\n\n![Broken](https://images.hive.blog/broken.png)',
+      tags: ['testing'],
+      community: '',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByLabel('Post title')).toHaveValue('Image health draft')
+
+    const brokenItem = page.locator('.compose-checklist__item').filter({ hasText: 'Image links' })
+    await expect(brokenItem).toContainText('1 image could not be loaded', { timeout: 20000 })
+    const coverItem = page.locator('.compose-checklist__item').filter({ hasText: 'Cover image quality' })
+    await expect(coverItem).toContainText('portrait', { timeout: 20000 })
+    await expect(coverItem).toContainText('100×300')
+    await expect(coverItem.getByRole('button', { name: /Hide the Cover image quality warning/ })).toBeVisible()
+  })
+
+  test('compose warns when a tag names another community', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await seedDrafts(page, [{
+      id: 'e2e-tag-mismatch',
+      owner: 'ausbitbank',
+      title: 'Tag mismatch draft',
+      body: 'Posting in one community with another community tag.',
+      tags: ['writing', 'hive-123456'],
+      community: 'hive-174578',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    const mismatch = page.locator('.compose-checklist__item').filter({ hasText: 'This post goes to #hive-174578' })
+    await expect(mismatch).toContainText('#hive-174578')
+    await expect(mismatch).toContainText('#hive-123456')
+  })
+
+  test('cover warnings stay out of shorts and comment composers', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/shorts')
+    await waitForApp(page)
+    await expect(page.getByRole('heading', { level: 1, name: 'Short posts' })).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('Images and cover')).toHaveCount(0)
+    await expect(page.getByText("Don't warn again")).toHaveCount(0)
+
+    await page.goto('/@ausbitbank/rescuing-hiveausbitdev-from-an-abandoned-vue-2-app-to-a-maintained-hive-explorer')
+    await waitForApp(page)
+    await expect(page.getByRole('button', { name: 'Reply' }).first()).toBeVisible({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Reply' }).first().click()
+    await expect(page.locator('.post-comment-card')).toBeVisible()
+    await expect(page.getByText('Images and cover')).toHaveCount(0)
+    await expect(page.getByText("Don't warn again")).toHaveCount(0)
+  })
+
   test('comment composer queues a posting comment', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

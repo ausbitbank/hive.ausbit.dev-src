@@ -373,4 +373,58 @@ describe('publish checklist', () => {
     }, { username: 'alice' })
     expect(checklistErrors(items).map(item => item.id)).toContain('beneficiaries')
   })
+
+  it('warns about a missing cover and marks the warning dismissible', () => {
+    const items = publishChecklist({ ...draft, body: 'Text only.' }, { username: 'alice' })
+    const images = items.find(item => item.id === 'images')
+    expect(images.status).toBe('warn')
+    expect(images.detail).toContain('cover image')
+    expect(images.dismissKey).toBe('cover-missing')
+  })
+
+  it('warns about broken images and small or portrait covers', () => {
+    const broken = publishChecklist(draft, {
+      username: 'alice',
+      imageHealth: {
+        broken: [{ url: 'https://images.hive.blog/missing.jpg', status: 'broken' }],
+        coverIssues: [{ code: 'portrait', width: 600, height: 900 }]
+      }
+    })
+    expect(broken.find(item => item.id === 'imagesBroken').status).toBe('warn')
+    expect(broken.find(item => item.id === 'imagesBroken').dismissKey).toBe('images-broken')
+    expect(broken.find(item => item.id === 'coverQuality').detail).toContain('portrait')
+    expect(broken.find(item => item.id === 'coverQuality').dismissKey).toBe('cover-quality')
+    expect(checklistErrors(broken)).toEqual([])
+  })
+
+  it('warns when tags name a different community than the destination', () => {
+    const items = publishChecklist({
+      ...draft,
+      tags: ['writing', 'hive-123456']
+    }, { username: 'alice' })
+    const mismatch = items.find(item => item.id === 'tagsMismatch')
+    expect(mismatch.status).toBe('warn')
+    expect(mismatch.detail).toContain('#hive-174578')
+    expect(mismatch.detail).toContain('#hive-123456')
+
+    const clean = publishChecklist({ ...draft, tags: ['writing', 'hive'] }, { username: 'alice' })
+    expect(clean.find(item => item.id === 'tagsMismatch')).toBeUndefined()
+  })
+
+  it('does not require a cover for comment edits', () => {
+    const items = publishChecklist({
+      title: '',
+      body: 'A reply.',
+      tags: [],
+      community: '',
+      editing: { parentAuthor: 'alice', parentPermlink: 'hello' }
+    }, {
+      username: 'alice',
+      imageHealth: { broken: [], coverIssues: [] }
+    })
+    expect(items.find(item => item.id === 'images')).toMatchObject({
+      status: 'ok',
+      detail: 'Comments have no cover image.'
+    })
+  })
 })

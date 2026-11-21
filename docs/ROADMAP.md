@@ -148,9 +148,15 @@ summary from the loaded rows with fees and latest date. See
 W59 (issue #82, composer upload hardening) is complete. Image uploads gain real
 per-file progress, cancel during signing or upload, per-file and retry-all
 actions, and recent-upload rows with size, relative time and copy URL. See
-`docs/workstreams/W59-composer-upload-hardening.md`. Cover quality warnings, the
-expanded publish checklist, community-picker metadata, topic drag controls, the
-remaining editor/draft gaps and metadata tooling remain.
+`docs/workstreams/W59-composer-upload-hardening.md`.
+
+W60 (issue #82, cover and checklist quality) is complete. Regular posts warn
+about a missing cover, broken images, small or portrait covers and mismatched
+community tags. Accounts can hide advisory warnings with “Don't warn again” and
+restore them later; shorts and comments never get cover warnings. See
+`docs/workstreams/W60-cover-checklist-quality.md`. Community-picker metadata,
+topic drag controls, the remaining editor/draft gaps and metadata tooling
+remain.
 
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
