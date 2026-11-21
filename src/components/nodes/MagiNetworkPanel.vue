@@ -51,9 +51,11 @@
         :rows="witnessRows"
         row-key="account"
         caption="Registered Magi witnesses"
-        :loading="loading"
+        :loading="loading || (!nodeReady && checking)"
         empty-icon="how_to_vote"
-        empty-message="No Magi witnesses were returned for this block height."
+        :empty-message="nodeReady
+          ? 'No Magi witnesses were returned for this block height.'
+          : (checking ? 'Probing Magi nodes for witnesses…' : 'No Magi node is available to read witnesses from.')"
       >
         <template #cell-account="{ value }">{{ value }}</template>
         <template #cell-enabled="{ row }">
@@ -232,7 +234,8 @@ export default {
   components: { DataTable },
   props: {
     node: { type: Object, default: null },
-    nodes: { type: Array, default: () => [] }
+    nodes: { type: Array, default: () => [] },
+    checking: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -242,6 +245,9 @@ export default {
     }
   },
   computed: {
+    nodeReady () {
+      return Boolean(this.node?.url && this.node?.head)
+    },
     witnessRows () {
       return this.witnesses
         .slice()
@@ -279,8 +285,9 @@ export default {
       return value ? value.slice(0, 10) + '…' + value.slice(-6) : '—'
     },
     async load (force = false) {
-      if (!this.node?.url || !this.node?.head) {
+      if (!this.nodeReady) {
         this.witnesses = []
+        this.error = ''
         return
       }
       if (this.loading) return

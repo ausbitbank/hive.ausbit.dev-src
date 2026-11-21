@@ -122,6 +122,34 @@ export function chainVersions (config = {}, majorityVersion = '', hardforkVersio
   }
 }
 
+/**
+ * Resolve a promise with a fallback when it does not settle before
+ * `deadlineMs`. A browser probe can occasionally outlive its own fetch timeout
+ * (a stalled CORS preflight, a throttled background tab), and one unresolved
+ * probe must never leave the whole node table stuck in a loading state.
+ */
+export function withDeadline (promise, deadlineMs, fallback) {
+  const wait = Math.max(0, Number(deadlineMs) || 0)
+  return new Promise(resolve => {
+    let done = false
+    let timer = null
+    const finish = value => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    timer = setTimeout(
+      () => finish(typeof fallback === 'function' ? fallback() : fallback),
+      wait
+    )
+    Promise.resolve(promise).then(
+      finish,
+      error => finish(typeof fallback === 'function' ? fallback(error) : fallback)
+    )
+  })
+}
+
 export function headLag (head, bestHead) {
   const height = Number(head)
   const best = Number(bestHead)

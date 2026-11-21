@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   chainVersions,
   debtStatus,
@@ -15,6 +15,7 @@ import {
   resourcePool,
   summarizeNodes,
   versionStatus,
+  withDeadline,
   withHeadLag
 } from '../../src/services/network'
 
@@ -112,6 +113,43 @@ describe('resource pool and versions', () => {
     expect(versionStatus('1.28.8', '1.28.9')).toBe('match')
     expect(versionStatus('1.27.5', '1.28.9')).toBe('mismatch')
     expect(versionStatus('', '1.28.9')).toBe('unknown')
+  })
+})
+
+describe('node probe deadline', () => {
+  it('passes through a probe that settles in time', async () => {
+    await expect(withDeadline(Promise.resolve({ ok: true }), 50, { ok: false }))
+      .resolves.toEqual({ ok: true })
+  })
+
+  it('resolves the fallback when a probe never settles', async () => {
+    vi.useFakeTimers()
+    try {
+      const promise = withDeadline(new Promise(() => {}), 20, () => ({ ok: false, error: 'Timed out' }))
+      await vi.advanceTimersByTimeAsync(20)
+      await expect(promise).resolves.toEqual({ ok: false, error: 'Timed out' })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('resolves the fallback when a probe rejects', async () => {
+    await expect(withDeadline(Promise.reject(new Error('boom')), 50, error => ({ ok: false, error: error.message })))
+      .resolves.toEqual({ ok: false, error: 'boom' })
+  })
+
+  it('ignores a late result after the deadline wins', async () => {
+    vi.useFakeTimers()
+    try {
+      let settle
+      const late = new Promise(resolve => { settle = resolve })
+      const promise = withDeadline(late, 20, { ok: false })
+      await vi.advanceTimersByTimeAsync(20)
+      settle({ ok: true })
+      await expect(promise).resolves.toEqual({ ok: false })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

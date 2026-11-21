@@ -22,7 +22,8 @@
             @update:model-value="switchNetwork"
           />
           <q-btn no-caps outline color="primary" icon="bolt" label="Auto-select fastest" :disable="!summary.fastest" @click="selectFastest" />
-          <q-btn flat round dense icon="refresh" :aria-label="'Re-check all ' + activeConfig.label + ' nodes'" :title="'Re-check all ' + activeConfig.label + ' nodes'" :loading="currentState.loading" @click="checkNetwork(activeNetwork)" />
+          <q-spinner v-if="currentState.loading" size="1.2rem" color="primary" aria-hidden="true" />
+          <q-btn flat round dense icon="refresh" :aria-label="'Re-check all ' + activeConfig.label + ' nodes'" :title="'Re-check all ' + activeConfig.label + ' nodes'" @click="checkNetwork(activeNetwork, { force: true })" />
         </div>
       </header>
 
@@ -114,7 +115,7 @@
         <q-card v-else-if="!visibleNodes.length" flat bordered class="net-state">
           <q-icon name="dns" size="2em" color="grey" aria-hidden="true" />
           <div>{{ nodes.length ? 'No nodes match this filter.' : 'No ' + activeConfig.label + ' nodes are configured.' }}</div>
-          <q-btn v-if="!nodes.length" flat dense no-caps color="primary" icon="refresh" label="Probe nodes" @click="checkNetwork(activeNetwork)" />
+          <q-btn v-if="!nodes.length" flat dense no-caps color="primary" icon="refresh" label="Probe nodes" @click="checkNetwork(activeNetwork, { force: true })" />
         </q-card>
 
         <node-compare-table
@@ -202,6 +203,7 @@
           v-else
           :node="magiInfo.node"
           :nodes="nodes"
+          :checking="currentState.loading"
         />
       </section>
 
@@ -470,6 +472,7 @@ import {
   pickFastestHealthy,
   sortNodes,
   summarizeNodes,
+  withDeadline,
   withHeadLag
 } from 'src/services/network'
 import {
@@ -485,6 +488,10 @@ import VueTimers from 'src/mixins/timers.js'
 
 const BEACON_FULL_REFRESH_MS = 5 * 60 * 1000
 const STALE_CHECK_MS = 60 * 1000
+// Probe results are normally capped by each client's own fetch timeout. This
+// is the outer safety net that keeps the table from spinning forever when a
+// request outlives it (stalled preflight, frozen background tab).
+const PROBE_DEADLINE_MS = 8000
 
 const NETWORKS = [
   {
@@ -532,6 +539,7 @@ function emptyNetworkState () {
   return {
     nodes: [],
     loading: false,
+    runId: 0,
     lastChecked: null,
     expectedVersion: '',
     beaconMap: {},
@@ -655,6 +663,7 @@ export default {
       return Boolean(node?.ok && (Number(node.lag) || 0) <= 2)
     },
     lastCheckedLabel () {
+      if (this.currentState.loading && !this.currentState.lastChecked) return 'Checking nodes…'
       if (!this.currentState.lastChecked) return 'Not checked yet'
       return 'Checked ' + new Date(this.currentState.lastChecked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     },
@@ -855,21 +864,34 @@ export default {
         state.beaconLoading = false
       }
     },
-    async checkNetwork (id) {
+    async checkNetwork (id, { force = false } = {}) {
       const config = this.networkConfig(id)
       const state = this.states[id]
-      if (!state || state.loading) return
+      if (!state) return
+      // A manual re-check may supersede an in-flight run: a probe that stalls
+      // must not make the refresh button a no-op. Each run carries a
+      // generation id, so late results from the old run are ignored.
+      if (state.loading && !force) return
+      const runId = (state.runId || 0) + 1
+      state.runId = runId
       state.loading = true
       try {
         const urls = this.probeList(id)
         const results = await Promise.all(urls.map(url => {
-          return config.probe(url).catch(error => ({
+          const probe = config.probe(url).catch(error => ({
             url,
             ok: false,
             latency: Infinity,
             error: error?.message || 'Unreachable'
           }))
+          return withDeadline(probe, PROBE_DEADLINE_MS, () => ({
+            url,
+            ok: false,
+            latency: Infinity,
+            error: 'Timed out'
+          }))
         }))
+        if (state.runId !== runId) return
         const tagged = results.map(node => ({
           ...node,
           kind: id,
@@ -887,7 +909,7 @@ export default {
           this.loadBeacon()
         }
       } finally {
-        state.loading = false
+        if (state.runId === runId) state.loading = false
       }
     },
     candidateNodes (id, nodes) {
