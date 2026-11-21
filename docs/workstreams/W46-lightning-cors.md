@@ -113,11 +113,18 @@ dev origins observed: `localhost:3000`, `localhost:5173`, `localhost:8080`,
   the app-wide async-component error boundary before any bridge state exists.
   The offline test loads the dialog chunk while online first. This is existing
   async-component behaviour, not specific to Lightning.
+- Dev origins are inconsistent upstream: preflights work for
+  `localhost:3000`, `localhost:5173`, `localhost:8080` and `127.0.0.1:3000`,
+  but `127.0.0.1:8080`, `127.0.0.1:5173` and `localhost:9000` get an ACAO on
+  simple GETs and no ACAO on preflight. Live dev must use
+  `http://localhost:8080` (or `localhost:3000`); the production origin is
+  unaffected.
 
 ## Next
 
-Phase 2 is the keepsats read-only spike. First answer, with a throwaway account:
-does `/auth/validate` accept `scope=hive:posting`? If not, do balances on chain
-with `#balance_request` and skip the API session entirely. If it does, the
-session is only a better way to read balance/history — no writes and no token
-storage.
+Phase 2 is the keepsats read-only session. The spike is **done and positive**:
+`/auth/validate` accepts `scope=hive:posting`, the token carries
+`scope: "hive:posting"` for ~50 minutes, and it reads
+`GET /v2/v4vapp/keepsats` with `200` (verified with `@ausbit.vsc`). Build it
+with memory-only tokens, posting key only, no writes, and keep the panel
+opt-in and secondary. If an action needs active authority, keep it on-chain.
