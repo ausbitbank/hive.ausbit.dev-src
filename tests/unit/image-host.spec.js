@@ -4,11 +4,16 @@ import {
   appendUploadHistory,
   buildImageSigningPayload,
   clearUploadHistory,
+  createUploadQueue,
+  formatUploadAge,
+  formatUploadBytes,
   imageHostErrorMessage,
   imageUploadUrl,
+  isUploadAborted,
   MAX_UPLOAD_HISTORY,
   readUploadHistory,
   uploadImage,
+  uploadQueueSummary,
   validateImageFile
 } from '../../src/services/imageHost'
 
@@ -98,6 +103,145 @@ describe('image upload', () => {
     })
     await expect(uploadImage({ username: 'ausbitbank', signature: 'sig', file: pngFile, fetchImpl }))
       .rejects.toThrow('invalid URL')
+  })
+})
+
+describe('upload queue and labels', () => {
+  it('formats byte sizes and relative upload times', () => {
+    expect(formatUploadBytes(0)).toBe('')
+    expect(formatUploadBytes(512)).toBe('512 B')
+    expect(formatUploadBytes(2048)).toBe('2.0 KB')
+    expect(formatUploadBytes(5 * 1024 * 1024)).toBe('5.0 MB')
+
+    const now = Date.UTC(2026, 10, 22, 12, 0, 0)
+    expect(formatUploadAge(now - 30 * 1000, now)).toBe('just now')
+    expect(formatUploadAge(now - 5 * 60 * 1000, now)).toBe('5 min ago')
+    expect(formatUploadAge(now - 3 * 60 * 60 * 1000, now)).toBe('3 hours ago')
+    expect(formatUploadAge(now - 2 * 24 * 60 * 60 * 1000, now)).toBe('2 days ago')
+    expect(formatUploadAge(0, now)).toBe('')
+  })
+
+  it('builds a queue with stable ids and limits cover uploads to one file', () => {
+    const files = [
+      { name: 'one.png', size: 100, type: 'image/png' },
+      { name: 'two.png', size: 200, type: 'image/png' }
+    ]
+    const queue = createUploadQueue(files, { now: 123, target: 'body' })
+    expect(queue).toHaveLength(2)
+    expect(queue[0]).toMatchObject({ name: 'one.png', size: 100, status: 'queued', progress: 0, alt: '' })
+    expect(queue[0].id).not.toBe(queue[1].id)
+    expect(createUploadQueue(files, { now: 123, target: 'cover' })).toHaveLength(1)
+  })
+
+  it('summarises queued, active, done, failed and cancelled rows', () => {
+    const summary = uploadQueueSummary([
+      { status: 'queued' },
+      { status: 'signing' },
+      { status: 'uploading' },
+      { status: 'done' },
+      { status: 'error' },
+      { status: 'cancelled' }
+    ])
+    expect(summary).toMatchObject({
+      total: 6,
+      queued: 1,
+      signing: 1,
+      uploading: 1,
+      done: 1,
+      failed: 1,
+      cancelled: 1,
+      active: 3,
+      finished: false
+    })
+    expect(uploadQueueSummary([])).toMatchObject({ total: 0, finished: true })
+  })
+})
+
+describe('image upload progress and cancellation', () => {
+  function fakeXhrFactory (behaviour) {
+    const state = { instance: null }
+    class FakeXhr {
+      constructor () {
+        this.upload = {}
+        this.status = 0
+        this.responseText = ''
+        state.instance = this
+      }
+
+      open (method, url) {
+        this.method = method
+        this.url = url
+      }
+
+      send (form) {
+        this.body = form
+        behaviour(this)
+      }
+
+      abort () {
+        this.aborted = true
+        if (typeof this.onabort === 'function') this.onabort()
+      }
+    }
+    return { factory: () => new FakeXhr(), state }
+  }
+
+  it('reports real upload progress through XHR', async () => {
+    const { factory, state } = fakeXhrFactory(xhr => {
+      xhr.upload.onprogress({ lengthComputable: true, total: 100, loaded: 25 })
+      xhr.upload.onprogress({ lengthComputable: true, total: 100, loaded: 75 })
+      xhr.status = 200
+      xhr.responseText = JSON.stringify({ url: 'https://images.hive.blog/DQmTest/photo.png' })
+      xhr.onload()
+    })
+    const progress = []
+    const url = await uploadImage({
+      username: 'ausbitbank',
+      signature: 'sig',
+      file: pngFile,
+      xhrFactory: factory,
+      onProgress: value => progress.push(value)
+    })
+    expect(url).toBe('https://images.hive.blog/DQmTest/photo.png')
+    expect(progress).toEqual([0, 25, 75, 100])
+    expect(state.instance.method).toBe('POST')
+    expect(state.instance.url).toBe(imageUploadUrl('ausbitbank', 'sig'))
+  })
+
+  it('aborts an in-flight upload and reports an aborted error', async () => {
+    const { factory, state } = fakeXhrFactory(() => {})
+    const controller = new AbortController()
+    const pending = uploadImage({
+      username: 'ausbitbank',
+      signature: 'sig',
+      file: pngFile,
+      xhrFactory: factory,
+      signal: controller.signal
+    })
+    controller.abort()
+    let error
+    try {
+      await pending
+    } catch (caught) {
+      error = caught
+    }
+    expect(state.instance.aborted).toBe(true)
+    expect(isUploadAborted(error)).toBe(true)
+    expect(error.message).toBe('Upload cancelled.')
+  })
+
+  it('maps non-2xx XHR responses to host errors', async () => {
+    const { factory } = fakeXhrFactory(xhr => {
+      xhr.status = 429
+      xhr.responseText = JSON.stringify({ error: { name: 'rate_limit_exceeded' } })
+      xhr.onload()
+    })
+    await expect(uploadImage({
+      username: 'ausbitbank',
+      signature: 'sig',
+      file: pngFile,
+      xhrFactory: factory
+    })).rejects.toThrow('rate_limit_exceeded')
   })
 })
 

@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { loginAs, readDrafts, readQueue, seedDrafts, seedQueue, waitForApp } from './helpers'
+import { loginAs, readDrafts, readQueue, runAxe, seedDrafts, seedQueue, waitForApp } from './helpers'
 
 const QUEUE_ITEMS = [
   ['ausbitbank', 'active', ['transfer', { from: 'ausbitbank', to: 'alice', amount: '1.000 HIVE', memo: '' }]],
@@ -151,6 +151,141 @@ test.describe('action flows', () => {
     expect(sign.key).toBe('Posting')
     expect(sign.length).toBeGreaterThan(100)
     expect(sign.prefix).toContain('"type":"Buffer"')
+  })
+
+  test('compose cancels and retries an in-flight upload', async ({ page }) => {
+    test.setTimeout(120000)
+    test.skip(Boolean(process.env.OBSCURA_CDP), 'File inputs need Chromium')
+    await loginAs(page)
+    await page.addInitScript(() => {
+      // Delay the first signature so the run can be cancelled while signing.
+      let signatures = 0
+      window.hive_keychain = {
+        requestHandshake: callback => callback({ success: true }),
+        requestSignBuffer: (account, message, key, callback) => {
+          signatures += 1
+          const delay = signatures === 1 ? 1500 : 0
+          setTimeout(() => callback({ success: true, result: 'fakesignature' }), delay)
+        }
+      }
+    })
+    let uploads = 0
+    await page.route('https://images.hive.blog/**', async route => {
+      if (route.request().method() !== 'POST') {
+        // Avatars and other images are not part of this upload test.
+        return route.fulfill({ status: 204, body: '' })
+      }
+      uploads += 1
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ url: 'https://images.hive.blog/fake/retried.png' })
+      })
+    })
+
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Upload image' }).click()
+    const dialog = page.locator('.compose-media-dialog')
+    await dialog.locator('input[type=file]').setInputFiles({
+      name: 'slow.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+    })
+    await dialog.getByRole('button', { name: 'Upload', exact: true }).click()
+
+    await expect(dialog.locator('.compose-upload-item')).toHaveCount(1)
+    await expect(dialog.getByText('Waiting for signature…')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Cancel upload' })).toBeVisible()
+    await dialog.getByRole('button', { name: 'Cancel upload' }).click()
+    await expect(dialog.locator('.compose-upload-item').getByText('Cancelled', { exact: true })).toBeVisible()
+    expect(uploads).toBe(0)
+
+    await dialog.locator('.compose-upload-item').getByRole('button', { name: 'Retry', exact: true }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue(
+      /!\[slow\]\(https:\/\/images\.hive\.blog\/fake\/retried\.png\)/
+    )
+    expect(uploads).toBe(1)
+  })
+
+  test('compose recent uploads show size, time and copy the URL', async ({ page }) => {
+    test.setTimeout(120000)
+    test.skip(Boolean(process.env.OBSCURA_CDP), 'Clipboard permissions need Chromium')
+    await loginAs(page)
+    const recent = {
+      version: 1,
+      items: [{
+        url: 'https://images.hive.blog/recent-meta.jpg',
+        alt: 'Recent metadata shot',
+        name: 'recent-meta.jpg',
+        size: 2048,
+        type: 'image/png',
+        uploadedAt: Date.now() - 5 * 60 * 1000
+      }]
+    }
+    await page.addInitScript(history => {
+      localStorage.setItem('composeUploads:ausbitbank', '__q_objt|' + JSON.stringify(history))
+    }, recent)
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Upload image' }).click()
+    const dialog = page.locator('.compose-media-dialog')
+    const row = dialog.locator('.compose-upload-recent__item')
+    await expect(row).toContainText('recent-meta.jpg')
+    await expect(row).toContainText('2.0 KB')
+    await expect(row).toContainText('5 min ago')
+    const thumbWidth = await row.locator('img').evaluate(element => element.getBoundingClientRect().width)
+    expect(thumbWidth).toBeLessThanOrEqual(60)
+
+    await row.getByRole('button', { name: /Copy URL/ }).click()
+    await expect(page.getByText('Image URL copied')).toBeVisible()
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText())
+    expect(clipboard).toBe('https://images.hive.blog/recent-meta.jpg')
+  })
+
+  test('compose upload dialog is axe clean and overflow-free at both widths', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    const recent = {
+      version: 1,
+      items: [{
+        url: 'https://images.hive.blog/recent-axe.jpg',
+        alt: 'A recent upload',
+        name: 'recent-axe.jpg',
+        size: 4096,
+        type: 'image/jpeg',
+        uploadedAt: Date.now() - 10 * 60 * 1000
+      }]
+    }
+    await page.addInitScript(history => {
+      localStorage.setItem('composeUploads:ausbitbank', '__q_objt|' + JSON.stringify(history))
+    }, recent)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Upload image' }).click()
+    const dialog = page.locator('.compose-media-dialog')
+    await expect(dialog.getByRole('heading', { name: 'Upload images' })).toBeVisible()
+    await expect(dialog.locator('.compose-upload-recent__item')).toHaveCount(1)
+
+    for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport)
+      await page.waitForTimeout(500)
+      const layout = await page.evaluate(() => {
+        const box = document.querySelector('.compose-media-dialog').getBoundingClientRect()
+        return {
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          dialogLeft: box.left,
+          dialogRight: box.right,
+          viewport: document.documentElement.clientWidth
+        }
+      })
+      expect(layout.overflow, viewport.width + 'px overflow').toBe(0)
+      expect(layout.dialogLeft).toBeGreaterThanOrEqual(0)
+      expect(layout.dialogRight).toBeLessThanOrEqual(layout.viewport)
+      const violations = await runAxe(page)
+      expect(violations, viewport.width + 'px axe').toEqual([])
+    }
   })
 
   test('compose inserts a media embed and shows the split preview', async ({ page }) => {

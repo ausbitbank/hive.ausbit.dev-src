@@ -1,6 +1,6 @@
 # hive.ausbit.dev roadmap
 
-Last updated: 2026-11-18
+Last updated: 2026-11-22
 
 This is the active roadmap. It contains only open work. Delivered features and
 their verification records live in `docs/workstreams/` and are not repeated
@@ -144,6 +144,13 @@ W58 (issue #87, keepsats send and local summary) is complete. Keepsats actions
 gain Send to another Hive account, and the wallet shows a local sats-received
 summary from the loaded rows with fees and latest date. See
 `docs/workstreams/W58-keepsats-send-summary.md`.
+
+W59 (issue #82, composer upload hardening) is complete. Image uploads gain real
+per-file progress, cancel during signing or upload, per-file and retry-all
+actions, and recent-upload rows with size, relative time and copy URL. See
+`docs/workstreams/W59-composer-upload-hardening.md`. Cover quality warnings, the
+expanded publish checklist, community-picker metadata, topic drag controls, the
+remaining editor/draft gaps and metadata tooling remain.
 
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional

@@ -688,7 +688,16 @@
             <div class="home-eyebrow">{{ uploadTarget === 'cover' ? 'Cover image' : 'Post media' }}</div>
             <h2 class="home-panel__title">{{ uploadTarget === 'cover' ? 'Upload a cover image' : 'Upload images' }}</h2>
           </div>
-          <q-btn flat dense round icon="close" aria-label="Close upload dialog" title="Close" @click="uploadDialogOpen = false" />
+          <q-btn
+            flat
+            dense
+            round
+            icon="close"
+            aria-label="Close upload dialog"
+            title="Close"
+            :disable="uploadBusy"
+            @click="uploadDialogOpen = false"
+          />
         </q-card-section>
         <q-separator />
         <q-card-section class="compose-media-dialog__body">
@@ -726,14 +735,79 @@
 
           <p class="compose-hint">{{ uploadLimitLabel }}</p>
           <q-toggle v-model="centerImages" label="Center uploaded images" aria-label="Center uploaded images" dense />
-          <div v-if="uploadStatus" class="compose-upload-status" role="status">{{ uploadStatus }}</div>
+          <div v-if="uploadItems.length" class="compose-upload-queue">
+            <div
+              v-for="item in uploadItems"
+              :key="item.id"
+              class="compose-upload-item"
+              :class="'is-' + item.status"
+            >
+              <div class="compose-upload-item__row">
+                <q-icon :name="uploadStatusIcon(item)" size="18px" aria-hidden="true" />
+                <div class="compose-upload-item__body">
+                  <div class="compose-upload-item__name" :title="item.name">{{ item.name }}</div>
+                  <div class="compose-upload-item__meta">
+                    <span v-if="item.size">{{ uploadSizeLabel(item.size) }}</span>
+                    <span>{{ uploadStatusLabel(item) }}</span>
+                  </div>
+                  <q-linear-progress
+                    v-if="item.status === 'signing' || item.status === 'uploading'"
+                    :value="item.progress / 100"
+                    :indeterminate="item.status === 'signing'"
+                    size="5px"
+                    color="primary"
+                    class="compose-upload-item__progress"
+                    :aria-label="'Upload progress for ' + item.name"
+                  />
+                </div>
+                <q-btn
+                  v-if="canRetryUpload(item)"
+                  flat
+                  dense
+                  no-caps
+                  icon="refresh"
+                  label="Retry"
+                  @click="retryUploadItem(item)"
+                />
+                <q-btn
+                  v-if="item.status === 'queued'"
+                  flat
+                  dense
+                  round
+                  icon="close"
+                  :aria-label="'Remove ' + item.name + ' from the upload queue'"
+                  title="Remove"
+                  @click="removeUploadItem(item)"
+                />
+              </div>
+              <div v-if="item.error" class="compose-upload-error" role="alert">
+                <q-icon name="error_outline" size="16px" aria-hidden="true" />
+                <span>{{ item.error }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="uploadSummaryLabel" class="compose-upload-status" role="status">{{ uploadSummaryLabel }}</div>
           <div v-if="uploadError" class="compose-upload-error" role="alert">
             <q-icon name="error_outline" size="16px" aria-hidden="true" />
             <span>{{ uploadError }}</span>
           </div>
 
           <div class="compose-upload-actions">
-            <q-btn flat no-caps label="Cancel" @click="uploadDialogOpen = false" />
+            <q-btn
+              flat
+              no-caps
+              :label="uploadBusy ? 'Cancel upload' : 'Cancel'"
+              @click="uploadBusy ? cancelUploadRun() : (uploadDialogOpen = false)"
+            />
+            <q-btn
+              v-if="uploadSummary.failed || uploadSummary.cancelled"
+              flat
+              no-caps
+              icon="refresh"
+              label="Retry failed"
+              :disable="uploadBusy"
+              @click="retryFailedUploads"
+            />
             <q-btn
               unelevated
               no-caps
@@ -741,7 +815,7 @@
               icon="cloud_upload"
               label="Upload"
               :loading="uploadBusy"
-              :disable="!canUpload || !uploadFiles.length"
+              :disable="!canUpload || !uploadFiles.length || uploadBusy"
               @click="uploadSelectedImages"
             />
           </div>
@@ -751,18 +825,29 @@
               <span>Recent uploads</span>
               <q-btn flat dense no-caps icon="delete_sweep" label="Clear" @click="clearUploads" />
             </div>
-            <div class="compose-media-grid">
-              <button
-                v-for="entry in recentUploads"
-                :key="entry.url"
-                type="button"
-                class="compose-media-tile"
-                @click="useRecentUpload(entry)"
-              >
-                <img :src="entry.url" :alt="entry.alt || 'Uploaded image'" loading="lazy" />
-                <span>{{ uploadTarget === 'cover' ? 'Use as cover' : 'Insert' }}</span>
-              </button>
-            </div>
+            <ul class="compose-upload-recent__list">
+              <li v-for="entry in recentUploads" :key="entry.url" class="compose-upload-recent__item">
+                <button
+                  type="button"
+                  class="compose-media-tile compose-upload-recent__tile"
+                  @click="useRecentUpload(entry)"
+                >
+                  <img :src="entry.url" :alt="entry.alt || 'Uploaded image'" loading="lazy" />
+                  <span class="compose-upload-recent__name">{{ entry.name || entry.alt || 'Uploaded image' }}</span>
+                  <span class="compose-upload-recent__meta">{{ uploadRecentMeta(entry) }}</span>
+                  <span class="compose-upload-recent__action">{{ uploadTarget === 'cover' ? 'Use as cover' : 'Insert' }}</span>
+                </button>
+                <q-btn
+                  flat
+                  dense
+                  round
+                  icon="content_copy"
+                  :aria-label="'Copy URL for ' + (entry.name || 'uploaded image')"
+                  title="Copy image URL"
+                  @click="copyUploadUrl(entry)"
+                />
+              </li>
+            </ul>
           </div>
         </q-card-section>
       </q-card>
@@ -2193,6 +2278,141 @@
   font-weight: 600;
 }
 
+.compose-upload-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.compose-upload-item {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.compose-upload-item.is-done {
+  border-color: rgba(102, 187, 106, 0.4);
+}
+
+.compose-upload-item.is-error {
+  border-color: rgba(255, 138, 128, 0.5);
+}
+
+.compose-upload-item.is-cancelled {
+  opacity: 0.82;
+}
+
+.compose-upload-item__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.compose-upload-item__row > .q-icon {
+  margin-top: 0.1rem;
+  color: #90a4ae;
+}
+
+.compose-upload-item.is-done .compose-upload-item__row > .q-icon {
+  color: #81c784;
+}
+
+.compose-upload-item.is-error .compose-upload-item__row > .q-icon {
+  color: #ff8a80;
+}
+
+.compose-upload-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose-upload-item__name {
+  overflow: hidden;
+  color: #e4eaed;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-upload-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.45rem;
+  color: #90a4ae;
+  font-size: 0.68rem;
+}
+
+.compose-upload-item__progress {
+  width: 100%;
+  margin-top: 0.3rem;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.compose-upload-recent__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 230px;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.compose-upload-recent__item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.compose-media-tile.compose-upload-recent__tile {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.3rem;
+}
+
+.compose-media-tile.compose-upload-recent__tile img {
+  flex: none;
+  width: 48px;
+  height: 48px;
+}
+
+.compose-upload-recent__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: #e4eaed;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-upload-recent__meta {
+  flex: none;
+  color: #78909c;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.compose-upload-recent__action {
+  flex: none;
+  color: #4fc3f7;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .compose-upload-recent__meta {
+    display: none;
+  }
+}
+
 .compose-media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
@@ -2597,12 +2817,17 @@ import {
   appendUploadHistory,
   buildImageSigningPayload,
   clearUploadHistory,
+  createUploadQueue,
+  formatUploadAge,
+  formatUploadBytes,
   imageHostErrorMessage,
+  isUploadAborted,
   MAX_IMAGE_BYTES,
   readImageBytes,
   readUploadHistory,
   RECOMMENDED_IMAGE_BYTES,
   uploadImage,
+  uploadQueueSummary,
   validateImageFile
 } from 'src/services/imageHost'
 import {
@@ -2750,8 +2975,9 @@ export default {
       uploadAlt: '',
       uploadError: '',
       uploadTarget: 'body',
-      uploadBusy: false,
-      uploadStatus: '',
+      uploadItems: [],
+      uploadAbort: null,
+      uploadRunCancelled: false,
       recentUploads: [],
       dragActive: false,
       savedSelection: { start: 0, end: 0 },
@@ -2878,6 +3104,24 @@ export default {
     },
     canUpload () {
       return Boolean(this.loggedInUser)
+    },
+    uploadBusy () {
+      return this.uploadItems.some(item =>
+        item.status === 'queued' || item.status === 'signing' || item.status === 'uploading'
+      )
+    },
+    uploadSummary () {
+      return uploadQueueSummary(this.uploadItems)
+    },
+    uploadSummaryLabel () {
+      const summary = this.uploadSummary
+      if (!summary.total) return ''
+      const parts = []
+      if (summary.done) parts.push(summary.done + ' uploaded')
+      if (summary.failed) parts.push(summary.failed + ' failed')
+      if (summary.cancelled) parts.push(summary.cancelled + ' cancelled')
+      if (summary.active) parts.push(summary.active + ' remaining')
+      return parts.join(' · ')
     },
     previewIsStale () {
       return Boolean(this.draft) && this.previewBody !== this.draft.body
@@ -3733,8 +3977,10 @@ export default {
         return
       }
       this.uploadTarget = target
+      this.uploadItems = []
+      this.uploadAbort = null
+      this.uploadRunCancelled = false
       this.uploadError = ''
-      this.uploadStatus = ''
       this.uploadAlt = ''
       this.uploadFiles = files ? Array.from(files) : []
       if (this.uploadFiles.length === 1) this.uploadAlt = altFromFileName(this.uploadFiles[0].name)
@@ -3748,7 +3994,70 @@ export default {
     setUploadFiles (value) {
       this.uploadFiles = Array.isArray(value) ? value : value ? [value] : []
       this.uploadAlt = this.uploadFiles.length === 1 ? altFromFileName(this.uploadFiles[0].name) : ''
+      this.uploadItems = []
       this.uploadError = ''
+    },
+    uploadSizeLabel (size) {
+      return formatUploadBytes(size)
+    },
+    uploadRecentMeta (entry) {
+      return [formatUploadBytes(entry?.size), formatUploadAge(entry?.uploadedAt)].filter(Boolean).join(' · ')
+    },
+    uploadStatusLabel (item) {
+      switch (item?.status) {
+        case 'queued': return 'Ready'
+        case 'signing': return 'Waiting for signature…'
+        case 'uploading': return item.progress ? 'Uploading · ' + item.progress + '%' : 'Uploading…'
+        case 'done': return 'Uploaded'
+        case 'cancelled': return 'Cancelled'
+        case 'error': return 'Failed'
+        default: return ''
+      }
+    },
+    uploadStatusIcon (item) {
+      switch (item?.status) {
+        case 'queued': return 'schedule'
+        case 'signing': return 'draw'
+        case 'uploading': return 'cloud_upload'
+        case 'done': return 'check_circle'
+        case 'cancelled': return 'block'
+        case 'error': return 'error_outline'
+        default: return 'image'
+      }
+    },
+    canRetryUpload (item) {
+      return !this.uploadBusy && (item?.status === 'error' || item?.status === 'cancelled')
+    },
+    cancelUploadItem (item) {
+      item.status = 'cancelled'
+      item.error = ''
+      item.progress = 0
+    },
+    removeUploadItem (item) {
+      this.uploadItems = this.uploadItems.filter(entry => entry.id !== item.id)
+    },
+    async copyUploadUrl (entry) {
+      const url = String(entry?.url || '')
+      if (!url) return
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url)
+        } else {
+          const field = document.createElement('textarea')
+          field.value = url
+          field.setAttribute('readonly', 'readonly')
+          field.style.position = 'fixed'
+          field.style.opacity = '0'
+          document.body.appendChild(field)
+          field.select()
+          const copied = document.execCommand?.('copy')
+          document.body.removeChild(field)
+          if (!copied) throw new Error('Clipboard is unavailable.')
+        }
+        this.$q.notify({ type: 'positive', message: 'Image URL copied', caption: url })
+      } catch {
+        this.$q.notify({ type: 'negative', message: 'Could not copy the image URL' })
+      }
     },
     async ensureSmartlockUnlocked () {
       const user = this.loggedInUser
@@ -3797,49 +4106,156 @@ export default {
         this.uploadError = 'Log in with Keychain or SmartLock to upload images.'
         return
       }
-      this.uploadBusy = true
+      const items = createUploadQueue(this.uploadFiles, { target: this.uploadTarget })
+      const single = items.length === 1
+      for (const item of items) {
+        item.alt = single
+          ? (this.uploadAlt.trim() || altFromFileName(item.name))
+          : altFromFileName(item.name)
+      }
+      this.uploadItems = items
+      this.uploadFiles = []
+      this.uploadAlt = ''
       this.uploadError = ''
-      const uploaded = []
-      const files = this.uploadTarget === 'cover' ? this.uploadFiles.slice(0, 1) : this.uploadFiles
+      // Work with the reactive proxies so per-file status, progress and errors
+      // update the dialog while the queue runs.
+      await this.runUploadQueue(this.uploadItems)
+    },
+    cancelUploadRun () {
+      if (!this.uploadBusy) return
+      this.uploadRunCancelled = true
       try {
-        for (const file of files) {
-          const validation = validateImageFile(file)
-          if (!validation.ok) throw new Error(file.name + ': ' + validation.error)
-          this.uploadStatus = 'Signing ' + file.name + '…'
-          const bytes = await readImageBytes(file)
-          const signature = await this.signImagePayload(buildImageSigningPayload(bytes))
-          this.uploadStatus = 'Uploading ' + file.name + '…'
-          const url = await uploadImage({ username: this.loggedInUser, signature, file })
-          const alt = files.length === 1 ? (this.uploadAlt.trim() || altFromFileName(file.name)) : altFromFileName(file.name)
-          uploaded.push({ url, alt, name: file.name, size: file.size, type: file.type })
-          this.recentUploads = appendUploadHistory(LocalStorage, this.loggedInUser, {
-            url,
-            alt,
-            name: file.name,
-            size: file.size,
-            type: file.type
-          })
+        this.uploadAbort?.abort()
+      } catch {
+        // The run's loop still observes the cancel flag.
+      }
+      for (const item of this.uploadItems) {
+        if (item.status === 'queued') this.cancelUploadItem(item)
+      }
+    },
+    async retryUploadItem (item) {
+      if (this.uploadBusy || !this.canUpload) return
+      item.status = 'queued'
+      item.error = ''
+      item.progress = 0
+      item.url = ''
+      await this.runUploadQueue([item])
+    },
+    async retryFailedUploads () {
+      if (this.uploadBusy) return
+      const targets = this.uploadItems.filter(item => item.status === 'error' || item.status === 'cancelled')
+      if (!targets.length) return
+      for (const item of targets) {
+        item.status = 'queued'
+        item.error = ''
+        item.progress = 0
+        item.url = ''
+      }
+      await this.runUploadQueue(targets)
+    },
+    async runUploadQueue (items) {
+      if (!items.length) return
+      const controller = typeof AbortController === 'function' ? new AbortController() : null
+      this.uploadAbort = controller
+      this.uploadRunCancelled = false
+      this.uploadError = ''
+      try {
+        for (const item of items) {
+          if (this.uploadRunCancelled) {
+            this.cancelUploadItem(item)
+            continue
+          }
+          item.status = 'signing'
+          item.progress = 0
+          item.error = ''
+          try {
+            const validation = validateImageFile(item.file)
+            if (!validation.ok) throw new Error(validation.error)
+            const bytes = await readImageBytes(item.file)
+            if (this.uploadRunCancelled) {
+              this.cancelUploadItem(item)
+              continue
+            }
+            const signature = await this.signImagePayload(buildImageSigningPayload(bytes))
+            if (this.uploadRunCancelled) {
+              this.cancelUploadItem(item)
+              continue
+            }
+            item.status = 'uploading'
+            const url = await uploadImage({
+              username: this.loggedInUser,
+              signature,
+              file: item.file,
+              signal: controller ? controller.signal : null,
+              onProgress: value => { item.progress = value }
+            })
+            if (this.uploadRunCancelled) {
+              this.cancelUploadItem(item)
+              continue
+            }
+            item.url = url
+            item.progress = 100
+            item.status = 'done'
+            const alt = item.alt || altFromFileName(item.name)
+            item.alt = alt
+            this.recentUploads = appendUploadHistory(LocalStorage, this.loggedInUser, {
+              url,
+              alt,
+              name: item.name,
+              size: item.size,
+              type: item.type
+            })
+          } catch (error) {
+            if (this.uploadRunCancelled || isUploadAborted(error)) {
+              this.cancelUploadItem(item)
+              continue
+            }
+            if (/cancelled|canceled/i.test(String(error?.message || ''))) {
+              this.cancelUploadItem(item)
+              this.uploadRunCancelled = true
+              continue
+            }
+            item.status = 'error'
+            item.progress = 0
+            item.error = imageHostErrorMessage(error)
+          }
         }
-        if (this.uploadTarget === 'cover' && uploaded[0]) {
-          this.draft.coverImage = uploaded[0].url
+      } finally {
+        this.uploadAbort = null
+      }
+      this.finishUploadRun(items)
+    },
+    finishUploadRun (items) {
+      const done = items.filter(item => item.status === 'done')
+      if (this.uploadTarget === 'cover') {
+        if (done[0]) {
+          this.draft.coverImage = done[0].url
           this.$q.notify({ type: 'positive', message: 'Cover image uploaded' })
-        } else {
-          this.insertUploadedImages(uploaded)
-          this.$q.notify({
-            type: 'positive',
-            message: uploaded.length > 1 ? uploaded.length + ' images uploaded' : 'Image uploaded',
-            caption: 'Inserted into the post.'
-          })
         }
+      } else if (done.length) {
+        this.insertUploadedImages(done.map(item => ({
+          url: item.url,
+          alt: item.alt || altFromFileName(item.name)
+        })))
+        this.$q.notify({
+          type: 'positive',
+          message: done.length > 1 ? done.length + ' images uploaded' : 'Image uploaded',
+          caption: 'Inserted into the post.'
+        })
+      }
+      const summary = uploadQueueSummary(this.uploadItems)
+      if (summary.failed) {
+        this.uploadError = summary.failed +
+          (summary.failed === 1 ? ' image failed to upload. Retry it below.' : ' images failed to upload. Retry them below.')
+        return
+      }
+      if (summary.cancelled) return
+      if (summary.total && summary.done === summary.total) {
         this.uploadDialogOpen = false
+        this.uploadItems = []
         this.uploadFiles = []
         this.uploadAlt = ''
-        this.uploadStatus = ''
-      } catch (error) {
-        this.uploadError = imageHostErrorMessage(error)
-        this.uploadStatus = ''
-      } finally {
-        this.uploadBusy = false
+        this.uploadError = ''
       }
     },
     insertUploadedImages (images) {
@@ -4048,8 +4464,10 @@ export default {
       this.uploadDialogOpen = false
       this.coverDialogOpen = false
       this.uploadFiles = []
+      this.uploadItems = []
+      this.uploadAbort = null
+      this.uploadRunCancelled = false
       this.uploadError = ''
-      this.uploadStatus = ''
       this.mode = 'write'
       this.previewBody = this.draft.body
       if (this.previewTimer) {
