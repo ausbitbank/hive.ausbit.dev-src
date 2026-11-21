@@ -28,7 +28,6 @@ async function mockBridge (page, { amountSats = 5000, paid = true } = {}) {
         memo: 'ausbitbank | POS via hive.ausbit.dev',
         expiry: 900,
         expires_at: Math.floor(Date.now() / 1000) + 900,
-        qr_code_base64: PNG
       }, 201)
     }
     if (url.includes('/v1/check_invoice')) {
@@ -66,6 +65,7 @@ test.describe('Lightning point of sale', () => {
     await page.getByRole('button', { name: 'Create invoice' }).click()
 
     await expect(page.locator('.lightning-invoice__sats')).toContainText('5,000 sats')
+    await expect(page.locator('.lightning-invoice__qr img')).toBeVisible()
     await expect(page.locator('.pos-paid')).toContainText('Paid')
     await expect(page.locator('.pos-session')).toContainText('1 sale · 5,000 sats')
     expect(invoices[0]).toMatchObject({ sats_amount: 5000, receive_currency: 'hbd', app_name: 'hiveausbit' })

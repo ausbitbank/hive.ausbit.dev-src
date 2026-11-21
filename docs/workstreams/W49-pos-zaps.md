@@ -38,6 +38,10 @@ integration, global zap counts, creator analytics and POS offline mode.
   address card as a fallback.
 - Invoice memo: optional public note (sanitised, no `|`) plus
   `POS via hive.ausbit.dev`.
+- QR: the live API did **not** return `qr_code_base64` on 2026-11-21 even with
+  `qr_image: true`. `LightningInvoiceCard` now falls back to a lazy `uqr`
+  generated SVG for the `lightning:` URI. The dependency is only loaded when an
+  invoice card renders.
 
 ## Zaps
 
@@ -64,6 +68,8 @@ integration, global zap counts, creator analytics and POS offline mode.
 
 - `bun run lint` — clean.
 - `bun run test` — 85 files, 810 tests (5 new POS helper tests).
+- QR fallback exercised in E2E with the invoice mock omitting
+  `qr_code_base64`; the card renders a generated SVG QR.
 - `bun run build` — succeeded.
 - Chromium E2E (3 tests): POS creates two fresh invoices with the requested
   amounts, shows paid and `2 sales · 6,000 sats`; POS axe-clean at 1440px and
@@ -91,6 +97,8 @@ integration, global zap counts, creator analytics and POS offline mode.
   there is no sales ledger and no daily server-side total.
 - No receipts, printing, refunds or cash-drawer integration.
 - The invoice status comes from polling; there are still no webhooks.
+- `/v1/new_invoice_hive` omitted `qr_code_base64` in live tests on 2026-11-21,
+  so the client generates the QR. Keep the server-provided QR when it returns.
 - Zap attribution is site-local and approximate: a fixed invoice memo marker is
   public, but there is no global index of zaps.
 
