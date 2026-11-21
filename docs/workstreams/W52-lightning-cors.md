@@ -1,4 +1,4 @@
-# W46 — Lightning CORS-live hardening (v4vapp Phase 1)
+# W52 — Lightning CORS-live hardening (v4vapp Phase 1)
 
 Date: 2026-11-21
 Status: complete — built and unit/E2E verified
@@ -131,7 +131,7 @@ opt-in and secondary. If an action needs active authority, keep it on-chain.
 
 ## Deploy
 
-W46–W48 deployed together on 2026-11-21 via `./scripts/deploy.sh`.
+W52–W54 deployed together on 2026-11-21 via `./scripts/deploy.sh`.
 
 - Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`
 - Live `https://hive.ausbit.dev/health`: "Bridge reachable", API `6.6.1`,

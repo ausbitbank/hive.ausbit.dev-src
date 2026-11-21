@@ -1,4 +1,4 @@
-# W48 — Keepsats on-chain actions (v4vapp Phase 3, mode B)
+# W54 — Keepsats on-chain actions (v4vapp Phase 3, mode B)
 
 Date: 2026-11-21
 Status: complete — built and unit/E2E verified
@@ -94,7 +94,7 @@ conversion, address and invoice payments.
 
 - `bun run lint` — clean.
 - `bun run test` — 84 files, 805 tests passed (builders/parsers, queue labels,
-  wallet classification, plus the W47 session tests).
+  wallet classification, plus the W53 session tests).
 - `bun run build` — succeeded.
 - Chromium E2E (5 keepsats tests): read-only balance, rejected signature,
   deposit queue, conversion queue, address payment queue. The deposit test also
@@ -135,7 +135,7 @@ conversion, address and invoice payments.
 
 ## Deploy
 
-Deployed with W46 and W47 on 2026-11-21 via `./scripts/deploy.sh`.
+Deployed with W52 and W53 on 2026-11-21 via `./scripts/deploy.sh`.
 
 - Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`
 - Live wallet smoke at 1440px and 390px: the keepsats panel and the collapsed

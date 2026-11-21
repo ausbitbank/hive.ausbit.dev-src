@@ -1,4 +1,4 @@
-# W49 — Point of sale and post zaps (v4vapp Phase 4)
+# W55 — Point of sale and post zaps (v4vapp Phase 4)
 
 Date: 2026-11-21
 Status: complete — built and unit/E2E verified
@@ -104,7 +104,7 @@ integration, global zap counts, creator analytics and POS offline mode.
 
 ## Next
 
-- W50: explorer bridge legibility (custom JSON cards, invoice memo decoding,
+- W56: explorer bridge legibility (custom JSON cards, invoice memo decoding,
   search for invoices/addresses), markets sats quotes and wallet/tax CSV.
 - Later: creator sats analytics, POS persistence if a ledger is acceptable.
 
@@ -114,7 +114,7 @@ Deployed on 2026-11-21 via `./scripts/deploy.sh` (twice: the first release was
 missing the client-side QR fallback).
 
 - Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T130039Z.tar.gz`
-  (the earlier `…125435Z` backup covers the pre-W49 release).
+  (the earlier `…125435Z` backup covers the pre-W55 release).
 - Live `https://hive.ausbit.dev/@ausbitbank/pos`: created a real 1,000 sat
   invoice, QR image rendered as a generated SVG (150×150), status "Waiting for
   payment", zero page errors and zero horizontal overflow at 1440px and 390px.

@@ -1,4 +1,4 @@
-# W50 — Explorer, markets and tax legibility (v4vapp Phase 5)
+# W56 — Explorer, markets and tax legibility (v4vapp Phase 5)
 
 Date: 2026-11-21
 Status: complete — built and unit/E2E verified

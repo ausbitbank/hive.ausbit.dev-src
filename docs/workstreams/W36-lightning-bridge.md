@@ -4,7 +4,7 @@ Date: 2026-11-20
 Status: complete — deployed and live-verified
 
 > Superseded in part on 2026-11-21: the production origin is now on the CORS
-> allowlist and the degraded CORS copy was replaced. See `W46-lightning-cors.md`.
+> allowlist and the degraded CORS copy was replaced. See `W52-lightning-cors.md`.
 
 ## Scope
 

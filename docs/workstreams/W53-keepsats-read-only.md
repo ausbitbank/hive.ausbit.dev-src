@@ -1,4 +1,4 @@
-# W47 — Keepsats read-only session (v4vapp Phase 2)
+# W53 — Keepsats read-only session (v4vapp Phase 2)
 
 Date: 2026-11-21
 Status: complete — built and unit/E2E verified
@@ -98,18 +98,18 @@ page reload drops it; the user must connect again.
 
 ## Next
 
-- W48 (candidate): mode B on-chain keepsats actions — deposit `#sats`,
+- W54 (candidate): mode B on-chain keepsats actions — deposit `#sats`,
   `#balance_request`, withdraw/convert `v4vapp_transfer`, pay invoice — through
   the existing signing queue with `manualOnly`. Reuse the notification parser.
 - POS/zaps and explorer/tax work remain later phases in issue #87.
 
-> Implemented as W48: `docs/workstreams/W48-keepsats-onchain-actions.md` covers
+> Implemented as W54: `docs/workstreams/W54-keepsats-onchain-actions.md` covers
 > deposit, conversion and invoice/address payment. Balance-request UI and user
 > transfers are still open.
 
 ## Deploy
 
-Deployed with W46 and W48 on 2026-11-21 (backup
+Deployed with W52 and W54 on 2026-11-21 (backup
 `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T122832Z.tar.gz`).
 
 - The deployed `KeepsatsPanel` chunk contains the read-only panel and actions.
