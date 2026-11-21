@@ -10,6 +10,11 @@ import {
   isV4vappTransfer,
   parseV4vappMemo
 } from './lightning'
+import {
+  describeKeepsatsCustomJson,
+  isKeepsatsCustomJson,
+  parseKeepsatsCustomJson
+} from './keepsats'
 
 export const WALLET_ACTIVITY_CATEGORIES = [
   { value: 'all', label: 'All activity' },
@@ -215,6 +220,7 @@ export function walletTransactionType (entry) {
 export function walletTransactionCategory (entry) {
   const [type, data = {}] = walletTransactionOperation(entry)
   if (type === 'transfer' && isV4vappTransfer(data)) return 'lightning'
+  if (type === 'custom_json' && isKeepsatsCustomJson(data)) return 'lightning'
   for (const category of Object.keys(CATEGORY_TYPES)) {
     if (CATEGORY_TYPES[category].includes(type)) return category
   }
@@ -226,6 +232,13 @@ export function walletTransactionDirection (entry, username) {
   switch (type) {
     case 'transfer':
       return data.to === username ? 'in' : data.from === username ? 'out' : 'neutral'
+    case 'custom_json': {
+      const keepsats = parseKeepsatsCustomJson(data)
+      if (!keepsats) return 'neutral'
+      if (keepsats.from === username) return 'out'
+      if (keepsats.to === username) return 'in'
+      return 'neutral'
+    }
     case 'transfer_to_vesting':
       return data.to === username ? 'in' : 'out'
     case 'withdraw_vesting':
@@ -328,6 +341,27 @@ export function walletOperationView (entry, { username, toHive } = {}) {
           view.label = parsed?.kind === 'deposit' ? 'Keepsats deposit' : 'Lightning payment'
           view.tone = 'out'
         }
+      }
+      break
+    }
+    case 'custom_json': {
+      const keepsats = parseKeepsatsCustomJson(data)
+      if (!keepsats) {
+        view.label = (data.id || 'custom') + ' app action'
+        break
+      }
+      const amount = Number(keepsats.sats)
+      view.icon = 'bolt'
+      view.lightning = keepsats
+      view.label = describeKeepsatsCustomJson(data) || 'Keepsats action'
+      view.counterparty = direction === 'in' ? keepsats.from : keepsats.to
+      if (Number.isFinite(amount) && amount > 0) {
+        view.parts = [part(amount.toLocaleString('en-US') + ' sats', direction === 'in' ? '+' : direction === 'out' ? '-' : 'none')]
+      }
+      if (/^lnbc[0-9a-z]+$/i.test(keepsats.memo)) {
+        view.memo = 'Lightning invoice · instructions are public on chain'
+      } else {
+        view.memo = keepsats.invoiceMessage || keepsats.memo
       }
       break
     }

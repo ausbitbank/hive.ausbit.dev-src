@@ -6,7 +6,7 @@
   "routes": {
     "/": {
       "jsKb": 510,
-      "routeJsKb": 150,
+      "routeJsKb": 152,
       "totalKb": 730
     },
     "/browse": {

@@ -64,3 +64,121 @@ export function normalizeKeepsats (payload = {}) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// On-chain keepsats instructions
+// ---------------------------------------------------------------------------
+
+export const KEEPSATS_TRANSFER_ID = 'v4vapp_transfer'
+export const KEEPSATS_NOTIFICATION_ID = 'v4vapp_notification'
+export const KEEPSATS_SERVER_ACCOUNT = 'v4vapp'
+export const KEEPSATS_DEPOSIT_MEMO = '#sats'
+
+const LIGHTNING_ADDRESS_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i
+
+export function parseKeepsatsJson (value) {
+  if (!value) return null
+  if (typeof value === 'object') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    return null
+  }
+}
+
+export function isKeepsatsCustomJson (data = {}) {
+  return data?.id === KEEPSATS_TRANSFER_ID || data?.id === KEEPSATS_NOTIFICATION_ID
+}
+
+/** Read a `v4vapp_transfer` / `v4vapp_notification` operation. */
+export function parseKeepsatsCustomJson (data = {}) {
+  if (!isKeepsatsCustomJson(data)) return null
+  const json = parseKeepsatsJson(data.json) || {}
+  const msats = numberOrNull(json.msats)
+  const sats = numberOrNull(json.sats)
+  return {
+    id: data.id,
+    from: String(json.from_account || json.hive_accname_from || ''),
+    to: String(json.to_account || json.hive_accname_to || ''),
+    sats: sats ?? (msats !== null ? msats / 1000 : null),
+    msats,
+    memo: String(json.memo || ''),
+    invoiceMessage: String(json.invoice_message || ''),
+    parentId: String(json.parent_id || ''),
+    notification: data.id === KEEPSATS_NOTIFICATION_ID || json.notification === true
+  }
+}
+
+/** Short label for the queue and wallet activity rows. */
+export function describeKeepsatsCustomJson (data = {}) {
+  const parsed = parseKeepsatsCustomJson(data)
+  if (!parsed) return ''
+  if (parsed.notification) {
+    return 'v4vapp notification' + (parsed.parentId ? ' · ' + parsed.parentId : '')
+  }
+  const memo = parsed.memo
+  if (/^lnbc[0-9a-z]+$/i.test(memo)) return 'Pay Lightning invoice with keepsats'
+  if (LIGHTNING_ADDRESS_RE.test(memo)) return 'Send keepsats to ' + memo
+  if (/^#HBD\b/i.test(memo)) return 'Convert keepsats to HBD'
+  if (/^#HIVE\b/i.test(memo)) return 'Convert keepsats to HIVE'
+  if (parsed.to && parsed.to !== KEEPSATS_SERVER_ACCOUNT) return 'Send keepsats to @' + parsed.to
+  return 'Keepsats action'
+}
+
+/**
+ * Build the custom_json payload for a keepsats instruction.
+ *
+ * The operation must be signed with the active key of `from_account`. `sats`
+ * is omitted for a fixed-amount invoice (the invoice decides) and required for
+ * a Lightning address. `to_account` is always the server for conversion,
+ * address payments and invoice payments.
+ */
+export function buildKeepsatsTransfer ({
+  from,
+  to = KEEPSATS_SERVER_ACCOUNT,
+  sats = null,
+  memo = '',
+  invoiceMessage = ''
+} = {}) {
+  const account = String(from || '').trim().replace(/^@/, '').toLowerCase()
+  if (!account) throw new Error('A Hive account is required for a keepsats transfer.')
+  const json = {
+    from_account: account,
+    to_account: String(to || KEEPSATS_SERVER_ACCOUNT).trim().replace(/^@/, '').toLowerCase()
+  }
+  const amount = Number(sats)
+  if (Number.isFinite(amount) && amount > 0) json.sats = String(Math.round(amount))
+  if (memo) json.memo = String(memo)
+  if (invoiceMessage) json.invoice_message = String(invoiceMessage)
+  return ['custom_json', {
+    required_auths: [account],
+    required_posting_auths: [],
+    id: KEEPSATS_TRANSFER_ID,
+    json: JSON.stringify(json)
+  }]
+}
+
+/** Normal `transfer` instruction that credits the amount to keepsats. */
+export function buildKeepsatsDeposit ({ from, amount, asset = 'HBD' } = {}) {
+  const account = String(from || '').trim().replace(/^@/, '').toLowerCase()
+  const value = Number(amount)
+  const symbol = String(asset || 'HBD').toUpperCase() === 'HIVE' ? 'HIVE' : 'HBD'
+  if (!account) throw new Error('A Hive account is required for a keepsats deposit.')
+  if (!Number.isFinite(value) || value <= 0) throw new Error('Enter an amount greater than zero.')
+  return ['transfer', {
+    from: account,
+    to: KEEPSATS_SERVER_ACCOUNT,
+    amount: value.toFixed(3) + ' ' + symbol,
+    memo: KEEPSATS_DEPOSIT_MEMO
+  }]
+}
+
+/** Convert keepsats to HIVE/HBD by transferring them back to the server. */
+export function buildKeepsatsConvert ({ from, sats, asset = 'HBD' } = {}) {
+  const symbol = String(asset || 'HBD').toUpperCase() === 'HIVE' ? 'HIVE' : 'HBD'
+  return buildKeepsatsTransfer({
+    from,
+    sats,
+    memo: '#' + symbol
+  })
+}
+

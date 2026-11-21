@@ -116,6 +116,30 @@ describe('wallet helpers', () => {
     expect(walletTransactionDirection(entry('convert', {}), 'alice')).toBe('neutral')
   })
 
+  it('labels keepsats custom_json as Lightning activity', () => {
+    const convert = entry('custom_json', {
+      id: 'v4vapp_transfer',
+      json: JSON.stringify({ from_account: 'alice', to_account: 'v4vapp', sats: '1234', memo: '#HBD' })
+    })
+    const notice = entry('custom_json', {
+      id: 'v4vapp_notification',
+      json: JSON.stringify({ from_account: 'v4vapp', to_account: 'alice', memo: 'Insufficient Keepsats balance | § XYZ', msats: '0', parent_id: 'XYZ', notification: true })
+    })
+
+    expect(walletTransactionCategory(convert)).toBe('lightning')
+    expect(walletTransactionCategory(notice)).toBe('lightning')
+    expect(walletTransactionDirection(convert, 'alice')).toBe('out')
+    expect(walletTransactionDirection(notice, 'alice')).toBe('in')
+
+    const convertView = walletOperationView(convert, { username: 'alice' })
+    expect(convertView).toMatchObject({ label: 'Convert keepsats to HBD', icon: 'bolt', tone: 'out', counterparty: 'v4vapp' })
+    expect(convertView.parts[0]).toMatchObject({ text: '1,234 sats', sign: '-' })
+
+    const noticeView = walletOperationView(notice, { username: 'alice' })
+    expect(noticeView).toMatchObject({ label: 'v4vapp notification · XYZ', tone: 'in', counterparty: 'v4vapp' })
+    expect(noticeView.memo).toContain('Insufficient Keepsats balance')
+  })
+
   it('labels v4vapp transfers as Lightning activity', () => {
     const received = entry('transfer', {
       from: 'v4vapp',

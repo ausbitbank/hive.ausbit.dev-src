@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { loginAs, runAxe, waitForApp } from './helpers'
+import { loginAs, readQueue, runAxe, waitForApp } from './helpers'
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lV9W6QAAAABJRU5ErkJggg=='
 const PUBLIC_KEY = 'STM5Q3cRD4aBmm1dSgxQf9y2KtPakZkgT3uEZM2QjHSsNVKivzTFK'
@@ -147,5 +147,116 @@ test.describe('Keepsats read-only session', () => {
     await expect(panel).toContainText('signed with a different key')
     await expect(panel.getByRole('button', { name: 'Read balance' })).toBeVisible()
     await expect(panel).not.toContainText('Read-only session')
+  })
+})
+
+test.describe('Keepsats on-chain actions', () => {
+  test('queues a deposit as a manual transfer with #sats', async ({ page }) => {
+    test.setTimeout(120000)
+    await mockBridge(page)
+    const panel = await openKeepsats(page)
+
+    await panel.getByText('Keepsats actions (on-chain)').click()
+    if (!process.env.OBSCURA_CDP) {
+      const violations = await runAxe(page)
+      expect(violations, 'wallet with keepsats actions open').toEqual([])
+    }
+    await panel.getByLabel('Keepsats deposit amount').fill('2.5')
+    await panel.getByRole('button', { name: 'Queue deposit' }).click()
+    await page.getByRole('button', { name: 'I understand' }).click()
+
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      const item = queue?.items?.[0]
+      return {
+        keyType: item?.[1],
+        op: item?.[2],
+        manualOnly: queue?.meta?.[0]?.manualOnly
+      }
+    }).toEqual({
+      keyType: 'active',
+      op: ['transfer', {
+        from: 'ausbitbank',
+        to: 'v4vapp',
+        amount: '2.500 HBD',
+        memo: '#sats'
+      }],
+      manualOnly: true
+    })
+  })
+
+  test('queues a conversion as an active custom_json', async ({ page }) => {
+    test.setTimeout(120000)
+    await mockBridge(page)
+    const panel = await openKeepsats(page)
+
+    await panel.getByText('Keepsats actions (on-chain)').click()
+    await panel.getByRole('button', { name: 'Convert', exact: true }).click()
+    await panel.getByLabel('Sats to convert').fill('1234')
+    await panel.getByRole('button', { name: 'Queue conversion' }).click()
+    await page.getByRole('button', { name: 'I understand' }).click()
+
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      const item = queue?.items?.[0]
+      const json = item?.[2]?.[1]?.json
+      return {
+        keyType: item?.[1],
+        type: item?.[2]?.[0],
+        id: item?.[2]?.[1]?.id,
+        auths: item?.[2]?.[1]?.required_auths,
+        body: json ? JSON.parse(json) : null,
+        manualOnly: queue?.meta?.[0]?.manualOnly
+      }
+    }).toEqual({
+      keyType: 'active',
+      type: 'custom_json',
+      id: 'v4vapp_transfer',
+      auths: ['ausbitbank'],
+      body: {
+        from_account: 'ausbitbank',
+        to_account: 'v4vapp',
+        sats: '1234',
+        memo: '#HBD'
+      },
+      manualOnly: true
+    })
+  })
+
+  test('queues a Lightning address payment from keepsats', async ({ page }) => {
+    test.setTimeout(120000)
+    await mockBridge(page)
+    const panel = await openKeepsats(page)
+
+    await panel.getByText('Keepsats actions (on-chain)').click()
+    await panel.getByRole('button', { name: 'Pay', exact: true }).click()
+    await panel.getByLabel('Lightning invoice or address to pay from keepsats').fill('bob@getalby.com')
+    await panel.getByLabel('Sats to send from keepsats').fill('5000')
+    await panel.getByRole('button', { name: 'Queue keepsats payment' }).click()
+    await page.getByRole('button', { name: 'I understand' }).click()
+
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      const item = queue?.items?.[0]
+      const json = item?.[2]?.[1]?.json
+      return {
+        keyType: item?.[1],
+        type: item?.[2]?.[0],
+        id: item?.[2]?.[1]?.id,
+        body: json ? JSON.parse(json) : null,
+        manualOnly: queue?.meta?.[0]?.manualOnly
+      }
+    }).toEqual({
+      keyType: 'active',
+      type: 'custom_json',
+      id: 'v4vapp_transfer',
+      body: {
+        from_account: 'ausbitbank',
+        to_account: 'v4vapp',
+        sats: '5000',
+        memo: 'bob@getalby.com'
+      },
+      manualOnly: true
+    })
   })
 })

@@ -37,6 +37,21 @@ describe('queue helpers', () => {
       .toBe('Delete post')
     expect(operationSummary(['alice', 'posting', ['custom_json', { id: 'follow' }]]))
       .toBe('follow app action')
+
+    const deposit = ['alice', 'active', ['transfer', { from: 'alice', to: 'v4vapp', amount: '2.500 HBD', memo: '#sats' }]]
+    expect(operationSummary(deposit)).toBe('Deposit 2.500 HBD to keepsats')
+
+    const convert = ['alice', 'active', ['custom_json', {
+      id: 'v4vapp_transfer',
+      json: JSON.stringify({ from_account: 'alice', to_account: 'v4vapp', sats: '1234', memo: '#HBD' })
+    }]]
+    expect(operationSummary(convert)).toBe('Convert keepsats to HBD')
+
+    const notice = ['alice', 'active', ['custom_json', {
+      id: 'v4vapp_notification',
+      json: JSON.stringify({ from_account: 'v4vapp', to_account: 'alice', parent_id: 'XYZ', notification: true })
+    }]]
+    expect(operationSummary(notice)).toBe('v4vapp notification · XYZ')
   })
 
   it('explains posting and active key requirements', () => {

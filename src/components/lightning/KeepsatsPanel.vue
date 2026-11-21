@@ -99,6 +99,12 @@
           </template>
         </p>
       </template>
+
+      <keepsats-actions
+        :account="account"
+        :balance-sats="data?.netSats || 0"
+        @queued="$emit('queued')"
+      />
     </div>
   </section>
 </template>
@@ -113,16 +119,19 @@ import {
   loadKeepsats
 } from 'src/services/v4vappAuth'
 import smartlock from 'components/smartlock/index.js'
+import KeepsatsActions from 'components/lightning/KeepsatsActions.vue'
 
 const DEFAULT_SMARTLOCK_TIMEOUT_MS = 15 * 60 * 1000
 
 export default {
   name: 'KeepsatsPanel',
+  components: { KeepsatsActions },
   props: {
     account: { type: String, required: true },
     loginType: { type: String, default: '' },
     smartlockTimeoutMs: { type: Number, default: DEFAULT_SMARTLOCK_TIMEOUT_MS }
   },
+  emits: ['queued'],
   data () {
     return {
       auth: null,

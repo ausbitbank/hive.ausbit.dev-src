@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeKeepsats } from '../../src/services/keepsats'
+import {
+  buildKeepsatsConvert,
+  buildKeepsatsDeposit,
+  buildKeepsatsTransfer,
+  describeKeepsatsCustomJson,
+  normalizeKeepsats,
+  parseKeepsatsCustomJson
+} from '../../src/services/keepsats'
 
 describe('Keepsats payload', () => {
   it('normalises the live zero-balance liability shape', () => {
@@ -61,3 +68,86 @@ describe('Keepsats payload', () => {
   })
 })
 
+
+describe('Keepsats on-chain instructions', () => {
+  it('builds a deposit as a normal transfer with #sats', () => {
+    expect(buildKeepsatsDeposit({ from: '@Alice', amount: 2.5, asset: 'HBD' })).toEqual(['transfer', {
+      from: 'alice',
+      to: 'v4vapp',
+      amount: '2.500 HBD',
+      memo: '#sats'
+    }])
+    expect(buildKeepsatsDeposit({ from: 'alice', amount: 1, asset: 'HIVE' })).toEqual(['transfer', {
+      from: 'alice',
+      to: 'v4vapp',
+      amount: '1.000 HIVE',
+      memo: '#sats'
+    }])
+    expect(() => buildKeepsatsDeposit({ from: 'alice', amount: 0 })).toThrow(/amount/i)
+  })
+
+  it('builds a conversion custom_json with the active authority', () => {
+    const [type, data] = buildKeepsatsConvert({ from: 'alice', sats: 1234, asset: 'hbd' })
+    expect(type).toBe('custom_json')
+    expect(data).toMatchObject({
+      required_auths: ['alice'],
+      required_posting_auths: [],
+      id: 'v4vapp_transfer'
+    })
+    expect(JSON.parse(data.json)).toEqual({
+      from_account: 'alice',
+      to_account: 'v4vapp',
+      sats: '1234',
+      memo: '#HBD'
+    })
+  })
+
+  it('builds invoice and address payments, omitting sats for a fixed invoice', () => {
+    const invoice = buildKeepsatsTransfer({
+      from: 'alice',
+      sats: null,
+      memo: 'lnbc1000u1pabc'
+    })
+    expect(JSON.parse(invoice[1].json)).toEqual({
+      from_account: 'alice',
+      to_account: 'v4vapp',
+      memo: 'lnbc1000u1pabc'
+    })
+
+    const address = buildKeepsatsTransfer({
+      from: 'alice',
+      sats: 5000,
+      memo: 'bob@getalby.com',
+      invoiceMessage: 'coffee'
+    })
+    expect(JSON.parse(address[1].json)).toEqual({
+      from_account: 'alice',
+      to_account: 'v4vapp',
+      sats: '5000',
+      memo: 'bob@getalby.com',
+      invoice_message: 'coffee'
+    })
+  })
+
+  it('describes custom_json operations for the queue and wallet', () => {
+    const convert = { id: 'v4vapp_transfer', json: JSON.stringify({ from_account: 'alice', to_account: 'v4vapp', sats: '1234', memo: '#HBD' }) }
+    expect(parseKeepsatsCustomJson(convert)).toMatchObject({
+      from: 'alice',
+      to: 'v4vapp',
+      sats: 1234,
+      memo: '#HBD',
+      notification: false
+    })
+    expect(describeKeepsatsCustomJson(convert)).toBe('Convert keepsats to HBD')
+
+    const invoice = { id: 'v4vapp_transfer', json: JSON.stringify({ from_account: 'alice', to_account: 'v4vapp', memo: 'lnbc1000u1pabc' }) }
+    expect(describeKeepsatsCustomJson(invoice)).toBe('Pay Lightning invoice with keepsats')
+
+    const address = { id: 'v4vapp_transfer', json: JSON.stringify({ from_account: 'alice', to_account: 'v4vapp', memo: 'bob@getalby.com', sats: '5000' }) }
+    expect(describeKeepsatsCustomJson(address)).toBe('Send keepsats to bob@getalby.com')
+
+    const notification = { id: 'v4vapp_notification', json: JSON.stringify({ from_account: 'v4vapp', to_account: 'alice', memo: 'Paid', parent_id: 'XYZ', notification: true }) }
+    expect(parseKeepsatsCustomJson(notification)).toMatchObject({ notification: true, parentId: 'XYZ' })
+    expect(describeKeepsatsCustomJson(notification)).toBe('v4vapp notification · XYZ')
+  })
+})

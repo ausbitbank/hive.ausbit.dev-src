@@ -124,6 +124,7 @@
       v-if="keepsatsEnabled && loggedIn"
       :account="account"
       :login-type="loginType"
+      @queued="$emit('queued')"
     />
 
     <lightning-receive-dialog

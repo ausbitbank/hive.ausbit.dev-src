@@ -69,16 +69,24 @@ opt-in, secondary keepsats panel with a memory-only token, custody disclosure
 and no write actions. See `docs/workstreams/W47-keepsats-read-only.md`. On-chain
 keepsats actions, POS and post zaps remain later phases.
 
+W48 (issue #87, Keepsats on-chain actions) is complete. Deposit `#sats`,
+conversion to HBD/HIVE, and Lightning invoice/address payments from keepsats are
+built as `manualOnly` queue actions with the active key; wallet activity now
+labels `v4vapp_transfer`/`v4vapp_notification`. See
+`docs/workstreams/W48-keepsats-onchain-actions.md`. A live operator smoke of a
+small deposit/conversion/payment is the remaining verification.
+
 W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
 #50, #77 and #78) are complete. W38 adds community headers, forced dashboard
 refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
 See `docs/workstreams/W37-dashboard-magi-tokens.md` and
 `docs/workstreams/W38-dashboard-followups.md`.
 
-Remaining follow-ups with no open workstream: on-chain keepsats actions,
-POS/post zaps and the explorer/tax work from the Lightning study (issue #87
-tracks the phases), and the optional #63 server-side existence check at the
-edge. Issue #82 (post composer) is the active in-progress workstream.
+Remaining follow-ups with no open workstream: POS/post zaps and the
+explorer/tax work from the Lightning study (issue #87 tracks the phases), the
+optional keepsats user-transfer and on-chain balance fallback, and the optional
+#63 server-side existence check at the edge. Issue #82 (post composer) is the
+active in-progress workstream.
 
 ## Definition of done
 

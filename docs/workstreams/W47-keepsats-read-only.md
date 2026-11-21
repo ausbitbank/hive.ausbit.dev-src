@@ -102,3 +102,7 @@ page reload drops it; the user must connect again.
   `#balance_request`, withdraw/convert `v4vapp_transfer`, pay invoice — through
   the existing signing queue with `manualOnly`. Reuse the notification parser.
 - POS/zaps and explorer/tax work remain later phases in issue #87.
+
+> Implemented as W48: `docs/workstreams/W48-keepsats-onchain-actions.md` covers
+> deposit, conversion and invoice/address payment. Balance-request UI and user
+> transfers are still open.
