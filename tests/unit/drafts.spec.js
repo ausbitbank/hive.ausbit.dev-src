@@ -3,6 +3,7 @@ import {
   DRAFT_STORAGE_KEY,
   MAX_DRAFTS,
   MAX_TAGS,
+  appendDraftHistory,
   createDraft,
   draftDisplayTitle,
   draftLengthGuidance,
@@ -12,10 +13,13 @@ import {
   normalizeTag,
   normalizeTags,
   parseDraftExport,
+  readDraftHistory,
   readDraftState,
   readDrafts,
   readPinnedDraftIds,
   removeDraftById,
+  removeDraftHistory,
+  restoreDraftSnapshot,
   serializeDraftExport,
   togglePinnedDraftId,
   upsertDraft,
@@ -181,6 +185,45 @@ describe('draft storage', () => {
   it('removes one draft without touching others', () => {
     const drafts = [createDraft({ id: 'a', title: 'A' }), createDraft({ id: 'b', title: 'B' })]
     expect(removeDraftById(drafts, 'a').map(item => item.id)).toEqual(['b'])
+  })
+})
+
+describe('draft history', () => {
+  it('stores previous versions, throttles autosaves and restores content', () => {
+    const storage = memoryStorage()
+    const previous = createDraft({ id: 'draft-1', owner: 'alice', title: 'Old title', body: 'Old body' }, 1000)
+    const current = createDraft({ ...previous, title: 'New title', body: 'New body' }, 2000)
+
+    appendDraftHistory(storage, previous, { now: 2000, current })
+    const first = readDraftHistory(storage)
+    expect(first['draft-1']).toHaveLength(1)
+    expect(first['draft-1'][0].title).toBe('Old title')
+
+    // A second change within the throttle window does not add another snapshot.
+    appendDraftHistory(storage, current, { now: 3000, current: { ...current, body: 'Newer body' } })
+    expect(readDraftHistory(storage)['draft-1']).toHaveLength(1)
+
+    appendDraftHistory(storage, current, {
+      now: 3000,
+      force: true,
+      current: { ...current, body: 'Newer body' }
+    })
+    expect(readDraftHistory(storage)['draft-1']).toHaveLength(2)
+
+    const restored = restoreDraftSnapshot(first['draft-1'][0], current, 4000)
+    expect(restored.id).toBe('draft-1')
+    expect(restored.owner).toBe('alice')
+    expect(restored.title).toBe('Old title')
+    expect(restored.body).toBe('Old body')
+  })
+
+  it('removes history for a specific draft', () => {
+    const storage = memoryStorage()
+    const previous = createDraft({ id: 'draft-1', title: 'Old', body: 'Body' }, 1000)
+    appendDraftHistory(storage, previous, { now: 2000, force: true })
+    expect(readDraftHistory(storage)['draft-1']).toHaveLength(1)
+    removeDraftHistory(storage, 'draft-1')
+    expect(readDraftHistory(storage)['draft-1']).toBeUndefined()
   })
 })
 

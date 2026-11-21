@@ -36,6 +36,7 @@
             <h2 id="compose-editor-title" class="home-panel__title">{{ activeDraftTitle }}</h2>
           </div>
           <div class="home-panel__actions">
+            <q-btn flat dense round icon="history" aria-label="Draft history" title="Draft history" @click="openDraftHistory" />
             <q-btn flat dense round icon="tune" aria-label="Editor settings" title="Editor settings" @click="settingsOpen = true" />
             <q-btn
               flat
@@ -831,6 +832,42 @@
       </q-card>
     </q-dialog>
 
+    <q-dialog v-model="historyOpen">
+      <q-card class="compose-history">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Recovery</div>
+            <h2 class="home-panel__title">Draft history</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close draft history" title="Close" @click="historyOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-history__body">
+          <p class="compose-hint compose-hint--top">
+            Snapshots are kept when the draft changes and on explicit saves. The last two versions are retained per draft.
+          </p>
+          <div class="compose-history__actions">
+            <q-btn flat no-caps icon="save" label="Save version now" @click="saveVersionNow" />
+            <q-btn v-if="draftHistory.length" flat no-caps color="red-4" icon="delete_sweep" label="Clear history" @click="clearCurrentDraftHistory" />
+          </div>
+          <div v-if="draftHistory.length" class="compose-history__list">
+            <div v-for="snapshot in draftHistory" :key="snapshot.id" class="compose-history__item">
+              <div class="compose-snippet__body">
+                <div class="compose-snippet__name">{{ draftDisplayTitle(snapshot) }}</div>
+                <div class="compose-snippet__preview">{{ snapshot.body }}</div>
+                <div class="compose-history__time">{{ formatHistoryTime(snapshot.capturedAt) }}</div>
+              </div>
+              <q-btn flat dense no-caps color="primary" label="Restore" @click="restoreHistory(snapshot)" />
+            </div>
+          </div>
+          <div v-else class="compose-empty-line">
+            <q-icon name="history" size="17px" aria-hidden="true" />
+            <span>No saved versions yet. Save a version now, or keep editing; one will appear after the next change.</span>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="snippetsOpen">
       <q-card class="compose-snippets">
         <q-card-section class="compose-media-dialog__head">
@@ -867,6 +904,11 @@
             <div class="compose-snippets__form-actions">
               <q-btn v-if="snippetId" flat no-caps label="Cancel edit" @click="resetSnippetForm" />
               <q-btn unelevated no-caps color="primary" :icon="snippetId ? 'save' : 'add'" :label="snippetId ? 'Save changes' : 'Save snippet'" @click="saveSnippet" />
+            </div>
+            <div class="compose-snippets__io">
+              <q-btn flat dense no-caps icon="download" label="Export snippets" @click="exportSnippets" />
+              <q-btn flat dense no-caps icon="upload_file" label="Import snippets" @click="triggerSnippetImport" />
+              <input ref="snippetImportInput" type="file" accept="application/json,.json" class="compose-file-input" aria-label="Import snippets JSON file" @change="onSnippetImportFile" />
             </div>
           </div>
 
@@ -911,6 +953,11 @@
               <span>{{ templateError }}</span>
             </div>
             <q-btn unelevated no-caps color="primary" icon="bookmark_add" label="Save current draft" @click="saveCurrentAsTemplate" />
+            <div class="compose-snippets__io">
+              <q-btn flat dense no-caps icon="download" label="Export templates" @click="exportTemplates" />
+              <q-btn flat dense no-caps icon="upload_file" label="Import templates" @click="triggerTemplateImport" />
+              <input ref="templateImportInput" type="file" accept="application/json,.json" class="compose-file-input" aria-label="Import templates JSON file" @change="onTemplateImportFile" />
+            </div>
           </div>
 
           <div v-if="templates.length" class="compose-template-group">
@@ -1702,6 +1749,58 @@
   gap: 0.3rem;
 }
 
+.compose-snippets__io {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+
+.compose-history {
+  width: 620px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow: auto;
+  background: #1d1d1d;
+}
+
+.compose-history__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-history__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.compose-history__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.compose-history__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.compose-history__time {
+  margin-top: 0.15rem;
+  color: #78909c;
+  font-size: 0.66rem;
+}
+
 .compose-snippets__list,
 .compose-template-group {
   display: flex;
@@ -2178,6 +2277,7 @@ import {
   DESCRIPTION_MAX,
   MAX_BENEFICIARIES,
   MAX_TAGS,
+  appendDraftHistory,
   createDraft,
   defaultAiTools,
   defaultRewards,
@@ -2192,9 +2292,12 @@ import {
   normalizeTag,
   normalizeTags,
   parseDraftExport,
+  readDraftHistory,
   readDrafts,
   readPinnedDraftIds,
   removeDraftById,
+  removeDraftHistory,
+  restoreDraftSnapshot,
   serializeDraftExport,
   togglePinnedDraftId,
   upsertDraft,
@@ -2216,16 +2319,22 @@ import {
 import {
   createSnippet,
   MAX_SNIPPET_NAME,
+  mergeSnippets,
+  parseSnippetExport,
   readSnippets,
   removeSnippetById,
+  serializeSnippetExport,
   upsertSnippet,
   writeSnippets
 } from 'src/services/snippets'
 import {
   applyTemplateToDraft,
   MAX_TEMPLATE_NAME,
+  mergeTemplates,
+  parseTemplateExport,
   readTemplates,
   removeTemplateById,
+  serializeTemplateExport,
   STARTER_TEMPLATES,
   templateFromDraft,
   upsertTemplate,
@@ -2311,6 +2420,8 @@ export default {
       starterTemplates: STARTER_TEMPLATES,
       publishedOpen: false,
       publishedInfo: null,
+      historyOpen: false,
+      draftHistory: [],
       mode: 'write',
       saveState: 'idle',
       editingLoading: false,
@@ -2877,6 +2988,137 @@ export default {
         .then(() => this.$q.notify({ type: 'positive', message: 'Post link copied' }))
         .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the link' }))
     },
+    openDraftHistory () {
+      if (!this.draft) return
+      const history = readDraftHistory(LocalStorage)
+      this.draftHistory = history[this.draft.id] || []
+      this.historyOpen = true
+    },
+    saveVersionNow () {
+      if (!this.draft) return
+      const history = appendDraftHistory(LocalStorage, this.draft, { force: true })
+      this.draftHistory = history[this.draft.id] || []
+      this.$q.notify({ type: 'positive', message: 'Version saved', caption: 'You can restore it from Draft history.' })
+    },
+    restoreHistory (snapshot) {
+      if (!snapshot || !this.draft) return
+      this.$q.dialog({
+        dark: true,
+        title: 'Restore this version?',
+        message: 'The current title, body and publishing options will be replaced by the saved version.',
+        cancel: { label: 'Cancel', flat: true },
+        ok: { label: 'Restore version', color: 'primary', unelevated: true },
+        persistent: true
+      }).onOk(() => {
+        this.draft = restoreDraftSnapshot(snapshot, this.draft)
+        this.previewBody = this.draft.body
+        this.mode = 'write'
+        this.historyOpen = false
+        this.$q.notify({ type: 'positive', message: 'Version restored' })
+      })
+    },
+    clearCurrentDraftHistory () {
+      if (!this.draft) return
+      this.$q.dialog({
+        dark: true,
+        title: 'Clear draft history?',
+        message: 'Saved versions for this draft will be removed. The current draft is not affected.',
+        cancel: { label: 'Cancel', flat: true },
+        ok: { label: 'Clear history', color: 'negative', unelevated: true },
+        persistent: true
+      }).onOk(() => {
+        removeDraftHistory(LocalStorage, this.draft.id)
+        this.draftHistory = []
+        this.$q.notify({ message: 'Draft history cleared' })
+      })
+    },
+    formatHistoryTime (value) {
+      return value ? moment.utc(value).fromNow() : ''
+    },
+    exportSnippets () {
+      if (!this.snippets.length) {
+        this.$q.notify({ message: 'There are no snippets to export yet.' })
+        return
+      }
+      const status = exportFile(
+        'hive-snippets-' + moment().format('YYYY-MM-DD') + '.json',
+        serializeSnippetExport(this.snippets),
+        'application/json'
+      )
+      if (status === true) this.$q.notify({ type: 'positive', message: 'Snippets exported' })
+      else this.$q.notify({ type: 'negative', message: 'Could not export snippets', caption: String(status) })
+    },
+    triggerSnippetImport () {
+      this.$refs.snippetImportInput?.click()
+    },
+    async onSnippetImportFile (event) {
+      const input = event.target
+      const file = input.files && input.files[0]
+      input.value = ''
+      if (!file) return
+      try {
+        const parsed = parseSnippetExport(await file.text(), { owner: this.loggedInUser })
+        if (parsed.error) {
+          this.$q.notify({ type: 'negative', message: 'Snippet import failed', caption: parsed.error })
+          return
+        }
+        const merged = mergeSnippets(this.snippets, parsed.snippets, { owner: this.loggedInUser })
+        this.snippets = merged.snippets
+        if (!writeSnippets(LocalStorage, this.loggedInUser, this.snippets)) {
+          this.$q.notify({ type: 'negative', message: 'Could not save imported snippets' })
+          return
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: 'Snippets imported',
+          caption: merged.added + ' added · ' + merged.updated + ' updated' + (merged.skipped ? ' · ' + merged.skipped + ' skipped' : '')
+        })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: 'Could not read that file', caption: error.message })
+      }
+    },
+    exportTemplates () {
+      if (!this.templates.length) {
+        this.$q.notify({ message: 'There are no saved templates to export yet.' })
+        return
+      }
+      const status = exportFile(
+        'hive-templates-' + moment().format('YYYY-MM-DD') + '.json',
+        serializeTemplateExport(this.templates),
+        'application/json'
+      )
+      if (status === true) this.$q.notify({ type: 'positive', message: 'Templates exported' })
+      else this.$q.notify({ type: 'negative', message: 'Could not export templates', caption: String(status) })
+    },
+    triggerTemplateImport () {
+      this.$refs.templateImportInput?.click()
+    },
+    async onTemplateImportFile (event) {
+      const input = event.target
+      const file = input.files && input.files[0]
+      input.value = ''
+      if (!file) return
+      try {
+        const parsed = parseTemplateExport(await file.text(), { owner: this.loggedInUser })
+        if (parsed.error) {
+          this.$q.notify({ type: 'negative', message: 'Template import failed', caption: parsed.error })
+          return
+        }
+        const merged = mergeTemplates(this.templates, parsed.templates, { owner: this.loggedInUser })
+        this.templates = merged.templates
+        if (!writeTemplates(LocalStorage, this.loggedInUser, this.templates)) {
+          this.$q.notify({ type: 'negative', message: 'Could not save imported templates' })
+          return
+        }
+        this.$q.notify({
+          type: 'positive',
+          message: 'Templates imported',
+          caption: merged.added + ' added · ' + merged.updated + ' updated' + (merged.skipped ? ' · ' + merged.skipped + ' skipped' : '')
+        })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: 'Could not read that file', caption: error.message })
+      }
+    },
     schedulePreview () {
       if (!this.draft) return
       if (!this.autoUpdatePreview) return
@@ -3300,6 +3542,14 @@ export default {
         owner: this.loggedInUser || this.draft.owner,
         updatedAt: now
       }, now)
+      const existing = this.drafts.find(item => item.id === this.draft.id)
+      if (existing) {
+        appendDraftHistory(LocalStorage, existing, {
+          now,
+          force: !silent,
+          current: saved
+        })
+      }
       this.drafts = upsertDraft(this.drafts, saved, now)
       const ok = writeDrafts(LocalStorage, this.drafts, now)
       if (!ok) {
@@ -3374,6 +3624,7 @@ export default {
       if (!target) return
       this.drafts = removeDraftById(this.drafts, target.id)
       writeDrafts(LocalStorage, this.drafts)
+      removeDraftHistory(LocalStorage, target.id)
       this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== target.id)
       writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
       if (this.draft && this.draft.id === target.id) {
@@ -3634,6 +3885,7 @@ export default {
         } else {
           this.drafts = removeDraftById(this.drafts, this.draft.id)
           writeDrafts(LocalStorage, this.drafts)
+          removeDraftHistory(LocalStorage, this.draft.id)
           this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== this.draft.id)
           writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
           this.lastSavedSnapshot = ''

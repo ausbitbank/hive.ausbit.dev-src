@@ -179,6 +179,65 @@ export function writeTemplates (storage, owner, templates, now = Date.now()) {
   return storageSet(storage, storageKey(owner), { version: TEMPLATE_VERSION, items: list })
 }
 
+export function serializeTemplateExport (templates, { now = Date.now() } = {}) {
+  return JSON.stringify({
+    app: 'hive.ausbit.dev',
+    type: 'hive-templates',
+    version: TEMPLATE_VERSION,
+    exportedAt: new Date(now).toISOString(),
+    templates: (Array.isArray(templates) ? templates : []).map(item => normalizeTemplate(item, now))
+  }, null, 2)
+}
+
+export function parseTemplateExport (text, { now = Date.now(), owner = null } = {}) {
+  if (typeof text !== 'string' || !text.trim()) {
+    return { templates: [], error: 'The file is empty.' }
+  }
+  let parsed
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return { templates: [], error: 'This file is not valid JSON.' }
+  }
+  const list = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed && parsed.templates)
+      ? parsed.templates
+      : []
+  const templates = list
+    .map(item => normalizeTemplate({ ...item, owner: item.owner || owner || null }, now))
+    .filter(templateHasContent)
+  if (!templates.length) return { templates: [], error: 'No templates with a name and content were found.' }
+  return { templates, error: '' }
+}
+
+/** Merge imported templates without overwriting newer local copies. */
+export function mergeTemplates (existing, imported, { owner = null, now = Date.now() } = {}) {
+  let templates = Array.isArray(existing) ? [...existing] : []
+  let added = 0
+  let updated = 0
+  let skipped = 0
+  for (const raw of Array.isArray(imported) ? imported : []) {
+    const template = normalizeTemplate({ ...raw, owner: raw.owner || owner || null }, now)
+    if (!templateHasContent(template)) {
+      skipped += 1
+      continue
+    }
+    const index = templates.findIndex(item => item.id === template.id)
+    if (index === -1) {
+      templates.push(template)
+      added += 1
+    } else if (template.updatedAt >= Number(templates[index].updatedAt)) {
+      templates[index] = template
+      updated += 1
+    } else {
+      skipped += 1
+    }
+  }
+  templates = sortTemplates(templates).slice(0, MAX_TEMPLATES)
+  return { templates, added, updated, skipped }
+}
+
 /** Starter templates always available, before the account's own templates. */
 export const STARTER_TEMPLATES = [
   {

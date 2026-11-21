@@ -288,6 +288,52 @@ test.describe('action flows', () => {
     }).toBe(true)
   })
 
+  test('compose imports snippets from a JSON file', async ({ page }) => {
+    test.setTimeout(120000)
+    test.skip(Boolean(process.env.OBSCURA_CDP), 'File inputs need Chromium')
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Insert snippet' }).dispatchEvent('click')
+    await page.locator('input[aria-label="Import snippets JSON file"]').setInputFiles({
+      name: 'snippets.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify({
+        type: 'hive-snippets',
+        version: 1,
+        snippets: [{ name: 'Imported signature', body: 'Thanks for reading.' }]
+      }))
+    })
+    await expect(page.getByText('Imported signature', { exact: true })).toBeVisible()
+  })
+
+  test('compose restores a draft history version', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByLabel('Post title').fill('Version test')
+    await page.getByLabel('Post body in Markdown').fill('Version one')
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.body === 'Version one')
+    }).toBe(true)
+
+    await page.getByLabel('Post body in Markdown').fill('Version two')
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.body === 'Version two')
+    }).toBe(true)
+
+    await page.getByRole('button', { name: 'Draft history' }).dispatchEvent('click')
+    await expect(page.getByRole('heading', { name: 'Draft history' })).toBeVisible()
+    const item = page.locator('.compose-history__item').filter({ hasText: 'Version one' })
+    await expect(item).toBeVisible()
+    await item.getByRole('button', { name: 'Restore' }).click()
+    await page.getByRole('button', { name: 'Restore version' }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue('Version one')
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

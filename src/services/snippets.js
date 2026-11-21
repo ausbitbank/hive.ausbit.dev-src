@@ -167,3 +167,30 @@ export function parseSnippetExport (text, { now = Date.now(), owner = null } = {
   if (!snippets.length) return { snippets: [], error: 'No snippets with a name and body were found.' }
   return { snippets, error: '' }
 }
+
+/** Merge imported snippets without overwriting newer local copies. */
+export function mergeSnippets (existing, imported, { owner = null, now = Date.now() } = {}) {
+  let snippets = Array.isArray(existing) ? [...existing] : []
+  let added = 0
+  let updated = 0
+  let skipped = 0
+  for (const raw of Array.isArray(imported) ? imported : []) {
+    const snippet = normalizeSnippet({ ...raw, owner: raw.owner || owner || null }, now)
+    if (!snippetHasContent(snippet)) {
+      skipped += 1
+      continue
+    }
+    const index = snippets.findIndex(item => item.id === snippet.id)
+    if (index === -1) {
+      snippets.push(snippet)
+      added += 1
+    } else if (snippet.updatedAt >= Number(snippets[index].updatedAt)) {
+      snippets[index] = snippet
+      updated += 1
+    } else {
+      skipped += 1
+    }
+  }
+  snippets = sortSnippets(snippets).slice(0, MAX_SNIPPETS)
+  return { snippets, added, updated, skipped }
+}

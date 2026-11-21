@@ -333,6 +333,160 @@ export function togglePinnedDraftId (storage, owner, id) {
   return next
 }
 
+export const DRAFT_HISTORY_KEY = 'composeDraftHistory'
+export const DRAFT_HISTORY_VERSION = 1
+export const MAX_DRAFT_HISTORY = 2
+export const MAX_DRAFT_HISTORY_TOTAL = 20
+export const DRAFT_HISTORY_INTERVAL_MS = 10 * 60 * 1000
+
+function snapshotFields (draft) {
+  return {
+    title: draft.title,
+    body: draft.body,
+    description: draft.description,
+    coverImage: draft.coverImage,
+    tags: draft.tags,
+    community: draft.community,
+    crossPost: draft.crossPost,
+    beneficiaries: draft.beneficiaries,
+    rewards: draft.rewards,
+    aiTools: draft.aiTools,
+    countdown: draft.countdown,
+    portfolio: draft.portfolio,
+    collection: draft.collection,
+    authorDisplay: draft.authorDisplay
+  }
+}
+
+function historySignature (draft) {
+  return JSON.stringify(snapshotFields(normalizeDraft(draft)))
+}
+
+function normalizeHistorySnapshot (raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const draftId = cleanString(raw.draftId, 80).trim()
+  if (!draftId) return null
+  const content = normalizeDraft({ ...raw, id: draftId }, Number(raw.capturedAt) || Date.now())
+  return {
+    id: typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim().slice(0, 80) : 'snap-' + draftId + '-' + (Number(raw.capturedAt) || Date.now()),
+    draftId,
+    ...snapshotFields(content),
+    updatedAt: content.updatedAt,
+    capturedAt: Number(raw.capturedAt) || Date.now()
+  }
+}
+
+function parseDraftHistory (raw) {
+  if (!raw) return {}
+  let source = raw
+  if (typeof raw === 'string') {
+    try {
+      source = JSON.parse(String(raw).replace(/^__q_objt\|/, ''))
+    } catch {
+      return {}
+    }
+  }
+  const drafts = source && typeof source === 'object' && source.drafts && typeof source.drafts === 'object'
+    ? source.drafts
+    : {}
+  const out = {}
+  for (const [draftId, list] of Object.entries(drafts)) {
+    const snapshots = (Array.isArray(list) ? list : [])
+      .map(normalizeHistorySnapshot)
+      .filter(Boolean)
+      .sort((a, b) => b.capturedAt - a.capturedAt)
+      .slice(0, MAX_DRAFT_HISTORY)
+    if (snapshots.length) out[draftId] = snapshots
+  }
+  return out
+}
+
+export function readDraftHistory (storage) {
+  return parseDraftHistory(storageGet(storage, DRAFT_HISTORY_KEY))
+}
+
+function writeDraftHistory (storage, history) {
+  const compact = {}
+  let total = 0
+  const entries = Object.entries(history || {})
+    .flatMap(([draftId, list]) => (Array.isArray(list) ? list : []).map(snapshot => ({ draftId, snapshot })))
+    .sort((a, b) => b.snapshot.capturedAt - a.snapshot.capturedAt)
+  for (const entry of entries) {
+    if (total >= MAX_DRAFT_HISTORY_TOTAL) break
+    const list = compact[entry.draftId] || []
+    if (list.length >= MAX_DRAFT_HISTORY) continue
+    list.push(entry.snapshot)
+    compact[entry.draftId] = list
+    total += 1
+  }
+  if (!total) {
+    storageRemove(storage, DRAFT_HISTORY_KEY)
+    return true
+  }
+  return storageSet(storage, DRAFT_HISTORY_KEY, {
+    version: DRAFT_HISTORY_VERSION,
+    drafts: compact
+  })
+}
+
+/**
+ * Store the previous saved version of a draft before it is overwritten.
+ * Autosave snapshots are throttled; explicit saves force one. History is a
+ * recovery convenience, so a storage failure is ignored.
+ */
+export function appendDraftHistory (storage, previous, { now = Date.now(), force = false, current = null } = {}) {
+  if (!previous || !previous.id) return readDraftHistory(storage)
+  const history = readDraftHistory(storage)
+  const list = history[previous.id] || []
+  if (current && historySignature(previous) === historySignature(current)) return history
+  if (list[0] && historySignature(list[0]) === historySignature(previous)) return history
+  if (!force && list[0] && now - list[0].capturedAt < DRAFT_HISTORY_INTERVAL_MS) return history
+
+  const normalized = normalizeDraft(previous, now)
+  const snapshot = {
+    id: 'snap-' + previous.id + '-' + now,
+    draftId: previous.id,
+    ...snapshotFields(normalized),
+    updatedAt: normalized.updatedAt,
+    capturedAt: now
+  }
+  const next = {
+    ...history,
+    [previous.id]: [snapshot, ...list].slice(0, MAX_DRAFT_HISTORY)
+  }
+  writeDraftHistory(storage, next)
+  return readDraftHistory(storage)
+}
+
+export function removeDraftHistory (storage, draftId) {
+  if (!draftId) return readDraftHistory(storage)
+  const history = readDraftHistory(storage)
+  if (!history[draftId]) return history
+  delete history[draftId]
+  writeDraftHistory(storage, history)
+  return readDraftHistory(storage)
+}
+
+export function clearDraftHistory (storage) {
+  storageRemove(storage, DRAFT_HISTORY_KEY)
+  return {}
+}
+
+/** Restore a snapshot while keeping the draft's id, owner and edit identity. */
+export function restoreDraftSnapshot (snapshot, draft, now = Date.now()) {
+  const base = normalizeDraft(draft, now)
+  const content = snapshotFields(normalizeDraft(snapshot, now))
+  return normalizeDraft({
+    ...base,
+    ...content,
+    id: base.id,
+    owner: base.owner,
+    editing: base.editing,
+    createdAt: base.createdAt,
+    updatedAt: now
+  }, now)
+}
+
 /** Insert or replace a draft, stamping updatedAt and enforcing the list limit. */
 export function upsertDraft (drafts, draft, now = Date.now()) {
   const normalized = normalizeDraft({ ...draft, updatedAt: now }, now)

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createSnippet,
   MAX_SNIPPETS,
+  mergeSnippets,
   normalizeSnippet,
   parseSnippetExport,
   readSnippets,
@@ -76,5 +77,17 @@ describe('snippet storage', () => {
     expect(parsed.error).toBe('')
     expect(parsed.snippets[0].name).toBe('Signature')
     expect(parsed.snippets[0].owner).toBe('alice')
+  })
+
+  it('merges imported snippets without overwriting newer local copies', () => {
+    const local = [{ id: 'a', name: 'Local', body: 'Body', updatedAt: 2000 }]
+    const merged = mergeSnippets(local, [
+      { id: 'a', name: 'Older', body: 'Body', updatedAt: 1000 },
+      { id: 'b', name: 'Imported', body: 'Body', updatedAt: 3000 }
+    ], { owner: 'alice', now: 4000 })
+    expect(merged.added).toBe(1)
+    expect(merged.updated).toBe(0)
+    expect(merged.skipped).toBe(1)
+    expect(merged.snippets.map(item => item.id).sort()).toEqual(['a', 'b'])
   })
 })

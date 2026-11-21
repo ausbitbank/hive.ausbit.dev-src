@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   applyTemplateToDraft,
   MAX_TEMPLATES,
+  mergeTemplates,
+  parseTemplateExport,
   readTemplates,
   removeTemplateById,
+  serializeTemplateExport,
   STARTER_TEMPLATES,
   templateFromDraft,
   templateHasContent,
@@ -118,5 +121,22 @@ describe('template storage', () => {
     const list = upsertTemplate([initial], { ...initial, name: 'Second' }, 2000)
     expect(list).toHaveLength(1)
     expect(list[0].name).toBe('Second')
+  })
+
+  it('round-trips exports and merges without overwriting newer copies', () => {
+    const template = templateFromDraft(createDraft({ title: 'T', body: 'B' }, 1000), { name: 'Saved' }, 1000)
+    const text = serializeTemplateExport([template], { now: 2000 })
+    const parsed = parseTemplateExport(text, { owner: 'alice', now: 3000 })
+    expect(parsed.error).toBe('')
+    expect(parsed.templates[0].name).toBe('Saved')
+    expect(parsed.templates[0].owner).toBe('alice')
+
+    const merged = mergeTemplates([template], [
+      { ...template, name: 'Older copy', updatedAt: 500 },
+      { id: 'new-template', name: 'New', draft: { title: 'N', body: 'B' }, updatedAt: 4000 }
+    ], { owner: 'alice', now: 5000 })
+    expect(merged.added).toBe(1)
+    expect(merged.updated).toBe(0)
+    expect(merged.skipped).toBe(1)
   })
 })
