@@ -257,6 +257,10 @@
               @update:model-value="setTags"
               @new-value="addTag"
             />
+            <div v-if="draft.tags.length > 1" class="compose-topic-order">
+              <q-btn flat dense no-caps icon="swap_vert" label="Order topics" @click="topicsOrderOpen = true" />
+              <span class="compose-hint">The first 5 are the primary discovery tags.</span>
+            </div>
             <div v-if="draft.crossPost" class="compose-source">
               <q-icon name="repeat" size="16px" aria-hidden="true" />
               <div class="compose-source__body">
@@ -475,9 +479,30 @@
               </div>
 
               <div class="compose-bene-add">
-                <q-input v-model.trim="newBeneAccount" outlined dense label="Account" aria-label="New beneficiary account" maxlength="16" @keyup.enter="addBeneficiary" />
+                <q-select
+                  v-model.trim="newBeneAccount"
+                  :options="beneficiaryOptions"
+                  :loading="beneficiarySearching"
+                  use-input
+                  fill-input
+                  hide-selected
+                  outlined
+                  dense
+                  label="Account"
+                  aria-label="New beneficiary account"
+                  maxlength="16"
+                  new-value-mode="add-unique"
+                  @filter="onBeneficiaryFilter"
+                  @new-value="onNewBeneficiaryValue"
+                  @keyup.enter="addBeneficiary"
+                />
                 <q-input v-model.number="newBenePercent" type="number" min="0" max="100" suffix="%" outlined dense label="Share" aria-label="New beneficiary share" @keyup.enter="addBeneficiary" />
                 <q-btn unelevated no-caps color="primary" icon="add" label="Add" :disable="!canAddBeneficiary" @click="addBeneficiary" />
+              </div>
+              <div class="compose-bene-actions">
+                <q-btn flat dense no-caps icon="group" label="Use defaults" @click="applyDefaultBeneficiaries" />
+                <q-btn v-if="draft.beneficiaries.length" flat dense no-caps color="red-4" icon="person_remove" label="Remove all" @click="removeAllBeneficiaries" />
+                <q-btn v-if="draft.beneficiaries.length" flat dense no-caps icon="bookmark_add" label="Save as defaults" @click="saveBeneficiariesAsDefaults" />
               </div>
               <div v-if="beneTotal > 100" class="compose-warning" role="alert">
                 <q-icon name="warning" size="16px" aria-hidden="true" />
@@ -882,6 +907,34 @@
             Keyboard: Ctrl/⌘ B bold, I italic, U underline, K link, Shift+X strikethrough,
             Alt+1/2/3 headings, Tab indent, Shift+Tab outdent, Ctrl+Enter publish.
           </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="topicsOrderOpen">
+      <q-card class="compose-topics-order">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Discovery</div>
+            <h2 class="home-panel__title">Topic order</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close topic order" title="Close" @click="topicsOrderOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-topics-order__body">
+          <p class="compose-hint compose-hint--top">
+            The first five topics are the primary discovery tags. Use the arrows to reorder.
+          </p>
+          <div class="compose-topics-order__list">
+            <div v-for="(tag, index) in draft.tags" :key="tag" class="compose-topics-order__row">
+              <span class="compose-topics-order__index">{{ index + 1 }}</span>
+              <span class="compose-topics-order__tag">#{{ tag }}</span>
+              <span v-if="index < 5" class="compose-pill compose-pill--ok">Primary</span>
+              <q-space />
+              <q-btn flat dense round size="sm" icon="arrow_upward" :disable="index === 0" :aria-label="'Move ' + tag + ' up'" title="Move up" @click="moveTag(index, -1)" />
+              <q-btn flat dense round size="sm" icon="arrow_downward" :disable="index === draft.tags.length - 1" :aria-label="'Move ' + tag + ' down'" title="Move down" @click="moveTag(index, 1)" />
+            </div>
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -1909,6 +1962,48 @@
   background: #1d1d1d;
 }
 
+.compose-topics-order {
+  width: 480px;
+  max-width: 94vw;
+  background: #1d1d1d;
+}
+
+.compose-topics-order__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-topics-order__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.compose-topics-order__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compose-topics-order__index {
+  width: 1.2rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.compose-topics-order__tag {
+  color: #e4eaed;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
 .compose-reminder-dialog__body {
   display: flex;
   flex-direction: column;
@@ -2208,6 +2303,24 @@
   align-items: center;
 }
 
+.compose-bene-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-wrap: wrap;
+}
+
+.compose-topic-order {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.compose-topic-order .compose-hint {
+  margin: 0;
+}
+
 .compose-empty-line {
   display: flex;
   align-items: center;
@@ -2444,6 +2557,9 @@ import moment from 'src/utils/time'
 import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
+import { fetchAccountNameSearch } from 'src/services/chainData'
+import { readRecentValues, rememberRecentValue } from 'src/services/composerPrefs'
+import { suggestTopics } from 'src/services/composerSuggestions'
 import {
   AI_TOOL_KEYS,
   COLLECTION_TAG,
@@ -2619,6 +2735,12 @@ export default {
       loadingSource: false,
       newBeneAccount: '',
       newBenePercent: 10,
+      beneficiaryOptions: [],
+      beneficiarySearching: false,
+      beneficiarySearchTimer: null,
+      recentCommunities: [],
+      recentTags: [],
+      topicsOrderOpen: false,
       discardOpen: false,
       discardTarget: null,
       communityLoading: false,
@@ -2662,7 +2784,6 @@ export default {
         { label: 'Split', value: 'split', icon: 'vertical_split' },
         { label: 'Preview', value: 'preview', icon: 'visibility' }
       ],
-      tagSuggestions: ['hive', 'blog', 'writing', 'photography', 'art', 'dev', 'news', 'music'],
       payoutSplitOptions: [
         { label: '50% HBD · 50% Hive Power', value: 5000 },
         { label: '100% HBD', value: 10000 },
@@ -2873,8 +2994,26 @@ export default {
       if (!this.storageBytes) return '0 KB'
       return (this.storageBytes / 1024).toFixed(this.storageBytes > 100 * 1024 ? 0 : 1) + ' KB'
     },
+    tagSuggestions () {
+      const base = ['hive', 'blog', 'writing', 'photography', 'art', 'dev', 'news', 'music']
+      const suggested = suggestTopics({
+        title: this.draft?.title || '',
+        body: this.draft?.body || '',
+        tags: this.draft?.tags || [],
+        community: this.draft?.community || ''
+      })
+      const tags = new Map()
+      for (const list of [this.recentTags, suggested, base]) {
+        for (const tag of list) {
+          const value = normalizeTag(tag)
+          if (value && !tags.has(value)) tags.set(value, value)
+        }
+      }
+      return [...tags.values()]
+    },
     communityOptions () {
       const options = new Map()
+      options.set('', { label: 'My blog (no community)', value: '' })
       const add = (value, label) => {
         const tag = normalizeTag(value)
         if (!tag || options.has(tag)) return
@@ -2888,6 +3027,9 @@ export default {
         } else if (item && item.name) {
           add(item.name, item.title ? item.title + ' · ' + item.name : item.name)
         }
+      }
+      for (const tag of this.recentCommunities) {
+        add(tag, 'Recent · #' + tag)
       }
       for (const info of Object.values(this.$hiveStore.communityInfo || {})) {
         if (info && info.name) add(info.name, info.title ? info.title + ' · ' + info.name : info.name)
@@ -2933,6 +3075,7 @@ export default {
       this.loadSnippets()
       this.loadTemplates()
       this.loadPinnedDrafts()
+      this.loadRecentValues()
     },
     'draft.body' () {
       this.schedulePreview()
@@ -2971,6 +3114,7 @@ export default {
     this.loadSnippets()
     this.loadTemplates()
     this.loadPinnedDrafts()
+    this.loadRecentValues()
     this.refreshStorageUsage()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.flushAutosave)
@@ -3013,6 +3157,86 @@ export default {
     },
     loadPinnedDrafts () {
       this.pinnedDraftIds = readPinnedDraftIds(LocalStorage, this.loggedInUser)
+    },
+    loadRecentValues () {
+      this.recentCommunities = readRecentValues(LocalStorage, 'communities', this.loggedInUser, 8)
+      this.recentTags = readRecentValues(LocalStorage, 'tags', this.loggedInUser, 12)
+    },
+    rememberCommunity (value) {
+      const tag = normalizeTag(value)
+      if (!tag) return
+      this.recentCommunities = rememberRecentValue(LocalStorage, 'communities', this.loggedInUser, tag, 8)
+    },
+    rememberTags (tags = this.draft?.tags) {
+      for (const tag of Array.isArray(tags) ? tags : []) {
+        this.recentTags = rememberRecentValue(LocalStorage, 'tags', this.loggedInUser, tag, 12)
+      }
+    },
+    onBeneficiaryFilter (value, update) {
+      const query = String(value || '').trim().toLowerCase()
+      if (this.beneficiarySearchTimer) clearTimeout(this.beneficiarySearchTimer)
+      if (!query) {
+        update([])
+        this.beneficiarySearching = false
+        return
+      }
+      this.beneficiarySearching = true
+      this.beneficiarySearchTimer = setTimeout(async () => {
+        try {
+          const accounts = await fetchAccountNameSearch(query, 6)
+          update((Array.isArray(accounts) ? accounts : [])
+            .map(account => account.name)
+            .filter(Boolean))
+        } catch {
+          update([])
+        } finally {
+          this.beneficiarySearching = false
+        }
+      }, 250)
+    },
+    onNewBeneficiaryValue (value, done) {
+      done(value, 'add-unique')
+    },
+    applyDefaultBeneficiaries () {
+      if (!this.draft) return
+      const defaults = normalizeBeneficiaries((this.$hiveStore.user.settings.beneficiary || []).map(item => ({
+        account: item.account,
+        weight: item.weight
+      })))
+      this.draft.beneficiaries = defaults
+      this.$q.notify({
+        message: defaults.length ? 'Default beneficiaries applied' : 'No default beneficiaries are configured'
+      })
+    },
+    removeAllBeneficiaries () {
+      if (!this.draft) return
+      this.draft.beneficiaries = []
+      this.$q.notify({ message: 'Beneficiaries removed for this draft' })
+    },
+    saveBeneficiariesAsDefaults () {
+      if (!this.draft) return
+      const beneficiary = this.draft.beneficiaries.map(item => ({
+        account: item.account,
+        weight: item.weight
+      }))
+      this.$hiveStore.updateSettings({
+        ...this.$hiveStore.user.settings,
+        beneficiary
+      })
+      this.$q.notify({
+        type: 'positive',
+        message: 'Beneficiary defaults saved',
+        caption: beneficiary.length ? 'New drafts will start with these beneficiaries.' : 'New drafts will start with no beneficiaries.'
+      })
+    },
+    moveTag (index, delta) {
+      if (!this.draft) return
+      const next = index + delta
+      if (index < 0 || next < 0 || next >= this.draft.tags.length) return
+      const tags = [...this.draft.tags]
+      const [tag] = tags.splice(index, 1)
+      tags.splice(next, 0, tag)
+      this.draft.tags = tags
     },
     refreshStorageUsage () {
       if (typeof localStorage === 'undefined') return
@@ -3978,7 +4202,9 @@ export default {
       this.$q.notify({ message: 'Draft discarded' })
     },
     setCommunity (value) {
-      this.draft.community = normalizeTag(value)
+      const tag = normalizeTag(value)
+      this.draft.community = tag
+      if (tag) this.rememberCommunity(tag)
     },
     addCommunity (value, done) {
       const tag = normalizeTag(value)
@@ -3986,6 +4212,7 @@ export default {
         this.$q.notify({ message: 'Use lowercase letters, numbers and hyphens for a community tag.' })
         return
       }
+      this.rememberCommunity(tag)
       done(tag)
     },
     setTags (value) {
@@ -3994,6 +4221,7 @@ export default {
         this.$q.notify({ message: 'Up to ' + MAX_TAGS + ' tags are kept. Extra tags were dropped.' })
       }
       this.draft.tags = tags
+      this.rememberTags(tags)
     },
     addTag (value, done) {
       const tag = normalizeTag(value)
@@ -4005,6 +4233,7 @@ export default {
         this.$q.notify({ message: 'Up to ' + MAX_TAGS + ' tags are allowed.' })
         return
       }
+      this.rememberTags([tag])
       done(tag)
     },
     setBeneficiaryPercent (index, value) {
@@ -4214,6 +4443,8 @@ export default {
           previousMetadata: editing ? editing.previousMetadata : null
         })
         this.$hiveStore.addToQueue(item)
+        this.rememberTags(this.draft.tags)
+        this.rememberCommunity(this.draft.community)
         this.publishedInfo = {
           author: this.loggedInUser,
           permlink,

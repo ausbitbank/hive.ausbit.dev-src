@@ -386,6 +386,35 @@ test.describe('action flows', () => {
     await expect(page.getByRole('button', { name: 'Schedule reminder' })).toBeVisible()
   })
 
+  test('compose beneficiary presets and topic reordering work', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await seedDrafts(page, [{
+      id: 'e2e-preset-draft',
+      owner: 'ausbitbank',
+      title: 'Preset draft',
+      body: 'Body',
+      tags: ['alpha', 'beta', 'gamma'],
+      community: '',
+      beneficiaries: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByText('No beneficiaries. You receive 100% of post rewards.')).toBeVisible()
+    await page.getByRole('button', { name: 'Use defaults' }).click()
+    await expect(page.getByLabel('Beneficiary account 1')).toHaveValue('ausbitbank')
+    await page.getByRole('button', { name: 'Remove all' }).click()
+    await expect(page.getByText('No beneficiaries. You receive 100% of post rewards.')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Order topics' }).click()
+    await expect(page.getByRole('heading', { name: 'Topic order' })).toBeVisible()
+    await expect(page.locator('.compose-topics-order__tag').first()).toHaveText('#alpha')
+    await page.getByRole('button', { name: 'Move alpha down' }).click()
+    await expect(page.locator('.compose-topics-order__tag').first()).toHaveText('#beta')
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

@@ -95,7 +95,13 @@ W50 is the fifth composer phase: active/archived draft views, archive/restore,
 local publish reminders, approximate local storage usage, clear-all drafts, and
 cross-tab synchronization. It is complete and deployed; the live smoke covered
 the reminder banner, storage line and Archived view with no page errors. See
-`docs/workstreams/W50-composer-reminders-lifecycle.md`. The optional visual
+`docs/workstreams/W50-composer-reminders-lifecycle.md`.
+
+W51 is the publishing-polish phase: beneficiary account search, defaults,
+remove-all and save-as-default; an explicit My blog destination with recent
+communities; topic suggestions from title/body and recent tags; and a topic
+ordering dialog that marks the first five primary tags. See
+`docs/workstreams/W51-composer-publishing-polish.md`. The optional visual
 editor remains the last major composer item.
 
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
