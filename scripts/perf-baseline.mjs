@@ -140,6 +140,9 @@ async function measureRoute (browser, route, initialAssets) {
         path: (() => {
           try { return new URL(entry.name).pathname } catch { return entry.name }
         })(),
+        sameOrigin: (() => {
+          try { return new URL(entry.name).origin === window.location.origin } catch { return false }
+        })(),
         encoded: entry.encodedBodySize || entry.transferSize || 0,
         duration: entry.duration
       }))
@@ -148,6 +151,8 @@ async function measureRoute (browser, route, initialAssets) {
       const isFont = asset => /\.(woff2?|ttf)$/.test(asset.path)
       const isImage = asset => /\.(png|jpe?g|webp|svg|ico)$/.test(asset.path)
       const sum = predicate => assets.filter(predicate).reduce((total, asset) => total + asset.encoded, 0)
+      const appTotal = sum(asset => asset.sameOrigin)
+      const total = sum(() => true)
       return {
         timings: {
           ttfbMs: Math.round(nav.responseStart || 0),
@@ -162,7 +167,9 @@ async function measureRoute (browser, route, initialAssets) {
           css: sum(isCss),
           fonts: sum(isFont),
           images: sum(isImage),
-          total: sum(() => true)
+          total,
+          appTotal,
+          thirdParty: total - appTotal
         },
         resources: assets,
         requests: {
@@ -192,6 +199,8 @@ async function measureRoute (browser, route, initialAssets) {
       fontKb: kb(data.bytes.fonts),
       imageKb: kb(data.bytes.images),
       totalKb: kb(data.bytes.total),
+      appTotalKb: kb(data.bytes.appTotal),
+      thirdPartyKb: kb(data.bytes.thirdParty),
       requests: data.requests.total,
       scriptRequests: data.requests.scripts,
       thirdPartyRequests: data.requests.thirdParty
@@ -227,8 +236,11 @@ function checkBudgets (result, budgets) {
     for (const [key, name] of checks) {
       const limit = limitFor(route.route, key)
       if (limit === undefined || limit === null) continue
-      if (Number(route[key]) > Number(limit)) {
-        failures.push(`${route.name}: ${name} ${route[key]} > budget ${limit}`)
+      // Third-party/UGC media varies by live content; the transfer budget
+      // covers app-owned assets so CI does not fail on a remote article image.
+      const value = key === 'totalKb' ? route.appTotalKb : route[key]
+      if (Number(value) > Number(limit)) {
+        failures.push(`${route.name}: ${name} ${value} > budget ${limit}`)
       }
     }
   }

@@ -241,8 +241,9 @@
           </div>
           <div class="home-panel__body compose-fields">
             <q-select
+              ref="communitySelect"
               :model-value="draft.community"
-              :options="communityOptions"
+              :options="communityOptionsShown"
               :loading="communityLoading"
               use-input
               fill-input
@@ -253,10 +254,96 @@
               dense
               label="Community or category"
               aria-label="Community or category"
-              hint="Your subscribed communities appear first. Becomes parent_permlink and the first tag."
+              hint="Search by title or name. Your subscribed communities appear first and become the parent category."
+              @filter="onCommunityFilter"
+              @popup-show="onCommunityPopupShow"
               @update:model-value="setCommunity"
               @new-value="addCommunity"
-            />
+            >
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section avatar>
+                    <q-avatar size="30px">
+                      <img :src="scope.opt.avatar" alt="" loading="lazy" />
+                    </q-avatar>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.title }}</q-item-label>
+                    <q-item-label caption>
+                      <template v-if="scope.opt.isBlog">Personal blog</template>
+                      <template v-else>
+                        #{{ scope.opt.value }}
+                        <template v-if="scope.opt.subscribers">
+                          · {{ formatCommunitySubscribers(scope.opt.subscribers) }} subscribers
+                        </template>
+                      </template>
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section v-if="scope.opt.subscribed" side>
+                    <q-badge color="primary" label="Subscribed" />
+                  </q-item-section>
+                  <q-item-section v-else-if="scope.opt.recent" side>
+                    <q-badge color="grey-8" text-color="white" label="Recent" />
+                  </q-item-section>
+                </q-item>
+              </template>
+              <template #selected>
+                <div class="compose-community-selected">
+                  <img
+                    v-if="selectedCommunity && selectedCommunity.avatar"
+                    :src="selectedCommunity.avatar"
+                    alt=""
+                    class="compose-community-selected__avatar"
+                  />
+                  <span>{{ selectedCommunity ? selectedCommunity.title : 'My blog' }}</span>
+                  <span v-if="draft.community" class="compose-community-selected__name">#{{ draft.community }}</span>
+                </div>
+              </template>
+            </q-select>
+
+            <div v-if="selectedCommunity" class="compose-community-card">
+              <img
+                v-if="selectedCommunity.avatar"
+                :src="selectedCommunity.avatar"
+                alt=""
+                class="compose-community-card__avatar"
+                loading="lazy"
+              />
+              <div class="compose-community-card__body">
+                <div class="compose-community-card__head">
+                  <span class="compose-community-card__title">{{ selectedCommunity.title }}</span>
+                  <span v-if="!selectedCommunity.isBlog" class="compose-community-card__name">#{{ selectedCommunity.value }}</span>
+                </div>
+                <div class="compose-community-card__meta">
+                  <span v-if="selectedCommunity.isBlog">Personal blog · no community</span>
+                  <span v-else-if="selectedCommunity.subscribers">
+                    {{ formatCommunitySubscribers(selectedCommunity.subscribers) }} subscribers
+                  </span>
+                  <span v-else>Community</span>
+                  <span v-if="selectedCommunity.subscribed" class="compose-community-card__tag">Subscribed</span>
+                  <span v-else-if="selectedCommunity.recent" class="compose-community-card__tag">Recent</span>
+                </div>
+                <p v-if="selectedCommunity.about" class="compose-community-card__about">{{ selectedCommunity.about }}</p>
+              </div>
+              <router-link
+                v-if="selectedCommunity.rulesLink"
+                :to="selectedCommunity.rulesLink"
+                class="compose-community-card__rules"
+              >
+                <q-icon name="policy" size="15px" aria-hidden="true" />
+                Rules
+              </router-link>
+            </div>
+            <div v-if="communityWarning" class="compose-warning" role="status">
+              <q-icon name="info" size="16px" aria-hidden="true" />
+              <span>
+                {{ communityWarning }}
+                <router-link v-if="selectedCommunity && selectedCommunity.rulesLink" :to="selectedCommunity.rulesLink">
+                  Read the rules
+                </router-link>
+              </span>
+            </div>
+
             <q-select
               :model-value="draft.tags"
               :options="tagSuggestions"
@@ -1777,6 +1864,114 @@
   gap: 0.6rem;
 }
 
+.compose-community-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.compose-community-selected__avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.compose-community-selected__name {
+  color: #78909c;
+  font-size: 0.72rem;
+}
+
+.compose-community-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.compose-community-card__avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0d1419;
+}
+
+.compose-community-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.compose-community-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.compose-community-card__title {
+  color: #e4eaed;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.compose-community-card__name {
+  color: #78909c;
+  font-size: 0.7rem;
+}
+
+.compose-community-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  color: #90a4ae;
+  font-size: 0.68rem;
+}
+
+.compose-community-card__tag {
+  padding: 0 0.3rem;
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  border-radius: 999px;
+  color: #81d4fa;
+  font-size: 0.62rem;
+}
+
+.compose-community-card__about {
+  display: -webkit-box;
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  color: #78909c;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.compose-community-card__rules {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: none;
+  color: #81d4fa;
+  font-size: 0.68rem;
+  text-decoration: none;
+}
+
+.compose-community-card__rules:hover,
+.compose-community-card__rules:focus-visible {
+  text-decoration: underline;
+}
+
+.compose-warning a {
+  color: #81d4fa;
+}
+
 .compose-cover {
   display: flex;
   gap: 0.6rem;
@@ -2814,7 +3009,13 @@ import moment from 'src/utils/time'
 import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
-import { fetchAccountNameSearch } from 'src/services/chainData'
+import { fetchAccountNameSearch, fetchCommunityInfoBatch } from 'src/services/chainData'
+import {
+  buildCommunityPickerOptions,
+  communitySubscriptionWarning,
+  filterCommunityOptions,
+  normalizeSubscriptionRows
+} from 'src/services/communityPicker'
 import { readRecentValues, rememberRecentValue } from 'src/services/composerPrefs'
 import { suggestTopics } from 'src/services/composerSuggestions'
 import {
@@ -3015,6 +3216,10 @@ export default {
       discardTarget: null,
       communityLoading: false,
       communityLoadedFor: null,
+      communityStats: {},
+      communityStatsLoadedFor: null,
+      communityFilter: '',
+      communityOptionsShown: [],
       uploadDialogOpen: false,
       uploadFiles: [],
       uploadAlt: '',
@@ -3321,30 +3526,27 @@ export default {
       }
       return [...tags.values()]
     },
-    communityOptions () {
-      const options = new Map()
-      options.set('', { label: 'My blog (no community)', value: '' })
-      const add = (value, label) => {
-        const tag = normalizeTag(value)
-        if (!tag || options.has(tag)) return
-        options.set(tag, { label: label || tag, value: tag })
-      }
-      for (const item of this.$hiveStore.user.communities || []) {
-        if (typeof item === 'string') {
-          add(item)
-        } else if (Array.isArray(item)) {
-          add(item[0], item[1] ? item[1] + ' · ' + item[0] : item[0])
-        } else if (item && item.name) {
-          add(item.name, item.title ? item.title + ' · ' + item.name : item.name)
-        }
-      }
-      for (const tag of this.recentCommunities) {
-        add(tag, 'Recent · #' + tag)
-      }
-      for (const info of Object.values(this.$hiveStore.communityInfo || {})) {
-        if (info && info.name) add(info.name, info.title ? info.title + ' · ' + info.name : info.name)
-      }
-      return [...options.values()]
+    allCommunityOptions () {
+      return buildCommunityPickerOptions({
+        subscriptions: this.$hiveStore.user.communities || [],
+        recent: this.recentCommunities,
+        info: { ...this.communityStats, ...(this.$hiveStore.communityInfo || {}) },
+        selected: this.draft?.community || '',
+        owner: this.loggedInUser
+      })
+    },
+    selectedCommunity () {
+      const selected = normalizeTag(this.draft?.community)
+      return this.allCommunityOptions.find(option => option.value === selected) ||
+        this.allCommunityOptions[0] ||
+        null
+    },
+    communityWarning () {
+      return communitySubscriptionWarning(this.draft?.community, {
+        subscriptions: this.$hiveStore.user.communities || [],
+        owner: this.loggedInUser,
+        loaded: this.communityLoadedFor === this.loggedInUser
+      })
     },
     saveLabel () {
       if (this.saveState === 'error') return 'Draft not saved — storage unavailable'
@@ -3387,6 +3589,10 @@ export default {
       this.loadPinnedDrafts()
       this.loadRecentValues()
       this.loadChecklistWarnings()
+      this.communityStats = {}
+      this.communityStatsLoadedFor = null
+      this.communityFilter = ''
+      this.communityOptionsShown = this.allCommunityOptions
     },
     imageProbeKey: {
       immediate: true,
@@ -3394,8 +3600,22 @@ export default {
         this.scheduleImageProbe()
       }
     },
+    allCommunityOptions: {
+      deep: true,
+      handler (list) {
+        this.communityOptionsShown = this.communityFilter
+          ? filterCommunityOptions(list, this.communityFilter)
+          : list
+      }
+    },
     'draft.body' () {
       this.schedulePreview()
+    },
+    'draft.community' (value) {
+      const tag = normalizeTag(value)
+      if (!tag) return
+      if (this.communityStats[tag] || this.$hiveStore.communityInfo[tag]) return
+      this.$hiveStore.getCommunityInfo(tag)
     },
     mode (value) {
       if (value !== 'write' && this.autoUpdatePreview) this.refreshPreview()
@@ -3459,11 +3679,48 @@ export default {
       try {
         await this.$hiveStore.getCommunitySubscriptions(user)
         this.communityLoadedFor = user
+        this.ensureCommunityStats()
       } catch (error) {
         console.error('Failed to load community subscriptions', error)
       } finally {
         this.communityLoading = false
       }
+    },
+    onCommunityPopupShow () {
+      this.communityFilter = ''
+      this.communityOptionsShown = this.allCommunityOptions
+      this.ensureCommunityStats()
+    },
+    onCommunityFilter (value, update) {
+      this.communityFilter = String(value || '')
+      update(() => {
+        this.communityOptionsShown = this.communityFilter
+          ? filterCommunityOptions(this.allCommunityOptions, this.communityFilter)
+          : this.allCommunityOptions
+      })
+    },
+    async ensureCommunityStats () {
+      const user = this.loggedInUser
+      if (!user || this.communityStatsLoadedFor === user) return
+      const rows = normalizeSubscriptionRows(this.$hiveStore.user.communities)
+      if (!rows.length) return
+      this.communityStatsLoadedFor = user
+      try {
+        const stats = await fetchCommunityInfoBatch(rows.map(row => row.name), {
+          limit: 40,
+          maxPages: 4,
+          fallback: false,
+          titleFor: name => rows.find(row => row.name === name)?.title || name
+        })
+        if (this.loggedInUser === user) this.communityStats = stats || {}
+      } catch {
+        if (this.loggedInUser === user) this.communityStats = {}
+      }
+    },
+    formatCommunitySubscribers (value) {
+      const number = Number(value)
+      if (!Number.isFinite(number) || number <= 0) return ''
+      return number.toLocaleString('en-US')
     },
     loadUploadHistory () {
       this.recentUploads = readUploadHistory(LocalStorage, this.loggedInUser)

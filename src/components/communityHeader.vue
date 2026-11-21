@@ -150,6 +150,14 @@ export default {
     account: function () {
       this.getCommunity()
       this.getCommunitySubscribers()
+    },
+    '$route.query.tab': {
+      immediate: true,
+      handler (value) {
+        if (['posts', 'about', 'subscribers', 'activities'].includes(String(value || ''))) {
+          this.tab = String(value)
+        }
+      }
     }
   },
   props: {

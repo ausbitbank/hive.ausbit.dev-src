@@ -278,33 +278,42 @@ export function fetchAccountSubscriptions (account, { force = false } = {}) {
  * unlisted communities) are then searched by title via `titleFor`. Anything
  * still missing is simply absent from the result map.
  */
-export function fetchCommunityInfoBatch (names, { force = false, limit = 40, titleFor = null } = {}) {
+export function fetchCommunityInfoBatch (names, {
+  force = false,
+  limit = 40,
+  titleFor = null,
+  fallback = true,
+  maxPages = 10
+} = {}) {
   const unique = [...new Set((Array.isArray(names) ? names : []).filter(name => typeof name === 'string' && name))]
   if (unique.length === 0) return Promise.resolve({})
 
   const pageSize = Math.max(1, Number(limit) || 40)
-  const maxPages = 10
+  const pageBudget = Math.max(1, Math.min(10, Number(maxPages) || 10))
+  const cacheKey = 'communities:batch:' + unique.slice().sort().join(',') +
+    ':' + pageSize + ':' + pageBudget + ':' + (fallback ? 'full' : 'ranked')
 
-  return loadCached('communities:batch:' + unique.slice().sort().join(','), async () => {
+  return loadCached(cacheKey, async () => {
     const found = {}
 
     // Ranked pages cover the popular communities cheaply.
     let last = ''
-    for (let page = 0; page < maxPages; page++) {
+    for (let page = 0; page < pageBudget; page++) {
       const batch = await apiListCommunities({ last, limit: pageSize, query: null, sort: 'rank' })
       if (!Array.isArray(batch) || batch.length === 0) break
       for (const community of batch) {
         if (community?.name) found[community.name] = community
       }
-      if (Object.keys(found).length >= unique.length) break
+      if (unique.every(name => found[name])) break
       const next = batch[batch.length - 1]?.name
       if (!next || next === last) break
       last = next
     }
 
     // Smaller communities are not ranked high enough to reach; look them up
-    // one by one using the subscription title as the search needle.
-    const missing = unique.filter(name => !found[name])
+    // one by one using the subscription title as the search needle. Callers
+    // that only need quick picker metadata can skip this long-tail pass.
+    const missing = fallback ? unique.filter(name => !found[name]) : []
     for (const name of missing) {
       const needle = typeof titleFor === 'function' ? titleFor(name) : name
       if (!needle) continue

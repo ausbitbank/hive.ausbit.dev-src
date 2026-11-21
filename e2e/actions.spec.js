@@ -679,6 +679,63 @@ test.describe('action flows', () => {
     await expect(coverItem.getByRole('button', { name: /Hide the Cover image quality warning/ })).toBeVisible()
   })
 
+  test('compose community picker searches, links rules and warns outside subscriptions', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    const select = page.getByLabel('Community or category')
+    await select.click()
+
+    await select.fill('Hive Governance')
+    const governance = page.locator('.q-menu .q-item').filter({ hasText: 'Hive Governance' })
+    await expect(governance).toBeVisible()
+    await expect(governance).toContainText('#hive-111111')
+    await expect(governance).toContainText(/[\d,]+ subscribers/, { timeout: 20000 })
+    await select.fill('hive-111111')
+    await expect(governance).toBeVisible()
+    await governance.click()
+
+    const card = page.locator('.compose-community-card')
+    await expect(card).toContainText('Hive Governance')
+    await expect(card).toContainText('#hive-111111')
+    await expect(card).toContainText('Subscribed')
+    await expect(card).toContainText(/[\d,]+ subscribers/)
+    const rules = card.getByRole('link', { name: 'Rules' })
+    await expect(rules).toHaveAttribute('href', '/c/hive-111111?tab=about')
+    await expect(page.locator('.compose-warning').filter({ hasText: 'not one of your subscribed communities' })).toHaveCount(0)
+    const avatar = card.locator('.compose-community-card__avatar')
+    await expect(avatar).toHaveAttribute('src', 'https://images.hive.blog/u/hive-111111/avatar')
+
+    await select.click()
+    await select.fill('hive-999999')
+    await page.keyboard.press('Enter')
+    await page.getByRole('heading', { level: 1, name: 'Write a post' }).click()
+    await expect(card).toContainText('#hive-999999')
+    const warning = page.locator('.compose-warning').filter({ hasText: 'not one of your subscribed communities' })
+    await expect(warning).toBeVisible()
+    await expect(warning.getByRole('link', { name: 'Read the rules' }))
+      .toHaveAttribute('href', '/c/hive-999999?tab=about')
+
+    for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport)
+      await page.waitForTimeout(400)
+      const overflow = await page.evaluate(() =>
+        document.documentElement.scrollWidth - document.documentElement.clientWidth
+      )
+      expect(overflow, viewport.width + 'px overflow').toBe(0)
+      expect(await runAxe(page), viewport.width + 'px axe').toEqual([])
+    }
+  })
+
+  test('community rules links open the about tab', async ({ page }) => {
+    test.setTimeout(120000)
+    await page.goto('/c/hive-174578?tab=about')
+    await waitForApp(page)
+    await expect(page.getByRole('tab', { name: 'About' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByText('Rules', { exact: true }).first()).toBeVisible({ timeout: 30000 })
+  })
+
   test('compose warns when a tag names another community', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

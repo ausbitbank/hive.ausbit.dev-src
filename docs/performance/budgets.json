@@ -20,7 +20,7 @@
       "totalKb": 710
     },
     "/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more": {
-      "jsKb": 632,
+      "jsKb": 636,
       "routeJsKb": 280,
       "totalKb": 860
     },
@@ -30,13 +30,13 @@
       "totalKb": 760
     },
     "/market": {
-      "jsKb": 465,
+      "jsKb": 468,
       "routeJsKb": 125,
       "totalKb": 710
     },
     "/compose": {
-      "jsKb": 505,
-      "routeJsKb": 148,
+      "jsKb": 508,
+      "routeJsKb": 152,
       "totalKb": 720
     },
     "/search?q=hive": {

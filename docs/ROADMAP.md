@@ -154,9 +154,20 @@ W60 (issue #82, cover and checklist quality) is complete. Regular posts warn
 about a missing cover, broken images, small or portrait covers and mismatched
 community tags. Accounts can hide advisory warnings with “Don't warn again” and
 restore them later; shorts and comments never get cover warnings. See
-`docs/workstreams/W60-cover-checklist-quality.md`. Community-picker metadata,
-topic drag controls, the remaining editor/draft gaps and metadata tooling
-remain.
+`docs/workstreams/W60-cover-checklist-quality.md`.
+
+W61 (issue #82, composer community picker) is complete. The picker shows
+community avatars, titles and subscriber counts, searches by title or name,
+links to the community rules, and warns before posting outside the account's
+subscriptions. See `docs/workstreams/W61-composer-community-picker.md`. Topic
+drag controls, the remaining editor/draft gaps and metadata tooling remain.
+
+Planned discovery work with no workstream yet: a public community browser for
+people who have not built subscriptions. The account-scoped communities view
+only covers communities an account already follows; a general browser would let
+newcomers search all Hive communities by title and topic, compare subscriber and
+recent-activity signals, and filter by category before choosing where to read or
+post.
 
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
