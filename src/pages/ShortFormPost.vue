@@ -51,6 +51,7 @@
               @Voted="weight => onVoted(weight)"
             />
             <reblog :author="post.author" :permlink="post.permlink" :reblogged="alreadyReblogged" />
+            <sats-zap-button :account="post.author" :permlink="post.permlink" compact />
             <span class="sfp-action sfp-action--static">
               <q-icon name="mode_comment" size="16px" aria-hidden="true" /> {{ replies.length }} replies
             </span>
@@ -150,13 +151,14 @@ import {
 import DataNotice from 'components/ui/DataNotice.vue'
 import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
 import Vote from 'components/vote.vue'
+import SatsZapButton from 'components/lightning/SatsZapButton.vue'
 import Reblog from 'components/reblog.vue'
 
 const Render = defineAsyncComponent(() => import('components/render.vue'))
 
 export default {
   name: 'ShortFormPost',
-  components: { DataNotice, Render, ShortFormMedia, Vote, Reblog },
+  components: { DataNotice, Render, ShortFormMedia, Vote, Reblog, SatsZapButton },
   props: {
     formatId: { type: String, required: true },
     author: { type: String, required: true },

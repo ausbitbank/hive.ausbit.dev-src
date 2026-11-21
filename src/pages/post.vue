@@ -207,6 +207,7 @@
               <h2 class="post-side-card__title">Actions</h2>
             </div>
             <div class="post-side-card__body post-side-card__actions">
+              <sats-zap-button :account="post.author" :permlink="post.permlink" />
               <tip-button :account="post.author" />
               <template v-if="isOwnPost">
                 <q-btn outline no-caps color="primary" icon="edit" label="Edit post" class="post-side-card__action" :to="editLink" />
@@ -986,6 +987,7 @@ const shareButtons = defineAsyncComponent(() => import('components/shareButtons.
 const votesDialog = defineAsyncComponent(() => import('components/votesDialog.vue'))
 const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
 import tipButton from 'components/tipButton.vue'
+import satsZapButton from 'components/lightning/SatsZapButton.vue'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
 import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
@@ -1001,6 +1003,7 @@ export default {
     vote,
     jsonViewer,
     tipButton,
+    satsZapButton,
     CommentForm,
     shareButtons,
     reblog,

@@ -302,6 +302,10 @@ memo can carry the post reference and an optional message.
 **Why:** Lightning-native audiences can support Hive creators without a Hive
 account; it is a growth channel, not just a wallet feature.
 
+**Implemented (W49):** a Zap button on posts and short-form posts opens the
+receive dialog for the author with 1k/5k/10k/21k sats presets. The invoice memo
+carries a site/post marker. No global zap count is claimed.
+
 **UX:**
 
 - Presets: 1k / 5k / 10k / 21k sats (or HBD equivalent).
@@ -438,6 +442,11 @@ currency (HBD/HIVE/USD/sats), memo, invoice QR, paid state, daily totals.
 
 **Why:** merchants and meetups can accept Lightning and settle in HBD/HIVE
 without a separate processor. It reuses the receive-invoice flow.
+
+**Implemented (W49):** public `/@account/pos` with a keypad, currency and
+receive-asset choice, a public note, one fresh invoice per sale, visibility-aware
+status polling, a paid state and local session totals. No login or keys. The
+live nginx metadata line for `pos` still needs a root-managed install.
 
 **UX:**
 
@@ -695,7 +704,7 @@ effective rate, and show the observed fixed fee warning for small amounts.
 | **1. Receive + identity** | Address derivation, profile/tip cards, receive dialog, status polling, wallet history classification (read-only) | `services/v4vapp.js`, `services/lightning.js`, `LightningAddressCard`, `LightningInvoiceCard`, `LightningReceiveDialog`, tip integration, `/lightning` hub | Unit tests (math, status, memo), E2E with mocked API, axe 1440/390, live smoke with 1 HBD invoice |
 | **2. Pay with Hive/HBD** | Decode, quote, fee display, queue transfer to `@v4vapp`, pending/refund tracking | `LightningPayDialog`, queue label/sidecar, wallet/tax classification | E2E queue + mocked settlement/refund; manual live payment of a 100-sat invoice; no auto-broadcast |
 | **3. Keepsats (opt-in)** | ~~Read-only balance/history (mode C)~~ **done W47**; ~~deposit/convert/pay via on-chain mode B~~ **done W48**; remaining: transfer to another user, on-chain balance-request UI, optional mode C writes | `KeepsatsPanel`, `KeepsatsActions`, `v4vappAuth`, `v4vapp_transfer` builders, notification parsing, custody disclosure | Read-only: explicit opt-in, posting key only, memory token, axe, no token leakage. Actions: explicit consent, `manualOnly` queue, live operator smoke |
-| **4. POS + zaps + analytics** | Merchant page, post zap presets, creator weekly sats, dashboard widget | `pages/pos.vue`, `SatsZapButton`, `CreatorSatsCard` | Paid/expired/error states, receipt, mobile smoke |
+| **4. POS + zaps + analytics** | ~~Merchant page and post zaps~~ **done W49**; creator weekly sats and dashboard widget remain | `pages/pos.vue`, `SatsZapButton`, later `CreatorSatsCard` | Paid/expired/error states, receipt, mobile smoke; analytics need a decision on indexing |
 | **5. Advanced** | Magi BTC, account creation, paywalls, LNURL-auth, alternative bridges | Research notes + spikes | Only after 1–4 are stable |
 
 ### Suggested first slice (a W36-sized workstream)

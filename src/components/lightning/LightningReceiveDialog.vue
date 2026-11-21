@@ -12,7 +12,7 @@
           </q-avatar>
           <div>
             <div class="lightning-eyebrow">Lightning</div>
-            <h2 class="lightning-dialog__title">Receive sats as {{ receiveLabel }}</h2>
+            <h2 class="lightning-dialog__title">{{ dialogTitle }}</h2>
           </div>
         </div>
         <q-btn flat dense round icon="close" aria-label="Close Lightning receive dialog" @click="$emit('update:modelValue', false)" />
@@ -21,9 +21,27 @@
       <q-card-section class="lightning-dialog__body">
         <template v-if="!invoice">
           <p class="lightning-dialog__lede">
-            Create a Lightning invoice for <strong>@{{ account }}</strong>. A Lightning wallet pays
-            sats; the bridge sends {{ receiveLabel }} to the Hive account.
+            Create a Lightning invoice for <strong>@{{ account }}</strong>.
+            <template v-if="intent === 'zap'">
+              A Lightning wallet pays sats; the author receives {{ receiveLabel }}.
+            </template>
+            <template v-else>
+              A Lightning wallet pays sats; the bridge sends {{ receiveLabel }} to the Hive account.
+            </template>
           </p>
+
+          <div v-if="presets.length" class="lightning-dialog__presets" role="group" aria-label="Common zap amounts">
+            <q-btn
+              v-for="preset in presets"
+              :key="preset"
+              flat
+              dense
+              no-caps
+              color="amber-9"
+              :label="presetLabel(preset)"
+              @click="setPreset(preset)"
+            />
+          </div>
 
           <div class="lightning-dialog__row">
             <q-select
@@ -199,7 +217,9 @@ export default {
     defaultCurrency: { type: String, default: 'hbd' },
     defaultAmount: { type: [Number, String], default: null },
     defaultReceiveCurrency: { type: String, default: '' },
-    defaultNote: { type: String, default: 'Tip from hive.ausbit.dev' }
+    defaultNote: { type: String, default: 'Tip from hive.ausbit.dev' },
+    intent: { type: String, default: 'receive' },
+    presets: { type: Array, default: () => [] }
   },
   emits: ['update:modelValue', 'paid'],
   data () {
@@ -247,6 +267,9 @@ export default {
     },
     openUrl () {
       return 'https://v4v.app/@' + encodeURIComponent(this.account)
+    },
+    dialogTitle () {
+      return this.intent === 'zap' ? 'Zap @' + this.account : 'Receive sats as ' + this.receiveLabel
     },
     feeFixedLabel () {
       return Number(this.feePolicy.fixed || 0).toLocaleString('en-US')
@@ -321,6 +344,17 @@ export default {
       this.fallback = false
       this.failureState = ''
       this.error = ''
+    },
+    presetLabel (value) {
+      const number = Number(value) || 0
+      return number >= 1000 ? (number / 1000) + 'k' : String(number)
+    },
+    setPreset (value) {
+      this.currency = 'sats'
+      this.amount = value
+      if (!this.receiveCurrency) this.receiveCurrency = 'hbd'
+      this.error = ''
+      this.fallback = false
     },
     resetForm () {
       if (this.invoice) return
@@ -476,6 +510,14 @@ export default {
   color: #90a4ae;
   font-size: 0.76rem;
   line-height: 1.45;
+}
+
+.lightning-dialog__presets {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  padding: 0.15rem 0;
 }
 
 .lightning-dialog__row {

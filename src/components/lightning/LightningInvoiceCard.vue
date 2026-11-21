@@ -240,7 +240,7 @@ export default {
 }
 
 .lightning-invoice__raw code {
-  color: #546e7a;
+  color: #90a4ae;
   font-size: 0.62rem;
   overflow-wrap: anywhere;
 }
