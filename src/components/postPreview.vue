@@ -20,7 +20,7 @@
       v-if="styleType === 'list' && hasImage"
       :to="postLink"
       class="post-card__thumb"
-      :aria-label="'Open post: ' + displayTitle"
+      :aria-label="openLabel"
     >
       <q-img
         :src="postImage"
@@ -30,13 +30,16 @@
         class="post-card__img"
         @error="imageFailed = true"
       />
+      <span v-if="isVideo" class="post-card__play" aria-hidden="true">
+        <q-icon name="play_arrow" />
+      </span>
     </router-link>
 
     <router-link
       v-if="styleType === 'cards'"
       :to="postLink"
       class="post-card__media"
-      :aria-label="'Open post: ' + displayTitle"
+      :aria-label="openLabel"
     >
       <q-img
         v-if="hasImage"
@@ -50,6 +53,9 @@
       <div v-else class="post-card__placeholder" aria-hidden="true">
         <q-icon name="article" />
       </div>
+      <span v-if="isVideo" class="post-card__play" aria-hidden="true">
+        <q-icon name="play_arrow" />
+      </span>
       <span v-if="communityTitle" class="post-card__community-overlay">{{ communityTitle }}</span>
     </router-link>
 
@@ -207,6 +213,46 @@
   font-size: 0.68rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 3Speak cards show a play badge over the thumbnail so a video is obvious
+   while scanning a feed, even when the thumbnail itself has no play glyph. */
+.post-card__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(8, 13, 17, 0.72);
+  color: #fff;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.post-card__play :deep(.q-icon) {
+  font-size: 30px;
+}
+
+.post-card:hover .post-card__play {
+  background: rgba(8, 13, 17, 0.86);
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+@media (max-width: 599px) {
+  .post-card__play {
+    width: 44px;
+    height: 44px;
+  }
+
+  .post-card__play :deep(.q-icon) {
+    font-size: 24px;
+  }
 }
 
 .post-card__body {
@@ -462,7 +508,7 @@
 
 <script>
 import moment from 'src/utils/time'
-import { postImage, postSummary } from 'src/utils/postPreview'
+import { postImage, postIsThreeSpeakVideo, postSummary } from 'src/utils/postPreview'
 import { stripHtml } from 'src/utils/safeHtml'
 import {
   formatPostReputation,
@@ -502,7 +548,14 @@ export default {
     isPinned () {
       return Boolean(this.post.stats && this.post.stats.is_pinned)
     },
+    isVideo () {
+      return postIsThreeSpeakVideo(this.post)
+    },
+    openLabel () {
+      return (this.isVideo ? 'Open video: ' : 'Open post: ') + this.displayTitle
+    },
     readLabel () {
+      if (this.isVideo) return 'Watch'
       return this.isComment ? 'View' : 'Read'
     },
     postImage () {

@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useHiveStore } from '../../src/stores/hive'
 import PostPreview from '../../src/components/postPreview.vue'
-import { postImage, postSummary, previewImageUrl } from '../../src/utils/postPreview'
+import { postImage, postIsThreeSpeakVideo, postSummary, previewImageUrl } from '../../src/utils/postPreview'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
 describe('postImage', () => {
@@ -68,6 +68,27 @@ describe('postImage', () => {
   })
 })
 
+describe('postIsThreeSpeakVideo', () => {
+  it('detects 3Speak metadata shapes', () => {
+    expect(postIsThreeSpeakVideo({ json_metadata: { app: '3speak/embed' } })).toBe(true)
+    expect(postIsThreeSpeakVideo({ json_metadata: { 'threespeak.video': { surface: 'watch' } } })).toBe(true)
+    expect(postIsThreeSpeakVideo({ json_metadata: { video: { platform: '3speak', url: 'https://play.3speak.tv/embed?v=a/b' } } })).toBe(true)
+    expect(postIsThreeSpeakVideo({ json_metadata: { links: ['https://3speak.tv/watch?v=a/b'] } })).toBe(true)
+  })
+
+  it('detects the embed URL when metadata is a string or body-only', () => {
+    expect(postIsThreeSpeakVideo({
+      json_metadata: JSON.stringify({ app: 'peakd/2026.11', image: ['https://images.3speak.tv/a.webp'] })
+    })).toBe(false)
+    expect(postIsThreeSpeakVideo({ body: 'https://play.3speak.tv/embed?v=alice/abc\n\nWatch this' })).toBe(true)
+  })
+
+  it('does not flag a prose post that only uses the #3speak tag', () => {
+    expect(postIsThreeSpeakVideo({ json_metadata: { tags: ['3speak', 'hive'] }, body: 'A written update.' })).toBe(false)
+    expect(postIsThreeSpeakVideo(null)).toBe(false)
+  })
+})
+
 describe('postSummary', () => {
   it('strips markdown, links, images and code', () => {
     const summary = postSummary({
@@ -93,7 +114,7 @@ describe('postSummary', () => {
 })
 
 describe('post card vote indicator', () => {
-  function mountCard (vote) {
+  function mountCard (vote, overrides = {}) {
     setActivePinia(createPinia())
     const store = useHiveStore()
     store.user.username = 'alice'
@@ -104,7 +125,8 @@ describe('post card vote indicator', () => {
       children: 0,
       json_metadata: {},
       stats: { total_votes: 12 },
-      active_votes: [{ voter: 'alice', rshares: vote }]
+      active_votes: [{ voter: 'alice', rshares: vote }],
+      ...overrides
     }
     return mount(PostPreview, {
       props: { post: basePost, styleType: 'cards' },
@@ -140,6 +162,19 @@ describe('post card vote indicator', () => {
     expect(wrapper.find('.post-card').classes()).not.toContain('post-card--voted-up')
     expect(wrapper.find('.post-card').classes()).not.toContain('post-card--voted-down')
     expect(wrapper.find('.post-card__voted-label').exists()).toBe(false)
+  })
+
+  it('shows a play badge and Watch label for a 3Speak video card', () => {
+    const wrapper = mountCard(0, {
+      json_metadata: { app: '3speak/embed', image: ['https://images.3speak.tv/a.webp'] }
+    })
+    expect(wrapper.find('.post-card__play').exists()).toBe(true)
+    expect(wrapper.find('.post-card__read').text()).toContain('Watch')
+  })
+
+  it('does not show a play badge on a regular post card', () => {
+    const wrapper = mountCard(0)
+    expect(wrapper.find('.post-card__play').exists()).toBe(false)
   })
 })
 

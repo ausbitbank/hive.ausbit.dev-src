@@ -54,6 +54,43 @@ function metadataFor (post) {
   return safeJsonParse(post.json_metadata || '{}')
 }
 
+const THREESPEAK_HOSTS = ['3speak.tv', 'www.3speak.tv', 'play.3speak.tv']
+
+function urlHost (value) {
+  try {
+    return new URL(String(value || '').trim()).hostname.toLowerCase()
+  } catch {
+    return ''
+  }
+}
+
+function hasThreeSpeakUrl (value) {
+  if (typeof value !== 'string' || !/3speak\.tv/i.test(value)) return false
+  const urls = value.match(/https?:\/\/[^\s)"'<>]+/gi) || []
+  return urls.some(url => THREESPEAK_HOSTS.includes(urlHost(url)))
+}
+
+/**
+ * True when a post is a 3Speak video. 3Speak writes `app: "3speak/embed"`, a
+ * `video` object and/or a `threespeak.video` marker; older clients sometimes
+ * only keep the embed URL in the body. A prose post merely tagged #3speak is
+ * not a video.
+ */
+export function postIsThreeSpeakVideo (post) {
+  if (!post) return false
+  const metadata = metadataFor(post)
+  if (/^3speak(?:\/|$)/i.test(String(metadata.app || '').trim())) return true
+  if (metadata['threespeak.video']) return true
+  const video = metadata.video
+  if (video && typeof video === 'object') {
+    if (String(video.platform || '').trim().toLowerCase() === '3speak') return true
+    if (hasThreeSpeakUrl(video.url) || hasThreeSpeakUrl(video.embed)) return true
+  }
+  const links = Array.isArray(metadata.links) ? metadata.links : []
+  if (links.some(hasThreeSpeakUrl)) return true
+  return hasThreeSpeakUrl(String(post.body || ''))
+}
+
 /**
  * Card images are thumbnails, not full-size media. Cloudinary URLs can be
  * resized at the edge; YouTube thumbnails can move from maxresdefault (often
