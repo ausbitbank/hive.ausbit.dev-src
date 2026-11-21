@@ -63,16 +63,22 @@ See `docs/workstreams/W46-lightning-cors.md`. Keepsats (Phase 2) is next: it
 stays opt-in and secondary, and the API-session scope is still an unverified
 spike.
 
+W47 (issue #87, Keepsats read-only session) is complete. The posting-key
+v4v.app session is verified live; the wallet's Lightning section gains an
+opt-in, secondary keepsats panel with a memory-only token, custody disclosure
+and no write actions. See `docs/workstreams/W47-keepsats-read-only.md`. On-chain
+keepsats actions, POS and post zaps remain later phases.
+
 W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
 #50, #77 and #78) are complete. W38 adds community headers, forced dashboard
 refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
 See `docs/workstreams/W37-dashboard-magi-tokens.md` and
 `docs/workstreams/W38-dashboard-followups.md`.
 
-Remaining follow-ups with no open workstream: Keepsats/POS/post zaps from the
-Lightning workstream (issue #87 tracks the phases), and the optional #63
-server-side existence check at the edge. Issue #82 (post composer) is the active
-in-progress workstream.
+Remaining follow-ups with no open workstream: on-chain keepsats actions,
+POS/post zaps and the explorer/tax work from the Lightning study (issue #87
+tracks the phases), and the optional #63 server-side existence check at the
+edge. Issue #82 (post composer) is the active in-progress workstream.
 
 ## Definition of done
 

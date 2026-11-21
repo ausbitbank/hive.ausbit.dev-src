@@ -120,6 +120,12 @@
       </div>
     </q-card>
 
+    <keepsats-panel
+      v-if="keepsatsEnabled && loggedIn"
+      :account="account"
+      :login-type="loginType"
+    />
+
     <lightning-receive-dialog
       v-if="receiveOpen"
       v-model="receiveOpen"
@@ -142,12 +148,13 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard } from 'quasar'
-import { lightningAddress, lightningAddressQrUrl, normalizeFeePolicy } from 'src/services/lightning'
+import { KEEPSATS_ENABLED, lightningAddress, lightningAddressQrUrl, normalizeFeePolicy } from 'src/services/lightning'
 import { bridgeFeePolicy, getBridgeStatus } from 'src/services/v4vapp'
 
 export default {
   name: 'LightningWalletPanel',
   components: {
+    KeepsatsPanel: defineAsyncComponent(() => import('components/lightning/KeepsatsPanel.vue')),
     LightningReceiveDialog: defineAsyncComponent(() => import('components/lightning/LightningReceiveDialog.vue')),
     LightningPayDialog: defineAsyncComponent(() => import('components/lightning/LightningPayDialog.vue'))
   },
@@ -168,6 +175,12 @@ export default {
     }
   },
   computed: {
+    keepsatsEnabled () {
+      return KEEPSATS_ENABLED
+    },
+    loginType () {
+      return this.$hiveStore?.user?.loginType || ''
+    },
     feeFixedLabel () {
       return Number(this.feePolicy.fixed || 0).toLocaleString('en-US')
     },

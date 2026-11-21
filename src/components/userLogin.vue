@@ -783,6 +783,9 @@ export default {
       this.loggedInUser = ''
       this.loginType = ''
       this.$hiveStore.clearNotificationsState()
+      // The read-only v4v.app session lives in an async chunk; clear it if that
+      // chunk is loaded without pulling it into the main bundle.
+      window.dispatchEvent(new CustomEvent('hive:auth-logout'))
     }
   },
   mounted () {

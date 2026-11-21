@@ -5,9 +5,14 @@
 // network call or a signing stack.
 
 export const LIGHTNING_ENABLED = true
+// Keepsats is custodial; keep a kill switch even though it ships opt-in.
+export const KEEPSATS_ENABLED = true
 export const V4VAPP_ACCOUNT = 'v4vapp'
 export const V4VAPP_API = 'https://api.v4v.app'
 export const V4VAPP_APP_NAME = 'hiveausbit'
+// The auth challenge/validate pair uses the site's domain as its app id.
+export const V4VAPP_AUTH_APP_ID = 'hive.ausbit.dev'
+export const V4VAPP_AUTH_SCOPE = 'hive:posting'
 
 export const LIGHTNING_DOMAINS = {
   hive: 'v4v.app',

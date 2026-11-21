@@ -15,6 +15,8 @@ import { loadCached, invalidateCache } from './cache'
 import {
   V4VAPP_API,
   V4VAPP_APP_NAME,
+  V4VAPP_AUTH_APP_ID,
+  V4VAPP_AUTH_SCOPE,
   invoiceStatus,
   lightningAddressQrUrl,
   normalizeFeePolicy
@@ -97,7 +99,8 @@ async function request (path, {
   method = 'GET',
   body,
   signal = null,
-  timeout = DEFAULT_TIMEOUT_MS
+  timeout = DEFAULT_TIMEOUT_MS,
+  token = ''
 } = {}) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeout)
@@ -109,7 +112,8 @@ async function request (path, {
       method,
       headers: {
         accept: 'application/json',
-        ...(body ? { 'content-type': 'application/json' } : {})
+        ...(body ? { 'content-type': 'application/json' } : {}),
+        ...(token ? { authorization: 'Bearer ' + token } : {})
       },
       body: body ? JSON.stringify(body) : undefined,
       credentials: 'omit',
@@ -327,6 +331,51 @@ export async function decodeInvoiceRemote (invoice, { signal = null } = {}) {
   const value = String(invoice || '').trim().replace(/^lightning:/i, '')
   if (!value) return null
   return request('/v1/decode_lightning/?pay_req=' + encodeURIComponent(value), { signal })
+}
+
+// ---------------------------------------------------------------------------
+// Read-only account session (keepsats)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask v4v.app for a posting-scope challenge. `clientId` is a stable random id,
+ * not a secret; it is 10–100 characters because the API rejects shorter ones.
+ */
+export async function getAuthChallenge (account, { clientId, signal = null } = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  const id = String(clientId || '').trim()
+  if (!name) throw new V4vappError('Choose a Hive account to connect.')
+  if (id.length < 10 || id.length > 100) throw new V4vappError('The Lightning session id is invalid.')
+  const query = [
+    'clientId=' + encodeURIComponent(id),
+    'appId=' + encodeURIComponent(V4VAPP_AUTH_APP_ID),
+    'scope=' + encodeURIComponent(V4VAPP_AUTH_SCOPE)
+  ].join('&')
+  const data = await request('/auth/' + encodeURIComponent(name) + '?' + query, { signal })
+  return { challenge: String(data?.challenge || '').trim(), raw: data }
+}
+
+/** Exchange a signed challenge for a short-lived bearer token. */
+export async function validateAuthSignature (body, { clientId, signal = null } = {}) {
+  const id = String(clientId || '').trim()
+  if (!id) throw new V4vappError('The Lightning session id is missing.')
+  if (!body || typeof body !== 'object') throw new V4vappError('The signed challenge is missing.')
+  return request('/auth/validate/?clientId=' + encodeURIComponent(id), {
+    method: 'POST',
+    body,
+    signal
+  })
+}
+
+/** Read the keepsats balance and (when present) recent activity. */
+export async function getKeepsats (account, token, { signal = null } = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  if (!name) throw new V4vappError('Choose a Hive account to read the balance.')
+  if (!token) throw new V4vappError('The Lightning session has expired. Reconnect to read the balance.')
+  return request('/v2/v4vapp/keepsats?hive_accname=' + encodeURIComponent(name), {
+    token,
+    signal
+  })
 }
 
 // ---------------------------------------------------------------------------

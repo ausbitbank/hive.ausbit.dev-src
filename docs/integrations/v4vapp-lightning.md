@@ -390,6 +390,12 @@ transfers. It also enables a "sats wallet" experience without leaving the site.
 **Why not default:** the balance is an IOU from v4vapp. It needs explicit
 disclosure, a feature flag, and a clear "withdraw to Hive" escape hatch.
 
+**Implemented (W47):** the read-only half of option 2. A posting-key challenge
+yields a ~50 minute bearer token held in memory; the wallet shows balance,
+in-progress sats, last activity and (when present) history, behind an explicit
+"Read balance" action. No writes, no token storage, no active key. Mode B write
+actions are still the next step.
+
 **Two implementation options:**
 
 1. **No v4vapp login (recommended first):**
@@ -686,7 +692,7 @@ effective rate, and show the observed fixed fee warning for small amounts.
 | **0. Contract** | ~~Confirm CORS allowlist~~, ~~posting-scope auth~~, rate limits, terms, support contact | CORS verified live 2026-11-21 (§3); posting-scope auth verified live 2026-11-21 (§2.2); `scripts/v4vapp-contract-check.mjs` runs daily in CI | **Contract done.** Terms/support still worth asking about before custody features |
 | **1. Receive + identity** | Address derivation, profile/tip cards, receive dialog, status polling, wallet history classification (read-only) | `services/v4vapp.js`, `services/lightning.js`, `LightningAddressCard`, `LightningInvoiceCard`, `LightningReceiveDialog`, tip integration, `/lightning` hub | Unit tests (math, status, memo), E2E with mocked API, axe 1440/390, live smoke with 1 HBD invoice |
 | **2. Pay with Hive/HBD** | Decode, quote, fee display, queue transfer to `@v4vapp`, pending/refund tracking | `LightningPayDialog`, queue label/sidecar, wallet/tax classification | E2E queue + mocked settlement/refund; manual live payment of a 100-sat invoice; no auto-broadcast |
-| **3. Keepsats (opt-in)** | Deposit, balance, withdraw, transfer, pay invoice, notifications; choose B (on-chain) first, C (API) if approved | `KeepsatsPanel`, `v4vapp_transfer` builder, notification parsing, custody disclosure | Explicit opt-in, balance reconciliation, withdraw-to-Hive works, axe, no token leakage |
+| **3. Keepsats (opt-in)** | ~~Read-only balance/history (mode C)~~ **done in W47**; then deposit, withdraw, transfer, pay invoice, notifications; on-chain (B) first, writes via C only if verified | `KeepsatsPanel`, `v4vappAuth`, `v4vapp_transfer` builder, notification parsing, custody disclosure | Read-only: explicit opt-in, posting key only, memory token, axe, no token leakage. Writes: balance reconciliation, withdraw-to-Hive works |
 | **4. POS + zaps + analytics** | Merchant page, post zap presets, creator weekly sats, dashboard widget | `pages/pos.vue`, `SatsZapButton`, `CreatorSatsCard` | Paid/expired/error states, receipt, mobile smoke |
 | **5. Advanced** | Magi BTC, account creation, paywalls, LNURL-auth, alternative bridges | Research notes + spikes | Only after 1–4 are stable |
 
