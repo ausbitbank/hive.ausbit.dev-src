@@ -184,6 +184,18 @@
                 </div>
               </li>
             </ul>
+            <div class="compose-reminder-action">
+              <q-btn
+                outline
+                no-caps
+                color="primary"
+                icon="alarm"
+                :label="draft.scheduledAt ? 'Reminder set' : 'Schedule reminder'"
+                class="compose-reminder-action__btn"
+                @click="openReminderDialog"
+              />
+              <span v-if="draft.scheduledAt" class="compose-hint">{{ scheduledLabel }} · local only</span>
+            </div>
             <q-btn
               class="compose-publish"
               unelevated
@@ -348,20 +360,6 @@
             >
               <template #append>
                 <q-btn v-if="draft.countdown" flat dense round icon="close" aria-label="Clear countdown" title="Clear countdown" @click="clearCountdown" />
-              </template>
-            </q-input>
-
-            <q-input
-              v-model="scheduledLocal"
-              type="datetime-local"
-              outlined
-              dense
-              label="Publish reminder (local)"
-              aria-label="Publish reminder date and time"
-              hint="A local reminder only. Nothing publishes automatically."
-            >
-              <template #append>
-                <q-btn v-if="draft.scheduledAt" flat dense round icon="close" aria-label="Clear publish reminder" title="Clear reminder" @click="clearScheduled" />
               </template>
             </q-input>
 
@@ -884,6 +882,38 @@
             Keyboard: Ctrl/⌘ B bold, I italic, U underline, K link, Shift+X strikethrough,
             Alt+1/2/3 headings, Tab indent, Shift+Tab outdent, Ctrl+Enter publish.
           </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="reminderDialogOpen">
+      <q-card class="compose-reminder-dialog">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Local reminder</div>
+            <h2 class="home-panel__title">Schedule reminder</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close reminder dialog" title="Close" @click="reminderDialogOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-reminder-dialog__body">
+          <q-input
+            v-model="reminderValue"
+            type="datetime-local"
+            outlined
+            dense
+            label="Remind me at"
+            aria-label="Reminder date and time"
+            hint="A local reminder only. This does not schedule or publish the post."
+          />
+          <p class="compose-hint">
+            When the time passes, the composer shows a reminder banner with an Open action.
+          </p>
+          <div class="compose-reminder-dialog__actions">
+            <q-btn flat no-caps label="Cancel" @click="reminderDialogOpen = false" />
+            <q-btn v-if="draft.scheduledAt" flat no-caps color="red-4" label="Clear reminder" @click="clearReminderDialog" />
+            <q-btn unelevated no-caps color="primary" icon="alarm_add" label="Save reminder" @click="saveReminder" />
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -1540,6 +1570,21 @@
   width: 100%;
 }
 
+.compose-reminder-action {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.55rem;
+}
+
+.compose-reminder-action__btn {
+  width: 100%;
+}
+
+.compose-reminder-action .compose-hint {
+  margin: 0;
+}
+
 .compose-hint {
   margin: 0.55rem 0 0;
   color: #78909c;
@@ -1856,6 +1901,28 @@
   max-height: 88vh;
   overflow: auto;
   background: #1d1d1d;
+}
+
+.compose-reminder-dialog {
+  width: 460px;
+  max-width: 94vw;
+  background: #1d1d1d;
+}
+
+.compose-reminder-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-reminder-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  padding-top: 0.2rem;
+  border-top: 1px solid var(--border-subtle);
 }
 
 .compose-history__body {
@@ -2534,6 +2601,8 @@ export default {
       publishedInfo: null,
       historyOpen: false,
       draftHistory: [],
+      reminderDialogOpen: false,
+      reminderValue: '',
       mode: 'write',
       saveState: 'idle',
       editingLoading: false,
@@ -2679,15 +2748,6 @@ export default {
       if (time <= Date.now()) return 'Choose a future date and time.'
       return ''
     },
-    scheduledLocal: {
-      get () {
-        return toLocalDateTimeInput(this.draft?.scheduledAt)
-      },
-      set (value) {
-        if (!this.draft) return
-        this.draft.scheduledAt = value ? fromLocalDateTimeInput(value) : ''
-      }
-    },
     tagCountLabel () {
       return (this.draft?.tags?.length || 0) + ' / ' + MAX_TAGS
     },
@@ -2804,6 +2864,10 @@ export default {
       return this.visibleDrafts
         .filter(item => !item.archivedAt && item.scheduledAt && Date.parse(item.scheduledAt) <= now)
         .sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt))
+    },
+    scheduledLabel () {
+      if (!this.draft?.scheduledAt) return ''
+      return moment(this.draft.scheduledAt).format('D MMM YYYY, HH:mm')
     },
     storageUsageLabel () {
       if (!this.storageBytes) return '0 KB'
@@ -3016,8 +3080,31 @@ export default {
       this.refreshStorageUsage()
       this.$q.notify({ message: 'Draft reminders dismissed' })
     },
-    clearScheduled () {
+    openReminderDialog () {
+      if (!this.draft) return
+      this.reminderValue = toLocalDateTimeInput(this.draft.scheduledAt)
+      this.reminderDialogOpen = true
+    },
+    saveReminder () {
+      if (!this.draft) return
+      const scheduledAt = this.reminderValue ? fromLocalDateTimeInput(this.reminderValue) : ''
+      if (this.reminderValue && !scheduledAt) {
+        this.$q.notify({ type: 'negative', message: 'Enter a valid reminder date and time.' })
+        return
+      }
+      this.draft.scheduledAt = scheduledAt
+      this.reminderDialogOpen = false
+      this.$q.notify({
+        type: 'positive',
+        message: scheduledAt ? 'Reminder set' : 'Reminder cleared',
+        caption: scheduledAt ? 'This is a local reminder only. Nothing publishes automatically.' : ''
+      })
+    },
+    clearReminderDialog () {
       if (this.draft) this.draft.scheduledAt = ''
+      this.reminderValue = ''
+      this.reminderDialogOpen = false
+      this.$q.notify({ message: 'Reminder cleared' })
     },
     onStorageChange (event) {
       const key = String(event.key || '')

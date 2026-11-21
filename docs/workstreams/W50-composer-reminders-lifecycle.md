@@ -32,8 +32,11 @@ localStorage keys, plus the current draft count.
 
 ## Publish reminders
 
-The Post details panel has a local reminder date/time field. Nothing is
-scheduled or broadcast automatically. When a reminder is due:
+The publish checklist now has a visible **Schedule reminder** button, opening a
+date/time dialog. The Post details field was removed so there is one clear
+trigger. Nothing is scheduled or broadcast automatically.
+
+When a reminder is due:
 
 - a banner appears at the top of the composer;
 - **Open** selects the draft;
@@ -54,9 +57,9 @@ the conflict. If this tab has no unsaved edits, the newer saved draft is loaded.
 - `bun run build` — succeeded.
 - Fast E2E against Obscura — 15 compose/action flows passing, 2 Chromium-only
   file-input tests skipped.
-- Chromium compose actions — 17/17 passing, including archive/restore, reminder
-  dismissal, clear-all and the existing upload, embed, snippet, template,
-  history and metadata flows.
+- Chromium compose actions — 18/18 passing, including the reminder dialog,
+  archive/restore, reminder dismissal, clear-all and the existing upload, embed,
+  snippet, template, history and metadata flows.
 - Chromium a11y and polish — 19/19 passing.
 - Performance budgets — pass after a small compose total-JS increase.
 - Visual smoke at 1440px: reminder banner, Active/Archived toggle and local

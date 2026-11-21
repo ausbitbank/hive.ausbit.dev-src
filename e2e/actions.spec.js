@@ -369,6 +369,23 @@ test.describe('action flows', () => {
     await expect(page.getByText('No saved drafts yet. Autosave starts when you write.')).toBeVisible()
   })
 
+  test('compose sets and clears a local publish reminder', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Schedule reminder' }).dispatchEvent('click')
+    await expect(page.getByRole('heading', { name: 'Schedule reminder' })).toBeVisible()
+    await page.getByLabel('Reminder date and time', { exact: true }).fill('2030-01-01T12:00')
+    await page.getByRole('button', { name: 'Save reminder' }).click()
+    await expect(page.getByRole('button', { name: 'Reminder set' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Reminder set' }).dispatchEvent('click')
+    await expect(page.getByRole('button', { name: 'Clear reminder' })).toBeVisible()
+    await page.getByRole('button', { name: 'Clear reminder' }).click()
+    await expect(page.getByRole('button', { name: 'Schedule reminder' })).toBeVisible()
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)
