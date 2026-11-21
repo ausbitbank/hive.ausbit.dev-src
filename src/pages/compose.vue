@@ -28,6 +28,20 @@
       <span>Drafts are saved on this device. Log in from the header to publish with your posting key.</span>
     </div>
 
+    <div v-if="dueReminders.length" class="compose-reminder" role="status">
+      <q-icon name="alarm" size="18px" aria-hidden="true" />
+      <div class="compose-reminder__body">
+        <strong>{{ dueReminders.length === 1 ? 'Draft reminder' : dueReminders.length + ' draft reminders' }}</strong>
+        <span>
+          {{ dueReminders.length === 1 ? draftDisplayTitle(dueReminders[0]) : 'Several drafts are due for a reminder.' }}
+        </span>
+      </div>
+      <div class="compose-reminder__actions">
+        <q-btn flat dense no-caps color="primary" label="Open" @click="openReminder(dueReminders[0])" />
+        <q-btn flat dense no-caps label="Dismiss" @click="dismissReminders" />
+      </div>
+    </div>
+
     <div class="compose-grid" v-if="draft">
       <section class="compose-main home-card home-panel" aria-labelledby="compose-editor-title">
         <div class="home-panel__head">
@@ -337,6 +351,20 @@
               </template>
             </q-input>
 
+            <q-input
+              v-model="scheduledLocal"
+              type="datetime-local"
+              outlined
+              dense
+              label="Publish reminder (local)"
+              aria-label="Publish reminder date and time"
+              hint="A local reminder only. Nothing publishes automatically."
+            >
+              <template #append>
+                <q-btn v-if="draft.scheduledAt" flat dense round icon="close" aria-label="Clear publish reminder" title="Clear reminder" @click="clearScheduled" />
+              </template>
+            </q-input>
+
             <div class="compose-toggle-row">
               <q-toggle v-model="draft.portfolio" label="Show in portfolio" aria-label="Show in portfolio" dense />
               <span class="compose-hint">Flags the cover image for a profile portfolio.</span>
@@ -501,7 +529,9 @@
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Local drafts</div>
-              <h2 id="compose-drafts-title" class="home-panel__title">Drafts ({{ filteredDrafts.length }})</h2>
+              <h2 id="compose-drafts-title" class="home-panel__title">
+                {{ draftView === 'archived' ? 'Archived' : 'Drafts' }} ({{ filteredDrafts.length }})
+              </h2>
             </div>
             <div class="home-panel__actions">
               <q-btn flat dense round icon="dashboard_customize" aria-label="Post templates" title="Templates" @click="openTemplates" />
@@ -509,6 +539,17 @@
             </div>
           </div>
           <div class="home-panel__body compose-drafts">
+            <div class="compose-draft-view">
+              <q-btn-toggle
+                v-model="draftView"
+                no-caps
+                unelevated
+                toggle-color="primary"
+                :options="draftViewOptions"
+                aria-label="Draft view"
+              />
+              <span class="compose-hint">{{ archivedDraftCount }} archived</span>
+            </div>
             <div class="compose-draft-filters">
               <q-input
                 v-model="draftSearch"
@@ -544,6 +585,7 @@
                   <span class="compose-draft__title">{{ draftDisplayTitle(item) }}</span>
                   <span class="compose-draft__meta">
                     <q-icon v-if="isPinnedDraft(item.id)" name="push_pin" size="11px" aria-hidden="true" />
+                    <q-icon v-if="item.scheduledAt" name="alarm" size="11px" aria-hidden="true" />
                     {{ draftTime(item.updatedAt) }} · {{ wordCount(item.body) }} words
                   </span>
                 </button>
@@ -557,6 +599,16 @@
                   :aria-label="(isPinnedDraft(item.id) ? 'Unpin' : 'Pin') + ' draft ' + draftDisplayTitle(item)"
                   :title="isPinnedDraft(item.id) ? 'Unpin draft' : 'Pin draft'"
                   @click="toggleDraftPin(item)"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
+                  :icon="draftView === 'archived' ? 'unarchive' : 'archive'"
+                  :aria-label="(draftView === 'archived' ? 'Restore' : 'Archive') + ' draft ' + draftDisplayTitle(item)"
+                  :title="draftView === 'archived' ? 'Restore draft' : 'Archive draft'"
+                  @click="draftView === 'archived' ? unarchiveDraft(item) : archiveDraft(item)"
                 />
                 <q-btn
                   flat
@@ -594,9 +646,13 @@
               <q-btn flat dense no-caps icon="download" label="Export draft" :disable="!draftHasContent(draft)" @click="exportCurrent" />
               <q-btn flat dense no-caps icon="archive" label="Export all" :disable="!visibleDrafts.length" @click="exportAll" />
               <q-btn flat dense no-caps icon="upload_file" label="Import" @click="triggerImport" />
+              <q-btn flat dense no-caps color="red-4" icon="delete_sweep" label="Clear all" :disable="!visibleDrafts.length" @click="clearAllDrafts" />
               <input ref="importInput" type="file" accept="application/json,.json" class="compose-file-input" aria-label="Import drafts JSON file" @change="onImportFile" />
             </div>
-            <p class="compose-hint">Drafts stay in this browser. Export a JSON backup before clearing site data.</p>
+            <p class="compose-hint">
+              Local storage: {{ storageUsageLabel }} · {{ visibleDrafts.length }} drafts.
+              Export a JSON backup before clearing site data.
+            </p>
           </div>
         </section>
       </aside>
@@ -1136,6 +1192,44 @@
   background: rgba(255, 183, 77, 0.08);
   color: #ffcc80;
   font-size: 0.78rem;
+}
+
+.compose-reminder {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(129, 212, 250, 0.35);
+  border-radius: var(--radius-sm);
+  background: rgba(79, 195, 247, 0.08);
+  color: #81d4fa;
+  font-size: 0.78rem;
+}
+
+.compose-reminder__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.compose-reminder__body strong {
+  color: #e4eaed;
+  font-size: 0.78rem;
+}
+
+.compose-reminder__body span {
+  color: #b0bec5;
+  font-size: 0.72rem;
+}
+
+.compose-reminder__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
 }
 
 .compose-grid {
@@ -2087,6 +2181,18 @@
   gap: 0.55rem;
 }
 
+.compose-draft-view {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.compose-draft-view .compose-hint {
+  margin: 0;
+}
+
 .compose-draft-filters {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 128px;
@@ -2403,6 +2509,12 @@ export default {
         { label: 'Recently updated', value: 'updated' },
         { label: 'Title', value: 'title' }
       ],
+      draftView: 'active',
+      draftViewOptions: [
+        { label: 'Active', value: 'active' },
+        { label: 'Archived', value: 'archived' }
+      ],
+      storageBytes: 0,
       pinnedDraftIds: [],
       snippets: [],
       snippetsOpen: false,
@@ -2567,6 +2679,15 @@ export default {
       if (time <= Date.now()) return 'Choose a future date and time.'
       return ''
     },
+    scheduledLocal: {
+      get () {
+        return toLocalDateTimeInput(this.draft?.scheduledAt)
+      },
+      set (value) {
+        if (!this.draft) return
+        this.draft.scheduledAt = value ? fromLocalDateTimeInput(value) : ''
+      }
+    },
     tagCountLabel () {
       return (this.draft?.tags?.length || 0) + ' / ' + MAX_TAGS
     },
@@ -2654,12 +2775,16 @@ export default {
     },
     filteredDrafts () {
       const query = this.draftSearch.trim().toLowerCase()
-      const source = query
-        ? this.visibleDrafts.filter(item =>
-            (item.title || '').toLowerCase().includes(query) ||
-            (item.body || '').toLowerCase().includes(query)
-          )
-        : [...this.visibleDrafts]
+      const archived = this.draftView === 'archived'
+      let source = this.visibleDrafts.filter(item => archived ? Boolean(item.archivedAt) : !item.archivedAt)
+      if (query) {
+        source = source.filter(item =>
+          (item.title || '').toLowerCase().includes(query) ||
+          (item.body || '').toLowerCase().includes(query)
+        )
+      } else {
+        source = [...source]
+      }
       const pinned = new Set(this.pinnedDraftIds)
       source.sort((a, b) => {
         const pinDiff = Number(pinned.has(b.id)) - Number(pinned.has(a.id))
@@ -2670,6 +2795,19 @@ export default {
         return Number(b.updatedAt) - Number(a.updatedAt)
       })
       return source
+    },
+    archivedDraftCount () {
+      return this.visibleDrafts.filter(item => Boolean(item.archivedAt)).length
+    },
+    dueReminders () {
+      const now = Date.now()
+      return this.visibleDrafts
+        .filter(item => !item.archivedAt && item.scheduledAt && Date.parse(item.scheduledAt) <= now)
+        .sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt))
+    },
+    storageUsageLabel () {
+      if (!this.storageBytes) return '0 KB'
+      return (this.storageBytes / 1024).toFixed(this.storageBytes > 100 * 1024 ? 0 : 1) + ' KB'
     },
     communityOptions () {
       const options = new Map()
@@ -2769,8 +2907,10 @@ export default {
     this.loadSnippets()
     this.loadTemplates()
     this.loadPinnedDrafts()
+    this.refreshStorageUsage()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.flushAutosave)
+    window.addEventListener('storage', this.onStorageChange)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   },
   beforeUnmount () {
@@ -2778,6 +2918,7 @@ export default {
     if (this.previewTimer) clearTimeout(this.previewTimer)
     window.removeEventListener('keydown', this.onGlobalKeydown)
     window.removeEventListener('beforeunload', this.flushAutosave)
+    window.removeEventListener('storage', this.onStorageChange)
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
   },
   methods: {
@@ -2808,6 +2949,108 @@ export default {
     },
     loadPinnedDrafts () {
       this.pinnedDraftIds = readPinnedDraftIds(LocalStorage, this.loggedInUser)
+    },
+    refreshStorageUsage () {
+      if (typeof localStorage === 'undefined') return
+      let bytes = 0
+      try {
+        for (let index = 0; index < localStorage.length; index++) {
+          const key = localStorage.key(index) || ''
+          if (!key.startsWith('compose')) continue
+          bytes += String(localStorage.getItem(key) || '').length
+        }
+      } catch {
+        bytes = 0
+      }
+      this.storageBytes = bytes
+    },
+    archiveDraft (draft) {
+      if (!draft) return
+      const archivedAt = Date.now()
+      this.drafts = upsertDraft(this.drafts, { ...draft, archivedAt })
+      writeDrafts(LocalStorage, this.drafts)
+      if (this.draft && this.draft.id === draft.id) this.draft.archivedAt = archivedAt
+      this.refreshStorageUsage()
+      this.$q.notify({ message: 'Draft archived', caption: 'Switch to Archived to restore it.' })
+    },
+    unarchiveDraft (draft) {
+      if (!draft) return
+      this.drafts = upsertDraft(this.drafts, { ...draft, archivedAt: null })
+      writeDrafts(LocalStorage, this.drafts)
+      if (this.draft && this.draft.id === draft.id) this.draft.archivedAt = null
+      this.refreshStorageUsage()
+      this.$q.notify({ message: 'Draft restored' })
+    },
+    clearAllDrafts () {
+      this.$q.dialog({
+        dark: true,
+        title: 'Clear every local draft?',
+        message: 'This removes all drafts and their history from this browser. Snippets and templates are kept. Export a backup first if you may need them.',
+        cancel: { label: 'Cancel', flat: true },
+        ok: { label: 'Clear all drafts', color: 'negative', unelevated: true },
+        persistent: true
+      }).onOk(() => {
+        for (const draft of this.drafts) removeDraftHistory(LocalStorage, draft.id)
+        this.drafts = []
+        writeDrafts(LocalStorage, [])
+        this.pinnedDraftIds = []
+        writePinnedDraftIds(LocalStorage, this.loggedInUser, [])
+        this.setActiveDraft(this.blankDraft())
+        this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
+        this.refreshStorageUsage()
+        this.$q.notify({ message: 'All local drafts cleared' })
+      })
+    },
+    openReminder (draft) {
+      if (!draft) return
+      this.draftView = 'active'
+      this.selectDraft(draft.id)
+    },
+    dismissReminders () {
+      const due = this.dueReminders.map(item => item.id)
+      if (!due.length) return
+      const set = new Set(due)
+      this.drafts = this.drafts.map(item => set.has(item.id) ? normalizeDraft({ ...item, scheduledAt: '' }) : item)
+      if (this.draft && set.has(this.draft.id)) this.draft.scheduledAt = ''
+      writeDrafts(LocalStorage, this.drafts)
+      this.refreshStorageUsage()
+      this.$q.notify({ message: 'Draft reminders dismissed' })
+    },
+    clearScheduled () {
+      if (this.draft) this.draft.scheduledAt = ''
+    },
+    onStorageChange (event) {
+      const key = String(event.key || '')
+      if (!key.startsWith('compose')) return
+      if (key === 'composeDrafts') {
+        const next = readDrafts(LocalStorage)
+        this.drafts = next
+        const active = this.draft ? next.find(item => item.id === this.draft.id) : null
+        if (this.draft && !active) {
+          this.setActiveDraft(next[0] || this.blankDraft())
+        } else if (active && this.snapshotDraft(this.draft) === this.lastSavedSnapshot) {
+          this.setActiveDraft(active)
+        } else if (active) {
+          this.$q.notify({ message: 'Drafts changed in another tab', caption: 'Your unsaved edits were kept.' })
+        }
+        this.refreshStorageUsage()
+        return
+      }
+      if (key.startsWith('composeSnippets:')) {
+        this.loadSnippets()
+        return
+      }
+      if (key.startsWith('composeTemplates:')) {
+        this.loadTemplates()
+        return
+      }
+      if (key.startsWith('composePinned:')) {
+        this.loadPinnedDrafts()
+        return
+      }
+      if (key === 'composeDraftHistory' && this.historyOpen) {
+        this.openDraftHistory()
+      }
     },
     openSnippets () {
       this.loadSnippets()
@@ -2847,6 +3090,7 @@ export default {
         this.snippetError = 'Could not save the snippet. Browser storage is unavailable.'
         return
       }
+      this.refreshStorageUsage()
       this.resetSnippetForm()
       this.$q.notify({ type: 'positive', message: existing ? 'Snippet updated' : 'Snippet saved' })
     },
@@ -2862,6 +3106,7 @@ export default {
       }).onOk(() => {
         this.snippets = removeSnippetById(this.snippets, snippet.id)
         writeSnippets(LocalStorage, this.loggedInUser, this.snippets)
+        this.refreshStorageUsage()
         if (this.snippetId === snippet.id) this.resetSnippetForm()
         this.$q.notify({ message: 'Snippet deleted' })
       })
@@ -2916,6 +3161,7 @@ export default {
         this.templateError = 'Could not save the template. Browser storage is unavailable.'
         return
       }
+      this.refreshStorageUsage()
       this.templateName = ''
       this.templateSummary = ''
       this.templateError = ''
@@ -2955,6 +3201,7 @@ export default {
       }).onOk(() => {
         this.templates = removeTemplateById(this.templates, template.id)
         writeTemplates(LocalStorage, this.loggedInUser, this.templates)
+        this.refreshStorageUsage()
         this.$q.notify({ message: 'Template deleted' })
       })
     },
@@ -2979,6 +3226,8 @@ export default {
       })
       this.drafts = upsertDraft(this.drafts, copy)
       writeDrafts(LocalStorage, this.drafts)
+      this.refreshStorageUsage()
+      this.draftView = 'active'
       this.selectDraft(copy.id)
       this.$q.notify({ type: 'positive', message: 'Draft duplicated' })
     },
@@ -2998,6 +3247,7 @@ export default {
       if (!this.draft) return
       const history = appendDraftHistory(LocalStorage, this.draft, { force: true })
       this.draftHistory = history[this.draft.id] || []
+      this.refreshStorageUsage()
       this.$q.notify({ type: 'positive', message: 'Version saved', caption: 'You can restore it from Draft history.' })
     },
     restoreHistory (snapshot) {
@@ -3029,6 +3279,7 @@ export default {
       }).onOk(() => {
         removeDraftHistory(LocalStorage, this.draft.id)
         this.draftHistory = []
+        this.refreshStorageUsage()
         this.$q.notify({ message: 'Draft history cleared' })
       })
     },
@@ -3068,6 +3319,7 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Could not save imported snippets' })
           return
         }
+        this.refreshStorageUsage()
         this.$q.notify({
           type: 'positive',
           message: 'Snippets imported',
@@ -3110,6 +3362,7 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Could not save imported templates' })
           return
         }
+        this.refreshStorageUsage()
         this.$q.notify({
           type: 'positive',
           message: 'Templates imported',
@@ -3518,7 +3771,8 @@ export default {
         countdown: draft.countdown,
         portfolio: draft.portfolio,
         collection: draft.collection,
-        authorDisplay: draft.authorDisplay
+        authorDisplay: draft.authorDisplay,
+        scheduledAt: draft.scheduledAt
       })
     },
     scheduleAutosave () {
@@ -3567,6 +3821,7 @@ export default {
       this.lastSavedAt = now
       this.saveState = 'saved'
       this.lastSavedSnapshot = this.snapshotDraft(this.draft)
+      this.refreshStorageUsage()
       if (!silent) this.$q.notify({ type: 'positive', message: 'Draft saved', caption: 'Kept in this browser as a local draft.' })
       return true
     },
@@ -3598,6 +3853,7 @@ export default {
       if (this.draft && draftHasContent(this.draft) && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
         this.saveDraft({ silent: true })
       }
+      this.draftView = 'active'
       this.setActiveDraft(this.blankDraft())
       this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
     },
@@ -3627,6 +3883,7 @@ export default {
       removeDraftHistory(LocalStorage, target.id)
       this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== target.id)
       writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
+      this.refreshStorageUsage()
       if (this.draft && this.draft.id === target.id) {
         this.setActiveDraft(this.drafts[0] || this.blankDraft())
         this.$router.replace({ name: 'compose', params: this.drafts[0] ? { draftId: this.drafts[0].id } : {} }).catch(() => {})
@@ -3888,6 +4145,7 @@ export default {
           removeDraftHistory(LocalStorage, this.draft.id)
           this.pinnedDraftIds = this.pinnedDraftIds.filter(id => id !== this.draft.id)
           writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
+          this.refreshStorageUsage()
           this.lastSavedSnapshot = ''
           this.setActiveDraft(this.blankDraft())
           this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
@@ -3948,6 +4206,7 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Could not save imported drafts', caption: 'Browser storage is full or unavailable.' })
           return
         }
+        this.refreshStorageUsage()
         this.$q.notify({
           type: 'positive',
           message: 'Drafts imported',

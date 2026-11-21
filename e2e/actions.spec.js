@@ -334,6 +334,41 @@ test.describe('action flows', () => {
     await expect(page.getByLabel('Post body in Markdown')).toHaveValue('Version one')
   })
 
+  test('compose archives, restores and clears drafts, and shows reminders', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    const dueAt = new Date(Date.now() - 60000).toISOString()
+    await seedDrafts(page, [{
+      id: 'e2e-archive-draft',
+      owner: 'ausbitbank',
+      title: 'Archive me',
+      body: 'Archived body',
+      tags: ['hive'],
+      community: '',
+      scheduledAt: dueAt,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByText('Draft reminder')).toBeVisible()
+    await page.getByRole('button', { name: 'Dismiss' }).click()
+    await expect(page.getByText('Draft reminder')).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Archive draft Archive me' }).dispatchEvent('click')
+    await expect(page.locator('.compose-draft__title')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Archived' }).click()
+    await expect(page.locator('.compose-draft__title')).toHaveText('Archive me')
+    await page.getByRole('button', { name: 'Restore draft Archive me' }).dispatchEvent('click')
+    await page.getByRole('button', { name: 'Active' }).click()
+    await expect(page.locator('.compose-draft__title')).toHaveText('Archive me')
+
+    await page.getByRole('button', { name: 'Clear all', exact: true }).click()
+    await page.getByRole('button', { name: 'Clear all drafts' }).click()
+    await expect(page.locator('.compose-draft__title')).toHaveCount(0)
+    await expect(page.getByText('No saved drafts yet. Autosave starts when you write.')).toBeVisible()
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

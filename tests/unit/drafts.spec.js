@@ -106,6 +106,17 @@ describe('draft normalization', () => {
     expect(draft.rewards.maxAcceptedPayout).toBe('0.000 HBD')
   })
 
+  it('normalises scheduled reminders and archive timestamps', () => {
+    const draft = createDraft({
+      scheduledAt: '2030-01-01T10:00:00.000Z',
+      archivedAt: 12345
+    }, 1000)
+    expect(draft.scheduledAt).toBe('2030-01-01T10:00:00.000Z')
+    expect(draft.archivedAt).toBe(12345)
+    expect(createDraft({ scheduledAt: 'not-a-date', archivedAt: 'nope' }, 1000).scheduledAt).toBe('')
+    expect(createDraft({ archivedAt: 'nope' }, 1000).archivedAt).toBeNull()
+  })
+
   it('drops unsafe cover URLs and invalid countdown values', () => {
     const draft = createDraft({
       coverImage: 'javascript:alert(1)',
@@ -246,7 +257,7 @@ describe('draft export and import', () => {
     const text = serializeDraftExport(draft, { now: 3000 })
     const envelope = JSON.parse(text)
     expect(envelope.type).toBe('hive-drafts')
-    expect(envelope.version).toBe(2)
+    expect(envelope.version).toBe(3)
     expect(envelope.exportedAt).toBe(new Date(3000).toISOString())
 
     const parsed = parseDraftExport(text, { owner: 'alice', now: 4000 })

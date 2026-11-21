@@ -9,7 +9,7 @@ import { safeExternalUrl } from '../utils/safeUrl'
 
 export const DRAFT_STORAGE_KEY = 'composeDrafts'
 export const DRAFT_EXPORT_TYPE = 'hive-drafts'
-export const DRAFT_VERSION = 2
+export const DRAFT_VERSION = 3
 export const MAX_DRAFTS = 40
 export const MAX_TITLE_CHARS = 255
 export const MAX_BODY_BYTES = 65535
@@ -85,6 +85,16 @@ export function normalizeCountdown (value) {
   if (!text) return ''
   const time = Date.parse(text)
   return Number.isFinite(time) ? new Date(time).toISOString() : ''
+}
+
+/** Local publish reminder. Past values are kept so a due reminder can surface. */
+export function normalizeScheduledAt (value) {
+  return normalizeCountdown(value)
+}
+
+export function normalizeArchivedAt (value) {
+  const time = Number(value)
+  return Number.isFinite(time) && time > 0 ? time : null
 }
 
 export function normalizeAuthorDisplay (value) {
@@ -212,6 +222,8 @@ export function normalizeDraft (raw, now = Date.now()) {
     portfolio: source.portfolio === true,
     collection: source.collection === true,
     authorDisplay: normalizeAuthorDisplay(source.authorDisplay),
+    scheduledAt: normalizeScheduledAt(source.scheduledAt),
+    archivedAt: normalizeArchivedAt(source.archivedAt),
     createdAt: Number.isFinite(createdAt) && createdAt > 0 ? createdAt : now,
     updatedAt: Number.isFinite(updatedAt) && updatedAt > 0 ? updatedAt : now
   }
@@ -354,7 +366,8 @@ function snapshotFields (draft) {
     countdown: draft.countdown,
     portfolio: draft.portfolio,
     collection: draft.collection,
-    authorDisplay: draft.authorDisplay
+    authorDisplay: draft.authorDisplay,
+    scheduledAt: draft.scheduledAt
   }
 }
 
