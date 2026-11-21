@@ -47,6 +47,52 @@ export function prefixLines (text, start, end, prefix) {
   return result(next, lineStart, lineStart + replacement.length)
 }
 
+/** Indent or outdent the selected lines with two spaces per level. */
+export function indentSelection (text, start, end, { outdent = false } = {}) {
+  const { source, from, to } = selection(text, start, end)
+  const lineStart = source.lastIndexOf('\n', Math.max(0, from - 1)) + 1
+  let blockEnd = to > from ? to : source.indexOf('\n', from)
+  if (blockEnd === -1) blockEnd = source.length
+  const segment = source.slice(lineStart, blockEnd)
+  const replacement = segment
+    .split('\n')
+    .map(line => outdent ? line.replace(/^ {1,2}/, '') : '  ' + line)
+    .join('\n')
+  const next = source.slice(0, lineStart) + replacement + source.slice(blockEnd)
+  return result(next, lineStart, lineStart + replacement.length)
+}
+
+/**
+ * Continue a list when Enter is pressed. Returns null when the caret is not on
+ * a list item, so the textarea keeps its normal newline behaviour.
+ */
+export function continueMarkdownList (text, start, end) {
+  const { source, from, to } = selection(text, start, end)
+  if (from !== to) return null
+  const lineStart = source.lastIndexOf('\n', Math.max(0, from - 1)) + 1
+  const lineEnd = source.indexOf('\n', from)
+  const line = source.slice(lineStart, lineEnd === -1 ? source.length : lineEnd)
+  const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(\[[ xX]\]\s+)?/)
+  if (!match) return null
+
+  const indent = match[1]
+  const baseMarker = match[3] ? '- [ ] ' : match[2]
+  const content = line.slice(match[0].length)
+  if (!content.trim()) {
+    // An empty list item ends the list instead of creating another one.
+    const next = source.slice(0, lineStart) + indent + source.slice(lineEnd === -1 ? source.length : lineEnd)
+    return result(next, lineStart + indent.length, lineStart + indent.length)
+  }
+
+  const nextMarker = /^\d+\.$/.test(baseMarker)
+    ? (Number(baseMarker.slice(0, -1)) + 1) + '. '
+    : baseMarker.endsWith(' ') ? baseMarker : baseMarker + ' '
+  const insertion = '\n' + indent + nextMarker
+  const position = from
+  const next = source.slice(0, position) + insertion + source.slice(position)
+  return result(next, position + insertion.length, position + insertion.length)
+}
+
 /** Insert a block at the selection, padding it with blank lines when needed. */
 export function insertBlock (text, start, end, block) {
   const { source, from, to } = selection(text, start, end)
@@ -131,14 +177,26 @@ export function applyMarkdownAction (text, start, end, action = {}) {
       return wrapSelection(text, start, end, '**', '**', 'bold text')
     case 'italic':
       return wrapSelection(text, start, end, '*', '*', 'italic text')
+    case 'underline':
+      return wrapSelection(text, start, end, '<u>', '</u>', 'underlined text')
+    case 'strikethrough':
+      return wrapSelection(text, start, end, '~~', '~~', 'struck text')
     case 'heading':
       return prefixLines(text, start, end, '## ')
+    case 'heading1':
+      return prefixLines(text, start, end, '# ')
+    case 'heading2':
+      return prefixLines(text, start, end, '## ')
+    case 'heading3':
+      return prefixLines(text, start, end, '### ')
     case 'quote':
       return prefixLines(text, start, end, '> ')
     case 'bulletList':
       return prefixLines(text, start, end, '- ')
     case 'numberList':
       return prefixLines(text, start, end, '1. ')
+    case 'taskList':
+      return prefixLines(text, start, end, '- [ ] ')
     case 'inlineCode':
       return wrapSelection(text, start, end, '`', '`', 'code')
     case 'codeBlock':
@@ -149,6 +207,13 @@ export function applyMarkdownAction (text, start, end, action = {}) {
       return insertImage(text, start, end, action)
     case 'center':
       return wrapSelection(text, start, end, '<center>', '</center>', action.placeholder || '![image description](https://)')
+    case 'embed':
+    case 'raw':
+      return insertBlock(text, start, end, String(action.markdown || action.text || ''))
+    case 'indent':
+      return indentSelection(text, start, end, { outdent: false })
+    case 'outdent':
+      return indentSelection(text, start, end, { outdent: true })
     case 'table':
       return insertTable(text, start, end, action)
     case 'divider':
@@ -160,12 +225,24 @@ export function applyMarkdownAction (text, start, end, action = {}) {
 
 /** Keyboard shortcuts that map directly to a markdown action. */
 export function shortcutMarkdownAction (event) {
-  if (!event || event.altKey || !(event.metaKey || event.ctrlKey)) return null
-  switch (String(event.key || '').toLowerCase()) {
+  if (!event || !(event.metaKey || event.ctrlKey)) return null
+  const key = String(event.key || '').toLowerCase()
+  if (event.altKey) {
+    switch (key) {
+      case '1': return { type: 'heading1' }
+      case '2': return { type: 'heading2' }
+      case '3': return { type: 'heading3' }
+      default: return null
+    }
+  }
+  if (event.shiftKey && key === 'x') return { type: 'strikethrough' }
+  switch (key) {
     case 'b':
       return { type: 'bold' }
     case 'i':
       return { type: 'italic' }
+    case 'u':
+      return { type: 'underline' }
     case 'k':
       return { type: 'link' }
     default:

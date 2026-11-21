@@ -1,5 +1,5 @@
 <template>
-  <q-page class="compose-page">
+  <q-page class="compose-page" :class="{ 'compose-page--fullscreen': fullscreenEditor }">
     <header class="compose-header">
       <div class="compose-header__intro">
         <div class="home-eyebrow">{{ isEditing ? 'Editing a published post' : 'Creator workflow' }}</div>
@@ -36,6 +36,16 @@
             <h2 id="compose-editor-title" class="home-panel__title">{{ activeDraftTitle }}</h2>
           </div>
           <div class="home-panel__actions">
+            <q-btn flat dense round icon="tune" aria-label="Editor settings" title="Editor settings" @click="settingsOpen = true" />
+            <q-btn
+              flat
+              dense
+              round
+              :icon="fullscreenEditor ? 'fullscreen_exit' : 'fullscreen'"
+              :aria-label="fullscreenEditor ? 'Exit fullscreen editor' : 'Fullscreen editor'"
+              :title="fullscreenEditor ? 'Exit fullscreen' : 'Fullscreen'"
+              @click="toggleFullscreen"
+            />
             <q-btn-toggle
               v-model="mode"
               no-caps
@@ -65,37 +75,53 @@
             <span>Editing a comment. Comments have no title or category.</span>
           </div>
 
-          <div v-if="mode === 'write'" class="compose-write">
-            <markdown-toolbar @action="applyAction" @upload="openImageUpload()">
-              <template #end>
-                <span class="compose-toolbar__count" :title="guidance.words + ' words'">{{ guidance.words }} words</span>
-              </template>
-            </markdown-toolbar>
-            <div class="compose-editor-wrap" @dragover.prevent="onEditorDragOver" @dragleave="onEditorDragLeave" @drop="onEditorDrop">
-              <textarea
-                ref="body"
-                v-model="draft.body"
-                class="compose-textarea"
-                :class="{ 'compose-textarea--drag': dragActive }"
-                rows="18"
-                aria-label="Post body in Markdown"
-                placeholder="Write in Markdown. Paste or drop images to upload them."
-                @keydown="onEditorKeydown"
-                @paste="onEditorPaste"
-              />
-              <div v-if="dragActive" class="compose-drop-hint" aria-hidden="true">
-                <q-icon name="cloud_upload" size="22px" />
-                <span>Drop images to upload</span>
+          <div
+            class="compose-editor-panes"
+            :class="{
+              'compose-editor-panes--split': mode === 'split',
+              'compose-editor-panes--top-down': mode === 'split' && topDownPreview
+            }"
+          >
+            <div v-if="mode !== 'preview'" class="compose-write">
+              <div v-if="isHtmlMode" class="compose-source-mode">
+                <q-icon name="code" size="16px" aria-hidden="true" />
+                <span>HTML source. The Markdown toolbar is hidden; the preview renders the result.</span>
+              </div>
+              <markdown-toolbar v-if="!isHtmlMode" @action="applyAction" @upload="openImageUpload()">
+                <template #end>
+                  <span class="compose-toolbar__count" :title="guidance.words + ' words'">{{ guidance.words }} words</span>
+                </template>
+              </markdown-toolbar>
+              <div class="compose-editor-wrap" @dragover.prevent="onEditorDragOver" @dragleave="onEditorDragLeave" @drop="onEditorDrop">
+                <textarea
+                  ref="body"
+                  v-model="draft.body"
+                  class="compose-textarea"
+                  :class="{ 'compose-textarea--drag': dragActive }"
+                  rows="18"
+                  :aria-label="isHtmlMode ? 'Post body in HTML' : 'Post body in Markdown'"
+                  :placeholder="isHtmlMode ? 'Write HTML. The preview renders the sanitised result.' : 'Write in Markdown. Paste or drop images to upload them.'"
+                  @keydown="onEditorKeydown"
+                  @paste="onEditorPaste"
+                />
+                <div v-if="dragActive" class="compose-drop-hint" aria-hidden="true">
+                  <q-icon name="cloud_upload" size="22px" />
+                  <span>Drop images to upload</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div v-else class="compose-preview">
-            <h3 class="compose-preview__title">{{ draft.title.trim() || 'Untitled post' }}</h3>
-            <render v-if="draft.body.trim()" :input="draft.body" class="postbody" />
-            <div v-else class="compose-preview__empty">
-              <q-icon name="preview_off" size="22px" aria-hidden="true" />
-              <span>Nothing to preview yet. Switch to Write and start the post.</span>
+            <div v-if="mode !== 'write'" class="compose-preview">
+              <div v-if="!autoUpdatePreview" class="compose-preview__notice">
+                <span>{{ previewIsStale ? 'Preview is out of date.' : 'Preview updates when you refresh.' }}</span>
+                <q-btn flat dense no-caps icon="refresh" label="Refresh preview" @click="refreshPreview" />
+              </div>
+              <h3 class="compose-preview__title">{{ draft.title.trim() || 'Untitled post' }}</h3>
+              <render v-if="previewBody.trim()" :input="previewBody" :embeds="previewEmbeds" class="postbody" />
+              <div v-else class="compose-preview__empty">
+                <q-icon name="preview_off" size="22px" aria-hidden="true" />
+                <span>Nothing to preview yet. Start the post in Write mode.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -638,6 +664,108 @@
       </q-card>
     </q-dialog>
 
+    <q-dialog v-model="settingsOpen">
+      <q-card class="compose-settings">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Editor</div>
+            <h2 class="home-panel__title">Editor settings</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close editor settings" title="Close" @click="settingsOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-settings__body">
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Source mode</div>
+              <div class="compose-setting__hint">Markdown is the default. HTML edits the raw source directly.</div>
+            </div>
+            <q-btn-toggle
+              v-model="sourceMode"
+              no-caps
+              unelevated
+              toggle-color="primary"
+              :options="sourceOptions"
+              aria-label="Editor source mode"
+            />
+          </div>
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Auto-update preview</div>
+              <div class="compose-setting__hint">Render the preview as you type. Turn it off for very long posts.</div>
+            </div>
+            <q-toggle v-model="autoUpdatePreview" aria-label="Auto-update preview" dense />
+          </div>
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Preview embeds</div>
+              <div class="compose-setting__hint">Show click-to-load video and audio players in the preview.</div>
+            </div>
+            <q-toggle v-model="previewEmbeds" aria-label="Preview embeds" dense />
+          </div>
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Top-down preview</div>
+              <div class="compose-setting__hint">In Split view, put the preview above the editor.</div>
+            </div>
+            <q-toggle v-model="topDownPreview" aria-label="Top-down preview" dense />
+          </div>
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Center uploaded images</div>
+              <div class="compose-setting__hint">Wrap newly inserted images in a centered block.</div>
+            </div>
+            <q-toggle v-model="centerImages" aria-label="Center uploaded images" dense />
+          </div>
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Fullscreen editor</div>
+              <div class="compose-setting__hint">Hide the publishing sidebar while you write.</div>
+            </div>
+            <q-toggle v-model="fullscreenEditor" aria-label="Fullscreen editor" dense />
+          </div>
+          <div class="compose-settings__actions">
+            <q-btn flat no-caps icon="content_copy" label="Copy Markdown" @click="copyDraft" />
+            <q-btn flat no-caps icon="refresh" label="Refresh preview" @click="refreshPreview" />
+            <q-btn flat no-caps icon="help_outline" label="Markdown help" @click="openEditorHelp" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="helpOpen">
+      <q-card class="compose-settings compose-help">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Reference</div>
+            <h2 class="home-panel__title">Markdown help</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close markdown help" title="Close" @click="helpOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-help__body">
+          <dl class="compose-help__list">
+            <div><dt><code>**bold**</code></dt><dd>Bold text</dd></div>
+            <div><dt><code>*italic*</code></dt><dd>Italic text</dd></div>
+            <div><dt><code>~~struck~~</code></dt><dd>Strikethrough</dd></div>
+            <div><dt><code># Heading</code></dt><dd>Heading levels 1 to 3 use one to three hashes</dd></div>
+            <div><dt><code>- item</code></dt><dd>Bullet list; use <code>1.</code> for numbered lists</dd></div>
+            <div><dt><code>- [ ] task</code></dt><dd>Task list item</dd></div>
+            <div><dt><code>[label](url)</code></dt><dd>Link</dd></div>
+            <div><dt><code>![alt](url)</code></dt><dd>Image with alternative text</dd></div>
+            <div><dt><code>&gt; quote</code></dt><dd>Block quote</dd></div>
+            <div><dt><code>`code`</code></dt><dd>Inline code; use three backticks for a block</dd></div>
+            <div><dt><code>---</code></dt><dd>Divider</dd></div>
+            <div><dt><code>&lt;center&gt;…&lt;/center&gt;</code></dt><dd>Centered image or short block</dd></div>
+          </dl>
+          <p class="compose-hint">
+            Keyboard: Ctrl/⌘ B bold, I italic, U underline, K link, Shift+X strikethrough,
+            Alt+1/2/3 headings, Tab indent, Shift+Tab outdent, Ctrl+Enter publish.
+          </p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="reviewOpen">
       <q-card class="compose-review">
         <q-card-section class="compose-media-dialog__head">
@@ -813,6 +941,60 @@
 
 .compose-write {
   margin-top: 0.65rem;
+}
+
+.compose-editor-panes--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.compose-editor-panes--split .compose-write,
+.compose-editor-panes--split .compose-preview {
+  min-width: 0;
+}
+
+.compose-editor-panes--split .compose-textarea,
+.compose-editor-panes--split .compose-preview {
+  min-height: 520px;
+}
+
+.compose-editor-panes--top-down {
+  display: flex;
+  flex-direction: column;
+}
+
+.compose-editor-panes--top-down .compose-preview {
+  order: -1;
+}
+
+.compose-source-mode {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(79, 195, 247, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(79, 195, 247, 0.06);
+  color: #90a4ae;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.compose-preview__notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid rgba(255, 183, 77, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 183, 77, 0.06);
+  color: #ffcc80;
+  font-size: 0.7rem;
 }
 
 .compose-editor-wrap {
@@ -1189,6 +1371,98 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.compose-settings {
+  width: 560px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow: auto;
+  background: #1d1d1d;
+}
+
+.compose-settings__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compose-setting__label {
+  color: #e4eaed;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.compose-setting__hint {
+  margin-top: 0.1rem;
+  color: #78909c;
+  font-size: 0.69rem;
+  line-height: 1.45;
+}
+
+.compose-settings__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  padding-top: 0.35rem;
+}
+
+.compose-help__body {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-help__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0 0 0.7rem;
+}
+
+.compose-help__list > div {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compose-help__list dt {
+  color: #81d4fa;
+  font-size: 0.72rem;
+}
+
+.compose-help__list dt code {
+  color: #81d4fa;
+}
+
+.compose-help__list dd {
+  margin: 0;
+  color: #b0bec5;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.compose-page--fullscreen .compose-side {
+  display: none;
+}
+
+.compose-page--fullscreen .compose-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.compose-page--fullscreen .compose-main {
+  position: static;
+}
+
 .compose-media-dialog__head {
   display: flex;
   align-items: flex-start;
@@ -1486,6 +1760,15 @@
   .compose-main {
     position: static;
   }
+
+  .compose-editor-panes--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .compose-editor-panes--split .compose-textarea,
+  .compose-editor-panes--split .compose-preview {
+    min-height: 430px;
+  }
 }
 
 @media (max-width: 599px) {
@@ -1528,17 +1811,28 @@
     grid-column: 2;
     justify-self: end;
   }
+
+  .compose-setting-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .compose-help__list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
 }
 </style>
 
 <script>
-import { LocalStorage, exportFile } from 'quasar'
+import { LocalStorage, copyToClipboard, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
 import { keychain } from '@hiveio/keychain'
 import smartlock from 'components/smartlock/index.js'
 import moment from 'src/utils/time'
-import { applyMarkdownAction, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
+import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
+import { detectEmbed } from 'src/services/embeds'
 import {
   AI_TOOL_KEYS,
   COLLECTION_TAG,
@@ -1667,6 +1961,19 @@ export default {
       coverDialogOpen: false,
       centerImages: LocalStorage.getItem('composeCenterImages') === true,
       reviewOpen: false,
+      settingsOpen: false,
+      helpOpen: false,
+      fullscreenEditor: false,
+      previewBody: '',
+      previewTimer: null,
+      autoUpdatePreview: LocalStorage.getItem('composeAutoPreview') !== false,
+      previewEmbeds: LocalStorage.getItem('composePreviewEmbeds') !== false,
+      topDownPreview: LocalStorage.getItem('composeTopDownPreview') === true,
+      sourceMode: LocalStorage.getItem('composeSourceMode') === 'html' ? 'html' : 'markdown',
+      sourceOptions: [
+        { label: 'Markdown', value: 'markdown' },
+        { label: 'HTML source', value: 'html' }
+      ],
       aiToolOptions: [
         { key: 'media_generation', label: 'Generating media on the post' },
         { key: 'translation', label: 'Language translation' },
@@ -1677,6 +1984,7 @@ export default {
       ],
       modeOptions: [
         { label: 'Write', value: 'write', icon: 'edit' },
+        { label: 'Split', value: 'split', icon: 'vertical_split' },
         { label: 'Preview', value: 'preview', icon: 'visibility' }
       ],
       tagSuggestions: ['hive', 'blog', 'writing', 'photography', 'art', 'dev', 'news', 'music'],
@@ -1774,6 +2082,12 @@ export default {
     },
     canUpload () {
       return Boolean(this.loggedInUser)
+    },
+    previewIsStale () {
+      return Boolean(this.draft) && this.previewBody !== this.draft.body
+    },
+    isHtmlMode () {
+      return this.sourceMode === 'html'
     },
     guidance () {
       return draftLengthGuidance(this.draft && this.draft.body)
@@ -1902,6 +2216,25 @@ export default {
       this.loadCommunitySubscriptions()
       this.loadUploadHistory()
     },
+    'draft.body' () {
+      this.schedulePreview()
+    },
+    mode (value) {
+      if (value !== 'write' && this.autoUpdatePreview) this.refreshPreview()
+    },
+    autoUpdatePreview (value) {
+      LocalStorage.set('composeAutoPreview', value === true)
+      if (value) this.refreshPreview()
+    },
+    previewEmbeds (value) {
+      LocalStorage.set('composePreviewEmbeds', value === true)
+    },
+    topDownPreview (value) {
+      LocalStorage.set('composeTopDownPreview', value === true)
+    },
+    sourceMode (value) {
+      LocalStorage.set('composeSourceMode', value === 'html' ? 'html' : 'markdown')
+    },
     centerImages (value) {
       LocalStorage.set('composeCenterImages', value === true)
     }
@@ -1923,6 +2256,7 @@ export default {
   },
   beforeUnmount () {
     this.flushAutosave()
+    if (this.previewTimer) clearTimeout(this.previewTimer)
     window.removeEventListener('keydown', this.onGlobalKeydown)
     window.removeEventListener('beforeunload', this.flushAutosave)
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
@@ -1946,6 +2280,39 @@ export default {
     },
     loadUploadHistory () {
       this.recentUploads = readUploadHistory(LocalStorage, this.loggedInUser)
+    },
+    schedulePreview () {
+      if (!this.draft) return
+      if (!this.autoUpdatePreview) return
+      if (this.previewTimer) clearTimeout(this.previewTimer)
+      this.previewTimer = setTimeout(() => {
+        this.previewTimer = null
+        this.refreshPreview()
+      }, 320)
+    },
+    refreshPreview () {
+      if (!this.draft) return
+      if (this.previewTimer) {
+        clearTimeout(this.previewTimer)
+        this.previewTimer = null
+      }
+      this.previewBody = this.draft.body
+    },
+    copyDraft () {
+      if (!this.draft || !this.draft.body) {
+        this.$q.notify({ message: 'There is nothing to copy yet.' })
+        return
+      }
+      copyToClipboard(this.draft.body)
+        .then(() => this.$q.notify({ type: 'positive', message: 'Post content copied as Markdown' }))
+        .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the post content' }))
+    },
+    toggleFullscreen () {
+      this.fullscreenEditor = !this.fullscreenEditor
+    },
+    openEditorHelp () {
+      this.settingsOpen = false
+      this.helpOpen = true
     },
     captureSelection () {
       const element = this.$refs.body
@@ -2100,10 +2467,20 @@ export default {
     },
     onEditorPaste (event) {
       const files = Array.from(event.clipboardData?.files || []).filter(file => file.type.startsWith('image/'))
-      if (!files.length) return
+      if (files.length) {
+        event.preventDefault()
+        this.captureSelection()
+        this.openImageUpload('body', files)
+        return
+      }
+      const text = String(event.clipboardData?.getData('text/plain') || '').trim()
+      if (!text) return
+      const element = this.$refs.body
+      if (element && element.selectionStart !== element.selectionEnd) return
+      const detected = detectEmbed(text)
+      if (!detected) return
       event.preventDefault()
-      this.captureSelection()
-      this.openImageUpload('body', files)
+      this.applyAction({ type: 'embed', markdown: detected.markdown })
     },
     onEditorDragOver () {
       this.dragActive = true
@@ -2114,10 +2491,18 @@ export default {
     onEditorDrop (event) {
       this.dragActive = false
       const files = Array.from(event.dataTransfer?.files || []).filter(file => file.type.startsWith('image/'))
-      if (!files.length) return
-      event.preventDefault()
-      this.captureSelection()
-      this.openImageUpload('body', files)
+      if (files.length) {
+        event.preventDefault()
+        this.captureSelection()
+        this.openImageUpload('body', files)
+        return
+      }
+      const text = String(event.dataTransfer?.getData('text/plain') || '').trim()
+      const detected = text ? detectEmbed(text) : null
+      if (detected) {
+        event.preventDefault()
+        this.applyAction({ type: 'embed', markdown: detected.markdown })
+      }
     },
     useRecentUpload (entry) {
       if (!entry) return
@@ -2264,6 +2649,11 @@ export default {
       this.uploadError = ''
       this.uploadStatus = ''
       this.mode = 'write'
+      this.previewBody = this.draft.body
+      if (this.previewTimer) {
+        clearTimeout(this.previewTimer)
+        this.previewTimer = null
+      }
       this.lastSavedSnapshot = this.snapshotDraft(this.draft)
       if (!this.drafts.some(item => item.id === this.draft.id)) {
         this.saveState = 'idle'
@@ -2527,13 +2917,7 @@ export default {
         this.loadingSource = false
       }
     },
-    applyAction (action) {
-      if (!this.draft) return
-      if (this.mode !== 'write') this.mode = 'write'
-      const textarea = this.$refs.body
-      const start = textarea ? textarea.selectionStart : this.draft.body.length
-      const end = textarea ? textarea.selectionEnd : this.draft.body.length
-      const next = applyMarkdownAction(this.draft.body, start, end, action)
+    replaceBody (next) {
       this.draft.body = next.text
       this.$nextTick(() => {
         const element = this.$refs.body
@@ -2542,11 +2926,43 @@ export default {
         element.setSelectionRange(next.start, next.end)
       })
     },
+    applyAction (action) {
+      if (!this.draft) return
+      if (this.mode === 'preview') this.mode = 'write'
+      const textarea = this.$refs.body
+      const start = textarea ? textarea.selectionStart : this.draft.body.length
+      const end = textarea ? textarea.selectionEnd : this.draft.body.length
+      this.replaceBody(applyMarkdownAction(this.draft.body, start, end, action))
+    },
     onEditorKeydown (event) {
       const action = shortcutMarkdownAction(event)
       if (action) {
         event.preventDefault()
         this.applyAction(action)
+        return
+      }
+      if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault()
+        this.applyAction({ type: event.shiftKey ? 'outdent' : 'indent' })
+        return
+      }
+      if (
+        event.key === 'Enter' &&
+        !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey
+      ) {
+        const textarea = this.$refs.body
+        if (textarea) {
+          const next = continueMarkdownList(this.draft.body, textarea.selectionStart, textarea.selectionEnd)
+          if (next) {
+            event.preventDefault()
+            this.replaceBody(next)
+            return
+          }
+        }
+      }
+      if (event.key === 'Escape' && this.fullscreenEditor) {
+        event.preventDefault()
+        this.fullscreenEditor = false
         return
       }
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {

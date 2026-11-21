@@ -1,22 +1,5 @@
 import DOMPurify from 'dompurify'
-
-// Keep in sync with the embed allowlist in src/components/render.vue.
-const EMBED_HOSTS = [
-  'youtube.com',
-  'www.youtube.com',
-  'youtu.be',
-  'player.vimeo.com',
-  'vimeo.com',
-  '3speak.tv',
-  'www.3speak.tv',
-  'play.3speak.tv',
-  'odysee.com',
-  'rumble.com',
-  'www.bitchute.com',
-  'd.tube',
-  'ipfs.io',
-  'gateway.ipfs.io'
-]
+import { EMBED_HOSTS } from './embedHosts'
 
 // Attributes that rendered community descriptions/rules may keep on iframes.
 const IFRAME_ATTRS = [

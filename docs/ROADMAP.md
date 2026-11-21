@@ -71,6 +71,14 @@ post badges and the absence of page errors. See
 `docs/workstreams/W46-post-composer-media.md`. Media embeds, a split live
 preview, snippets, templates and the visual editor remain follow-ups.
 
+W47 is the second composer phase: media embeds for video, audio and social
+links; Write/Split/Preview modes with debounced live preview, top-down and
+preview-embeds settings; HTML source mode; an expanded toolbar with headings,
+task lists, table and media dialogs; list continuation, indentation and more
+keyboard shortcuts. See `docs/workstreams/W47-composer-embeds-preview.md`.
+Snippets, templates, draft recovery, the post-publish panel and an optional
+visual editor remain.
+
 Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
 Lightning workstream, the optional #63 server-side existence check at the edge,
 and the remaining composer roadmap phases. There is no other open issue backlog

@@ -9,6 +9,7 @@
 
 <script>
 import DOMPurify from 'dompurify'
+import { EMBED_HOSTS } from 'src/utils/embedHosts'
 
 // The render-helper bundle carries a very large serializer. Loading it lazily
 // keeps it out of the initial JavaScript for the home, block and account
@@ -18,23 +19,6 @@ function loadRenderHelper () {
   if (!renderHelperPromise) renderHelperPromise = import('@ecency/render-helper')
   return renderHelperPromise
 }
-
-const EMBED_HOSTS = [
-  'youtube.com',
-  'www.youtube.com',
-  'youtu.be',
-  'player.vimeo.com',
-  'vimeo.com',
-  '3speak.tv',
-  'www.3speak.tv',
-  'play.3speak.tv',
-  'odysee.com',
-  'rumble.com',
-  'www.bitchute.com',
-  'd.tube',
-  'ipfs.io',
-  'gateway.ipfs.io'
-]
 
 function decodedImageUrl (url) {
   return String(url || '').replace(/&amp;/g, '&')
@@ -132,7 +116,8 @@ export default {
   name: 'render',
   props: {
     input: { type: String, default: '' },
-    preload: { type: Boolean, default: false }
+    preload: { type: Boolean, default: false },
+    embeds: { type: Boolean, default: true }
   },
   data () {
     return {
@@ -142,7 +127,8 @@ export default {
     }
   },
   watch: {
-    input: 'render'
+    input: 'render',
+    embeds: 'render'
   },
   mounted () {
     installPurifyHooks()
@@ -166,7 +152,7 @@ export default {
             ADD_TAGS: ['iframe'],
             ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
           })
-          const enhanced = this.enhanceEmbeds(safe)
+          const enhanced = this.embeds ? this.enhanceEmbeds(safe) : this.stripEmbeds(safe)
           // The page title is the only h1; post content headings start at h2.
           const normalizeHeadings = html => html
             .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
@@ -213,6 +199,51 @@ export default {
         if (!anchor.querySelector('img')) classes.push('markdown-video-link--text')
         anchor.setAttribute('class', classes.join(' '))
         anchor.setAttribute('aria-label', 'Play video')
+      }
+      return doc.body.innerHTML
+    },
+
+    /**
+     * The composer's "Preview embeds" setting. Keep the link, but drop the
+     * suspended player and its thumbnail so the preview stays lightweight.
+     */
+    stripEmbeds (html) {
+      if (typeof DOMParser === 'undefined') return html
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      doc.querySelectorAll('iframe').forEach(node => {
+        const src = node.getAttribute('src') || ''
+        if (!/^https?:\/\//i.test(src)) {
+          node.remove()
+          return
+        }
+        const link = doc.createElement('a')
+        link.setAttribute('href', src)
+        link.setAttribute('target', '_blank')
+        link.setAttribute('rel', 'noopener noreferrer')
+        link.textContent = 'Open embedded media'
+        node.replaceWith(link)
+      })
+      for (const anchor of doc.querySelectorAll('a.markdown-video-link')) {
+        const youtube = anchor.getAttribute('data-youtube')
+        const candidate = anchor.getAttribute('href') ||
+          anchor.getAttribute('data-video-href') ||
+          anchor.getAttribute('data-embed-src') ||
+          (youtube ? 'https://www.youtube.com/watch?v=' + youtube : '')
+        if (!/^https?:\/\//i.test(candidate || '')) {
+          anchor.remove()
+          continue
+        }
+        anchor.className = ''
+        anchor.setAttribute('href', candidate)
+        anchor.removeAttribute('data-embed-src')
+        anchor.removeAttribute('data-video-href')
+        anchor.removeAttribute('data-youtube')
+        anchor.removeAttribute('role')
+        anchor.removeAttribute('tabindex')
+        anchor.setAttribute('target', '_blank')
+        anchor.setAttribute('rel', 'noopener noreferrer')
+        anchor.setAttribute('aria-label', 'Open video')
+        anchor.textContent = 'Watch video'
       }
       return doc.body.innerHTML
     },

@@ -35,9 +35,9 @@
       "totalKb": 710
     },
     "/compose": {
-      "jsKb": 490,
-      "routeJsKb": 132,
-      "totalKb": 700
+      "jsKb": 496,
+      "routeJsKb": 136,
+      "totalKb": 710
     },
     "/search?q=hive": {
       "jsKb": 465,

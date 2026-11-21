@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   applyMarkdownAction,
   byteLength,
+  continueMarkdownList,
+  indentSelection,
   insertImage,
   insertLink,
   insertTable,
@@ -57,6 +59,29 @@ describe('markdown editing helpers', () => {
     expect(applyMarkdownAction('a', 0, 1, { type: 'unknown' }).text).toBe('a')
   })
 
+  it('supports underline, strikethrough, headings and task lists', () => {
+    expect(applyMarkdownAction('text', 0, 4, { type: 'underline' }).text).toBe('<u>text</u>')
+    expect(applyMarkdownAction('text', 0, 4, { type: 'strikethrough' }).text).toBe('~~text~~')
+    expect(applyMarkdownAction('text', 0, 4, { type: 'heading1' }).text).toBe('# text')
+    expect(applyMarkdownAction('text', 0, 4, { type: 'heading3' }).text).toBe('### text')
+    expect(applyMarkdownAction('text', 0, 4, { type: 'taskList' }).text).toBe('- [ ] text')
+    expect(applyMarkdownAction('', 0, 0, { type: 'embed', markdown: '<iframe src="x"></iframe>' }).text)
+      .toContain('<iframe src="x"></iframe>')
+  })
+
+  it('indents and outdents selected lines', () => {
+    expect(indentSelection('one\ntwo', 0, 7).text).toBe('  one\n  two')
+    expect(indentSelection('  one\n  two', 0, 11, { outdent: true }).text).toBe('one\ntwo')
+  })
+
+  it('continues bullet, numbered and task lists on Enter', () => {
+    expect(continueMarkdownList('- one', 5, 5).text).toBe('- one\n- ')
+    expect(continueMarkdownList('1. one', 6, 6).text).toBe('1. one\n2. ')
+    expect(continueMarkdownList('- [ ] one', 9, 9).text).toBe('- [ ] one\n- [ ] ')
+    expect(continueMarkdownList('- ', 2, 2).text).toBe('')
+    expect(continueMarkdownList('plain', 5, 5)).toBeNull()
+  })
+
   it('counts words, reading time and UTF-8 bytes', () => {
     expect(wordCount('Hello **Hive** and [friends](https://hive.io)')).toBe(4)
     expect(wordCount('```\ncode block\n```')).toBe(0)
@@ -69,6 +94,9 @@ describe('markdown editing helpers', () => {
     expect(shortcutMarkdownAction({ key: 'b', ctrlKey: true })).toEqual({ type: 'bold' })
     expect(shortcutMarkdownAction({ key: 'I', metaKey: true })).toEqual({ type: 'italic' })
     expect(shortcutMarkdownAction({ key: 'k', ctrlKey: true })).toEqual({ type: 'link' })
+    expect(shortcutMarkdownAction({ key: 'u', ctrlKey: true })).toEqual({ type: 'underline' })
+    expect(shortcutMarkdownAction({ key: 'X', ctrlKey: true, shiftKey: true })).toEqual({ type: 'strikethrough' })
+    expect(shortcutMarkdownAction({ key: '1', ctrlKey: true, altKey: true })).toEqual({ type: 'heading1' })
     expect(shortcutMarkdownAction({ key: 'b' })).toBeNull()
     expect(shortcutMarkdownAction({ key: 's', ctrlKey: true })).toBeNull()
   })

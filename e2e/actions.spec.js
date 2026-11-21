@@ -152,6 +152,53 @@ test.describe('action flows', () => {
     expect(sign.prefix).toContain('"type":"Buffer"')
   })
 
+  test('compose inserts a media embed and shows the split preview', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByLabel('Post body in Markdown').fill('A video from Hive:')
+    await page.getByRole('button', { name: 'Insert media embed' }).click()
+    await expect(page.getByRole('heading', { name: 'Insert media' })).toBeVisible()
+    await page.getByLabel('Media URL').fill('https://youtu.be/dQw4w9WgXcQ')
+    await expect(page.getByText('YouTube', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Insert media', exact: true }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue(/https:\/\/youtu\.be\/dQw4w9WgXcQ/)
+
+    await page.getByRole('button', { name: 'Split' }).click()
+    const preview = page.locator('.compose-preview')
+    await expect(preview).toBeVisible()
+    await expect(preview).toContainText('A video from Hive:')
+    await expect(preview.locator('.markdown-video-link').first()).toBeVisible()
+
+    await page.getByRole('button', { name: 'Editor settings' }).dispatchEvent('click')
+    await expect(page.getByRole('heading', { name: 'Editor settings' })).toBeVisible()
+    await page.getByLabel('Auto-update preview').click()
+    await page.getByLabel('Preview embeds').click()
+    await page.getByRole('button', { name: 'Close editor settings' }).click()
+    await expect(page.getByText('Preview updates when you refresh.')).toBeVisible()
+    await expect(preview.getByText('Watch video')).toBeVisible()
+  })
+
+  test('compose table dialog and HTML source mode', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await page.getByRole('button', { name: 'Insert table' }).click()
+    await expect(page.getByRole('heading', { name: 'Insert table' })).toBeVisible()
+    await page.getByLabel('Table columns').fill('2')
+    await page.getByLabel('Table rows').fill('3')
+    await page.locator('.md-toolbar__dialog').getByRole('button', { name: 'Insert table' }).click()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue(/\| Column 1 \| Column 2 \|/)
+
+    await page.getByRole('button', { name: 'Editor settings' }).dispatchEvent('click')
+    await page.getByRole('button', { name: 'HTML source' }).click()
+    await page.getByRole('button', { name: 'Close editor settings' }).click()
+    await expect(page.getByLabel('Post body in HTML')).toBeVisible()
+    await expect(page.getByLabel('Post body in Markdown')).toHaveCount(0)
+  })
+
   test('compose writes media, AI, countdown and declined-reward metadata', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)
