@@ -87,6 +87,11 @@ Post pages keep embeds enabled by default.
   new toolbar and preview controls.
 - Visual smoke at 1440px: split preview shows a YouTube click-to-play thumbnail,
   heading and list rendering; the settings dialog fits without overflow.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T092750Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: Split preview renders the YouTube
+  thumbnail, heading and list; the media dialog and editor settings open; no
+  page errors were reported.
 
 ## Follow-ups
 
