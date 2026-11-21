@@ -17,39 +17,10 @@ import { spawn } from 'node:child_process'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { chromium } from '@playwright/test'
-import { applyMetadata, buildMetadataTemplate, META_TEMPLATE_FILE } from './lib/prerender-meta.mjs'
+import { applyMetadata, buildMetadataTemplate, META_TEMPLATE_FILE, PRERENDER_ROUTES } from './lib/prerender-meta.mjs'
 
 const PORT = 4188
-const ROUTES = [
-  '/',
-  '/blocks',
-  '/trending',
-  '/created',
-  '/hot',
-  '/witnesses',
-  '/witness',
-  '/proposals',
-  '/hbd',
-  '/market',
-  '/markets',
-  '/health',
-  '/nodes',
-  '/magi',
-  '/create',
-  '/hbdstabilizer',
-  '/compose',
-  '/search',
-  '/lightning',
-  '/404',
-  // Microblog index and the five formats. Their metadata is client-rendered,
-  // so they get real prerendered shells instead of the generic 404 shell.
-  '/shorts',
-  '/shorts/snaps',
-  '/shorts/waves',
-  '/shorts/threads',
-  '/shorts/dbuzz',
-  '/shorts/moments'
-]
+const ROUTES = PRERENDER_ROUTES
 const DIST = resolve(process.cwd(), 'dist/spa')
 const DEFAULT_TITLE = 'hive.ausbit.dev — Hive block explorer'
 const DEFAULT_DESCRIPTION = 'A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.'

@@ -1,6 +1,41 @@
 export const MARKER = '<!-- hive:metadata-only-prerender -->'
 export const META_TEMPLATE_FILE = '__meta.html'
 
+// Routes prerendered by scripts/prerender.mjs. The nginx config in
+// deploy/nginx/hive.ausbit.dev.conf must serve each one with a real 200 and
+// its own metadata shell; a missing entry makes direct navigation return the
+// 404 shell (a title flash of "Page not found" before Vue mounts).
+export const PRERENDER_ROUTES = [
+  '/',
+  '/blocks',
+  '/trending',
+  '/created',
+  '/hot',
+  '/witnesses',
+  '/witness',
+  '/proposals',
+  '/hbd',
+  '/market',
+  '/markets',
+  '/health',
+  '/nodes',
+  '/magi',
+  '/create',
+  '/hbdstabilizer',
+  '/compose',
+  '/search',
+  '/lightning',
+  '/404',
+  // Microblog index and the five formats. Their metadata is client-rendered,
+  // so they get real prerendered shells instead of the generic 404 shell.
+  '/shorts',
+  '/shorts/snaps',
+  '/shorts/waves',
+  '/shorts/threads',
+  '/shorts/dbuzz',
+  '/shorts/moments'
+]
+
 export function escapeHtml (value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
