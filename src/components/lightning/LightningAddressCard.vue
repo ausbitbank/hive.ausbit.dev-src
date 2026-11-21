@@ -122,7 +122,7 @@ export default {
       return lightningAddressQrUrl(this.account, this.currency)
     },
     openUrl () {
-      return 'https://v4v.app/@' + encodeURIComponent(this.account)
+      return 'https://v4v.app'
     },
     currencyOptions () {
       return [

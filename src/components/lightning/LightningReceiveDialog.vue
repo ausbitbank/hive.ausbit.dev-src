@@ -266,7 +266,7 @@ export default {
       return Boolean(this.account) && Number(this.amount) > 0 && !this.busy
     },
     openUrl () {
-      return 'https://v4v.app/@' + encodeURIComponent(this.account)
+      return 'https://v4v.app'
     },
     dialogTitle () {
       return this.intent === 'zap' ? 'Zap @' + this.account : 'Receive sats as ' + this.receiveLabel
