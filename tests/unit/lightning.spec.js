@@ -159,11 +159,14 @@ describe('v4vapp memos', () => {
       reference: 'woVqr/s6PX'
     })
     expect(cleanV4vappMemo(received)).toContain('Converted 77 sats')
+    expect(cleanV4vappMemo(received)).toContain('fee 52 sats')
   })
 
   it('parses a keepsats deposit', () => {
-    const parsed = parseV4vappMemo('Deposit 21.999 HBD to 34,082 sats with fee: 1,069 for hivemodular2 | § 0600_fc89fd_1')
+    const memo = 'Deposit 21.999 HBD to 34,082 sats with fee: 1,069 for hivemodular2 | § 0600_fc89fd_1'
+    const parsed = parseV4vappMemo(memo)
     expect(parsed).toMatchObject({ kind: 'deposit', sats: 34082, feeSats: 1069, amount: 21.999, asset: 'HBD' })
+    expect(cleanV4vappMemo(memo)).toBe('Deposit of 34,082 sats (fee 1,069 sats)')
   })
 
   it('hides long invoices from the activity label', () => {

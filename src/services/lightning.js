@@ -282,10 +282,10 @@ export function cleanV4vappMemo (value) {
   if (!parsed) return typeof value === 'string' ? value : ''
   if (parsed.invoice) return 'Lightning invoice payment'
   if (parsed.kind === 'received' && parsed.sats !== null) {
-    return 'Converted ' + formatSats(parsed.sats) + ' sats' + (parsed.feeSats ? ' (fee ' + formatSats(parsed.feeSats) + ' sats)' : '')
+    return 'Converted ' + formatSats(parsed.sats) + (parsed.feeSats ? ' (fee ' + formatSats(parsed.feeSats) + ')' : '')
   }
   if (parsed.kind === 'deposit' && parsed.sats !== null) {
-    return 'Deposit of ' + formatSats(parsed.sats) + ' sats' + (parsed.feeSats ? ' (fee ' + formatSats(parsed.feeSats) + ' sats)' : '')
+    return 'Deposit of ' + formatSats(parsed.sats) + (parsed.feeSats ? ' (fee ' + formatSats(parsed.feeSats) + ')' : '')
   }
   if (parsed.zap) return parsed.message || 'Lightning zap'
   return parsed.message || String(value || '')

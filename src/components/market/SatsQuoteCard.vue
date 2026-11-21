@@ -106,7 +106,6 @@ export default {
     },
     conversionLabel () {
       if (!Number(this.satsInput)) return 'Enter sats to convert'
-      if (!this.conversion) return '—'
       return this.conversionValue(this.satsInput)
     }
   },
