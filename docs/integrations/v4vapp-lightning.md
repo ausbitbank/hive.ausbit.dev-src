@@ -1,7 +1,8 @@
 # v4vapp / Lightning integration study
 
 Status: research + options, not a delivery commitment. Verified against the live
-v4vapp API on 2026-11-20 (API `6.6.0`).
+v4vapp API on 2026-11-20 (API `6.6.0`); CORS and the public contract
+re-verified on 2026-11-21 (API `6.6.1`, see §3).
 
 Scope: how hive.ausbit.dev could use the v4vapp Hive ↔ Bitcoin Lightning bridge
 across the site (profiles, posts, tips, search, health, markets) and the wallet
@@ -63,11 +64,13 @@ The biggest concrete wins are:
 | Keepsats → LN | `v4vapp_transfer` with invoice/address memo | LN payee | LN routing only (no conversion fee) |
 | Keepsats → user | `v4vapp_transfer` with `to_account` | Another keepsats user | No fee |
 
-Live config on 2026-11-20: `conv_fee_percent=2.9%`, `conv_fee_sats=50`,
-`hive_return_fee=0.002`, `minimum_invoice_payment_sats=50`,
-`maximum_invoice_payment_sats=180000`, rate limits of 600k sats/4h,
-1.2M sats/72h and 2M sats/168h. Treat these as server-controlled, not constants:
-read them from `GET /v1` and show them in the UI.
+Live config on 2026-11-21: `conv_fee_percent=2.9%`, `conv_fee_sats=50`,
+`hive_return_fee=0.002`, `maximum_invoice_payment_sats=180000`, rate limits of
+600k sats/4h, 1.2M sats/72h and 2M sats/168h. The effective minimum is 50 sats:
+`config.minimum_invoice_payment_sats` briefly reported `1.0` while
+`config.min_max.min.sats` stayed at `50`, so read both and use the larger value.
+Treat all of these as server-controlled, not constants: read them from `GET /v1`
+and show them in the UI.
 
 ### 2.2 Endpoint inventory (verified)
 
@@ -116,7 +119,8 @@ Auth flow (reverse-engineered from the v4vapp frontend and a live challenge):
 `scope=hive:posting` is accepted by the challenge endpoint; **verify that
 validate accepts posting** before relying on it. If only active is accepted,
 do not ask for active merely to read a balance — use the on-chain
-`#balance_request` fallback or skip mode C.
+`#balance_request` fallback or skip mode C. As of 2026-11-21 this is still
+unverified; treat it as a Phase 2 spike, not a shipped assumption.
 
 ### 2.3 On-chain formats
 
@@ -186,7 +190,8 @@ Consequences for the UI:
 
 | Constraint | Detail | Mitigation |
 | --- | --- | --- |
-| **CORS** | At implementation time `https://hive.ausbit.dev` was **not** in the API allowlist (no `Access-Control-Allow-Origin`); `http://localhost:8080` was. v4vapp approved the production origin on 2026-11-20; the allowlist entry was propagating. | Keep the degraded-state fallbacks for preview/staging origins and bridge outages. A same-origin Cloudflare Worker proxy remains the fallback if the allowlist lapses, but does not fix third-party refresh cookies. |
+| **CORS** | **Resolved 2026-11-21.** `https://hive.ausbit.dev` is on the allowlist: `GET /v1` returns `access-control-allow-origin: https://hive.ausbit.dev` with `access-control-allow-credentials: true`; `OPTIONS` preflights allow `POST`, `Authorization` and `Content-Type`; `401`/`422` responses carry the header too, so the browser can read errors. Unlisted origins (including Playwright's `127.0.0.1:4173`) receive no header and there is no wildcard reflection. | Treat it as a tested invariant, not a hope: `scripts/v4vapp-contract-check.mjs` asserts the header and the public contract daily in CI. Keep offline/outage fallbacks. Do not ask the operator for more origins — preview and E2E origins stay mocked. |
+| **Unreachable vs blocked** | A browser cannot tell a CORS block from some network failures, but it can tell whether it is offline and whether the request timed out. | Keep four distinct UI states (`offline`, `timeout`, `degraded`, `blocked`). Only `blocked` mentions browser/CORS restrictions; an outage must not be blamed on the allowlist. |
 | **Refresh cookie** | v4v.app's httpOnly refresh cookie is first-party there; as a third-party cookie it may be blocked. | Use short-lived bearer tokens held in memory, re-auth on expiry. Do not build the product around silent refresh. |
 | **Custody** | Keepsats is an off-chain IOU. The on-chain `v4vapp_transfer` is an instruction/notification, not escrow. | Label "held by v4v.app (custodial)", default off, show operator + terms, never imply hive.ausbit.dev holds funds. |
 | **Single operator** | One bridge, one LND node, no SLA. `FAILURE_REASON_NO_ROUTE` is visible in public notifications. | Treat as best-effort, show pending/failed/refunded states, never claim success before settlement. |
@@ -638,6 +643,12 @@ effective rate, and show the observed fixed fee warning for small amounts.
 - `app_name=hiveausbit` on invoice creation; include a stable `clientId` for
   auth (random, 10–100 chars, stored locally, not a secret).
 - Show bridge attribution and a link to v4v.app/terms near the first use.
+- Bridge capability is a state, not an exception: `unknown | available |
+  degraded | offline | timeout | blocked | unauthorized`. `probeBridge()`
+  caches `GET /v1` for five minutes and never throws; screens use it to decide
+  whether to promise a live quote. A caller abort is not a bridge failure.
+- Read live fees/limits from `GET /v1` (including `min_max`) and label every
+  fallback value as an estimate/default.
 
 ### 6.8 Security rules
 
@@ -662,7 +673,7 @@ effective rate, and show the observed fixed fee warning for small amounts.
 
 | Phase | Scope | Deliverables | Exit criteria |
 | --- | --- | --- | --- |
-| **0. Contract** | Confirm CORS allowlist, posting-scope auth, rate limits, terms, support contact | Short decision note; dev spike against `localhost:8080` | Production origin allowed, or proxy decision made |
+| **0. Contract** | ~~Confirm CORS allowlist~~, posting-scope auth, rate limits, terms, support contact | CORS verified live on 2026-11-21 (§3); `scripts/v4vapp-contract-check.mjs` runs daily in CI | **CORS done.** Posting-scope auth is the remaining Phase 2 spike |
 | **1. Receive + identity** | Address derivation, profile/tip cards, receive dialog, status polling, wallet history classification (read-only) | `services/v4vapp.js`, `services/lightning.js`, `LightningAddressCard`, `LightningInvoiceCard`, `LightningReceiveDialog`, tip integration, `/lightning` hub | Unit tests (math, status, memo), E2E with mocked API, axe 1440/390, live smoke with 1 HBD invoice |
 | **2. Pay with Hive/HBD** | Decode, quote, fee display, queue transfer to `@v4vapp`, pending/refund tracking | `LightningPayDialog`, queue label/sidecar, wallet/tax classification | E2E queue + mocked settlement/refund; manual live payment of a 100-sat invoice; no auto-broadcast |
 | **3. Keepsats (opt-in)** | Deposit, balance, withdraw, transfer, pay invoice, notifications; choose B (on-chain) first, C (API) if approved | `KeepsatsPanel`, `v4vapp_transfer` builder, notification parsing, custody disclosure | Explicit opt-in, balance reconciliation, withdraw-to-Hive works, axe, no token leakage |
@@ -705,14 +716,16 @@ are explicit; no new dependency in the main bundle.
 
 **Technical**
 
-- ~~Can `https://hive.ausbit.dev` be added to the API CORS allowlist?~~ Answered
-  2026-11-20: v4vapp approved the production origin; the entry was still
-  propagating. Verify the live `Access-Control-Allow-Origin` header before
-  softening user-facing degraded-state copy. Preview/staging origins are still
-  an open question; a same-origin Worker proxy remains acceptable for public
-  endpoints.
+- ~~Can `https://hive.ausbit.dev` be added to the API CORS allowlist?~~ **Yes,
+  verified 2026-11-21.** `GET /v1`, the public reads and `POST` preflights
+  return `access-control-allow-origin: https://hive.ausbit.dev`; unlisted
+  origins get no header. The nightly contract check fails if the entry lapses.
+  No proxy is needed. Preview/staging origins and Playwright's
+  `127.0.0.1:4173` are not allowlisted and should stay mocked; do not ask for
+  more origins.
 - Does `/auth/validate` accept `scope=hive:posting`, or is active required?
-  If active is required, can we get a read-only balance scope?
+  If active is required, can we get a read-only balance scope? **Still open;
+  Phase 2 spike only.**
 - Is there a webhook/websocket or a batch status endpoint? Polling is the main
   scaling limit for POS.
 - What is the refund SLA and how is a refund surfaced (Hive transfer,
@@ -775,7 +788,9 @@ CANCELED  → expired=true (observed when expiry passes); offer a new invoice
 ```
 
 Use `paid`/`settled`/`expired`, not `state` alone. Do not treat `state` as a
-stable enum across versions.
+stable enum across versions. On 2026-11-21 an unknown `r_hash` also returned
+`state: CANCELED` with `expired: true`, so never infer "it was never paid" from
+this response alone — confirm on Hive.
 
 ### C. Amount math examples (2026-11-20)
 

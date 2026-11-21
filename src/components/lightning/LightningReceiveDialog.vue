@@ -71,7 +71,7 @@
             />
             <div class="lightning-dialog__fee-note">
               <q-icon name="info_outline" size="15px" aria-hidden="true" />
-              The sender pays sats. Small invoices lose a fixed ~50 sat bridge fee.
+              The sender pays sats. Small invoices lose a fixed {{ feeFixedLabel }} sat bridge fee.
             </div>
           </div>
 
@@ -86,17 +86,17 @@
             hint="Keep it short and free of personal information."
           />
 
-          <div v-if="error" class="lightning-dialog__error" role="alert">
+          <div v-if="error && !fallback" class="lightning-dialog__error" role="alert">
             <q-icon name="error_outline" size="16px" aria-hidden="true" />
             <span>{{ error }}</span>
           </div>
 
           <div v-if="fallback" class="lightning-dialog__fallback">
-            <p>
-              This browser cannot create a live invoice right now (the bridge blocked the request or
-              is unreachable). The Lightning address below still works: ask the sender to enter the
-              amount in their wallet, or open v4v.app.
-            </p>
+            <div class="lightning-dialog__fallback-head">
+              <q-icon :name="failureIcon" size="16px" aria-hidden="true" />
+              <strong>{{ failureTitle }}</strong>
+            </div>
+            <p>{{ failureMessage }}</p>
             <lightning-address-card :account="account" compact :show-qr="true" />
           </div>
 
@@ -133,7 +133,8 @@
 
           <div v-if="status === 'unknown'" class="lightning-dialog__error" role="alert">
             <q-icon name="cloud_off" size="16px" aria-hidden="true" />
-            <span>Live status checks are unavailable. The invoice may still be paid; watch the Hive wallet for a transfer from @v4vapp.</span>
+            <span>{{ statusUnknownText }}</span>
+            <q-btn flat dense no-caps color="amber-9" label="Retry" @click="startPolling" />
           </div>
 
           <div class="lightning-dialog__actions">
@@ -176,7 +177,16 @@
 
 <script>
 import { pollWhileVisible } from 'src/services/polling'
-import { checkInvoice, createInvoice, isBridgeBlocked } from 'src/services/v4vapp'
+import { normalizeFeePolicy } from 'src/services/lightning'
+import {
+  BRIDGE_STATES,
+  bridgeFeePolicy,
+  checkInvoice,
+  createInvoice,
+  getBridgeState,
+  getBridgeStatus,
+  isBridgeUnavailable
+} from 'src/services/v4vapp'
 import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
 import LightningInvoiceCard from 'components/lightning/LightningInvoiceCard.vue'
 
@@ -203,9 +213,12 @@ export default {
       busy: false,
       error: '',
       fallback: false,
+      failureState: '',
+      feePolicy: normalizeFeePolicy({}),
       invoice: null,
       status: 'open',
-      poller: null
+      poller: null,
+      pollFailures: 0
     }
   },
   computed: {
@@ -234,12 +247,50 @@ export default {
     },
     openUrl () {
       return 'https://v4v.app/@' + encodeURIComponent(this.account)
+    },
+    feeFixedLabel () {
+      return Number(this.feePolicy.fixed || 0).toLocaleString('en-US')
+    },
+    failureTitle () {
+      if (this.failureState === BRIDGE_STATES.OFFLINE) return 'You are offline'
+      if (this.failureState === BRIDGE_STATES.TIMEOUT) return 'The bridge did not respond'
+      if (this.failureState === BRIDGE_STATES.DEGRADED) return 'The bridge is busy'
+      if (this.failureState === BRIDGE_STATES.BLOCKED) return 'This browser could not reach the bridge'
+      return 'Live invoice unavailable'
+    },
+    failureMessage () {
+      if (this.failureState === BRIDGE_STATES.OFFLINE) {
+        return 'Reconnect to create a live invoice. The Lightning address below still works and can be paid as soon as the sender is online.'
+      }
+      if (this.failureState === BRIDGE_STATES.TIMEOUT || this.failureState === BRIDGE_STATES.DEGRADED) {
+        return 'The bridge is slow or rate-limiting right now. Try again in a moment, or use the address below and let the sender enter the amount.'
+      }
+      if (this.failureState === BRIDGE_STATES.BLOCKED) {
+        return 'The bridge API was blocked before it answered — usually an extension, VPN or intermediary. The Lightning address below still works: ask the sender to enter the amount in their wallet, or open v4v.app.'
+      }
+      return 'The bridge could not create an invoice. The Lightning address below still works, or try again.'
+    },
+    failureIcon () {
+      if (this.failureState === BRIDGE_STATES.OFFLINE) return 'wifi_off'
+      if (this.failureState === BRIDGE_STATES.BLOCKED) return 'shield'
+      return 'cloud_off'
+    },
+    statusUnknownText () {
+      if (this.failureState === BRIDGE_STATES.OFFLINE) {
+        return 'You are offline, so the payment status could not be checked. The invoice may still be paid; reconnect and retry, or watch the Hive wallet for a transfer from @v4vapp.'
+      }
+      if (this.failureState === BRIDGE_STATES.BLOCKED) {
+        return 'This browser could not read the payment status — usually an extension, VPN or intermediary. The invoice may still be paid; watch the Hive wallet for a transfer from @v4vapp.'
+      }
+      return 'Live status checks are unavailable right now. The invoice may still be paid; watch the Hive wallet for a transfer from @v4vapp.'
     }
   },
   watch: {
     modelValue (open) {
-      if (open) this.resetForm()
-      else {
+      if (open) {
+        this.resetForm()
+        this.loadFeePolicy()
+      } else {
         this.stopPolling()
         this.resetInvoice()
       }
@@ -257,9 +308,18 @@ export default {
       if (currency === 'hive') return 'hive'
       return 'sats'
     },
+    async loadFeePolicy () {
+      try {
+        const status = await getBridgeStatus()
+        if (status) this.feePolicy = bridgeFeePolicy(status)
+      } catch {
+        // Keep the last known/default policy; the create call reports reality.
+      }
+    },
     onCurrencyChange (value) {
       this.receiveCurrency = this.defaultReceiveFor(value)
       this.fallback = false
+      this.failureState = ''
       this.error = ''
     },
     resetForm () {
@@ -272,6 +332,7 @@ export default {
       this.note = this.defaultNote
       this.error = ''
       this.fallback = false
+      this.failureState = ''
       this.busy = false
     },
     resetInvoice () {
@@ -280,6 +341,7 @@ export default {
       this.status = 'open'
       this.error = ''
       this.fallback = false
+      this.failureState = ''
       this.busy = false
     },
     async create () {
@@ -287,6 +349,7 @@ export default {
       this.busy = true
       this.error = ''
       this.fallback = false
+      this.failureState = ''
       try {
         const invoice = await createInvoice({
           account: this.account,
@@ -299,16 +362,19 @@ export default {
         })
         this.invoice = invoice
         this.status = 'open'
+        this.pollFailures = 0
         this.startPolling()
       } catch (error) {
-        this.error = error?.message || 'Could not create a Lightning invoice.'
-        this.fallback = isBridgeBlocked(error)
+        this.failureState = getBridgeState().state
+        this.fallback = isBridgeUnavailable(error)
+        this.error = this.fallback ? '' : (error?.message || 'Could not create a Lightning invoice.')
       } finally {
         this.busy = false
       }
     },
     startPolling () {
       this.stopPolling()
+      this.pollFailures = 0
       this.poller = pollWhileVisible(() => this.check(), 2500)
       this.poller.start()
     },
@@ -323,6 +389,7 @@ export default {
       }
       try {
         const result = await checkInvoice(this.invoice.rHash)
+        this.pollFailures = 0
         this.status = result.status
         if (result.status === 'paid') {
           this.stopPolling()
@@ -331,6 +398,11 @@ export default {
           this.stopPolling()
         }
       } catch (error) {
+        this.pollFailures += 1
+        this.failureState = getBridgeState().state
+        // One dropped poll should not hide a payable invoice. Stop after a few
+        // failures and let the user retry, or keep watching the Hive wallet.
+        if (this.pollFailures < 3) return
         this.status = 'unknown'
         this.stopPolling()
         this.error = error?.message || ''
@@ -458,6 +530,14 @@ export default {
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
   background: rgba(255, 255, 255, 0.02);
+}
+
+.lightning-dialog__fallback-head {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #ffcc80;
+  font-size: 0.74rem;
 }
 
 .lightning-dialog__fallback p {

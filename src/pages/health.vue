@@ -208,6 +208,71 @@
           </div>
           <health-node-summary ref="nodeSummary" @summary="nodeSummary = $event" />
         </section>
+
+        <section class="net-section" aria-labelledby="lightning-bridge-title">
+          <div class="net-section__head">
+            <div>
+              <h2 id="lightning-bridge-title" class="net-section__title">Lightning bridge</h2>
+              <span class="net-section__hint">
+                Advisory third-party status from api.v4v.app · not part of the Hive consensus checks
+              </span>
+            </div>
+            <q-btn
+              flat
+              dense
+              no-caps
+              color="primary"
+              icon="refresh"
+              label="Check bridge"
+              :loading="bridgeLoading"
+              @click="loadBridge(true)"
+            />
+          </div>
+
+          <q-card flat bordered class="health-bridge">
+            <div class="health-bridge__head">
+              <q-icon :name="bridgeIcon" size="22px" :color="bridgeColor" aria-hidden="true" />
+              <div class="health-bridge__text">
+                <div class="health-bridge__state">{{ bridgeStateLabel }}</div>
+                <p class="health-bridge__note">{{ bridgeStateNote }}</p>
+              </div>
+              <span v-if="bridgeCheckedAt" class="health-bridge__time">
+                <q-icon name="schedule" size="13px" aria-hidden="true" />
+                {{ bridgeCheckedLabel }}
+              </span>
+            </div>
+
+            <dl v-if="bridge" class="health-bridge__facts">
+              <div>
+                <dt>API version</dt>
+                <dd>{{ bridge.version || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Bridge message</dt>
+                <dd>{{ bridge.message || '—' }}</dd>
+              </div>
+              <div>
+                <dt>LND</dt>
+                <dd>{{ bridgeLndLabel }}</dd>
+              </div>
+              <div>
+                <dt>Conversion fee</dt>
+                <dd>{{ bridgeFeeLabel }}</dd>
+              </div>
+              <div>
+                <dt>Invoice range</dt>
+                <dd>{{ bridgeRangeLabel }}</dd>
+              </div>
+              <div>
+                <dt>Price quote</dt>
+                <dd>{{ bridgeQuoteLabel }}</dd>
+              </div>
+            </dl>
+            <div v-else class="health-bridge__empty">
+              {{ bridgeEmptyLabel }}
+            </div>
+          </q-card>
+        </section>
       </template>
     </div>
   </q-page>
@@ -382,6 +447,85 @@
   text-decoration: underline;
 }
 
+.health-bridge {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.health-bridge__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.health-bridge__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.health-bridge__state {
+  color: #e4eaed;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.health-bridge__note {
+  margin: 0.15rem 0 0;
+  color: #90a4ae;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.health-bridge__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #78909c;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.health-bridge__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.health-bridge__facts > div {
+  min-width: 0;
+  padding: 0.6rem 0.85rem;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.health-bridge__facts > div:first-child {
+  border-left: 0;
+}
+
+.health-bridge__facts dt {
+  color: #78909c;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.health-bridge__facts dd {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 0.82rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.health-bridge__empty {
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+  color: #90a4ae;
+  font-size: 0.74rem;
+}
+
 @media (max-width: 1023px) {
   .health-chain__facts > div:nth-child(-n + 4) {
     border-top: 1px solid var(--border-subtle);
@@ -405,6 +549,14 @@
     width: 100%;
   }
 
+  .health-bridge__head {
+    flex-wrap: wrap;
+  }
+
+  .health-bridge__time {
+    width: 100%;
+  }
+
   .health-chain__facts > div {
     border-left: 0 !important;
     border-top: 1px solid var(--border-subtle) !important;
@@ -424,6 +576,7 @@ import DataNotice from 'components/ui/DataNotice.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchAccounts, fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { BRIDGE_STATES, bridgeFeePolicy, probeBridge } from 'src/services/v4vapp'
 import {
   chainVersions,
   formatCount,
@@ -469,6 +622,11 @@ export default {
       accountCount: null,
       rankedWitnesses: [],
       nodeSummary: null,
+      bridge: null,
+      bridgeState: BRIDGE_STATES.UNKNOWN,
+      bridgeError: '',
+      bridgeLoading: false,
+      bridgeCheckedAt: 0,
       loading: true,
       loadError: '',
       lastUpdated: null,
@@ -650,6 +808,86 @@ export default {
     lastUpdatedLabel () {
       if (!this.lastUpdated) return 'Not updated yet'
       return 'Updated ' + new Date(this.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    },
+    bridgeStateLabel () {
+      if (this.bridgeState === BRIDGE_STATES.AVAILABLE) return 'Bridge reachable'
+      if (this.bridgeState === BRIDGE_STATES.DEGRADED) return 'Bridge degraded'
+      if (this.bridgeState === BRIDGE_STATES.OFFLINE) return 'You are offline'
+      if (this.bridgeState === BRIDGE_STATES.TIMEOUT) return 'Bridge not responding'
+      if (this.bridgeState === BRIDGE_STATES.BLOCKED) return 'Blocked by the browser'
+      if (this.bridgeState === BRIDGE_STATES.UNAUTHORIZED) return 'Sign-in required'
+      return 'Not checked yet'
+    },
+    bridgeStateNote () {
+      if (this.bridgeState === BRIDGE_STATES.AVAILABLE) {
+        return 'The browser can read the bridge API and the live fee configuration.'
+      }
+      if (this.bridgeState === BRIDGE_STATES.DEGRADED) {
+        return 'The bridge answered with a rate limit or server error. Existing invoices and on-chain transfers are unaffected.'
+      }
+      if (this.bridgeState === BRIDGE_STATES.OFFLINE) {
+        return 'This browser is offline. Bridge status will refresh when the connection returns.'
+      }
+      if (this.bridgeState === BRIDGE_STATES.TIMEOUT) {
+        return 'The bridge did not answer within eight seconds. This is advisory only; Lightning payments may still settle.'
+      }
+      if (this.bridgeState === BRIDGE_STATES.BLOCKED) {
+        return 'The API was blocked before it answered, usually by an extension, VPN or intermediary. It is not a Hive consensus problem.'
+      }
+      if (this.bridgeState === BRIDGE_STATES.UNAUTHORIZED) {
+        return 'The bridge is reachable but requires a signed-in session for that request.'
+      }
+      return 'Run a check to read the bridge version, LND state and live fee limits.'
+    },
+    bridgeIcon () {
+      if (this.bridgeState === BRIDGE_STATES.AVAILABLE) return 'check_circle'
+      if (this.bridgeState === BRIDGE_STATES.OFFLINE) return 'wifi_off'
+      if (this.bridgeState === BRIDGE_STATES.BLOCKED) return 'shield'
+      if (this.bridgeState === BRIDGE_STATES.UNAUTHORIZED) return 'lock'
+      if (this.bridgeState === BRIDGE_STATES.UNKNOWN) return 'schedule'
+      return 'warning'
+    },
+    bridgeColor () {
+      if (this.bridgeState === BRIDGE_STATES.AVAILABLE) return 'green'
+      if (this.bridgeState === BRIDGE_STATES.UNKNOWN) return 'grey'
+      return 'orange'
+    },
+    bridgeCheckedLabel () {
+      if (!this.bridgeCheckedAt) return ''
+      return 'Checked ' + new Date(this.bridgeCheckedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    },
+    bridgeEmptyLabel () {
+      if (this.bridgeState === BRIDGE_STATES.UNKNOWN) {
+        return this.bridgeError || 'The bridge has not been checked yet.'
+      }
+      return 'Live version, LND and fee values will appear when the bridge answers.'
+    },
+    bridgeFeeLabel () {
+      const policy = this.bridge ? bridgeFeePolicy(this.bridge) : null
+      if (!policy) return '—'
+      const percentLabel = (Math.round(policy.percent * 1000) / 10) + '%'
+      const fixedLabel = Number(policy.fixed).toLocaleString('en-US') + ' sats'
+      return percentLabel + ' + ' + fixedLabel
+    },
+    bridgeRangeLabel () {
+      const policy = this.bridge ? bridgeFeePolicy(this.bridge) : null
+      if (!policy) return '—'
+      return Number(policy.minSats).toLocaleString('en-US') + ' – ' +
+        Number(policy.maxSats).toLocaleString('en-US') + ' sats'
+    },
+    bridgeLndLabel () {
+      const connection = this.bridge?.lnd_connection
+      const onward = this.bridge?.onward_response?.state
+      if (!connection && !onward) return '—'
+      return [connection, onward].filter(Boolean).join(' · ')
+    },
+    bridgeQuoteLabel () {
+      const config = this.bridge?.config?.min_max
+      if (!config) return '—'
+      const age = Number(config.quote_age_s)
+      const stale = config.stale === true
+      if (!Number.isFinite(age)) return stale ? 'Stale' : '—'
+      return Math.round(age) + 's old' + (stale ? ' · stale' : ' · fresh')
     }
   },
   mounted () {
@@ -659,12 +897,25 @@ export default {
       url: '/health'
     })
     this.load()
+    this.loadBridge(false)
   },
   methods: {
     formatCount,
     formatPercent,
     overallStatusColor,
     overallStatusLabel,
+    async loadBridge (force = true) {
+      this.bridgeLoading = true
+      try {
+        const result = await probeBridge({ force })
+        this.bridge = result.status
+        this.bridgeState = result.state
+        this.bridgeError = result.status ? '' : result.error
+        this.bridgeCheckedAt = result.at
+      } finally {
+        this.bridgeLoading = false
+      }
+    },
     async load () {
       this.loading = true
       this.loadError = ''
@@ -751,6 +1002,7 @@ export default {
     },
     refresh () {
       this.load()
+      this.loadBridge(true)
       this.$refs.nodeSummary?.load()
     }
   }

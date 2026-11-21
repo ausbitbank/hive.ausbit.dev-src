@@ -6,12 +6,16 @@ vi.mock('src/services/prices', () => ({
   getHivePrices: vi.fn()
 }))
 
-vi.mock('src/services/v4vapp', () => ({
-  getBridgeStatus: vi.fn(),
-  getSatsToHive: vi.fn(),
-  getBridgeState: vi.fn(),
-  bridgeFeePolicy: vi.fn(() => ({ percent: 0.029, fixed: 50, minSats: 50, maxSats: 180000 }))
-}))
+vi.mock('src/services/v4vapp', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    getBridgeStatus: vi.fn(),
+    getSatsToHive: vi.fn(),
+    getBridgeState: vi.fn(),
+    bridgeFeePolicy: vi.fn(() => ({ percent: 0.029, fixed: 50, minSats: 50, maxSats: 180000 }))
+  }
+})
 
 import { getHivePrices } from 'src/services/prices'
 import { getBridgeState, getBridgeStatus, getSatsToHive } from 'src/services/v4vapp'

@@ -104,8 +104,8 @@
       <div class="wallet-lightning__foot">
         <span class="wallet-lightning__note">
           Bridged by <a href="https://v4v.app" target="_blank" rel="noopener noreferrer">v4v.app</a>.
-          Keep invoices at 1,000 sats or more; the fixed ~50 sat fee eats small amounts. Keepsats
-          are held by v4v.app, not by hive.ausbit.dev.
+          Keep invoices at {{ preferredSatsLabel }} sats or more; the fixed {{ feeFixedLabel }} sat
+          fee eats small amounts. Keepsats are held by v4v.app, not by hive.ausbit.dev.
         </span>
         <q-btn
           flat
@@ -142,7 +142,8 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard } from 'quasar'
-import { lightningAddress, lightningAddressQrUrl } from 'src/services/lightning'
+import { lightningAddress, lightningAddressQrUrl, normalizeFeePolicy } from 'src/services/lightning'
+import { bridgeFeePolicy, getBridgeStatus } from 'src/services/v4vapp'
 
 export default {
   name: 'LightningWalletPanel',
@@ -162,10 +163,17 @@ export default {
       receiveOpen: false,
       payOpen: false,
       qrCurrency: 'hive',
-      qrFailed: false
+      qrFailed: false,
+      feePolicy: normalizeFeePolicy({})
     }
   },
   computed: {
+    feeFixedLabel () {
+      return Number(this.feePolicy.fixed || 0).toLocaleString('en-US')
+    },
+    preferredSatsLabel () {
+      return Math.max(1000, Number(this.feePolicy.minSats) || 0).toLocaleString('en-US')
+    },
     addressOptions () {
       return [
         { id: 'hive', label: 'HIVE', address: lightningAddress(this.account, 'hive') },
@@ -191,7 +199,18 @@ export default {
       this.qrFailed = false
     }
   },
+  mounted () {
+    this.loadFeePolicy()
+  },
   methods: {
+    async loadFeePolicy () {
+      try {
+        const status = await getBridgeStatus()
+        if (status?.config) this.feePolicy = bridgeFeePolicy(status)
+      } catch {
+        // Keep the labelled defaults.
+      }
+    },
     copyAddress (option) {
       Promise.resolve(copyToClipboard(option.address)).then(() => {
         this.$q.notify({ message: 'Copied ' + option.address, color: 'primary', icon: 'content_copy', timeout: 2000, position: 'top' })

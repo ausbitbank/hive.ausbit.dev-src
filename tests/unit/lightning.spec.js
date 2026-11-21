@@ -84,6 +84,25 @@ describe('Fees and quotes', () => {
     })
   })
 
+  it('uses the larger of the two published minimums', () => {
+    // Live on 2026-11-21: minimum_invoice_payment_sats reported 1 while the
+    // conversion floor (min_max.min.sats) was still 50.
+    expect(normalizeFeePolicy({
+      conv_fee_percent: 0.029,
+      conv_fee_sats: 50,
+      minimum_invoice_payment_sats: 1,
+      min_max: { min: { sats: 50 } }
+    }).minSats).toBe(50)
+    expect(normalizeFeePolicy({
+      minimum_invoice_payment_sats: 100,
+      min_max: { min: { sats: 50 } }
+    }).minSats).toBe(100)
+    expect(normalizeFeePolicy({
+      minimum_invoice_payment_sats: 1,
+      min_max: { min: { sats: 1 } }
+    }).minSats).toBe(1)
+  })
+
   it('reproduces the observed 180,000 sat fee', () => {
     expect(feeSats(180000, { conv_fee_percent: 0.029, conv_fee_sats: 50 })).toBe(5270)
     expect(feeSats(1000, { conv_fee_percent: 0.029, conv_fee_sats: 50 })).toBe(79)

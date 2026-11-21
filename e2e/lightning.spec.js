@@ -120,17 +120,4 @@ test.describe('Lightning bridge', () => {
     expect(runtimeErrors).toEqual([])
   })
 
-  test('falls back to the Lightning address when invoice creation is blocked', async ({ page }) => {
-    test.setTimeout(120000)
-    await page.route('https://api.v4v.app/**', route => route.abort())
-    await loginAs(page, 'brianoflondon')
-    await page.goto('/lightning')
-    await waitForApp(page)
-
-    await page.getByRole('button', { name: 'Create a fixed invoice' }).click()
-    const receive = page.locator('.lightning-dialog')
-    await receive.getByRole('button', { name: 'Create invoice' }).click()
-    await expect(receive).toContainText('cannot create a live invoice')
-    await expect(receive.locator('.lightning-address-card__address code')).toContainText('brianoflondon@v4v.app')
-  })
 })

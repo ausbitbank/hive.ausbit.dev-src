@@ -13,6 +13,8 @@ const ROUTES = [
   '/markets',
   '/compose',
   '/search',
+  '/lightning',
+  '/health',
   '/@ausbitbank',
   '/@ausbitbank/wallet',
   '/@ausbitbank/delegations',

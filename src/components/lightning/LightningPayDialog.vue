@@ -124,10 +124,9 @@
             <span>{{ quoteError }}</span>
           </div>
 
-          <div v-if="bridgeBlocked" class="lightning-pay__hint lightning-pay__hint--warn">
-            <q-icon name="cloud_off" size="15px" aria-hidden="true" />
-            Live bridge quotes are unavailable from this browser. The HBD/HIVE cost is estimated
-            from market prices; the bridge still processes the transfer on chain.
+          <div v-if="bridgeIssue" class="lightning-pay__hint lightning-pay__hint--warn">
+            <q-icon :name="bridgeIssueIcon" size="15px" aria-hidden="true" />
+            <span>{{ bridgeIssueText }}</span>
           </div>
 
           <div class="lightning-pay__asset">
@@ -217,6 +216,7 @@ import {
   satsRatesFromPrices
 } from 'src/services/lightning'
 import {
+  BRIDGE_STATES,
   bridgeFeePolicy,
   getBridgeState,
   getBridgeStatus,
@@ -244,7 +244,7 @@ export default {
       quote: null,
       quoteError: '',
       quoteSource: 'estimated',
-      bridgeBlocked: false,
+      bridgeIssue: '',
       asset: 'HBD',
       presets: [1000, 5000, 10000, 21000]
     }
@@ -301,6 +301,20 @@ export default {
       const percent = Number(this.quote?.percent)
       return Number.isFinite(percent) ? (Math.round(percent * 1000) / 10) + '%' : '2.9%'
     },
+    bridgeIssueIcon () {
+      if (this.bridgeIssue === BRIDGE_STATES.OFFLINE) return 'wifi_off'
+      if (this.bridgeIssue === BRIDGE_STATES.BLOCKED) return 'shield'
+      return 'cloud_off'
+    },
+    bridgeIssueText () {
+      if (this.bridgeIssue === BRIDGE_STATES.OFFLINE) {
+        return 'You are offline. The HBD/HIVE cost is estimated from the last known market prices; queueing still works and nothing is sent until you review and sign it.'
+      }
+      if (this.bridgeIssue === BRIDGE_STATES.BLOCKED) {
+        return 'This browser could not reach the bridge API — usually an extension, VPN or intermediary. The cost is estimated from market prices; the transfer still works on chain.'
+      }
+      return 'Live bridge quotes are unavailable right now. The HBD/HIVE cost is estimated from market prices; the transfer still works on chain.'
+    },
     displayTarget () {
       if (this.isAddress) return this.target?.value || ''
       const value = String(this.decoded?.raw || '')
@@ -343,7 +357,7 @@ export default {
       this.quote = null
       this.quoteError = ''
       this.quoteSource = 'estimated'
-      this.bridgeBlocked = false
+      this.bridgeIssue = ''
       this.asset = 'HBD'
       if (this.quoteTimer) clearTimeout(this.quoteTimer)
     },
@@ -458,7 +472,7 @@ export default {
         }
 
         this.quoteSource = 'estimated'
-        this.bridgeBlocked = !status || getBridgeState().state === 'blocked'
+        this.bridgeIssue = status ? '' : getBridgeState().state
 
         // The bridge returns the authoritative HBD/HIVE cost. Prefer it over
         // the market-price estimate, and use it on its own when the price feed
@@ -473,10 +487,10 @@ export default {
             if (hbd || hive) {
               quote = { ...quote, hbd, hive, source: 'bridge' }
               this.quoteSource = 'bridge'
-              this.bridgeBlocked = false
+              this.bridgeIssue = ''
             }
           } catch {
-            this.bridgeBlocked = true
+            this.bridgeIssue = getBridgeState().state || BRIDGE_STATES.DEGRADED
             this.quoteSource = 'estimated'
           }
         }

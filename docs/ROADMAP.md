@@ -51,9 +51,17 @@ W36 (Lightning receive and pay, v4vapp Phase 1–2) is complete and deployed:
 lint, unit tests, build, performance budgets, the targeted Lightning E2E and a
 live browser smoke are green. The full fast suite has four pre-existing
 live-data failures unrelated to this workstream. See
-`docs/workstreams/W36-lightning-bridge.md`. It ships with a documented CORS
-fallback until v4v.app allowlists the production origin. Keepsats, POS and post
-zaps remain open follow-ups.
+`docs/workstreams/W36-lightning-bridge.md`. Keepsats, POS and post zaps remain
+open follow-ups.
+
+W46 (issue #87, Lightning CORS-live hardening) is complete. The production
+origin is on v4v.app's CORS allowlist (verified 2026-11-21, API 6.6.1); the
+bridge client now separates offline, timeout, rate-limited, blocked and
+unauthorized states, the health page shows an advisory bridge row, and a daily
+read-only contract check fails if the allowlist or the public API shape drifts.
+See `docs/workstreams/W46-lightning-cors.md`. Keepsats (Phase 2) is next: it
+stays opt-in and secondary, and the API-session scope is still an unverified
+spike.
 
 W37 (dashboard Magi tokens, issue #76) and W38 (the last three open issues —
 #50, #77 and #78) are complete. W38 adds community headers, forced dashboard
@@ -61,9 +69,10 @@ refreshes, an in-editor rows/masonry preview, auto-optimize and named layouts.
 See `docs/workstreams/W37-dashboard-magi-tokens.md` and
 `docs/workstreams/W38-dashboard-followups.md`.
 
-Remaining follow-ups with no open GitHub issue: Keepsats/POS/post zaps from the
-Lightning workstream, and the optional #63 server-side existence check at the
-edge. There is no open issue backlog at the time of writing.
+Remaining follow-ups with no open workstream: Keepsats/POS/post zaps from the
+Lightning workstream (issue #87 tracks the phases), and the optional #63
+server-side existence check at the edge. Issue #82 (post composer) is the active
+in-progress workstream.
 
 ## Definition of done
 

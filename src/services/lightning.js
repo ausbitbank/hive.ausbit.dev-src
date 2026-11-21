@@ -19,7 +19,8 @@ export const LIGHTNING_DOMAINS = {
 export const SATS_PER_BTC = 100000000
 
 // Server defaults. The live values are read from GET /v1 and should win when
-// available; these only keep the UI useful when the bridge config is blocked.
+// available; these only keep the UI useful when the bridge config cannot be
+// read (offline, outage or a blocked request).
 export const DEFAULT_FEE_PERCENT = 0.029
 export const DEFAULT_FEE_SATS = 50
 export const DEFAULT_MIN_INVOICE_SATS = 50
@@ -51,8 +52,8 @@ export function lightningAddressDomain (currency = 'hive') {
   return LIGHTNING_DOMAINS[currency] || LIGHTNING_DOMAINS.hive
 }
 
-/** Direct image URL. An <img> is not subject to CORS, so the QR works even
- * when the JSON API is not on this origin's allowlist. */
+/** Direct image URL. The QR is rendered by an <img>, so it works even when the
+ * JSON API is unreachable; the surrounding card always shows the address too. */
 export function lightningAddressQrUrl (account, currency = 'hive') {
   const name = normalizeAccount(account)
   if (!name) return ''
@@ -97,12 +98,19 @@ export function normalizeFeePolicy (config = {}) {
     ? Number((rawPercent > 1 ? rawPercent / 100 : rawPercent).toFixed(6))
     : DEFAULT_FEE_PERCENT
   const fixed = Number(config.conv_fee_sats)
-  const min = Number(config.minimum_invoice_payment_sats)
+  // The bridge exposes two minimums. `minimum_invoice_payment_sats` is the
+  // outbound invoice floor; `min_max.min.sats` is the conversion floor that
+  // still applies (it was 50 sats when the former briefly reported 1). Taking
+  // the larger one prevents the UI from offering amounts the bridge rejects.
+  const minCandidates = [config.minimum_invoice_payment_sats, config.min_max?.min?.sats]
+    .map(Number)
+    .filter(value => Number.isFinite(value) && value > 0)
+  const min = minCandidates.length ? Math.max(...minCandidates) : DEFAULT_MIN_INVOICE_SATS
   const max = Number(config.maximum_invoice_payment_sats)
   return {
     percent,
     fixed: Number.isFinite(fixed) && fixed >= 0 ? fixed : DEFAULT_FEE_SATS,
-    minSats: Number.isFinite(min) && min > 0 ? min : DEFAULT_MIN_INVOICE_SATS,
+    minSats: min,
     maxSats: Number.isFinite(max) && max > 0 ? max : DEFAULT_MAX_INVOICE_SATS
   }
 }

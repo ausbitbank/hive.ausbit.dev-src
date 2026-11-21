@@ -63,7 +63,7 @@
     </div>
     <div v-else-if="displayStatus === 'unknown'" class="lightning-invoice__notice">
       <q-icon name="cloud_off" size="18px" aria-hidden="true" />
-      Payment status could not be checked from this browser. Check the destination wallet for the Hive transfer.
+      Payment status could not be checked just now. The invoice may still be paid; check the destination wallet for the Hive transfer.
     </div>
   </div>
 </template>
