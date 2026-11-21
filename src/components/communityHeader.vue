@@ -133,6 +133,7 @@ import { safeJsonParse, simpleMarkdownToHtml } from 'src/utils/safeHtml'
 import { sanitizeRichHtml } from 'src/utils/safeRichHtml'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { previewImageUrl } from 'src/utils/postPreview'
 // import { mapGetters } from 'vuex'
 export default {
   name: 'accountHeader',
@@ -198,12 +199,13 @@ export default {
     },
     async getCommunitySubscribers () {
       this.loadingSubscribers = true
-      var params = { community: this.account.name }
-      this.$hive.api.callAsync('bridge.list_subscribers', params)
-        .then(response => {
-          this.subscribers = response
-          this.loadingSubscribers = false
-        }).bind(this)
+      try {
+        this.subscribers = await this.$hive.api.callAsync('bridge.list_subscribers', { community: this.account.name })
+      } catch (error) {
+        console.error('Failed to load community subscribers', error)
+      } finally {
+        this.loadingSubscribers = false
+      }
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -212,12 +214,13 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     async getCommunityActivities () {
-      var params = { account: this.account.name, limit: 100 }
-      this.$hive.api.callAsync('bridge.account_notifications', params)
-        .then(response => {
-          this.activities = response
-          this.loading = false
-        })
+      try {
+        this.activities = await this.$hive.api.callAsync('bridge.account_notifications', { account: this.account.name, limit: 100 })
+      } catch (error) {
+        console.error('Failed to load community activities', error)
+      } finally {
+        this.loading = false
+      }
     },
     returnPostLink (author, permlink) {
       return '/@' + author + '/' + permlink
@@ -267,14 +270,14 @@ export default {
       return null
     },
     coverImage: function () {
-      var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
+      var defaultCover = previewImageUrl('https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg', 1280)
       if (this.account === undefined) {
         return defaultCover
       } else {
         if (this.account.posting_json_metadata) {
           const meta = safeJsonParse(this.account.posting_json_metadata)
           if (meta.profile && meta.profile.cover_image) {
-            return meta.profile.cover_image
+            return previewImageUrl(meta.profile.cover_image, 1280)
           } else {
             return defaultCover
           }

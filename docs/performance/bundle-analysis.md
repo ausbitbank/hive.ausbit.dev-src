@@ -221,6 +221,11 @@ remaining legacy weight without changing app behaviour.
   about 1.1 MB of image transfer.
 - **SVGs optimised.** The remaining service icons were run through SVGO
   (`--multipass`), saving another ~8.8 KB of static assets.
+- **Cover images resized.** Account and community cover images from known
+  hosts now go through the existing 1280px image proxy instead of loading the
+  original (often multi-megapixel) file as a CSS background.
+- **Fewer preconnects.** The shell keeps preconnects for the landing, market
+  and wallet origins and relies on DNS prefetch for the rest.
 - **Initial JS 352.0 → 348.5 KB raw / 113.8 → 112.8 KB Brotli.** The post
   renderer remains the largest lazy chunk; removing its `autolinker` dependency
   would save ~15 KB Brotli but changes fuzzy-domain linkification, so it was

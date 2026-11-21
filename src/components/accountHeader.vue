@@ -276,6 +276,7 @@ import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import { vestToHive } from 'src/services/wallet'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { previewImageUrl } from 'src/utils/postPreview'
 export default {
   name: 'accountHeader',
   data () {
@@ -443,7 +444,7 @@ export default {
         if (this.account.posting_json_metadata) {
           const meta = safeJsonParse(this.account.posting_json_metadata)
           if (meta.profile && meta.profile.cover_image) {
-            return meta.profile.cover_image
+            return previewImageUrl(meta.profile.cover_image, 1280)
           } else {
             return defaultCover
           }

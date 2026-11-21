@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-11-21T23:31:34.923Z",
-  "commit": "5b37597",
-  "label": "perf-pass-avatars-svgo",
+  "generatedAt": "2026-11-21T23:36:18.353Z",
+  "commit": "b8779ac",
+  "label": "perf-pass-covers",
   "routes": [
     {
       "route": "/",
       "name": "Home",
       "ttfbMs": 5,
-      "dclMs": 114,
-      "loadMs": 119,
-      "fcpMs": 128,
-      "lcpMs": 3308,
+      "dclMs": 112,
+      "loadMs": 113,
+      "fcpMs": 124,
+      "lcpMs": 2828,
       "cls": 0.003,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
@@ -30,14 +30,14 @@
       "route": "/browse",
       "name": "Browse",
       "ttfbMs": 3,
-      "dclMs": 80,
-      "loadMs": 81,
-      "fcpMs": 52,
-      "lcpMs": 2684,
+      "dclMs": 84,
+      "loadMs": 85,
+      "fcpMs": 48,
+      "lcpMs": 2628,
       "cls": 0,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
-      "routeJsKb": 120.4,
+      "routeJsKb": 120.5,
       "jsKb": 245.5,
       "cssKb": 45,
       "fontKb": 62.6,
@@ -45,18 +45,18 @@
       "totalKb": 596.4,
       "appTotalKb": 354.6,
       "thirdPartyKb": 241.8,
-      "requests": 148,
+      "requests": 147,
       "scriptRequests": 85,
-      "thirdPartyRequests": 53
+      "thirdPartyRequests": 52
     },
     {
       "route": "/b/1",
       "name": "Block 1",
       "ttfbMs": 2,
-      "dclMs": 77,
-      "loadMs": 78,
-      "fcpMs": 52,
-      "lcpMs": 1580,
+      "dclMs": 80,
+      "loadMs": 80,
+      "fcpMs": 40,
+      "lcpMs": 1552,
       "cls": 0,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
@@ -77,10 +77,10 @@
       "name": "Post",
       "ttfbMs": 2,
       "dclMs": 81,
-      "loadMs": 81,
+      "loadMs": 82,
       "fcpMs": 48,
-      "lcpMs": 2856,
-      "cls": 0.006,
+      "lcpMs": 2156,
+      "cls": 0,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
       "routeJsKb": 278.2,
@@ -91,41 +91,41 @@
       "totalKb": 514.1,
       "appTotalKb": 514.1,
       "thirdPartyKb": 0,
-      "requests": 134,
+      "requests": 135,
       "scriptRequests": 86,
-      "thirdPartyRequests": 35
+      "thirdPartyRequests": 36
     },
     {
       "route": "/@ausbitbank/wallet",
       "name": "Wallet",
       "ttfbMs": 2,
-      "dclMs": 81,
-      "loadMs": 81,
-      "fcpMs": 48,
-      "lcpMs": 2172,
-      "cls": 0.029,
+      "dclMs": 82,
+      "loadMs": 83,
+      "fcpMs": 52,
+      "lcpMs": 2128,
+      "cls": 0.036,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
-      "routeJsKb": 143.5,
-      "jsKb": 268.6,
+      "routeJsKb": 144.8,
+      "jsKb": 269.8,
       "cssKb": 46.2,
       "fontKb": 62.6,
       "imageKb": 9.6,
-      "totalKb": 386.9,
-      "appTotalKb": 386.9,
+      "totalKb": 388.2,
+      "appTotalKb": 388.2,
       "thirdPartyKb": 0,
       "requests": 145,
-      "scriptRequests": 89,
-      "thirdPartyRequests": 32
+      "scriptRequests": 90,
+      "thirdPartyRequests": 31
     },
     {
       "route": "/market",
       "name": "Internal market",
       "ttfbMs": 2,
-      "dclMs": 81,
+      "dclMs": 80,
       "loadMs": 81,
-      "fcpMs": 40,
-      "lcpMs": 296,
+      "fcpMs": 52,
+      "lcpMs": 304,
       "cls": 0,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
@@ -145,10 +145,10 @@
       "route": "/compose",
       "name": "Compose",
       "ttfbMs": 2,
-      "dclMs": 83,
-      "loadMs": 83,
-      "fcpMs": 40,
-      "lcpMs": 336,
+      "dclMs": 79,
+      "loadMs": 82,
+      "fcpMs": 44,
+      "lcpMs": 328,
       "cls": 0.007,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
@@ -167,11 +167,11 @@
     {
       "route": "/search?q=hive",
       "name": "Search",
-      "ttfbMs": 3,
-      "dclMs": 87,
-      "loadMs": 88,
-      "fcpMs": 52,
-      "lcpMs": 288,
+      "ttfbMs": 2,
+      "dclMs": 81,
+      "loadMs": 82,
+      "fcpMs": 40,
+      "lcpMs": 280,
       "cls": 0.001,
       "initialJsKb": 125,
       "initialCssKb": 36.5,
@@ -192,7 +192,7 @@
     "initial": {
       "rawKb": 577.9,
       "gzipKb": 166.7,
-      "brotliKb": 144.1
+      "brotliKb": 144
     },
     "largest": [
       {
@@ -208,19 +208,19 @@
         "brotliKb": 31.3
       },
       {
-        "file": "index-L3PS75OQ.js",
+        "file": "index-CVaWZY1g.js",
         "rawKb": 203.9,
         "gzipKb": 67.9,
-        "brotliKb": 59.1
+        "brotliKb": 59
       },
       {
-        "file": "compose-dfKZmiiI.js",
+        "file": "compose-wTYOGZJD.js",
         "rawKb": 145.3,
         "gzipKb": 38.3,
         "brotliKb": 33.3
       },
       {
-        "file": "Index-hkmsYDiz.js",
+        "file": "Index-cOzZXj5R.js",
         "rawKb": 124.8,
         "gzipKb": 34,
         "brotliKb": 29.1
@@ -232,13 +232,13 @@
         "brotliKb": 29.2
       },
       {
-        "file": "wallet-9oyjPTnz.js",
+        "file": "wallet-BusAuY6y.js",
         "rawKb": 86.1,
         "gzipKb": 22.7,
-        "brotliKb": 19.8
+        "brotliKb": 19.7
       },
       {
-        "file": "MainLayout-DgocMNZ_.js",
+        "file": "MainLayout-CeL5CFCW.js",
         "rawKb": 79.9,
         "gzipKb": 23.9,
         "brotliKb": 20.9
@@ -250,19 +250,19 @@
         "brotliKb": 24.4
       },
       {
-        "file": "account-CaOsJjw2.js",
+        "file": "account-DsGVbD1X.js",
         "rawKb": 60.4,
         "gzipKb": 17.1,
         "brotliKb": 15.1
       },
       {
-        "file": "witnesses-DwHxF4NY.js",
+        "file": "witnesses-D1mnESiD.js",
         "rawKb": 53.5,
         "gzipKb": 15.8,
         "brotliKb": 14
       },
       {
-        "file": "nodes-DUVvKsRT.js",
+        "file": "nodes-Be0iq8sL.js",
         "rawKb": 42.8,
         "gzipKb": 12.2,
         "brotliKb": 10.9
