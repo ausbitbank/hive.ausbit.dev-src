@@ -93,7 +93,8 @@ See `docs/workstreams/W49-composer-history-backup.md`.
 
 W50 is the fifth composer phase: active/archived draft views, archive/restore,
 local publish reminders, approximate local storage usage, clear-all drafts, and
-cross-tab synchronization. See
+cross-tab synchronization. It is complete and deployed; the live smoke covered
+the reminder banner, storage line and Archived view with no page errors. See
 `docs/workstreams/W50-composer-reminders-lifecycle.md`. The optional visual
 editor remains the last major composer item.
 

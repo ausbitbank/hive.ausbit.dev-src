@@ -61,6 +61,11 @@ the conflict. If this tab has no unsaved edits, the newer saved draft is loaded.
 - Performance budgets — pass after a small compose total-JS increase.
 - Visual smoke at 1440px: reminder banner, Active/Archived toggle and local
   storage line fit without overflow.
+- Deployed to production with `./scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261121T125955Z.tar.gz`.
+- Live smoke on `https://hive.ausbit.dev`: a due reminder appears, the local
+  storage line renders, the Archived view opens, and the browser reported no
+  page errors.
 
 ## Follow-ups
 
