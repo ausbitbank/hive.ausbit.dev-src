@@ -62,3 +62,9 @@ in the text. Other clients had the same shape (`cdn.steemitimages.com`,
 ## Deploy
 
 `./scripts/deploy.sh` — deployed to `hurgenburgen:/var/www/hive.ausbit.dev`.
+
+- Backup: `~/hive-backups/hive.ausbit.dev-20261121T061320Z.tar.gz`
+- Live check on `https://hive.ausbit.dev/shorts/threads`: none of the first 40
+  cards show a raw URL, and the previously broken cards render 1–4 images.
+- The `@rebe.torres12` humanoid-robot thread renders both bare-URL images
+  through the image proxy (`naturalWidth` 900 and 640) with a clean preview.
