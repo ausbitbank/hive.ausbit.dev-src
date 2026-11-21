@@ -3004,8 +3004,14 @@
 import { LocalStorage, copyToClipboard, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
 import { keychain } from '@hiveio/keychain'
-import smartlock from 'components/smartlock/index.js'
 import moment from 'src/utils/time'
+
+// Image uploads are the only compose feature that needs SmartLock. Load the
+// signing stack when the user actually signs, not when the page opens.
+let smartlockPromise = null
+function loadSmartlock () {
+  return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+}
 import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
@@ -4436,6 +4442,7 @@ export default {
       const user = this.loggedInUser
       if (!user) throw new Error('Log in to upload images.')
       const minutes = Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15
+      const smartlock = await loadSmartlock()
       if (smartlock.isAccountUnlocked(user, minutes * 60 * 1000)) return
       const password = await new Promise(resolve => {
         this.$q.dialog({
@@ -4462,6 +4469,7 @@ export default {
       if (this.loginType === 'smartlock') {
         await this.ensureSmartlockUnlocked()
         try {
+          const smartlock = await loadSmartlock()
           return await smartlock.api.signBuffer(user, payload)
         } catch (error) {
           throw new Error(error?.message || 'SmartLock could not sign the upload.', { cause: error })

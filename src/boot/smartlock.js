@@ -1,9 +1,13 @@
 import { Notify } from 'quasar'
 import { watch } from 'vue'
 import { defineBoot } from '#q-app'
-import smartlock from 'components/smartlock/index.js'
 import { useHiveStore } from 'src/stores/hive'
 import { DEFAULT_SETTINGS } from 'src/stores/hive/state'
+
+let smartlockPromise = null
+function loadSmartlock () {
+  return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+}
 
 // SmartLock only keeps the posting key in memory. Lock it after a period of
 // browser inactivity so leaving a tab open does not leave the key available
@@ -19,20 +23,25 @@ export default defineBoot(({ app }) => {
   let started = false
   let idleHandle = null
 
-  const touch = () => smartlock.touchActivity()
-  const lockNow = () => {
+  const touch = () => {
+    loadSmartlock().then(smartlock => smartlock.touchActivity()).catch(() => {})
+  }
+  const lockNow = async () => {
     const minutes = Number(store.user?.settings?.smartlockSessionMinutes) ||
       Number(DEFAULT_SETTINGS.smartlockSessionMinutes)
-    const locked = smartlock.lockExpired(minutes * 60 * 1000)
-    if (locked.length > 0 && store.user?.username) {
-      Notify.create({
-        message: 'SmartLock locked after ' + minutes + ' minutes of inactivity. Unlock again to sign posting actions.',
-        color: 'orange',
-        icon: 'lock',
-        position: 'top',
-        timeout: 6000
-      })
-    }
+    try {
+      const smartlock = await loadSmartlock()
+      const locked = smartlock.lockExpired(minutes * 60 * 1000)
+      if (locked.length > 0 && store.user?.username) {
+        Notify.create({
+          message: 'SmartLock locked after ' + minutes + ' minutes of inactivity. Unlock again to sign posting actions.',
+          color: 'orange',
+          icon: 'lock',
+          position: 'top',
+          timeout: 6000
+        })
+      }
+    } catch {}
   }
   const onVisibility = () => {
     if (document.visibilityState === 'visible') lockNow()
@@ -47,6 +56,7 @@ export default defineBoot(({ app }) => {
     document.addEventListener('visibilitychange', onVisibility)
     timer = setInterval(lockNow, 60 * 1000)
     app.config.globalProperties.$smartlockTimer = timer
+    loadSmartlock().catch(() => {})
   }
 
   const stop = () => {
