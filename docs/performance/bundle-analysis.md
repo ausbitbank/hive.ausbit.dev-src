@@ -232,6 +232,9 @@ remaining legacy weight without changing app behaviour.
   renderer on 60 real Hive posts plus crafted URL/email cases. The post chunk
   drops **125.2 → 119.8 KB Brotli**, and `remarkable`'s unused `autolinker`
   dependency is stubbed out of the install (~3 MB).
+- **Origin caching.** The nginx config now caches hashed `/assets/` for a year,
+  `/statics/` for a week, and requires revalidation for `sw.js`; `sendfile`
+  and `tcp_nopush` are enabled for static delivery.
 - **Initial JS 352.0 → 348.5 KB raw / 113.8 → 112.8 KB Brotli.** The post
   renderer remains the largest lazy chunk; removing its `autolinker` dependency
   would save ~15 KB Brotli but changes fuzzy-domain linkification, so it was

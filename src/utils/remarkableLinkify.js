@@ -12,7 +12,7 @@ import { TLDS } from './tlds'
 
 const LINK_SCAN_RE = /www|@|:\/\//
 const linkifier = new LinkifyIt()
-linkifier.tlds(TLDS, false)
+linkifier.tlds(TLDS.split('|'), false)
 linkifier.set({ fuzzyLink: true, fuzzyEmail: true })
 
 function isLinkOpen (value) {
