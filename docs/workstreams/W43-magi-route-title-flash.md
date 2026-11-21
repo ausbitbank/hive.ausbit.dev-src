@@ -1,7 +1,7 @@
 # W43 — `/magi` 404 title flash
 
 Date: 2026-11-21
-Status: fixed in the repo; host install pending (needs sudo)
+Status: fixed and installed on the host
 
 ## Symptom
 
@@ -56,7 +56,7 @@ This was an nginx routing gap, not Cloudflare and not the SPA router.
 ## Install on the host
 
 The `ausbitbank` SSH account has no passwordless sudo, so the config was not
-installed automatically. Run on the server (or with `ssh -t`):
+installed by the agent. The maintained install command is:
 
 ```bash
 scp deploy/nginx/hive.ausbit.dev.conf hurgenburgen:/tmp/hive.ausbit.dev.conf
@@ -66,6 +66,18 @@ ssh -t hurgenburgen 'sudo cp -a /etc/nginx/sites-available/hive.ausbit.dev \
   sudo nginx -t && sudo systemctl reload nginx'
 ```
 
-After the reload, `/magi` and `/lightning` should return 200 with their real
-titles. No SPA rebuild is needed; both `magi.html` and `lightning.html` are
-already on the host from the W42 deploy.
+Installed on 2026-11-21. The host backup is
+`/etc/nginx/sites-available/hive.ausbit.dev.bak-20261121T060229Z`; `nginx -t`
+passed and the service reloaded.
+
+Live verification after the reload:
+
+| URL | Status | Title |
+| --- | --- | --- |
+| `/magi` | 200 | Magi contracts — inspect state, outputs and simulation |
+| `/lightning` | 200 | Lightning — receive sats as Hive or pay Lightning invoices |
+| `/@ausbitbank/lightning` | 200 | @ausbitbank Lightning — hive.ausbit.dev |
+| `/magi/` | 301 | trailing-slash policy |
+
+No SPA rebuild was needed; both `magi.html` and `lightning.html` were already
+on the host from the W42 deploy.
