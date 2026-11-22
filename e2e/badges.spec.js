@@ -1,6 +1,8 @@
 import { test, expect } from './fixtures'
 import { waitForApp } from './helpers'
 
+test.use({ serviceWorkers: 'block' })
+
 const HIVE_HOSTS = [
   'https://api.hive.blog',
   'https://api.openhive.network',
@@ -125,6 +127,9 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
   await page.route('https://files.peakd.com/**', async route => {
     await route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
   })
+  await page.route('https://images.hive.blog/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'image/png', body: PNG })
+  })
 
   for (const host of HIVE_HOSTS) {
     await page.route(host + '/**', async route => {
@@ -140,30 +145,33 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
       if (payload.method !== 'condenser_api.get_accounts') return route.continue()
       const response = await route.fetch()
       const json = await response.json()
-      if (Array.isArray(json.result)) {
-        for (const account of json.result) {
-          if (account?.name === 'ausbitbank') {
-            let metadata
-            try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
-            metadata['hive.ausbit.dev'] = { theme: SKIN }
-            metadata.profile = { ...(metadata.profile || {}), pinned: POST.permlink }
-            account.posting_json_metadata = JSON.stringify(metadata)
-          }
-          if (account?.name === 'badge-069069') {
-            Object.assign(account, badgeAccount('badge-069069', {
-              name: 'NFT Showroom Verified Artist',
-              about: '<p>Verified by the <b>NFT Showroom</b> team</p>',
-              profile_image: 'https://files.peakd.com/file/badge.png'
-            }))
-          }
-          if (account?.name === 'alice') {
-            Object.assign(account, badgeAccount('alice', { name: 'Alice', profile_image: 'https://images.hive.blog/u/alice/avatar' }))
-          }
-          if (account?.name === 'bob') {
-            Object.assign(account, badgeAccount('bob', { name: 'Bob', profile_image: 'https://images.hive.blog/u/bob/avatar' }))
-          }
+      const requested = Array.isArray(payload.params?.[0]) ? payload.params[0] : []
+      const result = Array.isArray(json.result) ? json.result.filter(Boolean) : []
+      const fake = {
+        'badge-069069': badgeAccount('badge-069069', {
+          name: 'NFT Showroom Verified Artist',
+          about: '<p>Verified by the <b>NFT Showroom</b> team</p>',
+          profile_image: 'https://files.peakd.com/file/badge.png'
+        }),
+        alice: badgeAccount('alice', { name: 'Alice', profile_image: 'https://images.hive.blog/u/alice/avatar' }),
+        bob: badgeAccount('bob', { name: 'Bob', profile_image: 'https://images.hive.blog/u/bob/avatar' })
+      }
+      for (const account of result) {
+        if (account?.name === 'ausbitbank') {
+          let metadata
+          try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
+          metadata['hive.ausbit.dev'] = { theme: SKIN }
+          metadata.profile = { ...(metadata.profile || {}), pinned: POST.permlink }
+          account.posting_json_metadata = JSON.stringify(metadata)
         }
       }
+      for (const name of requested) {
+        if (!fake[name]) continue
+        const existing = result.find(account => account?.name === name)
+        if (existing) Object.assign(existing, fake[name])
+        else result.push(fake[name])
+      }
+      json.result = result
       await route.fulfill({ response, json })
     })
   }

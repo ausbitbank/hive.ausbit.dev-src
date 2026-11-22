@@ -195,6 +195,49 @@ describe('theme schema', () => {
     expect(validateTheme(input).ok).toBe(false)
   })
 
+  it('validates atmosphere and visual enums', () => {
+    const input = profileTheme()
+    input.profile.atmosphere = { source: 'collage', treatment: 'duotone', intensity: 'strong' }
+    input.profile.visual = { link: 'glow', button: 'pill', chip: 'stamp', divider: 'hex', image: 'rounded', gradient: 'diagonal' }
+    input.profile.banner = { layout: 'mosaic', images: ['https://images.hive.blog/0x0/a.png'] }
+    const result = validateTheme(input)
+    expect(result.ok).toBe(true)
+    expect(result.theme.profile.atmosphere).toEqual({ source: 'collage', treatment: 'duotone', intensity: 'strong' })
+    expect(result.theme.profile.visual.link).toBe('glow')
+
+    const bad = profileTheme()
+    bad.profile.visual = { link: 'javascript' }
+    expect(validateTheme(bad).ok).toBe(false)
+    const badAtmosphere = profileTheme()
+    badAtmosphere.profile.atmosphere = { source: 'video', treatment: 'css', intensity: 'wild' }
+    expect(validateTheme(badAtmosphere).ok).toBe(false)
+  })
+
+  it('validates light and dark variants independently', () => {
+    const input = profileTheme()
+    const light = Object.fromEntries(Object.entries(getTheme('hive-light').tokens))
+    const dark = Object.fromEntries(Object.entries(getTheme('hive-dark').tokens))
+    input.variants = { light: { tokens: light }, dark: { tokens: dark } }
+    const result = validateTheme(input)
+    expect(result.ok).toBe(true)
+    expect(result.theme.variants.light.tokens.surface).toBe(light.surface)
+
+    const broken = profileTheme()
+    broken.variants = { light: { tokens: { ...light, text: light.surface } } }
+    expect(validateTheme(broken).ok).toBe(false)
+    expect(validateTheme(broken).errors.join(' ')).toContain('variants.light.tokens.text')
+  })
+
+  it('resolves a variant by viewer mode and falls back to the base palette', () => {
+    const input = profileTheme()
+    const light = { ...getTheme('hive-light').tokens }
+    input.variants = { light: { tokens: light } }
+    const result = validateTheme(input)
+    expect(tokensFor(result.theme, { mode: 'light' })['--c-bg']).toBe(light.bg)
+    expect(tokensFor(result.theme, { mode: 'dark' })['--c-bg']).toBe(result.theme.tokens.bg)
+    expect(tokensFor(result.theme)['--c-bg']).toBe(result.theme.tokens.bg)
+  })
+
   it('validates the latest or pinned post module', () => {
     for (const value of ['latest', 'pinned', 'none']) {
       const input = profileTheme()

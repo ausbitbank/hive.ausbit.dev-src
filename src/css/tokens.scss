@@ -476,8 +476,31 @@ html[data-motion='reduced'] .skin-scope::before {
   border: 2px dashed var(--skin-primary, var(--c-primary));
 }
 
+.skin-scope[data-skin-gradient='to-right'],
+.skin-scope[data-skin-gradient='to-bottom'],
+.skin-scope[data-skin-gradient='diagonal'],
+.skin-scope[data-skin-gradient='radial'] {
+  --skin-gradient: linear-gradient(90deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+}
+
+.skin-scope[data-skin-gradient='to-right'] {
+  --skin-gradient: linear-gradient(90deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+}
+
+.skin-scope[data-skin-gradient='to-bottom'] {
+  --skin-gradient: linear-gradient(180deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+}
+
+.skin-scope[data-skin-gradient='diagonal'] {
+  --skin-gradient: linear-gradient(135deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+}
+
+.skin-scope[data-skin-gradient='radial'] {
+  --skin-gradient: radial-gradient(circle at 30% 25%, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+}
+
 .skin-scope[data-nameplate='gradient'] .account-header__name {
-  background: linear-gradient(90deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+  background: var(--skin-gradient, linear-gradient(90deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent))));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -564,6 +587,119 @@ html[data-motion='reduced'] .skin-scope::before {
 .skin-badge button:hover {
   color: var(--c-link-hover);
   text-decoration: underline;
+}
+
+/* Visual language controls. Geometry and layout stay app-owned. */
+.skin-scope[data-skin-link='underline'] a {
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.skin-scope[data-skin-link='glow'] a {
+  text-decoration: none;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 55%, transparent);
+}
+
+.skin-scope[data-skin-link='highlighter'] a {
+  padding: 0 0.12em;
+  background: linear-gradient(transparent 58%, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 32%, transparent) 58%);
+  text-decoration: none;
+}
+
+.skin-scope[data-skin-link='bracket'] a {
+  padding: 0 0.2em;
+  box-shadow: inset 2px 0 0 var(--skin-primary, var(--c-primary)), inset -2px 0 0 var(--skin-primary, var(--c-primary));
+  text-decoration: none;
+}
+
+.skin-scope[data-skin-button='outline'] .q-btn {
+  border: 1px solid var(--skin-primary, var(--c-primary)) !important;
+  background: transparent !important;
+}
+
+.skin-scope[data-skin-button='pill'] .q-btn {
+  border-radius: 999px !important;
+}
+
+.skin-scope[data-skin-button='square'] .q-btn {
+  border-radius: 0 !important;
+}
+
+.skin-scope[data-skin-button='ticket'] .q-btn {
+  border: 2px dashed var(--skin-primary, var(--c-primary)) !important;
+  border-radius: 8px !important;
+}
+
+.skin-scope[data-skin-chip='square'] .q-chip,
+.skin-scope[data-skin-chip='square'] .skin-badge-chip {
+  border-radius: 2px !important;
+}
+
+.skin-scope[data-skin-chip='stamp'] .q-chip,
+.skin-scope[data-skin-chip='stamp'] .skin-badge-chip {
+  border: 2px solid var(--skin-primary, var(--c-primary)) !important;
+  border-radius: 2px !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.skin-scope[data-skin-chip='ticket'] .q-chip,
+.skin-scope[data-skin-chip='ticket'] .skin-badge-chip {
+  border: 2px dashed var(--skin-primary, var(--c-primary)) !important;
+  border-radius: 8px !important;
+}
+
+.skin-scope[data-skin-divider='hairline'] hr,
+.skin-scope[data-skin-divider='hairline'] .q-separator {
+  border-top: 1px solid var(--skin-border, var(--c-border));
+}
+
+.skin-scope[data-skin-divider='dots'] hr,
+.skin-scope[data-skin-divider='dots'] .q-separator {
+  border-top: 2px dotted var(--skin-primary, var(--c-primary));
+}
+
+.skin-scope[data-skin-divider='wave'] hr,
+.skin-scope[data-skin-divider='wave'] .q-separator {
+  border: 0;
+  height: 6px;
+  background: radial-gradient(circle at 4px -2px, transparent 4px, var(--skin-primary, var(--c-primary)) 5px, transparent 6px) repeat-x;
+  background-size: 10px 8px;
+}
+
+.skin-scope[data-skin-divider='hex'] hr,
+.skin-scope[data-skin-divider='hex'] .q-separator {
+  border: 0;
+  height: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='16' viewBox='0 0 18 16'%3E%3Cpath d='M9 0l8 4.6v9.2L9 18 1 13.8V4.6z' transform='scale(.85) translate(1 -1)' fill='none' stroke='%23888888' stroke-opacity='0.55'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+}
+
+.skin-scope[data-skin-image='rounded'] .render img,
+.skin-scope[data-skin-image='rounded'] .postbody img,
+.skin-scope[data-skin-image='rounded'] .post-card__cover img {
+  border-radius: 12px;
+}
+
+.skin-scope[data-skin-image='polaroid'] .render img,
+.skin-scope[data-skin-image='polaroid'] .postbody img {
+  padding: 6px;
+  border: 1px solid var(--skin-border, var(--c-border));
+  border-radius: 2px;
+  background: var(--skin-surface, var(--c-surface));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--skin-text, var(--c-text)) 18%, transparent);
+}
+
+.skin-scope[data-skin-image='stamp'] .render img,
+.skin-scope[data-skin-image='stamp'] .postbody img {
+  border: 2px dashed var(--skin-primary, var(--c-primary));
+  border-radius: 4px;
+}
+
+.skin-scope[data-skin-image='duotone'] .render img,
+.skin-scope[data-skin-image='duotone'] .postbody img,
+.skin-scope[data-skin-image='duotone'] .post-card__cover img {
+  filter: grayscale(1) contrast(1.08);
 }
 
 /* Shelf section labels are shared by the shelf modules. */

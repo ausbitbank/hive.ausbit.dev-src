@@ -17,6 +17,8 @@
     :data-skin-effects="calm ? 'calm' : 'full'"
     :style="skinStyle"
   >
+    <atmosphere :theme="theme" :account="account" :calm="calm" />
+
     <div class="skin-badge" aria-label="Profile skin">
       <span v-if="preview" class="skin-badge__label">
         <q-icon name="visibility" size="14px" aria-hidden="true" />
@@ -34,17 +36,6 @@
         <button type="button" class="skin-badge__action" @click="ignoreSkin">Ignore this skin</button>
         <button type="button" class="skin-badge__action" @click="hideSkins">Hide all skins</button>
       </template>
-    </div>
-
-    <div v-if="theme.profile.banner && theme.profile.banner.images.length" class="skin-banner" aria-hidden="true">
-      <img
-        v-for="(image, index) in theme.profile.banner.images"
-        :key="image"
-        :src="image"
-        alt=""
-        loading="lazy"
-        :class="'skin-banner__image skin-banner__image--' + (index + 1)"
-      />
     </div>
 
     <slot :theme="theme" :calm="calm" :visible="visible" />
@@ -72,49 +63,22 @@
   margin-left: 0.6rem;
 }
 
-.skin-banner {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  height: clamp(90px, 14vw, 170px);
-  overflow: hidden;
-  border-bottom: 1px solid var(--c-border-subtle);
-}
-
-.skin-banner__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.82;
-}
-
-.skin-banner__image--1:only-child {
-  grid-column: 1 / -1;
-}
-
-.skin-banner__image--2 {
-  grid-column: span 2;
-}
-
 .skin-scope--preview {
   border: 1px dashed var(--c-border-strong);
   border-radius: var(--radius-card);
   overflow: hidden;
 }
 
-@media (max-width: 599px) {
-  .skin-banner {
-    height: 96px;
-  }
-}
 </style>
 
 <script>
+import Atmosphere from 'components/theme/Atmosphere.vue'
 import { readAccountTheme } from 'src/themes/account'
 import { quasarVarsFor, tokensFor } from 'src/themes/tokens'
 
 export default {
   name: 'ProfileSkin',
+  components: { Atmosphere },
   props: {
     account: { type: Object, default: null },
     author: { type: String, default: '' },

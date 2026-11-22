@@ -59,14 +59,14 @@
             <div class="studio-row">
               <q-input v-model="draft.name" dense outlined label="Skin name" maxlength="40" class="studio-grow" />
               <q-btn-toggle
-                v-model="draft.mode"
-                :options="[{ label: 'Dark', value: 'dark' }, { label: 'Light', value: 'light' }]"
+                v-model="modePlan"
+                :options="[{ label: 'Dark', value: 'dark' }, { label: 'Light', value: 'light' }, { label: 'Both', value: 'both' }]"
                 dense
                 no-caps
                 toggle-color="primary"
                 color="grey-9"
                 text-color="grey-3"
-                aria-label="Skin mode"
+                aria-label="Skin mode or mode variants"
               />
             </div>
             <q-input v-model="draft.mood" dense outlined label="Mood" maxlength="80" class="q-mt-sm" />
@@ -81,7 +81,19 @@
           <section class="studio-section">
             <div class="studio-section__head">
               <h2 class="studio-section__title">Palette</h2>
-              <span class="studio-section__hint">Every value is a hex colour; contrast is checked before publishing.</span>
+              <span class="studio-section__hint">Every value is a hex colour; each variant is contrast checked independently.</span>
+            </div>
+            <div v-if="isBoth" class="studio-row q-mb-sm">
+              <q-select
+                v-model="variantTarget"
+                :options="variantTargetOptions"
+                dense
+                outlined
+                emit-value
+                map-options
+                label="Edit palette for"
+                class="studio-grow"
+              />
             </div>
             <div class="studio-palette">
               <label v-for="field in colorFields" :key="field.key" class="studio-color">
@@ -90,14 +102,14 @@
                   <input
                     type="color"
                     class="studio-color__input"
-                    :value="draft.tokens[field.key]"
+                    :value="activeTokens[field.key]"
                     :aria-label="field.label + ' colour'"
                     @input="setColor(field.key, $event.target.value)"
                   />
                   <input
                     type="text"
                     class="studio-color__hex"
-                    :value="draft.tokens[field.key]"
+                    :value="activeTokens[field.key]"
                     maxlength="7"
                     spellcheck="false"
                     :aria-label="field.label + ' hex value'"
@@ -115,6 +127,11 @@
               </span>
               <span class="studio-meter__item" :class="contrastClass(contrastPrimary)">
                 Primary {{ contrastPrimary.toFixed(2) }}:1
+              </span>
+            </div>
+            <div v-if="isBoth" class="studio-meter" aria-label="Variant contrast summary">
+              <span v-for="variant in variantMeters" :key="variant.mode" class="studio-meter__item" :class="contrastClass(variant.ratio)">
+                {{ variant.label }} {{ variant.ratio.toFixed(2) }}:1
               </span>
             </div>
           </section>
@@ -146,6 +163,58 @@
             <div class="studio-row q-mt-sm">
               <q-select v-model="draft.effects.motion" :options="motionOptions" dense outlined label="Motion" class="studio-grow" />
               <q-select v-model="draft.effects.ambient" :options="ambientOptions" dense outlined label="Ambient" class="studio-grow" />
+            </div>
+          </section>
+
+          <section class="studio-section">
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Atmosphere</h2>
+              <span class="studio-section__hint">Your own cover or a three-image collage. The readability scrim is always applied.</span>
+            </div>
+            <div class="studio-row">
+              <q-select v-model="draft.profile.atmosphere.source" :options="atmosphereSourceOptions" dense outlined emit-value map-options label="Source" class="studio-grow" />
+              <q-select v-model="draft.profile.atmosphere.treatment" :options="atmosphereTreatmentOptions" dense outlined emit-value map-options label="Treatment" class="studio-grow" />
+              <q-select v-model="draft.profile.atmosphere.intensity" :options="atmosphereIntensityOptions" dense outlined emit-value map-options label="Intensity" class="studio-grow" />
+            </div>
+            <p v-if="draft.profile.atmosphere.source === 'cover' && coverWarning" class="studio-warning-note" role="note">{{ coverWarning }}</p>
+            <div v-if="draft.profile.atmosphere.source === 'collage'" class="studio-atmosphere">
+              <div class="studio-atmosphere__head">
+                <span>Choose up to 3 of your own images</span>
+                <span>{{ selectedCollage.length }} / 3</span>
+              </div>
+              <div v-if="atmosphereImages.length" class="studio-atmosphere__grid">
+                <button
+                  v-for="image in atmosphereImages"
+                  :key="image.url"
+                  type="button"
+                  class="studio-atmosphere__item"
+                  :class="{ 'is-selected': selectedCollage.includes(image.url) }"
+                  :aria-pressed="selectedCollage.includes(image.url)"
+                  :aria-label="image.label"
+                  @click="toggleCollageImage(image.url)"
+                >
+                  <img :src="image.url" alt="" loading="lazy" />
+                  <span>{{ image.label }}</span>
+                </button>
+              </div>
+              <p v-else class="studio-section__hint">No safe images found in your recent posts yet.</p>
+            </div>
+          </section>
+
+          <section class="studio-section">
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Visual language</h2>
+              <span class="studio-section__hint">Closed enums only; the app owns all layout and geometry.</span>
+            </div>
+            <div class="studio-row">
+              <q-select v-model="draft.profile.visual.link" :options="linkOptions" dense outlined label="Links" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.button" :options="buttonOptions" dense outlined label="Buttons" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.chip" :options="chipOptions" dense outlined label="Chips" class="studio-grow" />
+            </div>
+            <div class="studio-row q-mt-sm">
+              <q-select v-model="draft.profile.visual.divider" :options="dividerOptions" dense outlined label="Dividers" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.image" :options="imageOptions" dense outlined label="Post images" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.gradient" :options="gradientOptions" dense outlined label="Gradient" class="studio-grow" />
             </div>
           </section>
 
@@ -496,6 +565,64 @@
   line-height: 1.4;
 }
 
+.studio-warning-note {
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.studio-atmosphere {
+  margin-top: 0.65rem;
+}
+
+.studio-atmosphere__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  color: var(--c-text-subtle);
+  font-size: 0.7rem;
+}
+
+.studio-atmosphere__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.35rem;
+}
+
+.studio-atmosphere__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-2);
+  color: var(--c-text-subtle);
+  font: inherit;
+  font-size: 0.6rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-atmosphere__item img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.studio-atmosphere__item.is-selected {
+  border-color: var(--c-primary);
+  color: var(--c-text);
+}
+
 .studio-publish__actions {
   display: flex;
   flex-wrap: wrap;
@@ -737,14 +864,17 @@
 <script>
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import ProfileShelf from 'components/theme/ProfileShelf.vue'
-import { fetchAccount, fetchFollowingNames } from 'src/services/chainData'
+import { fetchAccount, fetchAccountPosts, fetchFollowingNames } from 'src/services/chainData'
 import { fetchBadgeSuggestions } from 'src/services/badges'
+import { readUploadHistory } from 'src/services/imageHost'
+import { postMetadata } from 'src/services/posts'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
-import { validateTheme } from 'src/themes/schema'
+import { isSafeImageUrl, validateTheme } from 'src/themes/schema'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { contrast, hslToHex, hueFor, rgbToHsl } from 'src/themes/color'
+import { safeJsonParse } from 'src/utils/safeHtml'
+import { contrast, ensureContrast, hslToHex, hueFor, mix, rgbToHsl } from 'src/themes/color'
 
 function clone (value) {
   return JSON.parse(JSON.stringify(value))
@@ -805,6 +935,28 @@ function paletteFor (average, username, mode) {
     negative: dark ? '#e57373' : '#b42318',
     warning: dark ? '#ffb74d' : '#9a5b00',
     info: dark ? '#81d4fa' : '#0b6f8a'
+  }
+}
+
+function variantFor (tokens, mode) {
+  const dark = mode === 'dark'
+  const surface = dark ? mix(tokens.primary, '#000000', 0.84) : '#ffffff'
+  const bg = dark ? mix(tokens.primary, '#000000', 0.9) : mix(tokens.primary, '#ffffff', 0.94)
+  const text = dark ? mix(tokens.primary, '#ffffff', 0.9) : mix(tokens.primary, '#000000', 0.86)
+  return {
+    bg,
+    surface,
+    surfaceAlt: dark ? mix(tokens.primary, '#000000', 0.78) : mix(tokens.primary, '#ffffff', 0.88),
+    text: ensureContrast(text, surface, 4.5),
+    muted: ensureContrast(dark ? mix(tokens.primary, '#ffffff', 0.6) : mix(tokens.primary, '#000000', 0.55), surface, 4.5),
+    border: dark ? mix(tokens.primary, '#000000', 0.62) : mix(tokens.primary, '#ffffff', 0.62),
+    primary: ensureContrast(tokens.primary, surface, 3),
+    secondary: ensureContrast(tokens.secondary, surface, 3),
+    accent: ensureContrast(tokens.accent, surface, 3),
+    positive: ensureContrast(tokens.positive, surface, 4.5),
+    negative: ensureContrast(tokens.negative, surface, 4.5),
+    warning: ensureContrast(tokens.warning, surface, 4.5),
+    info: ensureContrast(tokens.info, surface, 4.5)
   }
 }
 
@@ -873,6 +1025,38 @@ export default {
       circleLoading: false,
       badgeLoading: false,
       badgeSuggestions: { peakd: [], hivebuzz: [], level: null },
+      variantTarget: 'base',
+      variantTargetOptions: [
+        { label: 'Base fallback', value: 'base' },
+        { label: 'Dark variant', value: 'dark' },
+        { label: 'Light variant', value: 'light' }
+      ],
+      atmosphereImages: [],
+      coverUrl: '',
+      coverMeta: { width: 0, height: 0 },
+      atmosphereSourceOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Profile cover', value: 'cover' },
+        { label: 'Image collage', value: 'collage' }
+      ],
+      atmosphereTreatmentOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Duotone', value: 'duotone' },
+        { label: 'Gradient', value: 'gradient' },
+        { label: 'Grain', value: 'grain' },
+        { label: 'Halftone', value: 'halftone' }
+      ],
+      atmosphereIntensityOptions: [
+        { label: 'Subtle', value: 'subtle' },
+        { label: 'Medium', value: 'medium' },
+        { label: 'Strong', value: 'strong' }
+      ],
+      linkOptions: ['underline', 'glow', 'highlighter', 'bracket'],
+      buttonOptions: ['solid', 'outline', 'pill', 'square', 'ticket'],
+      chipOptions: ['pill', 'square', 'stamp', 'ticket'],
+      dividerOptions: ['hairline', 'dots', 'wave', 'hex'],
+      imageOptions: ['none', 'rounded', 'polaroid', 'stamp', 'duotone'],
+      gradientOptions: ['none', 'to-right', 'to-bottom', 'diagonal', 'radial'],
       statusIconOptions: [
         { label: 'No icon', value: 'none' },
         { label: 'Spark', value: 'spark' },
@@ -977,6 +1161,49 @@ export default {
       }
       return badges.slice(0, 7)
     },
+    modePlan: {
+      get () {
+        return this.draft.variants && (this.draft.variants.dark || this.draft.variants.light)
+          ? 'both'
+          : (this.draft.mode === 'light' ? 'light' : 'dark')
+      },
+      set (value) {
+        if (value === 'both') this.enableBothVariants()
+        else {
+          this.draft.mode = value === 'light' ? 'light' : 'dark'
+          delete this.draft.variants
+          this.variantTarget = 'base'
+        }
+      }
+    },
+    isBoth () {
+      return Boolean(this.draft.variants && (this.draft.variants.dark || this.draft.variants.light))
+    },
+    activeTokens () {
+      if (this.isBoth && this.variantTarget !== 'base') {
+        return this.draft.variants[this.variantTarget]?.tokens || this.draft.tokens
+      }
+      return this.draft.tokens
+    },
+    variantMeters () {
+      if (!this.isBoth) return []
+      const rows = []
+      for (const mode of ['dark', 'light']) {
+        const tokens = this.draft.variants?.[mode]?.tokens
+        if (tokens) rows.push({ mode, label: mode === 'dark' ? 'Dark' : 'Light', ratio: contrast(tokens.text, tokens.surface) })
+      }
+      return rows
+    },
+    selectedCollage () {
+      return Array.isArray(this.draft.profile.banner?.images) ? this.draft.profile.banner.images : []
+    },
+    coverWarning () {
+      if (!this.coverUrl) return 'No profile cover was found. The existing backdrop stays in place.'
+      const { width, height } = this.coverMeta
+      if (width && width < 1200) return 'This cover is small (' + width + 'px wide); it may look soft behind a page.'
+      if (width && height && height > width) return 'This cover is portrait-shaped; the atmosphere crops it to a wide strip.'
+      return ''
+    },
     presetOptions () {
       return THEMES.map(theme => ({ label: theme.name, value: theme.id, caption: theme.mood }))
     },
@@ -1000,13 +1227,13 @@ export default {
       return Boolean(this.username && this.validation.ok && !this.busy)
     },
     contrastText () {
-      return contrast(this.draft.tokens.text, this.draft.tokens.surface)
+      return contrast(this.activeTokens.text, this.activeTokens.surface)
     },
     contrastMuted () {
-      return contrast(this.draft.tokens.muted, this.draft.tokens.surface)
+      return contrast(this.activeTokens.muted, this.activeTokens.surface)
     },
     contrastPrimary () {
-      return contrast(this.draft.tokens.primary, this.draft.tokens.bg)
+      return contrast(this.activeTokens.primary, this.activeTokens.bg)
     },
     publishDiff () {
       if (!this.pendingMerged) return ''
@@ -1023,6 +1250,11 @@ export default {
       if (Array.isArray(value) && value.length > 6) {
         this.draft.profile.circle = value.slice(0, 6)
         this.$q.notify({ message: 'Hive Circle supports up to 6 accounts.', color: 'primary', timeout: 2200 })
+      }
+    },
+    'draft.profile.atmosphere.source' (value) {
+      if (value === 'collage' && !this.draft.profile.banner) {
+        this.draft.profile.banner = { layout: 'mosaic', images: [] }
       }
     },
     'draft.profile.badges.selected' (value) {
@@ -1074,6 +1306,7 @@ export default {
         }
         this.loadFollowing()
         this.loadBadges()
+        this.loadAtmosphereImages()
       } catch (error) {
         this.$q.notify({ type: 'negative', message: error?.message || 'Could not load your account' })
       } finally {
@@ -1122,6 +1355,53 @@ export default {
         this.badgeLoading = false
       }
     },
+    async loadAtmosphereImages () {
+      const rows = new Map()
+      const profile = this.account?.profile && typeof this.account.profile === 'object'
+        ? this.account.profile
+        : safeJsonParse(this.account?.posting_json_metadata, {}).profile || {}
+      this.coverUrl = isSafeImageUrl(profile.cover_image) ? profile.cover_image : ''
+      if (this.coverUrl) {
+        rows.set(this.coverUrl, 'Profile cover')
+        const image = new Image()
+        image.onload = () => { this.coverMeta = { width: image.naturalWidth, height: image.naturalHeight } }
+        image.src = this.coverUrl
+      } else {
+        this.coverMeta = { width: 0, height: 0 }
+      }
+      try {
+        const uploads = readUploadHistory(typeof localStorage !== 'undefined' ? localStorage : null, this.username)
+        for (const entry of uploads) {
+          if (isSafeImageUrl(entry.url) && !rows.has(entry.url)) rows.set(entry.url, 'Recent upload')
+        }
+      } catch {
+        // Upload history is optional.
+      }
+      try {
+        const posts = await fetchAccountPosts({ account: this.username, sort: 'blog', limit: 12 }, {})
+        for (const post of Array.isArray(posts) ? posts : []) {
+          const metadata = postMetadata(post)
+          const images = Array.isArray(metadata.image) ? metadata.image : [metadata.image]
+          for (const url of images) {
+            if (isSafeImageUrl(url) && !rows.has(url)) rows.set(url, 'From a recent post')
+          }
+        }
+      } catch {
+        // Recent posts are optional.
+      }
+      this.atmosphereImages = [...rows.entries()].slice(0, 30).map(([url, label]) => ({ url, label }))
+    },
+    toggleCollageImage (url) {
+      const current = this.selectedCollage
+      let next
+      if (current.includes(url)) next = current.filter(item => item !== url)
+      else if (current.length < 3) next = [...current, url]
+      else {
+        this.$q.notify({ message: 'Choose up to 3 collage images.', color: 'primary', timeout: 2200 })
+        return
+      }
+      this.draft.profile.banner = { layout: 'mosaic', images: next }
+    },
     applyPreset (id) {
       const preset = getTheme(id)
       if (!preset) return
@@ -1130,6 +1410,8 @@ export default {
       this.draft.shape = clone(preset.shape)
       this.draft.effects = clone(preset.effects)
       this.draft.mode = preset.mode
+      delete this.draft.variants
+      this.variantTarget = 'base'
       this.draft.tags = [...new Set([preset.mode, 'custom', ...preset.tags])].slice(0, 8)
       this.draft.remixedFrom = preset.author && preset.author !== 'hive.ausbit.dev' ? preset.author : null
       this.draft.profile.background = preset.effects.texture === 'none' ? 'mesh' : preset.effects.texture
@@ -1144,7 +1426,10 @@ export default {
         } catch {
           average = null
         }
-        this.draft.tokens = paletteFor(average, this.username, this.draft.mode)
+        const mode = this.isBoth && this.variantTarget === 'light'
+          ? 'light'
+          : (this.isBoth && this.variantTarget === 'dark' ? 'dark' : this.draft.mode)
+        this.applyPalette(paletteFor(average, this.username, mode))
         this.$q.notify({
           message: average ? 'Palette generated from your avatar.' : 'Palette generated from your account name.',
           color: 'primary',
@@ -1156,7 +1441,30 @@ export default {
     },
     setColor (key, value) {
       const next = String(value || '').trim().toLowerCase()
-      this.draft.tokens[key] = next.startsWith('#') ? next : '#' + next
+      this.activeTokens[key] = next.startsWith('#') ? next : '#' + next
+    },
+    applyPalette (tokens) {
+      if (this.isBoth && this.variantTarget !== 'base') {
+        this.draft.variants[this.variantTarget].tokens = tokens
+      } else {
+        this.draft.tokens = tokens
+      }
+    },
+    enableBothVariants () {
+      const base = clone(this.draft.tokens)
+      if (this.draft.mode === 'light') {
+        this.draft.variants = {
+          light: { tokens: base },
+          dark: { tokens: variantFor(base, 'dark') }
+        }
+        this.variantTarget = 'dark'
+      } else {
+        this.draft.variants = {
+          dark: { tokens: base },
+          light: { tokens: variantFor(base, 'light') }
+        }
+        this.variantTarget = 'light'
+      }
     },
     contrastClass (value) {
       if (value >= 4.5) return 'is-good'

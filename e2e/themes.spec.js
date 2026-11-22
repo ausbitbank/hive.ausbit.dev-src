@@ -1,6 +1,8 @@
 import { test, expect } from './fixtures'
 import { waitForApp } from './helpers'
 
+test.use({ serviceWorkers: 'block' })
+
 const HIVE_HOSTS = [
   'https://api.hive.blog',
   'https://api.openhive.network',
@@ -49,6 +51,8 @@ const SKIN = {
     card: 'glass',
     ticker: 'E2E skin ticker',
     stickers: ['hex'],
+    atmosphere: { source: 'cover', treatment: 'duotone', intensity: 'medium' },
+    visual: { link: 'glow', button: 'pill', chip: 'stamp', divider: 'hex', image: 'rounded', gradient: 'diagonal' },
     banner: null
   }
 }
@@ -70,6 +74,14 @@ test('appearance switches to Hive Light and persists after reload', async ({ pag
 test('a published profile skin is scoped and can be hidden', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
 
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7h8AAAAASUVORK5CYII=',
+    'base64'
+  )
+  await page.route('https://images.hive.blog/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'image/png', body: png })
+  })
+
   for (const host of HIVE_HOSTS) {
     await page.route(host + '/**', async route => {
       const payload = route.request().postDataJSON?.() || {}
@@ -82,6 +94,7 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
           let metadata
           try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
           metadata['hive.ausbit.dev'] = { theme: SKIN }
+          metadata.profile = { ...(metadata.profile || {}), cover_image: 'https://images.hive.blog/DQmcover/cover.png' }
           account.posting_json_metadata = JSON.stringify(metadata)
         }
       }
@@ -100,6 +113,12 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
   await expect(page.locator('.skin-sticker-tray')).toHaveCount(0)
   await expect(skin).toHaveAttribute('data-skin-background', 'mesh')
   await expect(skin).toHaveAttribute('data-avatar-frame', 'ring')
+  await expect(skin).toHaveAttribute('data-skin-link', 'glow')
+  await expect(skin).toHaveAttribute('data-skin-button', 'pill')
+  await expect(skin).toHaveAttribute('data-skin-gradient', 'diagonal')
+  await expect(skin.locator('.skin-atmosphere')).toBeVisible()
+  await expect(skin.locator('.skin-atmosphere')).toHaveAttribute('data-treatment', 'duotone')
+  await expect(skin.locator('.skin-banner')).toHaveCount(0)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'hive-dark')
 
   await page.getByRole('button', { name: 'Ignore this skin' }).click()
