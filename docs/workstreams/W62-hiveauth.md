@@ -51,7 +51,8 @@ re-enabled in normal queue auto-send.
 ## Verification performed
 
 - `bun run lint` — clean.
-- `bun run test` — 934 tests pass (107 files).
+- `bun run test` (initial implementation, 2026-11-22) — 934 tests pass
+  (107 files).
 - `bun run build` — clean; HiveAuth is a 13.82 KB / 5.09 KB gzip lazy chunk.
 - Live relay probe: `authenticate('ausbitbank')` connected, received
   `auth_wait` with a 60-second expiry and a valid `has://` URI; the request was
