@@ -133,21 +133,34 @@ test('post sidebar stacks between the article and comments on mobile and aligns 
 
   const mobile = await page.evaluate(() => {
     const rect = selector => document.querySelector(selector).getBoundingClientRect()
+    const label = el => {
+      for (const name of ['post-article', 'post-sidebar', 'post-comments', 'post-similar']) {
+        if (el.classList.contains(name)) return name === 'post-comments' ? 'comments' : name
+      }
+      return el.className.split(' ')[0]
+    }
+    const similar = document.querySelector('.post-similar')
     return {
       h1: document.querySelectorAll('h1').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      children: [...document.querySelectorAll('.post-grid > *')].map(el => el.className.split(' ')[0]),
+      children: [...document.querySelectorAll('.post-grid > *')].map(label),
       articleTop: rect('.post-article').top + window.scrollY,
       sidebarTop: rect('.post-sidebar').top + window.scrollY,
       commentsTop: rect('#comments').top + window.scrollY,
+      similarTop: similar ? similar.getBoundingClientRect().top + window.scrollY : null,
       position: getComputedStyle(document.querySelector('.post-sidebar')).position
     }
   })
   expect(mobile.h1).toBe(1)
   expect(mobile.overflow).toBe(0)
-  expect(mobile.children).toEqual(['post-article', 'post-sidebar', 'comments'])
+  expect(mobile.children.filter(name => name !== 'post-similar'))
+    .toEqual(['post-article', 'post-sidebar', 'comments'])
   expect(mobile.sidebarTop).toBeGreaterThan(mobile.articleTop)
   expect(mobile.commentsTop).toBeGreaterThan(mobile.sidebarTop)
+  if (mobile.children.includes('post-similar')) {
+    expect(mobile.children.at(-1)).toBe('post-similar')
+    expect(mobile.similarTop).toBeGreaterThan(mobile.commentsTop)
+  }
   expect(mobile.position).toBe('static')
 
   await page.setViewportSize({ width: 1440, height: 1100 })

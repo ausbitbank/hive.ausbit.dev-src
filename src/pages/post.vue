@@ -343,9 +343,14 @@
   grid-template-columns: minmax(0, 1fr) 312px;
   grid-template-areas:
     "article sidebar"
-    "comments sidebar";
+    "comments sidebar"
+    "similar similar";
   align-items: start;
   gap: var(--space-4);
+}
+
+.post-similar {
+  grid-area: similar;
 }
 
 .post-article {
@@ -943,7 +948,8 @@
     grid-template-areas:
       "article"
       "sidebar"
-      "comments";
+      "comments"
+      "similar";
   }
 
   .post-sidebar {

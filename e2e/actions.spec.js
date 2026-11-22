@@ -705,7 +705,7 @@ test.describe('action flows', () => {
     await expect(rules).toHaveAttribute('href', '/c/hive-111111?tab=about')
     await expect(page.locator('.compose-warning').filter({ hasText: 'not one of your subscribed communities' })).toHaveCount(0)
     const avatar = card.locator('.compose-community-card__avatar')
-    await expect(avatar).toHaveAttribute('src', 'https://images.hive.blog/u/hive-111111/avatar')
+    await expect(avatar).toHaveAttribute('src', 'https://images.hive.blog/u/hive-111111/avatar/small')
 
     await select.click()
     await select.fill('hive-999999')
