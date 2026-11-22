@@ -7,7 +7,7 @@
     </q-avatar>
     <span class="account-trigger__name gt-xs">{{ loggedInUser }}</span>
     <q-icon name="expand_more" size="16px" class="account-trigger__chevron gt-xs" aria-hidden="true" />
-    <q-popup-proxy ref="menu" @before-show="onMenuOpen" class="account-menu-popup">
+    <q-popup-proxy ref="menu" :breakpoint="0" :offset="[0, 6]" @before-show="onMenuOpen" class="account-menu-popup">
       <q-card flat class="login-card">
       <div v-if="loggedInUser">
         <div class="account-menu__head">
@@ -44,7 +44,7 @@
           </div>
         </div>
 
-        <q-list dense class="account-menu" role="navigation" aria-label="Account menu">
+        <div class="account-menu__body">
           <q-item v-if="loginType === 'smartlock'" class="login-smartlock-status">
             <q-item-section avatar>
               <q-icon :name="smartlockUnlocked ? 'lock_open' : 'lock'" :color="smartlockUnlocked ? 'green' : 'orange'" />
@@ -78,40 +78,34 @@
               />
             </q-item-section>
           </q-item>
-          <q-item v-else-if="loginType === 'keychain'" class="account-menu__provider account-menu__provider--compact">
-            <q-item-section avatar><q-icon name="key" color="primary" /></q-item-section>
-            <q-item-section>Hive Keychain</q-item-section>
-          </q-item>
-          <q-item v-else-if="loginType === 'hiveauth'" class="account-menu__provider account-menu__provider--compact">
-            <q-item-section avatar><q-icon name="smartphone" color="primary" /></q-item-section>
-            <q-item-section>
-              <q-item-label>HiveAuth</q-item-label>
-              <q-item-label caption>Approved in your mobile wallet</q-item-label>
-            </q-item-section>
-          </q-item>
 
-          <q-item-label header class="account-menu__heading">Your Hive</q-item-label>
-          <q-item v-for="link in menuLinks" :key="link.title" clickable :to="link.to" class="account-menu__item" @click="closeMenu">
-            <q-item-section avatar><q-icon :name="link.icon" /></q-item-section>
-            <q-item-section>{{ link.title }}</q-item-section>
-          </q-item>
-          <q-item v-if="account !== undefined && account.witness_votes && account.witness_votes.includes(loggedInUser)" clickable to="/witness" class="account-menu__item" @click="closeMenu">
-            <q-item-section avatar><q-icon name="admin_panel_settings" /></q-item-section>
-            <q-item-section>Witness</q-item-section>
-          </q-item>
+          <nav class="account-menu" aria-label="Account menu">
+            <div class="account-menu__heading">Your Hive</div>
+            <div class="account-menu__grid">
+              <q-item v-for="link in menuLinks" :key="link.title" clickable :to="link.to" class="account-menu__tile" @click="closeMenu">
+                <q-item-section avatar><q-icon :name="link.icon" aria-hidden="true" /></q-item-section>
+                <q-item-section>{{ link.title }}</q-item-section>
+              </q-item>
+              <q-item v-if="account !== undefined && account.witness_votes && account.witness_votes.includes(loggedInUser)" clickable to="/witness" class="account-menu__tile account-menu__tile--wide" @click="closeMenu">
+                <q-item-section avatar><q-icon name="admin_panel_settings" aria-hidden="true" /></q-item-section>
+                <q-item-section>Witness</q-item-section>
+              </q-item>
+            </div>
 
-          <q-item-label header class="account-menu__heading">Account</q-item-label>
-          <q-item clickable class="account-menu__item" @click="openSettings">
-            <q-item-section avatar><q-icon name="settings" /></q-item-section>
-            <q-item-section>Settings</q-item-section>
-          </q-item>
-          <q-item clickable class="account-menu__item account-menu__item--danger" @click="logout()">
-            <q-item-section avatar><q-icon name="logout" /></q-item-section>
-            <q-item-section>Log out</q-item-section>
-          </q-item>
-        </q-list>
+            <div class="account-menu__rule" role="presentation" />
+            <div class="account-menu__heading">Account</div>
+            <q-item clickable class="account-menu__tile account-menu__tile--row" @click="openSettings">
+              <q-item-section avatar><q-icon name="settings" aria-hidden="true" /></q-item-section>
+              <q-item-section>Settings</q-item-section>
+            </q-item>
+            <q-item clickable class="account-menu__tile account-menu__tile--row account-menu__tile--danger" @click="logout()">
+              <q-item-section avatar><q-icon name="logout" aria-hidden="true" /></q-item-section>
+              <q-item-section>Log out</q-item-section>
+            </q-item>
+          </nav>
+        </div>
       </div>
-      <q-list dense v-else>
+      <q-list dense v-else class="account-menu--guest">
         <div class="account-menu__head account-menu__head--guest">
           <div class="account-menu__ident">
             <span class="account-menu__name">Log in to Hive</span>
@@ -273,8 +267,11 @@
 }
 
 .login-card {
-  width: 320px;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
   max-width: 94vw;
+  max-height: min(84vh, 620px);
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
@@ -286,7 +283,7 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.85rem 0.85rem 0.75rem;
+  padding: 0.8rem 0.9rem 0.7rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -341,14 +338,8 @@ a.account-menu__name:hover {
   cursor: help;
 }
 
-.account-menu__provider--compact {
-  min-height: 34px;
-  color: var(--c-text-subtle);
-  font-size: 0.76rem;
-}
-
 .account-menu__voting {
-  padding: 0.6rem 0.85rem 0.7rem;
+  padding: 0.55rem 0.9rem 0.6rem;
   border-bottom: 1px solid var(--border-subtle);
   background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
@@ -385,23 +376,35 @@ a.account-menu__name:hover {
   gap: 0.5rem;
   margin-top: 0.35rem;
   color: var(--c-text-subtle);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
 
 .account-menu__voting-meta span {
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.25rem;
   white-space: nowrap;
 }
 
+.account-menu__body,
+.account-menu--guest {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.account-menu__body {
+  padding: 0.2rem 0 0.35rem;
+}
+
 .account-menu {
-  padding: 0.25rem 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .account-menu__heading {
-  padding: 0.55rem 0.85rem 0.2rem;
+  padding: 0.55rem 0.9rem 0.2rem;
   min-height: 0;
   color: var(--c-text-faint);
   font-size: 0.66rem;
@@ -411,43 +414,83 @@ a.account-menu__name:hover {
   text-transform: uppercase;
 }
 
-.account-menu .q-item {
-  min-height: 38px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+.account-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px 2px;
+  padding: 0 0.5rem;
+}
+
+.account-menu .q-item.account-menu__tile {
+  min-height: 33px;
+  padding: 3px 6px;
+  border-radius: 6px;
   color: var(--c-text-soft);
-  font-size: 0.84rem;
+  font-size: 0.83rem;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.account-menu .q-item__section--avatar {
-  min-width: 36px;
-  padding-right: 0.5rem;
+.account-menu .q-item.account-menu__tile--row {
+  margin: 0 0.5rem;
 }
 
-.account-menu .q-item__section--avatar .q-icon {
+.account-menu .q-item.account-menu__tile--wide {
+  grid-column: 1 / -1;
+}
+
+.account-menu .account-menu__tile .q-item__section--avatar {
+  min-width: 27px;
+  padding-right: 3px;
+}
+
+.account-menu .account-menu__tile .q-item__section--avatar .q-icon {
   color: var(--c-text-faint);
-  font-size: 19px;
+  font-size: 18px;
 }
 
-.account-menu .q-item:hover,
-.account-menu .q-item:focus-visible {
-  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+.account-menu .account-menu__tile .q-item__section:not(.q-item__section--avatar) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu .q-item.account-menu__tile:hover,
+.account-menu .q-item.account-menu__tile:focus-visible {
+  background: color-mix(in srgb, var(--c-link) 9%, transparent);
   color: var(--c-text-strong);
+  text-decoration: none;
 }
 
-.account-menu .q-item:hover .q-icon,
-.account-menu .q-item:focus-visible .q-icon,
-.account-menu .q-item.q-router-link--active .q-icon {
+.account-menu .q-item.account-menu__tile:hover .q-icon,
+.account-menu .q-item.account-menu__tile:focus-visible .q-icon,
+.account-menu .q-item.account-menu__tile.q-router-link--active .q-icon {
   color: var(--c-link);
 }
 
-.account-menu__item--danger,
-.account-menu__item--danger .q-item__section--avatar .q-icon {
+.account-menu .q-item.account-menu__tile.q-router-link--active {
+  color: var(--c-link-hover);
+}
+
+.account-menu__rule {
+  height: 1px;
+  margin: 5px 0.9rem 1px;
+  background: var(--border-subtle);
+}
+
+.account-menu .q-item.account-menu__tile--danger,
+.account-menu .q-item.account-menu__tile--danger .q-item__section--avatar .q-icon {
   color: var(--c-negative);
 }
 
-.account-menu .q-item.account-menu__item--danger:hover {
+.account-menu .q-item.account-menu__tile--danger:hover,
+.account-menu .q-item.account-menu__tile--danger:focus-visible {
   background: color-mix(in srgb, var(--c-negative) 10%, transparent);
+  color: var(--c-negative);
+}
+
+.account-menu .q-item.account-menu__tile--danger:hover .q-icon,
+.account-menu .q-item.account-menu__tile--danger:focus-visible .q-icon {
   color: var(--c-negative);
 }
 
@@ -504,12 +547,36 @@ a.account-menu__name:hover {
 }
 
 .login-smartlock-status {
-  text-align: left;
+  margin: 0.2rem 0.5rem 0.35rem;
+  padding: 6px;
+  border-radius: 6px;
   background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  text-align: left;
+}
+
+.login-smartlock-status .q-item__section--avatar {
+  min-width: 27px;
+  padding-right: 3px;
+}
+
+.login-smartlock-status .q-item__section--avatar .q-icon {
+  font-size: 19px;
 }
 
 .login-smartlock-status :deep(.q-item__label) {
   text-align: left;
+}
+
+.login-smartlock-status :deep(.q-item__label:not(.q-item__label--caption)) {
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+
+.login-smartlock-status :deep(.q-item__label--caption) {
+  margin-top: 2px;
+  color: var(--c-text-subtle);
+  font-size: 0.7rem;
+  line-height: 1.35;
 }
 
 .login-smartlock-card {
@@ -837,8 +904,11 @@ export default {
       }
     },
     setUsername (user) { this.username = user },
-    openSettings () {
+    closeMenu () {
       this.$refs.menu?.hide?.()
+    },
+    openSettings () {
+      this.closeMenu()
       this.settingsDialog = true
     },
     async smartLockRemoveAccount (user) {
