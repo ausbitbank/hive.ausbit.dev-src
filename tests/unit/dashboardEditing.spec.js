@@ -147,13 +147,15 @@ describe('edit-mode drafts', () => {
 
 describe('widget settings', () => {
   it('offers fields for every configurable registry widget', () => {
-    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations', 'vitals', 'walletActions', 'creatorStats', 'governance', 'hbd', 'communityPulse']) {
+    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations', 'vitals', 'walletActions', 'creatorStats', 'governance', 'hbd', 'communityPulse', 'delegations', 'witnessRound', 'nodeHealth', 'hiveEngine', 'trendingTags', 'draftsQueue']) {
       expect(isConfigurableWidget(type)).toBe(true)
       expect(settingsFieldsFor(type).length).toBeGreaterThan(0)
     }
-    // Network stats has no per-instance settings.
+    // Network stats and the community spotlight have no per-instance settings.
     expect(isConfigurableWidget('network')).toBe(false)
     expect(settingsFieldsFor('network')).toEqual([])
+    expect(isConfigurableWidget('communitySpotlight')).toBe(false)
+    expect(settingsFieldsFor('communitySpotlight')).toEqual([])
   })
 
   it('clamps numbers and casts toggles', () => {
@@ -216,6 +218,27 @@ describe('widget settings', () => {
       showProjection: true
     })
     expect(sanitiseWidgetSettings('hbd', { amount: -10 })).toEqual({ amount: 1 })
+  })
+
+  it('sanitises token symbol lists and delegation toggles', () => {
+    expect(sanitiseWidgetSettings('hiveEngine', {
+      symbols: ['hive', 'dec', 'dec', 'bad symbol!'],
+      showBalances: 1,
+      limit: 99
+    })).toEqual({
+      symbols: ['HIVE', 'DEC'],
+      showBalances: true,
+      limit: 8
+    })
+    expect(sanitiseWidgetSettings('delegations', {
+      showIncoming: 'yes',
+      showOutgoing: 0,
+      limit: 99
+    })).toEqual({
+      showIncoming: true,
+      showOutgoing: false,
+      limit: 10
+    })
   })
 
   it('keeps feed references and whitelists account feed types', () => {

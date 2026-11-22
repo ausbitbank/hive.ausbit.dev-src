@@ -392,7 +392,8 @@ test.describe('customisable dashboard', () => {
       'posts',
       'notifications',
       'network',
-      'hbd'
+      'hbd',
+      'draftsQueue'
     ])
   })
 
@@ -460,6 +461,47 @@ test.describe('customisable dashboard', () => {
     await expect(creator).toContainText('Author rewards')
     await expect(creator).not.toContainText('Could not load recent posts')
     await expect(creator).not.toContainText('needs an account')
+  })
+
+  test('renders the phase-2 discovery and infrastructure widgets', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Add widget' }).click()
+    for (const label of ['Trending tags', 'Drafts & queue', 'Community spotlight', 'Node health', 'Hive-Engine watchlist', 'Witness round']) {
+      await page.getByRole('button', { name: 'Add ' + label }).click()
+    }
+    await page.getByRole('button', { name: 'Done' }).click()
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const checks = [
+      ['trendingTags', 'Trending tags'],
+      ['draftsQueue', 'Drafts & queue'],
+      ['communitySpotlight', 'Community spotlight'],
+      ['nodeHealth', 'Node health'],
+      ['hiveEngine', 'L2 watchlist'],
+      ['witnessRound', 'Witness round']
+    ]
+    for (const [type, text] of checks) {
+      const card = page.locator('[data-widget-type="' + type + '"]')
+      await card.scrollIntoViewIfNeeded()
+      await expect(card).toContainText(text)
+    }
+  })
+
+  test('renders the signed-in delegation snapshot', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/')
+    await waitForApp(page)
+    const notNow = page.getByRole('button', { name: 'Not now' })
+    if (await notNow.isVisible().catch(() => false)) await notNow.click()
+
+    await openEditor(page)
+    await addWidget(page, 'Delegations')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const card = page.locator('[data-widget-type="delegations"]')
+    await card.scrollIntoViewIfNeeded()
+    await expect(card).toContainText('Delegated out')
+    await expect(card).not.toContainText('needs an account')
   })
 
   test('masonry presets collapse to one column on mobile', async ({ page }) => {

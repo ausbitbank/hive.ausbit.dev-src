@@ -263,6 +263,100 @@ export const WIDGET_REGISTRY = [
     minWidth: 'third',
     defaultSettings: { community: '', mode: 'single', showTopPost: true },
     singleton: false
+  },
+  {
+    type: 'delegations',
+    component: 'WidgetDelegationSnapshot',
+    label: 'Delegations',
+    description: 'Incoming and outgoing Hive Power delegations and effective HP.',
+    category: 'account',
+    icon: 'account_tree',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', showIncoming: false, showOutgoing: true, limit: 5 },
+    singleton: true,
+    requiresAccount: true,
+    defer: true
+  },
+  {
+    type: 'witnessRound',
+    component: 'WidgetWitnessRound',
+    label: 'Witness round',
+    description: 'Current block producer, the next producers and your witness slot.',
+    category: 'governance',
+    icon: 'how_to_vote',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', limit: 5 },
+    singleton: true
+  },
+  {
+    type: 'nodeHealth',
+    component: 'WidgetNodeHealth',
+    label: 'Node health',
+    description: 'Active API node latency, failures, head block and optional L2 probes.',
+    category: 'network',
+    icon: 'dns',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { showL2: false },
+    singleton: true,
+    defer: true
+  },
+  {
+    type: 'hiveEngine',
+    component: 'WidgetHiveEngineWatchlist',
+    label: 'Hive-Engine watchlist',
+    description: 'Prices, 24h change, volume and balances for chosen L2 tokens.',
+    category: 'markets',
+    icon: 'token',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: {
+      account: '',
+      symbols: ['SWAP.HIVE', 'DEC', 'LEO'],
+      showBalances: true,
+      limit: 6
+    },
+    singleton: true,
+    defer: true
+  },
+  {
+    type: 'trendingTags',
+    component: 'WidgetTrendingTags',
+    label: 'Trending tags',
+    description: 'The topics with the most activity and rewards right now.',
+    category: 'community',
+    icon: 'tag',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { limit: 8, showRewards: true },
+    singleton: true
+  },
+  {
+    type: 'draftsQueue',
+    component: 'WidgetDraftsQueue',
+    label: 'Drafts & queue',
+    description: 'Unfinished drafts and operations waiting to be signed.',
+    category: 'account',
+    icon: 'drafts',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { showDrafts: true, showQueue: true },
+    singleton: true
+  },
+  {
+    type: 'communitySpotlight',
+    component: 'WidgetCommunitySpotlight',
+    label: 'Community spotlight',
+    description: 'A rotating community worth discovering today.',
+    category: 'community',
+    icon: 'travel_explore',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: {},
+    singleton: true,
+    configurable: false
   }
 ]
 
@@ -347,7 +441,9 @@ export const DASHBOARD_PRESETS = [
       { type: 'witnesses', width: 'third', settings: { limit: 10 } },
       { type: 'posts', width: 'half', settings: { source: 'trending', limit: 6, view: 'cards', showBody: true } },
       { type: 'communityPulse', width: 'half', settings: {} },
-      { type: 'governance', width: 'full', settings: {} }
+      { type: 'governance', width: 'full', settings: {} },
+      { type: 'trendingTags', width: 'third', settings: {} },
+      { type: 'communitySpotlight', width: 'third', settings: {} }
     ]
   },
   {
@@ -363,7 +459,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'posts', width: 'half', settings: { source: 'trending', limit: 4, view: 'list' } },
       { type: 'notifications', width: 'third', settings: {} },
       { type: 'network', width: 'third', settings: {} },
-      { type: 'hbd', width: 'third', settings: {} }
+      { type: 'hbd', width: 'third', settings: {} },
+      { type: 'draftsQueue', width: 'third', settings: {} }
     ]
   },
   {
@@ -379,7 +476,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'network', width: 'half', settings: {} },
       { type: 'block', width: 'half', settings: {} },
       { type: 'witnesses', width: 'half', settings: { limit: 10 } },
-      { type: 'market', width: 'half', settings: {} }
+      { type: 'market', width: 'half', settings: {} },
+      { type: 'witnessRound', width: 'half', settings: {} }
     ]
   },
   {
@@ -394,7 +492,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'walletActions', width: 'half', settings: {} },
       { type: 'network', width: 'half', settings: {} },
       { type: 'block', width: 'half', settings: {} },
-      { type: 'witnesses', width: 'half', settings: { limit: 8 } }
+      { type: 'witnesses', width: 'half', settings: { limit: 8 } },
+      { type: 'hiveEngine', width: 'half', settings: {} }
     ]
   },
   {
@@ -409,7 +508,9 @@ export const DASHBOARD_PRESETS = [
       { type: 'creatorStats', width: 'half', settings: {} },
       { type: 'notifications', width: 'half', settings: {} },
       { type: 'governance', width: 'half', settings: {} },
-      { type: 'network', width: 'half', settings: {} }
+      { type: 'network', width: 'half', settings: {} },
+      { type: 'communitySpotlight', width: 'third', settings: {} },
+      { type: 'trendingTags', width: 'third', settings: {} }
     ]
   },
   {
@@ -424,7 +525,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'network', width: 'half', settings: {} },
       { type: 'hbd', width: 'third', settings: {} },
       { type: 'block', width: 'third', settings: {} },
-      { type: 'market', width: 'third', settings: {} }
+      { type: 'market', width: 'third', settings: {} },
+      { type: 'witnessRound', width: 'half', settings: {} }
     ]
   },
   {
@@ -439,7 +541,9 @@ export const DASHBOARD_PRESETS = [
       { type: 'governance', width: 'half', settings: {} },
       { type: 'hbd', width: 'half', settings: {} },
       { type: 'market', width: 'half', settings: {} },
-      { type: 'witnesses', width: 'half', settings: { limit: 10 } }
+      { type: 'witnesses', width: 'half', settings: { limit: 10 } },
+      { type: 'nodeHealth', width: 'half', settings: {} },
+      { type: 'hiveEngine', width: 'half', settings: {} }
     ]
   }
 ]

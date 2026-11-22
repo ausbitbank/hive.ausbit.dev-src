@@ -341,6 +341,47 @@ export function settingsFieldsFor (type) {
         },
         { key: 'showTopPost', kind: 'toggle', label: 'Show the top post' }
       ]
+    case 'delegations':
+      return [
+        ACCOUNT_FIELD,
+        { key: 'showIncoming', kind: 'toggle', label: 'Show incoming delegations', hint: 'Reconstructed from recent history and verified against each delegator. Slower than outgoing.' },
+        { key: 'showOutgoing', kind: 'toggle', label: 'Show outgoing delegations' },
+        LIMIT_FIELD(10, 'Delegators to show')
+      ]
+    case 'witnessRound':
+      return [
+        { key: 'account', kind: 'text', label: 'Highlight account', placeholder: 'ausbitbank', stripAt: true, hint: 'Optional. Highlights this witness when it is next in the round.' },
+        LIMIT_FIELD(8, 'Producers to show')
+      ]
+    case 'nodeHealth':
+      return [
+        { key: 'showL2', kind: 'toggle', label: 'Check Hive-Engine and Magi', hint: 'Runs two timed probes when the widget refreshes.' }
+      ]
+    case 'hiveEngine':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'symbols',
+          kind: 'list',
+          label: 'Token symbols',
+          hint: 'Up to 8 symbols, comma separated.',
+          maxItems: 8,
+          uppercase: true,
+          pattern: /^[a-z0-9][a-z0-9._-]*$/i
+        },
+        { key: 'showBalances', kind: 'toggle', label: 'Show my balances' },
+        LIMIT_FIELD(8, 'Tokens to show')
+      ]
+    case 'trendingTags':
+      return [
+        LIMIT_FIELD(12, 'Tags to show'),
+        { key: 'showRewards', kind: 'toggle', label: 'Show payouts' }
+      ]
+    case 'draftsQueue':
+      return [
+        { key: 'showDrafts', kind: 'toggle', label: 'Show drafts' },
+        { key: 'showQueue', kind: 'toggle', label: 'Show the signing queue' }
+      ]
     case 'notifications':
       return [LIMIT_FIELD(10, 'Notifications to show'), ACCOUNT_FIELD]
     case 'operations':
@@ -390,9 +431,11 @@ function settingList (raw, field = {}) {
     let text = String(value ?? '').trim()
     if (field.stripAt) text = text.replace(/^@/, '')
     if (field.stripHash) text = text.replace(/^#/, '')
+    if (field.uppercase) text = text.toUpperCase()
     text = text.trim()
     if (!text) continue
     if (field.numeric && !/^\d+$/.test(text)) continue
+    if (field.pattern && !field.pattern.test(text)) continue
     if (!result.includes(text)) result.push(text)
     if (result.length >= maxItems) break
   }

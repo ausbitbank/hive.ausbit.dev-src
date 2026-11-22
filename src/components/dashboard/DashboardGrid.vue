@@ -105,6 +105,33 @@
             v-else-if="entry.widget.type === 'communityPulse'"
             v-bind="settingsFor(entry.widget, { community: entry.widget.settings?.community, mode: entry.widget.settings?.mode, showTopPost: entry.widget.settings?.showTopPost })"
           />
+          <widget-delegation-snapshot
+            v-else-if="entry.widget.type === 'delegations'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, showIncoming: entry.widget.settings?.showIncoming, showOutgoing: entry.widget.settings?.showOutgoing, limit: entry.widget.settings?.limit })"
+          />
+          <widget-witness-round
+            v-else-if="entry.widget.type === 'witnessRound'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
+          />
+          <widget-node-health
+            v-else-if="entry.widget.type === 'nodeHealth'"
+            v-bind="settingsFor(entry.widget, { showL2: entry.widget.settings?.showL2 })"
+          />
+          <widget-hive-engine-watchlist
+            v-else-if="entry.widget.type === 'hiveEngine'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, symbols: entry.widget.settings?.symbols, showBalances: entry.widget.settings?.showBalances, limit: entry.widget.settings?.limit })"
+          />
+          <widget-trending-tags
+            v-else-if="entry.widget.type === 'trendingTags'"
+            v-bind="settingsFor(entry.widget, { limit: entry.widget.settings?.limit, showRewards: entry.widget.settings?.showRewards })"
+          />
+          <widget-drafts-queue
+            v-else-if="entry.widget.type === 'draftsQueue'"
+            v-bind="settingsFor(entry.widget, { showDrafts: entry.widget.settings?.showDrafts, showQueue: entry.widget.settings?.showQueue })"
+          />
+          <widget-community-spotlight
+            v-else-if="entry.widget.type === 'communitySpotlight'"
+          />
         </dashboard-widget-viewport>
       </dashboard-widget-shell>
     </div>
@@ -240,6 +267,13 @@ import WidgetCreatorStats from 'components/dashboard/WidgetCreatorStats.vue'
 import WidgetGovernanceWatch from 'components/dashboard/WidgetGovernanceWatch.vue'
 import WidgetHbdPeg from 'components/dashboard/WidgetHbdPeg.vue'
 import WidgetCommunityPulse from 'components/dashboard/WidgetCommunityPulse.vue'
+import WidgetDelegationSnapshot from 'components/dashboard/WidgetDelegationSnapshot.vue'
+import WidgetWitnessRound from 'components/dashboard/WidgetWitnessRound.vue'
+import WidgetNodeHealth from 'components/dashboard/WidgetNodeHealth.vue'
+import WidgetHiveEngineWatchlist from 'components/dashboard/WidgetHiveEngineWatchlist.vue'
+import WidgetTrendingTags from 'components/dashboard/WidgetTrendingTags.vue'
+import WidgetDraftsQueue from 'components/dashboard/WidgetDraftsQueue.vue'
+import WidgetCommunitySpotlight from 'components/dashboard/WidgetCommunitySpotlight.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
@@ -272,7 +306,14 @@ const RENDERED_TYPES = [
   'creatorStats',
   'governance',
   'hbd',
-  'communityPulse'
+  'communityPulse',
+  'delegations',
+  'witnessRound',
+  'nodeHealth',
+  'hiveEngine',
+  'trendingTags',
+  'draftsQueue',
+  'communitySpotlight'
 ]
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
@@ -301,6 +342,13 @@ export default {
     WidgetGovernanceWatch,
     WidgetHbdPeg,
     WidgetCommunityPulse,
+    WidgetDelegationSnapshot,
+    WidgetWitnessRound,
+    WidgetNodeHealth,
+    WidgetHiveEngineWatchlist,
+    WidgetTrendingTags,
+    WidgetDraftsQueue,
+    WidgetCommunitySpotlight,
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,

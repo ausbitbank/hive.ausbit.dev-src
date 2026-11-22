@@ -1,7 +1,7 @@
 # W65 — Dashboard widget expansion
 
 Date: 2026-11-23
-Status: Phase 0 and Phase 1 complete locally; Phase 2/3 pending
+Status: Phase 0–2 complete locally; Phase 3 pending
 Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
 Research: [`docs/dashboard-widgets-research.md`](../dashboard-widgets-research.md)
 
@@ -55,10 +55,30 @@ and the research document. This record tracks implementation and verification.
   communities: subscribers, active authors, pending rewards, role and top post;
   not-found and NSFW states.
 
-## Phase 2 — next wave (pending)
+## Phase 2 — next wave (done)
 
-Delegations, witness round, node health, Hive-Engine watchlist, trending tags,
-drafts/queue, community spotlight, my-communities source, HIVE-in-sats.
+- **Delegations** — outgoing totals and rows always; incoming reconstructed from
+  recent account history and verified against each delegator only when the
+  setting is enabled. Effective HP is read from the account record so the lists
+  are not double-counted.
+- **Witness round** — current producer, round position, upcoming producers,
+  missed-block counts and an optional account highlight.
+- **Node health** — active API node, latency, failures/cooldowns, head block,
+  version/health status, and optional Hive-Engine/Magi probes behind a setting.
+- **Hive-Engine watchlist** — chosen L2 tokens with price, 24h change, volume,
+  optional balances/value, and links to `/token/:symbol`.
+- **Trending tags** — chain tag ranks with a trending-feed fallback, post and
+  comment counts, compact payout labels and tag links.
+- **Drafts & queue** — local draft counts, oldest draft and signing-queue status
+  counts from the Pinia store. The queue is a header popup, not a route.
+- **Community spotlight** — a deterministic daily community pick from the
+  public directory, NSFW filtered.
+- Presets extended: Creator (drafts), Witness (round), Trader (Hive-Engine),
+  Community (spotlight + tags), Governance (round), Developer (node health +
+  Hive-Engine), Everyday (tags + spotlight).
+
+Still open for Phase 2: a "my communities" merged feed source for the existing
+posts widget, and HIVE-in-sats on the market widget.
 
 ## Phase 3 — actions and experiments (pending)
 
@@ -68,9 +88,9 @@ gallery, price alerts.
 
 ## Verification
 
-- `bun run test` — 127 files, 1,104 tests passed.
+- `bun run test` — 136 files, 1,168 tests passed.
 - `bun run build` — succeeded; home snapshot generated.
-- `bunx playwright test e2e/dashboard.spec.js` — 23 passed (Chromium).
+- `bunx playwright test e2e/dashboard.spec.js` — 25 passed (Chromium).
 - `bunx playwright test e2e/a11y.spec.js -g "custom dashboard templates"` —
   axe clean at 1440px and 390px for the Everyday and Creator templates.
 - `bunx playwright test e2e/a11y.spec.js -g "axe clean: /$"` — home axe clean
