@@ -37,6 +37,7 @@ export const COMMUNITY_CATEGORIES = [
 ]
 
 export const COMMUNITY_SORTS = [
+  { value: 'relevance', label: 'Relevance', icon: 'search' },
   { value: 'rank', label: 'Trending', icon: 'local_fire_department' },
   { value: 'subs', label: 'Subscribers', icon: 'groups' },
   { value: 'active', label: 'Active authors', icon: 'edit_note' },
@@ -115,12 +116,55 @@ export function directoryCategory (query) {
   return COMMUNITY_CATEGORIES.find(category => category.query === needle) || null
 }
 
+function matchScore (card, needle) {
+  const name = String(card.name || '').toLowerCase()
+  const title = String(card.title || '').toLowerCase()
+  const about = String(card.about || '').toLowerCase()
+  const words = title.split(/[^a-z0-9]+/).filter(Boolean)
+  let score = 0
+
+  if (name === needle) score += 200
+  else if (name.startsWith(needle)) score += 120
+  else if (name.includes(needle)) score += 60
+
+  if (title === needle) score += 160
+  else if (title.startsWith(needle)) score += 110
+  else if (words.includes(needle)) score += 90
+  else if (title.includes(needle)) score += 70
+
+  if (about.includes(needle)) score += 10
+  return score
+}
+
+/**
+ * Rank loaded search matches so title and community-name hits lead. Hivemind
+ * only filters title/about, so this adds the relevance ordering its `rank`
+ * sort cannot express.
+ */
+export function rankDirectoryCards (cards, query) {
+  const needle = String(query || '').trim().toLowerCase()
+  const list = Array.isArray(cards) ? cards : []
+  if (!needle) return [...list]
+
+  return list
+    .map((card, index) => ({ card, index, score: matchScore(card, needle) }))
+    .sort((a, b) =>
+      b.score - a.score ||
+      b.card.subscribers - a.card.subscribers ||
+      b.card.authors - a.card.authors ||
+      a.index - b.index
+    )
+    .map(row => row.card)
+}
+
 /**
  * Local sort for loaded results. Rank keeps the server's order, so it is left
- * untouched; active authors, subscribers and creation time sort client-side.
+ * untouched; relevance, active authors, subscribers and creation time sort
+ * client-side.
  */
-export function sortDirectoryCards (cards, sort = 'rank') {
+export function sortDirectoryCards (cards, sort = 'rank', query = '') {
   const list = Array.isArray(cards) ? [...cards] : []
+  if (sort === 'relevance') return rankDirectoryCards(list, query)
   if (sort === 'subs') {
     return list.sort((a, b) =>
       b.subscribers - a.subscribers ||

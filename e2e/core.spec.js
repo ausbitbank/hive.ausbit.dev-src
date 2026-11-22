@@ -25,16 +25,25 @@ test.describe('navigation and quick wins', () => {
     await page.waitForURL('**/communities')
     await waitForApp(page)
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Discover Hive communities')
-    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBeGreaterThan(0)
+    await expect(page.locator('.community-card').first()).toBeVisible({ timeout: 45000 })
+    await expect(page.locator('.community-index-shelf').first()).toBeVisible({ timeout: 45000 })
 
-    await page.getByLabel('Search Hive communities by title or description').fill('photography')
+    const input = page.getByLabel('Search Hive communities by title or description')
+    await input.fill('art')
     await expect.poll(() => page.locator('.community-index-section__hint').innerText(), { timeout: 45000 })
-      .toContain('photography')
-    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBeGreaterThan(0)
+      .toContain('Searching all Hive communities')
+    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBe(100)
+
+    await page.getByRole('button', { name: 'Load more matches' }).click()
+    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBeGreaterThan(100)
 
     await page.getByRole('button', { name: 'Gaming', exact: true }).click()
     await expect.poll(() => page.locator('.community-index-section__hint').innerText(), { timeout: 45000 })
       .toContain('gaming')
+
+    await input.fill('hive-174578')
+    await expect.poll(() => page.locator('.community-card__title').first().innerText(), { timeout: 45000 })
+      .toContain('OCD')
   })
 
   test('404 search resolves a block number and quick links are present', async ({ page }) => {

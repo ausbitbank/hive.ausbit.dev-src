@@ -33,7 +33,7 @@ Wallet:
 | `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens, Magi balances/tokens and transfers |
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
-| `/communities` (`/c`) | Public community browser for everyone: search all Hive communities by title, description and category, compare subscribers and active authors, sort by trending/subscribers/activity/newest, and hide NSFW communities |
+| `/communities` (`/c`) | Public community browser for everyone: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest community shelves; and hide NSFW communities |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |

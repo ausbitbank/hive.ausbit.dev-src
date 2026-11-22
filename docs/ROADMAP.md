@@ -168,6 +168,13 @@ compare subscribers and active authors, sort by trending, subscribers, active
 authors or newest, and hide NSFW communities without signing in. See
 `docs/workstreams/W62-public-community-browser.md`.
 
+W64 (community search and discovery) is complete. Search now requests 100
+matches per page, ranks title/name hits above description-only hits, exposes a
+visible "Load more matches" control, and resolves partial `hive-123` community
+names through account lookup. The empty-search view adds New communities, Active
+right now and Largest communities shelves with compact community cards. See
+`docs/workstreams/W64-community-search-discovery.md`.
+
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
 on-chain balance-request UI, the optional #63 server-side existence check at the

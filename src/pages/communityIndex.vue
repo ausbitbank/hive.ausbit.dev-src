@@ -32,9 +32,13 @@
 
       <section v-else-if="cards.length" class="community-index-stats" aria-label="Loaded community summary">
         <div class="community-index-stat">
-          <span class="community-index-stat__label">Loaded communities</span>
+          <span class="community-index-stat__label">{{ isSearching ? 'Matched communities' : 'Loaded communities' }}</span>
           <strong class="community-index-stat__value">{{ formatNumber(summary.communities) }}</strong>
-          <small class="community-index-stat__hint">{{ hasMore ? 'more load as you scroll' : 'end of the directory' }}</small>
+          <small class="community-index-stat__hint">
+            {{ isSearching
+              ? (hasMore ? 'more matches available' : 'all matches loaded')
+              : (hasMore ? 'more load as you scroll' : 'end of the directory') }}
+          </small>
         </div>
         <div class="community-index-stat">
           <span class="community-index-stat__label">Subscribers</span>
@@ -50,6 +54,43 @@
           <span class="community-index-stat__label">Pending payouts</span>
           <strong class="community-index-stat__value">{{ formatHbd(summary.pendingRewards) }}</strong>
           <small class="community-index-stat__hint">awaiting the next payout window</small>
+        </div>
+      </section>
+
+      <section
+        v-if="!isSearching && (shelves.length || spotlightLoading)"
+        class="community-index-spotlights"
+        aria-label="Community highlights"
+      >
+        <div v-if="spotlightLoading && !shelves.length" class="community-index-shelf" aria-label="Loading community highlights">
+          <q-skeleton type="text" width="150px" />
+          <div class="community-index-shelf__row">
+            <q-skeleton v-for="i in 4" :key="i" type="rect" width="245px" height="56px" />
+          </div>
+        </div>
+        <div v-for="shelf in shelves" :key="shelf.key" class="community-index-shelf">
+          <div class="community-index-shelf__head">
+            <div>
+              <div class="home-eyebrow">{{ shelf.eyebrow }}</div>
+              <h2 class="community-index-shelf__title">{{ shelf.title }}</h2>
+            </div>
+            <q-btn
+              flat
+              dense
+              no-caps
+              color="primary"
+              label="See all"
+              :aria-label="'See all ' + shelf.title.toLowerCase()"
+              @click="changeSort(shelf.sort)"
+            />
+          </div>
+          <div class="community-index-shelf__row">
+            <community-mini-card
+              v-for="card in shelf.cards"
+              :key="shelf.key + '-' + card.name"
+              :card="card"
+            />
+          </div>
         </div>
       </section>
 
@@ -74,7 +115,7 @@
               </template>
             </q-input>
             <p class="community-index-filter__hint">
-              Matches community titles and descriptions. Paste a <code>hive-123456</code> name to jump straight to it.
+              Searches every Hive community by title and description. A partial <code>hive-123</code> name works too.
             </p>
           </section>
 
@@ -141,25 +182,44 @@
         <div class="community-index-main">
           <div class="community-index-section__head">
             <div>
-              <div class="home-eyebrow">Directory</div>
+              <div class="home-eyebrow">{{ isSearching ? 'Search results' : 'Directory' }}</div>
               <h2 class="community-index-section__title">
-                {{ visibleCards.length }} {{ visibleCards.length === 1 ? 'community' : 'communities' }}
+                {{ visibleCards.length }}
+                {{ isSearching
+                  ? (visibleCards.length === 1 ? 'match' : 'matches')
+                  : (visibleCards.length === 1 ? 'community' : 'communities') }}
               </h2>
-              <small class="community-index-section__hint">
-                <template v-if="searchText">matching “{{ searchText }}” · </template>
-                <template v-if="hasMore">more load as you scroll</template>
-                <template v-else>all results loaded</template>
+              <small v-if="isSearching" class="community-index-section__hint">
+                Searching all Hive communities<template v-if="searchText"> for “{{ searchText }}”</template> ·
+                {{ hasMore ? 'more matches available' : 'all matches loaded' }}
+              </small>
+              <small v-else class="community-index-section__hint">
+                {{ hasMore ? 'more load as you scroll' : 'all results loaded' }}
               </small>
             </div>
-            <q-btn
-              v-if="filtersActive"
-              flat
-              dense
-              no-caps
-              icon="filter_alt_off"
-              label="Clear filters"
-              @click="clearFilters"
-            />
+            <div class="community-index-section__actions">
+              <q-btn
+                v-if="hasMore"
+                outline
+                dense
+                no-caps
+                color="primary"
+                icon="expand_more"
+                :label="isSearching ? 'Load more matches' : 'Load more communities'"
+                :loading="loadingMore"
+                :disable="loading"
+                @click="loadMore"
+              />
+              <q-btn
+                v-if="filtersActive"
+                flat
+                dense
+                no-caps
+                icon="filter_alt_off"
+                label="Clear filters"
+                @click="clearFilters"
+              />
+            </div>
           </div>
 
           <q-card v-if="error && !cards.length" flat bordered class="community-index-state">
@@ -229,6 +289,7 @@
 
 <script>
 import CommunityCard from 'components/community/CommunityCard.vue'
+import CommunityMiniCard from 'components/community/CommunityMiniCard.vue'
 import InfiniteScroll from 'components/ui/InfiniteScroll.vue'
 import {
   COMMUNITY_CATEGORIES,
@@ -239,10 +300,15 @@ import {
   sortDirectoryCards,
   summarizeDirectory
 } from 'src/services/communityDirectory'
-import { fetchCommunity, fetchCommunityDirectoryPage } from 'src/services/chainData'
+import {
+  fetchCommunity,
+  fetchCommunityDirectoryPage,
+  fetchCommunityNameMatches
+} from 'src/services/chainData'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const PAGE_SIZE = 36
+const SEARCH_PAGE_SIZE = 100
 const SEARCH_DELAY_MS = 320
 const SORT_VALUES = COMMUNITY_SORTS.map(option => option.value)
 
@@ -250,15 +316,16 @@ export default {
   name: 'CommunityIndexPage',
   components: {
     CommunityCard,
+    CommunityMiniCard,
     InfiniteScroll
   },
   data () {
     return {
       query: '',
       sort: 'rank',
+      sortChosen: false,
       hideNsfw: false,
       categories: COMMUNITY_CATEGORIES,
-      sortOptions: COMMUNITY_SORTS,
       cards: [],
       cursor: '',
       hasMore: true,
@@ -266,7 +333,13 @@ export default {
       loadingMore: false,
       error: '',
       loadToken: 0,
-      searchTimer: null
+      searchTimer: null,
+      spotlightLoading: false,
+      spotlights: {
+        new: [],
+        active: [],
+        largest: []
+      }
     }
   },
   computed: {
@@ -277,10 +350,19 @@ export default {
       return this.$hiveStore.user.username || ''
     },
     serverSort () {
-      return this.sort === 'active' ? 'rank' : this.sort
+      return ['relevance', 'active'].includes(this.sort) ? 'rank' : this.sort
     },
     searchText () {
       return String(this.query || '').trim()
+    },
+    isSearching () {
+      return Boolean(this.searchText)
+    },
+    pageSize () {
+      return this.isSearching ? SEARCH_PAGE_SIZE : PAGE_SIZE
+    },
+    sortOptions () {
+      return COMMUNITY_SORTS.filter(option => option.value !== 'relevance' || this.isSearching)
     },
     activeCategory () {
       return directoryCategory(this.searchText)
@@ -295,16 +377,36 @@ export default {
       const list = this.hideNsfw
         ? this.cards.filter(card => !card.nsfw)
         : this.cards
-      return sortDirectoryCards(list, this.sort)
+      return sortDirectoryCards(list, this.sort, this.searchText)
+    },
+    shelves () {
+      if (this.isSearching) return []
+      const used = new Set()
+      const unique = cards => (this.hideNsfw ? cards.filter(card => !card.nsfw) : cards)
+        .filter(card => {
+          if (used.has(card.name)) return false
+          used.add(card.name)
+          return true
+        })
+
+      return [
+        { key: 'new', eyebrow: 'Fresh', title: 'New communities', sort: 'new', cards: unique(this.spotlights.new) },
+        { key: 'active', eyebrow: 'Busy', title: 'Active right now', sort: 'active', cards: unique(this.spotlights.active) },
+        { key: 'largest', eyebrow: 'Popular', title: 'Largest communities', sort: 'subs', cards: unique(this.spotlights.largest) }
+      ].filter(shelf => shelf.cards.length)
     }
   },
   watch: {
     '$route.query' (value) {
       const nextQuery = String(value?.q || '').trim()
-      const nextSort = SORT_VALUES.includes(value?.sort) ? value.sort : 'rank'
+      const requested = SORT_VALUES.includes(value?.sort)
+        ? value.sort
+        : (nextQuery ? 'relevance' : 'rank')
+      const nextSort = !nextQuery && requested === 'relevance' ? 'rank' : requested
       if (nextQuery === this.query && nextSort === this.sort) return
       this.query = nextQuery
       this.sort = nextSort
+      this.sortChosen = Boolean(value?.sort)
       this.load({ reset: true })
     }
   },
@@ -326,7 +428,16 @@ export default {
         this.search()
       }, SEARCH_DELAY_MS)
     },
+    applySearchSort () {
+      if (this.searchText) {
+        if (!this.sortChosen) this.sort = 'relevance'
+      } else {
+        this.sortChosen = false
+        if (this.sort === 'relevance') this.sort = 'rank'
+      }
+    },
     search () {
+      this.applySearchSort()
       this.syncUrl(this.searchText)
       this.load({ reset: true })
     },
@@ -334,6 +445,8 @@ export default {
       clearTimeout(this.searchTimer)
       this.searchTimer = null
       this.query = ''
+      this.sortChosen = false
+      if (this.sort === 'relevance') this.sort = 'rank'
       this.syncUrl('')
       this.load({ reset: true })
     },
@@ -342,10 +455,13 @@ export default {
       if (this.searchText.toLowerCase() === next) return
       clearTimeout(this.searchTimer)
       this.query = next
+      this.applySearchSort()
       this.syncUrl(next)
       this.load({ reset: true })
     },
     changeSort (value) {
+      if (value === 'relevance' && !this.isSearching) return
+      this.sortChosen = true
       if (this.sort === value) return
       this.sort = value
       this.syncUrl(this.searchText)
@@ -354,7 +470,9 @@ export default {
     clearFilters () {
       clearTimeout(this.searchTimer)
       this.query = ''
+      this.sortChosen = false
       this.hideNsfw = false
+      if (this.sort === 'relevance') this.sort = 'rank'
       this.syncUrl('')
       this.load({ reset: true })
     },
@@ -372,9 +490,32 @@ export default {
     },
     refresh () {
       this.load({ reset: true, force: true })
+      this.loadSpotlights({ force: true })
     },
     loadMore () {
       this.load()
+    },
+    async loadSpotlights ({ force = false } = {}) {
+      this.spotlightLoading = true
+      try {
+        const [newRows, largestRows, rankedRows] = await Promise.all([
+          fetchCommunityDirectoryPage({ sort: 'new', limit: 12, force }),
+          fetchCommunityDirectoryPage({ sort: 'subs', limit: 20, force }),
+          fetchCommunityDirectoryPage({ sort: 'rank', limit: 100, force })
+        ])
+        this.spotlights = {
+          new: buildDirectoryCards(newRows).slice(0, 10),
+          active: buildDirectoryCards(rankedRows)
+            .filter(card => card.authors > 0)
+            .sort((a, b) => b.authors - a.authors || b.subscribers - a.subscribers)
+            .slice(0, 10),
+          largest: buildDirectoryCards(largestRows).slice(0, 10)
+        }
+      } catch (error) {
+        console.error('Failed to load community highlights', error)
+      } finally {
+        this.spotlightLoading = false
+      }
     },
     async load ({ reset = false, force = false } = {}) {
       if (!reset && (!this.hasMore || this.loading || this.loadingMore)) return
@@ -395,22 +536,26 @@ export default {
       try {
         const needle = this.searchText
         const exactName = reset && isHiveCommunityName(needle) ? needle.toLowerCase() : ''
-        const [page, exact] = await Promise.all([
+        const wantsNameMatches = reset && /^hive-\d+$/i.test(needle)
+        const [page, exact, nameMatches] = await Promise.all([
           fetchCommunityDirectoryPage({
             sort: this.serverSort,
             query: needle,
             last: reset ? '' : this.cursor,
-            limit: PAGE_SIZE,
+            limit: this.pageSize,
             force
           }),
           exactName
             ? fetchCommunity(exactName, null, { force }).catch(() => null)
-            : Promise.resolve(null)
+            : Promise.resolve(null),
+          wantsNameMatches
+            ? fetchCommunityNameMatches(needle, 12, { force }).catch(() => [])
+            : Promise.resolve([])
         ])
         if (token !== this.loadToken) return
 
-        const rows = exact?.name
-          ? [exact, ...page.filter(row => row.name !== exact.name)]
+        const rows = reset
+          ? [...nameMatches, ...(exact?.name ? [exact] : []), ...page]
           : page
         const batch = buildDirectoryCards(rows)
         const seen = new Set(reset ? [] : this.cards.map(card => card.name))
@@ -418,7 +563,7 @@ export default {
 
         this.cards = reset ? fresh : [...this.cards, ...fresh]
         this.cursor = page.length ? page[page.length - 1].name : this.cursor
-        this.hasMore = page.length >= PAGE_SIZE
+        this.hasMore = page.length >= this.pageSize
         this.updatePageMeta()
       } catch (error) {
         if (token !== this.loadToken) return
@@ -463,9 +608,14 @@ export default {
   },
   mounted () {
     this.query = String(this.$route.query.q || '').trim()
-    this.sort = SORT_VALUES.includes(this.$route.query.sort) ? this.$route.query.sort : 'rank'
+    const requested = SORT_VALUES.includes(this.$route.query.sort)
+      ? this.$route.query.sort
+      : (this.searchText ? 'relevance' : 'rank')
+    this.sort = !this.searchText && requested === 'relevance' ? 'rank' : requested
+    this.sortChosen = Boolean(this.$route.query.sort)
     if (this.globalProps && this.globalProps.empty) this.$hiveStore.getGlobalProps()
     this.updatePageMeta()
+    this.loadSpotlights()
     this.load({ reset: true })
   },
   beforeUnmount () {
@@ -548,6 +698,43 @@ export default {
   color: #78909c;
   font-size: 0.68rem;
   line-height: 1.35;
+}
+
+.community-index-spotlights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.community-index-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.community-index-shelf__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.community-index-shelf__title {
+  margin: 0.1rem 0 0;
+  color: #e4eaed;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.community-index-shelf__row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  scrollbar-width: thin;
 }
 
 .community-index-layout {
@@ -680,6 +867,14 @@ export default {
   font-size: 0.72rem;
   line-height: 1.4;
 }
+
+.community-index-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
 
 .community-index-grid {
   display: grid;

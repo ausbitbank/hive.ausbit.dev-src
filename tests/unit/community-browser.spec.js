@@ -5,6 +5,7 @@ import {
   communityTypeLabel,
   directoryCategory,
   isHiveCommunityName,
+  rankDirectoryCards,
   sortDirectoryCards,
   summarizeDirectory
 } from '../../src/services/communityDirectory'
@@ -125,6 +126,27 @@ describe('sortDirectoryCards', () => {
   it('keeps server order for rank and tolerates bad input', () => {
     expect(sortDirectoryCards(cards, 'rank').map(card => card.name)).toEqual(cards.map(card => card.name))
     expect(sortDirectoryCards(null, 'subs')).toEqual([])
+  })
+
+  it('ranks title and name matches above description-only matches', () => {
+    const searchCards = buildDirectoryCards([
+      { name: 'hive-100', title: 'Hive Open Circle', about: 'A photography circle.', subscribers: 9000, num_authors: 20 },
+      { name: 'hive-200', title: 'Gaming Photography', about: 'Games and screenshots.', subscribers: 2000, num_authors: 15 },
+      { name: 'hive-300', title: 'Photography Lovers', about: 'Share your best shots.', subscribers: 1000, num_authors: 10 }
+    ])
+
+    expect(rankDirectoryCards(searchCards, 'photography').map(card => card.name)).toEqual([
+      'hive-300',
+      'hive-200',
+      'hive-100'
+    ])
+    expect(sortDirectoryCards(searchCards, 'relevance', 'photography').map(card => card.name)).toEqual([
+      'hive-300',
+      'hive-200',
+      'hive-100'
+    ])
+    expect(rankDirectoryCards(searchCards, 'hive-200')[0].name).toBe('hive-200')
+    expect(rankDirectoryCards(searchCards, '')).toEqual(searchCards)
   })
 })
 

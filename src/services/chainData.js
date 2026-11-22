@@ -453,6 +453,37 @@ export function fetchCommunityDirectoryPage ({
 }
 
 /**
+ * Communities whose account name starts with a `hive-123` prefix.
+ *
+ * `bridge.list_communities` only queries titles and descriptions, so a partial
+ * community id would otherwise find nothing. Community accounts are ordinary
+ * Hive accounts, so `lookup_accounts` supplies the names and `get_community`
+ * fills in the display records.
+ */
+export function fetchCommunityNameMatches (prefix, limit = 12, { force = false } = {}) {
+  const needle = String(prefix || '').trim().toLowerCase()
+  if (!/^hive-\d+$/.test(needle)) return Promise.resolve([])
+
+  const count = Math.max(1, Math.min(20, Number(limit) || 12))
+  const key = 'communities:names:' + needle + ':' + count
+
+  return loadCached(key, async () => {
+    const names = await apiLookupAccounts(needle, Math.min(100, count * 3))
+    const matches = (Array.isArray(names) ? names : [])
+      .filter(name => typeof name === 'string' && /^hive-\d+$/.test(name) && name.startsWith(needle))
+      .slice(0, count)
+
+    const records = await Promise.all(
+      matches.map(name => fetchCommunity(name).catch(() => null))
+    )
+    return records.filter(record => record && record.name)
+  }, {
+    ttl: CACHE_TTL.communities,
+    force
+  })
+}
+
+/**
  * Candidate posts for a search. Tag/community queries page the chronological
  * feed so relevance ranking has enough of the newest posts to work with; those
  * pages are fetched sequentially and kept locally per request.
