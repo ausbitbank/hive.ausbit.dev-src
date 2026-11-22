@@ -146,7 +146,7 @@ scanner.
 
 Deployed on 2026-11-22 with `./scripts/deploy.sh`.
 
-- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T105900Z.tar.gz`
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T111340Z.tar.gz`
 - Live GET requests return 200 for `/appearance`, `/themes` and
   `/settings/skin`; the Cloudflare metadata Worker serves their prerendered
   shells with `x-hive-meta: theme-shell` until the nginx vhost config is
@@ -155,6 +155,11 @@ Deployed on 2026-11-22 with `./scripts/deploy.sh`.
   body classes and persists across reload; the Theme Wall renders ten built-in
   cards; the signed-out Skin Studio shows its sign-in state; the profile page
   loads with no page errors.
+- Publish fix: `account_update2` now sends an empty legacy `json_metadata`
+  (Hive means "leave unchanged") and only `posting_json_metadata`. Echoing the
+  current `json_metadata` back escalated the operation to active authority and
+  caused `Missing Active Authority` on publish. A live queue smoke confirms the
+  queued action uses the `posting` key type and has no active/owner/memo fields.
 
 ## Follow-ups
 
