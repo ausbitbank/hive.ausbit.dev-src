@@ -100,7 +100,6 @@
           mode="edit"
           :parent-author="post.parent_author || ''"
           :parent-permlink="post.parent_permlink || post.permlink"
-          :author="post.author"
           :permlink="post.permlink"
           :initial-body="post.body || ''"
           :json-metadata="post.json_metadata"

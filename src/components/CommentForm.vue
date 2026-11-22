@@ -263,7 +263,6 @@ export default {
      */
     mode: { type: String, default: 'create' },
     initialBody: { type: String, default: '' },
-    author: { type: String, default: '' },
     permlink: { type: String, default: '' },
     jsonMetadata: { type: [String, Object], default: null }
   },
@@ -390,7 +389,10 @@ export default {
 
         this.$hiveStore.addToQueue(commentQueueItem({
           username,
-          parentAuthor: this.isEdit ? this.author : this.parentAuthor,
+          // An edit must keep the original parent author. `parentAuthor` is the
+          // parent of the comment being edited (the container author for Snap,
+          // Wave and Moment comments), not the comment's own author.
+          parentAuthor: this.parentAuthor,
           parentPermlink: this.parentPermlink,
           body,
           permlink,
