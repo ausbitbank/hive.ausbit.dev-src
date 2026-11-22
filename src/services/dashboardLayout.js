@@ -39,6 +39,10 @@ export const MAX_WIDGETS = 20
  *
  * `live` widgets keep their own polling timer, so the grid only mounts them
  * while they are on screen.
+ *
+ * `defer` widgets are expensive to fetch (history, L2 balances, probes); the
+ * grid shows a skeleton and only mounts their body when the card is near the
+ * viewport.
  */
 export const WIDGET_REGISTRY = [
   {
@@ -175,6 +179,90 @@ export const WIDGET_REGISTRY = [
     minWidth: 'third',
     defaultSettings: { account: '', filters: ['all'], jsonIds: '', limit: 8, pollSeconds: 30, includeMagi: false },
     singleton: false
+  },
+  {
+    type: 'vitals',
+    component: 'WidgetAccountVitals',
+    label: 'Account vitals',
+    description: 'Voting power, resource credits, vote value and effective HP.',
+    category: 'account',
+    icon: 'monitor_heart',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', refreshSeconds: 60, showVoteValue: true },
+    singleton: true,
+    requiresAccount: true,
+    live: true
+  },
+  {
+    type: 'walletActions',
+    component: 'WidgetWalletActions',
+    label: 'Wallet actions',
+    description: 'Power-down, savings withdrawals, conversions, orders and claimable rewards.',
+    category: 'account',
+    icon: 'pending_actions',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: {
+      account: '',
+      showPowerDown: true,
+      showSavings: true,
+      showConversions: true,
+      showOrders: true,
+      showRewards: true
+    },
+    singleton: true,
+    requiresAccount: true
+  },
+  {
+    type: 'creatorStats',
+    component: 'WidgetCreatorStats',
+    label: 'Creator stats',
+    description: 'Author and curation rewards, pending payouts and your best recent post.',
+    category: 'account',
+    icon: 'insights',
+    defaultWidth: 'half',
+    minWidth: 'half',
+    defaultSettings: { account: '', windowDays: 7, showCurationApr: true, showTopPost: true },
+    singleton: true,
+    requiresAccount: true,
+    defer: true
+  },
+  {
+    type: 'governance',
+    component: 'WidgetGovernanceWatch',
+    label: 'Governance watch',
+    description: 'DHF budget, proposals closing soon and your governance vote expiry.',
+    category: 'governance',
+    icon: 'account_balance',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { limit: 4, watchlist: [], showBudget: true, showVoteExpiry: true },
+    singleton: true
+  },
+  {
+    type: 'hbd',
+    component: 'WidgetHbdPeg',
+    label: 'HBD peg & yield',
+    description: 'Internal market price, savings APR, debt ratio and haircut distance.',
+    category: 'markets',
+    icon: 'paid',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { amount: 1000, showProjection: true },
+    singleton: true
+  },
+  {
+    type: 'communityPulse',
+    component: 'WidgetCommunityPulse',
+    label: 'Community pulse',
+    description: 'Subscribers, active authors, pending rewards, your role and the top post.',
+    category: 'community',
+    icon: 'groups',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { community: '', mode: 'single', showTopPost: true },
+    singleton: false
   }
 ]
 
@@ -241,6 +329,125 @@ export const LOGGED_IN_STARTER_LAYOUT = [
   { type: 'market', width: 'half', settings: {} }
 ]
 
+/**
+ * Ready-made dashboards offered from the editor's Layouts menu. Each preset is
+ * a normal layout preset (`{ type, width, settings }`), so it can be previewed
+ * in the draft, saved as a named layout and shared like any other layout.
+ */
+export const DASHBOARD_PRESETS = [
+  {
+    id: 'everyday',
+    label: 'Everyday',
+    description: 'Prices, HBD, network health, governance and community in one view.',
+    icon: 'today',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'hbd', width: 'third', settings: {} },
+      { type: 'network', width: 'third', settings: {} },
+      { type: 'witnesses', width: 'third', settings: { limit: 10 } },
+      { type: 'posts', width: 'half', settings: { source: 'trending', limit: 6, view: 'cards', showBody: true } },
+      { type: 'communityPulse', width: 'half', settings: {} },
+      { type: 'governance', width: 'full', settings: {} }
+    ]
+  },
+  {
+    id: 'creator',
+    label: 'Creator',
+    description: 'Your account vitals, rewards, wallet actions and notifications.',
+    icon: 'edit_note',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'vitals', width: 'half', settings: {} },
+      { type: 'creatorStats', width: 'half', settings: {} },
+      { type: 'walletActions', width: 'half', settings: {} },
+      { type: 'posts', width: 'half', settings: { source: 'trending', limit: 4, view: 'list' } },
+      { type: 'notifications', width: 'third', settings: {} },
+      { type: 'network', width: 'third', settings: {} },
+      { type: 'hbd', width: 'third', settings: {} }
+    ]
+  },
+  {
+    id: 'witness',
+    label: 'Witness',
+    description: 'Witness rank and health, governance, blocks and network participation.',
+    icon: 'how_to_vote',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'myWitness', width: 'half', settings: {} },
+      { type: 'witnessHealth', width: 'half', settings: {} },
+      { type: 'governance', width: 'full', settings: {} },
+      { type: 'network', width: 'half', settings: {} },
+      { type: 'block', width: 'half', settings: {} },
+      { type: 'witnesses', width: 'half', settings: { limit: 10 } },
+      { type: 'market', width: 'half', settings: {} }
+    ]
+  },
+  {
+    id: 'trader',
+    label: 'Trader',
+    description: 'Markets, HBD peg and yield, wallet actions and chain activity.',
+    icon: 'show_chart',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'market', width: 'half', settings: {} },
+      { type: 'hbd', width: 'half', settings: {} },
+      { type: 'walletActions', width: 'half', settings: {} },
+      { type: 'network', width: 'half', settings: {} },
+      { type: 'block', width: 'half', settings: {} },
+      { type: 'witnesses', width: 'half', settings: { limit: 8 } }
+    ]
+  },
+  {
+    id: 'community',
+    label: 'Community',
+    description: 'Community stats, your creator numbers, the community feed and notifications.',
+    icon: 'groups',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'communityPulse', width: 'half', settings: {} },
+      { type: 'posts', width: 'half', settings: { reference: '/c/hive-139531', limit: 6, view: 'cards', showBody: true } },
+      { type: 'creatorStats', width: 'half', settings: {} },
+      { type: 'notifications', width: 'half', settings: {} },
+      { type: 'governance', width: 'half', settings: {} },
+      { type: 'network', width: 'half', settings: {} }
+    ]
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    description: 'DHF funding, proposal watch, witness standing and network health.',
+    icon: 'account_balance',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'governance', width: 'full', settings: { limit: 6 } },
+      { type: 'witnesses', width: 'half', settings: { limit: 10 } },
+      { type: 'network', width: 'half', settings: {} },
+      { type: 'hbd', width: 'third', settings: {} },
+      { type: 'block', width: 'third', settings: {} },
+      { type: 'market', width: 'third', settings: {} }
+    ]
+  },
+  {
+    id: 'developer',
+    label: 'Developer',
+    description: 'Network stats, blocks, HBD, governance and witness data for builders.',
+    icon: 'code',
+    tiling: 'masonry',
+    widgets: [
+      { type: 'block', width: 'half', settings: {} },
+      { type: 'network', width: 'half', settings: {} },
+      { type: 'governance', width: 'half', settings: {} },
+      { type: 'hbd', width: 'half', settings: {} },
+      { type: 'market', width: 'half', settings: {} },
+      { type: 'witnesses', width: 'half', settings: { limit: 10 } }
+    ]
+  }
+]
+
+export function presetById (id) {
+  return DASHBOARD_PRESETS.find(preset => preset.id === id) || null
+}
+
 function registryEntry (type) {
   return WIDGET_REGISTRY.find(entry => entry.type === type) || null
 }
@@ -267,10 +474,11 @@ function closestWidth (columns, minWidth) {
   return best.value
 }
 
-/** Copy of a registry widget's default settings. */
+/** Copy of a registry widget's default settings (arrays included). */
 export function defaultSettingsFor (type) {
   const entry = registryEntry(type)
-  return entry ? { ...entry.defaultSettings } : {}
+  if (!entry) return {}
+  return JSON.parse(JSON.stringify(entry.defaultSettings || {}))
 }
 
 /**

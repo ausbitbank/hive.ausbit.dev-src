@@ -371,4 +371,111 @@ test.describe('customisable dashboard', () => {
     await expect(page.getByRole('heading', { name: 'Make this dashboard yours' })).toBeHidden()
     await expect(page.locator('.dw-grid--packed')).toBeVisible()
   })
+
+  test('loads a persona template into the draft and saves it', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Layouts' }).click()
+    const menu = page.locator('.q-menu')
+    await expect(menu.getByText('Templates', { exact: true })).toBeVisible()
+    await menu.getByText('Creator', { exact: true }).click()
+
+    await expect(page.getByText(/Loaded "Creator"/)).toBeVisible()
+    await expect(page.locator('.home-editing.dw-grid--masonry')).toBeVisible()
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
+
+    const stored = await readDashboard(page, GUEST_KEY)
+    expect(stored.widgets.map(widget => widget.type)).toEqual([
+      'vitals',
+      'creatorStats',
+      'walletActions',
+      'posts',
+      'notifications',
+      'network',
+      'hbd'
+    ])
+  })
+
+  test('offers the new account, creator, governance and HBD widgets in the drawer', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Add widget' }).click()
+    for (const label of ['Account vitals', 'Wallet actions', 'Creator stats', 'Governance watch', 'HBD peg & yield', 'Community pulse']) {
+      await expect(page.getByRole('button', { name: 'Add ' + label })).toBeVisible()
+    }
+    await page.getByRole('button', { name: 'Done' }).click()
+  })
+
+  test('renders the public phase-1 widgets after save', async ({ page }) => {
+    await openEditor(page)
+    await addWidget(page, 'HBD peg & yield')
+    await addWidget(page, 'Governance watch')
+    await addWidget(page, 'Community pulse')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    await expect(page.locator('[data-widget-type="hbd"]')).toBeVisible()
+    await expect(page.locator('[data-widget-type="governance"]')).toBeVisible()
+    await expect(page.locator('[data-widget-type="communityPulse"]')).toBeVisible()
+    await expect(page.locator('[data-widget-type="hbd"]')).toContainText('HBD peg & yield')
+    await expect(page.locator('[data-widget-type="governance"]')).toContainText('Governance watch')
+  })
+
+  test('shows the guest state for account-only widgets', async ({ page }) => {
+    await openEditor(page)
+    await addWidget(page, 'Account vitals')
+    await addWidget(page, 'Wallet actions')
+    await addWidget(page, 'Creator stats')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    await expect(page.locator('[data-widget-type="vitals"]')).toContainText('Account vitals needs an account')
+    await expect(page.locator('[data-widget-type="walletActions"]')).toContainText('Wallet actions needs an account')
+    await expect(page.locator('[data-widget-type="creatorStats"]')).toContainText('Creator stats needs an account')
+  })
+
+  test('renders signed-in account widgets with live data', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/')
+    await waitForApp(page)
+    const notNow = page.getByRole('button', { name: 'Not now' })
+    if (await notNow.isVisible().catch(() => false)) await notNow.click()
+
+    await openEditor(page)
+    await addWidget(page, 'Account vitals')
+    await addWidget(page, 'Wallet actions')
+    await addWidget(page, 'Creator stats')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const vitals = page.locator('[data-widget-type="vitals"]')
+    await vitals.scrollIntoViewIfNeeded()
+    await expect(vitals).toContainText('Voting power')
+    await expect(vitals).not.toContainText('needs an account')
+
+    const actions = page.locator('[data-widget-type="walletActions"]')
+    await actions.scrollIntoViewIfNeeded()
+    await expect(actions).toContainText('Power down')
+    await expect(actions).not.toContainText('needs an account')
+
+    const creator = page.locator('[data-widget-type="creatorStats"]')
+    await creator.scrollIntoViewIfNeeded()
+    await expect(creator).toContainText('Creator')
+    await expect(creator).toContainText('Author rewards')
+    await expect(creator).not.toContainText('Could not load recent posts')
+    await expect(creator).not.toContainText('needs an account')
+  })
+
+  test('masonry presets collapse to one column on mobile', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Layouts' }).click()
+    await page.locator('.q-menu').getByText('Everyday', { exact: true }).click()
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.locator('.dw-grid--packed.dw-grid--masonry')).toBeVisible()
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.locator('.dw-grid--packed.dw-grid--masonry')).toHaveCount(0)
+    await expect(page.locator('.dw-grid--packed')).toBeVisible()
+
+    const overflow = await page.evaluate(() => (
+      document.documentElement.scrollWidth - document.documentElement.clientWidth
+    ))
+    expect(overflow).toBeLessThanOrEqual(1)
+  })
 })

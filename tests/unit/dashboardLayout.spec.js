@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_WIDGET_WIDTH,
+  DASHBOARD_PRESETS,
   GRID_COLUMNS,
   MAX_WIDGETS,
   WIDGET_REGISTRY,
@@ -20,6 +21,7 @@ import {
   nudgeWidget,
   optimiseLayout,
   packRows,
+  presetById,
   removeWidget,
   serialiseLayout,
   parseLayoutText,
@@ -64,6 +66,70 @@ describe('dashboard widget registry', () => {
     first.limit = 99
     expect(second.limit).toBe(6)
     expect(defaultSettingsFor('nope')).toEqual({})
+
+    const watchlistA = defaultSettingsFor('governance').watchlist
+    const watchlistB = defaultSettingsFor('governance').watchlist
+    watchlistA.push('1')
+    expect(watchlistB).toEqual([])
+  })
+
+  it('registers the phase-1 account, creator, governance and community widgets', () => {
+    const expected = {
+      vitals: 'account',
+      walletActions: 'account',
+      creatorStats: 'account',
+      governance: 'governance',
+      hbd: 'markets',
+      communityPulse: 'community'
+    }
+    for (const [type, category] of Object.entries(expected)) {
+      const meta = widgetMeta(type)
+      expect(meta).toBeTruthy()
+      expect(meta.component).toBeTruthy()
+      expect(meta.category).toBe(category)
+      expect(meta.minWidth).toBeTruthy()
+      expect(meta.defaultSettings).toBeTypeOf('object')
+    }
+    expect(widgetMeta('creatorStats').defer).toBe(true)
+    expect(widgetMeta('vitals').requiresAccount).toBe(true)
+    expect(widgetMeta('governance').requiresAccount).toBeUndefined()
+    expect(widgetMeta('hbd').requiresAccount).toBeUndefined()
+    expect(widgetMeta('communityPulse').requiresAccount).toBeUndefined()
+  })
+})
+
+describe('dashboard presets', () => {
+  it('offers unique, buildable presets with every widget type known', () => {
+    const ids = new Set()
+    for (const preset of DASHBOARD_PRESETS) {
+      expect(preset.id).toBeTruthy()
+      expect(ids.has(preset.id)).toBe(false)
+      ids.add(preset.id)
+      expect(preset.label).toBeTruthy()
+      expect(preset.description).toBeTruthy()
+      expect(preset.icon).toBeTruthy()
+      expect(preset.tiling).toBe('masonry')
+      const layout = buildLayout(preset.widgets)
+      expect(layout.length).toBe(preset.widgets.length)
+      for (const widget of layout) {
+        expect(isKnownWidgetType(widget.type)).toBe(true)
+        for (const key of Object.keys(defaultSettingsFor(widget.type))) {
+          expect(widget.settings).toHaveProperty(key)
+        }
+      }
+    }
+  })
+
+  it('resolves a preset by id and returns null for unknown ids', () => {
+    expect(presetById(DASHBOARD_PRESETS[0].id)).toBe(DASHBOARD_PRESETS[0])
+    expect(presetById('nope')).toBeNull()
+  })
+
+  it('keeps the persona presets distinct and non-empty', () => {
+    expect(DASHBOARD_PRESETS.length).toBeGreaterThanOrEqual(7)
+    for (const preset of DASHBOARD_PRESETS) {
+      expect(preset.widgets.length).toBeGreaterThan(0)
+    }
   })
 })
 

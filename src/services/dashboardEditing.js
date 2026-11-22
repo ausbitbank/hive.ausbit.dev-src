@@ -267,6 +267,80 @@ export function settingsFieldsFor (type) {
     case 'myWitness':
     case 'witnessHealth':
       return [ACCOUNT_FIELD]
+    case 'vitals':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'refreshSeconds',
+          kind: 'select',
+          label: 'Refresh interval',
+          options: [
+            { value: 30, label: 'Every 30 seconds' },
+            { value: 60, label: 'Every minute' },
+            { value: 300, label: 'Every 5 minutes' },
+            { value: 0, label: 'Manual only' }
+          ]
+        },
+        { key: 'showVoteValue', kind: 'toggle', label: 'Show vote value', hint: 'Estimate based on the current reward fund and voting power.' }
+      ]
+    case 'walletActions':
+      return [
+        ACCOUNT_FIELD,
+        { key: 'showPowerDown', kind: 'toggle', label: 'Show power-down' },
+        { key: 'showSavings', kind: 'toggle', label: 'Show savings withdrawals' },
+        { key: 'showConversions', kind: 'toggle', label: 'Show conversions' },
+        { key: 'showOrders', kind: 'toggle', label: 'Show open market orders' },
+        { key: 'showRewards', kind: 'toggle', label: 'Show claimable rewards' }
+      ]
+    case 'creatorStats':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'windowDays',
+          kind: 'window',
+          label: 'Reward window',
+          options: [
+            { value: 7, label: 'Last 7 days' },
+            { value: 30, label: 'Last 30 days' },
+            { value: 90, label: 'Last 90 days' }
+          ]
+        },
+        { key: 'showCurationApr', kind: 'toggle', label: 'Show curation APR', hint: 'Annualised from the loaded reward window; an estimate.' },
+        { key: 'showTopPost', kind: 'toggle', label: 'Show top post' }
+      ]
+    case 'governance':
+      return [
+        LIMIT_FIELD(8, 'Proposals to show'),
+        {
+          key: 'watchlist',
+          kind: 'list',
+          label: 'Proposal watchlist',
+          hint: 'Proposal ids, comma separated. Leave blank to show proposals closing soon.',
+          maxItems: 8,
+          numeric: true
+        },
+        { key: 'showBudget', kind: 'toggle', label: 'Show DHF budget' },
+        { key: 'showVoteExpiry', kind: 'toggle', label: 'Show my governance vote expiry' }
+      ]
+    case 'hbd':
+      return [
+        { key: 'amount', kind: 'amount', label: 'Projection amount (HBD)', min: 1, max: 10000000 },
+        { key: 'showProjection', kind: 'toggle', label: 'Show savings projection' }
+      ]
+    case 'communityPulse':
+      return [
+        { key: 'community', kind: 'text', label: 'Community', placeholder: 'hive-139531', stripHash: true, hint: 'Community name, for example hive-139531.' },
+        {
+          key: 'mode',
+          kind: 'select',
+          label: 'Show',
+          options: [
+            { value: 'single', label: 'One community' },
+            { value: 'mine', label: 'My communities' }
+          ]
+        },
+        { key: 'showTopPost', kind: 'toggle', label: 'Show the top post' }
+      ]
     case 'notifications':
       return [LIMIT_FIELD(10, 'Notifications to show'), ACCOUNT_FIELD]
     case 'operations':
@@ -306,6 +380,31 @@ export function isConfigurableWidget (type) {
 
 const CURRENCY_IDS = HOME_MARKET_CURRENCIES.map(entry => entry.id)
 const COIN_ID = /^[a-z0-9][a-z0-9-]*$/
+const ACCOUNT_NAME = /^[a-z0-9][a-z0-9.-]{1,15}$/
+
+function settingList (raw, field = {}) {
+  const values = Array.isArray(raw) ? raw : String(raw ?? '').split(',')
+  const maxItems = Math.max(1, Math.min(50, Number(field.maxItems) || 20))
+  const result = []
+  for (const value of values) {
+    let text = String(value ?? '').trim()
+    if (field.stripAt) text = text.replace(/^@/, '')
+    if (field.stripHash) text = text.replace(/^#/, '')
+    text = text.trim()
+    if (!text) continue
+    if (field.numeric && !/^\d+$/.test(text)) continue
+    if (!result.includes(text)) result.push(text)
+    if (result.length >= maxItems) break
+  }
+  return result
+}
+
+function accountList (raw, field = {}) {
+  return settingList(raw, { ...field, stripAt: true })
+    .map(value => value.toLowerCase())
+    .filter(value => ACCOUNT_NAME.test(value))
+    .slice(0, Math.max(1, Math.min(50, Number(field.maxItems) || 10)))
+}
 
 /**
  * Clamp and cast values coming from the Configure dialog. Only keys the widget
@@ -328,6 +427,20 @@ export function sanitiseWidgetSettings (type, settings = {}) {
         result[field.key] = Math.min(field.max, Math.max(field.min, Math.round(number)))
         break
       }
+      case 'window': {
+        const allowed = new Set((field.options || []).map(option => Number(option.value)))
+        const number = Math.round(Number(raw))
+        if (allowed.has(number)) result[field.key] = number
+        break
+      }
+      case 'amount': {
+        const number = Number(raw)
+        if (!Number.isFinite(number)) break
+        const min = Number.isFinite(Number(field.min)) ? Number(field.min) : 0
+        const max = Number.isFinite(Number(field.max)) ? Number(field.max) : 1000000000
+        result[field.key] = Math.min(max, Math.max(min, number))
+        break
+      }
       case 'select':
         if (field.options.some(option => option.value === raw)) result[field.key] = raw
         break
@@ -338,6 +451,12 @@ export function sanitiseWidgetSettings (type, settings = {}) {
         result[field.key] = [...new Set(values)]
         break
       }
+      case 'list':
+        result[field.key] = settingList(raw, field)
+        break
+      case 'accounts':
+        result[field.key] = accountList(raw, field)
+        break
       case 'currency': {
         const currency = String(raw ?? '').trim().toLowerCase()
         if (CURRENCY_IDS.includes(currency)) result[field.key] = currency

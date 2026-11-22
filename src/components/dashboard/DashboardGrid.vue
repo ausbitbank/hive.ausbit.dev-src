@@ -43,43 +43,69 @@
         @width-step="$emit('width-step', $event)"
         @remove="$emit('remove', $event)"
       >
-        <home-block-card
-          v-if="entry.widget.type === 'block'"
-          v-bind="settingsFor(entry.widget, { compact: entry.widget.settings?.compact })"
-        />
-        <home-market-card
-          v-else-if="entry.widget.type === 'market'"
-          v-bind="settingsFor(entry.widget, { coinIds: entry.widget.settings?.coinIds, currency: entry.widget.settings?.currency, compact: entry.widget.settings?.compact })"
-        />
-        <home-witness-card
-          v-else-if="entry.widget.type === 'witnesses'"
-          v-bind="settingsFor(entry.widget, { limit: entry.widget.settings?.limit, pinMine: entry.widget.settings?.pinMine, highlight: entry.widget.settings?.highlight, showHealth: entry.widget.settings?.showHealth })"
-        />
-        <home-trending-posts
-          v-else-if="entry.widget.type === 'posts'"
-          v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, account: entry.widget.settings?.account, feedSort: entry.widget.settings?.feedSort, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle, view: entry.widget.settings?.view, showBody: entry.widget.settings?.showBody, pollSeconds: entry.widget.settings?.pollSeconds })"
-        />
-        <widget-my-witness
-          v-else-if="entry.widget.type === 'myWitness'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
-        />
-        <widget-wallet
-          v-else-if="entry.widget.type === 'wallet'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, currency: entry.widget.settings?.currency, includeHiveEngine: entry.widget.settings?.includeHiveEngine, includeMagi: entry.widget.settings?.includeMagi })"
-        />
-        <widget-witness-health
-          v-else-if="entry.widget.type === 'witnessHealth'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
-        />
-        <widget-network-stats v-else-if="entry.widget.type === 'network'" />
-        <widget-notifications
-          v-else-if="entry.widget.type === 'notifications'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
-        />
-        <widget-operations
-          v-else-if="entry.widget.type === 'operations'"
-          v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, filters: entry.widget.settings?.filters, jsonIds: entry.widget.settings?.jsonIds, limit: entry.widget.settings?.limit, pollSeconds: entry.widget.settings?.pollSeconds, includeMagi: entry.widget.settings?.includeMagi })"
-        />
+        <dashboard-widget-viewport :enabled="deferFor(entry.widget) && !editing">
+          <home-block-card
+            v-if="entry.widget.type === 'block'"
+            v-bind="settingsFor(entry.widget, { compact: entry.widget.settings?.compact })"
+          />
+          <home-market-card
+            v-else-if="entry.widget.type === 'market'"
+            v-bind="settingsFor(entry.widget, { coinIds: entry.widget.settings?.coinIds, currency: entry.widget.settings?.currency, compact: entry.widget.settings?.compact })"
+          />
+          <home-witness-card
+            v-else-if="entry.widget.type === 'witnesses'"
+            v-bind="settingsFor(entry.widget, { limit: entry.widget.settings?.limit, pinMine: entry.widget.settings?.pinMine, highlight: entry.widget.settings?.highlight, showHealth: entry.widget.settings?.showHealth })"
+          />
+          <home-trending-posts
+            v-else-if="entry.widget.type === 'posts'"
+            v-bind="settingsFor(entry.widget, { reference: entry.widget.settings?.reference, source: entry.widget.settings?.source, tag: entry.widget.settings?.tag, account: entry.widget.settings?.account, feedSort: entry.widget.settings?.feedSort, limit: entry.widget.settings?.limit, showSortToggle: entry.widget.settings?.showSortToggle, view: entry.widget.settings?.view, showBody: entry.widget.settings?.showBody, pollSeconds: entry.widget.settings?.pollSeconds })"
+          />
+          <widget-my-witness
+            v-else-if="entry.widget.type === 'myWitness'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+          />
+          <widget-wallet
+            v-else-if="entry.widget.type === 'wallet'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, currency: entry.widget.settings?.currency, includeHiveEngine: entry.widget.settings?.includeHiveEngine, includeMagi: entry.widget.settings?.includeMagi })"
+          />
+          <widget-witness-health
+            v-else-if="entry.widget.type === 'witnessHealth'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account })"
+          />
+          <widget-network-stats v-else-if="entry.widget.type === 'network'" />
+          <widget-notifications
+            v-else-if="entry.widget.type === 'notifications'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, limit: entry.widget.settings?.limit })"
+          />
+          <widget-operations
+            v-else-if="entry.widget.type === 'operations'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, filters: entry.widget.settings?.filters, jsonIds: entry.widget.settings?.jsonIds, limit: entry.widget.settings?.limit, pollSeconds: entry.widget.settings?.pollSeconds, includeMagi: entry.widget.settings?.includeMagi })"
+          />
+          <widget-account-vitals
+            v-else-if="entry.widget.type === 'vitals'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, refreshSeconds: entry.widget.settings?.refreshSeconds, showVoteValue: entry.widget.settings?.showVoteValue })"
+          />
+          <widget-wallet-actions
+            v-else-if="entry.widget.type === 'walletActions'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, showPowerDown: entry.widget.settings?.showPowerDown, showSavings: entry.widget.settings?.showSavings, showConversions: entry.widget.settings?.showConversions, showOrders: entry.widget.settings?.showOrders, showRewards: entry.widget.settings?.showRewards })"
+          />
+          <widget-creator-stats
+            v-else-if="entry.widget.type === 'creatorStats'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, windowDays: entry.widget.settings?.windowDays, showCurationApr: entry.widget.settings?.showCurationApr, showTopPost: entry.widget.settings?.showTopPost })"
+          />
+          <widget-governance-watch
+            v-else-if="entry.widget.type === 'governance'"
+            v-bind="settingsFor(entry.widget, { limit: entry.widget.settings?.limit, watchlist: entry.widget.settings?.watchlist, showBudget: entry.widget.settings?.showBudget, showVoteExpiry: entry.widget.settings?.showVoteExpiry })"
+          />
+          <widget-hbd-peg
+            v-else-if="entry.widget.type === 'hbd'"
+            v-bind="settingsFor(entry.widget, { amount: entry.widget.settings?.amount, showProjection: entry.widget.settings?.showProjection })"
+          />
+          <widget-community-pulse
+            v-else-if="entry.widget.type === 'communityPulse'"
+            v-bind="settingsFor(entry.widget, { community: entry.widget.settings?.community, mode: entry.widget.settings?.mode, showTopPost: entry.widget.settings?.showTopPost })"
+          />
+        </dashboard-widget-viewport>
       </dashboard-widget-shell>
     </div>
 
@@ -201,12 +227,19 @@
 
 <script>
 import DashboardWidgetShell from 'components/dashboard/DashboardWidgetShell.vue'
+import DashboardWidgetViewport from 'components/dashboard/DashboardWidgetViewport.vue'
 import WidgetMyWitness from 'components/dashboard/WidgetMyWitness.vue'
 import WidgetWitnessHealth from 'components/dashboard/WidgetWitnessHealth.vue'
 import WidgetNetworkStats from 'components/dashboard/WidgetNetworkStats.vue'
 import WidgetNotifications from 'components/dashboard/WidgetNotifications.vue'
 import WidgetOperations from 'components/dashboard/WidgetOperations.vue'
 import WidgetWallet from 'components/dashboard/WidgetWallet.vue'
+import WidgetAccountVitals from 'components/dashboard/WidgetAccountVitals.vue'
+import WidgetWalletActions from 'components/dashboard/WidgetWalletActions.vue'
+import WidgetCreatorStats from 'components/dashboard/WidgetCreatorStats.vue'
+import WidgetGovernanceWatch from 'components/dashboard/WidgetGovernanceWatch.vue'
+import WidgetHbdPeg from 'components/dashboard/WidgetHbdPeg.vue'
+import WidgetCommunityPulse from 'components/dashboard/WidgetCommunityPulse.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
@@ -223,7 +256,24 @@ const SPANS = new Map(WIDGET_WIDTHS.map(entry => [entry.value, entry.columns]))
 
 // Types this grid renders today. Registry entries without a component are
 // still laid out and show the shell's "available shortly" placeholder.
-const RENDERED_TYPES = ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'network', 'notifications', 'operations']
+const RENDERED_TYPES = [
+  'block',
+  'market',
+  'witnesses',
+  'posts',
+  'wallet',
+  'myWitness',
+  'witnessHealth',
+  'network',
+  'notifications',
+  'operations',
+  'vitals',
+  'walletActions',
+  'creatorStats',
+  'governance',
+  'hbd',
+  'communityPulse'
+]
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
 // home/end keys jump to the ends of the layout.
@@ -238,12 +288,19 @@ export default {
   name: 'DashboardGrid',
   components: {
     DashboardWidgetShell,
+    DashboardWidgetViewport,
     WidgetMyWitness,
     WidgetWitnessHealth,
     WidgetNetworkStats,
     WidgetNotifications,
     WidgetOperations,
     WidgetWallet,
+    WidgetAccountVitals,
+    WidgetWalletActions,
+    WidgetCreatorStats,
+    WidgetGovernanceWatch,
+    WidgetHbdPeg,
+    WidgetCommunityPulse,
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,
@@ -279,7 +336,10 @@ export default {
       masonryWidth: 0,
       masonryTimer: null,
       masonryObserver: null,
-      resizeObserver: null
+      resizeObserver: null,
+      // Masonry uses absolute 12-column placement, which cannot collapse to a
+      // single column. Below 800px the grid falls back to the packed CSS grid.
+      narrow: false
     }
   },
   computed: {
@@ -338,6 +398,8 @@ export default {
   },
   mounted () {
     if (typeof window === 'undefined') return
+    this.updateNarrow()
+    window.addEventListener('resize', this.updateNarrow)
     window.addEventListener('pointermove', this.onPointerMove, { passive: false })
     window.addEventListener('pointerup', this.onPointerUp)
     window.addEventListener('pointercancel', this.cancelDrag)
@@ -348,17 +410,26 @@ export default {
     if (this.masonryTimer) clearTimeout(this.masonryTimer)
     this.disconnectMasonry()
     if (typeof window === 'undefined') return
+    window.removeEventListener('resize', this.updateNarrow)
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.cancelDrag)
     window.removeEventListener('keydown', this.onKeyDown)
   },
   methods: {
+    updateNarrow () {
+      if (typeof window === 'undefined') return
+      const next = Number(window.innerWidth) > 0 && Number(window.innerWidth) < 800
+      if (next === this.narrow) return
+      this.narrow = next
+      this.resetMasonry()
+    },
     masonryActive () {
       // Edit mode uses the same absolute tiling when the saved dashboard is in
       // masonry mode, so dragging/resizing previews the final arrangement
-      // instead of shifting after Save.
-      return Boolean(this.masonry) && (this.packed || this.editing)
+      // instead of shifting after Save. Narrow viewports use the packed grid
+      // so the cards stack instead of overlapping at desktop column widths.
+      return Boolean(this.masonry) && !this.narrow && (this.packed || this.editing)
     },
     cellStyle (entry) {
       if (this.masonryActive()) {
@@ -489,6 +560,9 @@ export default {
     },
     configurableFor (widget) {
       return widgetMeta(widget.type)?.configurable !== false
+    },
+    deferFor (widget) {
+      return widgetMeta(widget.type)?.defer === true
     },
     guestBlocked (widget) {
       return Boolean(widgetMeta(widget.type)?.requiresAccount) && !this.signedIn

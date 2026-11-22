@@ -64,6 +64,7 @@
         @save-layout="saveNamedLayout"
         @rename-layout="renameNamedLayout"
         @delete-layout="deleteNamedLayout"
+        @apply-preset="applyPreset"
       />
 
       <dashboard-setup-prompt
@@ -229,6 +230,7 @@ import DashboardSetupPrompt from 'components/dashboard/DashboardSetupPrompt.vue'
 import WidgetSettingsDialog from 'components/dashboard/WidgetSettingsDialog.vue'
 import {
   LOGGED_IN_STARTER_LAYOUT,
+  buildLayout,
   moveWidget,
   normaliseLayout,
   optimiseLayout,
@@ -381,6 +383,13 @@ export default {
       this.draftTiling = layout.tiling || 'rows'
       this.draftLayoutId = layout.id
       this.$q.notify({ type: 'info', message: 'Loaded "' + layout.label + '" — press Save to apply' })
+    },
+    applyPreset (preset) {
+      if (!preset) return
+      this.draft = draftWidgets(buildLayout(preset.widgets))
+      this.draftTiling = preset.tiling === 'masonry' ? 'masonry' : 'rows'
+      this.draftLayoutId = ''
+      this.$q.notify({ type: 'info', message: 'Loaded "' + preset.label + '" — press Save to apply' })
     },
     saveNamedLayout ({ label = '', id = '' } = {}) {
       const layoutId = this.$hiveStore.saveDashboardLayout(label, {

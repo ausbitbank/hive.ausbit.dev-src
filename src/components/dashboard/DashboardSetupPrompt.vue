@@ -7,8 +7,8 @@
       <h2 id="dw-setup-title" class="dw-setup__title">Make this dashboard yours</h2>
       <p class="dw-setup__body">
         Add your wallet, witness and notifications to the front page, then drag
-        the cards into the order you want. The current layout stays unless you
-        switch.
+        the cards into the order you want. Or open Customise → Layouts to start
+        from a Creator, Witness, Trader or Community template.
       </p>
     </div>
     <div class="dw-setup__actions">

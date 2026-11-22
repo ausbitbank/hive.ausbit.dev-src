@@ -30,7 +30,24 @@
 
     <div class="dw-bar__actions">
       <q-btn-dropdown ref="layoutsMenu" no-caps flat dense icon="dashboard" label="Layouts" class="dw-bar__layouts">
-        <q-list style="min-width: 300px" aria-label="Saved layouts">
+        <q-list style="min-width: 300px" aria-label="Dashboard templates and saved layouts">
+          <q-item-label header>Templates</q-item-label>
+          <q-item
+            v-for="preset in presets"
+            :key="preset.id"
+            clickable
+            @click="loadPreset(preset)"
+          >
+            <q-item-section avatar>
+              <q-icon :name="preset.icon" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ preset.label }}</q-item-label>
+              <q-item-label caption>{{ preset.description }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item-label header>Saved layouts</q-item-label>
           <q-item v-if="!layouts.length">
             <q-item-section class="dw-bar__empty">No saved layouts yet.</q-item-section>
           </q-item>
@@ -414,7 +431,7 @@
 </style>
 
 <script>
-import { serialiseLayout, parseLayoutText } from 'src/services/dashboardLayout'
+import { DASHBOARD_PRESETS, serialiseLayout, parseLayoutText } from 'src/services/dashboardLayout'
 
 export default {
   name: 'DashboardCustomiseBar',
@@ -432,7 +449,7 @@ export default {
     layouts: { type: Array, default: () => [] },
     activeLayoutId: { type: String, default: '' }
   },
-  emits: ['save', 'cancel', 'reset', 'add', 'import', 'tiling', 'optimise', 'load-layout', 'save-layout', 'rename-layout', 'delete-layout'],
+  emits: ['save', 'cancel', 'reset', 'add', 'import', 'tiling', 'optimise', 'load-layout', 'save-layout', 'rename-layout', 'delete-layout', 'apply-preset'],
   data () {
     return {
       exportOpen: false,
@@ -449,6 +466,9 @@ export default {
     }
   },
   computed: {
+    presets () {
+      return DASHBOARD_PRESETS
+    },
     activeEntry () {
       return this.layouts.find(entry => entry.id === this.activeLayoutId) || null
     },
@@ -481,6 +501,10 @@ export default {
     loadLayout (entry) {
       this.closeLayoutsMenu()
       this.$emit('load-layout', entry)
+    },
+    loadPreset (preset) {
+      this.closeLayoutsMenu()
+      this.$emit('apply-preset', preset)
     },
     openSaveDialog () {
       this.closeLayoutsMenu()

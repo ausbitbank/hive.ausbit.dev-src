@@ -147,7 +147,7 @@ describe('edit-mode drafts', () => {
 
 describe('widget settings', () => {
   it('offers fields for every configurable registry widget', () => {
-    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations']) {
+    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations', 'vitals', 'walletActions', 'creatorStats', 'governance', 'hbd', 'communityPulse']) {
       expect(isConfigurableWidget(type)).toBe(true)
       expect(settingsFieldsFor(type).length).toBeGreaterThan(0)
     }
@@ -191,6 +191,31 @@ describe('widget settings', () => {
   it('strips the @ from account overrides', () => {
     expect(sanitiseWidgetSettings('wallet', { account: '@alice' })).toEqual({ account: 'alice' })
     expect(sanitiseWidgetSettings('wallet', { account: '' })).toEqual({ account: '' })
+  })
+
+  it('sanitises list and account settings', () => {
+    expect(sanitiseWidgetSettings('governance', {
+      watchlist: '12, 34, 34, abc, ',
+      limit: 99
+    })).toEqual({ watchlist: ['12', '34'], limit: 8 })
+    expect(sanitiseWidgetSettings('governance', { watchlist: ['7', '8'] })).toEqual({
+      watchlist: ['7', '8']
+    })
+    expect(sanitiseWidgetSettings('vitals', { account: '@Alice' })).toEqual({ account: 'Alice' })
+  })
+
+  it('sanitises windows and amounts', () => {
+    expect(sanitiseWidgetSettings('creatorStats', {
+      windowDays: 30,
+      showCurationApr: 'yes',
+      showTopPost: 0
+    })).toEqual({ windowDays: 30, showCurationApr: true, showTopPost: false })
+    expect(sanitiseWidgetSettings('creatorStats', { windowDays: 365 })).toEqual({})
+    expect(sanitiseWidgetSettings('hbd', { amount: 1500.75, showProjection: true })).toEqual({
+      amount: 1500.75,
+      showProjection: true
+    })
+    expect(sanitiseWidgetSettings('hbd', { amount: -10 })).toEqual({ amount: 1 })
   })
 
   it('keeps feed references and whitelists account feed types', () => {

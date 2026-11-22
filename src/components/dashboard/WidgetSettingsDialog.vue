@@ -50,6 +50,50 @@
               />
             </template>
 
+            <template v-else-if="field.kind === 'window'">
+              <q-select
+                v-model="draft[field.key]"
+                :options="field.options"
+                emit-value
+                map-options
+                dense
+                outlined
+                options-dense
+                :label="field.label"
+              />
+            </template>
+
+            <template v-else-if="field.kind === 'amount'">
+              <q-input
+                v-model.number="draft[field.key]"
+                type="number"
+                dense
+                outlined
+                :min="field.min"
+                :max="field.max"
+                :step="field.step || 1"
+                :label="field.label"
+              />
+              <p v-if="field.hint" class="dw-settings__hint">{{ field.hint }}</p>
+            </template>
+
+            <template v-else-if="field.kind === 'list' || field.kind === 'accounts'">
+              <q-select
+                v-model="draft[field.key]"
+                :options="field.suggestions || []"
+                multiple
+                use-input
+                use-chips
+                new-value-mode="add-unique"
+                dense
+                outlined
+                options-dense
+                input-debounce="0"
+                :label="field.label"
+              />
+              <p v-if="field.hint" class="dw-settings__hint">{{ field.hint }}</p>
+            </template>
+
             <template v-else-if="field.kind === 'currency'">
               <q-select
                 v-model="draft[field.key]"
