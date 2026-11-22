@@ -31,10 +31,10 @@
       <span title="Token Rewards" v-else-if="!post.is_paidout && post.pending_token && post.precision">{{ post.pending_token / Math.pow(10, post.precision) }} {{ post.token }}</span>
       <span title="Hive Rewards" v-else>{{ post.payout }}</span>
       <q-popup-proxy v-if="!post.pending_token">
-        <votes-dialog :votes="post.active_votes" :simple="true" />
+        <votes-dialog :votes="post.active_votes || []" :simple="true" />
       </q-popup-proxy>
     </q-btn>
-    <vote v-on:Voted="showVoteEarly" :votes="post.active_votes" :author="post.author" :permlink="post.permlink" />
+    <vote v-on:Voted="showVoteEarly" :votes="post.active_votes || []" :author="post.author" :permlink="post.permlink" />
     <q-btn class="post-footer__action post-footer__more" dense icon="more_horiz" flat no-caps aria-label="More post actions" title="More post actions">
       <q-popup-proxy>
         <q-list dense class="post-footer__menu">

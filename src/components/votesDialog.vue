@@ -100,7 +100,7 @@
         </q-td>
       </template>
       <template #body-cell-percent="props">
-        <q-td :props="props" class="votes-dialog__num">{{ props.row.percent / 100 }}%</q-td>
+        <q-td :props="props" class="votes-dialog__num">{{ percentLabel(props.row.percent) }}</q-td>
       </template>
       <template #body-cell-rshares="props">
         <q-td :props="props" class="votes-dialog__num" :title="props.row.rshares">{{ compactNumber(props.row.rshares) }}</q-td>
@@ -118,6 +118,7 @@
 import moment from 'src/utils/time'
 import { formatReputation } from 'src/services/comments'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { normalizeVotes, voteDirection } from 'src/services/voteBreakdown'
 
 export default {
   name: 'votesDialog',
@@ -136,16 +137,21 @@ export default {
     }
   },
   props: {
-    votes: { type: Array, required: true },
+    // A post loaded from a partial cache/snapshot can arrive without vote
+    // rows, so never require a populated array here.
+    votes: { type: Array, required: false, default: () => [] },
     simple: { type: Boolean, required: false, default: false }
   },
   computed: {
-    sortedVotes () {
-      return [...this.votes].sort((a, b) => Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0))
+    safeVotes () {
+      return normalizeVotes(this.votes)
     },
-    upvotesOnly () { return this.votes.filter(v => Math.sign(v.rshares) === 1) },
-    downvotesOnly () { return this.votes.filter(v => Math.sign(v.rshares) === -1) },
-    unvotesOnly () { return this.votes.filter(v => v.rshares === 0) },
+    sortedVotes () {
+      return [...this.safeVotes].sort(this.sortByRshares)
+    },
+    upvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === 1) },
+    downvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === -1) },
+    unvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === 0) },
     totalRshares () {
       return this.upvotesOnly.reduce((sum, vote) => sum + (Number(vote.rshares) || 0), 0)
     },
@@ -159,7 +165,12 @@ export default {
   methods: {
     sortByRshares (a, b) { return Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0) },
     getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
-    linkAccount (username) { return '/@' + username },
+    linkAccount (username) { return username ? '/@' + username : '/' },
+    percentLabel (value) {
+      const percent = Number(value)
+      if (value === null || value === undefined || !Number.isFinite(percent)) return '—'
+      return (percent / 100) + '%'
+    },
     tidyNumber (value) {
       return Number(value || 0).toLocaleString('en-US')
     },
@@ -172,8 +183,9 @@ export default {
       return String(number)
     },
     weightLabel (vote) {
-      const percent = vote && vote.percent !== undefined ? Number(vote.percent) / 100 : null
-      if (percent === null || Number.isNaN(percent)) return ''
+      const raw = vote && vote.percent !== undefined && vote.percent !== null ? Number(vote.percent) : NaN
+      if (!Number.isFinite(raw)) return ''
+      const percent = raw / 100
       return (percent > 0 ? '+' : '') + percent + '%'
     },
     relativeTime (value) {

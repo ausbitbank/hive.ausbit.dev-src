@@ -116,7 +116,7 @@
                     v-if="loggedInUser"
                     :author="author"
                     :permlink="permlink"
-                    :votes="post.active_votes"
+                    :votes="post.active_votes || []"
                     @Voted="refreshPost"
                   />
                   <q-btn
@@ -279,7 +279,7 @@
     </div>
 
     <q-dialog v-model="showVotes">
-      <votes-dialog v-if="post" :votes="post.active_votes" />
+      <votes-dialog v-if="post" :votes="post.active_votes || []" />
     </q-dialog>
 
     <q-dialog v-model="showReply">
