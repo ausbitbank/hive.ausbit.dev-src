@@ -146,7 +146,7 @@ scanner.
 
 Deployed on 2026-11-22 with `./scripts/deploy.sh`.
 
-- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T111340Z.tar.gz`
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T111733Z.tar.gz`
 - Live GET requests return 200 for `/appearance`, `/themes` and
   `/settings/skin`; the Cloudflare metadata Worker serves their prerendered
   shells with `x-hive-meta: theme-shell` until the nginx vhost config is
@@ -160,6 +160,11 @@ Deployed on 2026-11-22 with `./scripts/deploy.sh`.
   current `json_metadata` back escalated the operation to active authority and
   caused `Missing Active Authority` on publish. A live queue smoke confirms the
   queued action uses the `posting` key type and has no active/owner/memo fields.
+- Queue repair: restored `account_update2` items signed with posting authority
+  are normalised to an empty legacy `json_metadata` before retry, so a failed
+  action queued by the earlier build is repaired after a reload instead of
+  failing again. Live smoke seeded a stale failed item and confirmed the store
+  held an empty `json_metadata` with the posting key type.
 
 ## Follow-ups
 
