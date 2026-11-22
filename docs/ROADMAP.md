@@ -191,11 +191,12 @@ ticker text becomes a static status line. Account pages gain a fixed Profile
 Shelf with a six-account Hive Circle, latest/pinned post and optional status.
 See `docs/workstreams/W65-profile-identity.md`.
 
-W66 (issue #92, badges) is implemented locally. PeakD membership is read through
-a same-origin Worker proxy with a Hive followers fallback; HiveBuzz reads only
-`state: "on"` badges. Both are cached, fail open and never load on post pages.
-The curated credential allowlist is the only source of “Verified”. See
-`docs/workstreams/W66-badges.md`.
+W66 (issue #92, badges) is implemented locally. A profile shelf confirms the
+author's selected PeakD badge accounts directly with the chain-native follow
+relationship; the Studio paginates followers only while the author is editing.
+HiveBuzz reads only `state: "on"` badges. Both are cached, fail open and never
+load on post pages. The curated credential allowlist is the only source of
+“Verified”. See `docs/workstreams/W66-badges.md`.
 
 W67 (issue #92, atmosphere and visual language) is implemented locally. Covers
 and three-image collages become an app-owned atmosphere with an enforced

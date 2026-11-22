@@ -5,12 +5,15 @@ vi.mock('../../src/services/chainData', () => ({
 }))
 
 vi.mock('../../src/services/api', () => ({
-  apiGetFollowers: vi.fn()
+  apiGetFollowers: vi.fn(),
+  bridgeRequest: vi.fn()
 }))
 
 import { fetchAccounts } from '../../src/services/chainData'
-import { apiGetFollowers } from '../../src/services/api'
+import { apiGetFollowers, bridgeRequest } from '../../src/services/api'
 import {
+  PEAKD_FOLLOWER_PAGE_SIZE,
+  checkPeakdMembership,
   clearBadgeCache,
   fetchBadgeSuggestions,
   fetchHiveBuzzBadges,
@@ -52,55 +55,61 @@ describe('credential allowlist', () => {
   })
 })
 
-describe('PeakD badges', () => {
-  it('proxies membership, filters incomplete metadata and marks credentials', async () => {
-    vi.stubGlobal('fetch', vi.fn(async url => {
-      expect(String(url)).toBe('/api/badges/peakd?account=alice')
-      return jsonResponse({ account: 'alice', badges: ['badge-069069', 'badge-100421', 'badge-100100'] })
-    }))
+describe('PeakD membership', () => {
+  it('confirms selected badge accounts directly with the follow relationship', async () => {
+    bridgeRequest.mockImplementation(async (_method, [badge]) => ({ follows: badge === 'badge-069069' }))
     fetchAccounts.mockResolvedValue([
-      peakdAccount('badge-069069', { name: 'NFT Showroom Verified Artist', about: '<p>Verified artist</p>', profile_image: 'https://files.peakd.com/file/a.png' }),
-      peakdAccount('badge-100421', { about: 'No name or image' }),
-      peakdAccount('badge-100100', { name: 'Hive Witness - Top 100', profile_image: 'https://files.peakd.com/file/b.png' })
+      peakdAccount('badge-069069', { name: 'NFT Showroom Verified Artist', about: '<p>Verified artist</p>', profile_image: 'https://files.peakd.com/file/a.png' })
     ])
-
-    const badges = await fetchPeakdBadges('alice')
-    expect(badges).toHaveLength(2)
-    const credential = badges.find(badge => badge.id === 'badge-069069')
-    expect(credential.verified).toBe(true)
-    expect(credential.issuer).toBe('NFT Showroom')
-    expect(credential.description).toBe('Verified artist')
-    expect(badges.find(badge => badge.id === 'badge-100100').verified).toBe(false)
+    const theme = {
+      profile: {
+        badges: {
+          showLevel: false,
+          selected: [
+            { source: 'peakd', id: 'badge-069069' },
+            { source: 'peakd', id: 'badge-100100' }
+          ]
+        }
+      }
+    }
+    const badges = await resolveProfileBadges(theme, 'alice')
+    expect(badges).toHaveLength(1)
+    expect(badges[0].id).toBe('badge-069069')
+    expect(badges[0].verified).toBe(true)
+    expect(badges[0].issuer).toBe('NFT Showroom')
+    expect(bridgeRequest).toHaveBeenCalledWith('get_relationship_between_accounts', ['badge-069069', 'alice'])
+    expect(bridgeRequest).toHaveBeenCalledWith('get_relationship_between_accounts', ['badge-100100', 'alice'])
+    expect(fetchAccounts).toHaveBeenCalledWith(['badge-069069'], { force: false })
   })
 
-  it('falls back to Hive followers when the proxy fails', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('proxy down') }))
-    apiGetFollowers.mockResolvedValue([{ follower: 'badge-424242' }, { follower: 'alice' }])
-    fetchAccounts.mockResolvedValue([
-      peakdAccount('badge-424242', { name: 'Hive Devs', profile_image: 'https://files.peakd.com/file/dev.png' })
-    ])
+  it('caches a membership answer for an hour', async () => {
+    bridgeRequest.mockResolvedValue({ follows: true })
+    expect(await checkPeakdMembership('badge-069069', 'alice')).toBe(true)
+    expect(await checkPeakdMembership('badge-069069', 'alice')).toBe(true)
+    expect(bridgeRequest).toHaveBeenCalledTimes(1)
+  })
+
+  it('paginates followers for the Studio picker', async () => {
+    const page = Array.from({ length: PEAKD_FOLLOWER_PAGE_SIZE }, (_, index) => ({ follower: 'user-' + index }))
+    page[PEAKD_FOLLOWER_PAGE_SIZE - 1] = { follower: 'badge-424242' }
+    apiGetFollowers
+      .mockResolvedValueOnce(page)
+      .mockResolvedValueOnce([{ follower: 'badge-069069' }, { follower: 'alice' }])
+
     const names = await fetchPeakdBadgeAccountNames('alice')
-    expect(names).toEqual(['badge-424242'])
-    expect(apiGetFollowers).toHaveBeenCalledWith('alice', '', 'blog', 1000)
+    expect(names).toEqual(['badge-424242', 'badge-069069'])
+    expect(apiGetFollowers).toHaveBeenNthCalledWith(1, 'alice', '', 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
+    expect(apiGetFollowers).toHaveBeenNthCalledWith(2, 'alice', 'badge-424242', 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
   })
 
-  it('omits images on unknown hosts and invalid accounts make no request', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse({ badges: ['badge-424242'] }))
-    vi.stubGlobal('fetch', fetchMock)
+  it('omits images on unknown hosts and ignores invalid accounts', async () => {
+    apiGetFollowers.mockResolvedValue([{ follower: 'badge-424242' }])
     fetchAccounts.mockResolvedValue([
       peakdAccount('badge-424242', { name: 'Hive Devs', profile_image: 'https://evil.example/a.png' })
     ])
     expect(await fetchPeakdBadges('alice')).toEqual([])
     expect(await fetchPeakdBadges('Not A Name')).toEqual([])
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('caches membership for an hour', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse({ badges: [] }))
-    vi.stubGlobal('fetch', fetchMock)
-    await fetchPeakdBadgeAccountNames('alice')
-    await fetchPeakdBadgeAccountNames('alice')
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(apiGetFollowers).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -120,15 +129,11 @@ describe('HiveBuzz badges', () => {
   })
 
   it('shows earned and unearned badges in the Studio suggestions', async () => {
-    vi.stubGlobal('fetch', vi.fn(async url => {
-      if (String(url).includes('/badges/')) {
-        return jsonResponse([
-          { id: 'first-post', title: 'First post', state: 'on', url: 'https://hivebuzz.me/a.png' },
-          { id: 'future', title: 'Future', state: 'off', url: 'https://hivebuzz.me/b.png' }
-        ])
-      }
-      return jsonResponse({ badges: [] })
-    }))
+    apiGetFollowers.mockResolvedValue([])
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse([
+      { id: 'first-post', title: 'First post', state: 'on', url: 'https://hivebuzz.me/a.png' },
+      { id: 'future', title: 'Future', state: 'off', url: 'https://hivebuzz.me/b.png' }
+    ])))
     const suggestions = await fetchBadgeSuggestions('alice')
     expect(suggestions.hivebuzz).toHaveLength(2)
     expect(suggestions.hivebuzz.filter(badge => badge.earned)).toHaveLength(1)
@@ -137,15 +142,11 @@ describe('HiveBuzz badges', () => {
 
 describe('profile badge resolution', () => {
   it('resolves selected badges plus the optional level and omits misses', async () => {
-    vi.stubGlobal('fetch', vi.fn(async url => {
-      const value = String(url)
-      if (value.startsWith('/api/badges/peakd')) {
-        return jsonResponse({ badges: ['badge-069069'] })
-      }
-      return jsonResponse([
-        { id: 'first-post', title: 'First post', state: 'on', url: 'https://hivebuzz.me/a.png' }
-      ])
-    }))
+    bridgeRequest.mockImplementation(async (_method, [badge]) => ({ follows: badge === 'badge-069069' }))
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse([
+      { id: 'first-post', title: 'First post', state: 'on', url: 'https://hivebuzz.me/a.png' }
+    ])))
+    apiGetFollowers.mockResolvedValue([])
     fetchAccounts.mockResolvedValue([
       peakdAccount('badge-069069', { name: 'NFT Showroom Verified Artist', profile_image: 'https://files.peakd.com/a.png' })
     ])

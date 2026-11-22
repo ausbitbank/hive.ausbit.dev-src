@@ -88,6 +88,14 @@ async function mockChain (page) {
         })
         return
       }
+      if (payload.method === 'condenser_api.get_followers') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: [{ follower: 'badge-069069' }] })
+        })
+        return
+      }
       if (payload.method === 'condenser_api.get_accounts') {
         const names = payload.params?.[0] || []
         const result = names.map(name => {
@@ -126,9 +134,6 @@ async function mockChain (page) {
       await route.continue()
     })
   }
-  await page.route('**/api/badges/peakd**', async route => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"badges":[]}' })
-  })
   await page.route('https://hivebuzz.me/**', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
@@ -203,13 +208,6 @@ test('viewer skin controls persist and reverse', async ({ page }) => {
 test('studio badge picker adds an earned badge to the preview', async ({ page }) => {
   await loginAs(page, 'viewer')
   await mockChain(page)
-  await page.route('**/api/badges/peakd**', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ account: 'viewer', badges: ['badge-069069'] })
-    })
-  })
 
   await page.goto('/settings/skin')
   await waitForApp(page)

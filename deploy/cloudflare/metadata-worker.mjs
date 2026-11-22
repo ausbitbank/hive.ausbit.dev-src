@@ -8,8 +8,7 @@
 //
 // Deploy (example):
 //   wrangler deploy deploy/cloudflare/metadata-worker.mjs \
-//     --name hive-metadata --route "hive.ausbit.dev/@*" \
-//     --route "hive.ausbit.dev/api/badges/peakd*"
+//     --name hive-metadata --route "hive.ausbit.dev/@*"
 //
 // It is intentionally dependency-free and fails open: any timeout, missing
 // post or API error returns the untouched origin response.
@@ -23,10 +22,6 @@ const HIVE_RPCS = [
 ]
 const FETCH_TIMEOUT_MS = 2500
 const CACHE_SECONDS = 300
-const BADGE_CACHE_SECONDS = 3600
-const PEAKD_BADGES_URL = 'https://peakd.com/api/public/accounts/badges?account='
-const HIVE_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
-const PEAKD_BADGE_RE = /^badge-\d{6}$/
 
 const POST_PATH = /^\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)\/?$/i
 const ACCOUNT_PATH = /^\/@([a-z0-9.-]+)\/?$/i
@@ -47,69 +42,7 @@ function hasHtml (request) {
   return request.method === 'GET' && accept.includes('text/html')
 }
 
-export function isValidBadgeAccount (value) {
-  const name = String(value || '').trim().toLowerCase()
-  return HIVE_ACCOUNT_RE.test(name) ? name : ''
-}
 
-function jsonResponse (value, status = 200, headers = {}) {
-  return new Response(JSON.stringify(value), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      ...headers
-    }
-  })
-}
-
-/**
- * Same-origin PeakD badge membership proxy.
- *
- * PeakD rejects browser requests that carry an Origin header, so the client
- * never calls it directly. This route validates the account name, keeps the
- * response at the edge for an hour and returns a small fail-open payload.
- */
-async function peakdBadges (request) {
-  const url = new URL(request.url)
-  const account = isValidBadgeAccount(url.searchParams.get('account'))
-  if (!account) {
-    return jsonResponse({ error: 'invalid account' }, 400, { 'cache-control': 'no-store' })
-  }
-  const cache = typeof caches !== 'undefined' ? caches.default : null
-  const cacheKey = new Request('https://hive.ausbit.dev/api/badges/peakd?account=' + encodeURIComponent(account), { method: 'GET' })
-  if (cache) {
-    const cached = await cache.match(cacheKey)
-    if (cached) return cached
-  }
-
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-  try {
-    const response = await fetch(PEAKD_BADGES_URL + encodeURIComponent(account), {
-      headers: {
-        accept: 'application/json',
-        'user-agent': 'hive.ausbit.dev badge shelf (+https://hive.ausbit.dev)'
-      },
-      signal: controller.signal
-    })
-    if (!response.ok) {
-      return jsonResponse({ account, badges: [] }, 502, { 'cache-control': 'no-store' })
-    }
-    const payload = await response.json()
-    const rows = Array.isArray(payload) ? payload : (Array.isArray(payload?.badges) ? payload.badges : [])
-    const badges = [...new Set(rows.filter(name => typeof name === 'string' && PEAKD_BADGE_RE.test(name)))].slice(0, 40)
-    const out = jsonResponse({ account, badges }, 200, {
-      'cache-control': 'public, max-age=' + BADGE_CACHE_SECONDS,
-      'x-hive-badges': 'peakd'
-    })
-    if (cache) await cache.put(cacheKey, out.clone())
-    return out
-  } catch {
-    return jsonResponse({ account, badges: [] }, 502, { 'cache-control': 'no-store' })
-  } finally {
-    clearTimeout(timer)
-  }
-}
 
 async function themeShell (request) {
   if (!hasHtml(request)) return null
@@ -339,10 +272,6 @@ async function lightningShell (request, account = '') {
 export default {
   async fetch (request) {
     const url = new URL(request.url)
-    if (request.method === 'GET' && url.pathname === '/api/badges/peakd') {
-      return peakdBadges(request)
-    }
-
     const theme = await themeShell(request).catch(() => null)
     if (theme) return theme
 

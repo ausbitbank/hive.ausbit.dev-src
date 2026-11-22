@@ -1,24 +1,31 @@
 // Cached, fail-open badge client for PeakD and HiveBuzz.
 //
-// PeakD badge membership is proxied by the same-origin Cloudflare Worker
-// (`/api/badges/peakd`). PeakD rejects browser CORS, so a direct request is
-// never attempted. If the proxy is unavailable we fall back to the public
-// `condenser_api.get_followers` list and filter `badge-######` accounts.
+// PeakD has no browser-safe public badge API. A profile shelf does not need to
+// enumerate every badge: the theme already stores up to six badge account
+// names, so each is confirmed directly with
+// `bridge.get_relationship_between_accounts(badge, account)`. That is one
+// small Hive read per selected badge, cached for an hour.
+//
+// The Studio picker is different: it needs every earned badge, so it paginates
+// the public `condenser_api.get_followers` list and keeps `badge-######`
+// accounts. That scan runs only while the author is editing a skin.
 //
 // HiveBuzz is CORS-enabled but throttled: one badges request and one level
 // image per account, cached for an hour. Every failure resolves to an empty
 // list so a profile never blocks on badges.
 
 import { fetchAccounts } from './chainData'
-import { apiGetFollowers } from './api'
+import { apiGetFollowers, bridgeRequest } from './api'
 import { credentialFor } from 'src/data/badges/credentials'
 import { stripHtml } from 'src/utils/safeHtml'
 
 export const BADGE_CACHE_TTL = 60 * 60 * 1000
-export const PEAKD_PROXY_PATH = '/api/badges/peakd'
 export const HIVEBUZZ_API = 'https://hivebuzz.me/api'
 export const HIVE_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 export const PEAKD_BADGE_RE = /^badge-\d{6}$/
+export const PEAKD_FOLLOWER_PAGE_SIZE = 1000
+// A Studio-only safety bound. Normal accounts finish long before this.
+export const PEAKD_MAX_FOLLOWER_PAGES = 100
 export const BADGE_IMAGE_HOSTS = [
   'images.hive.blog',
   'files.peakd.com',
@@ -57,7 +64,7 @@ function cacheSet (key, value) {
   return value
 }
 
-function load (key, fetcher, { force = false } = {}) {
+function load (key, fetcher, { force = false, fallback = [] } = {}) {
   if (force) cache.delete(key)
   const cached = cacheGet(key, { force })
   if (cached !== null) return Promise.resolve(cached)
@@ -65,7 +72,7 @@ function load (key, fetcher, { force = false } = {}) {
   const promise = Promise.resolve()
     .then(fetcher)
     .then(value => cacheSet(key, value))
-    .catch(() => [])
+    .catch(() => fallback)
     .finally(() => inflight.delete(key))
   inflight.set(key, promise)
   return promise
@@ -155,37 +162,81 @@ function followersBadgeNames (rows) {
     .filter(name => typeof name === 'string' && PEAKD_BADGE_RE.test(name))
 }
 
-async function peakdMembershipFromPeakd (account, options) {
-  const url = PEAKD_PROXY_PATH + '?account=' + encodeURIComponent(account)
-  const payload = await fetchJson(url, options)
-  const rows = Array.isArray(payload) ? payload : payload?.badges
-  return Array.isArray(rows) ? rows.filter(name => typeof name === 'string' && PEAKD_BADGE_RE.test(name)) : []
-}
-
-async function peakdMembershipFromChain (account) {
-  try {
-    const rows = await apiGetFollowers(account, '', 'blog', 1000)
-    return followersBadgeNames(rows)
-  } catch {
-    return []
+/**
+ * Full follower pagination, only used by the Studio picker. The profile shelf
+ * never calls this: it confirms the selected badge accounts directly.
+ */
+async function scanPeakdBadgeNames (account) {
+  const names = []
+  const seen = new Set()
+  let start = ''
+  for (let page = 0; page < PEAKD_MAX_FOLLOWER_PAGES; page += 1) {
+    let rows
+    try {
+      rows = await apiGetFollowers(account, start, 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
+    } catch {
+      break
+    }
+    if (!Array.isArray(rows) || rows.length === 0) break
+    for (const name of followersBadgeNames(rows)) {
+      if (!seen.has(name)) {
+        seen.add(name)
+        names.push(name)
+      }
+    }
+    if (rows.length < PEAKD_FOLLOWER_PAGE_SIZE) break
+    const last = rows[rows.length - 1]
+    const cursor = typeof last === 'string' ? last : last?.follower
+    if (!cursor || cursor === start) break
+    start = cursor
   }
+  return names.slice(0, 200)
 }
 
 export function fetchPeakdBadgeAccountNames (account, { force = false } = {}) {
   const name = normalizeAccount(account)
   if (!name) return Promise.resolve([])
-  return load('peakd:badge-accounts:' + name, async () => {
-    let names
-    try {
-      names = await peakdMembershipFromPeakd(name)
-    } catch {
-      names = []
-    }
-    if (!names.length) names = await peakdMembershipFromChain(name)
-    return [...new Set(names)].slice(0, 40)
-  }, { force })
+  return load('peakd:badge-accounts:' + name, () => scanPeakdBadgeNames(name), { force })
 }
 
+/**
+ * Confirm one selected badge account still follows the profile owner.
+ * `bridge.get_relationship_between_accounts(badge, account).follows` is the
+ * direct chain answer, so no follower list is needed on profile views.
+ */
+export function checkPeakdMembership (badgeAccount, account, { force = false } = {}) {
+  const badge = normalizeAccount(badgeAccount)
+  const name = normalizeAccount(account)
+  if (!badge || !name || !PEAKD_BADGE_RE.test(badge)) return Promise.resolve(false)
+  return load('peakd:membership:' + badge + ':' + name, async () => {
+    const relationship = await bridgeRequest('get_relationship_between_accounts', [badge, name])
+    return relationship?.follows === true
+  }, { force, fallback: false })
+}
+
+async function fetchSelectedPeakdBadges (account, selected, { force = false, signal = null } = {}) {
+  const names = [...new Set(
+    (Array.isArray(selected) ? selected : [])
+      .filter(item => item?.source === 'peakd')
+      .map(item => String(item.id || '').toLowerCase())
+      .filter(name => PEAKD_BADGE_RE.test(name))
+  )].slice(0, 6)
+  if (!names.length) return []
+  const confirmed = []
+  const results = await Promise.allSettled(names.map(name => checkPeakdMembership(name, account, { force })))
+  for (let index = 0; index < names.length; index += 1) {
+    if (results[index].status === 'fulfilled' && results[index].value === true) confirmed.push(names[index])
+  }
+  if (signal?.aborted || !confirmed.length) return []
+  try {
+    const accounts = await fetchAccounts(confirmed, { force })
+    return accounts.map(peakdBadge).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+/** Every earned PeakD badge, for the Studio picker only. */
 export async function fetchPeakdBadges (account, { force = false, signal = null } = {}) {
   const names = await fetchPeakdBadgeAccountNames(account, { force })
   if (!names.length) return []
@@ -277,7 +328,7 @@ export async function resolveProfileBadges (theme, account, { force = false, sig
   const needsPeakd = selected.some(item => item.source === 'peakd')
   const needsHivebuzz = showLevel || selected.some(item => item.source === 'hivebuzz')
   const [peakd, hivebuzz] = await Promise.allSettled([
-    needsPeakd ? fetchPeakdBadges(name, { force }) : Promise.resolve([]),
+    needsPeakd ? fetchSelectedPeakdBadges(name, selected, { force, signal }) : Promise.resolve([]),
     needsHivebuzz ? fetchHiveBuzzBadges(name, { force }) : Promise.resolve([])
   ])
   if (signal?.aborted) return []

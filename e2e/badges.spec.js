@@ -93,19 +93,10 @@ function badgeAccount (name, profile) {
 test('profile shelf renders status, Circle and issuer badges with mocked APIs', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
 
-  const badgeRequests = []
-  await page.route('**/api/badges/peakd**', async route => {
-    badgeRequests.push(route.request().url())
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ account: 'ausbitbank', badges: ['badge-069069'] })
-    })
-  })
+  const relationshipCalls = []
   await page.route('https://hivebuzz.me/**', async route => {
     const url = route.request().url()
     if (url.includes('/api/badges/ausbitbank')) {
-      badgeRequests.push(url)
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -139,6 +130,20 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: [POST] })
+        })
+        return
+      }
+      if (payload.method === 'bridge.get_relationship_between_accounts') {
+        relationshipCalls.push(payload.params)
+        const [badge, account] = payload.params || []
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            result: { follows: badge === 'badge-069069' && account === 'ausbitbank' }
+          })
         })
         return
       }
@@ -202,19 +207,21 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
   await expect(dialog.getByRole('link', { name: /View on PeakD/ })).toHaveAttribute('href', 'https://peakd.com/b/badge-069069')
 
   await expect(shelf.locator('.skin-post')).toContainText('Pinned from the E2E shelf')
-  expect(badgeRequests.length).toBeGreaterThan(0)
+  expect(relationshipCalls.length).toBeGreaterThan(0)
+  expect(relationshipCalls).toContainEqual(['badge-069069', 'ausbitbank'])
 })
 
 test('post pages do not request badges or the shelf', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
 
   let badgeRequests = 0
-  await page.route('**/api/badges/peakd**', async route => {
-    badgeRequests += 1
-    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"badges":[]}' })
+  page.on('request', request => {
+    const body = request.postData() || ''
+    if (body.includes('get_relationship_between_accounts') || request.url().includes('hivebuzz.me/api')) {
+      badgeRequests += 1
+    }
   })
   await page.route('https://hivebuzz.me/api/**', async route => {
-    badgeRequests += 1
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
 

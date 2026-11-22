@@ -6,7 +6,6 @@
     "hive.ausbit.dev/@*",
     "hive.ausbit.dev/appearance*",
     "hive.ausbit.dev/themes*",
-    "hive.ausbit.dev/settings/skin*",
-    "hive.ausbit.dev/api/badges/peakd*"
+    "hive.ausbit.dev/settings/skin*"
   ]
 }
