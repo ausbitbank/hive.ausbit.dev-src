@@ -3006,22 +3006,10 @@
 <script>
 import { LocalStorage, copyToClipboard, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
-import { keychain } from '@hiveio/keychain'
 import moment from 'src/utils/time'
-
-// Image uploads are the only compose feature that needs a signer. Load the
-// signing stack when the user actually signs, not when the page opens.
-let smartlockPromise = null
-function loadSmartlock () {
-  return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
-}
-
-let hiveauthPromise = null
-function loadHiveAuth () {
-  return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
-}
+import { signImageUploadChallenge } from 'src/services/imageSigning'
 import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
-import { altFromFileName, deriveDescription, extractBodyImages, markdownImage } from 'src/utils/media'
+import { altFromFileName, deriveDescription, extractBodyImages, imageFilesFromTransfer, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
 import { fetchAccountNameSearch, fetchCommunityInfoBatch } from 'src/services/chainData'
 import {
@@ -4440,13 +4428,8 @@ export default {
         this.$q.notify({ type: 'negative', message: 'Could not copy the image URL' })
       }
     },
-    async ensureSmartlockUnlocked () {
-      const user = this.loggedInUser
-      if (!user) throw new Error('Log in to upload images.')
-      const minutes = Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15
-      const smartlock = await loadSmartlock()
-      if (smartlock.isAccountUnlocked(user, minutes * 60 * 1000)) return
-      const password = await new Promise(resolve => {
+    promptSmartlockPassword () {
+      return new Promise(resolve => {
         this.$q.dialog({
           title: 'Unlock SmartLock',
           message: 'Enter the SmartLock password to sign the image upload.',
@@ -4455,38 +4438,16 @@ export default {
           persistent: true
         }).onOk(resolve).onCancel(() => resolve(''))
       })
-      if (!password) throw new Error('SmartLock is locked. Unlock it to upload images.')
-      await smartlock.unlockAccount(user, password, false)
     },
     async signImagePayload (payload) {
-      const user = this.loggedInUser
-      if (!user) throw new Error('Log in with Keychain, SmartLock or HiveAuth to upload images.')
-      if (this.loginType === 'hiveauth') {
-        try {
-          const hiveauth = await loadHiveAuth()
-          const result = await hiveauth.signChallenge(user, { keyType: 'posting', challenge: payload })
-          return result.signature
-        } catch (error) {
-          throw new Error(error?.message || 'HiveAuth could not sign the upload.', { cause: error })
-        }
-      }
-      if (this.loginType === 'keychain') {
-        const result = await keychain(window, 'requestSignBuffer', user, payload, 'Posting')
-        if (!result?.success) {
-          throw new Error(result?.cancel ? 'Cancelled in Keychain.' : (result?.msg || 'Keychain did not sign the upload.'))
-        }
-        return result.msg || result.result
-      }
-      if (this.loginType === 'smartlock') {
-        await this.ensureSmartlockUnlocked()
-        try {
-          const smartlock = await loadSmartlock()
-          return await smartlock.api.signBuffer(user, payload)
-        } catch (error) {
-          throw new Error(error?.message || 'SmartLock could not sign the upload.', { cause: error })
-        }
-      }
-      throw new Error('Log in with Keychain, SmartLock or HiveAuth to upload images.')
+      const minutes = Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15
+      return signImageUploadChallenge({
+        username: this.loggedInUser,
+        loginType: this.loginType,
+        payload,
+        smartlockSessionMs: minutes * 60 * 1000,
+        promptPassword: () => this.promptSmartlockPassword()
+      })
     },
     async uploadSelectedImages () {
       if (this.uploadBusy) return
@@ -4676,7 +4637,7 @@ export default {
       })
     },
     onEditorPaste (event) {
-      const files = Array.from(event.clipboardData?.files || []).filter(file => file.type.startsWith('image/'))
+      const files = imageFilesFromTransfer(event.clipboardData)
       if (files.length) {
         event.preventDefault()
         this.captureSelection()
@@ -4700,7 +4661,7 @@ export default {
     },
     onEditorDrop (event) {
       this.dragActive = false
-      const files = Array.from(event.dataTransfer?.files || []).filter(file => file.type.startsWith('image/'))
+      const files = imageFilesFromTransfer(event.dataTransfer)
       if (files.length) {
         event.preventDefault()
         this.captureSelection()

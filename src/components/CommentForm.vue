@@ -35,7 +35,8 @@
         <q-btn flat dense round size="sm" icon="format_list_numbered" aria-label="Numbered list" title="Numbered list" @click="prefixLines('1. ')" />
         <q-separator vertical class="q-mx-xs" />
         <q-btn flat dense round size="sm" icon="link" aria-label="Insert link" title="Insert link" @click="wrapSelection('[', '](https://)', 'link text')" />
-        <q-btn flat dense round size="sm" icon="image" aria-label="Insert image" title="Insert image" @click="wrapSelection('![', '](https://)', 'image description')" />
+        <q-btn flat dense round size="sm" icon="image" aria-label="Insert image URL" title="Insert image URL" @click="wrapSelection('![', '](https://)', 'image description')" />
+        <image-upload-button ref="imageUpload" @before-pick="captureSelection" @insert="insertUploadedImages" />
         <q-btn flat dense round size="sm" icon="code" aria-label="Inline code" title="Inline code" @click="wrapSelection('`', '`', 'code')" />
         <span class="comment-form__count" :title="body.length + ' characters'">{{ body.length }}</span>
       </div>
@@ -49,10 +50,13 @@
         rows="8"
         @keydown.ctrl.enter.prevent="submit"
         @keydown.meta.enter.prevent="submit"
+        @paste="onImagePaste"
+        @dragover.prevent
+        @drop="onImageDrop"
       />
 
       <div class="comment-form__hint">
-        <span>Markdown supported</span>
+        <span>Markdown supported · Paste or drop images</span>
         <span>Ctrl+Enter to {{ submitText.toLowerCase() }}</span>
       </div>
     </div>
@@ -237,12 +241,14 @@
 
 <script>
 import render from 'components/render.vue'
+import ImageUploadButton from 'components/ImageUploadButton.vue'
 import { commentPermlink, commentQueueItem } from 'src/services/comments'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { imageFilesFromTransfer, insertImageMarkdown } from 'src/utils/media'
 
 export default {
   name: 'commentForm',
-  components: { render },
+  components: { render, ImageUploadButton },
   props: {
     parentAuthor: { type: String, required: true },
     parentPermlink: { type: String, required: true },
@@ -266,7 +272,8 @@ export default {
     return {
       body: this.mode === 'edit' ? String(this.initialBody || '') : '',
       preview: false,
-      submitting: false
+      submitting: false,
+      savedSelection: null
     }
   },
   computed: {
@@ -324,6 +331,38 @@ export default {
         const position = lineStart + replacement.length
         textarea.setSelectionRange(position, position)
       })
+    },
+    captureSelection () {
+      const textarea = this.$refs.textarea
+      this.savedSelection = textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : { start: this.body.length, end: this.body.length }
+    },
+    insertUploadedImages (images) {
+      const selection = this.savedSelection || {}
+      const result = insertImageMarkdown(this.body, images, selection)
+      this.body = result.body
+      this.savedSelection = { start: result.cursor, end: result.cursor }
+      this.$nextTick(() => {
+        const textarea = this.$refs.textarea
+        if (!textarea) return
+        textarea.focus()
+        textarea.setSelectionRange(result.cursor, result.cursor)
+      })
+    },
+    onImagePaste (event) {
+      const files = imageFilesFromTransfer(event.clipboardData)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
+    },
+    onImageDrop (event) {
+      const files = imageFilesFromTransfer(event.dataTransfer)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
     },
     parseMetadata () {
       const value = this.jsonMetadata

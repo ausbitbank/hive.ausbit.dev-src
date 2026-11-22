@@ -5,6 +5,8 @@ import {
   deriveDescription,
   extractBodyImages,
   extractMentionedUsers,
+  imageFilesFromTransfer,
+  insertImageMarkdown,
   isImageUrl,
   markdownImage,
   normalizeImageUrl
@@ -42,6 +44,41 @@ describe('body image extraction', () => {
     expect(isImageUrl('https://example.com/photo.webp')).toBe(true)
     expect(isImageUrl('https://example.com/page')).toBe(false)
     expect(altFromFileName('my-holiday_photo.jpg')).toBe('my holiday photo')
+  })
+
+  it('collects pasted or dropped image files from both files and items', () => {
+    const fromFiles = { name: 'clipboard.png', type: 'image/png' }
+    const fromItems = { name: 'dragged.jpg', type: 'image/jpeg' }
+    const duplicate = fromFiles
+    const text = { name: 'notes.txt', type: 'text/plain' }
+
+    expect(imageFilesFromTransfer({
+      files: [fromFiles, text],
+      items: [
+        { kind: 'file', getAsFile: () => fromItems },
+        { kind: 'string', getAsFile: () => text },
+        { kind: 'file', getAsFile: () => duplicate }
+      ]
+    })).toEqual([fromFiles, fromItems])
+    expect(imageFilesFromTransfer(null)).toEqual([])
+  })
+
+  it('inserts uploaded images at the saved selection with paragraph spacing', () => {
+    const images = [
+      { alt: 'One', url: 'https://images.hive.blog/one.jpg' },
+      { alt: 'Two', url: 'https://images.hive.blog/two.jpg' }
+    ]
+
+    expect(insertImageMarkdown('Hello world', images, { start: 5, end: 5 })).toEqual({
+      body: 'Hello\n\n![One](https://images.hive.blog/one.jpg)\n\n![Two](https://images.hive.blog/two.jpg)\n\n world',
+      cursor: 91
+    })
+
+    expect(insertImageMarkdown('', images).body)
+      .toBe('![One](https://images.hive.blog/one.jpg)\n\n![Two](https://images.hive.blog/two.jpg)')
+
+    expect(insertImageMarkdown('Keep me', [], { start: 0, end: 0 }))
+      .toEqual({ body: 'Keep me', cursor: 0 })
   })
 })
 

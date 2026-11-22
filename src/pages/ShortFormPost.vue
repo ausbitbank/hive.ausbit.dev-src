@@ -93,9 +93,13 @@
               maxlength="1000"
               :placeholder="replyParent ? '@' + replyParent.author + ' ' : 'Write a reply as @' + loggedInUser + '…'"
               aria-label="Write a reply"
+              @paste="onImagePaste"
+              @dragover.prevent
+              @drop="onImageDrop"
             />
             <div class="sfp-reply__foot">
               <span class="sfp-reply__count">{{ 1000 - replyBody.length }}</span>
+              <image-upload-button ref="imageUpload" @before-pick="captureSelection" @insert="insertUploadedImages" />
               <q-btn unelevated no-caps color="primary" type="submit" icon="send" label="Queue reply" :disable="!replyBody.trim() || replyBody.length > 1000" />
             </div>
           </form>
@@ -149,7 +153,9 @@ import {
   shortMedia
 } from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
+import ImageUploadButton from 'components/ImageUploadButton.vue'
 import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
+import { imageFilesFromTransfer, insertImageMarkdown } from 'src/utils/media'
 import Vote from 'components/vote.vue'
 import SatsZapButton from 'components/lightning/SatsZapButton.vue'
 import Reblog from 'components/reblog.vue'
@@ -158,7 +164,7 @@ const Render = defineAsyncComponent(() => import('components/render.vue'))
 
 export default {
   name: 'ShortFormPost',
-  components: { DataNotice, Render, ShortFormMedia, Vote, Reblog, SatsZapButton },
+  components: { DataNotice, ImageUploadButton, Render, ShortFormMedia, Vote, Reblog, SatsZapButton },
   props: {
     formatId: { type: String, required: true },
     author: { type: String, required: true },
@@ -172,7 +178,8 @@ export default {
       loading: true,
       error: null,
       replyBody: '',
-      replyParent: null
+      replyParent: null,
+      savedSelection: null
     }
   },
   computed: {
@@ -281,6 +288,37 @@ export default {
       if (index >= 0) votes.splice(index, 1, entry)
       else votes.push(entry)
       this.post.active_votes = votes
+    },
+    captureSelection () {
+      const textarea = this.$refs.reply
+      this.savedSelection = textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : { start: this.replyBody.length, end: this.replyBody.length }
+    },
+    insertUploadedImages (images) {
+      const result = insertImageMarkdown(this.replyBody, images, this.savedSelection || {})
+      this.replyBody = result.body
+      this.savedSelection = { start: result.cursor, end: result.cursor }
+      this.$nextTick(() => {
+        const textarea = this.$refs.reply
+        if (!textarea) return
+        textarea.focus()
+        textarea.setSelectionRange(result.cursor, result.cursor)
+      })
+    },
+    onImagePaste (event) {
+      const files = imageFilesFromTransfer(event.clipboardData)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
+    },
+    onImageDrop (event) {
+      const files = imageFilesFromTransfer(event.dataTransfer)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
     },
     submitReply () {
       if (!this.post || !this.replyBody.trim() || this.replyBody.length > 1000) return

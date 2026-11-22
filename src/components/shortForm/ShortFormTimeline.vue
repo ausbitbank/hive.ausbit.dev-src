@@ -71,17 +71,23 @@
               maxlength="1000"
               :placeholder="placeholder"
               :aria-label="'Write a ' + format.label"
+              @paste="onImagePaste"
+              @dragover.prevent
+              @drop="onImageDrop"
             />
             <div class="sf-composer__foot">
               <span class="sf-composer__hint">
                 <template v-if="format.mode === 'container'">
-                  Replies to the newest container from @{{ format.containerAuthor }}.
+                  Replies to the newest container from @{{ format.containerAuthor }}. Paste or drop images.
                 </template>
                 <template v-else>
-                  Posted to #{{ format.tag }}. Uses your posting key only.
+                  Posted to #{{ format.tag }}. Uses your posting key only. Paste or drop images.
                 </template>
               </span>
-              <q-btn unelevated no-caps color="primary" type="submit" :disable="!canPost" :loading="posting" label="Queue post" icon="send" />
+              <span class="sf-composer__actions">
+                <image-upload-button ref="imageUpload" @before-pick="captureSelection" @insert="insertUploadedImages" />
+                <q-btn unelevated no-caps color="primary" type="submit" :disable="!canPost" :loading="posting" label="Queue post" icon="send" />
+              </span>
             </div>
           </form>
           <div v-else class="sf-composer sf-composer--notice">
@@ -167,6 +173,8 @@ import {
 } from 'src/services/shortForm'
 import DataNotice from 'components/ui/DataNotice.vue'
 import InfiniteScroll from 'components/ui/InfiniteScroll.vue'
+import ImageUploadButton from 'components/ImageUploadButton.vue'
+import { imageFilesFromTransfer, insertImageMarkdown } from 'src/utils/media'
 
 const ShortFormCard = defineAsyncComponent(() => import('components/shortForm/ShortFormCard.vue'))
 const MAX_CHARS = 1000
@@ -174,7 +182,7 @@ const PAGE_SIZE = 20
 
 export default {
   name: 'ShortFormTimeline',
-  components: { DataNotice, InfiniteScroll, ShortFormCard },
+  components: { DataNotice, InfiniteScroll, ShortFormCard, ImageUploadButton },
   props: {
     formatId: { type: String, required: true }
   },
@@ -190,7 +198,8 @@ export default {
       loadingMore: false,
       posting: false,
       error: null,
-      body: ''
+      body: '',
+      savedSelection: null
     }
   },
   computed: {
@@ -312,6 +321,37 @@ export default {
       const list = Array.isArray(post.reblogged_by) ? post.reblogged_by.slice() : []
       if (!list.some(name => String(name).toLowerCase() === String(this.loggedInUser).toLowerCase())) list.push(this.loggedInUser)
       post.reblogged_by = list
+    },
+    captureSelection () {
+      const textarea = this.$refs.body
+      this.savedSelection = textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : { start: this.body.length, end: this.body.length }
+    },
+    insertUploadedImages (images) {
+      const result = insertImageMarkdown(this.body, images, this.savedSelection || {})
+      this.body = result.body
+      this.savedSelection = { start: result.cursor, end: result.cursor }
+      this.$nextTick(() => {
+        const textarea = this.$refs.body
+        if (!textarea) return
+        textarea.focus()
+        textarea.setSelectionRange(result.cursor, result.cursor)
+      })
+    },
+    onImagePaste (event) {
+      const files = imageFilesFromTransfer(event.clipboardData)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
+    },
+    onImageDrop (event) {
+      const files = imageFilesFromTransfer(event.dataTransfer)
+      if (!files.length) return
+      event.preventDefault()
+      this.captureSelection()
+      this.$refs.imageUpload?.uploadFiles(files)
     },
     submit () {
       if (!this.canPost) return
@@ -500,6 +540,13 @@ export default {
 .sf-composer__hint {
   color: var(--c-text-faint);
   font-size: 0.75rem;
+}
+
+.sf-composer__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
 }
 
 .sf-list {

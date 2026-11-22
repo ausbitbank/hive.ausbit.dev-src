@@ -81,6 +81,52 @@ export function markdownImage ({ alt = 'image', url = '' } = {}) {
   return '![' + label + '](' + href + ')'
 }
 
+/**
+ * Insert uploaded images into a markdown body at a text selection.
+ *
+ * Blank lines are added around the image block so it stays a separate
+ * paragraph in every Markdown renderer. Returns the new body plus the cursor
+ * offset after the inserted block.
+ */
+export function insertImageMarkdown (body, images, { start, end } = {}) {
+  const text = String(body || '')
+  const list = Array.isArray(images) ? images.filter(image => image && image.url) : []
+  if (!list.length) {
+    return { body: text, cursor: Number.isFinite(start) ? start : text.length }
+  }
+
+  const from = Math.min(Math.max(0, Number.isFinite(start) ? start : text.length), text.length)
+  const to = Math.min(Math.max(from, Number.isFinite(end) ? end : from), text.length)
+  const block = list.map(image => markdownImage(image)).join('\n\n')
+  const before = text.slice(0, from)
+  const after = text.slice(to)
+  const lead = before && !before.endsWith('\n\n') ? (before.endsWith('\n') ? '\n' : '\n\n') : ''
+  const trail = after && !after.startsWith('\n\n') ? (after.startsWith('\n') ? '\n' : '\n\n') : ''
+  const inserted = lead + block + trail
+  return { body: before + inserted + after, cursor: from + inserted.length }
+}
+
+/**
+ * Image files from a clipboard or drag payload.
+ *
+ * Chrome/Safari usually fill `files`; some browsers only expose the same file
+ * through `items[i].getAsFile()`. Check both and de-duplicate.
+ */
+export function imageFilesFromTransfer (transfer) {
+  const files = []
+  const seen = new Set()
+  const push = file => {
+    if (!file || seen.has(file)) return
+    seen.add(file)
+    if (String(file.type || '').toLowerCase().startsWith('image/')) files.push(file)
+  }
+  for (const file of Array.from(transfer?.files || [])) push(file)
+  for (const item of Array.from(transfer?.items || [])) {
+    if (item?.kind === 'file' && typeof item.getAsFile === 'function') push(item.getAsFile())
+  }
+  return files
+}
+
 /** A readable alt text fallback from a file name. */
 export function altFromFileName (name) {
   const base = String(name || 'image')
