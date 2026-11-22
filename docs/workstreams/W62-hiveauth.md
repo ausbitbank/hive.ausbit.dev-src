@@ -1,7 +1,9 @@
 # W62 — HiveAuth (HAS) signing option
 
-Status: implemented on top of `2b51eee` (2026-11-22), pending real-device approval
-testing with Hive Keychain Mobile.
+Status: implemented on top of `2b51eee` (2026-11-22). Initial real-device testing
+on 2026-11-23 passed login, voting, commenting, keepsats and rejection; image
+uploads were switched to the image host checksum endpoint and HiveAuth was
+re-enabled in normal queue auto-send.
 
 ## What changed
 
@@ -19,9 +21,11 @@ testing with Hive Keychain Mobile.
 - `src/components/userLogin.vue` — third login option with QR (`uqr`), mobile
   deep link, copy link, countdown, cancel/retry, provider row and session restore
   on reload.
-- `src/components/queue.vue` — manual HiveAuth broadcasts; auto-send and
-  "send all" are disabled with an explanation.
-- `src/pages/compose.vue` — image uploads sign through `challenge_req`.
+- `src/components/queue.vue` — HiveAuth broadcasts flow through the normal
+  queue. Auto-send and "send all" process one action at a time and wait for each
+  phone approval.
+- `src/pages/compose.vue` — HiveAuth image uploads sign the image host's compact
+  checksum challenge and upload to `/cs/<account>/<signature>`.
 - `src/services/v4vappAuth.js` — keepsats auth signs through `challenge_req`.
 - `src/components/lightning/KeepsatsPanel.vue` and signing-related copy now
   include HiveAuth.
@@ -38,6 +42,11 @@ testing with Hive Keychain Mobile.
   directions, including unicode, before replacing it with the Web Crypto adapter.
 - `challenge_req` is used for image uploads and v4v.app. Keychain Mobile returns
   `{challenge: signature, pubkey}` encrypted with the session key.
+- The HAS relay closes WebSocket messages around 250 KB (code 1009). The full
+  image never fits, so HiveAuth uses the image host checksum endpoint: sign
+  `sha256("ImageSigningChallenge" + sha256(file))` via a 47-byte Buffer challenge,
+  then `POST /cs/<account>/<signature>`. Verified live: the `/cs/` route exists
+  and validates signatures.
 
 ## Verification performed
 
@@ -55,12 +64,19 @@ testing with Hive Keychain Mobile.
   errors, session save/restore/expiry, operation normalization, mocked
   WebSocket auth/sign/challenge, rejection, timeout, relay close, reconnect +
   `attach_req` after a dropped socket, mismatched uuid, missing session.
+- 2026-11-23 follow-up: image-host checksum tests and HiveAuth tests pass (41
+  focused tests); build succeeds. The full suite is currently blocked by two
+  unrelated in-progress theme/icon tests in the working tree.
 
 ## Not done / follow-ups
 
 - Real-device matrix: desktop QR scan, mobile deep link (including backgrounding
   the browser while the wallet is open), vote/comment/transfer, image upload,
-  v4v.app keepsats, reject/timeout, reload/expiry.
+  v4v.app keepsats, reject/timeout, reload/expiry, and queue auto-send with
+  multiple approvals.
+- Keychain Mobile only surfaces a pending HiveAuth request when the app is
+  foregrounded/reopened; push notification behaviour belongs to the wallet, not
+  the site.
 - Login challenge signature verification is not enforced client-side. The
   `auth_ack` is authenticated by the shared key; add local `Signature` recovery
   if we want explicit proof-of-key beyond HAS registration.

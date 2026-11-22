@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createHash } from 'node:crypto'
+import { createHash, webcrypto } from 'node:crypto'
 import {
   appendUploadHistory,
+  buildImageChecksumSigningPayload,
   buildImageSigningPayload,
   clearUploadHistory,
   createUploadQueue,
   formatUploadAge,
   formatUploadBytes,
+  imageChecksumUploadUrl,
   imageHostErrorMessage,
   imageUploadUrl,
   isUploadAborted,
@@ -60,6 +62,31 @@ describe('image validation', () => {
       .digest('hex')
     expect(digest).toBe(expected)
   })
+
+  it('builds the compact checksum challenge used by the image host /cs endpoint', async () => {
+    const file = new Uint8Array([1, 2, 3, 4, 5])
+    vi.stubGlobal('crypto', webcrypto)
+    try {
+      const payload = JSON.parse(await buildImageChecksumSigningPayload(file))
+      const prefix = new TextEncoder().encode('ImageSigningChallenge')
+      const bytes = Uint8Array.from(payload.data)
+      expect(bytes).toHaveLength(prefix.length + 32)
+      expect(Array.from(bytes.slice(0, prefix.length))).toEqual(Array.from(prefix))
+      expect(Array.from(bytes.slice(prefix.length))).toEqual(
+        Array.from(createHash('sha256').update(file).digest())
+      )
+      // This is what the PKSA signs: sha256(challenge + sha256(file)).
+      const expected = createHash('sha256')
+        .update(Buffer.concat([
+          Buffer.from('ImageSigningChallenge'),
+          createHash('sha256').update(file).digest()
+        ]))
+        .digest('hex')
+      expect(createHash('sha256').update(bytes).digest('hex')).toBe(expected)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 })
 
 describe('image upload', () => {
@@ -78,6 +105,22 @@ describe('image upload', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     expect(fetchImpl.mock.calls[0][0]).toBe(imageUploadUrl('ausbitbank', 'abcdef'))
     expect(fetchImpl.mock.calls[0][1].method).toBe('POST')
+  })
+
+  it('posts to the checksum endpoint when requested', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ url: 'https://images.hive.blog/DQmTest/photo.png' })
+    }))
+    await uploadImage({
+      username: 'ausbitbank',
+      signature: 'abcdef',
+      file: pngFile,
+      checksum: true,
+      fetchImpl
+    })
+    expect(fetchImpl.mock.calls[0][0]).toBe(imageChecksumUploadUrl('ausbitbank', 'abcdef'))
+    expect(fetchImpl.mock.calls[0][0]).toContain('/cs/ausbitbank/')
   })
 
   it('surfaces the host error name and maps friendly messages', async () => {

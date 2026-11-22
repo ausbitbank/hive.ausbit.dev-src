@@ -252,9 +252,9 @@ Prices and third-party charts can be delayed or temporarily unavailable.
   action.
 - **HiveAuth** shows a QR code or deep link; the user approves in a mobile wallet
   (Hive Keychain Mobile or HiveAuth Mobile) and keys never enter this origin.
-  HiveAuth is manual-only: each action needs phone approval, so the queue does
-  not auto-send it. The HAS relay sees the account, app name and timing, never
-  keys or plaintext operations.
+  Each action needs phone approval; the queue sends HiveAuth actions one at a
+  time and waits for that approval. The HAS relay sees the account, app name and
+  timing, never keys or plaintext operations.
 - **SmartLock** stores keys encrypted in local storage, keeps only the unlocked
   posting key in memory, auto-locks after an idle timeout, and asks for the
   password each time an active key is needed. The active key is never kept in

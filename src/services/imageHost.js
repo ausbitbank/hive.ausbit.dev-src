@@ -70,6 +70,25 @@ export function buildImageSigningPayload (bytes) {
   return JSON.stringify({ type: 'Buffer', data: Array.from(combined) })
 }
 
+/**
+ * Compact payload for HiveAuth. Sending the whole file through the HAS relay
+ * exceeds its ~250 KB message limit, so the image host's checksum endpoint
+ * (`/cs/<account>/<signature>`) verifies sha256(challenge + sha256(file)).
+ * That payload is only the 15-byte prefix plus a 32-byte digest.
+ */
+export async function buildImageChecksumSigningPayload (bytes) {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('SHA-256 is not available in this environment.')
+  }
+  const source = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || [])
+  const digest = new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', source))
+  const challenge = new TextEncoder().encode(IMAGE_SIGNING_CHALLENGE)
+  const combined = new Uint8Array(challenge.length + digest.length)
+  combined.set(challenge, 0)
+  combined.set(digest, challenge.length)
+  return JSON.stringify({ type: 'Buffer', data: Array.from(combined) })
+}
+
 export async function readImageBytes (file) {
   if (!file) throw new Error('Choose an image first.')
   if (typeof file.arrayBuffer === 'function') {
@@ -91,12 +110,22 @@ export async function readImageBytes (file) {
   })
 }
 
-export function imageUploadUrl (username, signature) {
+function uploadPathParts (username, signature) {
   const account = String(username || '').trim().toLowerCase()
   const sig = String(signature || '').trim()
   if (!ACCOUNT_RE.test(account)) throw new Error('A valid Hive account is required to upload.')
   if (!sig) throw new Error('The upload signature is missing.')
-  return IMAGE_HOST + '/' + encodeURIComponent(account) + '/' + encodeURIComponent(sig)
+  return { account: encodeURIComponent(account), signature: encodeURIComponent(sig) }
+}
+
+export function imageUploadUrl (username, signature) {
+  const { account, signature: sig } = uploadPathParts(username, signature)
+  return IMAGE_HOST + '/' + account + '/' + sig
+}
+
+export function imageChecksumUploadUrl (username, signature) {
+  const { account, signature: sig } = uploadPathParts(username, signature)
+  return IMAGE_HOST + '/cs/' + account + '/' + sig
 }
 
 /** Human-readable byte size, or an empty string for unknown/zero sizes. */
@@ -298,6 +327,7 @@ export async function uploadImage ({
   username,
   signature,
   file,
+  checksum = false,
   fetchImpl = null,
   xhrFactory = null,
   onProgress = null,
@@ -312,7 +342,9 @@ export async function uploadImage ({
     throw error
   }
 
-  const url = imageUploadUrl(username, signature)
+  const url = checksum
+    ? imageChecksumUploadUrl(username, signature)
+    : imageUploadUrl(username, signature)
   if (typeof onProgress === 'function') onProgress(0)
 
   if (typeof fetchImpl !== 'function') {

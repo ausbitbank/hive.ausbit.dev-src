@@ -3055,6 +3055,7 @@ import {
 } from 'src/services/drafts'
 import {
   appendUploadHistory,
+  buildImageChecksumSigningPayload,
   buildImageSigningPayload,
   clearUploadHistory,
   createUploadQueue,
@@ -4529,7 +4530,14 @@ export default {
               this.cancelUploadItem(item)
               continue
             }
-            const signature = await this.signImagePayload(buildImageSigningPayload(bytes))
+            // HiveAuth cannot send the full image through the HAS relay (the
+            // relay closes messages around 250 KB). Use the image host's
+            // checksum endpoint instead, which signs only a 47-byte challenge.
+            const checksum = this.loginType === 'hiveauth'
+            const payload = checksum
+              ? await buildImageChecksumSigningPayload(bytes)
+              : buildImageSigningPayload(bytes)
+            const signature = await this.signImagePayload(payload)
             if (this.uploadRunCancelled) {
               this.cancelUploadItem(item)
               continue
@@ -4539,6 +4547,7 @@ export default {
               username: this.loggedInUser,
               signature,
               file: item.file,
+              checksum,
               signal: controller ? controller.signal : null,
               onProgress: value => { item.progress = value }
             })

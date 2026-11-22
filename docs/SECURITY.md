@@ -119,10 +119,14 @@ and asset caching instead.
   in-memory fallback when storage is unavailable), never in `localStorage`.
   They can request signatures but cannot sign without the phone; logout and
   session expiry clear them.
-- Every broadcast is approved in the wallet. HiveAuth is deliberately excluded
-  from auto-send and "send all"; the queue shows why and keeps manual send
-  available. PKSA-side whitelisting may reduce prompts, but the site does not
-  rely on it.
+- Every broadcast is approved in the wallet. Auto-send and "send all" process one
+  HiveAuth action at a time and wait for the phone approval; if the phone is not
+  available the request times out instead of sending silently. PKSA-side
+  whitelisting may reduce prompts, but the site does not rely on it.
+- Image uploads use the image host's `/cs/<account>/<signature>` checksum
+  endpoint for HiveAuth. The signed challenge is
+  `sha256("ImageSigningChallenge" + sha256(file))`, not the file itself, because
+  the HAS relay closes messages around 250 KB.
 - The relay sees the account name, app metadata, request timing, the encrypted
   payloads and (in protocol 0.8) the session token on signing requests. It does
   not see keys, plaintext operations or the shared AES key (the key is delivered
