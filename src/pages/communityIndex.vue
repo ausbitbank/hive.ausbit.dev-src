@@ -723,7 +723,7 @@ export default {
 
 .community-index-shelf__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.98rem;
   font-weight: 600;
   line-height: 1.25;
