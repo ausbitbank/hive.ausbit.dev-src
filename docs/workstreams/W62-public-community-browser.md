@@ -126,6 +126,10 @@ covers both the cleared model and `clearSearch()`.
 
 - SPA deployed from commit `ca5d29f` with `scripts/deploy.sh`.
   Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T090835Z.tar.gz`.
+- Clear-field fix deployed from commit `a4e62c7`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T092239Z.tar.gz`.
+  Live smoke: fill `photography`, click the clear icon, and the input returns to
+  empty with 36 cards, no error boundary and no page errors.
 - The live nginx file is root-managed and had diverged from the repo. Only the
   two W62 hunks were applied to the live file (the `/c` redirect and
   `communities` in the prerendered-static-pages regex), rather than replacing
