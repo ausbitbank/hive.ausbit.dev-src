@@ -357,6 +357,57 @@ export const WIDGET_REGISTRY = [
     defaultSettings: {},
     singleton: true,
     configurable: false
+  },
+  {
+    type: 'magiNetwork',
+    component: 'WidgetMagiNetwork',
+    label: 'Magi network',
+    description: 'Magi head, witnesses, recent contracts and token prices.',
+    category: 'network',
+    icon: 'hub',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { showContracts: true, showTokens: true, limit: 4 },
+    singleton: true,
+    defer: true
+  },
+  {
+    type: 'accountWatchlist',
+    component: 'WidgetAccountWatchlist',
+    label: 'Account watchlist',
+    description: 'Reputation, HP and balances for accounts you follow.',
+    category: 'account',
+    icon: 'visibility',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { accounts: [], showBalances: true },
+    singleton: true,
+    defer: true
+  },
+  {
+    type: 'priceAlert',
+    component: 'WidgetPriceAlert',
+    label: 'Price alert',
+    description: 'Track a HIVE USD target and see how far the market is from it.',
+    category: 'markets',
+    icon: 'notification_important',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { target: 0, direction: 'above' },
+    singleton: true
+  },
+  {
+    type: 'followerGrowth',
+    component: 'WidgetFollowerGrowth',
+    label: 'Follower growth',
+    description: 'Followers, following and growth since this browser started tracking.',
+    category: 'account',
+    icon: 'people',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { account: '', showFollowing: true },
+    singleton: true,
+    requiresAccount: true
   }
 ]
 
@@ -460,7 +511,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'notifications', width: 'third', settings: {} },
       { type: 'network', width: 'third', settings: {} },
       { type: 'hbd', width: 'third', settings: {} },
-      { type: 'draftsQueue', width: 'third', settings: {} }
+      { type: 'draftsQueue', width: 'third', settings: {} },
+      { type: 'followerGrowth', width: 'third', settings: {} }
     ]
   },
   {
@@ -493,7 +545,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'network', width: 'half', settings: {} },
       { type: 'block', width: 'half', settings: {} },
       { type: 'witnesses', width: 'half', settings: { limit: 8 } },
-      { type: 'hiveEngine', width: 'half', settings: {} }
+      { type: 'hiveEngine', width: 'half', settings: {} },
+      { type: 'priceAlert', width: 'half', settings: {} }
     ]
   },
   {
@@ -543,7 +596,8 @@ export const DASHBOARD_PRESETS = [
       { type: 'market', width: 'half', settings: {} },
       { type: 'witnesses', width: 'half', settings: { limit: 10 } },
       { type: 'nodeHealth', width: 'half', settings: {} },
-      { type: 'hiveEngine', width: 'half', settings: {} }
+      { type: 'hiveEngine', width: 'half', settings: {} },
+      { type: 'magiNetwork', width: 'half', settings: {} }
     ]
   }
 ]

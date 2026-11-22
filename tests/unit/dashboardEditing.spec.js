@@ -147,7 +147,7 @@ describe('edit-mode drafts', () => {
 
 describe('widget settings', () => {
   it('offers fields for every configurable registry widget', () => {
-    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations', 'vitals', 'walletActions', 'creatorStats', 'governance', 'hbd', 'communityPulse', 'delegations', 'witnessRound', 'nodeHealth', 'hiveEngine', 'trendingTags', 'draftsQueue']) {
+    for (const type of ['block', 'market', 'witnesses', 'posts', 'wallet', 'myWitness', 'witnessHealth', 'notifications', 'operations', 'vitals', 'walletActions', 'creatorStats', 'governance', 'hbd', 'communityPulse', 'delegations', 'witnessRound', 'nodeHealth', 'hiveEngine', 'trendingTags', 'draftsQueue', 'magiNetwork', 'accountWatchlist', 'priceAlert', 'followerGrowth']) {
       expect(isConfigurableWidget(type)).toBe(true)
       expect(settingsFieldsFor(type).length).toBeGreaterThan(0)
     }
@@ -239,6 +239,21 @@ describe('widget settings', () => {
       showOutgoing: false,
       limit: 10
     })
+  })
+
+  it('sanitises account watchlists and price targets', () => {
+    expect(sanitiseWidgetSettings('accountWatchlist', {
+      accounts: ['@Alice', 'bob', 'bad name!', 'alice'],
+      showBalances: 1
+    })).toEqual({
+      accounts: ['alice', 'bob'],
+      showBalances: true
+    })
+    expect(sanitiseWidgetSettings('priceAlert', {
+      target: -5,
+      direction: 'below'
+    })).toEqual({ target: 0, direction: 'below' })
+    expect(sanitiseWidgetSettings('priceAlert', { direction: 'sideways' })).toEqual({})
   })
 
   it('keeps feed references and whitelists account feed types', () => {

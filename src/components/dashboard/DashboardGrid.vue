@@ -132,6 +132,22 @@
           <widget-community-spotlight
             v-else-if="entry.widget.type === 'communitySpotlight'"
           />
+          <widget-magi-network
+            v-else-if="entry.widget.type === 'magiNetwork'"
+            v-bind="settingsFor(entry.widget, { showContracts: entry.widget.settings?.showContracts, showTokens: entry.widget.settings?.showTokens, limit: entry.widget.settings?.limit })"
+          />
+          <widget-account-watchlist
+            v-else-if="entry.widget.type === 'accountWatchlist'"
+            v-bind="settingsFor(entry.widget, { accounts: entry.widget.settings?.accounts, showBalances: entry.widget.settings?.showBalances })"
+          />
+          <widget-price-alert
+            v-else-if="entry.widget.type === 'priceAlert'"
+            v-bind="settingsFor(entry.widget, { target: entry.widget.settings?.target, direction: entry.widget.settings?.direction })"
+          />
+          <widget-follower-growth
+            v-else-if="entry.widget.type === 'followerGrowth'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, showFollowing: entry.widget.settings?.showFollowing })"
+          />
         </dashboard-widget-viewport>
       </dashboard-widget-shell>
     </div>
@@ -274,6 +290,10 @@ import WidgetHiveEngineWatchlist from 'components/dashboard/WidgetHiveEngineWatc
 import WidgetTrendingTags from 'components/dashboard/WidgetTrendingTags.vue'
 import WidgetDraftsQueue from 'components/dashboard/WidgetDraftsQueue.vue'
 import WidgetCommunitySpotlight from 'components/dashboard/WidgetCommunitySpotlight.vue'
+import WidgetMagiNetwork from 'components/dashboard/WidgetMagiNetwork.vue'
+import WidgetAccountWatchlist from 'components/dashboard/WidgetAccountWatchlist.vue'
+import WidgetPriceAlert from 'components/dashboard/WidgetPriceAlert.vue'
+import WidgetFollowerGrowth from 'components/dashboard/WidgetFollowerGrowth.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
@@ -313,7 +333,11 @@ const RENDERED_TYPES = [
   'hiveEngine',
   'trendingTags',
   'draftsQueue',
-  'communitySpotlight'
+  'communitySpotlight',
+  'magiNetwork',
+  'accountWatchlist',
+  'priceAlert',
+  'followerGrowth'
 ]
 
 // Key bindings that move a picked-up widget. Arrows follow reading order; the
@@ -349,6 +373,10 @@ export default {
     WidgetTrendingTags,
     WidgetDraftsQueue,
     WidgetCommunitySpotlight,
+    WidgetMagiNetwork,
+    WidgetAccountWatchlist,
+    WidgetPriceAlert,
+    WidgetFollowerGrowth,
     HomeBlockCard,
     HomeMarketCard,
     HomeWitnessCard,

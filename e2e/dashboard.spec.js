@@ -393,7 +393,8 @@ test.describe('customisable dashboard', () => {
       'notifications',
       'network',
       'hbd',
-      'draftsQueue'
+      'draftsQueue',
+      'followerGrowth'
     ])
   })
 
@@ -501,6 +502,53 @@ test.describe('customisable dashboard', () => {
     const card = page.locator('[data-widget-type="delegations"]')
     await card.scrollIntoViewIfNeeded()
     await expect(card).toContainText('Delegated out')
+    await expect(card).not.toContainText('needs an account')
+  })
+
+  test('offers the phase-3 widgets in the drawer', async ({ page }) => {
+    await openEditor(page)
+    await page.getByRole('button', { name: 'Add widget' }).click()
+    for (const label of ['Magi network', 'Account watchlist', 'Price alert', 'Follower growth']) {
+      await expect(page.getByRole('button', { name: 'Add ' + label })).toBeVisible()
+    }
+    await page.getByRole('button', { name: 'Done' }).click()
+  })
+
+  test('renders the public phase-3 widgets after save', async ({ page }) => {
+    await openEditor(page)
+    await addWidget(page, 'Magi network')
+    await addWidget(page, 'Account watchlist')
+    await addWidget(page, 'Price alert')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const magi = page.locator('[data-widget-type="magiNetwork"]')
+    await magi.scrollIntoViewIfNeeded()
+    await expect(magi).toContainText('Magi network')
+
+    const watch = page.locator('[data-widget-type="accountWatchlist"]')
+    await watch.scrollIntoViewIfNeeded()
+    await expect(watch).toContainText('Add accounts in widget settings')
+
+    const alert = page.locator('[data-widget-type="priceAlert"]')
+    await alert.scrollIntoViewIfNeeded()
+    await expect(alert).toContainText('Price alert')
+    await expect(alert).toContainText('No target set')
+  })
+
+  test('renders follower growth for a signed-in account', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/')
+    await waitForApp(page)
+    const notNow = page.getByRole('button', { name: 'Not now' })
+    if (await notNow.isVisible().catch(() => false)) await notNow.click()
+
+    await openEditor(page)
+    await addWidget(page, 'Follower growth')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const card = page.locator('[data-widget-type="followerGrowth"]')
+    await card.scrollIntoViewIfNeeded()
+    await expect(card).toContainText('Followers')
     await expect(card).not.toContainText('needs an account')
   })
 

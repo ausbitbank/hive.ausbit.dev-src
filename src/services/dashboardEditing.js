@@ -382,6 +382,41 @@ export function settingsFieldsFor (type) {
         { key: 'showDrafts', kind: 'toggle', label: 'Show drafts' },
         { key: 'showQueue', kind: 'toggle', label: 'Show the signing queue' }
       ]
+    case 'magiNetwork':
+      return [
+        { key: 'showContracts', kind: 'toggle', label: 'Show recent contracts' },
+        { key: 'showTokens', kind: 'toggle', label: 'Show token prices' },
+        LIMIT_FIELD(8, 'Items to show')
+      ]
+    case 'accountWatchlist':
+      return [
+        {
+          key: 'accounts',
+          kind: 'accounts',
+          label: 'Accounts',
+          hint: 'Up to 10 Hive account names, comma separated.',
+          maxItems: 10
+        },
+        { key: 'showBalances', kind: 'toggle', label: 'Show HIVE and HBD balances' }
+      ]
+    case 'priceAlert':
+      return [
+        { key: 'target', kind: 'amount', label: 'HIVE USD target', min: 0, max: 1000000, step: 0.0001 },
+        {
+          key: 'direction',
+          kind: 'select',
+          label: 'Alert when the price is',
+          options: [
+            { value: 'above', label: 'At or above the target' },
+            { value: 'below', label: 'At or below the target' }
+          ]
+        }
+      ]
+    case 'followerGrowth':
+      return [
+        ACCOUNT_FIELD,
+        { key: 'showFollowing', kind: 'toggle', label: 'Show following count' }
+      ]
     case 'notifications':
       return [LIMIT_FIELD(10, 'Notifications to show'), ACCOUNT_FIELD]
     case 'operations':
@@ -443,10 +478,14 @@ function settingList (raw, field = {}) {
 }
 
 function accountList (raw, field = {}) {
-  return settingList(raw, { ...field, stripAt: true })
-    .map(value => value.toLowerCase())
-    .filter(value => ACCOUNT_NAME.test(value))
-    .slice(0, Math.max(1, Math.min(50, Number(field.maxItems) || 10)))
+  const result = []
+  for (const value of settingList(raw, { ...field, stripAt: true })) {
+    const name = value.toLowerCase()
+    if (!ACCOUNT_NAME.test(name)) continue
+    if (!result.includes(name)) result.push(name)
+    if (result.length >= Math.max(1, Math.min(50, Number(field.maxItems) || 10))) break
+  }
+  return result
 }
 
 /**
