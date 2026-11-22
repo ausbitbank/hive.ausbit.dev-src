@@ -87,8 +87,9 @@ security-sensitive surfaces entirely.
 
 `src/pages/account.vue`, `src/pages/browse.vue`, `src/pages/post.vue`
 
-- Wrap eligible content in `ProfileSkin`; the viewer's “Hide skins” choice wins
-  immediately, the author's skin is left untouched on chain.
+- Wrap eligible content in `ProfileSkin`; the viewer can ignore one author's
+  skin or hide all skins immediately, and the author's skin is left untouched
+  on chain. Ignored authors are managed from Appearance.
 
 `src/components/settings.vue`, `src/components/propsEditor.vue`
 

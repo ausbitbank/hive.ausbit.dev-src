@@ -151,6 +151,33 @@
         </div>
       </section>
 
+      <section
+        v-if="ignoredSkinAuthors.length"
+        class="theme-section"
+        aria-labelledby="theme-ignored-title"
+      >
+        <div class="theme-section__head">
+          <div>
+            <h2 id="theme-ignored-title" class="theme-section__title">Ignored profile skins</h2>
+            <p class="theme-section__hint">These authors' skins are hidden on their profile, blog and posts.</p>
+          </div>
+        </div>
+        <ul class="theme-ignored">
+          <li v-for="author in ignoredSkinAuthors" :key="author" class="theme-ignored__row">
+            <router-link :to="'/@' + author" class="theme-ignored__author">@{{ author }}</router-link>
+            <q-btn
+              flat
+              dense
+              no-caps
+              icon="undo"
+              label="Show again"
+              :aria-label="'Show skins by @' + author + ' again'"
+              @click="restoreSkin(author)"
+            />
+          </li>
+        </ul>
+      </section>
+
       <section class="theme-section theme-section--profile" aria-labelledby="theme-profile-title">
         <div class="theme-section__head">
           <div>
@@ -451,6 +478,31 @@
   min-width: 150px;
 }
 
+.theme-ignored {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.theme-ignored__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+}
+
+.theme-ignored__author {
+  color: var(--c-link);
+  font-weight: 600;
+}
+
 .theme-signin-hint {
   display: inline-flex;
   align-items: center;
@@ -519,6 +571,9 @@ export default {
     },
     loggedIn () {
       return Boolean(this.$hiveStore.user.username)
+    },
+    ignoredSkinAuthors () {
+      return this.$appearance.ignoredSkinAuthors
     }
   },
   methods: {
@@ -528,6 +583,9 @@ export default {
     resetTheme () {
       this.$appearance.setTheme(DEFAULT_THEME_ID)
       this.$q.notify({ message: 'Back to Hive Dark.', color: 'primary', timeout: 1600 })
+    },
+    restoreSkin (author) {
+      this.$appearance.unignoreSkinAuthor(author)
     },
     previewStyle (theme) {
       const t = theme.tokens

@@ -99,7 +99,19 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
   await expect(skin).toHaveAttribute('data-avatar-frame', 'ring')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'hive-dark')
 
-  await page.getByRole('button', { name: 'Hide skins' }).click()
+  await page.getByRole('button', { name: 'Ignore this skin' }).click()
+  await expect(page.locator('.skin-scope')).toHaveCount(0)
+  const ignored = await page.evaluate(() => JSON.parse(localStorage.getItem('ausbit:appearance') || '{}').ignoredSkinAuthors)
+  expect(ignored).toContain('ausbitbank')
+
+  await page.goto('/appearance')
+  await waitForApp(page)
+  await page.getByRole('button', { name: 'Show skins by @ausbitbank again' }).click()
+  await page.goto('/@ausbitbank')
+  await waitForApp(page)
+  await expect(page.locator('.skin-scope')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Hide all skins' }).click()
   await expect(page.locator('.skin-scope')).toHaveCount(0)
   const preference = await page.evaluate(() => JSON.parse(localStorage.getItem('ausbit:appearance') || '{}').profileSkins)
   expect(preference).toBe('off')

@@ -23,14 +23,10 @@
       <span v-if="theme.remixedFrom" class="skin-badge__note">
         remixed from <router-link :to="'/@' + theme.remixedFrom">@{{ theme.remixedFrom }}</router-link>
       </span>
-      <button v-if="!preview" type="button" class="skin-badge__action" @click="hideSkins">Hide skins</button>
-      <a
-        v-if="!preview"
-        class="skin-badge__action"
-        :href="reportUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-      >Report</a>
+      <template v-if="!preview">
+        <button type="button" class="skin-badge__action" @click="ignoreSkin">Ignore this skin</button>
+        <button type="button" class="skin-badge__action" @click="hideSkins">Hide all skins</button>
+      </template>
     </div>
 
     <div v-if="theme.profile.banner && theme.profile.banner.images.length" class="skin-banner" aria-hidden="true">
@@ -148,10 +144,14 @@ export default {
       if (this.previewTheme) return this.previewTheme
       return readAccountTheme(this.account).theme
     },
+    authorKey () {
+      return String(this.author || this.theme?.author || '').trim().toLowerCase().slice(0, 16)
+    },
     visible () {
       if (!this.enabled || !this.theme) return false
       if (this.preview) return true
       if (this.$appearance.highContrast) return false
+      if (this.authorKey && this.$appearance.ignoredSkinAuthors.includes(this.authorKey)) return false
       if (this.$appearance.profileSkins === 'off') return false
       if (this.$appearance.profileSkins === 'profile' && this.context === 'post') return false
       return true
@@ -179,12 +179,17 @@ export default {
         '--skin-avatar-radius': this.theme.profile.avatarFrame === 'none' ? '50%' : ''
       }
     },
-    reportUrl () {
-      const title = encodeURIComponent('Report a profile skin: @' + (this.author || this.theme?.author))
-      return 'https://github.com/ausbitbank/hive.ausbit.dev-src/issues/new?title=' + title
-    }
   },
   methods: {
+    ignoreSkin () {
+      if (!this.authorKey) return
+      this.$appearance.ignoreSkinAuthor(this.authorKey)
+      this.$q.notify({
+        message: 'Skin hidden. You can restore it from Appearance.',
+        color: 'primary',
+        timeout: 3000
+      })
+    },
     hideSkins () {
       this.$appearance.setProfileSkins('off')
       this.$q.notify({

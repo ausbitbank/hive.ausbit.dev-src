@@ -17,7 +17,17 @@ export const DEFAULT_APPEARANCE = {
   followSystem: false,
   profileSkins: 'on',
   motion: 'system',
-  highContrast: false
+  highContrast: false,
+  ignoredSkinAuthors: []
+}
+
+function normalizeAuthor (value) {
+  return String(value || '').trim().toLowerCase().slice(0, 16)
+}
+
+function normalizeIgnoredAuthors (value) {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.map(normalizeAuthor).filter(Boolean))].slice(0, 200)
 }
 
 let quasarRef = null
@@ -44,7 +54,8 @@ function readStored () {
       followSystem: parsed.followSystem === true,
       profileSkins: ['on', 'profile', 'off'].includes(parsed.profileSkins) ? parsed.profileSkins : 'on',
       motion: ['system', 'reduced', 'full'].includes(parsed.motion) ? parsed.motion : 'system',
-      highContrast: parsed.highContrast === true
+      highContrast: parsed.highContrast === true,
+      ignoredSkinAuthors: normalizeIgnoredAuthors(parsed.ignoredSkinAuthors)
     }
   } catch {
     return { ...DEFAULT_APPEARANCE }
@@ -60,7 +71,8 @@ function persist (state) {
       followSystem: state.followSystem,
       profileSkins: state.profileSkins,
       motion: state.motion,
-      highContrast: state.highContrast
+      highContrast: state.highContrast,
+      ignoredSkinAuthors: normalizeIgnoredAuthors(state.ignoredSkinAuthors)
     }))
   } catch {
     // Quota or private mode. The in-memory state still works.
@@ -229,6 +241,19 @@ export const useAppearanceStore = defineStore('appearance', {
     },
     setHighContrast (value) {
       this.highContrast = Boolean(value)
+      this.commit()
+    },
+    ignoreSkinAuthor (author) {
+      const name = normalizeAuthor(author)
+      if (!name) return
+      if (!this.ignoredSkinAuthors.includes(name)) {
+        this.ignoredSkinAuthors = [...this.ignoredSkinAuthors, name]
+      }
+      this.commit()
+    },
+    unignoreSkinAuthor (author) {
+      const name = normalizeAuthor(author)
+      this.ignoredSkinAuthors = this.ignoredSkinAuthors.filter(item => item !== name)
       this.commit()
     },
     reset () {
