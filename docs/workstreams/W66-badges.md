@@ -57,5 +57,7 @@ pages or feeds.
 - Chromium E2E with mocked PeakD/HiveBuzz APIs — shelf, circle, dialog,
   sanitized description, issuer link, omitted unknown badge, and no badge
   requests on a post page.
-- The Worker route still needs `wrangler deploy` before production uses the
-  proxy; the Hive followers fallback keeps the shelf working without it.
+- The Worker route is `hive.ausbit.dev/api/badges/peakd*`. A deploy that omits
+  this route leaves the endpoint on the SPA 404; the Hive followers fallback
+  keeps the shelf working. Verify with
+  `curl -sS https://hive.ausbit.dev/api/badges/peakd?account=ausbitbank`.

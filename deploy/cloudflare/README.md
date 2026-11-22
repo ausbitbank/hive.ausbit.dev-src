@@ -11,6 +11,8 @@ The Worker:
   `/settings/skin`;
 - serves the prerendered `appearance.html`, `themes.html` or
   `settings/skin.html` shell with a real 200 for the three theme routes;
+- proxies `GET /api/badges/peakd?account=<name>` for the badge shelf with
+  account validation, a timeout and a one-hour edge cache;
 - calls `bridge.get_post` or `bridge.get_profile` on `api.hive.blog` for
   account and post routes;
 - rewrites the title, description, canonical, Open Graph, Twitter and JSON-LD

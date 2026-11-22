@@ -8,7 +8,8 @@
 //
 // Deploy (example):
 //   wrangler deploy deploy/cloudflare/metadata-worker.mjs \
-//     --name hive-metadata --route "hive.ausbit.dev/@*"
+//     --name hive-metadata --route "hive.ausbit.dev/@*" \
+//     --route "hive.ausbit.dev/api/badges/peakd*"
 //
 // It is intentionally dependency-free and fails open: any timeout, missing
 // post or API error returns the untouched origin response.
