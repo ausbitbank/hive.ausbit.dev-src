@@ -157,6 +157,23 @@ describe('queue persistence', () => {
       expect(restored.meta[0].status).toBe('pending')
     })
 
+    it('repairs a posting account_update2 that would need active authority', () => {
+      localStore.set(QUEUE_STORAGE_KEY, {
+        savedAt: NOW.getTime(),
+        owner: 'alice',
+        items: [['alice', 'posting', ['account_update2', {
+          account: 'alice',
+          json_metadata: '{"legacy":true}',
+          posting_json_metadata: '{"profile":{}}'
+        }]]],
+        meta: []
+      })
+
+      const restored = restoreQueueState('alice')
+      expect(restored.queue[0][2][1].json_metadata).toBe('')
+      expect(restored.queue[0][2][1].posting_json_metadata).toBe('{"profile":{}}')
+    })
+
     it('turns an interrupted broadcast into a retryable failure', () => {
       persistQueue([validItem('alice')], [{ status: 'broadcasting', error: '', txId: '', addedAt: 1, updatedAt: 2 }])
 

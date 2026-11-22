@@ -1,5 +1,5 @@
 import { LocalStorage, SessionStorage } from 'quasar'
-import { normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
+import { normalizeQueueAction, normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE } from '../../services/hiveNodes'
 import dashboardState from './dashboard'
 
@@ -53,7 +53,7 @@ export function restoreQueueState (currentUsername) {
       return empty
     }
 
-    const validItems = items.filter(isValidQueueItem)
+    const validItems = items.filter(isValidQueueItem).map(normalizeQueueAction)
     if (validItems.length !== items.length) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
       if (validItems.length === 0) return empty

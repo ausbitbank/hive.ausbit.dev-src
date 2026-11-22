@@ -60,6 +60,22 @@ const OPERATION_LABELS = {
   recurrent_transfer: 'Recurring transfer'
 }
 
+/**
+ * A posting-authority `account_update2` may only touch posting metadata. Hive
+ * treats an empty legacy `json_metadata` as "unchanged"; echoing the current
+ * value back silently escalates the operation to active authority. Repair any
+ * already-queued item (for example a failed retry from an older build) before
+ * it can be broadcast again.
+ */
+export function normalizeQueueAction (action) {
+  if (!Array.isArray(action) || action.length !== 3) return action
+  const [owner, keyType, operation] = action
+  if (keyType !== 'posting' || !Array.isArray(operation) || operation[0] !== 'account_update2') return action
+  const data = operation[1]
+  if (!data || typeof data !== 'object' || !data.json_metadata) return action
+  return [owner, keyType, ['account_update2', { ...data, json_metadata: '' }]]
+}
+
 export function operationType (action) {
   const op = Array.isArray(action) ? action[2] : null
   return Array.isArray(op) ? op[0] : ''

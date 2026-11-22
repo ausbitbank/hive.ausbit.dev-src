@@ -6,6 +6,7 @@ import {
   createQueueMeta,
   keyRequirement,
   nextActionableIndex,
+  normalizeQueueAction,
   normalizeQueueMeta,
   operationLabel,
   operationSummary,
@@ -52,6 +53,34 @@ describe('queue helpers', () => {
       json: JSON.stringify({ from_account: 'v4vapp', to_account: 'alice', parent_id: 'XYZ', notification: true })
     }]]
     expect(operationSummary(notice)).toBe('v4vapp notification · XYZ')
+  })
+
+  it('repairs posting-authority account updates that would need active', () => {
+    const stale = ['alice', 'posting', ['account_update2', {
+      account: 'alice',
+      json_metadata: '{"legacy":true}',
+      posting_json_metadata: '{"profile":{}}',
+      extensions: []
+    }]]
+    const repaired = normalizeQueueAction(stale)
+    expect(repaired).not.toBe(stale)
+    expect(repaired[2][1].json_metadata).toBe('')
+    expect(repaired[2][1].posting_json_metadata).toBe('{"profile":{}}')
+
+    const alreadyClean = ['alice', 'posting', ['account_update2', {
+      account: 'alice',
+      json_metadata: '',
+      posting_json_metadata: '{"profile":{}}',
+      extensions: []
+    }]]
+    expect(normalizeQueueAction(alreadyClean)).toBe(alreadyClean)
+
+    const activeUpdate = ['alice', 'active', ['account_update2', {
+      account: 'alice',
+      json_metadata: '{"legacy":true}',
+      posting_json_metadata: '{"profile":{}}'
+    }]]
+    expect(normalizeQueueAction(activeUpdate)).toBe(activeUpdate)
   })
 
   it('explains posting and active key requirements', () => {

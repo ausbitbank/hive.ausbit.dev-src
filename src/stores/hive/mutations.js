@@ -1,6 +1,6 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { persistQueue } from './state'
-import { createQueueMeta, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
+import { createQueueMeta, normalizeQueueAction, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
 import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
 
 function ensureQueueMeta (state) {
@@ -89,7 +89,7 @@ export function addToQueue (newItem, options = {}) {
     meta.updatedAt = Date.now()
     notifyOfflineSigningBlocked()
   }
-  this.queue.push(newItem)
+  this.queue.push(normalizeQueueAction(newItem))
   ensureQueueMeta(this).push(meta)
   persistQueue(this.queue, this.queueMeta)
 }
