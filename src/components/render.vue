@@ -131,6 +131,22 @@ export function threeSpeakEmbedUrl (href) {
   }
 }
 
+/**
+ * The channel behind a Twitch player URL, unless it points at a specific VOD
+ * or clip. The render helper embeds every twitch.tv link, including profile
+ * pages, so the renderer uses this to turn channel embeds back into links.
+ */
+export function twitchChannelFromEmbed (src) {
+  try {
+    const url = new URL(src, 'https://hive.ausbit.dev')
+    if (url.hostname !== 'player.twitch.tv') return ''
+    if (url.searchParams.get('video') || url.searchParams.get('clip')) return ''
+    return (url.searchParams.get('channel') || '').trim()
+  } catch {
+    return ''
+  }
+}
+
 let hooksInstalled = false
 function installPurifyHooks () {
   if (hooksInstalled) return
@@ -243,7 +259,9 @@ export default {
             ADD_TAGS: ['iframe'],
             ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
           })
-          const enhanced = this.embeds ? this.enhanceEmbeds(safe) : this.stripEmbeds(safe)
+          const enhanced = this.embeds
+            ? this.enhanceEmbeds(this.deembedTwitchProfiles(safe))
+            : this.stripEmbeds(this.deembedTwitchProfiles(safe))
           // The page title is the only h1; post content headings start at h2.
           const normalizeHeadings = html => html
             .replace(/<h1(\s[^>]*)?>/gi, '<h2$1>')
@@ -315,6 +333,30 @@ export default {
         anchor.setAttribute('aria-label', 'Play video')
       }
       return doc.body.innerHTML
+    },
+
+    /**
+     * render-helper turns every Twitch link into a channel player, including
+     * bare profile links, which leaves a dead black frame when the channel is
+     * offline. Turn those back into ordinary links; VOD and clip players stay.
+     */
+    deembedTwitchProfiles (html) {
+      if (typeof DOMParser === 'undefined' || !/markdown-video-link-twitch/i.test(html)) return html
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      let changed = false
+      for (const anchor of doc.querySelectorAll('a.markdown-video-link-twitch')) {
+        const channel = twitchChannelFromEmbed(anchor.querySelector('iframe')?.getAttribute('src') || '')
+        if (!channel) continue
+        const href = 'https://www.twitch.tv/' + encodeURIComponent(channel)
+        const link = doc.createElement('a')
+        link.setAttribute('href', href)
+        link.setAttribute('target', '_blank')
+        link.setAttribute('rel', 'noopener noreferrer')
+        link.textContent = href
+        anchor.replaceWith(link)
+        changed = true
+      }
+      return changed ? doc.body.innerHTML : html
     },
 
     /**

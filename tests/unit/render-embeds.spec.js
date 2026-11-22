@@ -1,5 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import render, { bodyImageUrls, threeSpeakEmbedUrl } from '../../src/components/render.vue'
+import render, { bodyImageUrls, threeSpeakEmbedUrl, twitchChannelFromEmbed } from '../../src/components/render.vue'
+
+describe('twitchChannelFromEmbed', () => {
+  it('reads the channel from a channel player URL', () => {
+    expect(twitchChannelFromEmbed('https://player.twitch.tv/?channel=thecrazygamer16&parent=hive.ausbit.dev'))
+      .toBe('thecrazygamer16')
+  })
+
+  it('ignores VOD and clip players', () => {
+    expect(twitchChannelFromEmbed('https://player.twitch.tv/?video=123456789&parent=hive.ausbit.dev')).toBe('')
+    expect(twitchChannelFromEmbed('https://player.twitch.tv/?clip=SomeClipSlug&parent=hive.ausbit.dev')).toBe('')
+    expect(twitchChannelFromEmbed('https://example.com/?channel=alice')).toBe('')
+  })
+
+  it('turns channel embeds back into plain profile links', () => {
+    const html = '<p><a class="markdown-video-link markdown-video-link-twitch">' +
+      '<iframe src="https://player.twitch.tv/?channel=thecrazygamer16&parent=hive.ausbit.dev"></iframe></a></p>'
+    const result = render.methods.deembedTwitchProfiles(html)
+    expect(result).toContain('href="https://www.twitch.tv/thecrazygamer16"')
+    expect(result).toContain('>https://www.twitch.tv/thecrazygamer16</a>')
+    expect(result).not.toContain('<iframe')
+  })
+
+  it('keeps VOD and clip players embedded', () => {
+    const html = '<a class="markdown-video-link markdown-video-link-twitch">' +
+      '<iframe src="https://player.twitch.tv/?video=123456789&parent=hive.ausbit.dev"></iframe></a>'
+    expect(render.methods.deembedTwitchProfiles(html)).toBe(html)
+  })
+})
 
 describe('threeSpeakEmbedUrl', () => {
   it('converts legacy and player watch URLs to the Snapie embed', () => {

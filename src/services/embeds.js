@@ -48,6 +48,31 @@ function spotifyEmbed (url) {
   }
 }
 
+// Channel pages are profile links, not something the player can show unless
+// the channel happens to be live. Only embed a specific VOD or clip.
+function twitchEmbed (url) {
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
+    const parts = parsed.pathname.split('/').filter(Boolean)
+    const parent = '&parent=hive.ausbit.dev'
+    if (host === 'clips.twitch.tv') {
+      const slug = parts[0]
+      if (!slug) return ''
+      return 'https://player.twitch.tv/?clip=' + encodeURIComponent(slug) + parent
+    }
+    if (parts[0] === 'videos' && /^\d+$/.test(parts[1] || '')) {
+      return 'https://player.twitch.tv/?video=' + parts[1] + parent
+    }
+    if (parts[1] === 'clip' && parts[2]) {
+      return 'https://player.twitch.tv/?clip=' + encodeURIComponent(parts[2]) + parent
+    }
+    return ''
+  } catch {
+    return ''
+  }
+}
+
 function soundCloudEmbed (url) {
   try {
     const parsed = new URL(url)
@@ -136,10 +161,9 @@ export function detectEmbed (value) {
     return { kind: 'social', provider: 'X', url, markdown: '[View this post on X](' + url + ')' }
   }
 
-  if (host === 'twitch.tv') {
-    const channel = new URL(url).pathname.split('/').filter(Boolean)[0]
-    if (!channel) return null
-    const embed = 'https://player.twitch.tv/?channel=' + encodeURIComponent(channel) + '&parent=hive.ausbit.dev'
+  if (host === 'twitch.tv' || host === 'clips.twitch.tv') {
+    const embed = twitchEmbed(url)
+    if (!embed) return null
     return { kind: 'live', provider: 'Twitch', url, embedUrl: embed, markdown: iframeMarkdown(embed, 'Twitch player') }
   }
 

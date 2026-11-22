@@ -35,9 +35,18 @@ describe('media embed detection', () => {
     expect(soundcloud.provider).toBe('SoundCloud')
     expect(soundcloud.markdown).toContain('w.soundcloud.com/player')
 
-    const twitch = detectEmbed('https://twitch.tv/somechannel')
-    expect(twitch.provider).toBe('Twitch')
-    expect(twitch.markdown).toContain('player.twitch.tv')
+    const video = detectEmbed('https://twitch.tv/videos/123456789')
+    expect(video.provider).toBe('Twitch')
+    expect(video.markdown).toContain('player.twitch.tv/?video=123456789')
+
+    const clip = detectEmbed('https://clips.twitch.tv/SomeClipSlug')
+    expect(clip.provider).toBe('Twitch')
+    expect(clip.markdown).toContain('player.twitch.tv/?clip=SomeClipSlug')
+  })
+
+  it('leaves Twitch channel profile links as ordinary links', () => {
+    expect(detectEmbed('https://twitch.tv/somechannel')).toBeNull()
+    expect(detectEmbed('https://www.twitch.tv/somechannel')).toBeNull()
   })
 
   it('turns image URLs into markdown images and social posts into links', () => {
