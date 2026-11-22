@@ -1,7 +1,7 @@
 # W64 — Community search and discovery
 
 Date: 2026-11-22
-Status: implemented
+Status: implemented and deployed
 
 ## Scope
 
@@ -78,7 +78,19 @@ being searched. W64 improves both jobs:
   - searching `hive-174578` returns OCD as the first card;
   - clearing the field restores the shelves, with no page errors.
 - Axe: zero WCAG A/AA violations at 1440px and 390px, zero horizontal overflow.
-- Deployment and the production smoke are recorded below.
+
+## Deployment
+
+- SPA deployed from commit `9ef919d` with `scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T104725Z.tar.gz`.
+- Live smoke:
+  - New communities, Active right now and Largest communities shelves render;
+  - searching `art` loads 100 matches and **Load more matches** grows the list
+    to 135;
+  - the first relevance result is the community titled “Art”;
+  - searching `hive-174578` returns OCD as the only match;
+  - clearing the search restores the shelves and the 36-item directory;
+  - no page errors in the browser console.
 
 ## Notes and limits
 
