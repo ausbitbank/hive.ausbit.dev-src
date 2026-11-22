@@ -1,7 +1,7 @@
 # W63 — Theme system and profile skins
 
 Date: 2026-11-22
-Status: implemented and verified (local build; deployment pending)
+Status: implemented, deployed and verified
 
 ## Scope
 
@@ -142,12 +142,25 @@ scanner.
   bidi controls, metadata merge/preserve/remove and the `account_update2`
   shape.
 
+## Deployment
+
+Deployed on 2026-11-22 with `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T105900Z.tar.gz`
+- Live GET requests return 200 for `/appearance`, `/themes` and
+  `/settings/skin`; the Cloudflare metadata Worker serves their prerendered
+  shells with `x-hive-meta: theme-shell` until the nginx vhost config is
+  reloaded. The repo nginx config now has exact locations for those routes.
+- Live smoke: all ten theme cards render; Hive Light switches the document and
+  body classes and persists across reload; the Theme Wall renders ten built-in
+  cards; the signed-out Skin Studio shows its sign-in state; the profile page
+  loads with no page errors.
+
 ## Follow-ups
 
-- Deployment is intentionally pending: the working tree also contains the
-  uncommitted W62 community-browser work, so `./scripts/deploy.sh` would ship
-  both workstreams together. Merge/deploy them as one reviewed release.
-- Run the production live smoke after deployment.
+- Install the updated `deploy/nginx/hive.ausbit.dev.conf` with sudo and reload
+  nginx. The edge Worker already covers the three routes, so this is an
+  infrastructure tidy-up rather than a functional blocker.
 - Community skins (the community account already has metadata; the mechanism is
   ready, the route scope is intentionally disabled).
 - Share codes/import, named theme libraries, banner-collage upload, and a
