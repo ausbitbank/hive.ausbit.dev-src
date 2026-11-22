@@ -24,6 +24,96 @@ function decodedImageUrl (url) {
   return String(url || '').replace(/&amp;/g, '&')
 }
 
+const imageSizes = new Map()
+const imagePending = new Map()
+
+function decodeEntities (value) {
+  return String(value || '')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
+
+/**
+ * Image URLs from raw post markdown/HTML, in reading order. Bounded because
+ * only the first few images are worth sizing before paint.
+ */
+export function bodyImageUrls (source, limit = 4) {
+  const text = String(source || '')
+  if (!text) return []
+  const urls = []
+  const add = raw => {
+    const decoded = decodeEntities(decodedImageUrl(raw)).trim()
+    if (!/^https?:\/\//i.test(decoded) || urls.includes(decoded)) return
+    urls.push(decoded)
+  }
+
+  const markdown = /!\[[^\]]*\]\(\s*([^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/g
+  let match = markdown.exec(text)
+  while (match && urls.length < limit) {
+    add(match[1])
+    match = markdown.exec(text)
+  }
+
+  const html = /<img\b[^>]*\bsrc=["']([^"']+)["']/gi
+  match = html.exec(text)
+  while (match && urls.length < limit) {
+    add(match[1])
+    match = html.exec(text)
+  }
+
+  if (urls.length < limit) {
+    const bare = text.match(/https?:\/\/[^\s)"'<>]+/g) || []
+    for (const url of bare) {
+      if (urls.length >= limit) break
+      if (!/\.(?:jpe?g|png|gif|webp|avif)(?:[?#]|$)/i.test(url)) continue
+      add(url)
+    }
+  }
+  return urls.slice(0, limit)
+}
+
+function loadImageSize (url, timeoutMs = 4000) {
+  const key = decodedImageUrl(url)
+  if (!/^https?:\/\//i.test(key)) return Promise.resolve(null)
+  if (imageSizes.has(key)) return Promise.resolve(imageSizes.get(key))
+  if (imagePending.has(key)) return imagePending.get(key)
+  if (typeof Image === 'undefined') return Promise.resolve(null)
+
+  const promise = new Promise(resolve => {
+    const image = new Image()
+    let settled = false
+    const done = () => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      const size = image.naturalWidth > 0 && image.naturalHeight > 0
+        ? { width: image.naturalWidth, height: image.naturalHeight }
+        : null
+      if (size) imageSizes.set(key, size)
+      imagePending.delete(key)
+      resolve(size)
+    }
+    const timer = setTimeout(done, timeoutMs)
+    image.onload = done
+    image.onerror = done
+    image.src = key
+  })
+  imagePending.set(key, promise)
+  return promise
+}
+
+/** Dimensions for every image measured this session, keyed by raw and decoded URL. */
+function sizeMap () {
+  const map = new Map()
+  for (const [url, size] of imageSizes) {
+    const entry = { raw: url, decoded: url, ...size }
+    map.set(url, entry)
+    map.set(decodedImageUrl(url), entry)
+  }
+  return map
+}
+
 /** Convert a 3Speak watch URL into the Snapie player embed URL. */
 export function threeSpeakEmbedUrl (href) {
   try {
@@ -144,6 +234,7 @@ export default {
     render () {
       const token = ++this.renderToken
       this.loading = !this.preload || !this.rendered
+
       loadRenderHelper()
         .then(({ renderPostBody }) => {
           if (token !== this.renderToken) return
@@ -164,12 +255,19 @@ export default {
             return
           }
 
-          this.preloadImages(enhanced).then(dimensions => {
+          // Wait for the body images' dimensions before inserting the HTML so
+          // the article does not shift while they load. The timeout is bounded
+          // (the old code waited up to 10 s per image, which pinned LCP to the
+          // slowest image); stragglers are patched into the DOM after paint.
+          const images = bodyImageUrls(enhanced, 4)
+          const dimensionsReady = Promise.all(images.map(url => loadImageSize(url, 1800)))
+          return dimensionsReady.then(() => {
             if (token !== this.renderToken) return
             this.rendered = normalizeHeadings(
-              this.prioritizeFirstImage(this.applyImageDimensions(enhanced, dimensions))
+              this.prioritizeFirstImage(this.applyImageDimensions(enhanced, sizeMap()))
             )
             this.loading = false
+            this.patchImageDimensions()
           })
         })
         .catch(error => {
@@ -182,6 +280,20 @@ export default {
             .replaceAll('\n', '<br>') + '</p>'
           this.loading = false
         })
+    },
+
+    /** Set missing width/height attributes after the article has painted. */
+    patchImageDimensions () {
+      const root = this.$refs.root
+      if (!root || typeof root.querySelectorAll !== 'function') return
+      for (const image of root.querySelectorAll('img')) {
+        if (image.hasAttribute('width') && image.hasAttribute('height')) continue
+        const source = image.getAttribute('src') || ''
+        const size = imageSizes.get(source) || imageSizes.get(decodedImageUrl(source))
+        if (!size) continue
+        if (!image.hasAttribute('width')) image.setAttribute('width', String(size.width))
+        if (!image.hasAttribute('height')) image.setAttribute('height', String(size.height))
+      }
     },
 
     /**
@@ -248,47 +360,6 @@ export default {
         anchor.textContent = 'Watch video'
       }
       return doc.body.innerHTML
-    },
-
-    preloadImages (html) {
-      if (typeof Image === 'undefined') return Promise.resolve(new Map())
-      const urls = []
-      const pattern = /<img\b[^>]*\bsrc=["']([^"']+)["']/gi
-      let match = pattern.exec(html)
-      while (match && urls.length < 4) {
-        if (match[1]) urls.push({ raw: match[1], decoded: decodedImageUrl(match[1]) })
-        match = pattern.exec(html)
-      }
-      if (!urls.length) return Promise.resolve(new Map())
-
-      return Promise.all(urls.map(entry => new Promise(resolve => {
-        const image = new Image()
-        let settled = false
-        const done = () => {
-          if (settled) return
-          settled = true
-          clearTimeout(timer)
-          resolve({
-            raw: entry.raw,
-            decoded: entry.decoded,
-            width: image.naturalWidth || 0,
-            height: image.naturalHeight || 0
-          })
-        }
-        const timer = setTimeout(done, 10000)
-        image.onload = done
-        image.onerror = done
-        image.src = entry.decoded
-      }))).then(results => {
-        const dimensions = new Map()
-        for (const result of results) {
-          if (result.width > 0 && result.height > 0) {
-            dimensions.set(result.raw, result)
-            dimensions.set(result.decoded, result)
-          }
-        }
-        return dimensions
-      })
     },
 
     /** The first body image is usually the post's LCP. Let it fetch eagerly. */

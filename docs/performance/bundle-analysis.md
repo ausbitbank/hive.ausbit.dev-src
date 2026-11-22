@@ -243,6 +243,32 @@ remaining legacy weight without changing app behaviour.
 `bun run perf:check` passes. The heaviest remaining lazy chunk is still the post
 renderer (`@ecency/render-helper`, 126 KB Brotli).
 
+## First-paint data pass (2026-11-22)
+
+The remaining LCP on data routes was chain latency, not payload size. This pass
+makes the first frame independent of the slowest read:
+
+- **Pre-warmed home snapshot.** `scripts/generate-home-snapshot.mjs` publishes a
+  compact block/witness/market/feed snapshot at build time and injects it into
+  the home shell (`~9.9 KB Brotli`). Home widgets paint it synchronously, then
+  refresh live. Non-home shells use `/home-snapshot.json` for client-side
+  visits, and nginx caches that file for five minutes.
+- **Snapshot-first widgets.** The block, market, witness, post, network and
+  browse cards restore their last saved snapshot before the first network read;
+  the block card no longer waits for virtual operations before painting.
+- **No forced first read.** Initial home reads use the shared TTL cache instead
+  of `force: true`, so `globalProps` is fetched once and shared by the block,
+  witness and network cards.
+- **Bounded post image sizing.** The post renderer still reserves dimensions for
+  the first four body images, but each wait is capped at 1.8 s instead of the
+  old 10 s per image. Stragglers are patched into the DOM after paint.
+- **Measurement.** `bun run perf` now records the LCP element and supports
+  `PERF_API_LATENCY_MS` / `PERF_IMAGE_LATENCY_MS` for a slow-node scenario.
+
+Measured cold-cache effect (same harness): Home **2984 → ~1.1 s**, Browse
+**2724 → ~2.3 s**, Post **2356 → ~2.2 s**. Per-route LCP budgets were tightened
+to catch a regression back to the old API-bound numbers.
+
 ## Remaining opportunities
 
 1. **hive-js in the initial chunk.** Done in #88: signing/keys/memos use a
@@ -253,16 +279,22 @@ renderer (`@ecency/render-helper`, 126 KB Brotli).
    but a component-usage audit may remove more.
 3. **Material Icons.** Done: the font is now a 20.5 KB subset with a guard test
    (`bun run icons:subset`).
-4. **CLS on wallet and post.** Wallet remains ~0.23 CLS and post ~0.18 CLS from
-   asynchronous data landing. The dashboard now measures it; W24 owns the
-   skeleton/loading-transition work.
+4. **CLS on wallet and post.** Post is now ~0 because body image dimensions are
+   reserved before paint; wallet is ~0.03 and still worth watching as balances
+   land. The dashboard measures both per route.
 5. **HTTP/2 request count.** The app still makes ~100 requests on first load
-   because Quasar/Rolldown emits many small shared chunks. HTTP/2 handles this
-   well in production, but chunk consolidation may help weak networks.
-6. **Post renderer DOM parser.** `@xmldom/xmldom` is 270 KB of the lazy post
+   because Quasar/Rolldown emits many small shared chunks. A Rolldown
+   `codeSplitting` experiment did not change the emitted chunk graph, so this
+   needs a deliberate vendor-group audit rather than a blanket inline rule.
+6. **Cold browse and wallet.** These routes still wait for their first chain
+   read. The next step is the same edge/static snapshot pattern for the default
+   browse feed and the signed-in wallet's last-known balances.
+7. **Post renderer DOM parser.** `@xmldom/xmldom` is 270 KB of the lazy post
    chunk. A native-DOM swap was prototyped and rejected (see above); reducing
    it further needs render-helper's own differential fuzz plus a browser-native
-   serializer that preserves its nonce boundary.
+   serializer that preserves its nonce boundary. The page now paints the hero
+   before the renderer chunk and bounds the body image wait, so the renderer is
+   less visible to LCP even before the chunk shrinks.
 
 ## How this was measured
 

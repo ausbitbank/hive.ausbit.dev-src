@@ -179,6 +179,7 @@ import { formatCompactNumber, witnessVotesHp } from 'src/services/home'
 import { fetchGlobalProps, fetchWitnessesByVote } from 'src/services/chainData'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { getHomeSnapshot, whenHomeSnapshot } from 'src/services/homeSnapshot'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 
 // The card fetches the full ranked list so `limit`/`pinMine` can select from it;
@@ -254,10 +255,26 @@ export default {
       return pinned ? [pinned, ...rest.slice(0, size)] : rest.slice(0, size)
     }
   },
+  created () {
+    const snapshot = getHomeSnapshot()
+    if (snapshot?.witnesses?.length) {
+      this.applySnapshot(snapshot)
+      return
+    }
+    whenHomeSnapshot({ timeoutMs: 400 }).then(snapshot => {
+      if (snapshot?.witnesses?.length && !this.witnesses.length) this.applySnapshot(snapshot)
+    })
+  },
   mounted () {
     this.loadWitnesses()
   },
   methods: {
+    applySnapshot (snapshot) {
+      this.witnesses = snapshot.witnesses
+      this.globalProps = snapshot.globalProps || null
+      this.hardforkVersion = snapshot.hardforkVersion || ''
+      this.loading = false
+    },
     mineName () {
       return String(this.highlight || this.signedInUser || '').replace(/^@/, '')
     },
@@ -265,7 +282,7 @@ export default {
       return hiveAvatarUrl(user)
     },
     async loadWitnesses () {
-      this.loading = true
+      this.loading = this.witnesses.length === 0
       this.error = ''
       try {
         const [witnesses, props, hardfork] = await Promise.all([

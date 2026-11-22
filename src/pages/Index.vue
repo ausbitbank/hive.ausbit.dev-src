@@ -245,6 +245,7 @@ import {
   updateWidgetSettings
 } from 'src/services/dashboardEditing'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { pruneSnapshots } from 'src/services/snapshots'
 
 export default {
   name: 'Home',
@@ -308,6 +309,12 @@ export default {
       description: 'Explore the Hive blockchain: live blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.',
       url: '/'
     })
+    // Browse feeds save their own first-page snapshots. Prune expired keys on
+    // the landing page so repeat visits cannot fill the origin quota.
+    const prune = () => pruneSnapshots()
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(prune, { timeout: 4000 })
+    }
   },
   methods: {
     startEditing () {

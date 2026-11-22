@@ -165,6 +165,7 @@ import { ACCOUNT_FEED_SORTS, feedAvatar, feedHeader } from 'src/services/feedRef
 import { fetchCommunity } from 'src/services/chainData'
 import { pollWhileVisible } from 'src/services/polling'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { getHomeSnapshot, snapshotFeed, whenHomeSnapshot } from 'src/services/homeSnapshot'
 import moment from 'src/utils/time'
 
 const SNAPSHOT_PREFIX = 'home:posts:feed:'
@@ -283,6 +284,10 @@ export default {
   },
   created () {
     if (QUICK_SORTS.includes(this.source)) this.sort = this.source
+    if (this.applySnapshot()) return
+    whenHomeSnapshot({ timeoutMs: 400 }).then(snapshot => {
+      if (!this.posts.length) this.applySnapshot(snapshot)
+    })
   },
   watch: {
     source (value) {
@@ -297,6 +302,7 @@ export default {
       this.posts = []
       this.updatedAt = 0
       this.staleAt = null
+      this.applySnapshot()
       this.loadPosts()
     },
     communityKey () {
@@ -320,6 +326,15 @@ export default {
     this.stopClock()
   },
   methods: {
+    applySnapshot (snapshot = getHomeSnapshot()) {
+      const feed = snapshotFeed(this.feed?.key)
+      if (!snapshot || !feed?.posts?.length) return false
+      this.posts = feed.posts
+      this.updatedAt = snapshot.generatedAt
+      this.nowTick = snapshot.generatedAt
+      this.loading = false
+      return true
+    },
     restartPolling () {
       this.stopPolling()
       const seconds = Number(this.pollSeconds)

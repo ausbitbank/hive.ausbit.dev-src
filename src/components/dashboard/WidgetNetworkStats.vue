@@ -99,6 +99,7 @@ import { fetchGlobalProps, fetchMedianHistoryPrice } from 'src/services/chainDat
 import { formatCount, medianPrice } from 'src/services/network'
 import { networkStats } from 'src/services/dashboardWidgets'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { getHomeSnapshot, whenHomeSnapshot } from 'src/services/homeSnapshot'
 
 const SNAPSHOT_KEY = 'home:network-stats'
 
@@ -111,17 +112,30 @@ export default {
       loadError: ''
     }
   },
+  created () {
+    if (this.applySnapshot(getHomeSnapshot())) return
+    whenHomeSnapshot({ timeoutMs: 400 }).then(snapshot => {
+      if (!this.stats) this.applySnapshot(snapshot)
+    })
+  },
   mounted () {
     this.reload()
   },
   methods: {
+    applySnapshot (snapshot) {
+      const section = snapshot?.network
+      if (!section?.props) return false
+      this.stats = networkStats(section.props, { medianHiveUsd: medianPrice(section.median).hiveUsd })
+      this.loading = false
+      return true
+    },
     formatCount,
     async reload () {
-      this.loading = true
+      this.loading = !this.stats
       this.loadError = ''
       try {
         const [props, median] = await Promise.all([
-          fetchGlobalProps({ force: true }),
+          fetchGlobalProps(),
           fetchMedianHistoryPrice().catch(() => null)
         ])
         if (!props || props.empty) throw new Error('Global properties unavailable')

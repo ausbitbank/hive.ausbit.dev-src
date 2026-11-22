@@ -543,6 +543,7 @@ import {
 } from 'src/services/home'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { getHomeSnapshot, whenHomeSnapshot } from 'src/services/homeSnapshot'
 import {
   HOME_MARKET_COIN_SUGGESTIONS,
   HOME_MARKET_CURRENCIES,
@@ -680,10 +681,26 @@ export default {
       return this.updatedAt ? moment.utc(this.updatedAt).fromNow() : ''
     }
   },
+  created () {
+    if (this.applySnapshot(getHomeSnapshot())) return
+    whenHomeSnapshot({ timeoutMs: 400 }).then(snapshot => {
+      if (!this.coins.length) this.applySnapshot(snapshot)
+    })
+  },
   mounted () {
     this.loadPrices()
   },
   methods: {
+    applySnapshot (snapshot) {
+      const market = snapshot?.market
+      if (!market?.coins?.length) return false
+      if (market.currency !== this.activeCurrency) return false
+      if (market.coinIds && market.coinIds.join(',') !== this.activeCoinIds.join(',')) return false
+      this.coins = market.coins
+      this.updatedAt = Number(snapshot.generatedAt) || Date.now()
+      this.loading = false
+      return true
+    },
     prefs () {
       return { coinIds: this.activeCoinIds, currency: this.activeCurrency }
     },

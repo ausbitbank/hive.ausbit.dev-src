@@ -1,5 +1,15 @@
 <template>
   <div class="browse-container">
+    <div v-if="cachedAt && error && !loading" class="browse-notice">
+      <data-notice
+        variant="stale"
+        :message="'Showing saved posts — live refresh failed. ' + error"
+        :updated-at="cachedAt"
+        action-label="Retry"
+        @action="refresh"
+      />
+    </div>
+
     <div class="browse-toolbar">
       <div class="browse-toolbar__summary">
         <span v-if="loading && posts.length === 0">Loading posts…</span>
@@ -189,6 +199,10 @@
   min-width: 0;
 }
 
+.browse-notice {
+  margin-bottom: var(--space-2);
+}
+
 .browse-toolbar {
   display: flex;
   align-items: center;
@@ -361,6 +375,9 @@ import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { postPayoutValue, postUserVoteDirection } from 'src/services/posts'
 import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
+import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { trimPostsForSnapshot } from 'src/services/postSnapshot'
+import DataNotice from 'components/ui/DataNotice.vue'
 
 const DEFAULT_FILTERS = () => ({
   hideVoted: false,
@@ -403,7 +420,8 @@ export default {
   components: {
     postPreview: defineAsyncComponent(() => import('components/postPreview.vue')),
     browseTable: defineAsyncComponent(() => import('components/browseTable.vue')),
-    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue'))
+    infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue')),
+    DataNotice
   },
   data () {
     return {
@@ -411,6 +429,7 @@ export default {
       loading: false,
       loadingMore: false,
       error: null,
+      cachedAt: null,
       hasMore: true,
       limit: Number(this.$route.query.limit) || this.responseLimit || 20,
       styleType: normalizeStyle(this.$route.query.style),
@@ -485,19 +504,19 @@ export default {
   watch: {
     callMethod (value) {
       this.method = value || 'bridge.get_ranked_posts'
-      this.refresh()
+      this.switchFeed()
     },
     sortMethod (value) {
       this.sort = value || 'created'
-      this.refresh()
+      this.switchFeed()
     },
     showAccount (value) {
       this.account = value || null
-      this.refresh()
+      this.switchFeed()
     },
     showTag (value) {
       this.tag = value || null
-      this.refresh()
+      this.switchFeed()
     },
     '$route.query.style' (value) {
       const style = normalizeStyle(value)
@@ -507,10 +526,38 @@ export default {
       this.syncStyleQuery(value)
     }
   },
+  created () {
+    this.restoreSnapshot()
+  },
   mounted () {
     this.getPosts(false)
   },
   methods: {
+    snapshotKey () {
+      return 'browse:' + this.method + ':' + this.sort + ':' +
+        (this.account || '') + ':' + (this.tag || '') + ':' + this.limit
+    },
+    restoreSnapshot () {
+      const snapshot = loadSnapshot(this.snapshotKey())
+      const posts = snapshot?.data?.posts
+      if (!Array.isArray(posts) || !posts.length) return false
+      this.posts = posts
+      this.cachedAt = snapshot.savedAt
+      this.loading = false
+      this.hasMore = posts.length >= this.limit
+      return true
+    },
+    saveSnapshot () {
+      const posts = trimPostsForSnapshot(this.posts, { limit: this.limit, bodyLimit: 800 })
+      if (posts.length) saveSnapshot(this.snapshotKey(), { posts })
+    },
+    switchFeed () {
+      this.posts = []
+      this.cachedAt = null
+      this.hasMore = true
+      this.restoreSnapshot()
+      this.getPosts(false)
+    },
     async getPosts (append = false, { force = false } = {}) {
       if (append && (this.loading || this.loadingMore || !this.hasMore)) return
 
@@ -520,7 +567,8 @@ export default {
       if (append) {
         this.loadingMore = true
       } else {
-        this.loading = true
+        // Keep snapshot rows visible while the live page refreshes.
+        this.loading = this.posts.length === 0
       }
       this.error = null
 
@@ -546,11 +594,13 @@ export default {
           this.posts = this.posts.concat(list.filter(post => !seen.has(post.author + '/' + post.permlink)))
         } else {
           this.posts = list
+          this.cachedAt = null
+          this.saveSnapshot()
         }
         this.hasMore = list.length >= this.limit
       } catch (error) {
         this.error = error?.cause?.data || error?.message || 'Failed to load posts'
-        if (!append) this.posts = []
+        if (!append && !this.posts.length) this.posts = []
       } finally {
         this.loading = false
         this.loadingMore = false

@@ -18,6 +18,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { chromium } from '@playwright/test'
 import { applyMetadata, buildMetadataTemplate, META_TEMPLATE_FILE, PRERENDER_ROUTES } from './lib/prerender-meta.mjs'
+import { stripHomeSnapshot } from './lib/home-snapshot.mjs'
 
 const PORT = 4188
 const ROUTES = PRERENDER_ROUTES
@@ -49,7 +50,7 @@ async function main () {
   // nginx locations keep working instead of returning 404.
   await writeFile(
     resolve(DIST, META_TEMPLATE_FILE),
-    buildMetadataTemplate(shell, { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }),
+    buildMetadataTemplate(stripHomeSnapshot(shell), { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION }),
     'utf8'
   )
   console.log('Dynamic metadata template written', META_TEMPLATE_FILE)
@@ -91,7 +92,7 @@ async function main () {
           jsonLd
         }
       })
-      const html = applyMetadata(shell, metadata)
+      const html = applyMetadata(route === '/' ? shell : stripHomeSnapshot(shell), metadata)
       const file = outputFile(route)
       await mkdir(resolve(file, '..'), { recursive: true })
       await writeFile(file, html, 'utf8')

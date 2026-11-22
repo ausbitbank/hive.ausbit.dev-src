@@ -36,7 +36,7 @@
         </div>
       </div>
       <div class="home-panel__actions">
-        <q-btn flat dense round icon="refresh" aria-label="Refresh latest block" title="Refresh latest block" :loading="refreshing" @click="loadLatest" />
+        <q-btn flat dense round icon="refresh" aria-label="Refresh latest block" title="Refresh latest block" :loading="refreshing" @click="loadLatest({ force: true })" />
         <router-link to="/blocks" class="home-panel__link">All blocks</router-link>
       </div>
     </q-card-section>
@@ -47,7 +47,14 @@
         :message="offline ? 'Offline — showing the saved block.' : 'Live refresh failed — showing the saved block.'"
         :updated-at="staleAt"
         action-label="Retry"
-        @action="loadLatest"
+        @action="loadLatest({ force: true })"
+      />
+    </div>
+    <div v-else-if="cachedAt && snapshotAged" class="home-panel__notice">
+      <data-notice
+        variant="info"
+        message="Showing the last published snapshot while the live block loads."
+        :updated-at="cachedAt"
       />
     </div>
 
@@ -67,7 +74,7 @@
     <q-card-section v-else-if="error && !block" class="home-panel__state">
       <q-icon name="error_outline" size="24px" color="orange" aria-hidden="true" />
       <span>{{ error }}</span>
-      <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="loadLatest" />
+      <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="loadLatest({ force: true })" />
     </q-card-section>
 
     <template v-else-if="block">
@@ -235,6 +242,7 @@ import {
 } from 'src/services/home'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import { getHomeSnapshot, whenHomeSnapshot } from 'src/services/homeSnapshot'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 
 const POLL_INTERVAL = 15000
@@ -252,6 +260,9 @@ export default {
       block: null,
       blockNum: 0,
       virtualOps: [],
+      // Compact counters from the published home snapshot. Kept separate from
+      // the block because the snapshot never carries the full transaction list.
+      summary: null,
       headBlock: null,
       followHead: true,
       poller: null,
@@ -259,6 +270,8 @@ export default {
       refreshing: false,
       error: '',
       staleAt: null,
+      cachedAt: null,
+      loadToken: 0,
       timer: null
     }
   },
@@ -281,21 +294,26 @@ export default {
     followingHead () {
       return this.followHead
     },
+    /** Only call out a snapshot that was published more than five minutes ago. */
+    snapshotAged () {
+      return Boolean(this.cachedAt) && Date.now() - this.cachedAt > 5 * 60 * 1000
+    },
     transactions () {
-      return blockTransactionCount(this.block)
+      return this.summary ? this.summary.transactions : blockTransactionCount(this.block)
     },
     virtualCount () {
-      return this.virtualOps.length
+      return this.summary ? this.summary.virtualOps : this.virtualOps.length
     },
     operations () {
       // "Operations" excludes virtual operations everywhere. Virtual ops are
       // reported separately so the home card and the block page agree.
-      return blockOperationCount(this.block)
+      return this.summary ? this.summary.operations : blockOperationCount(this.block)
     },
     sizeKb () {
-      return blockSizeKb(this.block).toFixed(1)
+      return this.summary ? this.summary.sizeKb : blockSizeKb(this.block).toFixed(1)
     },
     mix () {
+      if (this.summary) return this.summary.mix || []
       if (!this.block) return []
       const regular = (this.block.transactions || []).flatMap(tx => tx.operations || [])
       return blockOperationMix([...regular, ...this.virtualOps], 4)
@@ -309,6 +327,20 @@ export default {
       return moment.utc(this.block.timestamp).fromNow()
     }
   },
+  created () {
+    // Paint the published snapshot before the first network read. The live
+    // load still runs from `mounted` and replaces this as soon as it lands.
+    const snapshot = getHomeSnapshot()
+    if (snapshot?.block) {
+      this.applySnapshot(snapshot.block, snapshot.generatedAt)
+      return
+    }
+    // Non-home shells do not carry the inline copy; the published JSON still
+    // lets a client-side visit paint before the chain read lands.
+    whenHomeSnapshot({ timeoutMs: 400 }).then(snapshot => {
+      if (snapshot?.block && this.loading) this.applySnapshot(snapshot.block, snapshot.generatedAt)
+    })
+  },
   mounted () {
     this.loadLatest()
     this.poller = pollWhileVisible(this.refreshIfNewBlock, POLL_INTERVAL, { immediate: false })
@@ -321,17 +353,33 @@ export default {
     avatarUrl (user) {
       return hiveAvatarUrl(user)
     },
-    async loadLatest () {
+    applySnapshot (section, generatedAt) {
+      if (!section?.block) return false
+      this.block = section.block
+      this.blockNum = Number(section.blockNum) || 0
+      this.headBlock = Number(section.headBlock) || null
+      this.summary = section.summary || null
+      this.virtualOps = []
+      this.followHead = false
+      this.loading = false
+      this.error = ''
+      this.cachedAt = Number(generatedAt) || Date.now()
+      return true
+    },
+    async loadLatest ({ force = false } = {}) {
       this.followHead = true
       this.refreshing = Boolean(this.block)
       try {
-        const props = await fetchGlobalProps({ force: true })
+        // Cache-first on the first paint: a warm `globalProps` entry is shared
+        // with the witness and network cards, so this is often free.
+        const props = await fetchGlobalProps({ force })
         const head = Number(props && props.head_block_number)
         if (!Number.isFinite(head) || head <= 0) throw new Error('Head block unavailable')
         this.headBlock = head
         await this.loadBlock(head)
       } catch (error) {
         console.error('Failed to load latest block', error)
+        this.followHead = false
         if (!this.restoreSnapshot()) this.error = 'Could not load the latest block.'
         this.loading = false
         this.refreshing = false
@@ -355,12 +403,15 @@ export default {
       this.blockNum = Number(data.blockNum) || 0
       this.headBlock = Number(data.headBlock) || null
       this.virtualOps = Array.isArray(data.virtualOps) ? data.virtualOps : []
+      this.summary = null
+      this.cachedAt = null
       this.staleAt = snapshot.savedAt
       this.error = ''
       return true
     },
     async loadBlock (number) {
       if (!Number.isFinite(number) || number < 1) return
+      const token = ++this.loadToken
       const hasBlock = Boolean(this.block)
       if (hasBlock) this.refreshing = true
       else this.loading = true
@@ -376,20 +427,38 @@ export default {
           block = await this.$hive.api.getBlockAsync(loadedNumber)
         }
         if (!block) throw new Error('Block not found')
+        if (token !== this.loadToken) return
 
-        const virtualOps = await this.$hive.api.getOpsInBlockAsync(loadedNumber, true).catch(() => [])
+        // Render the block as soon as the block read lands. Virtual operations
+        // are a separate call and only feed the "Virtual ops" counter, so they
+        // must never delay the first paint.
         this.block = block
         this.blockNum = loadedNumber
-        this.virtualOps = Array.isArray(virtualOps) ? virtualOps : []
+        this.summary = null
+        this.virtualOps = []
         this.staleAt = null
+        this.cachedAt = null
         if (loadedNumber >= (this.headBlock || 0)) this.followHead = true
+        this.loading = false
+        this.refreshing = false
         this.saveSnapshot()
+
+        this.$hive.api.getOpsInBlockAsync(loadedNumber, true)
+          .then(virtualOps => {
+            if (token !== this.loadToken) return
+            this.virtualOps = Array.isArray(virtualOps) ? virtualOps : []
+            this.saveSnapshot()
+          })
+          .catch(() => {})
       } catch (error) {
+        if (token !== this.loadToken) return
         console.error('Failed to load home block', error)
         if (!this.restoreSnapshot(number)) this.error = 'Could not load block ' + number + '.'
       } finally {
-        this.loading = false
-        this.refreshing = false
+        if (token === this.loadToken) {
+          this.loading = false
+          this.refreshing = false
+        }
       }
     },
     goToBlock (number) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import render, { threeSpeakEmbedUrl } from '../../src/components/render.vue'
+import render, { bodyImageUrls, threeSpeakEmbedUrl } from '../../src/components/render.vue'
 
 describe('threeSpeakEmbedUrl', () => {
   it('converts legacy and player watch URLs to the Snapie embed', () => {
@@ -28,5 +28,16 @@ describe('threeSpeakEmbedUrl', () => {
     )
     expect(html).toContain('<img fetchpriority="high" loading="eager" src="a.png">')
     expect(html).toContain('<img src="b.png" loading="lazy">')
+  })
+
+  it('extracts body images in reading order, de-duplicated', () => {
+    expect(bodyImageUrls(
+      '![a](https://images.example/a.png) text <img src="https://images.example/b.png"> ' +
+      'https://images.example/a.png https://images.example/not-an-image'
+    )).toEqual(['https://images.example/a.png', 'https://images.example/b.png'])
+  })
+
+  it('ignores non-http image URLs', () => {
+    expect(bodyImageUrls('![a](javascript:alert(1)) <img src="data:image/png;base64,x">')).toEqual([])
   })
 })

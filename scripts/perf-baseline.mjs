@@ -27,6 +27,11 @@ const args = process.argv.slice(2)
 const CHECK = args.includes('--check')
 const labelArg = args.find(arg => arg.startsWith('--label='))
 const LABEL = labelArg ? labelArg.slice('--label='.length) : (CHECK ? 'ci-check' : 'local')
+const API_LATENCY_MS = Number(process.env.PERF_API_LATENCY_MS) || 0
+const IMAGE_LATENCY_MS = Number(process.env.PERF_IMAGE_LATENCY_MS) || 0
+const SETTLE_MS = Number(process.env.PERF_SETTLE_MS) || 4500
+const API_HOSTS = /api\.hive\.blog|api\.openhive\.network|rpc\.mahdiyari\.info|herpc\.dtools\.dev|api\.hive-engine\.com|api\.coingecko\.com|history\.hive-engine\.com|vsc\.techcoderx\.com|indexer\.magi\.milohpr\.com/i
+const IMAGE_HOSTS = /images\.hive\.blog|files\.peakd\.com|images\.ecency\.com|i\.ecency\.com|cdn\.steemitimages\.com|steemitimages\.com|images\.3speak\.tv/i
 const POST = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
 const ROUTES = ['/', '/browse', '/b/1', POST, '/@ausbitbank/wallet', '/market', '/compose', '/search?q=hive']
 const ROUTE_NAMES = {
@@ -111,12 +116,37 @@ async function measureRoute (browser, route, initialAssets) {
     serviceWorkers: 'block'
   })
   const page = await context.newPage()
+  if (API_LATENCY_MS > 0) {
+    await page.route(API_HOSTS, async route => {
+      await new Promise(resolve => setTimeout(resolve, API_LATENCY_MS))
+      route.continue()
+    })
+  }
+  if (IMAGE_LATENCY_MS > 0) {
+    await page.route(IMAGE_HOSTS, async route => {
+      await new Promise(resolve => setTimeout(resolve, IMAGE_LATENCY_MS))
+      route.continue()
+    })
+  }
   await page.addInitScript(() => {
     window.__perfLcp = 0
     window.__perfCls = 0
+    window.__perfLcpElement = null
+    const describe = element => {
+      if (!element) return null
+      return {
+        tag: element.tagName || '',
+        className: String(element.className || '').slice(0, 100),
+        id: element.id || '',
+        src: element.currentSrc || element.src || '',
+        text: String(element.textContent || '').trim().slice(0, 100)
+      }
+    }
     new PerformanceObserver(list => {
       for (const entry of list.getEntries()) {
-        window.__perfLcp = Math.max(window.__perfLcp, entry.startTime)
+        if (entry.startTime < window.__perfLcp) continue
+        window.__perfLcp = entry.startTime
+        window.__perfLcpElement = describe(entry.element)
       }
     }).observe({ type: 'largest-contentful-paint', buffered: true })
     new PerformanceObserver(list => {
@@ -129,7 +159,7 @@ async function measureRoute (browser, route, initialAssets) {
   try {
     await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 60000 })
     await page.waitForFunction(() => Boolean(document.querySelector('#q-app')?.__vue_app__), null, { timeout: 30000 }).catch(() => {})
-    await page.waitForTimeout(4500)
+    await page.waitForTimeout(SETTLE_MS)
 
     const data = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] || {}
@@ -160,6 +190,7 @@ async function measureRoute (browser, route, initialAssets) {
           loadMs: Math.round(nav.loadEventEnd || 0),
           fcpMs: Math.round(fcp?.startTime || 0),
           lcpMs: Math.round(window.__perfLcp || 0),
+          lcpElement: window.__perfLcpElement,
           cls: Math.round((window.__perfCls || 0) * 1000) / 1000
         },
         bytes: {
@@ -265,6 +296,27 @@ async function writeDashboard (result, budgets) {
     String(route.requests)
   ])
   const budgetRows = []
+  const lcpElementRows = result.routes.map(route => {
+    const element = route.lcpElement
+    const detail = element
+      ? [element.tag, element.className, element.src].filter(Boolean).join(' ').slice(0, 120)
+      : '—'
+    return [route.name, formatNumber(route.lcpMs) + ' ms', '`' + detail.replaceAll('`', '') + '`']
+  })
+  const scenario = result.scenario || {}
+  const scenarioText = (scenario.apiLatencyMs || scenario.imageLatencyMs)
+    ? 'Simulated latency: chain/API **+' + (scenario.apiLatencyMs || 0) + ' ms**, images **+' +
+      (scenario.imageLatencyMs || 0) + ' ms**.'
+    : 'No simulated network latency.'
+  let snapshotText
+  try {
+    const body = await readFile(resolve(DIST, 'home-snapshot.json'))
+    snapshotText = 'The home shell also carries the pre-warmed snapshot: **' +
+      kb(brotliCompressSync(body).length) + ' KB Brotli** (' +
+      kb(body.length) + ' KB JSON). It is HTML transfer, not JS.'
+  } catch {
+    snapshotText = 'No pre-warmed home snapshot was published for this build.'
+  }
   if (budgets) {
     for (const route of result.routes) {
       budgetRows.push([
@@ -300,15 +352,30 @@ and encoded transfer sizes for the main explorer routes plus the compose and
 search pages. It is intentionally repeatable locally and in CI rather than tied
 to a hosted Lighthouse account.
 
+${scenarioText} Set \`PERF_API_LATENCY_MS\` / \`PERF_IMAGE_LATENCY_MS\` to model
+slow public nodes and media hosts, and \`PERF_SETTLE_MS\` to extend the
+measurement window.
+
 ## Latest run
 
 | Route | FCP | LCP | CLS | Initial JS | Route JS | CSS | Total transfer | Requests |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 ${rows.map(row => '| ' + row.join(' | ') + ' |').join('\n')}
 
+## LCP element
+
+The gap between FCP and LCP is almost always the first chain read or the first
+post image, not the JS shell. This table names the element that actually won.
+
+| Route | LCP | Element |
+| --- | ---: | --- |
+${lcpElementRows.map(row => '| ' + row.join(' | ') + ' |').join('\n')}
+
 Initial bundle snapshot: **${formatNumber(result.bundle.initial.gzipKb)} KB gzip**
 / **${formatNumber(result.bundle.initial.brotliKb)} KB Brotli** (entry shell and
 modulepreloads).
+
+${snapshotText}
 
 ## Budgets
 
@@ -382,6 +449,11 @@ async function main () {
       generatedAt: new Date().toISOString(),
       commit: commit(),
       label: LABEL,
+      scenario: {
+        apiLatencyMs: API_LATENCY_MS,
+        imageLatencyMs: IMAGE_LATENCY_MS,
+        settleMs: SETTLE_MS
+      },
       routes,
       bundle
     }
