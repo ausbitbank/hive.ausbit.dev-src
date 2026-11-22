@@ -96,10 +96,9 @@ gallery, price alerts.
 - `bunx playwright test e2e/a11y.spec.js -g "axe clean: /$"` — home axe clean
   at 1440px and 390px.
 - Targeted ESLint on every changed/new file — clean.
+- `bun run lint` — clean after the concurrent theme work fixed the earlier
+  `badges.js` warning.
 - `node scripts/check-theme-tokens.mjs` — clean.
-- Full `bun run lint` is currently blocked by an unrelated untracked
-  `src/services/badges.js` (`no-useless-assignment`); that file is not part of
-  this workstream.
 
 ## Notes
 
