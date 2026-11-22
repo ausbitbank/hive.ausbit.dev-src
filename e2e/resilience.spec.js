@@ -11,6 +11,14 @@ test.describe('network and data resilience', () => {
     await waitForApp(page)
     await expect(page.locator('.home-block__witness')).toBeVisible({ timeout: 40000 })
 
+    // The home shell paints from the build-time snapshot before the first live
+    // read, so failover happens after the card is already visible. Wait for the
+    // dead primary to be tried instead of sampling telemetry immediately.
+    await expect.poll(async () => {
+      const snapshot = await page.evaluate(() => window.__hiveTelemetry?.snapshot())
+      return snapshot?.attempts?.failovers || 0
+    }, { timeout: 40000 }).toBeGreaterThan(0)
+
     const telemetry = await page.evaluate(() => window.__hiveTelemetry?.snapshot())
     expect(telemetry.attempts.failovers).toBeGreaterThan(0)
     expect(telemetry.nodes.some(node => node.successes > 0 && node.key !== 'https://api.hive.blog')).toBe(true)
