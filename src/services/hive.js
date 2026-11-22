@@ -235,14 +235,18 @@ const api = {
   getCurrentMedianHistoryPriceAsync () {
     return rpcRequest('condenser_api.get_current_median_history_price', [])
   },
+  // The condenser wrappers take positional args and return the legacy string
+  // asset shape (`"18.173 HIVE"`). Calling `market_history_api` directly needs
+  // object params and returns NAI amounts, which the market normalisers do not
+  // parse.
   getTickerAsync () {
-    return rpcRequest('market_history_api.get_ticker', [])
+    return rpcRequest('condenser_api.get_ticker', [])
   },
   getOrderBookAsync (limit = 200) {
-    return rpcRequest('market_history_api.get_order_book', [limit])
+    return rpcRequest('condenser_api.get_order_book', [limit])
   },
   getRecentTradesAsync (limit = 100) {
-    return rpcRequest('market_history_api.get_recent_trades', [limit])
+    return rpcRequest('condenser_api.get_recent_trades', [limit])
   },
   getOpenOrdersAsync (owner) {
     return rpcRequest('condenser_api.get_open_orders', [owner])

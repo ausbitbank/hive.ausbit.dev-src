@@ -41,7 +41,13 @@ describe('hive.api read facade', () => {
     expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_account_history', ['alice', -1, 20])
 
     await hive.api.getTickerAsync()
-    expect(rpcRequest).toHaveBeenLastCalledWith('market_history_api.get_ticker', [])
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_ticker', [])
+
+    await hive.api.getOrderBookAsync(200)
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_order_book', [200])
+
+    await hive.api.getRecentTradesAsync(100)
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_recent_trades', [100])
 
     await hive.api.getWithdrawRoutesAsync('alice', 1)
     expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_withdraw_routes', ['alice', 1])
