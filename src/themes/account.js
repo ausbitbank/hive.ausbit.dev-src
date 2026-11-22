@@ -91,15 +91,19 @@ export function removeThemeMetadata (raw) {
 }
 
 /**
- * Build the account_update2 operation. `account_update2` can be signed with the
- * posting key when the owner/active/posting authorities are omitted. The legacy
- * `json_metadata` field is sent back verbatim because hive-tx serialises it as a
- * required string; an empty string would erase it.
+ * Build the account_update2 operation.
+ *
+ * `account_update2` lets the posting authority update `posting_json_metadata`
+ * when owner/active/posting authorities and the memo key are omitted. The
+ * legacy `json_metadata` field must be an empty string: in Hive, empty means
+ * "leave this field unchanged" and a non-empty value would escalate the
+ * operation to active authority. hive-tx serialises the field as a required
+ * string, so an empty string is both safe and necessary here.
  */
 export function buildThemeOperation (account, mergedPostingMetadata) {
   return ['account_update2', {
     account: account.name,
-    json_metadata: account.json_metadata || '',
+    json_metadata: '',
     posting_json_metadata: mergedPostingMetadata,
     extensions: []
   }]

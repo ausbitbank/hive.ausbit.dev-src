@@ -223,18 +223,22 @@ describe('account theme metadata', () => {
     expect(mergeThemeMetadata('{', profileTheme()).ok).toBe(false)
   })
 
-  it('builds an account_update2 that leaves legacy metadata intact', () => {
+  it('builds a posting-only account_update2 with empty legacy metadata', () => {
     const account = { name: 'alice', json_metadata: '{"legacy":true}' }
     const operation = buildThemeOperation(account, '{"profile":{}}')
     expect(operation[0]).toBe('account_update2')
     expect(operation[1]).toMatchObject({
       account: 'alice',
-      json_metadata: '{"legacy":true}',
+      // Empty means "leave unchanged"; sending the old value back would
+      // escalate the operation to active authority.
+      json_metadata: '',
       posting_json_metadata: '{"profile":{}}'
     })
     expect(operation[1].extensions).toEqual([])
     expect(operation[1].owner).toBeUndefined()
+    expect(operation[1].active).toBeUndefined()
     expect(operation[1].posting).toBeUndefined()
+    expect(operation[1].memo_key).toBeUndefined()
   })
 
   it('returns a safe empty result for a missing account', () => {

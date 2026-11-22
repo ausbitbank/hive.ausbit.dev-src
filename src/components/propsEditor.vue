@@ -81,7 +81,9 @@ export default {
   methods: {
     submitChanges () {
       if (this.type === 'postingMeta') {
-        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: this.account.json_metadata || '', posting_json_metadata: this.newjson, extensions: [] }]])
+        // Empty metadata means "leave unchanged" in account_update/account_update2.
+        // Sending the current value back would require active authority.
+        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson, extensions: [] }]])
         this.$emit('editedProps')
       }
       if (this.type === 'jsonMeta') {
