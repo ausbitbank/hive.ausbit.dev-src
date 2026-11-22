@@ -328,11 +328,11 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
 }
 
 /** Posting-key queue item for a top-level post (new or edited). */
-export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, commentOptions = true, previousMetadata = null } = {}) {
+export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null } = {}) {
   return [
     String(username || '').trim().toLowerCase(),
     'posting',
-    buildPostOperation({ username, draft, permlink, now, parentPermlink, commentOptions, previousMetadata })
+    buildPostOperation({ username, draft, permlink, now, parentPermlink, parentAuthor, commentOptions, previousMetadata })
   ]
 }
 

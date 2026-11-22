@@ -200,6 +200,41 @@ describe('post construction', () => {
     expect(operation[1]._edit).toBe(true)
   })
 
+  it('forwards the original parent through the queue item for a comment edit', () => {
+    const commentDraft = {
+      title: '',
+      body: 'edited reply',
+      tags: [],
+      community: '',
+      owner: 'alice',
+      editing: {
+        author: 'alice',
+        permlink: 're-parent',
+        parentAuthor: 'bob',
+        parentPermlink: 'parent-post',
+        previousMetadata: {}
+      }
+    }
+    const item = postQueueItem({
+      username: 'alice',
+      draft: commentDraft,
+      permlink: 're-parent',
+      parentAuthor: 'bob',
+      parentPermlink: 'parent-post',
+      commentOptions: false,
+      previousMetadata: {}
+    })
+    // The composer passes the original parent in; the queue item must forward
+    // it or Hive rejects the edit with "The parent of a comment cannot change."
+    expect(item[2][1]).toMatchObject({
+      parent_author: 'bob',
+      parent_permlink: 'parent-post',
+      author: 'alice',
+      permlink: 're-parent',
+      _edit: true
+    })
+  })
+
   it('does not require a title, tags or rewards when editing a comment', () => {
     const commentDraft = {
       title: '',
