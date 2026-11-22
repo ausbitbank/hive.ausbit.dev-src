@@ -277,27 +277,33 @@ import WidgetNetworkStats from 'components/dashboard/WidgetNetworkStats.vue'
 import WidgetNotifications from 'components/dashboard/WidgetNotifications.vue'
 import WidgetOperations from 'components/dashboard/WidgetOperations.vue'
 import WidgetWallet from 'components/dashboard/WidgetWallet.vue'
-import WidgetAccountVitals from 'components/dashboard/WidgetAccountVitals.vue'
-import WidgetWalletActions from 'components/dashboard/WidgetWalletActions.vue'
-import WidgetCreatorStats from 'components/dashboard/WidgetCreatorStats.vue'
-import WidgetGovernanceWatch from 'components/dashboard/WidgetGovernanceWatch.vue'
-import WidgetHbdPeg from 'components/dashboard/WidgetHbdPeg.vue'
-import WidgetCommunityPulse from 'components/dashboard/WidgetCommunityPulse.vue'
-import WidgetDelegationSnapshot from 'components/dashboard/WidgetDelegationSnapshot.vue'
-import WidgetWitnessRound from 'components/dashboard/WidgetWitnessRound.vue'
-import WidgetNodeHealth from 'components/dashboard/WidgetNodeHealth.vue'
-import WidgetHiveEngineWatchlist from 'components/dashboard/WidgetHiveEngineWatchlist.vue'
-import WidgetTrendingTags from 'components/dashboard/WidgetTrendingTags.vue'
-import WidgetDraftsQueue from 'components/dashboard/WidgetDraftsQueue.vue'
-import WidgetCommunitySpotlight from 'components/dashboard/WidgetCommunitySpotlight.vue'
-import WidgetMagiNetwork from 'components/dashboard/WidgetMagiNetwork.vue'
-import WidgetAccountWatchlist from 'components/dashboard/WidgetAccountWatchlist.vue'
-import WidgetPriceAlert from 'components/dashboard/WidgetPriceAlert.vue'
-import WidgetFollowerGrowth from 'components/dashboard/WidgetFollowerGrowth.vue'
 import HomeBlockCard from 'components/HomeBlockCard.vue'
 import HomeMarketCard from 'components/HomeMarketCard.vue'
 import HomeWitnessCard from 'components/HomeWitnessCard.vue'
 import HomeTrendingPosts from 'components/HomeTrendingPosts.vue'
+import { defineAsyncComponent } from 'vue'
+
+// Widgets outside the built-in/default layout are split into their own chunks.
+// The default home therefore stays under the route budget and a custom
+// dashboard only downloads the cards it actually uses.
+const WidgetAccountVitals = defineAsyncComponent(() => import('components/dashboard/WidgetAccountVitals.vue'))
+const WidgetWalletActions = defineAsyncComponent(() => import('components/dashboard/WidgetWalletActions.vue'))
+const WidgetCreatorStats = defineAsyncComponent(() => import('components/dashboard/WidgetCreatorStats.vue'))
+const WidgetGovernanceWatch = defineAsyncComponent(() => import('components/dashboard/WidgetGovernanceWatch.vue'))
+const WidgetHbdPeg = defineAsyncComponent(() => import('components/dashboard/WidgetHbdPeg.vue'))
+const WidgetCommunityPulse = defineAsyncComponent(() => import('components/dashboard/WidgetCommunityPulse.vue'))
+const WidgetDelegationSnapshot = defineAsyncComponent(() => import('components/dashboard/WidgetDelegationSnapshot.vue'))
+const WidgetWitnessRound = defineAsyncComponent(() => import('components/dashboard/WidgetWitnessRound.vue'))
+const WidgetNodeHealth = defineAsyncComponent(() => import('components/dashboard/WidgetNodeHealth.vue'))
+const WidgetHiveEngineWatchlist = defineAsyncComponent(() => import('components/dashboard/WidgetHiveEngineWatchlist.vue'))
+const WidgetTrendingTags = defineAsyncComponent(() => import('components/dashboard/WidgetTrendingTags.vue'))
+const WidgetDraftsQueue = defineAsyncComponent(() => import('components/dashboard/WidgetDraftsQueue.vue'))
+const WidgetCommunitySpotlight = defineAsyncComponent(() => import('components/dashboard/WidgetCommunitySpotlight.vue'))
+const WidgetMagiNetwork = defineAsyncComponent(() => import('components/dashboard/WidgetMagiNetwork.vue'))
+const WidgetAccountWatchlist = defineAsyncComponent(() => import('components/dashboard/WidgetAccountWatchlist.vue'))
+const WidgetPriceAlert = defineAsyncComponent(() => import('components/dashboard/WidgetPriceAlert.vue'))
+const WidgetFollowerGrowth = defineAsyncComponent(() => import('components/dashboard/WidgetFollowerGrowth.vue'))
+
 import { GRID_COLUMNS, WIDGET_WIDTHS, packRows, widgetMeta } from 'src/services/dashboardLayout'
 import {
   dropTargetFor,

@@ -24,7 +24,9 @@ and the research document. This record tracks implementation and verification.
   grid below 800px so cards stack instead of overlapping at desktop widths.
 - Lazy, visibility-aware widget mounting (`DashboardWidgetViewport`) for
   registry entries with `defer: true`; the grid keeps the shell and header
-  mounted and defers only the widget body.
+  mounted and defers only the widget body. Widgets outside the default layout
+  are also async chunks, so a default home never downloads the expanded
+  catalogue.
 - Settings kinds for `list`, `accounts`, `window` and `amount`, with
   sanitisation and unit tests.
 - Deep-copied default settings so array defaults (the governance watchlist) are
@@ -114,6 +116,9 @@ Deferred deliberately:
 - `bunx playwright test e2e/dashboard.spec.js` — 28 passed (Chromium).
 - `bunx playwright test e2e/a11y.spec.js -g "custom dashboard templates"` —
   axe clean at 1440px and 390px for the Everyday and Creator templates.
+- `bun run perf:check` — all route budgets passed. The default home now loads
+  409.6 KB total (down from 459.1 KB before the widget split) and stays under
+  the home JS/CSS budgets by keeping non-default widgets in async chunks.
 - `bunx playwright test e2e/a11y.spec.js -g "axe clean: /$"` — home axe clean
   at 1440px and 390px.
 - Targeted ESLint on every changed/new file — clean.
