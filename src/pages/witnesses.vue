@@ -200,22 +200,22 @@
   padding: 0.28rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   text-decoration: none;
 }
 
 .witness-jump a:hover,
 .witness-jump a:focus-visible {
-  color: #e4eaed;
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.08);
+  color: var(--c-text);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .witness-list-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.018);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .witness-list {
@@ -232,7 +232,7 @@
   flex-wrap: wrap;
   padding: 0.6rem 0.9rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
@@ -261,7 +261,7 @@
 
 .witness-proxy-dialog__intro {
   margin: 0.4rem 0 0.8rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.82rem;
   line-height: 1.5;
 }
@@ -271,7 +271,7 @@
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.65rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 </style>

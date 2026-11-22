@@ -21,7 +21,7 @@
       </div>
 
       <template v-else-if="post">
-        <article class="sfp-post home-card" :style="{ '--sfp-accent': format ? format.color : '#4fc3f7' }">
+        <article class="sfp-post home-card" :style="{ '--sfp-accent': format ? format.color : 'var(--c-link)' }">
           <header class="sfp-post__head">
             <router-link :to="{ name: 'account', params: { username: post.author } }" class="sfp-author">
               <q-avatar size="40px" class="sfp-avatar">{{ initial }}</q-avatar>
@@ -327,7 +327,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
@@ -349,18 +349,18 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .sfp-author:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: none;
 }
 
 .sfp-avatar {
-  background: rgba(255, 255, 255, 0.08);
-  color: #cfd8dc;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-soft);
   font-weight: 700;
 }
 
@@ -371,13 +371,13 @@ export default {
 
 .sfp-author__time {
   display: block;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
 }
 
 .sfp-post__body {
   margin-top: var(--space-3);
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   line-height: var(--line-body);
   overflow-wrap: anywhere;
@@ -402,15 +402,15 @@ export default {
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.78rem;
   cursor: pointer;
 }
 
 .sfp-action:hover {
-  background: rgba(79, 195, 247, 0.1);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-text);
 }
 
 .sfp-action--static {
@@ -419,7 +419,7 @@ export default {
 
 .sfp-action--static:hover {
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .sfp-flex {
@@ -428,7 +428,7 @@ export default {
 
 .sfp-container-note {
   margin: var(--space-2) 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
 }
 
@@ -441,7 +441,7 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.85rem;
 }
 
@@ -451,16 +451,16 @@ export default {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.25);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-shadow) 25%, transparent);
+  color: var(--c-text);
   font: inherit;
   font-size: 0.92rem;
   resize: vertical;
 }
 
 .sfp-reply__input:focus-visible {
-  border-color: #4fc3f7;
-  outline: 2px solid rgba(79, 195, 247, 0.35);
+  border-color: var(--c-link);
+  outline: 2px solid color-mix(in srgb, var(--c-link) 35%, transparent);
 }
 
 .sfp-reply__foot {
@@ -472,14 +472,14 @@ export default {
 }
 
 .sfp-reply__count {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 .sfp-replies__title {
   margin: var(--space-2) 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -506,7 +506,7 @@ export default {
 }
 
 .sfp-reply-author {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 700;
   text-decoration: none;
 }
@@ -515,13 +515,13 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 
 .sfp-reply-item__body {
   margin-top: 0.35rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.9rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
@@ -533,7 +533,7 @@ export default {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-5);
-  color: #78909c;
+  color: var(--c-text-faint);
   text-align: center;
 }
 

@@ -46,7 +46,7 @@
           <q-item-section>
             <q-item-label>
               <router-link :to="blockLink(block.number)" class="text-primary text-bold">Block #{{ tidyNumber(block.number) }}</router-link>
-              <span class="text-grey text-caption q-ml-sm">{{ blockAge(block.timestamp) }}</span>
+              <span class="text-faint text-caption q-ml-sm">{{ blockAge(block.timestamp) }}</span>
             </q-item-label>
             <q-item-label caption>
               <span :title="block.timestamp">{{ blockTime(block.timestamp) }}</span>
@@ -74,11 +74,11 @@
         </q-item>
       </div>
 
-      <q-card-section v-else-if="!error" class="text-center text-grey">
+      <q-card-section v-else-if="!error" class="text-center text-faint">
         No blocks to show.
       </q-card-section>
 
-      <q-card-actions v-if="blocks.length > 0" class="text-caption text-grey">
+      <q-card-actions v-if="blocks.length > 0" class="text-caption text-faint">
         {{ rangeLabel }} · {{ autoRefresh ? 'auto-refresh every 8s' : 'auto-refresh paused' }}
       </q-card-actions>
     </q-card>

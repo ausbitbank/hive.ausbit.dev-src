@@ -80,7 +80,7 @@
 <style scoped>
 .witness-filters {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .witness-filters__body {
@@ -103,7 +103,7 @@
 
 .witness-filters__count {
   padding: 0 0.9rem 0.7rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 

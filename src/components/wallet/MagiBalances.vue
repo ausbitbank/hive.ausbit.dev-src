@@ -162,11 +162,11 @@
 .wallet-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .wallet-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -184,7 +184,7 @@
 
 .wallet-card__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.25;
@@ -200,15 +200,15 @@
 .wallet-magi__intro {
   max-width: 78ch;
   margin: 0.55rem 1rem 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 .wallet-magi__banner {
   margin: 0.65rem 1rem;
-  background: rgba(239, 83, 80, 0.12);
-  color: #ef9a9a;
+  background: color-mix(in srgb, var(--c-negative) 12%, transparent);
+  color: var(--c-negative);
 }
 
 .wallet-magi__state {
@@ -217,7 +217,7 @@
   justify-content: center;
   gap: 0.45rem;
   padding: 1.2rem 1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -230,15 +230,15 @@
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .wallet-magi__summary strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0;
@@ -261,18 +261,18 @@
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .wallet-magi__cell span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .wallet-magi__cell strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -280,7 +280,7 @@
 }
 
 .wallet-magi__cell small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
 }
@@ -296,14 +296,14 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.55rem 0 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .wallet-magi__subhead small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0;
   text-transform: none;
@@ -323,16 +323,16 @@
 }
 
 .wallet-magi__delegation-result {
-  border: 1px solid rgba(129, 199, 132, 0.35);
-  background: rgba(129, 199, 132, 0.08);
-  color: #a5d6a7;
+  border: 1px solid color-mix(in srgb, var(--c-positive) 35%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 8%, transparent);
+  color: var(--c-positive);
 }
 
 .wallet-magi__delegation-error,
 .wallet-magi__tokens-error {
-  border: 1px solid rgba(255, 183, 77, 0.35);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .wallet-magi__tokens-error {
@@ -363,7 +363,7 @@
 .wallet-magi-token__avatar {
   flex: none;
   border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
   font-size: 0.62rem;
   font-weight: 600;
 }
@@ -377,7 +377,7 @@
 
 .wallet-magi-token__symbol {
   overflow: hidden;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.84rem;
   font-weight: 600;
   text-decoration: none;
@@ -386,25 +386,25 @@
 }
 
 .wallet-magi-token__symbol:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .wallet-magi-token__contract {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-family: monospace;
   font-size: 0.64rem;
   text-decoration: none;
 }
 
 .wallet-magi-token__contract:hover {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: underline;
 }
 
 .wallet-magi-token__amount {
   flex: none;
-  color: #a5d6a7;
+  color: var(--c-positive);
   font-size: 0.86rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -437,18 +437,18 @@
   height: 28px;
   margin-top: 0.05rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text-subtle);
 }
 
 .wallet-magi-op--in .wallet-magi-op__icon {
-  background: rgba(76, 175, 80, 0.12);
-  color: #81c784;
+  background: color-mix(in srgb, var(--c-positive) 12%, transparent);
+  color: var(--c-positive);
 }
 
 .wallet-magi-op--out .wallet-magi-op__icon {
-  background: rgba(239, 83, 80, 0.1);
-  color: #e57373;
+  background: color-mix(in srgb, var(--c-negative) 10%, transparent);
+  color: var(--c-negative);
 }
 
 .wallet-magi-op__main {
@@ -457,14 +457,14 @@
 }
 
 .wallet-magi-op__title {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.84rem;
   line-height: 1.35;
 }
 
 .wallet-magi-op__meta {
   margin-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -477,11 +477,11 @@
 }
 
 .wallet-magi-op__amount.is-in {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 .wallet-magi-op__amount.is-out {
-  color: #ef9a9a;
+  color: var(--c-negative);
 }
 
 @media (max-width: 599px) {

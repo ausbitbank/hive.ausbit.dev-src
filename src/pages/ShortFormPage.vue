@@ -38,7 +38,7 @@ export default {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-6);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   text-align: center;
 }
 </style>

@@ -240,11 +240,11 @@ export default {
 .wallet-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .wallet-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -262,7 +262,7 @@ export default {
 
 .wallet-card__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.25;
@@ -278,7 +278,7 @@ export default {
 .wallet-lightning__intro {
   max-width: 78ch;
   margin: 0.55rem 1rem 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
@@ -309,14 +309,14 @@ export default {
   padding: 0.15rem 0.3rem 0.15rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
 .wallet-lightning__address:hover,
 .wallet-lightning__address.is-active {
-  border-color: rgba(79, 195, 247, 0.35);
-  background: rgba(79, 195, 247, 0.05);
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  background: color-mix(in srgb, var(--c-link) 5%, transparent);
 }
 
 .wallet-lightning__address-main {
@@ -336,7 +336,7 @@ export default {
 }
 
 .wallet-lightning__address-label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.6rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -345,7 +345,7 @@ export default {
 .wallet-lightning__address-main code {
   max-width: 100%;
   overflow: hidden;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-family: monospace;
   font-size: 0.78rem;
   text-overflow: ellipsis;
@@ -353,7 +353,7 @@ export default {
 }
 
 .wallet-lightning__address.is-active .wallet-lightning__address-main code {
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .wallet-lightning__qr {
@@ -383,13 +383,13 @@ export default {
   height: 132px;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
 }
 
 .wallet-lightning__qr figcaption {
   max-width: 132px;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   line-height: 1.3;
   text-align: center;
@@ -407,13 +407,13 @@ export default {
 
 .wallet-lightning__note {
   max-width: 78ch;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.4;
 }
 
 .wallet-lightning__note a {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .wallet-lightning__activity {

@@ -330,7 +330,7 @@ export default {
 .delegations-intro {
   margin: 0.35rem 0 0;
   max-width: 72ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.86rem;
 }
 
@@ -346,11 +346,11 @@ export default {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-4);
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .delegations-state--error {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .delegations-loading {
@@ -374,18 +374,18 @@ export default {
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .delegation-stat__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .delegation-stat__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.2;
@@ -393,11 +393,11 @@ export default {
 }
 
 .delegation-stat__value--negative {
-  color: #ffab91;
+  color: var(--c-warning-soft);
 }
 
 .delegation-stat small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.3;
 }
@@ -414,7 +414,7 @@ export default {
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .delegations-card__head {
@@ -426,7 +426,7 @@ export default {
 }
 
 .delegations-card__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -434,7 +434,7 @@ export default {
 
 .delegations-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -444,7 +444,7 @@ export default {
   align-items: center;
   gap: 0.45rem;
   padding: 0.5rem 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.4;
 }
@@ -469,7 +469,7 @@ export default {
 
 .delegations-table thead th {
   border-top: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -481,7 +481,7 @@ export default {
 }
 
 .delegations-table a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -497,19 +497,19 @@ export default {
 
 .delegations-table__vests {
   display: block;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
 }
 
 .delegations-table__time {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   white-space: nowrap;
 }
 
 .delegations-note {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }
@@ -547,18 +547,18 @@ export default {
 }
 
 .delegations-timeline__badge--in {
-  background: rgba(76, 175, 80, 0.16);
-  color: #a5d6a7;
+  background: color-mix(in srgb, var(--c-positive) 16%, transparent);
+  color: var(--c-positive);
 }
 
 .delegations-timeline__badge--out {
-  background: rgba(255, 183, 77, 0.16);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 16%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .delegations-timeline__badge--return {
-  background: rgba(79, 195, 247, 0.16);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-link) 16%, transparent);
+  color: var(--c-link-hover);
 }
 
 .delegations-timeline__body {
@@ -566,12 +566,12 @@ export default {
 }
 
 .delegations-timeline__title {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.78rem;
 }
 
 .delegations-timeline__title a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -581,17 +581,17 @@ export default {
 
 .delegations-timeline__amount {
   margin-left: 0.35rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-variant-numeric: tabular-nums;
 }
 
 .delegations-timeline__meta {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
 .delegations-timeline__meta a {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 @media (max-width: 599px) {

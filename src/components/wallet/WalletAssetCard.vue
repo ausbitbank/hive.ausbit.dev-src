@@ -62,7 +62,7 @@
   height: 100%;
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .wallet-asset__body {
@@ -83,7 +83,7 @@
 .wallet-asset__icon {
   flex: none;
   border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .wallet-asset__label {
@@ -92,7 +92,7 @@
 
 .wallet-asset__label h3 {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -107,7 +107,7 @@
 
 .wallet-asset__balance {
   margin-top: 0.45rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.18rem;
   font-weight: 600;
   line-height: 1.2;
@@ -116,20 +116,20 @@
 }
 
 .wallet-asset__balance span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   font-weight: 500;
 }
 
 .wallet-asset__usd {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
 }
 
 .wallet-asset__hint {
   margin: 0.25rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.35;
 }

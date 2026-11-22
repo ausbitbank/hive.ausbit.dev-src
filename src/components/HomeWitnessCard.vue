@@ -98,7 +98,7 @@
 .home-witness__rank {
   flex: none;
   width: 1.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   font-weight: 600;
   text-align: center;
@@ -117,7 +117,7 @@
 .home-witness__name {
   display: block;
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.83rem;
   font-weight: 600;
   text-decoration: none;
@@ -126,15 +126,15 @@
 }
 
 .home-witness__name:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-witness__tag {
   margin-left: 0.3rem;
   padding: 0.02rem 0.35rem;
   border-radius: var(--radius-pill);
-  background: rgba(79, 195, 247, 0.16);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-link) 16%, transparent);
+  color: var(--c-link-hover);
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -144,11 +144,11 @@
 
 .home-witness--pinned {
   border-radius: var(--radius-sm);
-  background: rgba(79, 195, 247, 0.06);
+  background: color-mix(in srgb, var(--c-link) 6%, transparent);
 }
 
 .home-witness--mine {
-  box-shadow: inset 2px 0 0 #4fc3f7;
+  box-shadow: inset 2px 0 0 var(--c-link);
 }
 
 .home-witness__meta {
@@ -157,7 +157,7 @@
   flex-wrap: wrap;
   gap: 0.25rem;
   margin-top: 0.05rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
 }
 

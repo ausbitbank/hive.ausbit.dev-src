@@ -226,7 +226,7 @@ export default {
 }
 
 .authorities__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -234,21 +234,21 @@ export default {
 
 .authorities__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.25;
 }
 
 .authorities__edit {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .authorities__section {
   padding: 0.5rem 0.6rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .authorities__section-head {
@@ -260,12 +260,12 @@ export default {
 
 .authorities__section-icon {
   flex: none;
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .authorities__section-title {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.76rem;
   font-weight: 600;
   line-height: 1.3;
@@ -277,7 +277,7 @@ export default {
   padding: 0.02rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -285,7 +285,7 @@ export default {
 
 .authorities__info {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
   cursor: help;
 }
 
@@ -301,7 +301,7 @@ export default {
   gap: 0.35rem;
   min-width: 0;
   padding: 0.22rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid color-mix(in srgb, var(--c-text) 5%, transparent);
 }
 
 .authorities__row:first-child {
@@ -310,7 +310,7 @@ export default {
 
 .authorities__row-icon {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .authorities__key {
@@ -318,10 +318,10 @@ export default {
   min-width: 0;
   overflow: hidden;
   padding: 0.05rem 0.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--c-text) 6%, transparent);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.22);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-shadow) 22%, transparent);
+  color: var(--c-text-muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.68rem;
   text-overflow: ellipsis;
@@ -332,7 +332,7 @@ export default {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.74rem;
   font-weight: 600;
   text-decoration: none;
@@ -347,7 +347,7 @@ export default {
 .authorities__weight {
   flex: none;
   min-width: 1.4rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -359,7 +359,7 @@ export default {
 
 .authorities__none {
   padding: 0.25rem 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   font-style: italic;
 }
@@ -369,16 +369,16 @@ export default {
 }
 
 .authorities__add-btn {
-  border: 1px dashed rgba(79, 195, 247, 0.35);
+  border: 1px dashed color-mix(in srgb, var(--c-link) 35%, transparent);
   border-radius: var(--radius-pill);
   padding: 0 0.6rem;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.7rem;
   font-weight: 600;
 }
 
 .authorities__add-btn:hover {
-  background: rgba(79, 195, 247, 0.08);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .authorities__editor {
@@ -386,7 +386,7 @@ export default {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -396,7 +396,7 @@ export default {
 
 .authorities__editor-title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.88rem;
   font-weight: 600;
 }
@@ -414,10 +414,10 @@ export default {
   gap: 0.35rem;
   margin: 0;
   padding: 0.4rem 0.5rem;
-  border: 1px solid rgba(255, 183, 77, 0.3);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 30%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(255, 183, 77, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.68rem;
   line-height: 1.4;
 }

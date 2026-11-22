@@ -36,7 +36,8 @@
         </aside>
       </div>
 
-      <div v-else class="post-grid">
+      <profile-skin v-else :account="account" :author="author" context="post">
+      <div class="post-grid">
           <article class="post-article">
             <q-card flat bordered class="post-article-card">
               <header class="post-hero">
@@ -276,6 +277,7 @@
           </div>
         </section>
       </div>
+      </profile-skin>
     </div>
 
     <q-dialog v-model="showVotes">
@@ -376,20 +378,20 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .post-hero__eyebrow a {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
 }
 
 .post-hero__dot {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .post-hero__muted {
@@ -411,7 +413,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem 0.5rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.85rem;
 }
 
@@ -423,14 +425,14 @@
 }
 
 .post-author__name {
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .post-author__rep {
   padding: 0 0.35rem;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   font-weight: 500;
 }
@@ -439,7 +441,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #4fc3f7;
+  color: var(--c-link);
   font: inherit;
   cursor: pointer;
   text-decoration: underline;
@@ -465,16 +467,16 @@
   padding: 0 10px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
 }
 
 .post-hero__actions :deep(.post-action-btn.q-btn:hover) {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-text) 22%, transparent);
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-strong);
 }
 
 .post-body-section {
@@ -483,7 +485,7 @@
 
 .post-reply-to {
   margin-bottom: 0.7rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.82rem;
 }
 
@@ -494,15 +496,15 @@
   flex-wrap: wrap;
   margin-bottom: 0.7rem;
   padding: 0.25rem 0.6rem;
-  border: 1px solid rgba(79, 195, 247, 0.28);
+  border: 1px solid color-mix(in srgb, var(--c-link) 28%, transparent);
   border-radius: var(--radius-pill);
-  background: rgba(79, 195, 247, 0.06);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-link) 6%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .post-crosspost a {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   overflow-wrap: anywhere;
 }
 
@@ -521,23 +523,23 @@
   padding: 0.2rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.04);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.4;
 }
 
 .post-badge--ai {
-  border-color: rgba(129, 212, 250, 0.35);
-  background: rgba(79, 195, 247, 0.08);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-link-hover);
   cursor: help;
 }
 
 .post-badge--countdown {
-  border-color: rgba(255, 183, 77, 0.3);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 30%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
   font-variant-numeric: tabular-nums;
 }
 
@@ -552,15 +554,15 @@
 .post-tag {
   padding: 0.12rem 0.5rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  color: #b0bec5 !important;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text-muted) !important;
   font-size: 0.74rem;
   text-decoration: none;
 }
 
 .post-tag:hover {
-  background: rgba(79, 195, 247, 0.16);
-  color: #81d4fa !important;
+  background: color-mix(in srgb, var(--c-link) 16%, transparent);
+  color: var(--c-link-hover) !important;
 }
 
 .post-sidebar {
@@ -581,7 +583,7 @@
   overflow: hidden;
   flex: none;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .post-side-card__head {
@@ -595,7 +597,7 @@
 
 .post-side-card__title {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -604,7 +606,7 @@
 }
 
 .post-side-card__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.3;
   text-decoration: none;
@@ -636,7 +638,7 @@
 .post-author-card__name {
   display: block;
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.25;
@@ -648,7 +650,7 @@
 .post-author-card__display {
   display: block;
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.25;
@@ -657,18 +659,18 @@
 }
 
 .post-author-card__name:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .post-author-card__rep {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   line-height: 1.3;
 }
 
 .post-author-card__rep strong {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-weight: 600;
 }
 
@@ -678,7 +680,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 10px 0 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -699,13 +701,13 @@
   align-items: baseline;
   gap: var(--space-2);
   padding: 7px 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   line-height: 1.35;
 }
 
 .post-fact + .post-fact {
-  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  border-top: 1px solid color-mix(in srgb, var(--c-text) 5%, transparent);
 }
 
 .post-fact dt {
@@ -714,13 +716,13 @@
   gap: 6px;
   min-width: 0;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .post-fact dt .q-icon {
   flex: none;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 15px;
 }
 
@@ -728,7 +730,7 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-variant-numeric: tabular-nums;
   text-align: right;
   text-overflow: ellipsis;
@@ -736,12 +738,12 @@
 }
 
 .post-fact dd a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .post-fact dd a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
@@ -749,7 +751,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #4fc3f7;
+  color: var(--c-link);
   font: inherit;
   font-variant-numeric: inherit;
   cursor: pointer;
@@ -758,7 +760,7 @@
 }
 
 .post-fact__button:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .post-notices {
@@ -773,7 +775,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 3px 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.75rem;
   line-height: 1.35;
 }
@@ -781,7 +783,7 @@
 .post-notice .q-icon {
   flex: none;
   margin-top: 1px;
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .post-side-card__actions {
@@ -794,15 +796,15 @@
   width: 100%;
   min-height: 38px;
   border-radius: var(--radius-pill);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-text) 14%, transparent);
+  color: var(--c-text);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .post-side-card__actions :deep(.q-btn:hover) {
-  border-color: rgba(79, 195, 247, 0.45);
-  background: rgba(79, 195, 247, 0.08);
+  border-color: color-mix(in srgb, var(--c-link) 45%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .post-side-card__actions :deep(.post-side-card__action) {
@@ -821,26 +823,26 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 4px 8px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   line-height: 1.4;
 }
 
 .post-external__label {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .post-external__dot {
-  color: #546e7a;
+  color: var(--c-text-faint);
 }
 
 .post-external a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .post-external a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
@@ -875,7 +877,7 @@
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 @media (max-width: 1023px) {
@@ -895,7 +897,7 @@
 
 .post-state-card__text {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   overflow-wrap: anywhere;
 }
 
@@ -923,7 +925,7 @@
 }
 
 .post-side-card__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.45;
 }
@@ -931,12 +933,12 @@
 .post-delete-card {
   width: 430px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .post-delete-card__text {
   margin: 0.5rem 0 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.82rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
@@ -1028,23 +1030,23 @@
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
   text-decoration: none;
 }
 
 .post-similar__link:hover {
-  border-color: rgba(129, 212, 250, 0.4);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
 }
 
 .post-similar__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .post-similar__meta {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 </style>
@@ -1068,6 +1070,7 @@ import { AI_TOOL_LABELS, readCrossPostMetadata } from 'src/services/publish'
 import { fetchHiveSenseSimilar } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import ProfileSkin from 'components/theme/ProfileSkin.vue'
 
 export default {
   name: 'postView',
@@ -1081,7 +1084,8 @@ export default {
     CommentForm,
     shareButtons,
     reblog,
-    votesDialog
+    votesDialog,
+    ProfileSkin
   },
   data () {
     return {

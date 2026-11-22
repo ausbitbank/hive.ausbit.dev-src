@@ -184,7 +184,7 @@ export default {
 .sfo-head__subtitle {
   max-width: 74ch;
   margin: 0.35rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.9rem;
 }
 
@@ -201,14 +201,14 @@ export default {
   gap: var(--space-2);
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
-  border-top: 3px solid var(--card-accent, #4fc3f7);
+  border-top: 3px solid var(--card-accent, var(--c-link));
   color: inherit;
   text-decoration: none;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
 .sfo-card:hover {
-  border-color: var(--card-accent, #4fc3f7);
+  border-color: var(--card-accent, var(--c-link));
   text-decoration: none;
   transform: translateY(-1px);
 }
@@ -217,7 +217,7 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--card-accent, #4fc3f7);
+  color: var(--card-accent, var(--c-link));
 }
 
 .sfo-card__labels {
@@ -228,22 +228,22 @@ export default {
 }
 
 .sfo-card__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 700;
 }
 
 .sfo-card__app {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 
 .sfo-card__arrow {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .sfo-card__desc {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -255,7 +255,7 @@ export default {
   overflow: hidden;
   min-height: 96px;
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.28);
+  background: color-mix(in srgb, var(--c-shadow) 28%, transparent);
 }
 
 .sfo-card__preview img {
@@ -267,7 +267,7 @@ export default {
 
 .sfo-card__placeholder {
   padding: var(--space-2);
-  color: #607d8b;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   text-align: center;
 }
@@ -277,7 +277,7 @@ export default {
 }
 
 .sfo-liked__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;
@@ -290,7 +290,7 @@ export default {
 }
 
 .sfo-liked__body--empty {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.85rem;
 }
 
@@ -316,7 +316,7 @@ export default {
 }
 
 .sfo-mini:hover {
-  border-color: rgba(79, 195, 247, 0.4);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
   text-decoration: none;
 }
 
@@ -335,7 +335,7 @@ export default {
 }
 
 .sfo-mini__author {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.76rem;
   font-weight: 700;
 }
@@ -343,7 +343,7 @@ export default {
 .sfo-mini__body {
   display: -webkit-box;
   overflow: hidden;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.78rem;
   line-height: 1.4;
   -webkit-box-orient: vertical;

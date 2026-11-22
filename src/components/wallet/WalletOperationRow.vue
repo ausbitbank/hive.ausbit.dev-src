@@ -90,18 +90,18 @@
   height: 28px;
   margin-top: 0.1rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text-subtle);
 }
 
 .wallet-op--in .wallet-op__icon {
-  background: rgba(76, 175, 80, 0.12);
-  color: #81c784;
+  background: color-mix(in srgb, var(--c-positive) 12%, transparent);
+  color: var(--c-positive);
 }
 
 .wallet-op--out .wallet-op__icon {
-  background: rgba(239, 83, 80, 0.1);
-  color: #e57373;
+  background: color-mix(in srgb, var(--c-negative) 10%, transparent);
+  color: var(--c-negative);
 }
 
 .wallet-op__main {
@@ -114,7 +114,7 @@
   align-items: center;
   gap: 0.3rem;
   flex-wrap: wrap;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.84rem;
   line-height: 1.35;
 }
@@ -125,7 +125,7 @@
 
 .wallet-op__account,
 .wallet-op__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -148,7 +148,7 @@
   gap: 0.25rem;
   flex-wrap: wrap;
   margin-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -162,7 +162,7 @@
   gap: 0.3rem;
   flex-wrap: wrap;
   margin-top: 0.25rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -183,29 +183,29 @@
 }
 
 .wallet-op__part {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .wallet-op__part.is-in {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .wallet-op__part.is-out {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .wallet-op__usd {
   display: block;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.65rem;
 }
 
 .wallet-op__json-toggle {
   flex: none;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .wallet-op__json {
@@ -213,7 +213,7 @@
   padding: 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--c-shadow) 20%, transparent);
   overflow-x: auto;
 }
 

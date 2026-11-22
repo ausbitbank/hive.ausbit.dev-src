@@ -106,7 +106,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -132,7 +132,7 @@ export default {
 
 .market-orders__table th {
   padding: 0.22rem 0.45rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -149,23 +149,23 @@ export default {
 .market-orders__table td {
   padding: 0.3rem 0.45rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   text-align: right;
   white-space: nowrap;
 }
 
 .market-orders__table time {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
 .market-orders__buy {
-  color: #81c784;
+  color: var(--c-positive);
   font-weight: 600;
 }
 
 .market-orders__sell {
-  color: #ef9a9a;
+  color: var(--c-negative);
   font-weight: 600;
 }
 

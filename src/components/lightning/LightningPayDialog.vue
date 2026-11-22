@@ -573,7 +573,7 @@ export default {
 .lightning-pay {
   width: 640px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .lightning-pay__head {
@@ -593,12 +593,12 @@ export default {
 }
 
 .lightning-pay__icon {
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
 }
 
 .lightning-eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -606,7 +606,7 @@ export default {
 
 .lightning-pay__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.25;
@@ -621,7 +621,7 @@ export default {
 
 .lightning-pay__lede {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
@@ -630,17 +630,17 @@ export default {
   display: flex;
   align-items: flex-start;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }
 
 .lightning-pay__hint--warn {
   padding: 0.45rem 0.55rem;
-  border: 1px solid rgba(255, 152, 0, 0.3);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 30%, transparent);
   border-radius: 0.4rem;
-  background: rgba(255, 152, 0, 0.05);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 5%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .lightning-pay__actions {
@@ -660,13 +660,13 @@ export default {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   cursor: pointer;
 }
 
 .lightning-pay__back:hover {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .lightning-pay__invoice {
@@ -676,7 +676,7 @@ export default {
   padding: 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.55rem;
-  background: rgba(0, 0, 0, 0.18);
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
 }
 
 .lightning-pay__invoice-top {
@@ -687,14 +687,14 @@ export default {
 }
 
 .lightning-pay__invoice-label {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .lightning-pay__invoice-value {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
@@ -704,34 +704,34 @@ export default {
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
 .lightning-pay__summary-row strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-variant-numeric: tabular-nums;
 }
 
 .lightning-pay__summary-row small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
 }
 
 .lightning-pay__summary-row--total {
   padding-top: 0.3rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .lightning-pay__summary-row--total strong {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .lightning-pay__description {
   display: flex;
   gap: 0.5rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.35;
 }
@@ -743,7 +743,7 @@ export default {
 
 .lightning-pay__description p {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   overflow-wrap: anywhere;
 }
 
@@ -769,19 +769,19 @@ export default {
 }
 
 .lightning-pay__asset-label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .lightning-pay__balance {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
 .lightning-pay__balance strong {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .lightning-pay__error {
@@ -789,10 +789,10 @@ export default {
   align-items: flex-start;
   gap: 0.35rem;
   padding: 0.5rem 0.6rem;
-  border: 1px solid rgba(255, 152, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: 0.45rem;
-  background: rgba(255, 152, 0, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -801,7 +801,7 @@ export default {
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
-  color: #a1887f;
+  color: var(--c-warning);
   font-size: 0.68rem;
   line-height: 1.4;
 }
@@ -811,16 +811,16 @@ export default {
   align-items: flex-start;
   gap: 0.5rem;
   padding: 0.7rem;
-  border: 1px solid rgba(76, 175, 80, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-positive) 40%, transparent);
   border-radius: 0.5rem;
-  background: rgba(76, 175, 80, 0.07);
-  color: #c8e6c9;
+  background: color-mix(in srgb, var(--c-positive) 7%, transparent);
+  color: var(--c-positive-soft);
   font-size: 0.76rem;
 }
 
 .lightning-pay__queued p {
   margin: 0.2rem 0 0;
-  color: #a5d6a7;
+  color: var(--c-positive);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -829,7 +829,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   overflow-wrap: anywhere;
 }

@@ -37,18 +37,18 @@
   flex-wrap: wrap;
   padding: 0.4rem 0.8rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.025);
-  color: #78909c;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
 .account-operation__index {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-family: monospace;
 }
 
 .account-operation__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 

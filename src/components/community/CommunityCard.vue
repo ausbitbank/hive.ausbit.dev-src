@@ -101,12 +101,12 @@ export default {
   padding: 0.9rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .community-card:hover {
-  border-color: rgba(79, 195, 247, 0.32);
+  border-color: color-mix(in srgb, var(--c-link) 32%, transparent);
   box-shadow: var(--shadow-card);
   transform: translateY(-1px);
 }
@@ -118,7 +118,7 @@ export default {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  background: #10161b;
+  background: var(--c-bg-deep);
 }
 
 .community-card__avatar :deep(.q-img) {
@@ -154,12 +154,12 @@ export default {
 }
 
 .community-card__title a {
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .community-card__title a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .community-card__meta {
@@ -172,7 +172,7 @@ export default {
 }
 
 .community-card__handle {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-variant-numeric: tabular-nums;
 }
 
@@ -180,7 +180,7 @@ export default {
   padding: 0 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -188,25 +188,25 @@ export default {
 
 .community-card__role--owner,
 .community-card__role--admin {
-  border-color: rgba(239, 83, 80, 0.4);
-  color: #ef9a9a;
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  color: var(--c-negative);
 }
 
 .community-card__role--mod {
-  border-color: rgba(255, 183, 77, 0.4);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 40%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .community-card__role--member {
-  border-color: rgba(38, 166, 154, 0.4);
-  color: #80cbc4;
+  border-color: color-mix(in srgb, var(--c-positive) 40%, transparent);
+  color: var(--c-info);
 }
 
 .community-card__flag {
   padding: 0 0.35rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 183, 77, 0.12);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 12%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -217,7 +217,7 @@ export default {
   align-items: center;
   gap: 0.1rem;
   flex: none;
-  color: #4fc3f7 !important;
+  color: var(--c-link) !important;
   font-size: 0.75rem;
   font-weight: 600;
   text-decoration: none;
@@ -225,7 +225,7 @@ export default {
 }
 
 .community-card__action:hover {
-  color: #81d4fa !important;
+  color: var(--c-link-hover) !important;
 }
 
 .community-card__about {
@@ -234,13 +234,13 @@ export default {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   line-height: 1.5;
 }
 
 .community-card__about--muted {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-style: italic;
 }
 
@@ -252,7 +252,7 @@ export default {
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .community-card__stat {
@@ -260,7 +260,7 @@ export default {
 }
 
 .community-card__stat dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.6rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -268,7 +268,7 @@ export default {
 
 .community-card__stat dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.84rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -287,7 +287,7 @@ export default {
   padding: 0.22rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5 !important;
+  color: var(--c-text-muted) !important;
   font-size: 0.72rem;
   font-weight: 600;
   text-decoration: none;
@@ -295,14 +295,14 @@ export default {
 }
 
 .community-card__link:hover {
-  border-color: rgba(79, 195, 247, 0.45);
-  background: rgba(79, 195, 247, 0.1);
-  color: #81d4fa !important;
+  border-color: color-mix(in srgb, var(--c-link) 45%, transparent);
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-link-hover) !important;
   text-decoration: none;
 }
 
 .community-card__link--muted {
-  color: #90a4ae !important;
+  color: var(--c-text-subtle) !important;
   font-weight: 500;
 }
 

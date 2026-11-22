@@ -639,11 +639,11 @@ export default {
   justify-content: center;
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .proposal-detail-state--error {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .proposal-detail-state__title {
@@ -668,7 +668,7 @@ export default {
 
 .proposal-detail-header__id {
   font-size: 0.82rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-detail-title {
@@ -691,7 +691,7 @@ export default {
 
 .proposal-detail-person__label {
   font-size: 0.72rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-detail-dates {
@@ -699,7 +699,7 @@ export default {
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
   font-size: 0.84rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .proposal-detail-dates > span {
@@ -723,7 +723,7 @@ export default {
   align-items: center;
   gap: 4px;
   font-size: 0.76rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-detail-login {
@@ -731,7 +731,7 @@ export default {
 }
 
 .proposal-detail-muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -767,7 +767,7 @@ export default {
 }
 
 .proposal-detail-faq__body {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.88rem;
   line-height: 1.55;
 }
@@ -791,7 +791,7 @@ export default {
 
 .proposal-detail-support__target {
   margin-top: var(--space-1);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .proposal-detail-voters__head {

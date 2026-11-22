@@ -106,7 +106,7 @@
 <style scoped>
 .vote-calculator {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .vote-calculator__body {
@@ -125,7 +125,7 @@
 
 .vote-calculator__intro p {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -160,25 +160,25 @@
   min-width: 0;
   padding: 0.55rem 0.65rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .vote-calculator__result > span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .vote-calculator__result strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .vote-calculator__result small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -187,23 +187,23 @@
   align-items: flex-start;
   gap: 0.4rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(255, 183, 77, 0.07);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 7%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .vote-calculator__outcome.is-in {
-  border-color: rgba(76, 175, 80, 0.35);
-  background: rgba(76, 175, 80, 0.08);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 35%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 8%, transparent);
+  color: var(--c-positive);
 }
 
 .vote-calculator__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.45;
 }

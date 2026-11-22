@@ -78,10 +78,10 @@ export default {
   width: 100%;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(79, 195, 247, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-link) 35%, transparent);
   border-radius: var(--radius-pill);
-  background: rgba(79, 195, 247, 0.06);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-link) 6%, transparent);
+  color: var(--c-link-hover);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -92,9 +92,9 @@ export default {
 }
 
 .tip-button__btn.q-btn:hover {
-  border-color: rgba(79, 195, 247, 0.6);
-  background: rgba(79, 195, 247, 0.12);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 60%, transparent);
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-soft);
 }
 
 .tip-button__coins {

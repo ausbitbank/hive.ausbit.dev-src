@@ -451,7 +451,7 @@ export default {
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
   min-width: 0;
 }
 
@@ -459,7 +459,7 @@ export default {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .funding-stat__value {
@@ -472,12 +472,12 @@ export default {
 .funding-stat__value span {
   font-size: 0.8rem;
   font-weight: 400;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .funding-stat__hint {
   font-size: 0.72rem;
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .proposals-controls {
@@ -492,7 +492,7 @@ export default {
   min-height: 1.4em;
   margin: var(--space-2) 0 var(--space-4);
   font-size: 0.8rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   text-align: center;
 }
 
@@ -503,11 +503,11 @@ export default {
   justify-content: center;
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .proposals-state--error {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .proposal-section {
@@ -523,7 +523,7 @@ export default {
 
 .proposal-section__note {
   margin: 0 0 var(--space-3);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.82rem;
 }
 

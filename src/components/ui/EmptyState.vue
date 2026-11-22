@@ -59,7 +59,7 @@ export default {
 
 .ui-empty__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -67,7 +67,7 @@ export default {
 .ui-empty__message {
   max-width: 520px;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   line-height: 1.5;
 }

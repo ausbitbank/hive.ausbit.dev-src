@@ -295,7 +295,7 @@ export default {
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .comments__header {
@@ -324,8 +324,8 @@ export default {
 .comments__count {
   padding: 0.05rem 0.4rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.07);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.78rem;
 }
 
@@ -359,12 +359,12 @@ export default {
 }
 
 .comments__intro-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .comments__intro-text {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .comments__intro-actions {
@@ -376,7 +376,7 @@ export default {
 }
 
 .comments__login-hint {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.85rem;
 }
 
@@ -402,7 +402,7 @@ export default {
   gap: var(--space-2);
   padding: var(--space-5) var(--space-2);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .comments__list {
@@ -420,7 +420,7 @@ export default {
 }
 
 .comments__progress {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
 }
 

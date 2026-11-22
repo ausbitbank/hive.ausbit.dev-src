@@ -459,7 +459,7 @@ export default {
 .lightning-dialog {
   width: 620px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .lightning-dialog__head {
@@ -479,12 +479,12 @@ export default {
 }
 
 .lightning-dialog__icon {
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
 }
 
 .lightning-eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -492,7 +492,7 @@ export default {
 
 .lightning-dialog__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.25;
@@ -507,7 +507,7 @@ export default {
 
 .lightning-dialog__lede {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
@@ -537,7 +537,7 @@ export default {
 }
 
 .lightning-dialog__suffix {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -546,7 +546,7 @@ export default {
   align-items: center;
   gap: 0.25rem;
   flex: 1 1 220px;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.35;
 }
@@ -556,10 +556,10 @@ export default {
   align-items: flex-start;
   gap: 0.35rem;
   padding: 0.5rem 0.6rem;
-  border: 1px solid rgba(255, 152, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: 0.45rem;
-  background: rgba(255, 152, 0, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -571,20 +571,20 @@ export default {
   padding: 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .lightning-dialog__fallback-head {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.74rem;
 }
 
 .lightning-dialog__fallback p {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -603,16 +603,16 @@ export default {
   align-items: flex-start;
   gap: 0.45rem;
   padding: 0.6rem;
-  border: 1px solid rgba(76, 175, 80, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-positive) 40%, transparent);
   border-radius: 0.5rem;
-  background: rgba(76, 175, 80, 0.07);
-  color: #c8e6c9;
+  background: color-mix(in srgb, var(--c-positive) 7%, transparent);
+  color: var(--c-positive-soft);
   font-size: 0.74rem;
 }
 
 .lightning-dialog__success p {
   margin: 0.2rem 0 0;
-  color: #a5d6a7;
+  color: var(--c-positive);
   font-size: 0.7rem;
   line-height: 1.4;
 }

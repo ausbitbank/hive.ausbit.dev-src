@@ -9,6 +9,30 @@
     <meta name="msapplication-tap-highlight" content="no" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0d1114" />
+    <script>
+      // Apply the last chosen appearance before first paint so a light theme
+      // never flashes the dark boot splash. The full theme is applied in the
+      // theme boot file; this only needs the base colours.
+      (function () {
+        try {
+          var raw = localStorage.getItem('ausbit:appearance:boot')
+          if (!raw) return
+          var theme = JSON.parse(raw)
+          if (!theme || !theme.bg || !theme.text) return
+          var root = document.documentElement
+          root.dataset.theme = theme.id || 'hive-dark'
+          root.dataset.mode = theme.mode === 'light' ? 'light' : 'dark'
+          root.style.colorScheme = theme.mode === 'light' ? 'light' : 'dark'
+          root.style.setProperty('--c-bg', theme.bg)
+          root.style.setProperty('--c-text', theme.text)
+          if (theme.primary) root.style.setProperty('--c-primary', theme.primary)
+          var meta = document.querySelector('meta[name="theme-color"]')
+          if (meta) meta.setAttribute('content', theme.bg)
+        } catch (error) {
+          // Storage can be unavailable in private mode; keep the dark default.
+        }
+      })()
+    </script>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="alternate" type="application/rss+xml" title="hive.ausbit.dev project updates" href="/feed.xml" />
 
@@ -48,8 +72,8 @@
       html,
       body {
         margin: 0;
-        background: #121212;
-        color: #e4eaed;
+        background: var(--c-bg, #121212);
+        color: var(--c-text, #e4eaed);
       }
 
       .boot-splash {

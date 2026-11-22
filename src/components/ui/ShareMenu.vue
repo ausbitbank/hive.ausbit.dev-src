@@ -7,7 +7,7 @@
     :aria-label="'Share ' + (title || 'this page')"
     :title="'Share ' + (title || 'this page')"
   >
-    <q-menu dark auto-close>
+    <q-menu auto-close>
       <q-list dense class="share-menu" role="menu" aria-label="Share actions">
         <q-item clickable role="menuitem" @click="copyLink">
           <q-item-section avatar><q-icon name="link" size="18px" /></q-item-section>

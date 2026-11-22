@@ -74,11 +74,11 @@
 .wallet-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .wallet-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -95,7 +95,7 @@
 
 .wallet-portfolio__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.2;
@@ -103,7 +103,7 @@
 
 .wallet-portfolio__sub {
   margin-top: 0.2rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
@@ -125,7 +125,7 @@
 }
 
 .wallet-portfolio__total {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: clamp(1.9rem, 3.4vw, 2.6rem);
   font-weight: 600;
   line-height: 1.05;
@@ -147,20 +147,20 @@
   padding: 0.2rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   white-space: nowrap;
 }
 
 .wallet-chip--up {
-  border-color: rgba(76, 175, 80, 0.35);
-  color: #81c784;
+  border-color: color-mix(in srgb, var(--c-positive) 35%, transparent);
+  color: var(--c-positive);
 }
 
 .wallet-chip--down {
-  border-color: rgba(239, 83, 80, 0.35);
-  color: #e57373;
+  border-color: color-mix(in srgb, var(--c-negative) 35%, transparent);
+  color: var(--c-negative);
 }
 
 .wallet-portfolio__footer {
@@ -184,7 +184,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #4fc3f7;
+  color: var(--c-link);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 600;
@@ -193,14 +193,14 @@
 }
 
 .wallet-jump__link:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .wallet-jump__link--active {
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: underline;
-  text-decoration-color: #4fc3f7;
+  text-decoration-color: var(--c-link);
   text-underline-offset: 4px;
 }
 
@@ -208,7 +208,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 

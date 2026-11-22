@@ -164,7 +164,7 @@
   border: 1px solid var(--border-subtle);
   border-bottom: 0;
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .md-toolbar .q-btn,
@@ -180,7 +180,7 @@
   width: 480px;
   max-width: 94vw;
   overflow: hidden;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .md-toolbar__dialog-head {
@@ -207,7 +207,7 @@
 
 .md-toolbar__hint {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -215,7 +215,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #ff8a80;
+  color: var(--c-negative);
   font-size: 0.75rem;
 }
 
@@ -226,7 +226,7 @@
   padding: 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .md-toolbar__media img {
@@ -237,20 +237,20 @@
 }
 
 .md-toolbar__media-provider {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .md-toolbar__media-kind {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
 .md-toolbar__actions {
   padding: 0.55rem 0.85rem 0.7rem;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 @media (max-width: 599px) {

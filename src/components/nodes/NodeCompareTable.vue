@@ -107,21 +107,21 @@
   overflow-x: auto;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.018);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .node-compare__table {
   width: 100%;
   border-collapse: collapse;
   min-width: 960px;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.78rem;
 }
 
 .node-compare__caption {
   caption-side: top;
   padding: 0.6rem 0.9rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   text-align: left;
 }
@@ -131,8 +131,8 @@
   top: 0;
   z-index: 1;
   padding: 0.45rem 0.55rem;
-  background: #141a1f;
-  color: #90a4ae;
+  background: var(--c-surface-3);
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -149,15 +149,15 @@
 }
 
 .node-compare__row--offline {
-  box-shadow: inset 3px 0 0 rgba(239, 83, 80, 0.75);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-negative) 75%, transparent);
 }
 
 .node-compare__row--behind {
-  box-shadow: inset 3px 0 0 rgba(255, 183, 77, 0.7);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-warning) 70%, transparent);
 }
 
 .node-compare__row.is-active {
-  background: rgba(79, 195, 247, 0.06);
+  background: color-mix(in srgb, var(--c-link) 6%, transparent);
 }
 
 .node-compare__name {
@@ -167,7 +167,7 @@
 
 .node-compare__host {
   display: block;
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -188,19 +188,19 @@
 }
 
 .node-compare__status.is-ok {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .node-compare__status.is-behind {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .node-compare__status.is-offline {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .node-compare__status.is-unknown {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .node-compare__row .num {
@@ -209,7 +209,7 @@
 }
 
 .node-compare__muted {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .node-compare__score {
@@ -218,24 +218,24 @@
 }
 
 .node-compare__score small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-weight: 400;
 }
 
 .node-compare__score.is-ok {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .node-compare__score.is-watch {
-  color: #ffd54f;
+  color: var(--c-focus);
 }
 
 .node-compare__score.is-warning {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .node-compare__score.is-critical {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .node-compare__features {
@@ -249,7 +249,7 @@
   padding: 0.05rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.62rem;
   white-space: nowrap;
 }

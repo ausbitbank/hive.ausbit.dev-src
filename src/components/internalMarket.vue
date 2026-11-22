@@ -375,14 +375,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .market-ticker__pair-note {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -397,14 +397,14 @@ export default {
 }
 
 .market-ticker__label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .market-ticker__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.2;
@@ -416,7 +416,7 @@ export default {
 }
 
 .market-ticker__sub {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
@@ -425,7 +425,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -443,9 +443,9 @@ export default {
   flex-wrap: wrap;
   margin-top: var(--space-3);
   padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.75rem;
 }
 
@@ -484,7 +484,7 @@ export default {
 .market-info__list {
   margin: 0;
   padding-left: 1.1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   line-height: 1.55;
 }
@@ -503,25 +503,25 @@ export default {
 }
 
 .market-info__links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .market-info__links a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .is-up {
-  color: #66bb6a;
+  color: var(--c-positive);
 }
 
 .is-down {
-  color: #ef5350;
+  color: var(--c-negative);
 }
 
 .is-flat {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 @media (max-width: 1199px) {

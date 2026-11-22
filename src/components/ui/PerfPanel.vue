@@ -181,7 +181,7 @@ export default {
 .perf-panel :deep(.home-panel) {
   max-height: min(78vh, 760px);
   overflow: auto;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--c-shadow) 50%, transparent);
 }
 
 .perf-panel__head {
@@ -191,7 +191,7 @@ export default {
 .perf-panel__route {
   max-width: 280px;
   overflow: hidden;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-family: monospace;
   font-size: 0.7rem;
   text-overflow: ellipsis;
@@ -212,7 +212,7 @@ export default {
 
 .perf-panel__title {
   margin: 0 0 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -232,12 +232,12 @@ export default {
 }
 
 .perf-panel__facts dt {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .perf-panel__facts dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-family: monospace;
   text-align: right;
 }
@@ -257,16 +257,16 @@ export default {
   justify-content: space-between;
   gap: 0.4rem;
   min-width: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
 .perf-panel__nodes li.is-active {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .perf-panel__nodes li.is-cooling {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .perf-panel__node-url {
@@ -285,19 +285,19 @@ export default {
 
 .perf-panel__chip {
   padding: 0.02rem 0.28rem;
-  border: 1px solid rgba(79, 195, 247, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-link) 40%, transparent);
   border-radius: var(--radius-pill);
-  color: #81d4fa;
+  color: var(--c-link-hover);
   font-size: 0.62rem;
 }
 
 .perf-panel__chip--warn {
-  border-color: rgba(255, 183, 77, 0.45);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 45%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .perf-panel__chunks summary {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   cursor: pointer;
   font-size: 0.72rem;
 }
@@ -305,7 +305,7 @@ export default {
 .perf-panel__chunks ol {
   margin: 0.35rem 0 0;
   padding-left: 1.1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-family: monospace;
   font-size: 0.68rem;
 }
@@ -328,12 +328,12 @@ export default {
   justify-content: space-between;
   gap: 0.4rem;
   flex-wrap: wrap;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
 }
 
 .perf-panel__foot code {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 @media (max-width: 599px) {

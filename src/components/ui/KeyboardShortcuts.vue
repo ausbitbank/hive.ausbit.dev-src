@@ -123,7 +123,7 @@ export default {
   width: 540px;
   max-width: 94vw;
   overflow: hidden;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .shortcuts-card__head {
@@ -146,7 +146,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
 }
 
@@ -156,8 +156,8 @@ export default {
   padding: 0.12rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-text);
   font-family: monospace;
   font-size: 0.68rem;
   text-align: center;

@@ -314,16 +314,16 @@ export default {
   justify-content: space-between;
   gap: var(--space-4);
   padding: clamp(1.1rem, 3vw, 2rem);
-  border: 1px solid rgba(255, 193, 7, 0.18);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 18%, transparent);
   border-radius: var(--radius-card);
   background:
-    radial-gradient(circle at 92% 12%, rgba(255, 193, 7, 0.14), transparent 38%),
-    radial-gradient(circle at 4% 100%, rgba(79, 195, 247, 0.08), transparent 40%),
-    rgba(255, 255, 255, 0.02);
+    radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--c-warning) 14%, transparent), transparent 38%),
+    radial-gradient(circle at 4% 100%, color-mix(in srgb, var(--c-link) 8%, transparent), transparent 40%),
+    color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .lightning-hero__eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -332,7 +332,7 @@ export default {
 
 .lightning-hero__title {
   margin: 0.2rem 0 0.35rem;
-  color: #f5f0e1;
+  color: var(--c-warning-soft);
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -342,19 +342,19 @@ export default {
 .lightning-hero__lede {
   max-width: 68ch;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.86rem;
   line-height: 1.55;
 }
 
 .lightning-hero__lede a {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .lightning-hero__mark img {
   width: clamp(72px, 10vw, 120px);
   height: auto;
-  filter: drop-shadow(0 0 18px rgba(255, 193, 7, 0.28));
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--c-warning) 28%, transparent));
 }
 
 .lightning-link-banner {
@@ -363,26 +363,26 @@ export default {
   gap: 0.5rem;
   margin-bottom: var(--space-3);
   padding: 0.7rem 0.8rem;
-  border: 1px solid rgba(255, 193, 7, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-card);
-  background: rgba(255, 193, 7, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .lightning-link-banner strong {
   display: block;
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 0.82rem;
 }
 
 .lightning-link-banner p {
   margin: 0.15rem 0 0.3rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
 }
 
 .lightning-link-banner code {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
   overflow-wrap: anywhere;
 }
@@ -395,11 +395,11 @@ export default {
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.6rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .lightning-account-bar__label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -422,7 +422,7 @@ export default {
 
 .lightning-section-title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -435,7 +435,7 @@ export default {
 }
 
 .lightning-login-hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -446,19 +446,19 @@ export default {
   padding: 0.85rem 0.9rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .lightning-card__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .lightning-card__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.45;
 }
@@ -467,7 +467,7 @@ export default {
 .lightning-fees {
   margin: 0;
   padding-left: 1.1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   line-height: 1.5;
 }
@@ -479,12 +479,12 @@ export default {
 
 .lightning-steps strong,
 .lightning-fees strong {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .lightning-card--fees {
-  border-color: rgba(255, 193, 7, 0.2);
-  background: rgba(255, 193, 7, 0.025);
+  border-color: color-mix(in srgb, var(--c-warning) 20%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 3%, transparent);
 }
 
 .lightning-empty {
@@ -495,13 +495,13 @@ export default {
   padding: 2.5rem 1rem;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-card);
-  color: #78909c;
+  color: var(--c-text-faint);
   text-align: center;
 }
 
 .lightning-empty h2 {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 1rem;
 }
 

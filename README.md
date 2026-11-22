@@ -35,6 +35,9 @@ Wallet:
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
 | `/communities` (`/c`) | Public community browser for everyone: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest community shelves; and hide NSFW communities |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
+| `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast and profile-skin visibility |
+| `/themes` | Theme wall with built-in themes and profile skins published by accounts you follow |
+| `/settings/skin` | Skin Studio: design a palette, backdrop, type, avatar frame, nameplate, card material, ticker and sticker shelf; preview it and publish it to your Hive account with posting authority |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |
@@ -53,6 +56,9 @@ Wallet:
 
 Additional UX:
 
+- The whole site uses a semantic theme token layer. Themes never rearrange
+  content, and profile skins are scoped to the author's profile, blog and post
+  pages with a visible “Skin by” badge and a one-click “Hide skins” action.
 - `Ctrl K` or `/` opens search and jump.
 - `f` opens the full search page; the search page supports arrow-key navigation
   and saved searches.
@@ -92,6 +98,8 @@ src/
   router/        Routes and history-mode scroll behaviour
   services/      Chain reads, caches, API client, search, market/wallet helpers
   stores/hive/   Pinia state, queue persistence and account/global-props actions
+  stores/        Appearance preferences and the theme store
+  themes/        Theme manifests, strict profile-skin schema, tokens and metadata helpers
   utils/         Time, metadata, safe HTML/URL helpers
 ```
 

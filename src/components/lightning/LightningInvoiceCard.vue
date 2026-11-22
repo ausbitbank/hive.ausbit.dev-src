@@ -195,19 +195,19 @@ export default {
 .lightning-invoice {
   border: 1px solid var(--border-subtle);
   border-radius: 0.6rem;
-  background: rgba(0, 0, 0, 0.18);
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
   overflow: hidden;
 }
 
 .lightning-invoice--paid {
-  border-color: rgba(76, 175, 80, 0.45);
-  background: rgba(76, 175, 80, 0.06);
+  border-color: color-mix(in srgb, var(--c-positive) 45%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 6%, transparent);
 }
 
 .lightning-invoice--expired,
 .lightning-invoice--unknown {
-  border-color: rgba(255, 152, 0, 0.35);
-  background: rgba(255, 152, 0, 0.05);
+  border-color: color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 5%, transparent);
 }
 
 .lightning-invoice__body {
@@ -234,14 +234,14 @@ export default {
 }
 
 .lightning-invoice__sats {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
 
 .lightning-invoice__fiat {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -249,16 +249,16 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
 }
 
 .lightning-invoice__timer {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .lightning-invoice__memo {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -273,7 +273,7 @@ export default {
 }
 
 .lightning-invoice__raw code {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   overflow-wrap: anywhere;
 }
@@ -299,7 +299,7 @@ export default {
   height: 190px;
   border: 1px dashed var(--border-subtle);
   border-radius: 0.45rem;
-  color: #546e7a;
+  color: var(--c-text-faint);
 }
 
 .lightning-invoice__paid,
@@ -309,12 +309,12 @@ export default {
   gap: 0.35rem;
   padding: 0.55rem 0.85rem;
   border-top: 1px solid var(--border-subtle);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.7rem;
 }
 
 .lightning-invoice__paid {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 @media (max-width: 599px) {

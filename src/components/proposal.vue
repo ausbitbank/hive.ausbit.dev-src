@@ -295,7 +295,7 @@ export default {
 
 .proposal-people__receiver {
   font-size: 0.8rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .proposal-badge {
@@ -312,7 +312,7 @@ export default {
 .proposal-card__id {
   display: inline-block;
   margin-left: var(--space-2);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.85rem;
   font-weight: 400;
   white-space: nowrap;
@@ -323,7 +323,7 @@ export default {
   flex-direction: column;
   gap: 4px;
   font-size: 0.84rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .proposal-card__meta-item {
@@ -336,7 +336,7 @@ export default {
 }
 
 .proposal-card__permlink {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-card__permlink a {
@@ -345,7 +345,7 @@ export default {
 }
 
 .proposal-card__muted {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .proposal-card__note {
@@ -353,10 +353,10 @@ export default {
   gap: var(--space-2);
   align-items: flex-start;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(186, 104, 200, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-accent) 35%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(186, 104, 200, 0.08);
-  color: #e1bee7;
+  background: color-mix(in srgb, var(--c-accent) 8%, transparent);
+  color: var(--c-accent-soft);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -374,14 +374,14 @@ export default {
   min-width: 0;
   padding: var(--space-2);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .proposal-stat__label {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-stat__value {
@@ -403,11 +403,11 @@ export default {
   gap: var(--space-2);
   flex-wrap: wrap;
   font-size: 0.78rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .proposal-support__target {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-card__actions {
@@ -423,7 +423,7 @@ export default {
   align-items: center;
   gap: 4px;
   font-size: 0.72rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .proposal-card__login {

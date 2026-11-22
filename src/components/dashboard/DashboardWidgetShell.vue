@@ -133,7 +133,7 @@
 }
 
 .dw-widget--editing {
-  box-shadow: inset 0 0 0 1px rgba(79, 195, 247, 0.35);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-link) 35%, transparent);
 }
 
 .dw-widget--dragging {
@@ -141,7 +141,7 @@
 }
 
 .dw-widget--dropping {
-  box-shadow: inset 0 0 0 2px rgba(79, 195, 247, 0.9);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--c-link) 90%, transparent);
   transform: translateY(-1px);
 }
 
@@ -163,11 +163,11 @@
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .dw-widget__guest-title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -186,7 +186,7 @@
   margin-top: auto;
   padding: 0.4rem 0.75rem;
   border-top: 1px dashed var(--border-subtle);
-  background: rgba(79, 195, 247, 0.05);
+  background: color-mix(in srgb, var(--c-link) 5%, transparent);
 }
 
 .dw-widget__drag-handle {
@@ -197,7 +197,7 @@
   border: 0;
   border-radius: var(--radius-sm, 6px);
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.72rem;
   cursor: grab;
@@ -206,8 +206,8 @@
 
 .dw-widget__drag-handle:hover,
 .dw-widget__drag-handle:focus-visible {
-  background: rgba(255, 255, 255, 0.07);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text);
 }
 
 .dw-widget__drag-handle:active {
@@ -229,16 +229,16 @@
   padding: 0;
   border: 1px solid var(--border-subtle);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   cursor: pointer;
 }
 
 .dw-widget__width-btn:hover:not(:disabled),
 .dw-widget__width-btn:focus-visible {
-  border-color: rgba(79, 195, 247, 0.5);
-  background: rgba(79, 195, 247, 0.12);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 50%, transparent);
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-soft);
 }
 
 .dw-widget__width-btn:disabled {
@@ -248,7 +248,7 @@
 
 .dw-widget__width-label {
   min-width: 4.6rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   letter-spacing: 0.04em;
   text-align: center;

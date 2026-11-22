@@ -187,11 +187,11 @@
 .wallet-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .wallet-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -209,7 +209,7 @@
 
 .wallet-card__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.25;
@@ -221,7 +221,7 @@
   gap: 0.35rem;
   margin: 0;
   padding: 0.5rem 1rem 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -230,12 +230,12 @@
   align-items: center;
   gap: 0.6rem;
   padding: 1.1rem 1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
 .wallet-pending__clear strong {
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .wallet-pending__clear span {
@@ -258,7 +258,7 @@
   padding: 0.7rem 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .wallet-pending__wide {
@@ -278,7 +278,7 @@
   align-items: center;
   gap: 0.3rem;
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -298,11 +298,11 @@
 }
 
 .wallet-pending__facts span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .wallet-pending__facts strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -338,17 +338,17 @@
 }
 
 .wallet-pending__list strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-variant-numeric: tabular-nums;
 }
 
 .wallet-pending__list span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   overflow-wrap: anywhere;
 }
 
 .wallet-pending__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.74rem;
   font-weight: 600;
   text-decoration: none;
@@ -359,7 +359,7 @@
 }
 
 .wallet-pending__value {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
@@ -378,7 +378,7 @@
 
 .wallet-pending__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.35;
 }

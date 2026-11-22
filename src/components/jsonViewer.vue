@@ -4,7 +4,7 @@
     :deep="deep"
     :show-length="showLength"
     :render-node-value="renderNodeValue"
-    theme="dark"
+    :theme="$appearance.isDark ? 'dark' : 'light'"
   />
 </template>
 
@@ -16,28 +16,29 @@
 /* The vendored dark theme is tuned for #2e4558 panels; restyle it for the
    app's near-black cards and quieter type scale. */
 .vjs-tree {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 12px;
   line-height: 1.5;
 }
 
 .vjs-tree-node.dark:hover,
-.vjs-tree-node.dark.is-highlight {
-  background-color: rgba(79, 195, 247, 0.08) !important;
+.vjs-tree-node.dark.is-highlight,
+.vjs-tree-node.is-highlight {
+  background-color: color-mix(in srgb, var(--c-link) 8%, transparent) !important;
 }
 
-.vjs-key { color: #81d4fa; }
-.vjs-colon { color: #607d8b; }
-.vjs-value-string { color: #a5d6a7; }
-.vjs-value-number { color: #90caf9; }
-.vjs-value-boolean { color: #ffcc80; }
+.vjs-key { color: var(--c-link-hover); }
+.vjs-colon { color: var(--c-text-faint); }
+.vjs-value-string { color: var(--c-positive); }
+.vjs-value-number { color: var(--c-link); }
+.vjs-value-boolean { color: var(--c-warning-soft); }
 .vjs-value-null,
-.vjs-value-undefined { color: #ce93d8; }
-.vjs-tree-brackets { color: #b0bec5; }
+.vjs-value-undefined { color: var(--c-link-visited); }
+.vjs-tree-brackets { color: var(--c-text-muted); }
 .vjs-tree-brackets:hover,
-.vjs-carets:hover { color: #4fc3f7; }
+.vjs-carets:hover { color: var(--c-link); }
 .vjs-tree-node .vjs-indent-unit.has-line {
-  border-left: 1px dashed rgba(255, 255, 255, 0.12);
+  border-left: 1px dashed color-mix(in srgb, var(--c-text) 12%, transparent);
 }
 </style>
 

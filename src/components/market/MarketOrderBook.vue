@@ -133,7 +133,7 @@ export default {
 
 <style scoped>
 .market-book__unit {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -155,18 +155,18 @@ export default {
   justify-content: space-between;
   gap: 0.4rem;
   padding: 0.28rem 0.5rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .market-book__side--ask {
-  color: #ef9a9a;
+  color: var(--c-negative);
 }
 
 .market-book__side--bid {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 .market-book__table {
@@ -178,7 +178,7 @@ export default {
 
 .market-book__table th {
   padding: 0.22rem 0.5rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -193,7 +193,7 @@ export default {
 .market-book__table td {
   padding: 0.24rem 0.5rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   text-align: right;
   white-space: nowrap;
 }
@@ -220,11 +220,11 @@ export default {
 }
 
 .market-book__price--ask {
-  color: #ef9a9a;
+  color: var(--c-negative);
 }
 
 .market-book__price--bid {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 .market-book__spread {
@@ -236,13 +236,13 @@ export default {
   padding: 0.34rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
 .market-book__spread strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-variant-numeric: tabular-nums;
 }
 </style>

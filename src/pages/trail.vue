@@ -4,9 +4,9 @@
   </q-page>
 </template>
 <style>
-a:link { color: #1d8ce0; font-weight: bold; text-decoration: none; }
-a:visited { color: #884488; }
-:target { background-color: #ffa; }
+a:link { color: var(--c-link); font-weight: bold; text-decoration: none; }
+a:visited { color: var(--c-accent); }
+:target { background-color: color-mix(in srgb, var(--c-warning) 24%, transparent); }
 </style>
 <script>
 import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'

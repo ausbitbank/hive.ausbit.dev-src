@@ -58,18 +58,18 @@ export default {
   width: 100%;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid rgba(255, 193, 7, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 40%, transparent);
   border-radius: var(--radius-pill);
-  background: rgba(255, 193, 7, 0.06);
-  color: #ffe082;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .sats-zap__btn.q-btn:hover {
-  border-color: rgba(255, 193, 7, 0.7);
-  background: rgba(255, 193, 7, 0.12);
-  color: #fff3cd;
+  border-color: color-mix(in srgb, var(--c-warning) 70%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 12%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .sats-zap__btn--compact.q-btn {

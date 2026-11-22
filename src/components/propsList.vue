@@ -60,7 +60,7 @@ export default {
 .props-row__label {
   flex: none;
   max-width: 45%;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -71,7 +71,7 @@ export default {
   flex: 1;
   min-width: 0;
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.76rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -82,17 +82,17 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 500;
   text-decoration: none;
 }
 
 .props-row__value a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .props-row__value a .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 </style>

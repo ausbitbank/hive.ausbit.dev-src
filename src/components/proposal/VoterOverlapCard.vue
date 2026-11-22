@@ -143,19 +143,19 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .voter-overlap__lead {
   margin: 0.2rem 0 0.55rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   line-height: 1.45;
 }
 
 .voter-overlap__lead strong {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .voter-overlap__pairs {
@@ -166,7 +166,7 @@ export default {
 }
 
 .voter-overlap__pairs dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -174,7 +174,7 @@ export default {
 
 .voter-overlap__pairs dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
@@ -188,13 +188,13 @@ export default {
 }
 
 .voter-overlap__more {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
 .voter-overlap__note {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }

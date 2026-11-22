@@ -117,7 +117,7 @@
 
 .comment-form__context {
   margin-top: 0.1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   overflow-wrap: anywhere;
 }
@@ -134,7 +134,7 @@
   padding: 0.25rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .comment-form__toolbar .q-btn {
@@ -145,7 +145,7 @@
   flex: none;
   margin-left: auto;
   padding: 0 0.3rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -159,15 +159,15 @@
   border: 1px solid var(--border-subtle);
   border-top: 0;
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  background: #0d1419;
-  color: #e4eaed;
+  background: var(--c-drawer);
+  color: var(--c-text);
   font: inherit;
   font-size: 0.95rem;
   line-height: 1.65;
 }
 
 .comment-form__textarea:focus {
-  outline: 2px solid rgba(79, 195, 247, 0.6);
+  outline: 2px solid color-mix(in srgb, var(--c-link) 60%, transparent);
   outline-offset: -1px;
 }
 
@@ -177,7 +177,7 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   padding: 0.35rem 0.15rem 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -187,11 +187,11 @@
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .comment-form__empty {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .comment-form__actions {
@@ -203,7 +203,7 @@
 }
 
 .comment-form__auth {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 

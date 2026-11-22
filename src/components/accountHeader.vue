@@ -14,8 +14,8 @@
             <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ stripHtml(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</a><span v-else><q-icon name="link" /> {{ stripHtml(postingJsonMeta.profile.website.replace('http://', '').replace('https://', '')) }}</span></div>
         </span>
         <div v-if="showFollowCount && followCount" class="text-caption">
-          <span v-if="followCount.following_count > 0"><q-icon name="people" /><router-link :to="linkFollowing"> {{ tidyNumber(followCount.following_count) }} <span class="text-grey">following</span></router-link>&nbsp;</span>
-          <span v-if="followCount.follower_count > 0"><q-icon name="people_alt" /><router-link :to="linkFollowers"> {{ tidyNumber(followCount.follower_count) }} <span class="text-grey">followers</span></router-link></span>
+          <span v-if="followCount.following_count > 0"><q-icon name="people" /><router-link :to="linkFollowing"> {{ tidyNumber(followCount.following_count) }} <span class="text-faint">following</span></router-link>&nbsp;</span>
+          <span v-if="followCount.follower_count > 0"><q-icon name="people_alt" /><router-link :to="linkFollowers"> {{ tidyNumber(followCount.follower_count) }} <span class="text-faint">followers</span></router-link></span>
         </div>
         <div v-if="showRelationship && relationship && account !== undefined">
           <q-btn v-if="relationship.follows" no-caps push dense label="Following" color="primary" icon="star" @click="unfollowUser(account.name)" />
@@ -27,7 +27,7 @@
           <user-services :username="account.name" />
         </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs bg-dark text-white text-center" :class="{ 'account-tabs--overflow': tabsOverflow }" v-if="showNavBar">
+      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs text-center" :class="{ 'account-tabs--overflow': tabsOverflow }" v-if="showNavBar">
         <q-tabs
           ref="tabs"
           :dense="$q.screen.lt.md"
@@ -37,9 +37,8 @@
           icons
           no-caps
           inline-label
-          active-color="white"
           indicator-color="secondary"
-          class="text-grey-4 full-width"
+          class="text-soft full-width"
           aria-label="Account sections"
         >
           <template v-for="(tab, index) in navTabs" :key="tab.name">
@@ -54,18 +53,19 @@
 .account-header {
   position: relative;
   padding: 1.25rem 0.75rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background-color: #0b1014;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-text) 6%, transparent);
+  background-color: var(--c-bg-deep);
   background-position: center, center;
   background-repeat: no-repeat;
   background-size: cover, cover;
 }
 .account-header__name {
+  color: #fff;
   font-size: clamp(1.5rem, 3.2vw, 2.1rem);
   line-height: 1.2;
   font-weight: 600;
   letter-spacing: -0.01em;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--c-shadow) 55%, transparent);
   overflow-wrap: anywhere;
 }
 .account-header__avatar {
@@ -75,15 +75,16 @@
 .account-header__avatar :deep(.q-avatar) {
   width: 88px;
   height: 88px;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  border: 2px solid color-mix(in srgb, var(--c-text) 60%, transparent);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--c-shadow) 40%, transparent);
 }
 .account-header__profile {
+  color: #fff;
   max-width: 720px;
   margin: 0.5rem auto 0;
   padding: 0 0.25rem;
   line-height: 1.55;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 8px color-mix(in srgb, var(--c-shadow) 55%, transparent);
 }
 .account-header__profile :deep(.q-icon) {
   font-size: 1.05em;
@@ -105,21 +106,21 @@
 }
 .account-header__balances {
   max-width: 210px;
-  border-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: color-mix(in srgb, var(--c-text) 14%, transparent) !important;
   border-radius: var(--radius-card, 10px);
-  background: rgba(8, 13, 17, 0.78) !important;
-  box-shadow: var(--shadow-card, 0 6px 18px rgba(0, 0, 0, 0.26));
+  background: color-mix(in srgb, var(--c-bg-deep) 78%, transparent) !important;
+  box-shadow: var(--shadow-card, 0 6px 18px color-mix(in srgb, var(--c-shadow) 26%, transparent));
 }
 .account-tabs {
   max-width: 1100px;
   min-height: 48px;
   margin: 0.9rem auto 0.15rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid color-mix(in srgb, var(--c-text) 8%, transparent);
   border-radius: var(--radius-card, 10px);
   /* The pill owns the horizontal overflow of its scrollable tab strip, but
      does not clip it: Quasar's outside arrows sit over the rounded corners. */
   overflow: visible;
-  background: rgba(8, 13, 17, 0.84) !important;
+  background: color-mix(in srgb, var(--c-bg-deep) 84%, transparent) !important;
   box-shadow: none;
 }
 .account-tabs :deep(.q-tabs) {
@@ -187,20 +188,20 @@
   align-items: center;
   justify-content: center;
   display: flex;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 26px;
   text-shadow: none;
   opacity: 0.95;
   transition: opacity 0.2s ease;
 }
 .account-tabs :deep(.q-tabs__arrow--left) {
-  background: linear-gradient(to right, #080d11 55%, rgba(8, 13, 17, 0));
+  background: linear-gradient(to right, var(--c-bg-deep) 55%, color-mix(in srgb, var(--c-bg-deep) 0%, transparent));
 }
 .account-tabs :deep(.q-tabs__arrow--right) {
-  background: linear-gradient(to left, #080d11 55%, rgba(8, 13, 17, 0));
+  background: linear-gradient(to left, var(--c-bg-deep) 55%, color-mix(in srgb, var(--c-bg-deep) 0%, transparent));
 }
 .account-tabs :deep(.q-tabs__arrow:hover:not(.q-tabs__arrow--faded)) {
-  color: #fff;
+  color: var(--c-text-strong);
 }
 /* A faded arrow means there is nothing more in that direction. */
 .account-tabs :deep(.q-tabs__arrow--faded) {
@@ -232,6 +233,7 @@
 }
 
 .account-header--compact .account-header__name {
+  color: #fff;
   font-size: 1.3rem;
 }
 

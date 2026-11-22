@@ -119,7 +119,7 @@ export default {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
   text-overflow: ellipsis;
@@ -131,7 +131,7 @@ export default {
 }
 
 .withdraw-row__percent {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -140,7 +140,7 @@ export default {
   padding: 0.05rem 0.4rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -148,13 +148,13 @@ export default {
 }
 
 .withdraw-row__mode.is-staked {
-  border-color: rgba(129, 199, 132, 0.35);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 35%, transparent);
+  color: var(--c-positive);
 }
 
 .withdraw-row__mode.is-liquid {
-  border-color: rgba(79, 195, 247, 0.3);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 30%, transparent);
+  color: var(--c-link-hover);
 }
 
 .withdraw-row__remove {
@@ -166,13 +166,13 @@ export default {
   align-items: center;
   gap: 0.35rem;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 .withdraw-empty .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .withdraw-actions {
@@ -186,19 +186,19 @@ export default {
 .withdraw-actions__btn {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.74rem;
   font-weight: 600;
 }
 
 .withdraw-actions__btn:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.08);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .withdraw-actions__refresh {
   margin-left: auto;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .withdraw-editor {
@@ -206,7 +206,7 @@ export default {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -215,7 +215,7 @@ export default {
 }
 
 .withdraw-editor__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -223,7 +223,7 @@ export default {
 
 .withdraw-editor__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
 }
@@ -239,12 +239,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
 .withdraw-editor__slider-value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }

@@ -2,7 +2,7 @@
   <a href="#main-content" class="skip-link">Skip to main content</a>
   <q-layout view="hHh lpR fFf">
     <q-header reveal elevated>
-      <q-toolbar class="bg-dark text-primary site-toolbar">
+      <q-toolbar class="site-toolbar">
         <q-btn class="site-toolbar__menu" flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title class="site-toolbar__brand">
           <router-link to="/" class="site-brand" aria-label="hive.ausbit.dev home">
@@ -146,7 +146,9 @@
 .site-toolbar {
   gap: var(--space-1);
   border-bottom: 1px solid var(--border-subtle);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+  background: var(--c-header);
+  color: var(--c-text);
+  box-shadow: 0 1px 0 var(--c-border-subtle);
 }
 
 .site-toolbar__brand {
@@ -176,7 +178,7 @@
 }
 
 .site-brand:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: none;
 }
 
@@ -208,25 +210,25 @@
   min-width: 36px;
   min-height: 36px;
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .site-toolbar__icon:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: var(--c-overlay);
+  color: var(--c-text-strong);
 }
 
 .site-toolbar__cta {
   gap: 0.3rem;
   padding: 0 0.6rem 0 0.4rem;
   border: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.035);
-  color: #e4eaed;
+  background: var(--c-overlay-weak);
+  color: var(--c-text);
 }
 
 .site-toolbar__cta:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.1);
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
 }
 
 .site-toolbar__cta-label {
@@ -235,7 +237,7 @@
 }
 
 .site-drawer {
-  background: #0d1419 !important;
+  background: var(--c-drawer) !important;
   border-right: 1px solid var(--border-subtle);
 }
 
@@ -256,12 +258,12 @@
   padding: 0.3rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-overlay-weak);
   text-decoration: none;
 }
 
 .site-nav__badge:hover {
-  border-color: rgba(79, 195, 247, 0.4);
+  border-color: color-mix(in srgb, var(--c-primary) 40%, transparent);
   text-decoration: none;
 }
 
@@ -281,24 +283,24 @@
 .site-nav__quick .q-item {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--c-overlay-weak);
 }
 
 .site-nav__quick .q-item:hover {
-  border-color: rgba(79, 195, 247, 0.35);
-  background: rgba(79, 195, 247, 0.08);
+  border-color: color-mix(in srgb, var(--c-primary) 35%, transparent);
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
 }
 
 .site-nav__quick .q-item__section--avatar .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .site-nav__kbd {
   padding: 0.05rem 0.3rem;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #78909c;
+  background: var(--c-overlay-weak);
+  color: var(--c-text-faint);
   font-family: monospace;
   font-size: 0.65rem;
 }
@@ -306,7 +308,7 @@
 .site-nav__heading {
   padding: var(--space-3) var(--space-4) var(--space-1);
   min-height: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -323,20 +325,20 @@
   padding-top: 6px;
   padding-bottom: 6px;
   border-radius: var(--radius-sm);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .site-nav .q-item:hover {
-  background: rgba(79, 195, 247, 0.08);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
+  color: var(--c-text-strong);
 }
 
 .site-nav .q-item.q-router-link--active,
 .site-nav .q-item--active {
-  background: rgba(79, 195, 247, 0.1);
-  box-shadow: inset 2px 0 0 #4fc3f7;
-  color: #fff;
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--c-link);
+  color: var(--c-text-strong);
 }
 
 .site-nav .q-item__section--avatar {
@@ -345,19 +347,19 @@
 }
 
 .site-nav .q-item__section--avatar .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 20px;
 }
 
 .site-nav .q-item:hover .q-item__section--avatar .q-icon,
 .site-nav .q-item.q-router-link--active .q-item__section--avatar .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .site-nav .q-item__label--caption {
   margin-top: 1px;
   overflow: hidden;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -372,7 +374,7 @@
   margin-top: auto;
   padding: var(--space-3) var(--space-4) var(--space-4);
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   text-align: center;
 }
@@ -385,21 +387,21 @@
 
 .site-nav__footer-line .q-icon {
   font-size: 1.05em;
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .site-nav__footer-line .site-nav__heart {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .site-nav__footer-line a {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
 }
 
 .site-nav__footer-tag {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -411,15 +413,15 @@
   padding: 0.2rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.035);
-  color: #90a4ae;
+  background: var(--c-overlay-weak);
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   text-transform: none;
 }
 
 .command-trigger:hover {
-  border-color: rgba(79, 195, 247, 0.45);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
+  color: var(--c-text);
 }
 
 .command-trigger__label {
@@ -434,8 +436,8 @@
   padding: 0.05rem 0.3rem;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #78909c;
+  background: var(--c-overlay-weak);
+  color: var(--c-text-faint);
   font-family: monospace;
   font-size: 0.65rem;
 }
@@ -617,6 +619,12 @@ export default {
           caption: 'drafts and publishing',
           icon: 'edit_note',
           to: '/compose'
+        },
+        {
+          title: 'Appearance',
+          caption: 'themes and profile skins',
+          icon: 'palette',
+          to: '/appearance'
         },
         {
           title: 'Lightning',

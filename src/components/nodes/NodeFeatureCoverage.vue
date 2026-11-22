@@ -43,7 +43,7 @@
 <style scoped>
 .node-features {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .node-features__body {
@@ -63,7 +63,7 @@
 .node-features__hint {
   max-width: 640px;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.5;
 }
@@ -82,7 +82,7 @@
   padding: 0.6rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .node-features__head {
@@ -93,47 +93,47 @@
 }
 
 .node-features__label {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .node-features__count {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .node-features__count.is-full {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .node-features__count.is-partial {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .node-features__count.is-low {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .node-features__fill.is-full {
-  background: #81c784;
+  background: var(--c-positive);
 }
 
 .node-features__fill.is-partial {
-  background: #ffb74d;
+  background: var(--c-warning);
 }
 
 .node-features__fill.is-low {
-  background: #e57373;
+  background: var(--c-negative);
 }
 
 .node-features__bar {
   height: 3px;
   margin: 0.4rem 0 0.45rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
   overflow: hidden;
 }
 
@@ -148,7 +148,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem 0.4rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -157,12 +157,12 @@
 }
 
 .node-features__host.is-active {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
 }
 
 .node-features__host.is-muted {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .node-features__empty {
@@ -171,7 +171,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: var(--space-4);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   text-align: center;
 }

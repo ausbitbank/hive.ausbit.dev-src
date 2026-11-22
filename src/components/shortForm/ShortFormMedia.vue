@@ -126,7 +126,7 @@ export default {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.3);
+  background: color-mix(in srgb, var(--c-shadow) 30%, transparent);
 }
 
 .sfm__img {
@@ -152,7 +152,7 @@ export default {
   align-items: center;
   padding: 2px 6px;
   border-radius: var(--radius-pill);
-  background: rgba(0, 0, 0, 0.6);
+  background: color-mix(in srgb, var(--c-shadow) 60%, transparent);
   color: #fff;
 }
 </style>

@@ -39,7 +39,7 @@ export default {
   overflow: auto;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #0f171c;
+  background: var(--c-bg-deep);
   box-shadow: var(--shadow-pop);
 }
 
@@ -49,7 +49,7 @@ export default {
 }
 
 .post-dialog__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -57,7 +57,7 @@ export default {
 
 .post-dialog__title {
   margin: 0.15rem 0 0.4rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.2rem;
   font-weight: 600;
   line-height: 1.3;
@@ -69,7 +69,7 @@ export default {
 }
 
 .post-dialog__title a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .post-dialog__body {

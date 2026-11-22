@@ -495,7 +495,7 @@ export default {
 
 .community-feed__title {
   margin: 0.18rem 0 0.2rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.25;
@@ -504,7 +504,7 @@ export default {
 .community-feed__hint {
   max-width: 70ch;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -536,7 +536,7 @@ export default {
   margin-top: var(--space-3);
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .community-feed__state p {
@@ -550,7 +550,7 @@ export default {
   gap: 0.4rem;
   flex-wrap: wrap;
   margin-top: var(--space-3);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.82rem;
 }
 
@@ -558,7 +558,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
 }
 
@@ -584,7 +584,7 @@ export default {
 
 .community-sources__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -609,7 +609,7 @@ export default {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -620,14 +620,14 @@ export default {
 }
 
 .community-sources__mode small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
 }
 
 .community-sources__mode--active {
-  border-color: rgba(79, 195, 247, 0.5);
-  background: rgba(79, 195, 247, 0.1);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-link) 50%, transparent);
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-text);
 }
 
 .community-sources__picker {
@@ -648,7 +648,7 @@ export default {
 
 .community-sources__empty {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
@@ -659,7 +659,7 @@ export default {
 
 .community-sources__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.4;
 }

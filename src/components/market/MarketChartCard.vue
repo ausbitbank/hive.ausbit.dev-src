@@ -64,7 +64,7 @@
           >Open on TradingView</a>
         </div>
       </div>
-      <trading-view-widget v-else :options="chartOptions" />
+      <trading-view-widget v-else :key="$appearance.effectiveThemeId" :options="chartOptions" />
     </div>
 
     <q-card-section class="home-panel__footer">
@@ -82,6 +82,7 @@ import {
   tradingPair,
   tradingViewChartUrl
 } from 'src/services/market'
+import { chartPaletteFor } from 'src/themes/tokens'
 
 export default {
   name: 'MarketChartCard',
@@ -122,10 +123,11 @@ export default {
       return tradingViewChartUrl(this.pair)
     },
     chartOptions () {
+      const palette = chartPaletteFor(this.$appearance.theme)
       return {
         symbol: this.pair,
         interval: this.interval,
-        theme: 'dark',
+        theme: palette.mode,
         style: 8,
         locale: 'en',
         timezone: 'Etc/UTC',
@@ -135,7 +137,7 @@ export default {
         hide_side_toolbar: true,
         allow_symbol_change: false,
         save_image: false,
-        toolbar_bg: '#1d1d1d',
+        toolbar_bg: palette.toolbar,
         watchlist: this.pairs.map(item => item.value)
       }
     }
@@ -182,8 +184,8 @@ export default {
   padding: var(--space-5) var(--space-4);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.018);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
+  color: var(--c-text-subtle);
   text-align: center;
 }
 

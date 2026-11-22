@@ -57,17 +57,17 @@
 
 .result-row:hover {
   border-color: var(--border-subtle);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .result-row:focus-visible {
-  outline: 2px solid #4fc3f7;
+  outline: 2px solid var(--c-link);
   outline-offset: 1px;
 }
 
 .result-row--active {
-  border-color: rgba(79, 195, 247, 0.35);
-  background: rgba(79, 195, 247, 0.07);
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  background: color-mix(in srgb, var(--c-link) 7%, transparent);
 }
 
 .result-row__icon {
@@ -78,8 +78,8 @@
   width: 30px;
   height: 30px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-link-hover);
 }
 
 .result-row__body {
@@ -91,7 +91,7 @@
 
 .result-row__title {
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.84rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -100,7 +100,7 @@
 
 .result-row__description {
   overflow: hidden;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.73rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -110,21 +110,21 @@
   flex: none;
   padding: 0.05rem 0.4rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.66rem;
   white-space: nowrap;
 }
 
 .result-row__arrow {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .result-list__empty {
   margin: 0;
   padding: 0.6rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 </style>

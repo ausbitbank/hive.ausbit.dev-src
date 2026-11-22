@@ -138,7 +138,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -155,7 +155,7 @@
 .home-head__tagline {
   max-width: 680px;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -172,13 +172,13 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   text-decoration: none;
 }
 
 .home-link:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-customise {
@@ -188,8 +188,8 @@
   padding: 0.22rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font: inherit;
   font-size: 0.78rem;
   cursor: pointer;
@@ -197,9 +197,9 @@
 
 .home-customise:hover,
 .home-customise:focus-visible {
-  border-color: rgba(79, 195, 247, 0.45);
-  background: rgba(79, 195, 247, 0.1);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 45%, transparent);
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-link-soft);
 }
 
 @media (max-width: 599px) {

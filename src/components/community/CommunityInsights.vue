@@ -217,7 +217,7 @@ export default {
 }
 
 .community-insights__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -225,7 +225,7 @@ export default {
 
 .community-insights__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -233,13 +233,13 @@ export default {
 .community-insights__hint {
   margin: 0.25rem 0 0;
   max-width: 70ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .community-insights__sample {
   margin: 0 0 var(--space-2);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -248,12 +248,12 @@ export default {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
 }
 
 .community-insights__state--error {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .community-insights__grid {
@@ -266,31 +266,31 @@ export default {
   min-width: 0;
   padding: 0.6rem 0.7rem;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .community-stat__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .community-stat__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.2rem;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .community-stat__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
 .community-insights__card {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .community-insights__card--wide {
@@ -306,7 +306,7 @@ export default {
 }
 
 .community-insights__card-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -314,14 +314,14 @@ export default {
 
 .community-insights__card-title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .community-insights__muted,
 .community-insights__note {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
@@ -355,23 +355,23 @@ export default {
   width: 100%;
   min-height: 30px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .community-cadence__fill {
   width: 100%;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(180deg, #66bb6a, #2e7d32);
+  background: linear-gradient(180deg, var(--c-positive), var(--c-positive));
 }
 
 .community-cadence__label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.52rem;
   white-space: nowrap;
 }
 
 .community-cadence__count {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.56rem;
   font-variant-numeric: tabular-nums;
 }
@@ -396,7 +396,7 @@ export default {
 }
 
 .community-authors a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -405,7 +405,7 @@ export default {
 }
 
 .community-authors span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   white-space: nowrap;
 }
 
@@ -413,7 +413,7 @@ export default {
   margin: 0.4rem 0 0;
   padding: 0;
   list-style: none;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.74rem;
 }
 
@@ -431,7 +431,7 @@ export default {
 }
 
 .community-flag-text__label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -439,7 +439,7 @@ export default {
 
 .community-flag-text p {
   margin: 0.2rem 0 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.4;
   overflow-wrap: anywhere;

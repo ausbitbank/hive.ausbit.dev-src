@@ -101,7 +101,7 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -118,7 +118,7 @@
 }
 
 .browse-table :deep(td a) {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 </style>
 

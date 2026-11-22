@@ -129,8 +129,8 @@ export default {
   padding: 0 10px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -140,18 +140,18 @@ export default {
 }
 
 .reblog-btn.q-btn:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-text) 22%, transparent);
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-strong);
 }
 
 .reblog-btn--active.q-btn {
-  border-color: rgba(129, 199, 132, 0.4);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 40%, transparent);
+  color: var(--c-positive);
 }
 
 .reblog-btn--active.q-btn .q-icon {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .reblog-card {
@@ -159,7 +159,7 @@ export default {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -172,11 +172,11 @@ export default {
 
 .reblog-card__icon {
   flex: none;
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .reblog-card__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -184,7 +184,7 @@ export default {
 
 .reblog-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -192,7 +192,7 @@ export default {
 .reblog-card__text {
   margin: 0.4rem 0 0;
   padding: 0 var(--space-3);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }

@@ -676,18 +676,18 @@ export default {
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .community-index-stat__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .community-index-stat__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.3rem;
   font-weight: 600;
   line-height: 1.2;
@@ -695,7 +695,7 @@ export default {
 }
 
 .community-index-stat__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.35;
 }
@@ -759,18 +759,18 @@ export default {
   padding: 0.75rem 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .community-index-filter__hint {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }
 
 .community-index-filter__hint code {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.66rem;
 }
 
@@ -788,21 +788,21 @@ export default {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
   background: transparent;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font: inherit;
   font-size: 0.74rem;
   cursor: pointer;
 }
 
 .community-index-chip:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  color: var(--c-text);
 }
 
 .community-index-chip--active {
-  border-color: rgba(79, 195, 247, 0.45);
-  background: rgba(79, 195, 247, 0.14);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 45%, transparent);
+  background: color-mix(in srgb, var(--c-link) 14%, transparent);
+  color: var(--c-link-hover);
 }
 
 .community-index-sorts {
@@ -819,7 +819,7 @@ export default {
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font: inherit;
   font-size: 0.78rem;
   text-align: left;
@@ -827,14 +827,14 @@ export default {
 }
 
 .community-index-sort:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text);
 }
 
 .community-index-sort--active {
-  border-color: rgba(79, 195, 247, 0.35);
-  background: rgba(79, 195, 247, 0.1);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-link-hover);
 }
 
 .community-index-main {
@@ -854,7 +854,7 @@ export default {
 
 .community-index-section__title {
   margin: 0.15rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.08rem;
   font-weight: 600;
   line-height: 1.25;
@@ -863,7 +863,7 @@ export default {
 .community-index-section__hint {
   display: block;
   margin-top: 0.15rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -874,7 +874,6 @@ export default {
   gap: 0.35rem;
   flex-wrap: wrap;
 }
-
 
 .community-index-grid {
   display: grid;
@@ -904,9 +903,9 @@ export default {
 }
 
 .community-index-banner {
-  border: 1px solid rgba(255, 183, 77, 0.35);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .community-index-state {
@@ -916,7 +915,7 @@ export default {
   gap: var(--space-2);
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .community-index-state p {
@@ -927,12 +926,12 @@ export default {
 }
 
 .community-index-state code {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .community-index-state__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
 }
@@ -946,7 +945,7 @@ export default {
 }
 
 .community-index-end {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
 }
 

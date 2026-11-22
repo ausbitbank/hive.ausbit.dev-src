@@ -180,7 +180,7 @@ export default {
 
 .sats-quote__intro {
   margin: 0 0 0.4rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -199,13 +199,13 @@ export default {
 }
 
 .sats-quote__row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .sats-quote__row dd {
   margin: 0;
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 0.78rem;
   font-weight: 600;
   text-align: right;
@@ -227,19 +227,19 @@ export default {
 }
 
 .sats-quote__result {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.74rem;
   font-weight: 600;
 }
 
 .sats-quote__note {
   margin: 0.5rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.45;
 }
 
 .sats-quote__note a {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 </style>

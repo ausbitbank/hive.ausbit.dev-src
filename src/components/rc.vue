@@ -3,7 +3,6 @@
     <template v-if="compact">
       <span class="rc__value">{{ rcLabel }}%</span>
       <q-linear-progress
-        dark
         rounded
         size="8px"
         :value="rcPercent"
@@ -25,7 +24,7 @@
           <q-icon name="info" size="15px" aria-hidden="true" />
         </button>
       </div>
-      <q-linear-progress dark rounded size="10px" :value="rcPercent" :color="rcColor" class="rc__bar rc__bar--full" aria-label="Resource credits available" />
+      <q-linear-progress rounded size="10px" :value="rcPercent" :color="rcColor" class="rc__bar rc__bar--full" aria-label="Resource credits available" />
       <div class="rc__full-legend">{{ rcStateLabel }}</div>
 
       <div class="rc__budget" v-if="!showAccountClaimsOnly">
@@ -214,7 +213,7 @@ export default {
 }
 
 .rc__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -235,11 +234,11 @@ export default {
 }
 
 .rc__value--button .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .rc__value--button:hover .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .rc__bar {
@@ -250,7 +249,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.3;
 }
@@ -260,12 +259,12 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #78909c;
+  background: var(--c-text-faint);
 }
 
-.rc__dot--green { background: #66bb6a; }
-.rc__dot--orange { background: #ffb74d; }
-.rc__dot--red { background: #e57373; }
+.rc__dot--green { background: var(--c-positive); }
+.rc__dot--orange { background: var(--c-warning); }
+.rc__dot--red { background: var(--c-negative); }
 
 /* Full form used by the account creation page. */
 .rc__full-head {
@@ -276,7 +275,7 @@ export default {
 }
 
 .rc__full-title {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -288,7 +287,7 @@ export default {
 
 .rc__full-legend {
   margin-top: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -306,22 +305,22 @@ export default {
   padding: 0.45rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .rc__budget-item.is-low {
-  border-color: rgba(229, 115, 115, 0.35);
+  border-color: color-mix(in srgb, var(--c-negative) 35%, transparent);
 }
 
 .rc__budget-value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .rc__budget-label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -329,7 +328,7 @@ export default {
 
 .rc__note {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -349,7 +348,7 @@ export default {
 
 .rc__refresh {
   margin-left: auto;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .rc-dialog {
@@ -360,7 +359,7 @@ export default {
   flex-direction: column;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -370,7 +369,7 @@ export default {
 }
 
 .rc-dialog__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -378,7 +377,7 @@ export default {
 
 .rc-dialog__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }

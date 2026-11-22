@@ -152,13 +152,13 @@ export default {
 }
 
 .market-snapshot__row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .market-snapshot__row dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
   text-align: right;
@@ -166,7 +166,7 @@ export default {
 }
 
 .market-snapshot__unit {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   font-weight: 500;
 }
@@ -185,24 +185,24 @@ export default {
 }
 
 .market-snapshot__links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .market-snapshot__links a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .is-up {
-  color: #66bb6a;
+  color: var(--c-positive);
 }
 
 .is-down {
-  color: #ef5350;
+  color: var(--c-negative);
 }
 
 .is-flat {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 </style>

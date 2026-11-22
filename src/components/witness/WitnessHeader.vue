@@ -76,7 +76,7 @@
 
 <style scoped>
 .witness-overview {
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .witness-overview__stats {
@@ -99,7 +99,7 @@
 }
 
 .witness-overview__stat strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.2;
@@ -108,7 +108,7 @@
 }
 
 .witness-overview__stat > span:last-child {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.35;
 }

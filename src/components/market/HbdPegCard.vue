@@ -81,7 +81,7 @@ export default {
 
 .hbd-peg__intro {
   margin: 0 0 0.4rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -100,7 +100,7 @@ export default {
 }
 
 .hbd-peg__row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -109,7 +109,7 @@ export default {
   align-items: baseline;
   gap: 0.35rem;
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
   text-align: right;
@@ -122,14 +122,14 @@ export default {
 }
 
 .is-up {
-  color: #66bb6a;
+  color: var(--c-positive);
 }
 
 .is-down {
-  color: #ef5350;
+  color: var(--c-negative);
 }
 
 .is-flat {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 </style>

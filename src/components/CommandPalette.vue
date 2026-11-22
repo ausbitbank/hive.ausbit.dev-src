@@ -83,7 +83,7 @@
   margin-top: 6vh;
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: #11181e;
+  background: var(--c-surface-2);
 }
 
 .command-palette__search {
@@ -91,7 +91,7 @@
   align-items: center;
   gap: 0.55rem;
   padding: 0.7rem 0.9rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .command-palette__input {
@@ -104,8 +104,8 @@
   padding: 0.05rem 0.3rem;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-text-subtle);
   font-family: monospace;
   font-size: 0.67rem;
 }
@@ -118,7 +118,7 @@
 
 .command-palette__group {
   padding: 0.5rem 0.95rem 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -134,8 +134,8 @@
 }
 
 .command-result--active {
-  border-left-color: #4fc3f7;
-  background: rgba(79, 195, 247, 0.1);
+  border-left-color: var(--c-link);
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
 }
 
 .command-result--search {
@@ -143,23 +143,23 @@
   margin: 0.25rem 0.6rem;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(79, 195, 247, 0.05);
+  background: color-mix(in srgb, var(--c-link) 5%, transparent);
   font: inherit;
   text-align: left;
 }
 
 .command-result--search.command-result--active {
-  border-color: rgba(79, 195, 247, 0.5);
-  border-left-color: #4fc3f7;
+  border-color: color-mix(in srgb, var(--c-link) 50%, transparent);
+  border-left-color: var(--c-link);
 }
 
 .command-result__icon {
   flex: none;
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .command-result--active .command-result__icon {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .command-result__body {
@@ -169,7 +169,7 @@
 
 .command-result__label {
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.86rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -178,7 +178,7 @@
 
 .command-result__description {
   overflow: hidden;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -186,11 +186,11 @@
 
 .command-result__arrow {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .command-result--active .command-result__arrow {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .command-palette__empty {
@@ -198,7 +198,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1.2rem 1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -208,7 +208,7 @@
   gap: 0.8rem;
   flex-wrap: wrap;
   padding: 0.5rem 0.95rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 

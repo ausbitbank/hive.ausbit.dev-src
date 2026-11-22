@@ -217,23 +217,23 @@
   align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
 .browse-toolbar__summary strong {
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .browse-toolbar__filtered {
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .browse-toolbar__range {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .browse-toolbar__actions {
@@ -244,7 +244,7 @@
 }
 
 .browse-filter--active {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .browse-filter-card {
@@ -264,7 +264,7 @@
 }
 
 .browse-filter-card__hint {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -324,7 +324,7 @@
   gap: var(--space-2);
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .browse-state p {
@@ -338,7 +338,7 @@
   gap: 0.4rem;
   flex-wrap: wrap;
   margin-top: var(--space-3);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.82rem;
 }
 
@@ -350,7 +350,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.8rem;
 }
 

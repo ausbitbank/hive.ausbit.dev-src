@@ -98,7 +98,7 @@
 
 .dw-ops__filters {
   margin-top: 0.15rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.35;
 }
@@ -122,7 +122,7 @@
 }
 
 .dw-ops__row--magi .dw-ops__icon {
-  color: #ba68c8;
+  color: var(--c-accent);
 }
 
 .dw-ops__row--magi .dw-ops__label::after {
@@ -130,8 +130,8 @@
   margin-left: 0.35rem;
   padding: 0.02rem 0.3rem;
   border-radius: 999px;
-  background: rgba(186, 104, 200, 0.16);
-  color: #ce93d8;
+  background: color-mix(in srgb, var(--c-accent) 16%, transparent);
+  color: var(--c-link-visited);
   font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -141,7 +141,7 @@
 
 .dw-ops__icon {
   flex: none;
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .dw-ops__text {
@@ -152,14 +152,14 @@
 }
 
 .dw-ops__label {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
 }
 
 .dw-ops__summary {
   overflow: hidden;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -168,7 +168,7 @@
 .dw-ops__block,
 .dw-ops__time {
   flex: none;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
   text-decoration: none;
@@ -176,7 +176,7 @@
 }
 
 .dw-ops__block:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
@@ -187,7 +187,7 @@
   gap: 0.4rem;
   flex-wrap: wrap;
   padding: 1.1rem 0.9rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
 }
 

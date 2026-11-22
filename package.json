@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "quasar dev",
     "build": "quasar build && node scripts/cf-compat.mjs && node scripts/generate-feed.mjs && node scripts/generate-home-snapshot.mjs",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-theme-tokens.mjs",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",

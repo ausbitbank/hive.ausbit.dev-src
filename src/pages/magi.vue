@@ -228,7 +228,7 @@
 
 .magi-search {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .magi-search__body {
@@ -251,24 +251,24 @@
 
 .magi-search__hint {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.5;
 }
 
 .magi-search__hint a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .magi-search__hint code {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .magi-banner {
-  border: 1px solid rgba(255, 183, 77, 0.35);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .magi-section {
@@ -287,13 +287,13 @@
 
 .magi-section__title {
   margin: 0.15rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .magi-section__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.45;
 }
@@ -316,18 +316,18 @@
   padding: 0.45rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .magi-meta span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .magi-meta strong {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.74rem;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -335,7 +335,7 @@
 
 .magi-description {
   padding-top: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -367,10 +367,10 @@
 .magi-inline-error {
   margin: 0 0.9rem 0.6rem;
   padding: 0.45rem 0.55rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.72rem;
 }
 
@@ -379,8 +379,8 @@
   padding: 0.75rem 0.9rem;
   overflow-x: auto;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.18);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -388,7 +388,7 @@
 }
 
 .magi-link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.74rem;
   font-weight: 600;
   text-decoration: none;
@@ -399,7 +399,7 @@
 }
 
 .magi-contract-link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
 }
@@ -411,7 +411,7 @@
 .magi-output-ret {
   display: block;
   margin-top: 0.15rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   overflow-wrap: anywhere;
 }

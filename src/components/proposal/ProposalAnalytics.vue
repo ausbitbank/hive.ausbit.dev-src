@@ -192,7 +192,7 @@ export default {
 }
 
 .prop-analytics__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -200,7 +200,7 @@ export default {
 
 .prop-analytics__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -208,7 +208,7 @@ export default {
 .prop-analytics__hint {
   margin: 0.3rem 0 0;
   max-width: 70ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -220,7 +220,7 @@ export default {
 
 .prop-card {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .prop-card__head {
@@ -231,7 +231,7 @@ export default {
 }
 
 .prop-card__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -239,13 +239,13 @@ export default {
 
 .prop-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
 
 .prop-card__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.74rem;
   text-decoration: none;
   white-space: nowrap;
@@ -264,19 +264,19 @@ export default {
 }
 
 .prop-metric__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.45rem;
   font-weight: 600;
   line-height: 1.1;
 }
 
 .prop-metric__unit {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .prop-metric__hint {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
@@ -292,7 +292,7 @@ export default {
 }
 
 .prop-pairs dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -300,7 +300,7 @@ export default {
 
 .prop-pairs dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.8rem;
 }
 
@@ -311,7 +311,7 @@ export default {
   margin-top: 0.7rem;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -342,23 +342,23 @@ export default {
   width: 100%;
   min-height: 40px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .prop-bar__fill {
   width: 100%;
   border-radius: 3px 3px 0 0;
-  background: linear-gradient(180deg, #4fc3f7, #0288d1);
+  background: linear-gradient(180deg, var(--c-link), var(--c-info));
 }
 
 .prop-bar__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.56rem;
   white-space: nowrap;
 }
 
 .prop-bar__value {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.56rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -367,7 +367,7 @@ export default {
 .prop-rank {
   margin: 0.5rem 0 0;
   padding: 0 0 0 1.1rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.76rem;
 }
 
@@ -377,7 +377,7 @@ export default {
 
 .prop-rank a,
 .prop-receivers a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -388,7 +388,7 @@ export default {
 
 .prop-rank__meta {
   display: block;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -406,13 +406,13 @@ export default {
   padding: 0.14rem 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.68rem;
   text-transform: capitalize;
 }
 
 .prop-chip b {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   font-weight: 600;
 }
 
@@ -436,18 +436,18 @@ export default {
 }
 
 .prop-receivers span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   white-space: nowrap;
 }
 
 .prop-muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
 .prop-footnote {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.45;
 }

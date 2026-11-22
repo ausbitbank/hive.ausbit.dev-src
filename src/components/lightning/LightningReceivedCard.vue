@@ -79,7 +79,7 @@ export default {
 }
 
 .lightning-received__total {
-  color: #a5d6a7;
+  color: var(--c-positive);
   font-size: 1.35rem;
   font-weight: 700;
 }
@@ -97,7 +97,7 @@ export default {
 }
 
 .lightning-received__list dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -105,14 +105,14 @@ export default {
 
 .lightning-received__list dd {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .lightning-received__note {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   line-height: 1.45;
 }

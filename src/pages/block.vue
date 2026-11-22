@@ -403,7 +403,7 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -422,12 +422,12 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.85rem;
 }
 
 .block-hero__dot {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .block-hero__actions {
@@ -452,7 +452,7 @@ export default {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 
@@ -476,7 +476,7 @@ export default {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .block-metric__value {
@@ -488,7 +488,7 @@ export default {
 .block-metric__mono {
   font-family: monospace;
   font-size: 0.74rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   overflow-wrap: anywhere;
 }
 
@@ -513,7 +513,7 @@ export default {
   justify-content: center;
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .block-state__title {
@@ -523,7 +523,7 @@ export default {
 
 .block-state__text {
   margin: var(--space-2) 0 var(--space-4);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .block-virtual-card__body {
@@ -546,7 +546,7 @@ export default {
 
 .block-raw__hint {
   font-size: 0.78rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .block-footer-nav {

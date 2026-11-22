@@ -455,7 +455,7 @@ export default {
 }
 
 .pos-eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -463,7 +463,7 @@ export default {
 
 .pos-head__title {
   margin: 0.15rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.8rem;
   line-height: 1.1;
 }
@@ -471,7 +471,7 @@ export default {
 .pos-lede {
   max-width: 56ch;
   margin: 0.4rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.86rem;
   line-height: 1.5;
 }
@@ -494,7 +494,7 @@ export default {
   padding: 1rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .pos-card__head {
@@ -506,7 +506,7 @@ export default {
 }
 
 .pos-card__eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.6rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -514,7 +514,7 @@ export default {
 
 .pos-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.1rem;
 }
 
@@ -522,21 +522,21 @@ export default {
   padding: 0.15rem 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .pos-card__status--paid {
-  border-color: rgba(76, 175, 80, 0.5);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 50%, transparent);
+  color: var(--c-positive);
 }
 
 .pos-card__status--expired,
 .pos-card__status--unknown {
-  border-color: rgba(255, 152, 0, 0.4);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 40%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .pos-amount {
@@ -548,19 +548,19 @@ export default {
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.6rem;
-  background: rgba(0, 0, 0, 0.25);
+  background: color-mix(in srgb, var(--c-shadow) 25%, transparent);
   overflow-wrap: anywhere;
 }
 
 .pos-amount__value {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 2.2rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .pos-amount__currency {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.82rem;
   text-transform: uppercase;
 }
@@ -575,27 +575,27 @@ export default {
   min-height: 52px;
   border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.035);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 650;
   cursor: pointer;
 }
 
 .pos-key:hover {
-  border-color: rgba(255, 193, 7, 0.45);
-  background: rgba(255, 193, 7, 0.08);
+  border-color: color-mix(in srgb, var(--c-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
 }
 
 .pos-key:focus-visible {
-  outline: 2px solid #ffc107;
+  outline: 2px solid var(--c-warning);
   outline-offset: 2px;
 }
 
 .pos-key--clear {
   grid-column: 1 / -1;
   min-height: 40px;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.8rem;
 }
 
@@ -612,14 +612,14 @@ export default {
 }
 
 .pos-receive__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
 .pos-hint,
 .pos-foot {
   margin: 0.6rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.45;
 }
@@ -636,10 +636,10 @@ export default {
   gap: 0.35rem;
   margin-top: 0.55rem;
   padding: 0.5rem 0.6rem;
-  border: 1px solid rgba(255, 152, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: 0.45rem;
-  background: rgba(255, 152, 0, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -650,16 +650,16 @@ export default {
   gap: 0.5rem;
   margin-top: 0.6rem;
   padding: 0.6rem;
-  border: 1px solid rgba(76, 175, 80, 0.45);
+  border: 1px solid color-mix(in srgb, var(--c-positive) 45%, transparent);
   border-radius: 0.5rem;
-  background: rgba(76, 175, 80, 0.07);
-  color: #c8e6c9;
+  background: color-mix(in srgb, var(--c-positive) 7%, transparent);
+  color: var(--c-positive-soft);
   font-size: 0.76rem;
 }
 
 .pos-paid p {
   margin: 0.2rem 0 0;
-  color: #a5d6a7;
+  color: var(--c-positive);
   font-size: 0.7rem;
 }
 
@@ -672,7 +672,7 @@ export default {
 }
 
 .pos-invoice__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -684,7 +684,7 @@ export default {
   padding: 1.4rem 0.6rem;
   border: 1px dashed var(--border-subtle);
   border-radius: 0.6rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   text-align: center;
   font-size: 0.74rem;
 }
@@ -696,7 +696,7 @@ export default {
 }
 
 .pos-empty__fallback {
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .pos-session {
@@ -706,16 +706,16 @@ export default {
   margin-top: 0.7rem;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
 .pos-session strong {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .pos-session small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
 }
 
@@ -726,12 +726,12 @@ export default {
   gap: var(--space-2);
   flex-wrap: wrap;
   margin-top: var(--space-4);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
 .pos-foot a {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .pos-invalid {
@@ -750,7 +750,7 @@ export default {
 
 .pos-invalid p {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
 }
 

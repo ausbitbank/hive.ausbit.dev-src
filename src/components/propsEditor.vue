@@ -81,7 +81,7 @@ export default {
   methods: {
     submitChanges () {
       if (this.type === 'postingMeta') {
-        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson, extensions: [] }]])
+        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: this.account.json_metadata || '', posting_json_metadata: this.newjson, extensions: [] }]])
         this.$emit('editedProps')
       }
       if (this.type === 'jsonMeta') {
@@ -163,7 +163,7 @@ export default {
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -174,24 +174,24 @@ export default {
 }
 
 .props-editor__note--ok {
-  border-color: rgba(129, 199, 132, 0.32);
-  background: rgba(76, 175, 80, 0.06);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 32%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 6%, transparent);
+  color: var(--c-positive);
 }
 
 .props-editor__note--info {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .props-editor__note--error {
-  border-color: rgba(229, 115, 115, 0.32);
-  background: rgba(239, 83, 80, 0.06);
-  color: #ef9a9a;
+  border-color: color-mix(in srgb, var(--c-negative) 32%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 6%, transparent);
+  color: var(--c-negative);
 }
 
 .props-editor__tags-title {
   margin-bottom: 0.2rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -201,15 +201,15 @@ export default {
   margin: 0 0.25rem 0.25rem 0;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.7rem;
 }
 
 .props-editor__tags .q-chip.is-selected {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.12);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-soft);
 }
 
 .props-editor__viewer {
@@ -218,7 +218,7 @@ export default {
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--c-shadow) 20%, transparent);
   font-size: 0.72rem;
 }
 
@@ -227,7 +227,7 @@ export default {
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -236,7 +236,7 @@ export default {
 }
 
 .props-editor__dialog-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -244,7 +244,7 @@ export default {
 
 .props-editor__dialog-title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
 }

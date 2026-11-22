@@ -96,7 +96,7 @@ export default {
 
 <style scoped>
 .market-trades__unit {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -122,7 +122,7 @@ export default {
 
 .market-trades__table th {
   padding: 0.22rem 0.45rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -138,7 +138,7 @@ export default {
 .market-trades__table td {
   padding: 0.26rem 0.45rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   text-align: right;
   white-space: nowrap;
 }
@@ -148,22 +148,22 @@ export default {
 }
 
 .market-trades__buy {
-  color: #81c784;
+  color: var(--c-positive);
   font-weight: 600;
 }
 
 .market-trades__sell {
-  color: #ef9a9a;
+  color: var(--c-negative);
   font-weight: 600;
 }
 
 .market-trades__table time {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
 .market-trades__table a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 

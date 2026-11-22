@@ -96,7 +96,7 @@
             <span>No queued actions. Actions you vote, post, transfer or trade will appear here for review.</span>
           </div>
 
-          <q-scroll-area v-else class="queue-scroll" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.25, backgroundColor: '#4fc3f7' }">
+          <q-scroll-area v-else class="queue-scroll" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.25, backgroundColor: 'var(--c-link)' }">
             <q-list separator>
               <q-item v-for="(action, index) in queue" :key="actionKey(action, index)" class="queue-item">
                 <q-item-section avatar>
@@ -561,7 +561,6 @@ export default {
     promptPassword (user, title) {
       return new Promise((resolve, reject) => {
         this.$q.dialog({
-          dark: true,
           title,
           message: 'Enter the SmartLock password for @' + user + '. The password is only used to decrypt the key for this action.',
           prompt: { model: '', type: 'password' },
@@ -604,7 +603,6 @@ export default {
     },
     confirmClearAll () {
       this.$q.dialog({
-        dark: true,
         title: 'Clear the action queue?',
         message: 'This removes every queued action, including failed and sent items. It does not cancel anything already broadcast.',
         cancel: true,
@@ -627,7 +625,7 @@ export default {
 .queue-panel {
   width: 470px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .queue-summary {
@@ -644,24 +642,24 @@ export default {
   padding: 0.12rem 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.66rem;
   white-space: nowrap;
 }
 
 .queue-chip--pending {
-  border-color: rgba(79, 195, 247, 0.35);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  color: var(--c-link-hover);
 }
 
 .queue-chip--failed {
-  border-color: rgba(239, 83, 80, 0.4);
-  color: #ef9a9a;
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  color: var(--c-negative);
 }
 
 .queue-chip--sent {
-  border-color: rgba(76, 175, 80, 0.35);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 35%, transparent);
+  color: var(--c-positive);
 }
 
 .queue-auto {
@@ -669,18 +667,18 @@ export default {
   align-items: center;
   gap: 0.2rem;
   margin-left: auto;
-  color: #81c784;
+  color: var(--c-positive);
   font-size: 0.66rem;
   white-space: nowrap;
 }
 
 .queue-auto--paused {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .queue-auto-note {
   padding: 0.35rem 0.9rem 0;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -716,14 +714,14 @@ export default {
 }
 
 .queue-item__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .queue-item__summary {
   margin-top: 0.1rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.74rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -735,7 +733,7 @@ export default {
   gap: 0.3rem;
   flex-wrap: wrap;
   margin-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -744,7 +742,7 @@ export default {
   align-items: flex-start;
   gap: 0.25rem;
   margin-top: 0.2rem;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.7rem;
   line-height: 1.35;
 }
@@ -755,7 +753,7 @@ export default {
 
 .queue-details {
   margin: 0.1rem 0 0 -0.4rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 
@@ -765,7 +763,7 @@ export default {
 }
 
 .queue-footer strong {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-weight: 600;
 }
 </style>

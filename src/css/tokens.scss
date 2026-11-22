@@ -1,0 +1,620 @@
+// Theme token defaults and base surface rules.
+//
+// The defaults mirror Hive Dark so the app is usable before JavaScript applies
+// a persisted theme. Runtime themes set the same custom properties on
+// <html>; inline custom properties win over these declarations.
+
+:root {
+  --c-bg: #0d1114;
+  --c-bg-deep: #080d11;
+  --c-surface: #151c21;
+  --c-card: #141a1e;
+  --c-surface-1: #1a2329;
+  --c-surface-2: #10181d;
+  --c-surface-3: #141a1f;
+  --c-surface-glass: rgba(8, 13, 17, 0.72);
+  --c-header: rgba(13, 17, 20, 0.94);
+  --c-drawer: #0d1419;
+  --c-footer: rgba(8, 13, 17, 0.5);
+  --c-dialog: #151c21;
+  --c-code-bg: #1a272d;
+  --c-code-border: #131e23;
+  --c-code-text: #ececec;
+
+  --c-text: #e4eaed;
+  --c-text-strong: #ffffff;
+  --c-text-soft: #cfd8dc;
+  --c-text-muted: #b0bec5;
+  --c-text-subtle: #90a4ae;
+  --c-text-faint: #78909c;
+  --c-text-inverse: #0b1d2a;
+
+  --c-link: #4fc3f7;
+  --c-link-hover: #81d4fa;
+  --c-link-visited: #ce93d8;
+  --c-link-soft: #e1f5fe;
+  --c-primary: #3e92cc;
+  --c-primary-soft: #4fc3f7;
+  --c-secondary: #e31337;
+  --c-accent: #9c27b0;
+  --c-accent-soft: #e1bee7;
+  --c-positive: #81c784;
+  --c-negative: #e57373;
+  --c-warning: #ffb74d;
+  --c-info: #81d4fa;
+  --c-positive-soft: #a5d6a7;
+  --c-negative-soft: #ef9a9a;
+  --c-warning-soft: #ffcc80;
+
+  --c-border: #2a3942;
+  --c-border-subtle: rgba(255, 255, 255, 0.09);
+  --c-border-strong: rgba(255, 255, 255, 0.18);
+  --c-focus: #ffd54f;
+  --c-on-primary: #0b1d2a;
+  --c-on-accent: #ffffff;
+  --c-mode-toggle-bg: #2a638a;
+  --c-mode-toggle-text: #ffffff;
+
+  --c-overlay-weak: rgba(255, 255, 255, 0.04);
+  --c-overlay: rgba(255, 255, 255, 0.08);
+  --c-overlay-strong: rgba(255, 255, 255, 0.14);
+  --c-scrim: rgba(4, 8, 12, 0.72);
+  --c-shadow: #000000;
+  --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --c-shadow-card: 0 6px 18px rgba(0, 0, 0, 0.26);
+  --c-shadow-pop: 0 14px 40px rgba(0, 0, 0, 0.45);
+  --c-qr-bg: #ffffff;
+  --c-qr-ink: #000000;
+
+  --font-body: Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-display: Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --border-subtle: var(--c-border-subtle);
+  --surface-glass: var(--c-surface-glass);
+  --shadow-sm: var(--c-shadow-sm);
+  --shadow-card: var(--c-shadow-card);
+  --shadow-pop: var(--c-shadow-pop);
+}
+
+html {
+  background: var(--c-bg);
+}
+
+body,
+body.body--dark,
+body.body--light {
+  background-color: var(--c-bg) !important;
+  color: var(--c-text);
+}
+
+body {
+  accent-color: var(--c-primary);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.page-title,
+.home-panel__title,
+.market-head__title,
+.net-head__title,
+.post-hero__title,
+.post-state-card__title,
+.theme-title,
+.wall-title,
+.studio-title {
+  font-family: var(--font-display);
+}
+
+code,
+pre,
+kbd,
+.settings-bene-row__account {
+  font-family: var(--font-mono);
+}
+
+/* Quasar surfaces. The app's own cards opt into .home-card/.account-card etc. */
+.q-card,
+.q-dialog .q-card,
+.q-menu,
+.q-popup-proxy .q-card,
+.q-table__container,
+.q-table__card,
+.q-table,
+.q-list,
+.q-item {
+  color: var(--c-text);
+}
+
+.q-card {
+  background-color: var(--c-surface);
+}
+
+.q-menu,
+.q-popup-proxy .q-card {
+  background-color: var(--c-surface-2);
+}
+
+.q-dialog .q-card {
+  background-color: var(--c-surface);
+}
+
+.q-table__container,
+.q-table__card {
+  background-color: var(--c-surface);
+}
+
+.q-table thead tr {
+  background-color: var(--c-surface-2);
+}
+
+.q-table tbody tr:hover {
+  background-color: var(--c-overlay-weak);
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: var(--c-border);
+}
+
+.q-field--filled .q-field__control {
+  background-color: var(--c-surface-2);
+}
+
+.q-field__label,
+.q-field__bottom,
+.q-field__messages {
+  color: var(--c-text-subtle);
+}
+
+.q-field__native,
+.q-field__input,
+.q-field__prefix,
+.q-field__suffix {
+  color: var(--c-text);
+}
+
+.q-separator {
+  background-color: var(--c-border-subtle);
+}
+
+.q-toolbar,
+.q-header,
+.q-drawer,
+.q-footer {
+  color: var(--c-text);
+}
+
+.q-drawer,
+.q-drawer__content {
+  background-color: var(--c-drawer);
+}
+
+.q-header .q-toolbar {
+  background-color: var(--c-header);
+}
+
+.q-notification {
+  color: var(--c-text-inverse);
+}
+
+.q-dialog__backdrop {
+  background: var(--c-scrim);
+}
+
+.q-tab__label,
+.q-tabs__arrow {
+  color: inherit;
+}
+
+/* Utility classes for new and migrated components. */
+.text-strong { color: var(--c-text-strong) !important; }
+.text-body { color: var(--c-text) !important; }
+.text-soft { color: var(--c-text-soft) !important; }
+.text-muted { color: var(--c-text-muted) !important; }
+.text-subtle { color: var(--c-text-subtle) !important; }
+.text-faint { color: var(--c-text-faint) !important; }
+.text-link { color: var(--c-link) !important; }
+.surface { background-color: var(--c-surface) !important; }
+.surface-1 { background-color: var(--c-surface-1) !important; }
+.surface-2 { background-color: var(--c-surface-2) !important; }
+.border-subtle { border-color: var(--c-border-subtle) !important; }
+
+html[data-mode='light'] .text-grey-4,
+html[data-mode='light'] .text-grey-5,
+html[data-mode='light'] .text-grey {
+  color: var(--c-text-subtle) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Texture layer
+   Textures are app-owned CSS/SVG. A theme can choose one, but cannot supply
+   the pattern itself.
+   --------------------------------------------------------------------------- */
+html[data-texture='grid'] body {
+  background-image:
+    linear-gradient(to right, var(--c-overlay-weak) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--c-overlay-weak) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-attachment: fixed;
+}
+
+html[data-texture='scanlines'] body {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--c-overlay-weak) 0,
+    var(--c-overlay-weak) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  background-attachment: fixed;
+}
+
+html[data-texture='hex'] body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cg fill='none' stroke='%23888888' stroke-opacity='0.12' stroke-width='1'%3E%3Cpath d='M28 0l24 14v28L28 56 4 42V14z'/%3E%3Cpath d='M28 48l24 14v28L28 104 4 90V62z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 96px;
+  background-attachment: fixed;
+}
+
+html[data-texture='stars'] body {
+  background-image:
+    radial-gradient(circle at 15% 20%, var(--c-overlay-strong) 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 34%, var(--c-overlay-strong) 1px, transparent 1.5px),
+    radial-gradient(circle at 42% 78%, var(--c-overlay-strong) 1px, transparent 1.5px),
+    radial-gradient(circle at 88% 68%, var(--c-overlay-strong) 1px, transparent 1.5px);
+  background-size: 180px 180px, 240px 240px, 320px 320px, 260px 260px;
+  background-attachment: fixed;
+}
+
+html[data-texture='paper'] body {
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, var(--c-overlay-weak) 3px, var(--c-overlay-weak) 4px);
+  background-attachment: fixed;
+}
+
+html[data-texture='leaves'] body {
+  background-image:
+    radial-gradient(ellipse at 12% 18%, var(--c-overlay-weak), transparent 34%),
+    radial-gradient(ellipse at 86% 72%, var(--c-overlay-weak), transparent 30%);
+  background-attachment: fixed;
+}
+
+html[data-texture='aurora'] body {
+  background-image:
+    radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--c-primary) 18%, transparent), transparent 52%),
+    radial-gradient(ellipse at 80% 18%, color-mix(in srgb, var(--c-accent) 16%, transparent), transparent 48%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--c-info) 12%, transparent), transparent 55%);
+  background-attachment: fixed;
+}
+
+html[data-texture='grain'] body {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion and contrast overrides
+   The store also sets data-motion/data-contrast; these rules cover the case
+   where the OS preference changes while the app is open.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion='full'] *,
+  html[data-motion='full'] *::before,
+  html[data-motion='full'] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+html[data-motion='reduced'] *,
+html[data-motion='reduced'] *::before,
+html[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Profile skin scope
+   The wrapper only supplies validated variables and app-owned decoration.
+   Content is isolated so a skin cannot paint over the site chrome.
+   --------------------------------------------------------------------------- */
+.skin-scope {
+  position: relative;
+  isolation: isolate;
+  contain: paint;
+  background-color: var(--skin-bg, var(--c-bg));
+  color: var(--skin-text, var(--c-text));
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.skin-scope::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--skin-backdrop, none);
+  opacity: var(--skin-backdrop-opacity, 1);
+}
+
+.skin-scope[data-skin-background='mesh']::before {
+  background:
+    radial-gradient(ellipse at 18% 10%, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 20%, transparent), transparent 50%),
+    radial-gradient(ellipse at 82% 24%, color-mix(in srgb, var(--skin-accent, var(--c-accent)) 18%, transparent), transparent 46%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--skin-info, var(--c-info)) 14%, transparent), transparent 55%);
+}
+
+.skin-scope[data-skin-background='aurora']::before {
+  background:
+    radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 26%, transparent), transparent 52%),
+    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--skin-accent, var(--c-accent)) 22%, transparent), transparent 48%),
+    radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--skin-info, var(--c-info)) 16%, transparent), transparent 58%);
+}
+
+.skin-scope[data-skin-background='horizon']::before {
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--skin-accent, var(--c-accent)) 22%, transparent), transparent 44%),
+    repeating-linear-gradient(to bottom, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 18%, transparent) 0 1px, transparent 1px 34px);
+}
+
+.skin-scope[data-skin-background='starfield']::before {
+  background-image:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--skin-text, var(--c-text)) 34%, transparent) 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 34%, color-mix(in srgb, var(--skin-text, var(--c-text)) 26%, transparent) 1px, transparent 1.5px),
+    radial-gradient(circle at 42% 78%, color-mix(in srgb, var(--skin-text, var(--c-text)) 30%, transparent) 1px, transparent 1.5px);
+  background-size: 180px 180px, 240px 240px, 320px 320px;
+}
+
+.skin-scope[data-skin-background='hex']::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'%3E%3Cg fill='none' stroke='%23888888' stroke-opacity='0.18' stroke-width='1'%3E%3Cpath d='M28 0l24 14v28L28 56 4 42V14z'/%3E%3Cpath d='M28 48l24 14v28L28 104 4 90V62z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 96px;
+}
+
+.skin-scope[data-skin-background='grid']::before {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 12%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.skin-scope[data-skin-background='scanlines']::before {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--skin-text, var(--c-text)) 7%, transparent) 0 1px,
+    transparent 1px 4px
+  );
+}
+
+.skin-scope[data-skin-background='grain']::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+.skin-scope[data-skin-background='paper']::before {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, color-mix(in srgb, var(--skin-text, var(--c-text)) 4%, transparent) 3px, color-mix(in srgb, var(--skin-text, var(--c-text)) 4%, transparent) 4px);
+}
+
+.skin-scope[data-skin-background='leaves']::before {
+  background:
+    radial-gradient(ellipse at 12% 18%, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 16%, transparent), transparent 34%),
+    radial-gradient(ellipse at 86% 72%, color-mix(in srgb, var(--skin-accent, var(--c-accent)) 14%, transparent), transparent 30%);
+}
+
+.skin-scope[data-skin-motion='drift']::before,
+.skin-scope[data-skin-motion='shimmer']::before {
+  animation: skin-drift 22s ease-in-out infinite alternate;
+}
+
+.skin-scope[data-skin-motion='pulse']::before {
+  animation: skin-pulse 8s ease-in-out infinite;
+}
+
+@keyframes skin-drift {
+  from { transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
+  to { transform: translate3d(1.5%, 1%, 0) scale(1.04); }
+}
+
+@keyframes skin-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+
+html[data-motion='reduced'] .skin-scope::before {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skin-scope::before {
+    animation: none !important;
+  }
+}
+
+/* Skin avatars, nameplates, cards and stickers. */
+.skin-scope .account-header__avatar .q-avatar,
+.skin-scope .skin-avatar {
+  border-radius: var(--skin-avatar-radius, 50%);
+}
+
+.skin-scope[data-avatar-frame='ring'] .account-header__avatar .q-avatar {
+  border: 3px solid var(--skin-primary, var(--c-primary));
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 18%, transparent);
+}
+
+.skin-scope[data-avatar-frame='hex'] .account-header__avatar .q-avatar {
+  border-radius: 28%;
+  border: 3px solid var(--skin-primary, var(--c-primary));
+  transform: rotate(45deg);
+}
+.skin-scope[data-avatar-frame='hex'] .account-header__avatar .q-avatar img {
+  transform: rotate(-45deg);
+}
+
+.skin-scope[data-avatar-frame='halo'] .account-header__avatar .q-avatar {
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 30%, transparent),
+    0 0 34px color-mix(in srgb, var(--skin-accent, var(--c-accent)) 34%, transparent);
+}
+
+.skin-scope[data-avatar-frame='orbit'] .account-header__avatar .q-avatar {
+  box-shadow: 0 0 0 2px var(--skin-primary, var(--c-primary)), 0 0 0 7px color-mix(in srgb, var(--skin-accent, var(--c-accent)) 22%, transparent);
+}
+
+.skin-scope[data-avatar-frame='pixel'] .account-header__avatar .q-avatar {
+  border-radius: 4px;
+  image-rendering: pixelated;
+  border: 3px solid var(--skin-primary, var(--c-primary));
+}
+
+.skin-scope[data-avatar-frame='ticket'] .account-header__avatar .q-avatar {
+  border-radius: 8px;
+  border: 2px dashed var(--skin-primary, var(--c-primary));
+}
+
+.skin-scope[data-nameplate='gradient'] .account-header__name {
+  background: linear-gradient(90deg, var(--skin-primary, var(--c-primary)), var(--skin-accent, var(--c-accent)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.skin-scope[data-nameplate='neon'] .account-header__name {
+  color: var(--skin-primary, var(--c-primary));
+  text-shadow: 0 0 12px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 55%, transparent);
+}
+
+.skin-scope[data-nameplate='emboss'] .account-header__name {
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--skin-bg, var(--c-bg)) 65%, #000), 0 -1px 0 color-mix(in srgb, var(--skin-text, var(--c-text)) 18%, transparent);
+}
+
+.skin-scope[data-nameplate='stamp'] .account-header__name {
+  display: inline-block;
+  padding: 0.1em 0.45em;
+  border: 2px solid var(--skin-primary, var(--c-primary));
+  color: var(--skin-primary, var(--c-primary));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-1.5deg);
+}
+
+.skin-scope[data-card='glass'] .q-card,
+.skin-scope[data-card='glass'] .home-card,
+.skin-scope[data-card='glass'] .account-card {
+  background: color-mix(in srgb, var(--skin-surface, var(--c-surface)) 62%, transparent) !important;
+  backdrop-filter: blur(14px);
+  border-color: color-mix(in srgb, var(--skin-border, var(--c-border)) 60%, transparent) !important;
+}
+
+.skin-scope[data-card='paper'] .q-card,
+.skin-scope[data-card='paper'] .home-card,
+.skin-scope[data-card='paper'] .account-card {
+  background: var(--skin-surface, var(--c-surface)) !important;
+  border-color: color-mix(in srgb, var(--skin-border, var(--c-border)) 70%, transparent) !important;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--skin-text, var(--c-text)) 8%, transparent) !important;
+}
+
+.skin-scope[data-card='terminal'] .q-card,
+.skin-scope[data-card='terminal'] .home-card,
+.skin-scope[data-card='terminal'] .account-card {
+  background: var(--skin-surface, var(--c-surface)) !important;
+  border: 1px solid var(--skin-primary, var(--c-primary)) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.skin-scope[data-card='ticket'] .q-card,
+.skin-scope[data-card='ticket'] .home-card,
+.skin-scope[data-card='ticket'] .account-card {
+  border: 2px dashed var(--skin-border, var(--c-border)) !important;
+  border-radius: 12px !important;
+}
+
+.skin-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: 0.45rem 1rem;
+  border-bottom: 1px solid var(--c-border-subtle);
+  background: var(--c-surface-2);
+  color: var(--c-text-subtle);
+  font-size: 0.74rem;
+  position: relative;
+  z-index: 2;
+}
+
+.skin-badge a,
+.skin-badge button {
+  color: var(--c-link);
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.skin-badge a:hover,
+.skin-badge button:hover {
+  color: var(--c-link-hover);
+  text-decoration: underline;
+}
+
+.skin-ticker {
+  overflow: hidden;
+  padding: 0.35rem 1rem;
+  border-bottom: 1px solid var(--c-border-subtle);
+  background: color-mix(in srgb, var(--skin-primary, var(--c-primary)) 10%, transparent);
+  color: var(--skin-text, var(--c-text));
+  font-size: 0.8rem;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.skin-ticker__track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: skin-ticker 18s linear infinite;
+}
+
+.skin-scope[data-skin-motion='none'] .skin-ticker__track {
+  padding-left: 0;
+  animation: none;
+}
+
+@keyframes skin-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.skin-sticker-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem 0;
+}
+
+.skin-sticker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border-subtle);
+  background: var(--c-surface-2);
+  font-size: 1rem;
+}
+
+/* Keep the focus ring visible inside a skin. */
+.skin-scope :focus-visible {
+  outline: 3px solid var(--c-focus);
+  outline-offset: 2px;
+}

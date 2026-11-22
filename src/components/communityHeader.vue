@@ -1,6 +1,6 @@
 <template>
   <span v-if="account !== undefined && communityInfo !== undefined">
-    <div class="col-12 text-center full-width" :style='coverImageStyle'>
+    <div class="community-cover col-12 text-center full-width" :style='coverImageStyle'>
       <router-link :to="getAccountLink(account.name)"><q-avatar class="hvr"><q-img :src="getHiveAvatarUrl(account.name)" alt="Community avatar" /></q-avatar></router-link>
       <div v-if="communityInfo !== undefined" class="text-h4">{{ communityInfo.title }}</div>
       <div v-else-if="postingJsonMeta && postingJsonMeta.name" class="text-h4" :title="account.name">{{ postingJsonMeta.profile.name }}</div>
@@ -323,3 +323,10 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.community-cover {
+  color: #fff;
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--c-shadow) 55%, transparent);
+}
+</style>

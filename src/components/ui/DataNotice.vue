@@ -63,33 +63,33 @@ export default {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.76rem;
   line-height: 1.4;
 }
 
 .data-notice--stale {
-  background: rgba(255, 183, 77, 0.08);
-  border-color: rgba(255, 183, 77, 0.28);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-warning) 28%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .data-notice--offline {
-  background: rgba(144, 164, 174, 0.08);
-  border-color: rgba(144, 164, 174, 0.28);
-  color: #cfd8dc;
+  background: color-mix(in srgb, var(--c-text-subtle) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-text-subtle) 28%, transparent);
+  color: var(--c-text-soft);
 }
 
 .data-notice--error {
-  background: rgba(239, 83, 80, 0.08);
-  border-color: rgba(239, 83, 80, 0.3);
-  color: #ffcdd2;
+  background: color-mix(in srgb, var(--c-negative) 8%, transparent);
+  border-color: color-mix(in srgb, var(--c-negative) 30%, transparent);
+  color: var(--c-negative-soft);
 }
 
 .data-notice--info {
-  background: rgba(79, 195, 247, 0.07);
-  border-color: rgba(79, 195, 247, 0.24);
-  color: #b3e5fc;
+  background: color-mix(in srgb, var(--c-link) 7%, transparent);
+  border-color: color-mix(in srgb, var(--c-link) 24%, transparent);
+  color: var(--c-link-soft);
 }
 
 .data-notice__text {
@@ -97,7 +97,7 @@ export default {
 }
 
 .data-notice__age {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   white-space: nowrap;
 }
 

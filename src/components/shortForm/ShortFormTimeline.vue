@@ -359,7 +359,7 @@ export default {
 .sf-head__subtitle {
   max-width: 70ch;
   margin: 0.35rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.88rem;
 }
 
@@ -387,22 +387,22 @@ export default {
   padding: 0.34rem 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
 }
 
 .sf-tab:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  color: var(--c-text-strong);
   text-decoration: none;
 }
 
 .sf-tab--active {
-  border-color: var(--tab-color, #4fc3f7);
-  background: rgba(79, 195, 247, 0.1);
-  color: #fff;
+  border-color: var(--tab-color, var(--c-link));
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-text-strong);
 }
 
 .sf-grid {
@@ -431,7 +431,7 @@ export default {
   padding: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .sf-composer--locked,
@@ -439,7 +439,7 @@ export default {
   flex-direction: row;
   align-items: center;
   gap: var(--space-2);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.86rem;
 }
 
@@ -454,19 +454,19 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .sf-composer__count {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
 
 .sf-composer__count--over {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .sf-composer__input {
@@ -475,8 +475,8 @@ export default {
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.25);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-shadow) 25%, transparent);
+  color: var(--c-text);
   font: inherit;
   font-size: 0.92rem;
   line-height: 1.5;
@@ -484,8 +484,8 @@ export default {
 }
 
 .sf-composer__input:focus-visible {
-  border-color: #4fc3f7;
-  outline: 2px solid rgba(79, 195, 247, 0.35);
+  border-color: var(--c-link);
+  outline: 2px solid color-mix(in srgb, var(--c-link) 35%, transparent);
   outline-offset: 1px;
 }
 
@@ -498,7 +498,7 @@ export default {
 }
 
 .sf-composer__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.75rem;
 }
 
@@ -523,7 +523,7 @@ export default {
 
 .sf-end {
   margin: var(--space-3) 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.8rem;
   text-align: center;
 }
@@ -536,7 +536,7 @@ export default {
   padding: var(--space-6) var(--space-4);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-card);
-  color: #78909c;
+  color: var(--c-text-faint);
   text-align: center;
 }
 
@@ -557,12 +557,12 @@ export default {
 }
 
 .sf-about__list dt {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .sf-about__list dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   overflow-wrap: anywhere;
 }
 </style>

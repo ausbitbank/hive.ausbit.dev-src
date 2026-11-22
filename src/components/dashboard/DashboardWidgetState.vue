@@ -30,7 +30,7 @@
   align-items: flex-start;
   gap: 0.7rem;
   padding: 0.75rem 1rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
   line-height: 1.45;
 }
@@ -42,7 +42,7 @@
 }
 
 .dw-state__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
 }
 

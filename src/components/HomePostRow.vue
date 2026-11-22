@@ -52,7 +52,7 @@
 .home-post-row__rank {
   flex: none;
   width: 1.15rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
   font-weight: 600;
   text-align: center;
@@ -64,7 +64,7 @@
   height: 54px;
   overflow: hidden;
   border-radius: var(--radius-sm);
-  background: #10161b;
+  background: var(--c-bg-deep);
 }
 
 .home-post-row__thumb :deep(.q-img) {
@@ -82,7 +82,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.35;
@@ -90,7 +90,7 @@
 }
 
 .home-post-row__title:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-post-row__meta {
@@ -99,28 +99,28 @@
   flex-wrap: wrap;
   gap: 0.3rem;
   margin-top: 0.2rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
 .home-post-row__meta a {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   text-decoration: none;
 }
 
 .home-post-row__meta a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-post-row__community {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .home-post-row__voted {
   display: inline-flex;
   align-items: center;
   gap: 0.12rem;
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .home-post-row__excerpt {
@@ -129,20 +129,20 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0.18rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.4;
 }
 
 .home-post-row__stats span.is-voted {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .home-post-row__stats {
   display: flex;
   flex: none;
   gap: 0.55rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
 }
 

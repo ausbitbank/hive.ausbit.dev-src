@@ -27,7 +27,7 @@
         :aria-label="'Recently voted posts by ' + account"
         @mouseenter="autoplay = false"
         @mouseleave="autoplay = true"
-        class="hive-carousel bg-dark text-white shadow-2"
+        class="hive-carousel text-white shadow-2"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
           <div class="carousel-caption">

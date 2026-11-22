@@ -260,7 +260,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 2px;
-  background: #4fc3f7;
+  background: var(--c-link);
   opacity: 0;
   transition: opacity 160ms ease;
 }
@@ -279,7 +279,7 @@
 }
 
 .home-market-row:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .home-market-row__name {
@@ -290,18 +290,18 @@
 }
 
 .home-market-row__symbol {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .home-market-row--hive .home-market-row__symbol {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-market-row__coin {
   overflow: hidden;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -335,7 +335,7 @@
 }
 
 .home-market-row__price {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -356,7 +356,7 @@
 
 .home-market-row__external {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .home-market__error {
@@ -366,7 +366,7 @@
   gap: 0.3rem;
   flex-wrap: wrap;
   padding: 0.35rem 0.8rem;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.72rem;
 }
 
@@ -399,7 +399,7 @@
   align-items: baseline;
   justify-content: space-between;
   margin-top: 0.35rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -407,12 +407,12 @@
 }
 
 .home-market-settings__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-weight: 500;
 }
 
 .home-market-settings__note {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.3;
 }
@@ -448,7 +448,7 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font: inherit;
   font-size: 0.8rem;
   text-align: left;
@@ -457,7 +457,7 @@
 
 .home-market-settings__option:hover:not(:disabled),
 .home-market-settings__option:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
 }
 
 .home-market-settings__option:disabled {
@@ -466,14 +466,14 @@
 }
 
 .home-market-settings__option.is-selected {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .home-market-settings__option-symbol {
   flex: none;
   width: 4.2rem;
   overflow: hidden;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -503,15 +503,15 @@
 }
 
 .is-up {
-  color: #66bb6a;
+  color: var(--c-positive);
 }
 
 .is-down {
-  color: #ef5350;
+  color: var(--c-negative);
 }
 
 .is-flat {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 @media (max-width: 599px) {

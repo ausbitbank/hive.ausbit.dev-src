@@ -76,7 +76,7 @@ export default {
 }
 
 .savings-apr__number {
-  color: #81c784;
+  color: var(--c-positive);
   font-size: 1.9rem;
   font-weight: 600;
   line-height: 1.1;
@@ -84,7 +84,7 @@ export default {
 }
 
 .savings-apr__unit {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -92,7 +92,7 @@ export default {
 
 .savings-apr__intro {
   margin: 0.4rem 0 0.55rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -111,13 +111,13 @@ export default {
 }
 
 .savings-apr__row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .savings-apr__row dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.8rem;
   font-weight: 600;
   text-align: right;

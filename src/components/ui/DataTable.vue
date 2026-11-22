@@ -106,7 +106,7 @@ export default {
 }
 
 .ui-table__caption {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -133,7 +133,7 @@ export default {
 .ui-table th {
   padding: 0.48rem 0.75rem;
   border-bottom: 1px solid var(--border-subtle);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -145,7 +145,7 @@ export default {
 .ui-table td {
   padding: 0.5rem 0.75rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   white-space: nowrap;
 }
 
@@ -178,7 +178,7 @@ export default {
   align-items: center;
   gap: 0.35rem;
   padding: var(--space-5) var(--space-4);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   text-align: center;
 }
@@ -186,7 +186,7 @@ export default {
 .ui-table__footer {
   padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border-subtle);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 

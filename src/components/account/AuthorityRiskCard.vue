@@ -151,7 +151,7 @@ export default {
 }
 
 .authority-risk__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -159,14 +159,14 @@ export default {
 
 .authority-risk__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .authority-risk__summary {
   margin: 0.35rem 0 0.6rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
@@ -187,33 +187,33 @@ export default {
   padding: 0.45rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .authority-risk__finding--critical {
-  border-color: rgba(244, 67, 54, 0.4);
-  background: rgba(244, 67, 54, 0.06);
-  color: #ef9a9a;
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 6%, transparent);
+  color: var(--c-negative);
 }
 
 .authority-risk__finding--warning {
-  border-color: rgba(255, 183, 77, 0.32);
-  background: rgba(255, 183, 77, 0.05);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 32%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 5%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .authority-risk__finding--info {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .authority-risk__finding-label {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
 }
 
 .authority-risk__finding-detail {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -225,7 +225,7 @@ export default {
 }
 
 .authority-risk__permissions-title {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -248,7 +248,7 @@ export default {
 
 .authority-risk__permissions thead th {
   border-top: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -256,7 +256,7 @@ export default {
 }
 
 .authority-risk__permissions tbody th {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-weight: 500;
 }
 
@@ -270,20 +270,20 @@ export default {
   align-items: center;
   gap: 0.35rem;
   margin-top: 0.55rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
 .authority-risk__queued {
   margin-top: 0.65rem;
   padding: 0.5rem;
-  border: 1px solid rgba(79, 195, 247, 0.3);
+  border: 1px solid color-mix(in srgb, var(--c-link) 30%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(79, 195, 247, 0.05);
+  background: color-mix(in srgb, var(--c-link) 5%, transparent);
 }
 
 .authority-risk__queued-title {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   font-size: 0.66rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -291,7 +291,7 @@ export default {
 
 .authority-risk__queued-op {
   margin-top: 0.2rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.74rem;
   font-family: monospace;
 }
@@ -299,14 +299,14 @@ export default {
 .authority-risk__diff {
   margin: 0.25rem 0 0;
   padding-left: 1rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.7rem;
   line-height: 1.4;
 }
 
 .authority-risk__note {
   margin: 0.65rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }

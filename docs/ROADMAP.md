@@ -175,6 +175,17 @@ names through account lookup. The empty-search view adds New communities, Active
 right now and Largest communities shelves with compact community cards. See
 `docs/workstreams/W64-community-search-discovery.md`.
 
+W63 (theme system and profile skins) is implemented locally. Ten built-in
+themes including the default Hive Dark and a light theme are selectable in
+`/appearance`; the token layer and CI scanner replace the old hard-coded dark
+palette. Authors can design a skin in `/settings/skin`, preview it, and publish
+it as namespaced `posting_json_metadata` with posting authority. Visitors see a
+skin on the author's profile, blog and posts inside a bounded, contrast-checked
+scope, and can hide all skins at any time. `/themes` shows built-in themes and
+skins from accounts the viewer follows. See
+`docs/workstreams/W63-theme-system.md`. Deployment and the production smoke
+remain.
+
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
 on-chain balance-request UI, the optional #63 server-side existence check at the

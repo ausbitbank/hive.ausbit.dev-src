@@ -370,7 +370,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -384,7 +384,7 @@ export default {
   align-items: flex-start;
   gap: 0.3rem;
   margin: 0.45rem 0 0.2rem;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.74rem;
   line-height: 1.4;
 }
@@ -410,16 +410,16 @@ export default {
   padding: 0.15rem 0.4rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
 .market-trade-panel__quote:hover:not(:disabled) {
-  border-color: rgba(79, 195, 247, 0.5);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-link) 50%, transparent);
+  color: var(--c-text);
 }
 
 .market-trade-panel__quote:disabled {
@@ -442,7 +442,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -453,12 +453,12 @@ export default {
   gap: 0.4rem;
   flex-wrap: wrap;
   padding-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
 .market-trade-panel__fee strong {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .market-trade-panel__hint {
@@ -466,7 +466,7 @@ export default {
   align-items: flex-start;
   gap: 0.3rem;
   margin: 0;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -494,7 +494,7 @@ export default {
 
 .market-trade-panel__balances-head h3 {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.82rem;
   font-weight: 600;
 }
@@ -520,13 +520,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .market-trade-panel__balance-row dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.76rem;
   font-weight: 600;
   text-align: right;

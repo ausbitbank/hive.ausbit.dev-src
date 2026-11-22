@@ -154,8 +154,8 @@ export default {
   overflow: hidden;
   border-radius: var(--radius-card);
   background:
-    radial-gradient(circle at 90% 0%, rgba(255, 193, 7, 0.08), transparent 45%),
-    rgba(255, 255, 255, 0.025);
+    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--c-warning) 8%, transparent), transparent 45%),
+    color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .lightning-address-card__head {
@@ -175,12 +175,12 @@ export default {
 }
 
 .lightning-address-card__icon {
-  border: 1px solid rgba(255, 193, 7, 0.35);
-  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
 }
 
 .lightning-eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -188,7 +188,7 @@ export default {
 
 .lightning-address-card__title {
   margin: 0.1rem 0 0;
-  color: #f1e7c8;
+  color: var(--c-warning-soft);
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.2;
@@ -216,11 +216,11 @@ export default {
   padding: 0.4rem 0.45rem 0.4rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: 0.45rem;
-  background: rgba(0, 0, 0, 0.18);
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
 }
 
 .lightning-address-card__address code {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 0.76rem;
   overflow-wrap: anywhere;
 }
@@ -249,7 +249,7 @@ export default {
   height: 150px;
   border: 1px dashed var(--border-subtle);
   border-radius: 0.45rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -259,7 +259,7 @@ export default {
 
 .lightning-address-card__hint {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.4;
 }

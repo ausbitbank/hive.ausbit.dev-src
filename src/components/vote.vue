@@ -359,8 +359,8 @@ export default {
   padding: 0 10px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -370,36 +370,36 @@ export default {
 }
 
 .vote-control__btn--up .q-icon {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .vote-control__btn--down .q-icon {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .vote-control__btn.q-btn:hover:not(.disabled) {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-text) 22%, transparent);
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-strong);
   transform: translateY(-1px);
 }
 
 .vote-control__btn.q-btn.is-active {
-  border-color: rgba(129, 199, 132, 0.45) !important;
-  color: #e8f5e9 !important;
+  border-color: color-mix(in srgb, var(--c-positive) 45%, transparent) !important;
+  color: var(--c-positive-soft) !important;
   background: linear-gradient(
     90deg,
-    rgba(76, 175, 80, 0.32) var(--vote-weight, 100%),
-    rgba(255, 255, 255, 0.04) var(--vote-weight, 100%)
+    color-mix(in srgb, var(--c-positive) 32%, transparent) var(--vote-weight, 100%),
+    color-mix(in srgb, var(--c-text) 4%, transparent) var(--vote-weight, 100%)
   ) !important;
 }
 
 .vote-control__btn--down.is-active {
-  border-color: rgba(229, 115, 115, 0.45) !important;
+  border-color: color-mix(in srgb, var(--c-negative) 45%, transparent) !important;
   background: linear-gradient(
     90deg,
-    rgba(239, 83, 80, 0.32) var(--vote-weight, 100%),
-    rgba(255, 255, 255, 0.04) var(--vote-weight, 100%)
+    color-mix(in srgb, var(--c-negative) 32%, transparent) var(--vote-weight, 100%),
+    color-mix(in srgb, var(--c-text) 4%, transparent) var(--vote-weight, 100%)
   ) !important;
 }
 
@@ -414,15 +414,15 @@ export default {
   gap: 6px;
   max-width: 100%;
   padding: 5px 8px 5px 10px;
-  border: 1px solid rgba(129, 199, 132, 0.4);
+  border: 1px solid color-mix(in srgb, var(--c-positive) 40%, transparent);
   border-radius: var(--radius-pill);
-  background: rgba(76, 175, 80, 0.08);
+  background: color-mix(in srgb, var(--c-positive) 8%, transparent);
   animation: vote-control-in 0.16s ease-out;
 }
 
 .vote-control__composer--down {
-  border-color: rgba(229, 115, 115, 0.4);
-  background: rgba(239, 83, 80, 0.08);
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 8%, transparent);
 }
 
 @keyframes vote-control-in {
@@ -438,16 +438,16 @@ export default {
 }
 
 .vote-control__composer-icon {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .vote-control__composer--down .vote-control__composer-icon {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .vote-control__composer-label {
   overflow: hidden;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -456,7 +456,7 @@ export default {
 
 .vote-control__composer-value {
   min-width: 38px;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -468,17 +468,17 @@ export default {
   min-width: 52px;
   height: 18px;
   margin: 0;
-  accent-color: #81c784;
+  accent-color: var(--c-positive);
   cursor: pointer;
 }
 
 .vote-control__composer--down .vote-control__range {
-  accent-color: #e57373;
+  accent-color: var(--c-negative);
 }
 
 .vote-control__percent {
   min-width: 36px;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -496,7 +496,7 @@ export default {
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.68rem;
   font-weight: 600;
@@ -505,14 +505,14 @@ export default {
 }
 
 .vote-control__preset:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-strong);
 }
 
 .vote-control__preset.is-selected {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-text) 18%, transparent);
+  background: color-mix(in srgb, var(--c-text) 10%, transparent);
+  color: var(--c-text-strong);
 }
 
 .vote-control__composer-actions {
@@ -530,13 +530,13 @@ export default {
 }
 
 .vote-control__confirm.q-btn.text-white {
-  color: #0b1d2a !important;
+  color: var(--c-text-inverse) !important;
 }
 
 .vote-control__cancel.q-btn {
   min-width: 26px;
   min-height: 26px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .vote-control__sent {
@@ -544,9 +544,9 @@ export default {
   align-items: center;
   gap: 6px;
   padding: 4px 6px 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid color-mix(in srgb, var(--c-text) 20%, transparent);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.74rem;
   font-weight: 600;
   transition: background 0.15s ease, border-color 0.15s ease;
@@ -557,64 +557,64 @@ export default {
 }
 
 .vote-control__sent-label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-weight: 500;
 }
 
 .vote-control__sent--up {
-  border-color: rgba(129, 199, 132, 0.4);
-  background: rgba(76, 175, 80, 0.1);
+  border-color: color-mix(in srgb, var(--c-positive) 40%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 10%, transparent);
 }
 
 .vote-control__sent--up .q-icon:first-child,
 .vote-control__sent--up .vote-control__sent-label {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 .vote-control__sent--down {
-  border-color: rgba(229, 115, 115, 0.4);
-  background: rgba(239, 83, 80, 0.1);
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 10%, transparent);
 }
 
 .vote-control__sent--down .q-icon:first-child,
 .vote-control__sent--down .vote-control__sent-label {
-  color: #ef9a9a;
+  color: var(--c-negative);
 }
 
 .vote-control__sent--pending {
   border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: color-mix(in srgb, var(--c-text) 24%, transparent);
 }
 
 .vote-control__sent--pending .vote-control__sent-label {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .vote-control__sent--failed {
-  border-color: rgba(255, 183, 77, 0.45);
-  background: rgba(255, 183, 77, 0.08);
+  border-color: color-mix(in srgb, var(--c-warning) 45%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
 }
 
 .vote-control__sent--failed .q-icon:first-child,
 .vote-control__sent--failed .vote-control__sent-label {
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .vote-control__sent-retry.q-btn,
 .vote-control__sent-dismiss.q-btn {
   min-width: 24px;
   min-height: 24px;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .vote-control__sent-retry.q-btn:hover {
-  background: rgba(255, 183, 77, 0.15);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 15%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .vote-control__sent-dismiss.q-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-strong);
 }
 
 @media (max-width: 599px) {

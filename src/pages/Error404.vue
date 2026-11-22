@@ -13,7 +13,6 @@
           v-model="query"
           dense
           outlined
-          dark
           label="Search accounts, posts, tags, blocks or transactions"
           aria-label="Search for a Hive page"
           class="not-found-search__input"
@@ -79,7 +78,7 @@ export default {
   justify-content: center;
   min-height: 100vh;
   padding: var(--space-5) var(--space-4);
-  background: #0d1114;
+  background: var(--c-bg);
 }
 
 .not-found-card {
@@ -88,12 +87,12 @@ export default {
   padding: var(--space-6);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
   text-align: center;
 }
 
 .not-found-eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -109,7 +108,7 @@ export default {
 .not-found-intro {
   margin: 0 auto 1rem;
   max-width: 52ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.88rem;
   line-height: 1.55;
 }
@@ -127,19 +126,19 @@ export default {
 
 .not-found-hint {
   margin: 0.45rem 0 0;
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.74rem;
 }
 
 .not-found-examples {
   margin: 0.5rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.5;
 }
 
 .not-found-examples code {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .not-found-links {
@@ -154,7 +153,7 @@ export default {
 }
 
 .not-found-links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 

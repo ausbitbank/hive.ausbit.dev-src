@@ -209,18 +209,18 @@ export default {
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .hbd-converter__result-label {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .hbd-converter__result-value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.35rem;
   font-weight: 600;
   line-height: 1.2;
@@ -229,7 +229,7 @@ export default {
 }
 
 .hbd-converter__result-usd {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
@@ -247,13 +247,13 @@ export default {
 }
 
 .hbd-converter__meta-row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
 .hbd-converter__meta-row dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.76rem;
   font-weight: 600;
   text-align: right;
@@ -264,13 +264,13 @@ export default {
   align-items: flex-start;
   gap: 0.3rem;
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.45;
 }
 
 .hbd-converter__note--warning {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .hbd-converter__actions {
@@ -283,12 +283,12 @@ export default {
 }
 
 .hbd-converter__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .hbd-converter__link:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 

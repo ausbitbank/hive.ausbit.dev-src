@@ -27,7 +27,7 @@
             <span>Magi resource credits</span>
             <strong>{{ rcLabel }}</strong>
           </div>
-          <q-linear-progress dark rounded size="7px" :value="rcPercent / 100" color="primary" aria-label="Magi resource credits" />
+          <q-linear-progress rounded size="7px" :value="rcPercent / 100" color="primary" aria-label="Magi resource credits" />
           <small>{{ rcPercent }}% available</small>
         </div>
 
@@ -63,7 +63,7 @@
   gap: 0.4rem;
   flex-direction: column;
   padding: 0.35rem 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
   text-align: center;
 }
@@ -73,7 +73,7 @@
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .magi-account__rc-head {
@@ -85,14 +85,14 @@
 }
 
 .magi-account__rc-head span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .magi-account__rc-head strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -101,7 +101,7 @@
 .magi-account__rc small {
   display: block;
   margin-top: 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -117,11 +117,11 @@
   padding: 0.45rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .magi-account__stats dt {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -129,7 +129,7 @@
 
 .magi-account__stats dd {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -137,7 +137,7 @@
 
 .magi-account__stats dd small {
   display: block;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   font-weight: 400;
 }
@@ -154,7 +154,7 @@
 }
 
 .magi-account__links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 

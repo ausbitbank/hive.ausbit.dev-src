@@ -85,7 +85,7 @@ export default {
 .comment--nested {
   margin-left: calc(var(--indent) * 16px);
   padding-left: 12px;
-  border-left: 2px solid rgba(62, 146, 204, 0.28);
+  border-left: 2px solid color-mix(in srgb, var(--c-primary) 28%, transparent);
 }
 
 .comment__header {
@@ -95,7 +95,7 @@ export default {
   gap: 0.3rem;
   min-width: 0;
   font-size: 0.8rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .comment__avatar {
@@ -106,20 +106,20 @@ export default {
 .comment__author {
   font-size: 0.86rem;
   font-weight: 600;
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .comment__rep {
   padding: 0 0.3rem;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.7rem;
   line-height: 1.5;
 }
 
 .comment__dot {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .comment__time-link {
@@ -128,13 +128,13 @@ export default {
 }
 
 .comment__time-link:hover .comment__time {
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: underline;
   text-underline-offset: 0.14em;
 }
 
 .comment__reply-count {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.75rem;
 }
 
@@ -146,7 +146,7 @@ export default {
   margin: 0.4rem 0 0.1rem 2.15rem;
   font-size: 0.94rem;
   line-height: 1.6;
-  color: #dbe3e8;
+  color: var(--c-text-soft);
 }
 
 .comment__body :deep(p:last-child) {

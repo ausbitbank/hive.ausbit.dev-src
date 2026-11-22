@@ -268,7 +268,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -288,16 +288,16 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.85rem;
 }
 
 .tx-hero__subtitle a {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .tx-hero__dot {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .tx-hero__id {
@@ -309,11 +309,11 @@
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .tx-hero__id-label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.66rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -321,7 +321,7 @@
 
 .tx-hero__id code {
   min-width: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
@@ -348,7 +348,7 @@
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .tx-metric--wide {
@@ -356,7 +356,7 @@
 }
 
 .tx-metric__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -369,19 +369,19 @@
 }
 
 a.tx-metric__value {
-  color: #64b5f6;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 a.tx-metric__value:visited {
-  color: #ce93d8;
+  color: var(--c-link-visited);
 }
 
 .tx-metric__mono {
   font-family: monospace;
   font-size: 0.74rem;
   font-weight: 500;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
 }
 
 .tx-body {
@@ -407,12 +407,12 @@ a.tx-metric__value:visited {
   padding: 0.15rem 0.9rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.015);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .tx-op__label {
   padding-top: 0.45rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -427,7 +427,7 @@ a.tx-metric__value:visited {
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .tx-signatures__head {
@@ -444,7 +444,7 @@ a.tx-metric__value:visited {
 }
 
 .tx-signatures__hint {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
@@ -459,7 +459,7 @@ a.tx-metric__value:visited {
 .tx-signature code {
   flex: 1;
   min-width: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   overflow-wrap: anywhere;
 }
@@ -479,7 +479,7 @@ a.tx-metric__value:visited {
 }
 
 .tx-raw__hint {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
 }
 
@@ -491,7 +491,7 @@ a.tx-metric__value:visited {
   justify-content: center;
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .tx-state__title {
@@ -502,12 +502,12 @@ a.tx-metric__value:visited {
 
 .tx-state__text {
   margin: var(--space-2) 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   overflow-wrap: anywhere;
 }
 
 .tx-state__id {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.75rem;
   overflow-wrap: anywhere;
 }

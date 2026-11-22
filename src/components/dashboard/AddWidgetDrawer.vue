@@ -86,7 +86,7 @@
   flex-direction: column;
   width: min(420px, 100vw);
   max-width: 100vw;
-  background: #0b1116;
+  background: var(--c-bg-deep);
 }
 
 .dw-drawer__head {
@@ -99,7 +99,7 @@
 
 .dw-drawer__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.15rem;
   font-weight: 600;
 }
@@ -117,8 +117,8 @@
   margin: 0 0 0.6rem;
   padding: 0.45rem 0.6rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.74rem;
   line-height: 1.4;
 }
@@ -131,7 +131,7 @@
 
 .dw-drawer__group-title {
   margin: 0 0 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -166,8 +166,8 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-link-hover);
 }
 
 .dw-drawer__text {
@@ -180,7 +180,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.35rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -188,8 +188,8 @@
 .dw-drawer__tag {
   padding: 0.02rem 0.35rem;
   border-radius: var(--radius-pill);
-  background: rgba(79, 195, 247, 0.14);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-link) 14%, transparent);
+  color: var(--c-link-hover);
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -198,14 +198,14 @@
 
 .dw-drawer__desc {
   margin: 0.15rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   line-height: 1.35;
 }
 
 .dw-drawer__reason {
   margin: 0.2rem 0 0;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.7rem;
 }
 
@@ -215,7 +215,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 2rem 1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.8rem;
   text-align: center;
 }
@@ -230,7 +230,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   border-top: 1px solid var(--border-subtle);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 

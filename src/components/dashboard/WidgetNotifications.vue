@@ -69,7 +69,7 @@
   gap: 0.45rem;
   padding: 0.4rem 0.15rem;
   border-top: 1px solid var(--border-subtle);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.78rem;
   line-height: 1.35;
   text-decoration: none;
@@ -80,7 +80,7 @@
 }
 
 .dw-notify__row:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
   text-decoration: none;
 }
 
@@ -92,17 +92,17 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text-subtle);
 }
 
 .dw-notify__icon.is-votes {
-  color: #a5d6a7;
+  color: var(--c-positive);
 }
 
 .dw-notify__icon.is-replies,
 .dw-notify__icon.is-mentions {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .dw-notify__text {
@@ -112,7 +112,7 @@
 
 .dw-notify__time {
   flex: none;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   white-space: nowrap;
 }
@@ -120,7 +120,7 @@
 .dw-notify__empty {
   margin: 0;
   padding: 0.4rem 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.78rem;
 }
 

@@ -281,7 +281,7 @@
 <style scoped>
 .health-loading {
   padding: var(--space-4);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .health-notice {
@@ -291,22 +291,22 @@
 .health-banner {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(76, 175, 80, 0.07);
+  background: color-mix(in srgb, var(--c-positive) 7%, transparent);
 }
 
 .health-banner--warning {
-  border-color: rgba(255, 183, 77, 0.35);
-  background: rgba(255, 183, 77, 0.07);
+  border-color: color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 7%, transparent);
 }
 
 .health-banner--critical {
-  border-color: rgba(239, 83, 80, 0.4);
-  background: rgba(239, 83, 80, 0.07);
+  border-color: color-mix(in srgb, var(--c-negative) 40%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 7%, transparent);
 }
 
 .health-banner--watch {
-  border-color: rgba(255, 213, 79, 0.35);
-  background: rgba(255, 213, 79, 0.06);
+  border-color: color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
 }
 
 .health-banner__body {
@@ -323,14 +323,14 @@
 
 .health-banner__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .health-banner__text p {
   margin: 0.15rem 0 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
   line-height: 1.45;
 }
@@ -339,31 +339,31 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
 
 .health-link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.78rem;
   font-weight: 600;
   text-decoration: none;
 }
 
 .health-link:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .health-link--plain {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-weight: 500;
 }
 
 .health-chain {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .health-chain__facts {
@@ -389,7 +389,7 @@
 }
 
 .health-chain__facts dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -399,24 +399,24 @@
   display: flex;
   flex-direction: column;
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .health-chain__facts dd a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .health-chain__facts dd a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .health-chain__facts dd small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-weight: 400;
 }
@@ -438,18 +438,18 @@
 }
 
 .health-chain__block-links a {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   text-decoration: none;
 }
 
 .health-chain__block-links a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
 .health-bridge {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .health-bridge__head {
@@ -465,14 +465,14 @@
 }
 
 .health-bridge__state {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .health-bridge__note {
   margin: 0.15rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   line-height: 1.4;
 }
@@ -481,7 +481,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   white-space: nowrap;
 }
@@ -505,7 +505,7 @@
 }
 
 .health-bridge__facts dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -513,7 +513,7 @@
 
 .health-bridge__facts dd {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -522,7 +522,7 @@
 .health-bridge__empty {
   padding: 0.7rem 0.9rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 

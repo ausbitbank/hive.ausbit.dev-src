@@ -9,6 +9,38 @@
     </q-card-section>
 
     <div class="settings-scroll">
+      <section class="settings-section" aria-labelledby="settings-appearance-title">
+        <div class="settings-section__head">
+          <q-icon name="palette" size="18px" color="primary" aria-hidden="true" />
+          <div>
+            <h3 id="settings-appearance-title" class="settings-section__title">Appearance</h3>
+            <p class="settings-section__hint">Site theme and comfort options. Profile skins are chosen by the author you are visiting.</p>
+          </div>
+        </div>
+        <div class="settings-fields">
+          <q-select
+            :model-value="$appearance.effectiveThemeId"
+            :options="themeSelectOptions"
+            emit-value
+            map-options
+            dense
+            outlined
+            label="Site theme"
+            aria-label="Site theme"
+            @update:model-value="$appearance.setTheme($event)"
+          />
+          <q-btn
+            outline
+            no-caps
+            color="primary"
+            icon="open_in_new"
+            label="Open the theme gallery"
+            to="/appearance"
+            v-close-popup
+          />
+        </div>
+      </section>
+
       <section class="settings-section" aria-labelledby="settings-voting-title">
         <div class="settings-section__head">
           <q-icon name="how_to_vote" size="18px" color="primary" aria-hidden="true" />
@@ -194,7 +226,7 @@
   width: 470px;
   max-width: 94vw;
   max-height: min(680px, calc(100vh - 72px));
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .settings-card :deep(.home-panel__head) {
@@ -225,7 +257,7 @@
 
 .settings-section__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.3;
@@ -233,7 +265,7 @@
 
 .settings-section__hint {
   margin: 0.15rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   line-height: 1.45;
 }
@@ -253,7 +285,7 @@
 
 .settings-vote__value {
   min-width: 48px;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.9rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -281,14 +313,14 @@
   padding: 0.35rem 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .settings-bene-row__account {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.8rem;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -324,7 +356,7 @@
   padding: 0.55rem 0.6rem;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 
@@ -338,11 +370,11 @@
 }
 
 .settings-total {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .settings-warning {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .settings-select {
@@ -358,11 +390,11 @@
   flex: none;
   padding: 0.6rem 1rem 0.7rem;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .settings-footer__note {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
@@ -409,6 +441,7 @@
 import { setHiveNode } from 'src/services/hive'
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE, MAGI_NODES } from 'src/services/hiveNodes'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { themeOptions } from 'src/themes/registry'
 
 function weightToPercent (weight) {
   const value = Number(weight)
@@ -432,6 +465,7 @@ export default {
       magiNodeOptions: [...MAGI_NODES],
       ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog',
       smartlockSessionMinutes: Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15,
+      themeSelectOptions: themeOptions(),
       smartlockTimeoutOptions: [
         { label: '5 minutes', value: 5 },
         { label: '15 minutes', value: 15 },

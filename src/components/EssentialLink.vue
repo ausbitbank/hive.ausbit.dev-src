@@ -60,7 +60,7 @@ export default {
 
 <style scoped>
 .site-link__external {
-  color: #546e7a;
+  color: var(--c-text-faint);
   opacity: 0;
   transition: opacity 0.15s ease;
 }

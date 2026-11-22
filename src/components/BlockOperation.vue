@@ -410,7 +410,7 @@ export default {
 
 .block-op--virtual {
   padding-left: 0.5rem;
-  border-left: 2px solid rgba(38, 166, 154, 0.35);
+  border-left: 2px solid color-mix(in srgb, var(--c-positive) 35%, transparent);
 }
 
 .block-op__row {
@@ -443,7 +443,7 @@ export default {
   flex-wrap: wrap;
   gap: 0.25rem 0.35rem;
   line-height: 1.45;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.86rem;
 }
 
@@ -452,12 +452,12 @@ export default {
 }
 
 .block-op__muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .block-op__json-toggle {
   flex: none;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .block-op__json {
@@ -465,7 +465,7 @@ export default {
   padding: 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.18);
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
   overflow-x: auto;
 }
 

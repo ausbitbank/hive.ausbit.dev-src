@@ -282,7 +282,7 @@
 .nodes-list-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.018);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .nodes-list {
@@ -328,7 +328,7 @@
 
 .node-prefs {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .node-prefs__body {
@@ -347,7 +347,7 @@
 .node-prefs__row p {
   flex: 1 1 320px;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -359,12 +359,12 @@
   flex-wrap: wrap;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
 }
 
 .node-prefs__status strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
   overflow-wrap: anywhere;
 }
@@ -382,38 +382,38 @@
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .layer2-stat-grid span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .layer2-stat-grid strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .layer2-stat-grid small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   overflow-wrap: anywhere;
 }
 
 .layer2-note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
   line-height: 1.5;
 }
 
 .layer2-note code {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
 }
 

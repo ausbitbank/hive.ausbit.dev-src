@@ -296,7 +296,7 @@ export default {
   margin-bottom: var(--space-3);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .connections-search {
@@ -320,21 +320,21 @@ export default {
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.74rem;
   cursor: pointer;
 }
 
 .connections-chip:hover:not(:disabled) {
-  color: #e4eaed;
-  border-color: rgba(79, 195, 247, 0.4);
+  color: var(--c-text);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
 }
 
 .connections-chip--active {
-  color: #0b1014;
+  color: var(--c-bg-deep);
   border-color: transparent;
-  background: #4fc3f7;
+  background: var(--c-link);
   font-weight: 600;
 }
 
@@ -349,13 +349,13 @@ export default {
   padding: 0.7rem 0.75rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.014);
+  background: color-mix(in srgb, var(--c-text) 1%, transparent);
   transition: border-color 160ms ease, background-color 160ms ease;
 }
 
 .connection-card:hover {
-  border-color: rgba(79, 195, 247, 0.28);
-  background: rgba(255, 255, 255, 0.03);
+  border-color: color-mix(in srgb, var(--c-link) 28%, transparent);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .connection-card--skeleton {
@@ -374,7 +374,7 @@ export default {
   padding: var(--space-6) var(--space-3);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-card);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   text-align: center;
 }
 
@@ -384,7 +384,7 @@ export default {
 
 .connections-count {
   margin: 0.75rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
   text-align: center;
 }

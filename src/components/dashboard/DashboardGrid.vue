@@ -145,8 +145,8 @@
   bottom: 6px;
   width: 3px;
   border-radius: var(--radius-pill);
-  background: #4fc3f7;
-  box-shadow: 0 0 10px rgba(79, 195, 247, 0.75);
+  background: var(--c-link);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-link) 75%, transparent);
   pointer-events: none;
 }
 
@@ -168,16 +168,16 @@
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-card);
   background: transparent;
-  color: #78909c;
+  color: var(--c-text-faint);
   font: inherit;
   font-size: 0.76rem;
   cursor: pointer;
 }
 
 .dw-grid__end.is-target {
-  border-color: rgba(79, 195, 247, 0.7);
-  background: rgba(79, 195, 247, 0.08);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 70%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-link-soft);
 }
 
 @media (max-width: 799px) {

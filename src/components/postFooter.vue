@@ -252,7 +252,7 @@ export default {
   gap: 0.4rem 0.55rem;
   padding: 0.5rem 0.75rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
@@ -261,19 +261,19 @@ export default {
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-weight: 600;
   text-decoration: none;
 }
 
 .post-footer__author:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: none;
 }
 
 .post-footer__avatar {
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
 }
 
 .post-footer__author-name {
@@ -290,8 +290,8 @@ export default {
   padding: 0.1rem 0.45rem 0.1rem 0.15rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.7rem;
   text-decoration: none;
 }
@@ -303,8 +303,8 @@ export default {
 }
 
 .post-footer__community:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  color: var(--c-text-strong);
   text-decoration: none;
 }
 
@@ -314,28 +314,28 @@ export default {
   height: 22px;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
 }
 
 .post-footer__chip--pinned.q-chip {
-  border-color: rgba(255, 183, 77, 0.35);
-  background: rgba(255, 183, 77, 0.08);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .post-footer__title {
   min-width: 0;
   overflow: hidden;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .post-footer__time {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -345,7 +345,7 @@ export default {
   padding: 0 8px;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   font-weight: 600;
 }
@@ -355,21 +355,21 @@ export default {
 }
 
 .post-footer__action.q-btn .q-btn__content .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .post-footer__action.q-btn:hover {
   border-color: var(--border-subtle);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text-strong);
 }
 
 .post-footer__action.q-btn:hover .q-btn__content .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .post-footer__payout-icon {
-  color: #e31337 !important;
+  color: var(--c-secondary) !important;
 }
 
 .post-footer__more {
@@ -383,21 +383,21 @@ export default {
 
 .post-footer__menu .q-item {
   min-height: 38px;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.82rem;
 }
 
 .post-footer__menu .q-item__section--avatar .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .post-footer__menu .q-item:hover {
-  background: rgba(79, 195, 247, 0.08);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-text-strong);
 }
 
 .post-footer__menu-hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.3;
 }
@@ -405,12 +405,12 @@ export default {
 .post-footer__confirm {
   width: 430px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .post-footer__confirm-text {
   margin: 0.5rem 0 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.82rem;
   line-height: 1.55;
   overflow-wrap: anywhere;

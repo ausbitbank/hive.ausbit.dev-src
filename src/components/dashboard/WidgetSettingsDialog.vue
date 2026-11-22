@@ -127,7 +127,7 @@
 .dw-settings {
   width: min(440px, 96vw);
   max-width: 96vw;
-  background: #0b1116;
+  background: var(--c-bg-deep);
 }
 
 .dw-settings__head {
@@ -140,7 +140,7 @@
 
 .dw-settings__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -161,14 +161,14 @@
 
 .dw-settings__hint {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.35;
 }
 
 .dw-settings__empty {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.8rem;
 }
 

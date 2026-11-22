@@ -158,18 +158,18 @@ export default {
   padding: 0.15rem;
   border: 1px solid var(--border-subtle);
   border-radius: 999px;
-  background: rgba(8, 13, 17, 0.84);
+  background: color-mix(in srgb, var(--c-bg-deep) 84%, transparent);
 }
 
 .connections-tabs :deep(.q-tab) {
   min-height: 32px;
   padding: 0 0.9rem;
   border-radius: 999px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .connections-tabs :deep(.q-tab--active) {
-  background: rgba(79, 195, 247, 0.14);
+  background: color-mix(in srgb, var(--c-link) 14%, transparent);
 }
 
 .connections-tab__count {

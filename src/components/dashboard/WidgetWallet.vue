@@ -82,14 +82,14 @@
 
 .dw-wallet__label {
   display: block;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .dw-wallet__total {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.55rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -107,18 +107,18 @@
 }
 
 .dw-wallet__change.is-up {
-  background: rgba(102, 187, 106, 0.14);
-  color: #a5d6a7;
+  background: color-mix(in srgb, var(--c-positive) 14%, transparent);
+  color: var(--c-positive);
 }
 
 .dw-wallet__change.is-down {
-  background: rgba(239, 83, 80, 0.14);
-  color: #ef9a9a;
+  background: color-mix(in srgb, var(--c-negative) 14%, transparent);
+  color: var(--c-negative);
 }
 
 .dw-wallet__change.is-flat {
-  background: rgba(255, 255, 255, 0.07);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 7%, transparent);
+  color: var(--c-text-muted);
 }
 
 .dw-wallet__rows {
@@ -135,11 +135,11 @@
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .dw-wallet__row dt {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -154,14 +154,14 @@
 }
 
 .dw-wallet__amount {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .dw-wallet__usd {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
@@ -173,18 +173,18 @@
   gap: 0.5rem;
   padding: 0.45rem 0.6rem;
   border-radius: var(--radius-sm);
-  background: rgba(79, 195, 247, 0.07);
+  background: color-mix(in srgb, var(--c-link) 7%, transparent);
 }
 
 .dw-wallet__reward-parts {
   display: block;
   margin-top: 0.1rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.74rem;
 }
 
 .dw-wallet__reward-usd {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   font-size: 0.8rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -193,7 +193,7 @@
 
 .dw-wallet__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 </style>

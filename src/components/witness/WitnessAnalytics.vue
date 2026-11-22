@@ -329,7 +329,7 @@ export default {
 }
 
 .gov-analytics__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -337,7 +337,7 @@ export default {
 
 .gov-analytics__title {
   margin: 0.12rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.25;
@@ -346,7 +346,7 @@ export default {
 .gov-analytics__hint {
   margin: 0.3rem 0 0;
   max-width: 62ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -358,7 +358,7 @@ export default {
 }
 
 .gov-analytics__trend-note {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -370,7 +370,7 @@ export default {
 
 .gov-card {
   min-width: 0;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .gov-card__head {
@@ -382,7 +382,7 @@ export default {
 }
 
 .gov-card__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -390,7 +390,7 @@ export default {
 
 .gov-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -404,14 +404,14 @@ export default {
 }
 
 .gov-metric__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.45rem;
   font-weight: 600;
   line-height: 1.1;
 }
 
 .gov-metric__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
 }
 
@@ -424,7 +424,7 @@ export default {
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: 0.25rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
 }
 
@@ -440,7 +440,7 @@ export default {
 }
 
 .gov-pairs dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -448,7 +448,7 @@ export default {
 
 .gov-pairs dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.8rem;
 }
 
@@ -466,24 +466,24 @@ export default {
   padding: 0.45rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .gov-feed-stat span {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .gov-feed-stat small {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
 }
 
-.gov-feed-stat--fresh { border-color: rgba(76, 175, 80, 0.35); }
-.gov-feed-stat--aging { border-color: rgba(255, 193, 7, 0.35); }
-.gov-feed-stat--stale { border-color: rgba(255, 112, 67, 0.4); }
-.gov-feed-stat--missing { border-color: rgba(244, 67, 54, 0.45); }
+.gov-feed-stat--fresh { border-color: color-mix(in srgb, var(--c-positive) 35%, transparent); }
+.gov-feed-stat--aging { border-color: color-mix(in srgb, var(--c-warning) 35%, transparent); }
+.gov-feed-stat--stale { border-color: color-mix(in srgb, var(--c-warning) 40%, transparent); }
+.gov-feed-stat--missing { border-color: color-mix(in srgb, var(--c-negative) 45%, transparent); }
 
 .gov-list {
   margin: 0.5rem 0 0;
@@ -506,7 +506,7 @@ export default {
 }
 
 .gov-list a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -515,7 +515,7 @@ export default {
 }
 
 .gov-list__empty {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .gov-severity {
@@ -525,13 +525,13 @@ export default {
   white-space: nowrap;
 }
 
-.gov-severity--fresh { background: rgba(76, 175, 80, 0.14); color: #a5d6a7; }
-.gov-severity--aging { background: rgba(255, 193, 7, 0.14); color: #ffe082; }
-.gov-severity--stale { background: rgba(255, 112, 67, 0.16); color: #ffab91; }
-.gov-severity--missing { background: rgba(244, 67, 54, 0.18); color: #ef9a9a; }
+.gov-severity--fresh { background: color-mix(in srgb, var(--c-positive) 14%, transparent); color: var(--c-positive); }
+.gov-severity--aging { background: color-mix(in srgb, var(--c-warning) 14%, transparent); color: var(--c-warning-soft); }
+.gov-severity--stale { background: color-mix(in srgb, var(--c-warning) 16%, transparent); color: var(--c-warning-soft); }
+.gov-severity--missing { background: color-mix(in srgb, var(--c-negative) 18%, transparent); color: var(--c-negative); }
 
 .gov-version {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-family: monospace;
   font-size: 0.74rem;
 }
@@ -543,7 +543,7 @@ export default {
 }
 
 .gov-drift__title {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -563,17 +563,17 @@ export default {
   padding: 0.15rem 0.45rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.68rem;
   text-decoration: none;
 }
 
 .gov-chip span {
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .gov-chip--more {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .gov-table {
@@ -592,7 +592,7 @@ export default {
 
 .gov-table thead th {
   border-top: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -604,7 +604,7 @@ export default {
 }
 
 .gov-table a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -618,12 +618,12 @@ export default {
 }
 
 .gov-muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .gov-footnote {
   margin: 0.6rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.45;
 }

@@ -1,5 +1,6 @@
 <template>
   <q-page class="browse-page">
+    <profile-skin :account="account" :author="account && account.name" :context="'blog'" :enabled="isAccount">
     <account-header
       v-if="isAccount && account !== undefined"
       :globalProps="globalProps"
@@ -57,6 +58,7 @@
         :showToolbar="false"
       />
     </div>
+    </profile-skin>
   </q-page>
 </template>
 
@@ -91,7 +93,7 @@
 
 .browse-head__subtitle {
   margin: 0.35rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.86rem;
 }
 
@@ -119,21 +121,21 @@
   padding: 0.32rem 0.7rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .browse-sort-link:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  color: #e4eaed;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  color: var(--c-text);
 }
 
 .browse-sort-link--active {
-  border-color: rgba(79, 195, 247, 0.45);
-  background: rgba(79, 195, 247, 0.14);
-  color: #81d4fa;
+  border-color: color-mix(in srgb, var(--c-link) 45%, transparent);
+  background: color-mix(in srgb, var(--c-link) 14%, transparent);
+  color: var(--c-link-hover);
 }
 
 @media (max-width: 599px) {
@@ -148,6 +150,7 @@ import { defineAsyncComponent } from 'vue'
 import browseContainer from 'components/browseContainer.vue'
 import accountHeader from 'components/accountHeader.vue'
 import CommunityInsights from 'components/community/CommunityInsights.vue'
+import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const SORT_LABELS = {
@@ -192,6 +195,7 @@ export default {
     browseContainer,
     accountHeader,
     CommunityInsights,
+    ProfileSkin,
     communityHeader: defineAsyncComponent(() => import('components/communityHeader.vue'))
   },
   data () {

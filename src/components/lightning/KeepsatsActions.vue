@@ -411,7 +411,6 @@ export default {
       }
       return new Promise((resolve) => {
         this.$q.dialog({
-          dark: true,
           title: 'Keepsats are custodial',
           message: 'This action moves sats held by v4v.app, not by hive.ausbit.dev. '
             + 'You still review and sign every action in the queue, and nothing auto-sends. '
@@ -521,7 +520,7 @@ export default {
 
 .keepsats-actions summary {
   cursor: pointer;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   font-weight: 600;
 }
@@ -531,18 +530,18 @@ export default {
 .keepsats-actions__custody,
 .keepsats-actions__warn {
   margin: 0.5rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   line-height: 1.45;
 }
 
 .keepsats-actions__warn {
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .keepsats-actions__custody {
   margin-top: 0.6rem;
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .keepsats-actions__row {
@@ -559,7 +558,7 @@ export default {
 }
 
 .keepsats-actions__suffix {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 

@@ -59,18 +59,18 @@
   padding: 0.45rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .dw-network__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .dw-network__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -78,11 +78,11 @@
 }
 
 a.dw-network__value:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .dw-network__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   text-transform: capitalize;
 }

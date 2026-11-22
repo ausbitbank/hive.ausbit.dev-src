@@ -61,7 +61,7 @@ export default {
   height: 100%;
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .ui-stat {
@@ -76,14 +76,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .ui-stat__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.35rem;
   font-weight: 600;
   line-height: 1.2;
@@ -92,7 +92,7 @@ export default {
 }
 
 .ui-stat__unit {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   font-weight: 500;
 }
@@ -100,7 +100,7 @@ export default {
 .ui-stat__hint {
   margin-top: auto;
   padding-top: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   line-height: 1.35;
 }
@@ -115,12 +115,12 @@ export default {
 }
 
 .ui-stat__links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .ui-stat__links a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 </style>

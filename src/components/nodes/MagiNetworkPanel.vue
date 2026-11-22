@@ -88,7 +88,7 @@
 <style scoped>
 .magi-panel__card {
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .magi-panel__head {
@@ -100,7 +100,7 @@
 }
 
 .magi-panel__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -108,7 +108,7 @@
 
 .magi-panel__title {
   margin: 0.2rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -116,7 +116,7 @@
 .magi-panel__hint {
   max-width: 70ch;
   margin: 0.25rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
   line-height: 1.45;
 }
@@ -142,33 +142,33 @@
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .magi-panel__stats span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .magi-panel__stats strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .magi-panel__stats strong.is-ok {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .magi-panel__stats strong.is-warn {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .magi-panel__stats small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   overflow-wrap: anywhere;
 }
@@ -178,17 +178,17 @@
 }
 
 .magi-panel__muted {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .magi-panel__version {
   display: block;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.72rem;
 }
 
 .magi-panel__peer {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-family: monospace;
   font-size: 0.68rem;
 }
@@ -202,7 +202,7 @@
 }
 
 .magi-panel__link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
 }

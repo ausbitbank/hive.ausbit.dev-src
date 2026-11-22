@@ -63,7 +63,7 @@
 .health-node-summary {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .health-node-summary__loading {
@@ -96,13 +96,13 @@
 }
 
 .health-node-summary__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .health-node-summary__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -118,25 +118,25 @@
   min-width: 0;
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .health-node-summary__stats span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .health-node-summary__stats strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.86rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .health-node-summary__stats small {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   overflow-wrap: anywhere;
 }
@@ -154,12 +154,12 @@
 }
 
 .health-node-summary__links a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
 .health-node-summary__links a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 

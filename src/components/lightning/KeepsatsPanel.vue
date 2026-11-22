@@ -216,7 +216,6 @@ export default {
     async promptPassword () {
       return new Promise((resolve, reject) => {
         this.$q.dialog({
-          dark: true,
           title: 'Unlock SmartLock',
           message: 'Enter the SmartLock password for @' + this.account + '. It is only used to unlock the posting key in this tab.',
           prompt: { model: '', type: 'password' },
@@ -280,7 +279,7 @@ export default {
   padding: 0.85rem 0.95rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.018);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .keepsats__head {
@@ -295,11 +294,11 @@ export default {
   align-items: center;
   gap: 0.55rem;
   min-width: 0;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .keepsats__eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.6rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -311,7 +310,7 @@ export default {
   gap: 0.4rem;
   flex-wrap: wrap;
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
 }
@@ -329,7 +328,7 @@ export default {
 .keepsats__custody,
 .keepsats__hint {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.45;
 }
@@ -342,12 +341,12 @@ export default {
   margin-top: 0.55rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-subtle);
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .keepsats__custody a,
 .keepsats__note a {
-  color: #ffe082;
+  color: var(--c-warning-soft);
 }
 
 .keepsats__error {
@@ -356,10 +355,10 @@ export default {
   gap: 0.35rem;
   margin-top: 0.55rem;
   padding: 0.45rem 0.55rem;
-  border: 1px solid rgba(255, 152, 0, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: 0.4rem;
-  background: rgba(255, 152, 0, 0.06);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 6%, transparent);
+  color: var(--c-warning-soft);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -373,13 +372,13 @@ export default {
 }
 
 .keepsats__balance strong {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   font-size: 1.25rem;
   font-weight: 700;
 }
 
 .keepsats__fiat {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -388,7 +387,7 @@ export default {
   align-items: center;
   gap: 0.3rem;
   margin-top: 0.35rem;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.7rem;
 }
 
@@ -397,7 +396,7 @@ export default {
   flex-direction: column;
   gap: 0.15rem;
   margin-top: 0.45rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
@@ -411,13 +410,13 @@ export default {
 
 .keepsats__history {
   margin-top: 0.6rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.7rem;
 }
 
 .keepsats__history summary {
   cursor: pointer;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .keepsats__history ul {
@@ -442,13 +441,13 @@ export default {
 }
 
 .keepsats__history-amount {
-  color: #ffe082;
+  color: var(--c-warning-soft);
   text-align: right;
 }
 
 .keepsats__history-meta {
   grid-column: 1 / -1;
-  color: #78909c;
+  color: var(--c-text-faint);
   overflow-wrap: anywhere;
 }
 </style>

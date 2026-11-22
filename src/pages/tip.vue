@@ -77,7 +77,7 @@ export default {
 
 <style scoped>
 .lightning-eyebrow {
-  color: #b0a06a;
+  color: var(--c-warning);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -85,14 +85,14 @@ export default {
 
 .tip-lightning__title {
   margin: 0.15rem 0 0.3rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .tip-lightning__lede {
   margin: 0 0 0.6rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }

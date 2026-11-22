@@ -300,9 +300,9 @@ export default {
   flex-wrap: wrap;
   margin-bottom: var(--space-3);
   padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.75rem;
 }
 
@@ -326,7 +326,7 @@ export default {
 
 .markets-cta__body p {
   margin: 0 0 0.6rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -358,21 +358,21 @@ export default {
 
 .markets-resources__item h3 {
   margin: 0 0 0.25rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .markets-resources__item p {
   margin: 0 0 0.4rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 .markets-resources__item a {
   display: block;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.76rem;
   font-weight: 600;
   text-decoration: none;
@@ -383,7 +383,7 @@ export default {
 }
 
 .markets-resources__item a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 

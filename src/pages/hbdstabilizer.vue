@@ -324,9 +324,9 @@ export default {
   flex-wrap: wrap;
   margin-bottom: var(--space-3);
   padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.75rem;
 }
 
@@ -345,19 +345,19 @@ export default {
 
 .stabilizer-section__title {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.08rem;
   font-weight: 600;
 }
 
 .stabilizer-section__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 
 .stabilizer-link,
 .stabilizer-account-link {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.76rem;
   font-weight: 600;
   text-decoration: none;
@@ -369,12 +369,12 @@ export default {
 }
 
 .stabilizer-buy {
-  color: #81c784;
+  color: var(--c-positive);
   font-weight: 600;
 }
 
 .stabilizer-sell {
-  color: #ef9a9a;
+  color: var(--c-negative);
   font-weight: 600;
 }
 
@@ -388,7 +388,7 @@ export default {
 
 .stabilizer-history__empty {
   align-items: center;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 

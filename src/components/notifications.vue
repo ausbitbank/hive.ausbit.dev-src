@@ -78,7 +78,7 @@
           </div>
         </div>
 
-        <q-scroll-area v-else class="notifications-scroll" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.25, backgroundColor: '#4fc3f7' }">
+        <q-scroll-area v-else class="notifications-scroll" :thumb-style="{ width: '5px', borderRadius: '5px', opacity: 0.25, backgroundColor: 'var(--c-link)' }">
           <div v-if="filteredNotifications.length === 0" class="notifications-state">
             <q-icon name="notifications_none" size="26px" color="grey" aria-hidden="true" />
             <span v-if="unreadOnly">No unread notifications match this filter.</span>
@@ -408,7 +408,7 @@ export default {
 .notifications-panel {
   width: 440px;
   max-width: 94vw;
-  background: #1d1d1d;
+  background: var(--c-surface-1);
 }
 
 .notifications-toolbar {
@@ -427,7 +427,7 @@ export default {
 
 .notifications-unread {
   flex: 0 0 auto;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.75rem;
 }
 
@@ -461,20 +461,20 @@ export default {
   justify-content: center;
   gap: 0.4rem;
   padding: 1.5rem 1rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.78rem;
   text-align: center;
 }
 
 .notifications-state--error {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .notification-row__message {
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -494,17 +494,17 @@ export default {
   align-items: center;
   gap: 0.3rem;
   margin-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
 }
 
 .notifications-end {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
 }
 
 .notifications-queued {
-  color: #ffb74d;
+  color: var(--c-warning);
   font-weight: 600;
 }
 

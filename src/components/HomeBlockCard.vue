@@ -145,12 +145,12 @@
 
 .home-block__witness-text {
   min-width: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
 }
 
 .home-block__witness-text a {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
 }
 
@@ -160,7 +160,7 @@
   flex-wrap: wrap;
   gap: 0.3rem;
   margin-top: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 
@@ -178,18 +178,18 @@
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .home-block__metric-label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .home-block__metric-value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -204,7 +204,7 @@
 
 .home-block__mix-label {
   margin-right: 0.1rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -213,8 +213,8 @@
 .home-block__mix-chip {
   padding: 0.08rem 0.42rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.055);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.68rem;
 }
 

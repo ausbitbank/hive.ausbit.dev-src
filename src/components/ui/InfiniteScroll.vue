@@ -185,7 +185,7 @@ export default {
 }
 
 .infinite-scroll__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
 }
 
@@ -204,18 +204,18 @@ export default {
   border: 0;
   border-radius: var(--radius-card, 8px);
   background: transparent;
-  color: #4fc3f7;
+  color: var(--c-link);
   font: inherit;
   font-size: 0.78rem;
   cursor: pointer;
 }
 
 .infinite-scroll__more:hover {
-  background: rgba(79, 195, 247, 0.08);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .infinite-scroll__more:focus-visible {
-  outline: 2px solid #4fc3f7;
+  outline: 2px solid var(--c-link);
   outline-offset: 2px;
 }
 </style>

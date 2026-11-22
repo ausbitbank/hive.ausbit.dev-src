@@ -84,7 +84,7 @@ export default {
 .error-boundary__text,
 .error-boundary__detail {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.86rem;
   line-height: 1.5;
 }
@@ -93,8 +93,8 @@ export default {
   max-width: 100%;
   padding: 0.4rem 0.55rem;
   border-radius: var(--radius-card);
-  background: rgba(0, 0, 0, 0.18);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-shadow) 18%, transparent);
+  color: var(--c-text-subtle);
   font-family: monospace;
   font-size: 0.74rem;
   word-break: break-word;

@@ -129,7 +129,7 @@ export default {
   width: 100%;
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: #131722;
+  background: var(--c-bg-deep);
 }
 
 .tradingview-widget__host,
@@ -148,8 +148,8 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(8, 13, 17, 0.88);
-  color: #90a4ae;
+  background: color-mix(in srgb, var(--c-bg-deep) 88%, transparent);
+  color: var(--c-text-subtle);
   font-size: 0.82rem;
   text-align: center;
 }
@@ -159,7 +159,7 @@ export default {
 }
 
 .tradingview-widget__fallback a {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
 }
 </style>

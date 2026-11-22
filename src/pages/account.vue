@@ -8,6 +8,7 @@
     </q-card>
 
     <template v-else-if="account !== null && account !== undefined && globalProps !== null">
+      <profile-skin :account="account" :author="account.name" context="profile">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
       <div class="account-shell">
         <q-card flat bordered class="account-card account-overview">
@@ -64,13 +65,13 @@
               <div class="account-stat">
                 <span class="account-stat__label">Voting power</span>
                 <strong class="account-stat__value">{{ votePower }}%</strong>
-                <q-linear-progress dark rounded size="8px" :value="Number(votePower) / 100" color="primary" class="account-stat__bar" aria-label="Voting power" />
+                <q-linear-progress rounded size="8px" :value="Number(votePower) / 100" color="primary" class="account-stat__bar" aria-label="Voting power" />
               </div>
 
               <div class="account-stat">
                 <span class="account-stat__label">Downvote power</span>
                 <strong class="account-stat__value">{{ downvotePowerPct }}%</strong>
-                <q-linear-progress v-if="downvotePower !== null" dark rounded size="8px" :value="downvotePowerPct / 100" color="red" class="account-stat__bar" aria-label="Downvote power" />
+                <q-linear-progress v-if="downvotePower !== null" rounded size="8px" :value="downvotePowerPct / 100" color="red" class="account-stat__bar" aria-label="Downvote power" />
                 <small v-else class="account-stat__hint">Unavailable</small>
               </div>
 
@@ -238,6 +239,7 @@
           </aside>
         </div>
       </div>
+      </profile-skin>
     </template>
 
     <div v-else class="account-loading" aria-label="Loading account">
@@ -277,7 +279,7 @@
 }
 
 .account-card__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -285,7 +287,7 @@
 
 .account-card__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.25;
@@ -313,7 +315,7 @@
   padding: 0.18rem 0.5rem;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  color: #9ecbe9;
+  color: var(--c-link-soft);
   font-size: 0.76rem;
   font-weight: 500;
   text-decoration: none;
@@ -321,9 +323,9 @@
 }
 
 .account-quick-links a:hover {
-  border-color: rgba(79, 195, 247, 0.35);
-  background: rgba(79, 195, 247, 0.08);
-  color: #e1f5fe;
+  border-color: color-mix(in srgb, var(--c-link) 35%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-link-soft);
   text-decoration: none;
 }
 
@@ -343,24 +345,24 @@
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .account-stat__label {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .account-stat__value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
 
 .account-stat__hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.3;
 }
@@ -380,26 +382,26 @@
   flex-wrap: wrap;
   margin-top: 0.75rem;
   padding: 0.45rem 0.6rem;
-  border: 1px solid rgba(255, 183, 77, 0.25);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 25%, transparent);
   border-radius: var(--radius-sm);
-  background: rgba(255, 183, 77, 0.07);
-  color: #ffb74d;
+  background: color-mix(in srgb, var(--c-warning) 7%, transparent);
+  color: var(--c-warning);
   font-size: 0.78rem;
 }
 
 .account-powerdown__time {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
 }
 
 .account-external {
   margin-top: 0.75rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .account-external a {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .account-grid {
@@ -428,7 +430,7 @@
 }
 
 .account-activity__actions .q-toggle {
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
 }
 
@@ -440,12 +442,12 @@
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
 .account-filter-card__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
 }
@@ -464,7 +466,7 @@
   gap: 0.35rem;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
 }
 
@@ -482,12 +484,12 @@
 }
 
 .account-activity__page {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
 .account-muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.8rem;
 }
 
@@ -500,11 +502,11 @@
 }
 
 .account-muted--row .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .account-muted a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -529,17 +531,17 @@
   padding: 0.15rem 0.45rem 0.15rem 0.15rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.025);
-  color: #cfd8dc;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-soft);
   font-size: 0.72rem;
   font-weight: 500;
   text-decoration: none;
 }
 
 .account-witness-votes__item a:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.08);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-text-strong);
   text-decoration: none;
 }
 
@@ -558,21 +560,21 @@
   padding: 0.6rem 0.7rem;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 .account-empty > .q-icon {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .account-empty__pitch {
-  color: #b0bec5;
+  color: var(--c-text-muted);
 }
 
 .account-empty__pitch a {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .account-empty__btn {
@@ -656,6 +658,7 @@ import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
 import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
+import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'accountPage',
@@ -672,7 +675,8 @@ export default {
     MagiAccountSummary,
     LightningAddressCard,
     withdrawRoutes,
-    ShareMenu
+    ShareMenu,
+    ProfileSkin
     // recentVotedPostsCarousel
   },
   data () {

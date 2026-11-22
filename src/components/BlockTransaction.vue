@@ -86,12 +86,12 @@ export default {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.6rem 0.9rem;
-  background: rgba(255, 255, 255, 0.035);
+  background: color-mix(in srgb, var(--c-text) 4%, transparent);
 }
 
 .block-tx__index {
   font-size: 0.75rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -100,12 +100,12 @@ export default {
   font-family: monospace;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #64b5f6;
+  color: var(--c-link);
   overflow-wrap: anywhere;
 }
 
 .block-tx__id:visited {
-  color: #ce93d8;
+  color: var(--c-link-visited);
 }
 
 .block-tx__ops {

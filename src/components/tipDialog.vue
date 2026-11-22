@@ -1,5 +1,5 @@
 <template>
-  <q-list bordered separator class="bg-dark">
+  <q-list bordered separator class="surface-1">
     <q-item clickable>
       <q-item-section avatar>
         <q-avatar><q-icon name="img:/statics/hive.svg" title="Hive" /></q-avatar>

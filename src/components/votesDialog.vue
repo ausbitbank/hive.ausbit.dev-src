@@ -210,7 +210,7 @@ export default {
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
 }
 
 .votes-dialog__head {
@@ -222,7 +222,7 @@ export default {
 }
 
 .votes-dialog__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -230,14 +230,14 @@ export default {
 
 .votes-dialog__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.25;
 }
 
 .votes-dialog__close {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .votes-dialog__summary {
@@ -254,39 +254,39 @@ export default {
   padding: 0.25rem 0.6rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.74rem;
   white-space: nowrap;
 }
 
 .votes-summary strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .votes-summary--up {
-  border-color: rgba(129, 199, 132, 0.35);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 35%, transparent);
+  color: var(--c-positive);
 }
 
 .votes-summary--up .q-icon,
 .votes-summary--up strong {
-  color: #81c784;
+  color: var(--c-positive);
 }
 
 .votes-summary--down {
-  border-color: rgba(229, 115, 115, 0.35);
+  border-color: color-mix(in srgb, var(--c-negative) 35%, transparent);
 }
 
 .votes-summary--down .q-icon,
 .votes-summary--down strong {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .votes-summary--muted .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .votes-dialog__tabs {
@@ -304,7 +304,7 @@ export default {
 
 .votes-dialog__section-title {
   margin: 0 0 var(--space-2);
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -328,20 +328,20 @@ export default {
   padding: 0.35rem 0.5rem 0.35rem 0.35rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.025);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .votes-grid__link:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.08);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
   text-decoration: none;
 }
 
 .votes-grid__avatar {
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--c-text) 10%, transparent);
 }
 
 .votes-grid__name {
@@ -357,14 +357,14 @@ export default {
 
 .votes-grid__weight {
   flex: none;
-  color: #81c784;
+  color: var(--c-positive);
   font-size: 0.7rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .votes-grid__link--down .votes-grid__weight {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .votes-dialog__empty {
@@ -373,7 +373,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   padding: var(--space-6) var(--space-4);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.84rem;
   text-align: center;
 }
@@ -384,7 +384,7 @@ export default {
 }
 
 .votes-dialog__voter {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 

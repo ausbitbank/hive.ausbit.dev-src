@@ -58,7 +58,7 @@ import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
 import Vote from 'components/vote.vue'
 import Reblog from 'components/reblog.vue'
 
-const DEFAULT_ACCENT = '#4fc3f7'
+const DEFAULT_ACCENT = 'var(--c-link)'
 
 export default {
   name: 'ShortFormCard',
@@ -115,12 +115,12 @@ export default {
 .sfc {
   padding: var(--space-3) var(--space-3) var(--space-2);
   border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--sfc-accent, #4fc3f7);
+  border-left: 3px solid var(--sfc-accent, var(--c-link));
   transition: border-color 0.15s ease;
 }
 
 .sfc:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: color-mix(in srgb, var(--c-text) 16%, transparent);
 }
 
 .sfc-head {
@@ -135,19 +135,19 @@ export default {
   align-items: center;
   gap: var(--space-2);
   min-width: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .sfc-author:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: none;
 }
 
 .sfc-avatar {
   flex: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #cfd8dc;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-soft);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -170,7 +170,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.74rem;
 }
 
@@ -180,7 +180,7 @@ export default {
 
 .sfc-body {
   margin: var(--space-2) 0 0;
-  color: #dfe6ea;
+  color: var(--c-text-soft);
   font-size: 0.94rem;
   line-height: 1.55;
   white-space: pre-line;
@@ -189,7 +189,7 @@ export default {
 }
 
 .sfc-body:hover {
-  color: #fff;
+  color: var(--c-text-strong);
 }
 
 .sfc-foot {
@@ -218,7 +218,7 @@ export default {
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
@@ -227,8 +227,8 @@ export default {
 }
 
 .sfc-action:hover {
-  background: rgba(79, 195, 247, 0.1);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-link) 10%, transparent);
+  color: var(--c-text);
 }
 
 .sfc-action--static {
@@ -237,7 +237,7 @@ export default {
 
 .sfc-action--static:hover {
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .sfc-spacer {

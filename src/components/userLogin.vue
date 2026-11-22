@@ -33,7 +33,7 @@
             <span class="account-menu__voting-label"><q-icon name="bolt" size="14px" aria-hidden="true" /> Voting power</span>
             <span class="account-menu__voting-value">{{ votePower }}%</span>
           </div>
-          <q-linear-progress dark rounded size="6px" :value="votePower / 100" color="primary" class="account-menu__voting-bar" aria-label="Voting power" />
+          <q-linear-progress rounded size="6px" :value="votePower / 100" color="primary" class="account-menu__voting-bar" aria-label="Voting power" />
           <div class="account-menu__voting-meta">
             <span title="Estimated value of a 100% vote at your current voting power">
               <q-icon name="paid" size="13px" aria-hidden="true" /> {{ fullVoteLabel }} full vote
@@ -181,7 +181,7 @@
             <q-btn icon="img:/statics/member.webp" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
-            <div class="text-caption text-grey-5">Saves only your username on this device. It never stores your posting, active or memo keys; SmartLock needs your password again after a reload.</div>
+            <div class="text-caption text-faint">Saves only your username on this device. It never stores your posting, active or memo keys; SmartLock needs your password again after a reload.</div>
           </q-item-section>
         </q-item>
         <div class="account-menu__saved">
@@ -248,15 +248,15 @@
   min-height: 36px;
   padding: 0 0.5rem 0 0.25rem;
   border-radius: var(--radius-pill);
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .account-trigger:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
 }
 
 .account-trigger__avatar {
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid color-mix(in srgb, var(--c-text) 14%, transparent);
 }
 
 .account-trigger__name {
@@ -269,7 +269,7 @@
 }
 
 .account-trigger__chevron {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .login-card {
@@ -278,7 +278,7 @@
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: #10181d;
+  background: var(--c-surface-2);
   box-shadow: var(--shadow-pop);
 }
 
@@ -297,7 +297,7 @@
 
 .account-menu__avatar {
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
 }
 
 .account-menu__ident {
@@ -309,7 +309,7 @@
 
 .account-menu__name {
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.3;
@@ -319,7 +319,7 @@
 }
 
 a.account-menu__name:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   text-decoration: underline;
 }
 
@@ -328,7 +328,7 @@ a.account-menu__name:hover {
   align-items: center;
   gap: 0.2rem;
   overflow: hidden;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -337,20 +337,20 @@ a.account-menu__name:hover {
 
 .account-menu__meta-info {
   flex: none;
-  color: #607d8b;
+  color: var(--c-text-faint);
   cursor: help;
 }
 
 .account-menu__provider--compact {
   min-height: 34px;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .account-menu__voting {
   padding: 0.6rem 0.85rem 0.7rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .account-menu__voting-row {
@@ -365,14 +365,14 @@ a.account-menu__name:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .account-menu__voting-value {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -384,7 +384,7 @@ a.account-menu__name:hover {
   justify-content: space-between;
   gap: 0.5rem;
   margin-top: 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
@@ -403,7 +403,7 @@ a.account-menu__name:hover {
 .account-menu__heading {
   padding: 0.55rem 0.85rem 0.2rem;
   min-height: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.66rem;
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -415,7 +415,7 @@ a.account-menu__name:hover {
   min-height: 38px;
   padding-top: 4px;
   padding-bottom: 4px;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.84rem;
 }
 
@@ -425,30 +425,30 @@ a.account-menu__name:hover {
 }
 
 .account-menu .q-item__section--avatar .q-icon {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 19px;
 }
 
 .account-menu .q-item:hover,
 .account-menu .q-item:focus-visible {
-  background: rgba(79, 195, 247, 0.08);
-  color: #fff;
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
+  color: var(--c-text-strong);
 }
 
 .account-menu .q-item:hover .q-icon,
 .account-menu .q-item:focus-visible .q-icon,
 .account-menu .q-item.q-router-link--active .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .account-menu__item--danger,
 .account-menu__item--danger .q-item__section--avatar .q-icon {
-  color: #e57373;
+  color: var(--c-negative);
 }
 
 .account-menu .q-item.account-menu__item--danger:hover {
-  background: rgba(239, 83, 80, 0.1);
-  color: #ef9a9a;
+  background: color-mix(in srgb, var(--c-negative) 10%, transparent);
+  color: var(--c-negative);
 }
 
 .login-method {
@@ -459,14 +459,14 @@ a.account-menu__name:hover {
   width: 100%;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.82rem;
   font-weight: 600;
 }
 
 .login-method__btn:hover {
-  border-color: rgba(79, 195, 247, 0.4);
-  background: rgba(79, 195, 247, 0.08);
+  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
+  background: color-mix(in srgb, var(--c-link) 8%, transparent);
 }
 
 .login-key-guide {
@@ -474,13 +474,13 @@ a.account-menu__name:hover {
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
   text-align: left;
 }
 
 .login-key-guide__title {
   margin-bottom: 0.35rem;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.76rem;
   font-weight: 600;
 }
@@ -489,7 +489,7 @@ a.account-menu__name:hover {
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.7rem;
   line-height: 1.4;
 }
@@ -499,13 +499,13 @@ a.account-menu__name:hover {
 }
 
 .login-key-guide__row strong {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-weight: 600;
 }
 
 .login-smartlock-status {
   text-align: left;
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .login-smartlock-status :deep(.q-item__label) {
@@ -518,7 +518,7 @@ a.account-menu__name:hover {
 }
 
 .login-smartlock-card__title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
   text-align: center;
@@ -526,7 +526,7 @@ a.account-menu__name:hover {
 
 .login-smartlock-card__hint {
   margin: 0.35rem 0 0.6rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
   line-height: 1.4;
   text-align: center;
@@ -538,7 +538,7 @@ a.account-menu__name:hover {
   justify-content: center;
   gap: 0.3rem;
   padding: 0.15rem 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   text-align: center;
 }
@@ -556,7 +556,7 @@ a.account-menu__name:hover {
 }
 
 .account-menu__chip {
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.76rem;
 }
 
@@ -566,7 +566,7 @@ a.account-menu__name:hover {
 }
 
 .login-hiveauth-title {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.05rem;
   font-weight: 600;
   text-align: center;
@@ -574,7 +574,7 @@ a.account-menu__name:hover {
 
 .login-hiveauth-subtitle {
   margin-top: 0.2rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   line-height: 1.4;
   text-align: center;
@@ -594,7 +594,7 @@ a.account-menu__name:hover {
   align-items: center;
   gap: 0.6rem;
   padding: 1.2rem 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.8rem;
 }
 
@@ -610,25 +610,25 @@ a.account-menu__name:hover {
 .login-hiveauth-expiry,
 .login-hiveauth-hint {
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.76rem;
   line-height: 1.4;
 }
 
 .login-hiveauth-expiry {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-variant-numeric: tabular-nums;
 }
 
 .login-hiveauth-hint {
-  color: #ffb74d;
+  color: var(--c-warning);
 }
 
 .login-hiveauth-error {
   padding: 0.5rem 0.65rem;
   border-radius: 6px;
-  background: rgba(244, 67, 54, 0.12);
-  color: #ef9a9a;
+  background: color-mix(in srgb, var(--c-negative) 12%, transparent);
+  color: var(--c-negative);
   font-size: 0.78rem;
   line-height: 1.4;
 }
@@ -646,15 +646,15 @@ a.account-menu__name:hover {
   align-items: center;
   min-height: 32px;
   padding: 0 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid color-mix(in srgb, var(--c-text) 18%, transparent);
   border-radius: var(--radius-pill);
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.76rem;
   text-decoration: none;
 }
 
 .login-hiveauth-link:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
 }
 
 @media (max-width: 599px) {
@@ -914,7 +914,6 @@ export default {
     async getPasswordPrompt (user) {
       const smartlock = await loadSmartlock()
       this.$q.dialog({
-        dark: true,
         title: 'Account ' + user + ' is locked',
         message: 'Enter your password to unlock account ' + user + '. Unlocked keys are kept in memory only, so you will need your password again after a page reload.',
         prompt: {

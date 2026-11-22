@@ -49,7 +49,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -66,7 +66,7 @@ export default {
 .ui-page-intro {
   max-width: 720px;
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.9rem;
   line-height: 1.5;
 }

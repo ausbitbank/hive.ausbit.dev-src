@@ -152,7 +152,7 @@
   gap: 0.65rem;
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--border-subtle);
-  background: rgba(255, 255, 255, 0.012);
+  background: color-mix(in srgb, var(--c-text) 1%, transparent);
 }
 
 .witness-row:first-child {
@@ -160,16 +160,16 @@
 }
 
 .witness-row--critical {
-  box-shadow: inset 3px 0 0 rgba(239, 83, 80, 0.8);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-negative) 80%, transparent);
 }
 
 .witness-row--warning {
-  box-shadow: inset 3px 0 0 rgba(255, 183, 77, 0.7);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-warning) 70%, transparent);
 }
 
 .witness-row__rank {
   padding-top: 0.45rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -194,14 +194,14 @@
 }
 
 .witness-row__name {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.93rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .witness-row__name:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .witness-row__badge {
@@ -214,7 +214,7 @@
   flex-wrap: wrap;
   gap: 0.3rem 0.75rem;
   margin-top: 0.15rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.72rem;
 }
 
@@ -237,21 +237,21 @@
   display: flex;
   align-items: flex-start;
   gap: 0.3rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.72rem;
   line-height: 1.4;
 }
 
 .witness-row__warning--critical {
-  color: #ef9a9a;
+  color: var(--c-negative);
 }
 
 .witness-row__warning--warning {
-  color: #ffcc80;
+  color: var(--c-warning-soft);
 }
 
 .witness-row__warning--info {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .witness-row__proxy-note {
@@ -259,7 +259,7 @@
   align-items: flex-start;
   gap: 0.3rem;
   margin-top: 0.4rem;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.72rem;
   line-height: 1.4;
 }
@@ -277,7 +277,7 @@
 }
 
 .witness-row__login-hint {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -301,7 +301,7 @@
 }
 
 .witness-row__facts dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -309,7 +309,7 @@
 
 .witness-row__facts dd {
   margin: 0;
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   font-size: 0.76rem;
   overflow-wrap: anywhere;
 }

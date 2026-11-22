@@ -46,7 +46,7 @@
 .health-witness-card {
   overflow: hidden;
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .health-witness-list {
@@ -68,18 +68,18 @@
 }
 
 .health-witness--critical {
-  box-shadow: inset 3px 0 0 rgba(239, 83, 80, 0.8);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-negative) 80%, transparent);
 }
 
 .health-witness--warning {
-  box-shadow: inset 3px 0 0 rgba(255, 183, 77, 0.65);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--c-warning) 65%, transparent);
 }
 
 .health-witness__rank {
   flex: none;
   width: 2rem;
   padding-top: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   font-weight: 600;
   text-align: right;
@@ -104,14 +104,14 @@
 }
 
 .health-witness__title a {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.83rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .health-witness__title a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .health-witness__badge {
@@ -122,7 +122,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.2rem 0.65rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.68rem;
 }
 
@@ -133,7 +133,7 @@
   margin: 0.18rem 0 0;
   padding: 0;
   list-style: none;
-  color: #ffcc80;
+  color: var(--c-warning-soft);
   font-size: 0.68rem;
 }
 

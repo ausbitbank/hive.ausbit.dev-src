@@ -237,7 +237,7 @@ export default {
 <style scoped>
 .voter-segments {
   margin-top: var(--space-3);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .voter-segments__head {
@@ -249,7 +249,7 @@ export default {
 }
 
 .voter-segments__eyebrow {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -257,7 +257,7 @@ export default {
 
 .voter-segments__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -265,7 +265,7 @@ export default {
 .voter-segments__hint {
   margin: 0.25rem 0 0;
   max-width: 62ch;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
 }
 
@@ -292,13 +292,13 @@ export default {
   padding: 0.5rem 0.6rem;
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-sm);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
 }
 
 .voter-segments__state--error {
-  border-color: rgba(255, 183, 77, 0.4);
-  color: #ffcc80;
+  border-color: color-mix(in srgb, var(--c-warning) 40%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .voter-segments__metrics {
@@ -313,19 +313,19 @@ export default {
   padding: 0.45rem 0.5rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
 }
 
 .voter-segments__metric-value {
   display: block;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .voter-segments__metric-label {
   display: block;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.64rem;
 }
 
@@ -337,7 +337,7 @@ export default {
 }
 
 .voter-segments__band-title {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.64rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -353,7 +353,7 @@ export default {
   justify-content: space-between;
   gap: var(--space-2);
   margin-bottom: 0.15rem;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.7rem;
 }
 
@@ -383,7 +383,7 @@ export default {
 }
 
 .voter-segments__top a {
-  color: #4fc3f7;
+  color: var(--c-link);
   text-decoration: none;
 }
 
@@ -392,17 +392,17 @@ export default {
 }
 
 .voter-segments__top span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   white-space: nowrap;
 }
 
 .voter-segments__muted {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
 }
 
 .voter-segments__note {
   margin: 0.55rem 0 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.4;
 }

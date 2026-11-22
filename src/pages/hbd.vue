@@ -370,9 +370,9 @@ export default {
   flex-wrap: wrap;
   margin-bottom: var(--space-3);
   padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(255, 183, 77, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
   border-radius: var(--radius-sm);
-  color: #ffb74d;
+  color: var(--c-warning);
   font-size: 0.75rem;
 }
 
@@ -390,17 +390,17 @@ export default {
 
 .hbd-copy p {
   margin: 0 0 0.65rem;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.81rem;
   line-height: 1.55;
 }
 
 .hbd-copy strong {
-  color: #e4eaed;
+  color: var(--c-text);
 }
 
 .hbd-apr {
-  color: #81c784;
+  color: var(--c-positive);
   font-size: 2rem;
   font-weight: 600;
   line-height: 1.1;
@@ -408,7 +408,7 @@ export default {
 }
 
 .hbd-apr span {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.76rem;
   letter-spacing: 0.05em;
 }
@@ -427,13 +427,13 @@ export default {
 }
 
 .hbd-facts__row dt {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
 .hbd-facts__row dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.78rem;
   font-weight: 600;
   text-align: right;
@@ -445,13 +445,13 @@ export default {
   align-items: flex-start;
   gap: 0.3rem;
   margin: 0.7rem 0 0 !important;
-  color: #78909c !important;
+  color: var(--c-text-faint) !important;
   font-size: 0.72rem !important;
 }
 
 .hbd-link {
   display: inline-block;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.76rem;
   font-weight: 600;
   text-decoration: none;
@@ -474,21 +474,21 @@ export default {
 
 .hbd-get-item h3 {
   margin: 0 0 0.25rem;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 .hbd-get-item p {
   margin: 0 0 0.4rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 .hbd-get-item a {
   display: block;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.76rem;
   font-weight: 600;
   text-decoration: none;

@@ -8,12 +8,12 @@ const root = dirname(fileURLToPath(import.meta.url))
 const src = (...parts) => resolve(root, 'src', ...parts)
 
 export default defineConfig(() => ({
-  boot: ['hivejs', 'hiveStore', 'smartlock', 'pwa', 'prefetch'],
+  boot: ['theme', 'hivejs', 'hiveStore', 'smartlock', 'pwa', 'prefetch'],
 
   // The Material Icons font is self-hosted and subset to the icons the app
   // uses; see scripts/subset-icons.mjs and src/css/material-icons.scss.
   // Animate.css is vendored too, so @quasar/extras is not a dependency.
-  css: ['material-icons.scss', 'animations.css', 'app.scss'],
+  css: ['material-icons.scss', 'animations.css', 'app.scss', 'tokens.scss'],
 
   build: {
     vueRouterMode: 'history',

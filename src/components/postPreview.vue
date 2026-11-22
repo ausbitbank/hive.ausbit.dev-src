@@ -138,12 +138,12 @@
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.028);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .post-card:hover {
-  border-color: rgba(79, 195, 247, 0.32);
+  border-color: color-mix(in srgb, var(--c-link) 32%, transparent);
   box-shadow: var(--shadow-card);
   transform: translateY(-1px);
 }
@@ -154,13 +154,13 @@
   gap: 0.35rem;
   padding: 0.4rem 0.9rem;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(79, 195, 247, 0.07);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-link) 7%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.75rem;
 }
 
 .post-card__reblog a {
-  color: #81d4fa;
+  color: var(--c-link-hover);
   font-weight: 600;
 }
 
@@ -169,7 +169,7 @@
   position: relative;
   display: block;
   overflow: hidden;
-  background: #10161b;
+  background: var(--c-bg-deep);
 }
 
 .post-card__media {
@@ -203,8 +203,8 @@
   width: 100%;
   height: 100%;
   min-height: 150px;
-  background: linear-gradient(135deg, rgba(62, 146, 204, 0.2), rgba(156, 39, 176, 0.12));
-  color: rgba(255, 255, 255, 0.32);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c-primary) 20%, transparent), color-mix(in srgb, var(--c-accent) 12%, transparent));
+  color: color-mix(in srgb, var(--c-text) 32%, transparent);
   font-size: 2.6rem;
 }
 
@@ -216,8 +216,8 @@
   padding: 0.12rem 0.5rem;
   overflow: hidden;
   border-radius: var(--radius-pill);
-  background: rgba(8, 13, 17, 0.82);
-  color: #e4eaed;
+  background: color-mix(in srgb, var(--c-bg-deep) 82%, transparent);
+  color: var(--c-text);
   font-size: 0.68rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -234,9 +234,9 @@
   justify-content: center;
   width: 52px;
   height: 52px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-text) 35%, transparent);
   border-radius: 50%;
-  background: rgba(8, 13, 17, 0.72);
+  background: color-mix(in srgb, var(--c-bg-deep) 72%, transparent);
   color: #fff;
   transform: translate(-50%, -50%);
   pointer-events: none;
@@ -248,7 +248,7 @@
 }
 
 .post-card:hover .post-card__play {
-  background: rgba(8, 13, 17, 0.86);
+  background: color-mix(in srgb, var(--c-bg-deep) 86%, transparent);
   transform: translate(-50%, -50%) scale(1.05);
 }
 
@@ -278,7 +278,7 @@
   flex-wrap: wrap;
   gap: 0.28rem 0.4rem;
   min-width: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.75rem;
 }
 
@@ -287,7 +287,7 @@
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: none;
 }
 
@@ -302,13 +302,13 @@
 .post-card__rep {
   padding: 0 0.3rem;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.66rem;
 }
 
 .post-card__dot {
-  color: #607d8b;
+  color: var(--c-text-faint);
 }
 
 .post-card__badge {
@@ -317,36 +317,36 @@
   gap: 0.15rem;
   padding: 0 0.32rem;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #b0bec5;
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+  color: var(--c-text-muted);
   font-size: 0.63rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .post-card__badge--comment {
-  background: rgba(0, 188, 212, 0.14);
-  color: #4dd0e1;
+  background: color-mix(in srgb, var(--c-info) 14%, transparent);
+  color: var(--c-info);
 }
 
 .post-card__badge--ai {
-  background: rgba(79, 195, 247, 0.12);
-  color: #81d4fa;
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-hover);
 }
 
 .post-card__badge--countdown {
-  background: rgba(255, 183, 77, 0.12);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 12%, transparent);
+  color: var(--c-warning-soft);
   letter-spacing: 0;
   text-transform: none;
 }
 
 .post-card__reply-to {
-  color: #78909c;
+  color: var(--c-text-faint);
 }
 
 .post-card__community-inline {
-  color: #4fc3f7;
+  color: var(--c-link);
   font-size: 0.71rem;
 }
 
@@ -363,12 +363,12 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   text-decoration: none;
 }
 
 .post-card__title a:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .post-card__summary {
@@ -377,7 +377,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
-  color: #b0bec5;
+  color: var(--c-text-muted);
   font-size: 0.84rem;
   line-height: 1.5;
 }
@@ -391,15 +391,15 @@
 .post-card__tag {
   padding: 0.05rem 0.42rem;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.05);
-  color: #90a4ae !important;
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+  color: var(--c-text-subtle) !important;
   font-size: 0.67rem;
   text-decoration: none;
 }
 
 .post-card__tag:hover {
-  background: rgba(79, 195, 247, 0.12);
-  color: #81d4fa !important;
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-hover) !important;
 }
 
 .post-card__footer {
@@ -409,7 +409,7 @@
   margin-top: auto;
   padding-top: 0.55rem;
   border-top: 1px solid var(--border-subtle);
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.71rem;
 }
 
@@ -433,15 +433,15 @@
 }
 
 .post-card__stat--voted-up {
-  border-color: rgba(76, 175, 80, 0.45);
-  background: rgba(76, 175, 80, 0.16);
-  color: #a5d6a7;
+  border-color: color-mix(in srgb, var(--c-positive) 45%, transparent);
+  background: color-mix(in srgb, var(--c-positive) 16%, transparent);
+  color: var(--c-positive);
 }
 
 .post-card__stat--voted-down {
-  border-color: rgba(239, 83, 80, 0.45);
-  background: rgba(239, 83, 80, 0.16);
-  color: #ef9a9a;
+  border-color: color-mix(in srgb, var(--c-negative) 45%, transparent);
+  background: color-mix(in srgb, var(--c-negative) 16%, transparent);
+  color: var(--c-negative);
 }
 
 .post-card__voted-label {
@@ -454,32 +454,32 @@
 
 /* A subtle directional accent on the card edge reinforces the vote state. */
 .post-card--voted-up {
-  box-shadow: inset 3px 0 0 0 rgba(129, 199, 132, 0.85);
+  box-shadow: inset 3px 0 0 0 color-mix(in srgb, var(--c-positive) 85%, transparent);
 }
 
 .post-card--voted-down {
-  box-shadow: inset 3px 0 0 0 rgba(239, 83, 80, 0.85);
+  box-shadow: inset 3px 0 0 0 color-mix(in srgb, var(--c-negative) 85%, transparent);
 }
 
 .post-card--voted-up:hover {
-  border-color: rgba(129, 199, 132, 0.5);
+  border-color: color-mix(in srgb, var(--c-positive) 50%, transparent);
 }
 
 .post-card--voted-down:hover {
-  border-color: rgba(239, 83, 80, 0.5);
+  border-color: color-mix(in srgb, var(--c-negative) 50%, transparent);
 }
 
 .post-card__read {
   display: inline-flex;
   align-items: center;
   gap: 0.12rem;
-  color: #4fc3f7;
+  color: var(--c-link);
   font-weight: 600;
   text-decoration: none;
 }
 
 .post-card__read:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .post-card--list {

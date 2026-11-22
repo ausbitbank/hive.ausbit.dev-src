@@ -271,11 +271,11 @@
   flex-wrap: wrap;
   margin-bottom: var(--space-4);
   padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(79, 195, 247, 0.35);
+  border: 1px solid color-mix(in srgb, var(--c-link) 35%, transparent);
   border-radius: var(--radius-card);
-  background: rgba(8, 13, 17, 0.92);
+  background: color-mix(in srgb, var(--c-bg-deep) 92%, transparent);
   box-shadow: var(--shadow-card);
-  color: #cfd8dc;
+  color: var(--c-text-soft);
   backdrop-filter: blur(6px);
 }
 
@@ -287,7 +287,7 @@
 }
 
 .dw-bar__main .q-icon {
-  color: #4fc3f7;
+  color: var(--c-link);
 }
 
 .dw-bar__text {
@@ -299,12 +299,12 @@
 }
 
 .dw-bar__text strong {
-  color: #e4eaed;
+  color: var(--c-text);
   font-weight: 600;
 }
 
 .dw-bar__summary {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
 }
 
@@ -316,7 +316,7 @@
   padding: 0.12rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .dw-bar__tiling-btn {
@@ -327,7 +327,7 @@
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font: inherit;
   font-size: 0.72rem;
   cursor: pointer;
@@ -335,16 +335,16 @@
 
 .dw-bar__tiling-btn:hover,
 .dw-bar__tiling-btn:focus-visible {
-  color: #e1f5fe;
+  color: var(--c-link-soft);
 }
 
 .dw-bar__tiling-btn.is-active {
-  background: rgba(79, 195, 247, 0.18);
-  color: #e1f5fe;
+  background: color-mix(in srgb, var(--c-link) 18%, transparent);
+  color: var(--c-link-soft);
 }
 
 .dw-bar__empty {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.78rem;
 }
 
@@ -374,7 +374,7 @@
 
 .dw-share__title {
   margin: 0.1rem 0 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -387,7 +387,7 @@
 
 .dw-share__hint {
   margin: 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.78rem;
   line-height: 1.45;
 }

@@ -76,7 +76,7 @@
 }
 
 .dw-mywitness__rank-number {
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 1.45rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -84,7 +84,7 @@
 
 .dw-mywitness__rank-total {
   margin-left: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.72rem;
 }
 
@@ -99,13 +99,13 @@
 }
 
 .dw-mywitness__badge.is-good {
-  background: rgba(102, 187, 106, 0.14);
-  color: #a5d6a7;
+  background: color-mix(in srgb, var(--c-positive) 14%, transparent);
+  color: var(--c-positive);
 }
 
 .dw-mywitness__badge.is-warn {
-  background: rgba(255, 183, 77, 0.14);
-  color: #ffcc80;
+  background: color-mix(in srgb, var(--c-warning) 14%, transparent);
+  color: var(--c-warning-soft);
 }
 
 .dw-mywitness__stats {
@@ -122,7 +122,7 @@
   padding: 0.4rem 0.55rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
 }
 
 .dw-mywitness__wide {
@@ -130,7 +130,7 @@
 }
 
 .dw-mywitness__stats dt {
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -138,7 +138,7 @@
 
 .dw-mywitness__stats dd {
   margin: 0;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.84rem;
   font-weight: 600;
 }
@@ -147,19 +147,19 @@
   overflow: hidden;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
 }
 
 .dw-mywitness__bar-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #4fc3f7, #81d4fa);
+  background: linear-gradient(90deg, var(--c-link), var(--c-link-hover));
 }
 
 .dw-mywitness__note {
   margin: 0;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
 }
 </style>

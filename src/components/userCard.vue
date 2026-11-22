@@ -200,8 +200,8 @@ export default {
 }
 
 .user-card__avatar :deep(.q-avatar) {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #10181d;
+  border: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
+  background: var(--c-surface-2);
 }
 
 .user-card__body {
@@ -219,7 +219,7 @@ export default {
 
 .user-card__name {
   overflow: hidden;
-  color: #e4eaed;
+  color: var(--c-text);
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.3;
@@ -229,11 +229,11 @@ export default {
 }
 
 .user-card__name:hover {
-  color: #81d4fa;
+  color: var(--c-link-hover);
 }
 
 .user-card__handle {
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -244,7 +244,7 @@ export default {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0.2rem 0 0;
-  color: #90a4ae;
+  color: var(--c-text-subtle);
   font-size: 0.74rem;
   line-height: 1.4;
 }
@@ -255,7 +255,7 @@ export default {
   gap: 0.25rem 0.65rem;
   flex-wrap: wrap;
   margin-top: 0.3rem;
-  color: #78909c;
+  color: var(--c-text-faint);
   font-size: 0.68rem;
   line-height: 1.3;
 }
