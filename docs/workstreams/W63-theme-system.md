@@ -147,7 +147,7 @@ scanner.
 
 Deployed on 2026-11-22 with `./scripts/deploy.sh`.
 
-- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T111733Z.tar.gz`
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T112629Z.tar.gz`
 - Live GET requests return 200 for `/appearance`, `/themes` and
   `/settings/skin`; the Cloudflare metadata Worker serves their prerendered
   shells with `x-hive-meta: theme-shell` until the nginx vhost config is
@@ -166,6 +166,10 @@ Deployed on 2026-11-22 with `./scripts/deploy.sh`.
   action queued by the earlier build is repaired after a reload instead of
   failing again. Live smoke seeded a stale failed item and confirmed the store
   held an empty `json_metadata` with the posting key type.
+- Viewer control: the skin badge has no report action. “Ignore this skin” hides
+  only that author and can be undone from Appearance; “Hide all skins” remains
+  the global switch. Live smoke confirmed the badge actions, per-author
+  persistence and restore with no page errors.
 
 ## Follow-ups
 
