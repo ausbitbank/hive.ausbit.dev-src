@@ -100,10 +100,69 @@ describe('built-in themes', () => {
 })
 
 describe('theme schema', () => {
-  it('accepts a valid profile theme', () => {
+  it('accepts a valid profile theme and migrates the legacy ticker', () => {
     const result = validateTheme(profileTheme(), { requireProfile: true })
     expect(result.ok).toBe(true)
-    expect(result.theme.profile.ticker).toBe('Hello Hive')
+    expect(result.theme.profile.ticker).toBeUndefined()
+    expect(result.theme.profile.status).toEqual({ text: 'Hello Hive', icon: 'none' })
+    expect(result.legacy.ticker).toBe(true)
+  })
+
+  it('accepts a static status line with a closed icon enum', () => {
+    const input = profileTheme()
+    input.profile.status = { text: 'Building a Hive dashboard', icon: 'hammer' }
+    const result = validateTheme(input)
+    expect(result.ok).toBe(true)
+    expect(result.theme.profile.status).toEqual({ text: 'Building a Hive dashboard', icon: 'hammer' })
+
+    const badIcon = profileTheme()
+    badIcon.profile.status = { text: 'Hi', icon: 'rocket' }
+    expect(validateTheme(badIcon).ok).toBe(false)
+  })
+
+  it('rejects HTML, URLs and overlong status text', () => {
+    for (const text of ['<b>Hello</b>', 'Visit https://example.com', 'x'.repeat(81)]) {
+      const input = profileTheme()
+      input.profile.status = { text, icon: 'none' }
+      expect(validateTheme(input).ok, text).toBe(false)
+    }
+  })
+
+  it('accepts legacy stickers but never returns or renders them', () => {
+    const input = profileTheme()
+    input.profile.stickers = ['hex', 'star']
+    const result = validateTheme(input)
+    expect(result.ok).toBe(true)
+    expect(result.theme.profile.stickers).toBeUndefined()
+    expect(result.legacy.stickers).toBe(true)
+    expect(result.warnings.join(' ')).toContain('Legacy stickers')
+  })
+
+  it('validates and dedupes the Hive Circle', () => {
+    const input = profileTheme()
+    input.profile.circle = ['alice', 'bob', 'alice', 'carol', 'dave', 'erin', 'frank', 'grace']
+    expect(validateTheme(input).ok).toBe(false)
+
+    const valid = profileTheme()
+    valid.profile.circle = ['alice', 'bob', 'alice', 'carol']
+    const result = validateTheme(valid)
+    expect(result.ok).toBe(true)
+    expect(result.theme.profile.circle).toEqual(['alice', 'bob', 'carol'])
+
+    const invalid = profileTheme()
+    invalid.profile.circle = ['A', 'not a name', 'alice']
+    expect(validateTheme(invalid).ok).toBe(false)
+  })
+
+  it('validates the latest or pinned post module', () => {
+    for (const value of ['latest', 'pinned', 'none']) {
+      const input = profileTheme()
+      input.profile.post = value
+      expect(validateTheme(input).theme.profile.post).toBe(value)
+    }
+    const input = profileTheme()
+    input.profile.post = 'random'
+    expect(validateTheme(input).ok).toBe(false)
   })
 
   it('rejects a site-scoped theme as an account skin', () => {

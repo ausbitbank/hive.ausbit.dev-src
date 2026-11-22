@@ -16,6 +16,9 @@ export const DEFAULT_APPEARANCE = {
   themeId: DEFAULT_THEME_ID,
   followSystem: false,
   profileSkins: 'on',
+  skinEffects: 'full',
+  showSkinStatus: true,
+  showSkinExtras: true,
   motion: 'system',
   highContrast: false,
   ignoredSkinAuthors: []
@@ -53,6 +56,9 @@ function readStored () {
       themeId: typeof parsed.themeId === 'string' ? parsed.themeId : DEFAULT_THEME_ID,
       followSystem: parsed.followSystem === true,
       profileSkins: ['on', 'profile', 'off'].includes(parsed.profileSkins) ? parsed.profileSkins : 'on',
+      skinEffects: ['full', 'calm'].includes(parsed.skinEffects) ? parsed.skinEffects : 'full',
+      showSkinStatus: parsed.showSkinStatus !== false,
+      showSkinExtras: parsed.showSkinExtras !== false,
       motion: ['system', 'reduced', 'full'].includes(parsed.motion) ? parsed.motion : 'system',
       highContrast: parsed.highContrast === true,
       ignoredSkinAuthors: normalizeIgnoredAuthors(parsed.ignoredSkinAuthors)
@@ -70,6 +76,9 @@ function persist (state) {
       themeId: state.themeId,
       followSystem: state.followSystem,
       profileSkins: state.profileSkins,
+      skinEffects: state.skinEffects,
+      showSkinStatus: state.showSkinStatus !== false,
+      showSkinExtras: state.showSkinExtras !== false,
       motion: state.motion,
       highContrast: state.highContrast,
       ignoredSkinAuthors: normalizeIgnoredAuthors(state.ignoredSkinAuthors)
@@ -175,6 +184,9 @@ export const useAppearanceStore = defineStore('appearance', {
     },
     skinsEnabled (state) {
       return state.profileSkins !== 'off'
+    },
+    skinCalm (state) {
+      return state.skinEffects === 'calm' || this.effectiveMotion === 'reduced'
     }
   },
   actions: {
@@ -237,6 +249,18 @@ export const useAppearanceStore = defineStore('appearance', {
     },
     setMotion (value) {
       this.motion = ['system', 'reduced', 'full'].includes(value) ? value : 'system'
+      this.commit()
+    },
+    setSkinEffects (value) {
+      this.skinEffects = ['full', 'calm'].includes(value) ? value : 'full'
+      this.commit()
+    },
+    setShowSkinStatus (value) {
+      this.showSkinStatus = Boolean(value)
+      this.commit()
+    },
+    setShowSkinExtras (value) {
+      this.showSkinExtras = Boolean(value)
       this.commit()
     },
     setHighContrast (value) {

@@ -23,6 +23,13 @@ function themeMode (theme) {
   return theme && theme.mode === 'light' ? 'light' : 'dark'
 }
 
+/** The viewer's mode selects a variant when the skin provides one. */
+export function resolveThemeTokens (theme, mode = '') {
+  const variant = mode && theme?.variants?.[mode]
+  if (variant?.tokens) return { mode, tokens: variant.tokens }
+  return { mode: themeMode(theme), tokens: theme?.tokens || {} }
+}
+
 export function highContrastTokens (mode = 'dark') {
   const dark = mode !== 'light'
   if (dark) {
@@ -115,9 +122,10 @@ export function highContrastTokens (mode = 'dark') {
   }
 }
 
-export function tokensFor (theme, { highContrast = false } = {}) {
-  const tokens = theme?.tokens || {}
-  const dark = themeMode(theme) === 'dark'
+export function tokensFor (theme, { highContrast = false, mode = '' } = {}) {
+  const resolved = resolveThemeTokens(theme, mode)
+  const tokens = resolved.tokens
+  const dark = resolved.mode === 'dark'
   const bg = tokens.bg || (dark ? '#0d1114' : '#f5f7fa')
   const surface = tokens.surface || (dark ? '#151c21' : '#ffffff')
   const text = tokens.text || (dark ? '#e4eaed' : '#132029')
@@ -208,9 +216,10 @@ export function tokensFor (theme, { highContrast = false } = {}) {
 }
 
 /** Quasar's own CSS variables. Keep these separate from the app tokens. */
-export function quasarVarsFor (theme) {
-  const tokens = theme?.tokens || {}
-  const dark = themeMode(theme) === 'dark'
+export function quasarVarsFor (theme, { mode = '' } = {}) {
+  const resolved = resolveThemeTokens(theme, mode)
+  const tokens = resolved.tokens
+  const dark = resolved.mode === 'dark'
   return {
     '--q-primary': tokens.primary || '#3e92cc',
     '--q-secondary': tokens.secondary || '#e31337',
@@ -249,6 +258,6 @@ export function themeStyleObject (theme) {
   return { ...tokensFor(theme), ...quasarVarsFor(theme) }
 }
 
-export function themeModeOf (theme) {
-  return themeMode(theme)
+export function themeModeOf (theme, mode = '') {
+  return resolveThemeTokens(theme, mode).mode
 }

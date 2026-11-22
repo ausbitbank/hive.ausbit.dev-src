@@ -70,7 +70,12 @@
               />
             </div>
             <q-input v-model="draft.mood" dense outlined label="Mood" maxlength="80" class="q-mt-sm" />
-            <q-input v-model="draft.profile.ticker" dense outlined label="Ticker (optional, plain text)" maxlength="140" class="q-mt-sm" />
+            <div v-if="legacyNote" class="studio-legacy" role="note">{{ legacyNote }}</div>
+            <div class="studio-row q-mt-sm">
+              <q-input v-model="draft.profile.status.text" dense outlined label="Status line (optional, plain text)" maxlength="80" class="studio-grow" />
+              <q-select v-model="draft.profile.status.icon" :options="statusIconOptions" dense outlined emit-value map-options label="Status icon" class="studio-grow" />
+            </div>
+            <p class="studio-section__hint q-mt-xs">Shown as a static line. No marquee, links or HTML.</p>
           </section>
 
           <section class="studio-section">
@@ -142,19 +147,34 @@
               <q-select v-model="draft.effects.motion" :options="motionOptions" dense outlined label="Motion" class="studio-grow" />
               <q-select v-model="draft.effects.ambient" :options="ambientOptions" dense outlined label="Ambient" class="studio-grow" />
             </div>
-            <div class="studio-stickers" aria-label="Sticker tray">
-              <span class="studio-stickers__label">Sticker shelf</span>
-              <q-chip
-                v-for="sticker in stickerOptions"
-                :key="sticker"
-                dense
-                clickable
-                :outline="!draft.profile.stickers.includes(sticker)"
-                :color="draft.profile.stickers.includes(sticker) ? 'primary' : 'grey'"
-                :text-color="draft.profile.stickers.includes(sticker) ? 'black' : 'white'"
-                @click="toggleSticker(sticker)"
-              >{{ stickerIcon(sticker) }} {{ sticker }}</q-chip>
+          </section>
+
+          <section class="studio-section">
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Profile Shelf</h2>
+              <span class="studio-section__hint">Optional modules under your header. The layout stays fixed.</span>
             </div>
+            <div class="studio-row">
+              <q-select
+                v-model="draft.profile.circle"
+                :options="circleOptions"
+                :disable="!followingNames.length"
+                multiple
+                use-input
+                use-chips
+                dense
+                outlined
+                label="Hive Circle (up to 6 accounts you follow)"
+                class="studio-grow"
+                @filter="filterCircle"
+              />
+            </div>
+            <div class="studio-row q-mt-sm">
+              <q-select v-model="draft.profile.post" :options="postOptions" dense outlined emit-value map-options label="Latest or pinned post" class="studio-grow" />
+            </div>
+            <p class="studio-section__hint q-mt-xs">
+              Circle accounts come from your public following list. Badge selection is in the next section.
+            </p>
           </section>
 
           <section class="studio-section studio-publish">
@@ -187,6 +207,7 @@
             <span class="studio-preview__hint">Profile surfaces only</span>
           </div>
           <profile-skin :preview-theme="previewTheme" :author="username" context="profile">
+            <template #default="{ theme }">
             <div class="studio-mock">
               <div class="studio-mock__cover"></div>
               <div class="studio-mock__hero">
@@ -199,6 +220,7 @@
                   <span class="is-active">Blog</span><span>Posts</span><span>Wallet</span>
                 </div>
               </div>
+              <profile-shelf v-if="theme" :theme="theme" :account="account" preview />
               <div class="studio-mock__grid">
                 <article class="studio-mock__card">
                   <div class="studio-mock__eyebrow">Latest post</div>
@@ -213,6 +235,7 @@
                 </article>
               </div>
             </div>
+            </template>
           </profile-skin>
         </aside>
       </div>
@@ -431,18 +454,15 @@
 .studio-meter__item.is-warn { color: var(--c-warning); border-color: color-mix(in srgb, var(--c-warning) 45%, transparent); }
 .studio-meter__item.is-bad { color: var(--c-negative); border-color: color-mix(in srgb, var(--c-negative) 45%, transparent); }
 
-.studio-stickers {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.7rem;
-}
-
-.studio-stickers__label {
-  color: var(--c-text-subtle);
-  font-size: 0.7rem;
-  margin-right: 0.2rem;
+.studio-legacy {
+  margin-top: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-warning);
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 
 .studio-publish__actions {
@@ -685,19 +705,14 @@
 
 <script>
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
-import { fetchAccount } from 'src/services/chainData'
+import ProfileShelf from 'components/theme/ProfileShelf.vue'
+import { fetchAccount, fetchFollowingNames } from 'src/services/chainData'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
 import { validateTheme } from 'src/themes/schema'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { contrast, hslToHex, hueFor, rgbToHsl } from 'src/themes/color'
-
-const STICKER_OPTIONS = ['hex', 'bee', 'star', 'spark', 'cassette', 'pixel-heart', 'coffee', 'rocket', 'flower', 'lightning']
-const STICKER_ICONS = {
-  hex: '⬡', bee: '🐝', star: '✦', spark: '✨', cassette: '📼',
-  'pixel-heart': '♥', coffee: '☕', rocket: '🚀', flower: '✿', lightning: '⚡'
-}
 
 function clone (value) {
   return JSON.parse(JSON.stringify(value))
@@ -725,8 +740,12 @@ function baseDraft (username) {
       avatarFrame: 'ring',
       nameplate: 'gradient',
       card: 'glass',
-      ticker: '',
-      stickers: ['hex', 'star'],
+      status: { text: '', icon: 'none' },
+      circle: [],
+      badges: { selected: [], showLevel: true },
+      post: 'none',
+      atmosphere: { source: 'none', treatment: 'duotone', intensity: 'medium' },
+      visual: { link: 'underline', button: 'solid', chip: 'pill', divider: 'hairline', image: 'none', gradient: 'none' },
       banner: null
     }
   }
@@ -802,7 +821,7 @@ async function averageImageColor (url) {
 
 export default {
   name: 'SkinStudio',
-  components: { ProfileSkin },
+  components: { ProfileSkin, ProfileShelf },
   data () {
     return {
       username: this.$hiveStore.user.username || '',
@@ -816,6 +835,25 @@ export default {
       pendingOperation: null,
       pendingMerged: '',
       pendingUnpublish: null,
+      legacyNote: '',
+      followingNames: [],
+      circleFilter: '',
+      circleLoading: false,
+      statusIconOptions: [
+        { label: 'No icon', value: 'none' },
+        { label: 'Spark', value: 'spark' },
+        { label: 'Hammer', value: 'hammer' },
+        { label: 'Coffee', value: 'coffee' },
+        { label: 'Moon', value: 'moon' },
+        { label: 'Leaf', value: 'leaf' },
+        { label: 'Antenna', value: 'antenna' },
+        { label: 'Heart', value: 'heart' }
+      ],
+      postOptions: [
+        { label: 'No post card', value: 'none' },
+        { label: 'Latest post', value: 'latest' },
+        { label: 'Pinned post', value: 'pinned' }
+      ],
       colorFields: [
         { key: 'bg', label: 'Background' },
         { key: 'surface', label: 'Surface' },
@@ -842,11 +880,18 @@ export default {
       nameplateOptions: ['plain', 'gradient', 'neon', 'emboss', 'stamp'],
       cardOptions: ['flat', 'glass', 'paper', 'terminal', 'ticket'],
       motionOptions: ['none', 'subtle', 'lively'],
-      ambientOptions: ['none', 'drift', 'shimmer', 'pulse'],
-      stickerOptions: STICKER_OPTIONS
+      ambientOptions: ['none', 'drift', 'shimmer', 'pulse']
     }
   },
   computed: {
+    circleOptions () {
+      const selected = Array.isArray(this.draft.profile.circle) ? this.draft.profile.circle : []
+      const query = this.circleFilter.trim().toLowerCase()
+      return [...new Set([...selected, ...this.followingNames])]
+        .filter(name => !query || name.includes(query))
+        .sort((a, b) => a.localeCompare(b))
+        .slice(0, 60)
+    },
     presetOptions () {
       return THEMES.map(theme => ({ label: theme.name, value: theme.id, caption: theme.mood }))
     },
@@ -889,8 +934,15 @@ export default {
     }
   },
   watch: {
+    'draft.profile.circle' (value) {
+      if (Array.isArray(value) && value.length > 6) {
+        this.draft.profile.circle = value.slice(0, 6)
+        this.$q.notify({ message: 'Hive Circle supports up to 6 accounts.', color: 'primary', timeout: 2200 })
+      }
+    },
     '$hiveStore.user.username' (value) {
       this.username = value || ''
+      this.followingNames = []
       this.loadAccount()
     }
   },
@@ -915,19 +967,57 @@ export default {
         this.account = account || null
         if (!account) return
         this.loadedRaw = account.posting_json_metadata || ''
-        const existing = readAccountTheme(account).theme
+        const stored = readAccountTheme(account)
+        const existing = stored.theme
         if (existing) {
           this.draft = clone(existing)
           this.draft.author = this.username
           this.draft.scope = 'profile'
+          this.ensureDraftShape()
+          this.legacyNote = stored.legacy?.stickers
+            ? 'Legacy stickers are no longer displayed; use the Profile Shelf instead.'
+            : ''
         } else {
           this.draft = baseDraft(this.username)
+          this.legacyNote = ''
         }
+        this.loadFollowing()
       } catch (error) {
         this.$q.notify({ type: 'negative', message: error?.message || 'Could not load your account' })
       } finally {
         this.busy = false
       }
+    },
+    ensureDraftShape () {
+      const profile = this.draft.profile || (this.draft.profile = {})
+      if (!profile.status || typeof profile.status !== 'object') profile.status = { text: '', icon: 'none' }
+      if (typeof profile.status.text !== 'string') profile.status.text = ''
+      if (!Array.isArray(profile.circle)) profile.circle = []
+      if (!profile.badges || typeof profile.badges !== 'object') profile.badges = { selected: [], showLevel: true }
+      if (!Array.isArray(profile.badges.selected)) profile.badges.selected = []
+      if (typeof profile.badges.showLevel !== 'boolean') profile.badges.showLevel = true
+      if (!['latest', 'pinned', 'none'].includes(profile.post)) profile.post = 'none'
+      if (!profile.atmosphere || typeof profile.atmosphere !== 'object') {
+        profile.atmosphere = { source: 'none', treatment: 'duotone', intensity: 'medium' }
+      }
+      if (!profile.visual || typeof profile.visual !== 'object') {
+        profile.visual = { link: 'underline', button: 'solid', chip: 'pill', divider: 'hairline', image: 'none', gradient: 'none' }
+      }
+    },
+    async loadFollowing () {
+      if (!this.username || this.followingNames.length) return
+      this.circleLoading = true
+      try {
+        this.followingNames = await fetchFollowingNames(this.username)
+      } catch {
+        this.followingNames = []
+      } finally {
+        this.circleLoading = false
+      }
+    },
+    filterCircle (value, update) {
+      this.circleFilter = value || ''
+      update()
     },
     applyPreset (id) {
       const preset = getTheme(id)
@@ -965,21 +1055,10 @@ export default {
       const next = String(value || '').trim().toLowerCase()
       this.draft.tokens[key] = next.startsWith('#') ? next : '#' + next
     },
-    toggleSticker (sticker) {
-      const current = this.draft.profile.stickers
-      if (current.includes(sticker)) {
-        this.draft.profile.stickers = current.filter(item => item !== sticker)
-      } else if (current.length < 6) {
-        this.draft.profile.stickers = [...current, sticker]
-      }
-    },
     contrastClass (value) {
       if (value >= 4.5) return 'is-good'
       if (value >= 3) return 'is-warn'
       return 'is-bad'
-    },
-    stickerIcon (id) {
-      return STICKER_ICONS[id] || '✦'
     },
     async freshAccount () {
       this.busy = true

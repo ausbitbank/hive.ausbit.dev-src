@@ -9,7 +9,9 @@
 
     <template v-else-if="account !== null && account !== undefined && globalProps !== null">
       <profile-skin :account="account" :author="account.name" context="profile">
+      <template #default="{ theme }">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
+      <profile-shelf v-if="theme" :theme="theme" :account="account" />
       <div class="account-shell">
         <q-card flat bordered class="account-card account-overview">
           <q-card-section>
@@ -239,6 +241,7 @@
           </aside>
         </div>
       </div>
+      </template>
       </profile-skin>
     </template>
 
@@ -659,6 +662,7 @@ import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
+import ProfileShelf from 'components/theme/ProfileShelf.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'accountPage',
@@ -676,7 +680,8 @@ export default {
     LightningAddressCard,
     withdrawRoutes,
     ShareMenu,
-    ProfileSkin
+    ProfileSkin,
+    ProfileShelf
     // recentVotedPostsCarousel
   },
   data () {

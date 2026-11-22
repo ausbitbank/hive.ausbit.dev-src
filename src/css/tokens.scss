@@ -566,51 +566,12 @@ html[data-motion='reduced'] .skin-scope::before {
   text-decoration: underline;
 }
 
-.skin-ticker {
-  overflow: hidden;
-  padding: 0.35rem 1rem;
-  border-bottom: 1px solid var(--c-border-subtle);
-  background: color-mix(in srgb, var(--skin-primary, var(--c-primary)) 10%, transparent);
-  color: var(--skin-text, var(--c-text));
-  font-size: 0.8rem;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.skin-ticker__track {
-  display: inline-block;
-  padding-left: 100%;
-  animation: skin-ticker 18s linear infinite;
-}
-
-.skin-scope[data-skin-motion='none'] .skin-ticker__track {
-  padding-left: 0;
-  animation: none;
-}
-
-@keyframes skin-ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
-}
-
-.skin-sticker-tray {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 1rem 0;
-}
-
-.skin-sticker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid var(--c-border-subtle);
-  background: var(--c-surface-2);
-  font-size: 1rem;
+/* Calm mode keeps the palette and static atmosphere but removes motion. */
+.skin-scope[data-skin-effects='calm']::before,
+.skin-scope[data-skin-effects='calm'] .skin-atmosphere__grain,
+.skin-scope[data-skin-effects='calm'] .skin-atmosphere__image {
+  animation: none !important;
+  transform: none !important;
 }
 
 /* Keep the focus ring visible inside a skin. */

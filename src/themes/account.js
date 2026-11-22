@@ -35,6 +35,7 @@ export function themeFromPostingMetadata (raw) {
     theme: result.theme,
     error: result.errors[0] || '',
     warnings: result.warnings,
+    legacy: result.legacy,
     raw: parsed.value
   }
 }

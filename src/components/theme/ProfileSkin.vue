@@ -7,7 +7,14 @@
     :data-avatar-frame="theme.profile.avatarFrame"
     :data-nameplate="theme.profile.nameplate"
     :data-card="theme.profile.card"
+    :data-skin-link="theme.profile.visual.link"
+    :data-skin-button="theme.profile.visual.button"
+    :data-skin-chip="theme.profile.visual.chip"
+    :data-skin-divider="theme.profile.visual.divider"
+    :data-skin-image="theme.profile.visual.image"
+    :data-skin-gradient="theme.profile.visual.gradient"
     :data-skin-motion="motion"
+    :data-skin-effects="calm ? 'calm' : 'full'"
     :style="skinStyle"
   >
     <div class="skin-badge" aria-label="Profile skin">
@@ -40,17 +47,9 @@
       />
     </div>
 
-    <div v-if="theme.profile.ticker" class="skin-ticker">
-      <span class="skin-ticker__track">{{ theme.profile.ticker }}</span>
-    </div>
-
-    <div v-if="theme.profile.stickers.length" class="skin-sticker-tray" aria-hidden="true">
-      <span v-for="sticker in theme.profile.stickers" :key="sticker" class="skin-sticker">{{ stickerIcon(sticker) }}</span>
-    </div>
-
-    <slot />
+    <slot :theme="theme" :calm="calm" :visible="visible" />
   </div>
-  <slot v-else />
+  <slot v-else :theme="null" :calm="false" :visible="false" />
 </template>
 
 <style scoped>
@@ -114,19 +113,6 @@
 import { readAccountTheme } from 'src/themes/account'
 import { quasarVarsFor, tokensFor } from 'src/themes/tokens'
 
-const STICKER_ICONS = {
-  hex: '⬡',
-  bee: '🐝',
-  star: '✦',
-  spark: '✨',
-  cassette: '📼',
-  'pixel-heart': '♥',
-  coffee: '☕',
-  rocket: '🚀',
-  flower: '✿',
-  lightning: '⚡'
-}
-
 export default {
   name: 'ProfileSkin',
   props: {
@@ -156,14 +142,20 @@ export default {
       if (this.$appearance.profileSkins === 'profile' && this.context === 'post') return false
       return true
     },
+    calm () {
+      return Boolean(this.$appearance.skinCalm)
+    },
+    viewerMode () {
+      return this.$appearance.isDark ? 'dark' : 'light'
+    },
     motion () {
-      if (this.$appearance.effectiveMotion === 'reduced') return 'none'
+      if (this.calm) return 'none'
       return this.theme.profile.background === 'solid' ? 'none' : (this.theme.effects.ambient === 'none' ? 'none' : this.theme.effects.ambient)
     },
     skinStyle () {
       if (!this.theme) return {}
-      const tokens = tokensFor(this.theme)
-      const quasar = quasarVarsFor(this.theme)
+      const tokens = tokensFor(this.theme, { mode: this.viewerMode })
+      const quasar = quasarVarsFor(this.theme, { mode: this.viewerMode })
       return {
         ...tokens,
         ...quasar,
@@ -197,9 +189,6 @@ export default {
         color: 'primary',
         timeout: 3000
       })
-    },
-    stickerIcon (id) {
-      return STICKER_ICONS[id] || '✦'
     }
   }
 }

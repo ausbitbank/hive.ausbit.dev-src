@@ -94,7 +94,10 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
   const skin = page.locator('.skin-scope')
   await expect(skin).toBeVisible()
   await expect(page.locator('.skin-badge')).toContainText('Skin by')
-  await expect(page.locator('.skin-ticker')).toContainText('E2E skin ticker')
+  // The legacy ticker is migrated to a static status line; stickers are gone.
+  await expect(page.locator('.skin-status')).toContainText('E2E skin ticker')
+  await expect(page.locator('.skin-ticker')).toHaveCount(0)
+  await expect(page.locator('.skin-sticker-tray')).toHaveCount(0)
   await expect(skin).toHaveAttribute('data-skin-background', 'mesh')
   await expect(skin).toHaveAttribute('data-avatar-frame', 'ring')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'hive-dark')
