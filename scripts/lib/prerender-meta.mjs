@@ -26,6 +26,9 @@ export const PRERENDER_ROUTES = [
   '/compose',
   '/search',
   '/lightning',
+  '/appearance',
+  '/themes',
+  '/settings/skin',
   '/404',
   // Microblog index and the five formats. Their metadata is client-rendered,
   // so they get real prerendered shells instead of the generic 404 shell.

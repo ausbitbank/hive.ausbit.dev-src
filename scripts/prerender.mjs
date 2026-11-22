@@ -25,6 +25,7 @@ const ROUTES = PRERENDER_ROUTES
 const DIST = resolve(process.cwd(), 'dist/spa')
 const DEFAULT_TITLE = 'hive.ausbit.dev — Hive block explorer'
 const DEFAULT_DESCRIPTION = 'A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.'
+const DIRECTORY_INDEX_ROUTES = new Set(['/appearance', '/themes', '/settings/skin'])
 
 async function waitForServer () {
   for (let i = 0; i < 40; i++) {
@@ -96,6 +97,11 @@ async function main () {
       const file = outputFile(route)
       await mkdir(resolve(file, '..'), { recursive: true })
       await writeFile(file, html, 'utf8')
+      if (DIRECTORY_INDEX_ROUTES.has(route)) {
+        const directory = resolve(DIST, route.replace(/^\//, ''))
+        await mkdir(directory, { recursive: true })
+        await writeFile(resolve(directory, 'index.html'), html, 'utf8')
+      }
       console.log('Metadata prerendered', route)
     }
 

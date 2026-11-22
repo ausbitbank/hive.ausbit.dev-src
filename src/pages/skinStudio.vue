@@ -690,6 +690,7 @@ import { hiveAvatarUrl } from 'src/utils/avatar'
 import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
 import { validateTheme } from 'src/themes/schema'
+import { setPageMeta } from 'src/utils/pageMeta'
 import { contrast, hslToHex, hueFor, rgbToHsl } from 'src/themes/color'
 
 const STICKER_OPTIONS = ['hex', 'bee', 'star', 'spark', 'cassette', 'pixel-heart', 'coffee', 'rocket', 'flower', 'lightning']
@@ -894,6 +895,11 @@ export default {
     }
   },
   mounted () {
+    setPageMeta({
+      title: 'Skin Studio — design your Hive profile skin',
+      description: 'Design a palette, backdrop, type, avatar frame and ticker for your Hive profile, then publish it with posting authority.',
+      url: '/settings/skin'
+    })
     this.loadAccount()
   },
   methods: {

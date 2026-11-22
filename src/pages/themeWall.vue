@@ -331,9 +331,17 @@ import { readAccountTheme } from 'src/themes/account'
 import { THEMES, getTheme } from 'src/themes/registry'
 import { tokensFor } from 'src/themes/tokens'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { setPageMeta } from 'src/utils/pageMeta'
 
 export default {
   name: 'ThemeWall',
+  mounted () {
+    setPageMeta({
+      title: 'Theme Wall — looks from the Hive',
+      description: 'Built-in Hive themes and profile skins published by accounts you follow on hive.ausbit.dev.',
+      url: '/themes'
+    })
+  },
   data () {
     return {
       tab: 'built-in',
