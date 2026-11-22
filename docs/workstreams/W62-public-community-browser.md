@@ -1,7 +1,7 @@
 # W62 — Public community browser
 
 Date: 2026-11-22
-Status: implemented and verified locally
+Status: implemented, deployed and verified
 
 ## Scope
 
@@ -113,6 +113,21 @@ Supporting changes:
   tells the reader that loading more widens the sample.
 - Long-tail communities still invisible to `list_communities` remain a Hivemind
   limitation, as noted in W29.
-- Deploy and the production smoke are still pending. Run `./scripts/deploy.sh`
-  then verify `/c` redirects to `/communities`, search and category filters work
-  against the live node, and `/communities.html` carries the directory metadata.
+## Deployment
+
+- SPA deployed from commit `ca5d29f` with `scripts/deploy.sh`.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261122T090835Z.tar.gz`.
+- The live nginx file is root-managed and had diverged from the repo. Only the
+  two W62 hunks were applied to the live file (the `/c` redirect and
+  `communities` in the prerendered-static-pages regex), rather than replacing
+  root-managed configuration wholesale.
+  Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev.nginx.20261122T091256Z`.
+  `nginx -t` passed and nginx was reloaded.
+- Live smoke:
+  - `/c` returns a 301 to `/communities`;
+  - `/communities` returns 200 with the directory title and metadata;
+  - the directory shows cards from the live Hive node;
+  - searching `photography` and selecting `Gaming` each render 36 community
+    cards;
+  - `/c/hive-174578` still returns 200 and renders the OCD community page;
+  - no page errors in the browser console.
