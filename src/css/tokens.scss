@@ -566,6 +566,17 @@ html[data-motion='reduced'] .skin-scope::before {
   text-decoration: underline;
 }
 
+/* Shelf section labels are shared by the shelf modules. */
+.skin-shelf__label {
+  margin: 0 0 0.3rem;
+  color: var(--skin-muted, var(--c-text-muted));
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 /* Calm mode keeps the palette and static atmosphere but removes motion. */
 .skin-scope[data-skin-effects='calm']::before,
 .skin-scope[data-skin-effects='calm'] .skin-atmosphere__grain,

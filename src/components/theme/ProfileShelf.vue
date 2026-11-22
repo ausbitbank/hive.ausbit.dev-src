@@ -4,7 +4,7 @@
 
     <div v-if="showExtras" class="profile-shelf__modules">
       <hive-circle v-if="circle.length" :names="circle" :accounts="circleAccounts" />
-      <slot name="badges" />
+      <badge-shelf v-if="displayBadges.length" :badges="displayBadges" />
 
       <article v-if="post" class="skin-post" aria-labelledby="skin-post-title">
         <h2 id="skin-post-title" class="skin-shelf__label">{{ postMode === 'pinned' ? 'Pinned post' : 'Latest post' }}</h2>
@@ -115,6 +115,8 @@
 <script>
 import StatusLine from 'components/theme/StatusLine.vue'
 import HiveCircle from 'components/theme/HiveCircle.vue'
+import BadgeShelf from 'components/theme/BadgeShelf.vue'
+import { resolveProfileBadges } from 'src/services/badges'
 import { fetchAccountPosts, fetchAccounts } from 'src/services/chainData'
 import { postDisplayTitle, postMetadata } from 'src/services/posts'
 import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
@@ -136,15 +138,17 @@ function firstImage (post) {
 
 export default {
   name: 'ProfileShelf',
-  components: { StatusLine, HiveCircle },
+  components: { StatusLine, HiveCircle, BadgeShelf },
   props: {
     theme: { type: Object, default: null },
     account: { type: Object, default: null },
-    preview: { type: Boolean, default: false }
+    preview: { type: Boolean, default: false },
+    previewBadges: { type: Array, default: () => [] }
   },
   data () {
     return {
       circleAccounts: [],
+      badges: [],
       post: null,
       controller: null
     }
@@ -165,10 +169,13 @@ export default {
     showExtras () {
       return this.$appearance.showSkinExtras !== false
     },
+    displayBadges () {
+      return this.preview ? this.previewBadges : this.badges
+    },
     hasContent () {
       if (this.showStatus && this.status) return true
       if (!this.showExtras) return false
-      return Boolean(this.circle.length || this.post)
+      return Boolean(this.circle.length || this.displayBadges.length || this.post)
     },
     author () {
       return this.account?.name || ''
@@ -189,6 +196,9 @@ export default {
     },
     postMode () {
       this.loadPost()
+    },
+    'theme.profile.badges' () {
+      this.loadBadges()
     }
   },
   mounted () {
@@ -204,7 +214,20 @@ export default {
       if (this.preview || !this.author) return
       this.controller?.abort()
       this.controller = typeof AbortController !== 'undefined' ? new AbortController() : null
-      await Promise.allSettled([this.loadCircle(), this.loadPost()])
+      await Promise.allSettled([this.loadCircle(), this.loadPost(), this.loadBadges()])
+    },
+    async loadBadges () {
+      this.badges = []
+      if (this.preview || !this.author || !this.theme) return
+      const selected = Array.isArray(this.theme.profile?.badges?.selected) ? this.theme.profile.badges.selected : []
+      const showLevel = this.theme.profile?.badges?.showLevel !== false
+      if (!selected.length && !showLevel) return
+      try {
+        const badges = await resolveProfileBadges(this.theme, this.author, { signal: this.controller?.signal })
+        if (!this.controller?.signal.aborted) this.badges = badges
+      } catch {
+        this.badges = []
+      }
     },
     async loadCircle () {
       if (!this.circle.length) {

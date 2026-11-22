@@ -173,7 +173,38 @@
               <q-select v-model="draft.profile.post" :options="postOptions" dense outlined emit-value map-options label="Latest or pinned post" class="studio-grow" />
             </div>
             <p class="studio-section__hint q-mt-xs">
-              Circle accounts come from your public following list. Badge selection is in the next section.
+              Circle accounts come from your public following list.
+            </p>
+          </section>
+
+          <section class="studio-section">
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Badges</h2>
+              <span class="studio-section__hint">Issued by PeakD or HiveBuzz. Verification is never self-claimed.</span>
+            </div>
+            <div class="studio-row">
+              <q-select
+                v-model="selectedBadgeKeys"
+                :options="badgeOptions"
+                multiple
+                use-chips
+                dense
+                outlined
+                label="Show up to 6 earned badges"
+                class="studio-grow"
+                :loading="badgeLoading"
+              />
+            </div>
+            <div class="studio-row q-mt-sm">
+              <q-toggle
+                :model-value="draft.profile.badges.showLevel"
+                label="Show HiveBuzz level"
+                color="primary"
+                @update:model-value="draft.profile.badges.showLevel = $event"
+              />
+            </div>
+            <p v-if="badgeSuggestionsEmpty" class="studio-section__hint q-mt-xs">
+              No earned badges were returned. The shelf stays hidden until a badge resolves.
             </p>
           </section>
 
@@ -220,7 +251,7 @@
                   <span class="is-active">Blog</span><span>Posts</span><span>Wallet</span>
                 </div>
               </div>
-              <profile-shelf v-if="theme" :theme="theme" :account="account" preview />
+              <profile-shelf v-if="theme" :theme="theme" :account="account" :preview-badges="previewBadges" preview />
               <div class="studio-mock__grid">
                 <article class="studio-mock__card">
                   <div class="studio-mock__eyebrow">Latest post</div>
@@ -707,6 +738,7 @@
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import ProfileShelf from 'components/theme/ProfileShelf.vue'
 import { fetchAccount, fetchFollowingNames } from 'src/services/chainData'
+import { fetchBadgeSuggestions } from 'src/services/badges'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
@@ -839,6 +871,8 @@ export default {
       followingNames: [],
       circleFilter: '',
       circleLoading: false,
+      badgeLoading: false,
+      badgeSuggestions: { peakd: [], hivebuzz: [], level: null },
       statusIconOptions: [
         { label: 'No icon', value: 'none' },
         { label: 'Spark', value: 'spark' },
@@ -892,6 +926,57 @@ export default {
         .sort((a, b) => a.localeCompare(b))
         .slice(0, 60)
     },
+    earnedBadges () {
+      return [
+        ...this.badgeSuggestions.peakd,
+        ...this.badgeSuggestions.hivebuzz.filter(badge => badge.earned)
+      ]
+    },
+    badgeOptions () {
+      const options = this.earnedBadges.map(badge => ({
+        label: badge.title + ' · ' + badge.issuer + (badge.verified ? ' · Verified' : ''),
+        value: badge.source + ':' + badge.id,
+        caption: badge.source === 'peakd' ? 'PeakD' : 'HiveBuzz'
+      }))
+      const known = new Set(options.map(option => option.value))
+      for (const item of this.draft.profile.badges?.selected || []) {
+        const value = item.source + ':' + item.id
+        if (!known.has(value)) options.push({ label: item.id, value, caption: item.source })
+      }
+      return options
+    },
+    selectedBadgeKeys: {
+      get () {
+        return (this.draft.profile.badges?.selected || []).map(item => item.source + ':' + item.id)
+      },
+      set (keys) {
+        const selected = []
+        for (const key of Array.isArray(keys) ? keys.slice(0, 6) : []) {
+          const index = String(key).indexOf(':')
+          if (index < 1) continue
+          const source = key.slice(0, index)
+          const id = key.slice(index + 1)
+          if (!['peakd', 'hivebuzz'].includes(source) || !id) continue
+          selected.push({ source, id })
+        }
+        this.draft.profile.badges.selected = selected
+      }
+    },
+    badgeSuggestionsEmpty () {
+      return !this.badgeLoading && this.earnedBadges.length === 0
+    },
+    previewBadges () {
+      const byKey = new Map(this.earnedBadges.map(badge => [badge.source + ':' + badge.id, badge]))
+      const badges = []
+      if (this.draft.profile.badges?.showLevel && this.badgeSuggestions.level) {
+        badges.push(this.badgeSuggestions.level)
+      }
+      for (const item of this.draft.profile.badges?.selected || []) {
+        const badge = byKey.get(item.source + ':' + item.id)
+        if (badge) badges.push(badge)
+      }
+      return badges.slice(0, 7)
+    },
     presetOptions () {
       return THEMES.map(theme => ({ label: theme.name, value: theme.id, caption: theme.mood }))
     },
@@ -940,6 +1025,12 @@ export default {
         this.$q.notify({ message: 'Hive Circle supports up to 6 accounts.', color: 'primary', timeout: 2200 })
       }
     },
+    'draft.profile.badges.selected' (value) {
+      if (Array.isArray(value) && value.length > 6) {
+        this.draft.profile.badges.selected = value.slice(0, 6)
+        this.$q.notify({ message: 'The badge shelf supports up to 6 selected badges.', color: 'primary', timeout: 2200 })
+      }
+    },
     '$hiveStore.user.username' (value) {
       this.username = value || ''
       this.followingNames = []
@@ -982,6 +1073,7 @@ export default {
           this.legacyNote = ''
         }
         this.loadFollowing()
+        this.loadBadges()
       } catch (error) {
         this.$q.notify({ type: 'negative', message: error?.message || 'Could not load your account' })
       } finally {
@@ -1018,6 +1110,17 @@ export default {
     filterCircle (value, update) {
       this.circleFilter = value || ''
       update()
+    },
+    async loadBadges (force = false) {
+      if (!this.username) return
+      this.badgeLoading = true
+      try {
+        this.badgeSuggestions = await fetchBadgeSuggestions(this.username, { force })
+      } catch {
+        this.badgeSuggestions = { peakd: [], hivebuzz: [], level: null }
+      } finally {
+        this.badgeLoading = false
+      }
     },
     applyPreset (id) {
       const preset = getTheme(id)

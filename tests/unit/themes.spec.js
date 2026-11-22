@@ -5,6 +5,7 @@ import { highContrastTokens, tokensFor } from '../../src/themes/tokens'
 import {
   MAX_THEME_BYTES,
   THEME_SCHEMA,
+  isSafeImageUrl,
   parseTheme,
   validateTheme
 } from '../../src/themes/schema'
@@ -152,6 +153,46 @@ describe('theme schema', () => {
     const invalid = profileTheme()
     invalid.profile.circle = ['A', 'not a name', 'alice']
     expect(validateTheme(invalid).ok).toBe(false)
+  })
+
+  it('validates unique badge selections and the level switch', () => {
+    const input = profileTheme()
+    input.profile.badges = {
+      showLevel: true,
+      selected: [
+        { source: 'peakd', id: 'badge-069069' },
+        { source: 'hivebuzz', id: 'first-post' },
+        { source: 'peakd', id: 'badge-069069' }
+      ]
+    }
+    const result = validateTheme(input)
+    expect(result.ok).toBe(true)
+    expect(result.theme.profile.badges.selected).toEqual([
+      { source: 'peakd', id: 'badge-069069' },
+      { source: 'hivebuzz', id: 'first-post' }
+    ])
+    expect(result.theme.profile.badges.showLevel).toBe(true)
+
+    const tooMany = profileTheme()
+    tooMany.profile.badges = {
+      selected: Array.from({ length: 7 }, (_, index) => ({ source: 'peakd', id: 'badge-00000' + index }))
+    }
+    expect(validateTheme(tooMany).ok).toBe(false)
+
+    const badSource = profileTheme()
+    badSource.profile.badges = { selected: [{ source: 'self', id: 'verified' }] }
+    expect(validateTheme(badSource).ok).toBe(false)
+  })
+
+  it('restricts banner images to known HTTPS image hosts', () => {
+    expect(isSafeImageUrl('https://images.hive.blog/0x0/https://example.com/a.png')).toBe(true)
+    expect(isSafeImageUrl('https://files.peakd.com/file/a.png')).toBe(true)
+    expect(isSafeImageUrl('https://evil.example/a.png')).toBe(false)
+    expect(isSafeImageUrl('http://images.hive.blog/a.png')).toBe(false)
+
+    const input = profileTheme()
+    input.profile.banner = { layout: 'mosaic', images: ['https://evil.example/a.png'] }
+    expect(validateTheme(input).ok).toBe(false)
   })
 
   it('validates the latest or pinned post module', () => {
