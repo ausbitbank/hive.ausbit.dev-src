@@ -30,22 +30,15 @@ describe('hive.api read facade', () => {
     setHiveTxNode.mockReset()
   })
 
-  it('maps named reads to the namespaces hive-js used', async () => {
+  it('maps named reads to the shapes hive-js returned', async () => {
     await hive.api.getBlockAsync(42)
-    expect(rpcRequest).toHaveBeenLastCalledWith('block_api.get_block', { block_num: 42 })
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_block', [42])
 
     await hive.api.getOpsInBlockAsync(42, true)
-    expect(rpcRequest).toHaveBeenLastCalledWith('account_history_api.get_ops_in_block', {
-      block_num: 42,
-      only_virtual: true
-    })
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_ops_in_block', [42, true])
 
     await hive.api.getAccountHistory('alice', -1, 20)
-    expect(rpcRequest).toHaveBeenLastCalledWith('account_history_api.get_account_history', {
-      account: 'alice',
-      from: -1,
-      limit: 20
-    })
+    expect(rpcRequest).toHaveBeenLastCalledWith('condenser_api.get_account_history', ['alice', -1, 20])
 
     await hive.api.getTickerAsync()
     expect(rpcRequest).toHaveBeenLastCalledWith('market_history_api.get_ticker', [])

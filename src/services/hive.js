@@ -215,16 +215,16 @@ const api = {
     return rpcRequest(method, params)
   },
   getBlockAsync (blockNum) {
-    return rpcRequest('block_api.get_block', { block_num: blockNum })
+    // condenser_api returns the block itself; block_api wraps it in `{ block }`,
+    // which leaves callers without transactions or a witness.
+    return rpcRequest('condenser_api.get_block', [blockNum])
   },
   getBlockHeaderAsync (blockNum) {
     return rpcRequest('condenser_api.get_block_header', [blockNum])
   },
   getOpsInBlockAsync (blockNum, onlyVirtual = false) {
-    return rpcRequest('account_history_api.get_ops_in_block', {
-      block_num: blockNum,
-      only_virtual: onlyVirtual
-    })
+    // condenser_api returns the operation array directly instead of `{ ops }`.
+    return rpcRequest('condenser_api.get_ops_in_block', [blockNum, onlyVirtual])
   },
   getContentAsync (author, permlink) {
     return rpcRequest('condenser_api.get_content', [author, permlink])
@@ -272,7 +272,8 @@ const api = {
     return rpcRequest('condenser_api.get_account_count', [])
   },
   getAccountHistory (account, from = -1, limit = 100) {
-    return rpcRequest('account_history_api.get_account_history', { account, from, limit })
+    // Callers expect the condenser list of `[index, operation]` rows.
+    return rpcRequest('condenser_api.get_account_history', [account, from, limit])
   }
 }
 
