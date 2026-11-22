@@ -113,6 +113,15 @@ Supporting changes:
   tells the reader that loading more widens the sample.
 - Long-tail communities still invisible to `list_communities` remain a Hivemind
   limitation, as noted in W29.
+
+## Post-deploy fix
+
+Quasar's clearable `q-input` emits `update:modelValue(null)` when the clear icon
+is clicked. The page called `.trim()` on that value during render, which crashed
+the component. Search state now goes through a null-safe `searchText` computed,
+and `@clear` resets the query, URL and paging immediately. A regression test
+covers both the cleared model and `clearSearch()`.
+
 ## Deployment
 
 - SPA deployed from commit `ca5d29f` with `scripts/deploy.sh`.

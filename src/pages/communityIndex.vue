@@ -67,6 +67,7 @@
               aria-label="Search Hive communities by title or description"
               autocomplete="off"
               @update:model-value="scheduleSearch"
+              @clear="clearSearch"
             >
               <template #prepend>
                 <q-icon name="search" size="18px" aria-hidden="true" />
@@ -83,8 +84,8 @@
               <button
                 type="button"
                 class="community-index-chip"
-                :class="{ 'community-index-chip--active': !query.trim() }"
-                :aria-pressed="!query.trim()"
+                :class="{ 'community-index-chip--active': !searchText }"
+                :aria-pressed="!searchText"
                 @click="selectCategory(null)"
               >
                 All
@@ -145,7 +146,7 @@
                 {{ visibleCards.length }} {{ visibleCards.length === 1 ? 'community' : 'communities' }}
               </h2>
               <small class="community-index-section__hint">
-                <template v-if="query.trim()">matching “{{ query.trim() }}” · </template>
+                <template v-if="searchText">matching “{{ searchText }}” · </template>
                 <template v-if="hasMore">more load as you scroll</template>
                 <template v-else>all results loaded</template>
               </small>
@@ -184,12 +185,12 @@
 
           <q-card v-else-if="!visibleCards.length" flat bordered class="community-index-state">
             <q-icon name="search_off" size="1.8em" aria-hidden="true" />
-            <h2 class="community-index-state__title">{{ query.trim() ? 'No matching communities' : 'No communities found' }}</h2>
+            <h2 class="community-index-state__title">{{ searchText ? 'No matching communities' : 'No communities found' }}</h2>
             <p v-if="hideNsfw && cards.length">
               NSFW communities are hidden by your safety filter.
             </p>
-            <p v-else-if="query.trim()">
-              Nothing matched “{{ query.trim() }}”. Try a shorter title, a different category, or a <code>hive-123456</code> community name.
+            <p v-else-if="searchText">
+              Nothing matched “{{ searchText }}”. Try a shorter title, a different category, or a <code>hive-123456</code> community name.
             </p>
             <p v-else>
               The community directory did not return any results. Try refreshing in a moment.
@@ -278,11 +279,14 @@ export default {
     serverSort () {
       return this.sort === 'active' ? 'rank' : this.sort
     },
+    searchText () {
+      return String(this.query || '').trim()
+    },
     activeCategory () {
-      return directoryCategory(this.query)
+      return directoryCategory(this.searchText)
     },
     filtersActive () {
-      return Boolean(this.query.trim()) || this.hideNsfw
+      return Boolean(this.searchText) || this.hideNsfw
     },
     summary () {
       return summarizeDirectory(this.cards)
@@ -323,13 +327,19 @@ export default {
       }, SEARCH_DELAY_MS)
     },
     search () {
-      const next = String(this.query || '').trim()
-      this.syncUrl(next)
+      this.syncUrl(this.searchText)
+      this.load({ reset: true })
+    },
+    clearSearch () {
+      clearTimeout(this.searchTimer)
+      this.searchTimer = null
+      this.query = ''
+      this.syncUrl('')
       this.load({ reset: true })
     },
     selectCategory (category) {
       const next = category ? category.query : ''
-      if (String(this.query || '').trim().toLowerCase() === next) return
+      if (this.searchText.toLowerCase() === next) return
       clearTimeout(this.searchTimer)
       this.query = next
       this.syncUrl(next)
@@ -338,7 +348,7 @@ export default {
     changeSort (value) {
       if (this.sort === value) return
       this.sort = value
-      this.syncUrl(this.query.trim())
+      this.syncUrl(this.searchText)
       this.load({ reset: true })
     },
     clearFilters () {
@@ -383,7 +393,7 @@ export default {
       }
 
       try {
-        const needle = this.query.trim()
+        const needle = this.searchText
         const exactName = reset && isHiveCommunityName(needle) ? needle.toLowerCase() : ''
         const [page, exact] = await Promise.all([
           fetchCommunityDirectoryPage({
