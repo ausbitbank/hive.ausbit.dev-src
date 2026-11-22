@@ -97,6 +97,15 @@ async function mockChain (page) {
               'hive.ausbit.dev': { theme: ALICE_THEME }
             })
           }
+          if (name === 'badge-069069') {
+            return account('badge-069069', {
+              profile: {
+                name: 'NFT Showroom Verified Artist',
+                about: 'Verified by the NFT Showroom team',
+                profile_image: 'https://files.peakd.com/file/badge.png'
+              }
+            })
+          }
           return account(name)
         })
         await route.fulfill({
@@ -123,8 +132,12 @@ async function mockChain (page) {
   await page.route('https://hivebuzz.me/**', async route => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
   })
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7h8AAAAASUVORK5CYII=', 'base64')
   await page.route('https://images.hive.blog/**', async route => {
-    await route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7h8AAAAASUVORK5CYII=', 'base64') })
+    await route.fulfill({ status: 200, contentType: 'image/png', body: png })
+  })
+  await page.route('https://files.peakd.com/**', async route => {
+    await route.fulfill({ status: 200, contentType: 'image/png', body: png })
   })
 }
 
@@ -185,6 +198,30 @@ test('viewer skin controls persist and reverse', async ({ page }) => {
   await page.getByLabel('Show profile shelf extras').click()
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('ausbit:appearance') || '{}').showSkinStatus)).toBe(true)
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem('ausbit:appearance') || '{}').showSkinExtras)).toBe(true)
+})
+
+test('studio badge picker adds an earned badge to the preview', async ({ page }) => {
+  await loginAs(page, 'viewer')
+  await mockChain(page)
+  await page.route('**/api/badges/peakd**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ account: 'viewer', badges: ['badge-069069'] })
+    })
+  })
+
+  await page.goto('/settings/skin')
+  await waitForApp(page)
+  await expect(page.locator('.studio-publish')).toBeVisible({ timeout: 20000 })
+
+  const badgeRow = page.locator('.studio-section').filter({ hasText: 'Issued by PeakD or HiveBuzz' }).locator('.q-select')
+  await expect(badgeRow).toBeVisible()
+  await badgeRow.click()
+  await page.locator('.q-menu .q-item').filter({ hasText: 'NFT Showroom Verified Artist' }).click()
+  await page.keyboard.press('Escape')
+
+  await expect(page.locator('.studio-preview').getByRole('button', { name: /NFT Showroom Verified Artist/ })).toBeVisible()
 })
 
 test('theme code export and import preview before apply', async ({ page, context }) => {

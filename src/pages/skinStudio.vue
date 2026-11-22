@@ -262,6 +262,8 @@
                 :options="badgeOptions"
                 multiple
                 use-chips
+                emit-value
+                map-options
                 dense
                 outlined
                 label="Show up to 6 earned badges"
