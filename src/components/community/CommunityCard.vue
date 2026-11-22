@@ -13,6 +13,7 @@
           <div class="community-card__meta">
             <span class="community-card__handle">{{ card.name }}</span>
             <span v-if="card.roleLabel" class="community-card__role" :class="'community-card__role--' + card.role">{{ card.roleLabel }}</span>
+            <span v-if="card.typeLabel" class="community-card__role" :class="'community-card__role--' + card.type">{{ card.typeLabel }}</span>
             <span v-if="card.nsfw" class="community-card__flag">NSFW</span>
             <span v-if="card.restricted" class="community-card__flag">Restricted</span>
           </div>

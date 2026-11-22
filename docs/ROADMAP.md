@@ -162,12 +162,11 @@ links to the community rules, and warns before posting outside the account's
 subscriptions. See `docs/workstreams/W61-composer-community-picker.md`. Topic
 drag controls, the remaining editor/draft gaps and metadata tooling remain.
 
-Planned discovery work with no workstream yet: a public community browser for
-people who have not built subscriptions. The account-scoped communities view
-only covers communities an account already follows; a general browser would let
-newcomers search all Hive communities by title and topic, compare subscriber and
-recent-activity signals, and filter by category before choosing where to read or
-post.
+W62 (public community browser) is complete. `/communities` (short alias `/c`)
+lets anyone search all Hive communities by title, description and category,
+compare subscribers and active authors, sort by trending, subscribers, active
+authors or newest, and hide NSFW communities without signing in. See
+`docs/workstreams/W62-public-community-browser.md`.
 
 Remaining follow-ups with no open workstream: creator analytics beyond the
 loaded-rows summary (weekly totals, top zaps, unique supporters), the optional

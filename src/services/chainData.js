@@ -417,6 +417,42 @@ export function fetchCommunitySearch (query, limit = 6, { force = false } = {}) 
 }
 
 /**
+ * One page of the public community directory.
+ *
+ * `sort` is limited to the three sorts Hivemind supports (`rank`, `new`,
+ * `subs`). The query filters community titles and descriptions; exact
+ * `hive-123456` lookups are handled by the page with `fetchCommunity`.
+ */
+export function fetchCommunityDirectoryPage ({
+  sort = 'rank',
+  query = '',
+  last = '',
+  limit = 36,
+  force = false
+} = {}) {
+  const safeSort = ['rank', 'new', 'subs'].includes(sort) ? sort : 'rank'
+  const needle = String(query || '').trim()
+  const pageLimit = Math.max(1, Math.min(100, Number(limit) || 36))
+  const key = 'communities:directory:' + safeSort + ':' + pageLimit + ':' +
+    (last || '') + ':' + needle.toLowerCase()
+
+  return loadCached(key, async () => {
+    const rows = await apiListCommunities({
+      last: last || '',
+      limit: pageLimit,
+      query: needle || null,
+      sort: safeSort
+    })
+    return Array.isArray(rows)
+      ? rows.filter(community => community && typeof community.name === 'string' && community.name)
+      : []
+  }, {
+    ttl: CACHE_TTL.communities,
+    force
+  })
+}
+
+/**
  * Candidate posts for a search. Tag/community queries page the chronological
  * feed so relevance ranking has enough of the newest posts to work with; those
  * pages are fetched sequentially and kept locally per request.

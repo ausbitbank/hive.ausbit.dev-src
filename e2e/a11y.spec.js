@@ -12,6 +12,7 @@ const ROUTES = [
   '/market',
   '/markets',
   '/compose',
+  '/communities',
   '/search',
   '/lightning',
   '/health',

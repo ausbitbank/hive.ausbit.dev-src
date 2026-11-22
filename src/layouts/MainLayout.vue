@@ -124,6 +124,7 @@
       <footer class="site-footer" aria-label="Site footer">
         <nav class="site-footer__links" aria-label="Footer navigation">
           <router-link to="/created">Browse</router-link>
+          <router-link to="/communities">Communities</router-link>
           <router-link to="/blocks">Blocks</router-link>
           <router-link to="/proposals">Proposals</router-link>
           <router-link to="/nodes">Nodes</router-link>
@@ -572,6 +573,12 @@ export default {
           caption: 'trending, created, hot',
           icon: 'explore',
           to: '/browse'
+        },
+        {
+          title: 'Communities',
+          caption: 'discover and join',
+          icon: 'forum',
+          to: '/communities'
         },
         {
           title: 'Short posts',

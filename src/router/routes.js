@@ -66,6 +66,8 @@ const routes = [
       { path: 'drafts', redirect: { name: 'compose' } },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
+      { path: 'communities', name: 'communities', component: () => import('pages/communityIndex.vue') },
+      { path: 'c', redirect: '/communities' },
       { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'c/:username', name: 'community', component: () => import('pages/browse.vue') },
       { path: 'shorts', name: 'shorts-index', component: () => import('pages/ShortForm.vue') },

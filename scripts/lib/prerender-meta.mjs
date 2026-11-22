@@ -11,6 +11,7 @@ export const PRERENDER_ROUTES = [
   '/trending',
   '/created',
   '/hot',
+  '/communities',
   '/witnesses',
   '/witness',
   '/proposals',

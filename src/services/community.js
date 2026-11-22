@@ -153,7 +153,7 @@ export function communityRoleWeight (role) {
   return ROLE_WEIGHT[String(role || '').toLowerCase()] ?? 0
 }
 
-function cleanText (value) {
+export function cleanCommunityText (value) {
   if (typeof value !== 'string') return ''
   return value
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
@@ -185,8 +185,8 @@ export function buildCommunityCards (subscriptions, infoByName = {}, options = {
         : (role ? role.charAt(0).toUpperCase() + role.slice(1) : '')
       return {
         name,
-        title: cleanText(record?.title) || row.title || name,
-        about: cleanText(record?.about).slice(0, limit),
+        title: cleanCommunityText(record?.title) || row.title || name,
+        about: cleanCommunityText(record?.about).slice(0, limit),
         role,
         roleLabel,
         weight: communityRoleWeight(role),

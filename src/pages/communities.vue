@@ -27,7 +27,7 @@
         <div class="communities-head__actions">
           <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="load({ force: true })" />
           <q-btn v-if="isSelf" outline no-caps color="primary" icon="rss_feed" label="My full feed" to="/created/my" />
-          <q-btn v-else-if="!loading && cards.length" outline no-caps color="primary" icon="forum" label="Hive communities" to="/created" />
+          <q-btn outline no-caps color="primary" icon="travel_explore" label="Discover communities" to="/communities" />
         </div>
       </header>
 
@@ -69,7 +69,10 @@
             <template v-if="isSelf">Join a community from its page and it will show up here with its own card and feed.</template>
             <template v-else>@{{ username }} has not joined any Hive communities yet.</template>
           </p>
-          <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
+          <div class="communities-state__actions">
+            <q-btn outline no-caps color="primary" icon="travel_explore" label="Discover communities" to="/communities" />
+            <q-btn flat no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
+          </div>
         </q-card>
       </div>
 
@@ -662,6 +665,14 @@ export default {
   color: #e4eaed;
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+.communities-state__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 @media (max-width: 1023px) {

@@ -342,6 +342,7 @@ export function resolveJumpResults (query, { knownAccounts = {}, accountChecks =
 
 const COMMANDS = [  { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
   { label: 'Browse posts', description: 'Trending, new and community posts', icon: 'explore', path: '/browse', keywords: 'posts feed content' },
+  { label: 'Communities', description: 'Discover Hive communities by topic and activity', icon: 'forum', path: '/communities', keywords: 'community communities discover browse directory join subscribe' },
   { label: 'Short posts', description: 'Snaps, Waves, Threads, D.Buzz and Moments', icon: 'bolt', path: '/shorts', keywords: 'microblog snaps waves threads dbuzz moments short' },
   { label: 'Trending posts', description: 'What Hive is reading now', icon: 'trending_up', path: '/trending', keywords: 'hot popular' },
   { label: 'Latest blocks', description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer' },  { label: 'Witnesses', description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes' },

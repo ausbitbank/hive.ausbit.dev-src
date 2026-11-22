@@ -19,6 +19,24 @@ test.describe('navigation and quick wins', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('loggedInUser'))).toContain('ausbitbank')
   })
 
+  test('public community directory browses and searches all communities', async ({ page }) => {
+    test.setTimeout(120000)
+    await page.goto('/c')
+    await page.waitForURL('**/communities')
+    await waitForApp(page)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Discover Hive communities')
+    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBeGreaterThan(0)
+
+    await page.getByLabel('Search Hive communities by title or description').fill('photography')
+    await expect.poll(() => page.locator('.community-index-section__hint').innerText(), { timeout: 45000 })
+      .toContain('photography')
+    await expect.poll(() => page.locator('.community-card').count(), { timeout: 45000 }).toBeGreaterThan(0)
+
+    await page.getByRole('button', { name: 'Gaming', exact: true }).click()
+    await expect.poll(() => page.locator('.community-index-section__hint').innerText(), { timeout: 45000 })
+      .toContain('gaming')
+  })
+
   test('404 search resolves a block number and quick links are present', async ({ page }) => {
     await page.goto('/this-route-does-not-exist')
     await waitForApp(page)
