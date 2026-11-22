@@ -62,5 +62,6 @@ report action.
 - Chromium E2E — 3/3 in `theme-share.spec.js` (wall filter, remix, adopt,
   viewer-control persistence, code import preview/rejection) plus 4/4 in
   `themes.spec.js` and `badges.spec.js`.
-- Axe at 1440px and 390px — 20 existing routes plus `/appearance`, `/themes` and
-  `/settings/skin`; all green.
+- Axe at 1440px and 390px — all 23 routes, including `/appearance`, `/themes`
+  and `/settings/skin`. One full run reported a transient `/browse` violation;
+  the route passed immediately on a focused re-run.
