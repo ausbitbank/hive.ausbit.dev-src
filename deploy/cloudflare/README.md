@@ -7,8 +7,12 @@ links showed the permlink slug and the app icon before this Worker.
 The Worker:
 
 - only touches `GET` requests that accept `text/html`;
-- matches `/@account` and `/@account/permlink`;
-- calls `bridge.get_post` or `bridge.get_profile` on `api.hive.blog`;
+- matches `/@account`, `/@account/permlink`, `/appearance`, `/themes` and
+  `/settings/skin`;
+- serves the prerendered `appearance.html`, `themes.html` or
+  `settings/skin.html` shell with a real 200 for the three theme routes;
+- calls `bridge.get_post` or `bridge.get_profile` on `api.hive.blog` for
+  account and post routes;
 - rewrites the title, description, canonical, Open Graph, Twitter and JSON-LD
   tags, plus the static crawler `<h1>`/summary;
 - caches successful HTML for five minutes;
@@ -22,8 +26,8 @@ The repository root contains `wrangler.jsonc`, so a deploy is one command:
 npx wrangler deploy
 ```
 
-The Worker is bound to `hive.ausbit.dev/@*`. It handles only `GET` requests that
-accept HTML and match `/@account` or `/@account/permlink`; account subpages
+The Worker is bound to `hive.ausbit.dev/@*`, the three theme routes and their
+subpaths. It handles only `GET` requests that accept HTML; account subpages
 (`/wallet`, `/followers`, …) are left to the origin SSI shell.
 
 Verify with a non-JS request:

@@ -25,6 +25,14 @@ const CACHE_SECONDS = 300
 
 const POST_PATH = /^\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)\/?$/i
 const ACCOUNT_PATH = /^\/@([a-z0-9.-]+)\/?$/i
+// Client-side theme surfaces. The origin serves these as a 404 shell because
+// the nginx vhost is intentionally explicit about routes; this Worker returns
+// the matching prerendered shell with a real 200 at the edge.
+const THEME_SHELLS = new Map([
+  ['/appearance', '/appearance.html'],
+  ['/themes', '/themes.html'],
+  ['/settings/skin', '/settings/skin.html']
+])
 const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|tip|trail)(?:\/|$)/i
 const LIGHTNING_PATH = /^\/lightning\/?$/i
 const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
@@ -32,6 +40,25 @@ const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
 function hasHtml (request) {
   const accept = request.headers.get('accept') || ''
   return request.method === 'GET' && accept.includes('text/html')
+}
+
+async function themeShell (request) {
+  if (!hasHtml(request)) return null
+  const url = new URL(request.url)
+  const shell = THEME_SHELLS.get(url.pathname)
+  if (!shell) return null
+  const shellUrl = new URL(request.url)
+  shellUrl.pathname = shell
+  shellUrl.search = ''
+  const response = await fetch(shellUrl.toString(), {
+    headers: { accept: 'text/html' }
+  })
+  if (!response.ok) return null
+  const headers = new Headers(response.headers)
+  headers.set('content-type', 'text/html; charset=utf-8')
+  headers.set('cache-control', 'public, max-age=' + CACHE_SECONDS)
+  headers.set('x-hive-meta', 'theme-shell')
+  return new Response(response.body, { status: 200, headers })
 }
 
 async function rpc (method, params) {
@@ -242,6 +269,9 @@ async function lightningShell (request, account = '') {
 
 export default {
   async fetch (request) {
+    const theme = await themeShell(request).catch(() => null)
+    if (theme) return theme
+
     const url = new URL(request.url)
     const accountLightning = request.method === 'GET' ? url.pathname.match(ACCOUNT_LIGHTNING_PATH) : null
     if (accountLightning) return lightningShell(request, accountLightning[1])
