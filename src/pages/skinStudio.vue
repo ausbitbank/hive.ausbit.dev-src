@@ -15,6 +15,7 @@
         </div>
         <div class="studio-head__actions">
           <q-btn flat no-caps icon="arrow_back" label="Appearance" to="/appearance" />
+          <q-btn outline no-caps icon="input" label="Import code" @click="openImport" />
           <q-btn outline no-caps icon="visibility" label="View my profile" :to="'/@' + username" />
         </div>
       </header>
@@ -71,6 +72,10 @@
             </div>
             <q-input v-model="draft.mood" dense outlined label="Mood" maxlength="80" class="q-mt-sm" />
             <div v-if="legacyNote" class="studio-legacy" role="note">{{ legacyNote }}</div>
+            <div v-if="remixNote" class="studio-remix" role="note">
+              {{ remixNote }}
+              <q-btn v-if="remixOriginal" flat dense no-caps icon="undo" label="Reset to original" @click="resetRemix" />
+            </div>
             <div class="studio-row q-mt-sm">
               <q-input v-model="draft.profile.status.text" dense outlined label="Status line (optional, plain text)" maxlength="80" class="studio-grow" />
               <q-select v-model="draft.profile.status.icon" :options="statusIconOptions" dense outlined emit-value map-options label="Status icon" class="studio-grow" />
@@ -289,7 +294,8 @@
               <div v-for="warning in validation.warnings" :key="warning">{{ warning }}</div>
             </div>
             <div class="studio-publish__actions">
-              <q-btn outline no-caps icon="content_copy" label="Copy JSON" @click="copyJson" />
+              <q-btn outline no-caps icon="content_copy" label="Copy theme code" @click="copyThemeCode" />
+              <q-btn outline no-caps icon="code" label="Copy JSON" @click="copyJson" />
               <q-btn outline no-caps icon="download" label="Download" @click="downloadJson" />
               <q-btn outline no-caps color="negative" icon="delete_outline" label="Unpublish" @click="openUnpublish" />
               <q-btn unelevated no-caps color="primary" icon="publish" label="Publish to Hive" :disable="!canPublish" @click="openPublish" />
@@ -372,6 +378,45 @@
         <q-card-actions align="right">
           <q-btn flat no-caps label="Cancel" v-close-popup />
           <q-btn unelevated no-caps color="negative" icon="delete_outline" label="Queue unpublish" @click="confirmUnpublish" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="importOpen">
+      <q-card class="studio-dialog studio-import">
+        <q-card-section>
+          <div class="studio-eyebrow">Import</div>
+          <h2 class="studio-dialog__title">Paste a theme code</h2>
+          <p class="studio-dialog__text">Nothing is applied until you confirm the preview.</p>
+          <q-input
+            v-model="importCode"
+            type="textarea"
+            autogrow
+            outlined
+            label="hive-theme:1:…"
+            class="q-mt-sm"
+            spellcheck="false"
+          />
+          <div v-if="importError" class="studio-errors" role="alert">{{ importError }}</div>
+          <div v-else-if="importWarnings.length" class="studio-warnings">
+            <div v-for="warning in importWarnings" :key="warning">{{ warning }}</div>
+          </div>
+          <div v-if="importPreview" class="studio-import__preview">
+            <profile-skin :preview-theme="importPreview" :author="importPreview.author || username" context="profile">
+              <div class="studio-import__mock">
+                <span class="studio-import__name">{{ importPreview.name }}</span>
+                <span class="studio-import__mode">{{ importPreview.mode === 'light' ? 'Light' : 'Dark' }} · {{ importPreview.mood }}</span>
+                <span class="studio-import__swatches">
+                  <span v-for="swatch in importSwatches" :key="swatch" :style="{ background: swatch }"></span>
+                </span>
+              </div>
+            </profile-skin>
+          </div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Cancel" v-close-popup />
+          <q-btn outline no-caps icon="translate" label="Check code" :loading="importBusy" @click="decodeImport" />
+          <q-btn unelevated no-caps color="primary" icon="check" label="Use this theme" :disable="!importPreview" @click="applyImport" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -553,6 +598,63 @@
 .studio-meter__item.is-good { color: var(--c-positive); border-color: color-mix(in srgb, var(--c-positive) 45%, transparent); }
 .studio-meter__item.is-warn { color: var(--c-warning); border-color: color-mix(in srgb, var(--c-warning) 45%, transparent); }
 .studio-meter__item.is-bad { color: var(--c-negative); border-color: color-mix(in srgb, var(--c-negative) 45%, transparent); }
+
+.studio-remix {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--c-primary) 35%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.studio-import {
+  width: min(720px, 96vw);
+}
+
+.studio-import__preview {
+  margin-top: 0.7rem;
+  overflow: hidden;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-card);
+}
+
+.studio-import__mock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.2rem;
+}
+
+.studio-import__name {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.studio-import__mode {
+  color: var(--skin-muted, var(--c-text-muted));
+  font-size: 0.72rem;
+}
+
+.studio-import__swatches {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.35rem;
+}
+
+.studio-import__swatches span {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: 50%;
+}
 
 .studio-legacy {
   margin-top: 0.55rem;
@@ -872,6 +974,7 @@ import { hiveAvatarUrl } from 'src/utils/avatar'
 import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
 import { isSafeImageUrl, validateTheme } from 'src/themes/schema'
+import { decodeThemeCode, encodeThemeCode } from 'src/themes/shareCode'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { safeJsonParse } from 'src/utils/safeHtml'
 import { contrast, ensureContrast, hslToHex, hueFor, mix, rgbToHsl } from 'src/themes/color'
@@ -1020,6 +1123,13 @@ export default {
       pendingMerged: '',
       pendingUnpublish: null,
       legacyNote: '',
+      remixOriginal: null,
+      importOpen: false,
+      importCode: '',
+      importPreview: null,
+      importError: '',
+      importWarnings: [],
+      importBusy: false,
       followingNames: [],
       circleFilter: '',
       circleLoading: false,
@@ -1148,6 +1258,15 @@ export default {
     },
     badgeSuggestionsEmpty () {
       return !this.badgeLoading && this.earnedBadges.length === 0
+    },
+    remixNote () {
+      if (!this.draft.remixedFrom) return ''
+      return 'Remix of @' + this.draft.remixedFrom + ' — not yet published.'
+    },
+    importSwatches () {
+      if (!this.importPreview) return []
+      const tokens = this.importPreview.tokens
+      return [tokens.bg, tokens.surface, tokens.primary, tokens.secondary, tokens.accent, tokens.text]
     },
     previewBadges () {
       const byKey = new Map(this.earnedBadges.map(badge => [badge.source + ':' + badge.id, badge]))
@@ -1304,6 +1423,7 @@ export default {
           this.draft = baseDraft(this.username)
           this.legacyNote = ''
         }
+        this.consumeRemix()
         this.loadFollowing()
         this.loadBadges()
         this.loadAtmosphereImages()
@@ -1311,6 +1431,79 @@ export default {
         this.$q.notify({ type: 'negative', message: error?.message || 'Could not load your account' })
       } finally {
         this.busy = false
+      }
+    },
+    consumeRemix () {
+      if (typeof sessionStorage === 'undefined') return
+      let payload
+      try {
+        payload = JSON.parse(sessionStorage.getItem('ausbit:theme:remix') || 'null')
+      } catch {
+        payload = null
+      }
+      sessionStorage.removeItem('ausbit:theme:remix')
+      if (!payload?.theme) return
+      const result = validateTheme(payload.theme, { requireProfile: true })
+      if (!result.ok) return
+      this.draft = clone(result.theme)
+      this.draft.author = this.username
+      this.draft.scope = 'profile'
+      if (payload.author && payload.author !== this.username) this.draft.remixedFrom = payload.author
+      this.ensureDraftShape()
+      this.remixOriginal = clone(this.draft)
+      this.legacyNote = ''
+    },
+    resetRemix () {
+      if (!this.remixOriginal) return
+      this.draft = clone(this.remixOriginal)
+      this.ensureDraftShape()
+    },
+    openImport () {
+      this.importOpen = true
+      this.importCode = ''
+      this.importPreview = null
+      this.importError = ''
+      this.importWarnings = []
+    },
+    async decodeImport () {
+      this.importBusy = true
+      this.importPreview = null
+      this.importError = ''
+      this.importWarnings = []
+      try {
+        const result = await decodeThemeCode(this.importCode)
+        if (!result.ok) {
+          this.importError = result.errors.join(' ')
+          return
+        }
+        this.importPreview = result.theme
+        this.importWarnings = result.warnings
+      } catch (error) {
+        this.importError = error?.message || 'Could not read that code.'
+      } finally {
+        this.importBusy = false
+      }
+    },
+    applyImport () {
+      if (!this.importPreview) return
+      const sourceAuthor = this.importPreview.author
+      this.draft = clone(this.importPreview)
+      this.draft.author = this.username
+      this.draft.scope = 'profile'
+      if (sourceAuthor && sourceAuthor !== this.username) this.draft.remixedFrom = sourceAuthor
+      this.ensureDraftShape()
+      this.remixOriginal = clone(this.draft)
+      this.importOpen = false
+      this.$q.notify({ message: 'Theme imported into the Studio. Review it before publishing.', color: 'primary', timeout: 3200 })
+    },
+    async copyThemeCode () {
+      if (!this.validation.theme) return
+      try {
+        const code = await encodeThemeCode(this.validation.theme)
+        await navigator.clipboard.writeText(code)
+        this.$q.notify({ message: 'Theme code copied.', color: 'primary', timeout: 1800 })
+      } catch {
+        this.$q.notify({ type: 'negative', message: 'Could not create a theme code.' })
       }
     },
     ensureDraftShape () {

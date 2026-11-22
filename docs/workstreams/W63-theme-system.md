@@ -178,7 +178,7 @@ Deployed on 2026-11-22 with `./scripts/deploy.sh`.
   infrastructure tidy-up rather than a functional blocker.
 - Community skins (the community account already has metadata; the mechanism is
   ready, the route scope is intentionally disabled).
-- Share codes/import, named theme libraries, banner-collage upload, and a
-  curated public gallery.
+- Named theme libraries and a curated public gallery (theme codes, import and
+  collage atmosphere landed in W67b).
 - Optional self-hosted display fonts if the measured bundle budget allows.
 - Deployment and production live smoke.

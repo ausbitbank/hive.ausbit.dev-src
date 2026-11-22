@@ -52,7 +52,6 @@ post a closed enum. Images still require HTTPS on an approved image host.
 
 - `bun run lint` — 0 errors (one unrelated warning in `communityPulse.js`); the
   theme token scanner is clean.
-- `bun run test` — 126 files, 1,087 tests passing.
-- `bun run build` — blocked during implementation by an unrelated, in-progress
-  dashboard widget file; re-run after that workstream settles.
-- Targeted Chromium E2E and axe — run with the W66/W67 suites.
+- `bun run test` — 136 files, 1,168 tests passing at the final W67b gate.
+- `bun run build` — succeeded after the unrelated dashboard workstream landed.
+- Targeted Chromium E2E and axe — covered by the W65–W67b verification pass.

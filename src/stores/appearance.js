@@ -6,6 +6,7 @@
 
 import { defineStore } from 'pinia'
 import { getTheme, DEFAULT_THEME_ID } from 'src/themes/registry'
+import { validateTheme } from 'src/themes/schema'
 import { quasarVarsFor, themeModeOf, tokensFor } from 'src/themes/tokens'
 
 export const APPEARANCE_STORAGE_KEY = 'ausbit:appearance'
@@ -21,7 +22,14 @@ export const DEFAULT_APPEARANCE = {
   showSkinExtras: true,
   motion: 'system',
   highContrast: false,
-  ignoredSkinAuthors: []
+  ignoredSkinAuthors: [],
+  customTheme: null
+}
+
+function normalizeCustomTheme (value) {
+  if (!value || typeof value !== 'object') return null
+  const result = validateTheme(value)
+  return result.ok ? result.theme : null
 }
 
 function normalizeAuthor (value) {
@@ -61,7 +69,8 @@ function readStored () {
       showSkinExtras: parsed.showSkinExtras !== false,
       motion: ['system', 'reduced', 'full'].includes(parsed.motion) ? parsed.motion : 'system',
       highContrast: parsed.highContrast === true,
-      ignoredSkinAuthors: normalizeIgnoredAuthors(parsed.ignoredSkinAuthors)
+      ignoredSkinAuthors: normalizeIgnoredAuthors(parsed.ignoredSkinAuthors),
+      customTheme: normalizeCustomTheme(parsed.customTheme)
     }
   } catch {
     return { ...DEFAULT_APPEARANCE }
@@ -81,7 +90,8 @@ function persist (state) {
       showSkinExtras: state.showSkinExtras !== false,
       motion: state.motion,
       highContrast: state.highContrast,
-      ignoredSkinAuthors: normalizeIgnoredAuthors(state.ignoredSkinAuthors)
+      ignoredSkinAuthors: normalizeIgnoredAuthors(state.ignoredSkinAuthors),
+      customTheme: state.customTheme || null
     }))
   } catch {
     // Quota or private mode. The in-memory state still works.
@@ -168,8 +178,12 @@ export const useAppearanceStore = defineStore('appearance', {
       if (state.followSystem) return state.systemDark ? 'hive-dark' : 'hive-light'
       return state.themeId
     },
-    theme () {
+    theme (state) {
+      if (!state.followSystem && state.themeId === 'custom' && state.customTheme) return state.customTheme
       return getTheme(this.effectiveThemeId)
+    },
+    customThemeActive (state) {
+      return !state.followSystem && state.themeId === 'custom' && Boolean(state.customTheme)
     },
     isDark () {
       return this.theme.mode === 'dark'
@@ -197,7 +211,7 @@ export const useAppearanceStore = defineStore('appearance', {
       if (q) this.attachQuasar(q)
       const stored = readStored()
       Object.assign(this, stored)
-      this.themeId = getTheme(this.themeId).id
+      this.themeId = this.themeId === 'custom' && this.customTheme ? 'custom' : getTheme(this.themeId).id
       this.systemDark = systemPrefersDark()
       this.hydrated = true
       this.setupSystemListener()
@@ -237,6 +251,37 @@ export const useAppearanceStore = defineStore('appearance', {
     setTheme (id) {
       this.themeId = getTheme(id).id
       this.followSystem = false
+      this.commit()
+    },
+    adoptCustomTheme (theme, source = '') {
+      const result = validateTheme({
+        schema: 'hive.ausbit.dev/theme@1',
+        scope: 'site',
+        id: 'custom',
+        name: theme?.name || 'Adopted palette',
+        mood: source ? 'Adopted from @' + source : 'A palette adopted on this device',
+        description: theme?.description || '',
+        author: 'local',
+        remixedFrom: null,
+        tags: ['custom', ...(Array.isArray(theme?.tags) ? theme.tags : [])].slice(0, 8),
+        mode: theme?.mode === 'light' ? 'light' : 'dark',
+        tokens: theme?.tokens,
+        type: theme?.type,
+        shape: theme?.shape,
+        effects: theme?.effects,
+        profile: theme?.profile,
+        variants: theme?.variants
+      })
+      if (!result.ok) return { ok: false, errors: result.errors }
+      this.customTheme = result.theme
+      this.themeId = 'custom'
+      this.followSystem = false
+      this.commit()
+      return { ok: true, theme: result.theme, errors: [] }
+    },
+    clearCustomTheme () {
+      this.customTheme = null
+      if (this.themeId === 'custom') this.themeId = DEFAULT_THEME_ID
       this.commit()
     },
     setFollowSystem (value) {

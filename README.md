@@ -35,9 +35,9 @@ Wallet:
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
 | `/communities` (`/c`) | Public community browser for everyone: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest community shelves; and hide NSFW communities |
 | `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
-| `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast and profile-skin visibility |
-| `/themes` | Theme wall with built-in themes and profile skins published by accounts you follow |
-| `/settings/skin` | Skin Studio: design a palette, backdrop, type, avatar frame, nameplate, card material, ticker and sticker shelf; preview it and publish it to your Hive account with posting authority |
+| `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast, profile-skin visibility, calm effects, status/extras visibility and adopted palettes |
+| `/themes` | Theme wall with built-in themes and published profile skins, filters for mode/tag/credential and recent/featured views, remixing and local palette adoption |
+| `/settings/skin` | Skin Studio: palette, light/dark variants, status line, Hive Circle, badges, atmosphere, visual language, latest/pinned post, theme codes and publishing with posting authority |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |
@@ -59,6 +59,13 @@ Additional UX:
 - The whole site uses a semantic theme token layer. Themes never rearrange
   content, and profile skins are scoped to the author's profile, blog and post
   pages with a visible “Skin by” badge and a one-click “Hide skins” action.
+- Profile skins can carry a static status, a six-account Hive Circle, curated
+  PeakD/HiveBuzz badges, a cover/collage atmosphere and a latest/pinned post.
+  Badges are cached, fail open and are only marked verified when they match the
+  issuer allowlist. The Profile Shelf never loads on post pages or feeds.
+- Theme codes, remixing and “Use this palette” are local-first. Importing a code
+  always previews before applying; adopting a palette never changes the
+  author's on-chain skin.
 - `Ctrl K` or `/` opens search and jump.
 - `f` opens the full search page; the search page supports arrow-key navigation
   and saved searches.

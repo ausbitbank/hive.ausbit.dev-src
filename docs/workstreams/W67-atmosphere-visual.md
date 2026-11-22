@@ -54,10 +54,12 @@ separate contrast meters.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — 127 files, 1,103 tests passing, including variant resolution,
-  independent variant contrast, atmosphere/visual enums and safe image hosts.
+- `bun run test` — 136 files, 1,168 tests passing at the final W67b gate,
+  including variant resolution, independent variant contrast, atmosphere/visual
+  enums and safe image hosts.
 - `bun run build` — succeeded.
 - Chromium E2E — 4/4 in `themes.spec.js` and `badges.spec.js`, covering
   atmosphere, visual attributes, shelf, badges and no badge request on a post
   page.
-- Axe at 1440px and 390px — run with the final W67b verification pass.
+- Axe at 1440px and 390px — green, including `/appearance`, `/themes` and the
+  Skin Studio.

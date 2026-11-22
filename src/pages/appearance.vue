@@ -29,7 +29,7 @@
           />
         </div>
 
-        <div class="theme-grid" role="list" aria-label="Site themes">
+        <div class="theme-grid" aria-label="Site themes">
           <button
             v-for="item in themes"
             :key="item.id"
@@ -38,7 +38,6 @@
             :class="{ 'is-active': item.id === activeThemeId }"
             :aria-pressed="item.id === activeThemeId"
             :style="previewStyle(item)"
-            role="listitem"
             @click="selectTheme(item.id)"
           >
             <span class="theme-card__preview" aria-hidden="true">
@@ -148,6 +147,69 @@
               @update:model-value="$appearance.setHighContrast($event)"
             />
           </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Profile skin effects</div>
+              <div class="theme-option__hint">Calm keeps the palette and static atmosphere but removes drift, grain and hover motion.</div>
+            </div>
+            <q-select
+              :model-value="$appearance.skinEffects"
+              :options="skinEffectOptions"
+              dense
+              outlined
+              emit-value
+              map-options
+              class="theme-option__select"
+              aria-label="Profile skin effects"
+              @update:model-value="$appearance.setSkinEffects($event)"
+            />
+          </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Show status lines</div>
+              <div class="theme-option__hint">Hide the static status line under an author's name.</div>
+            </div>
+            <q-toggle
+              :model-value="$appearance.showSkinStatus"
+              color="primary"
+              aria-label="Show profile status lines"
+              @update:model-value="$appearance.setShowSkinStatus($event)"
+            />
+          </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Show profile extras</div>
+              <div class="theme-option__hint">Hide Hive Circle, badges and the latest post card while keeping the look.</div>
+            </div>
+            <q-toggle
+              :model-value="$appearance.showSkinExtras"
+              color="primary"
+              aria-label="Show profile shelf extras"
+              @update:model-value="$appearance.setShowSkinExtras($event)"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section v-if="customThemeActive" class="theme-section" aria-labelledby="theme-adopted-title">
+        <div class="theme-section__head">
+          <div>
+            <h2 id="theme-adopted-title" class="theme-section__title">Adopted palette</h2>
+            <p class="theme-section__hint">Stored only on this device. The author's on-chain skin is unchanged.</p>
+          </div>
+          <q-btn flat dense no-caps icon="undo" label="Use Hive Dark" @click="clearAdopted" />
+        </div>
+        <div class="theme-adopted" :style="previewStyle($appearance.customTheme)">
+          <span class="theme-adopted__swatches" aria-hidden="true">
+            <span v-for="swatch in swatches($appearance.customTheme)" :key="swatch" :style="{ background: swatch }"></span>
+          </span>
+          <span>
+            <strong>{{ $appearance.customTheme.name }}</strong>
+            <span class="theme-adopted__mood">{{ $appearance.customTheme.mood }}</span>
+          </span>
         </div>
       </section>
 
@@ -503,6 +565,35 @@
   font-weight: 600;
 }
 
+.theme-adopted {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--preview-border, var(--c-border-subtle));
+  border-radius: var(--radius-card);
+  background: var(--preview-bg, var(--c-surface));
+  color: var(--preview-text, var(--c-text));
+}
+
+.theme-adopted__swatches {
+  display: flex;
+  gap: 3px;
+}
+
+.theme-adopted__swatches span {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: 50%;
+}
+
+.theme-adopted__mood {
+  display: block;
+  color: var(--preview-muted, var(--c-text-muted));
+  font-size: 0.72rem;
+}
+
 .theme-signin-hint {
   display: inline-flex;
   align-items: center;
@@ -562,6 +653,10 @@ export default {
         { label: 'Follow system', value: 'system' },
         { label: 'Reduce motion', value: 'reduced' },
         { label: 'Allow full motion', value: 'full' }
+      ],
+      skinEffectOptions: [
+        { label: 'Full effects', value: 'full' },
+        { label: 'Calm effects', value: 'calm' }
       ]
     }
   },
@@ -574,11 +669,18 @@ export default {
     },
     ignoredSkinAuthors () {
       return this.$appearance.ignoredSkinAuthors
+    },
+    customThemeActive () {
+      return this.$appearance.customThemeActive
     }
   },
   methods: {
     selectTheme (id) {
       this.$appearance.setTheme(id)
+    },
+    clearAdopted () {
+      this.$appearance.clearCustomTheme()
+      this.$q.notify({ message: 'Adopted palette removed.', color: 'primary', timeout: 1800 })
     },
     resetTheme () {
       this.$appearance.setTheme(DEFAULT_THEME_ID)

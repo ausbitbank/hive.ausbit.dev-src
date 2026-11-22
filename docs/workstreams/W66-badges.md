@@ -52,7 +52,8 @@ pages or feeds.
 ## Verification
 
 - `bun run lint` — clean for the badge files.
-- `bun run test` — 127 files, 1,100 tests passing, including 9 new badge tests.
+- `bun run test` — 136 files, 1,168 tests passing at the final W67b gate,
+  including 9 badge tests.
 - Chromium E2E with mocked PeakD/HiveBuzz APIs — shelf, circle, dialog,
   sanitized description, issuer link, omitted unknown badge, and no badge
   requests on a post page.

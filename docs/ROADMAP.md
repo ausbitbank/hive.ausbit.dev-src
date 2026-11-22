@@ -183,14 +183,39 @@ it as namespaced `posting_json_metadata` with posting authority. Visitors see a
 skin on the author's profile, blog and posts inside a bounded, contrast-checked
 scope, and can hide all skins at any time. `/themes` shows built-in themes and
 skins from accounts the viewer follows. See
-`docs/workstreams/W63-theme-system.md`. Deployment and the production smoke
-remain.
+`docs/workstreams/W63-theme-system.md`.
 
-Remaining follow-ups with no open workstream: creator analytics beyond the
-loaded-rows summary (weekly totals, top zaps, unique supporters), the optional
-on-chain balance-request UI, the optional #63 server-side existence check at the
-edge, and the optional visual editor from the composer roadmap. There is
-otherwise no open issue backlog.
+W65 (issue #92, profile identity) is implemented locally. The sticker tray and
+marquee ticker are gone; old themes still validate, stickers are ignored and
+ticker text becomes a static status line. Account pages gain a fixed Profile
+Shelf with a six-account Hive Circle, latest/pinned post and optional status.
+See `docs/workstreams/W65-profile-identity.md`.
+
+W66 (issue #92, badges) is implemented locally. PeakD membership is read through
+a same-origin Worker proxy with a Hive followers fallback; HiveBuzz reads only
+`state: "on"` badges. Both are cached, fail open and never load on post pages.
+The curated credential allowlist is the only source of “Verified”. See
+`docs/workstreams/W66-badges.md`.
+
+W67 (issue #92, atmosphere and visual language) is implemented locally. Covers
+and three-image collages become an app-owned atmosphere with an enforced
+readability scrim; link/button/chip/divider/image/gradient enums and independent
+light/dark token variants are available in the Studio. See
+`docs/workstreams/W67-atmosphere-visual.md`.
+
+W67b (issue #92, sharing and viewer control) is implemented locally. Theme codes
+preview before apply, wall cards remix with attribution or adopt a palette
+locally, and the wall has mode/tag/credential/recent/featured filters. Viewers
+can calm effects and hide status or shelf extras while keeping per-author
+ignore and “Hide all skins”. See
+`docs/workstreams/W67b-sharing-viewer-control.md`.
+
+The issue #92 work is ready for the deployment gate. Remaining follow-ups with
+no open workstream: production deploy and live smoke for W65–W67b, creator
+analytics beyond the loaded-rows summary (weekly totals, top zaps, unique
+supporters), the optional on-chain balance-request UI, the optional #63
+server-side existence check at the edge, and the optional visual editor from the
+composer roadmap.
 
 ## Definition of done
 

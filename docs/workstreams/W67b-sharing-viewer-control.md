@@ -1,0 +1,66 @@
+# W67b — Sharing and viewer control
+
+Date: 2026-11-23
+Status: implemented locally
+
+## Scope
+
+- Theme code export/import with preview before apply.
+- Remix from the Theme Wall with attribution.
+- Adopt a published palette as a local site theme.
+- Theme Wall mode/tag/credential/recent/featured filters and search.
+- Viewer controls for calm effects, hidden status, hidden shelf extras and
+  ignored authors.
+
+## Theme codes
+
+`src/themes/shareCode.js` encodes a validated theme as
+`hive-theme:1:<g|j>:<base64url>`. Export prefers gzip through
+`CompressionStream` and falls back to plain JSON. Import checks the prefix,
+size, base64, gzip and finally runs the strict theme validator. The Studio
+shows a preview and requires “Use this theme” before the draft changes. Nothing
+is applied from a query string.
+
+## Remix and adoption
+
+- Wall cards set `remixedFrom` to the original author and open the Studio with a
+  local draft. The skin badge preserves attribution on publish. “Reset to
+  original” restores the remix snapshot.
+- “Use palette” previews the palette in a dialog, then stores a validated site
+  theme in `ausbit:appearance.customTheme` on this device. It never modifies the
+  author's on-chain skin. Appearance can remove the adopted palette at any time.
+
+## Theme Wall
+
+- Search by author/theme name.
+- Mode filter: any, dark, light.
+- Tag filter built from the visible themes.
+- Kind filter: credential, achievement, minimal.
+- Tabs: Built-in, Following, Recent and Featured. Featured includes explicitly
+  tagged themes and published skins with a curated credential.
+- Empty and failure states do not block the wall.
+
+## Viewer controls
+
+`src/stores/appearance.js` persists `skinEffects` (`full`/`calm`),
+`showSkinStatus`, `showSkinExtras`, `profileSkins`, `ignoredSkinAuthors` and the
+adopted custom theme. The Appearance page exposes each control and the ignored
+author list. Calm removes drift/grain/hover motion while keeping palette and
+static atmosphere; hiding extras keeps the look but removes Circle, badges and
+the post card. “Ignore this skin” and “Hide all skins” remain; there is no
+report action.
+
+## Verification
+
+- `bun run lint` — clean.
+- `bun run test` — 136 files, 1,168 tests passing.
+- `bun run build` — succeeded.
+- `bun run perf:check` — passes on the W65–W67b tree (theme-only worktree,
+  measured at commit `28e2927`). The shared working tree currently fails the
+  Home route/total JS budgets because of the concurrently developed dashboard
+  widgets, which are outside W65–W67.
+- Chromium E2E — 3/3 in `theme-share.spec.js` (wall filter, remix, adopt,
+  viewer-control persistence, code import preview/rejection) plus 4/4 in
+  `themes.spec.js` and `badges.spec.js`.
+- Axe at 1440px and 390px — 20 existing routes plus `/appearance`, `/themes` and
+  `/settings/skin`; all green.

@@ -16,6 +16,15 @@
         <q-btn flat no-caps icon="palette" label="Appearance" to="/appearance" />
       </header>
 
+      <div class="wall-filters">
+        <q-input v-model="search" dense outlined clearable label="Search author or theme" class="wall-filters__search">
+          <template #prepend><q-icon name="search" aria-hidden="true" /></template>
+        </q-input>
+        <q-select v-model="modeFilter" :options="modeOptions" dense outlined emit-value map-options label="Mode" class="wall-filters__select" />
+        <q-select v-model="tagFilter" :options="tagOptions" dense outlined emit-value map-options label="Tag" class="wall-filters__select" />
+        <q-select v-model="kindFilter" :options="kindOptions" dense outlined emit-value map-options label="Kind" class="wall-filters__select" />
+      </div>
+
       <q-tabs
         v-model="tab"
         dense
@@ -28,13 +37,15 @@
       >
         <q-tab name="built-in" label="Built-in themes" icon="invert_colors" />
         <q-tab name="following" label="Following" icon="people" />
+        <q-tab name="recent" label="Recent" icon="schedule" />
+        <q-tab name="featured" label="Featured" icon="star" />
       </q-tabs>
 
       <q-tab-panels v-model="tab" animated class="wall-panels">
         <q-tab-panel name="built-in">
-          <div class="wall-grid">
+          <div v-if="filteredBuiltIn.length" class="wall-grid">
             <button
-              v-for="theme in builtIn"
+              v-for="theme in filteredBuiltIn"
               :key="theme.id"
               type="button"
               class="wall-card"
@@ -57,9 +68,14 @@
               </span>
             </button>
           </div>
+          <div v-else class="wall-empty wall-empty--small">
+            <q-icon name="filter_alt_off" size="1.6rem" aria-hidden="true" />
+            <h2>No built-in themes match</h2>
+            <p>Clear the filters to see all ten themes.</p>
+          </div>
         </q-tab-panel>
 
-        <q-tab-panel name="following">
+        <q-tab-panel v-for="panel in ['following', 'recent', 'featured']" :key="panel" :name="panel">
           <div v-if="!loggedIn" class="wall-empty">
             <q-icon name="login" size="2rem" color="primary" aria-hidden="true" />
             <h2>Sign in to see skins from people you follow</h2>
@@ -69,15 +85,15 @@
           <div v-else class="wall-following">
             <div class="wall-following__head">
               <p class="wall-following__hint">
-                {{ loading ? 'Reading profile metadata…' : skins.length ? skins.length + ' published skins from people you follow.' : 'No published skins found in your following list yet.' }}
+                {{ loading ? 'Reading profile metadata…' : visibleSkins.length ? visibleSkins.length + ' published skins in this view.' : 'No published skins match this view yet.' }}
               </p>
               <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="loadFollowing(true)" />
             </div>
 
             <div v-if="error" class="wall-error" role="alert">{{ error }}</div>
 
-            <div v-if="skins.length" class="wall-grid">
-              <article v-for="item in skins" :key="item.account.name" class="wall-card wall-card--skin" :style="styleFor(item.theme)">
+            <div v-if="visibleSkins.length" class="wall-grid">
+              <article v-for="item in visibleSkins" :key="item.account.name" class="wall-card wall-card--skin" :style="styleFor(item.theme)">
                 <span class="wall-card__swatches" aria-hidden="true">
                   <span v-for="swatch in swatches(item.theme)" :key="swatch" :style="{ background: swatch }"></span>
                 </span>
@@ -91,23 +107,56 @@
                   <span class="wall-card__name">{{ item.theme.name }}</span>
                   <span class="wall-card__mode">{{ item.theme.mode === 'light' ? 'Light' : 'Dark' }} · {{ item.theme.mood }}</span>
                   <span class="wall-card__mood">{{ item.theme.description }}</span>
+                  <span v-if="credentialLabel(item.theme)" class="wall-card__verified">
+                    <q-icon name="verified" size="13px" aria-hidden="true" />
+                    {{ credentialLabel(item.theme) }}
+                  </span>
                 </span>
-                <router-link class="wall-card__action" :to="'/@' + item.account.name">
-                  Visit profile
-                  <q-icon name="arrow_forward" size="15px" aria-hidden="true" />
-                </router-link>
+                <span class="wall-card__actions">
+                  <q-btn flat dense no-caps icon="tune" label="Remix" @click="remixSkin(item)" />
+                  <q-btn flat dense no-caps icon="palette" label="Use palette" @click="openAdopt(item)" />
+                  <router-link class="wall-card__action" :to="'/@' + item.account.name">
+                    Visit
+                    <q-icon name="arrow_forward" size="15px" aria-hidden="true" />
+                  </router-link>
+                </span>
               </article>
             </div>
 
             <div v-else-if="!loading" class="wall-empty wall-empty--small">
               <q-icon name="palette" size="1.6rem" aria-hidden="true" />
               <h2>No skins here yet</h2>
-              <p>When someone you follow publishes a skin, it will appear here. You can be first.</p>
+              <p>When someone you follow publishes a skin that matches this view, it will appear here.</p>
               <q-btn unelevated no-caps color="primary" icon="brush" label="Open Skin Studio" to="/settings/skin" />
             </div>
           </div>
         </q-tab-panel>
       </q-tab-panels>
+
+      <q-dialog v-model="adoptOpen">
+        <q-card class="wall-dialog">
+          <q-card-section>
+            <div class="wall-eyebrow">Adopt palette</div>
+            <h2 class="wall-dialog__title">Use this palette on this device?</h2>
+            <p class="wall-dialog__text">
+              This previews {{ adoptItem?.theme?.name }} as your site theme. The author's published skin is not changed.
+            </p>
+            <div v-if="adoptItem" class="wall-adopt-preview" :style="previewVars(adoptItem.theme)">
+              <span class="wall-adopt-preview__swatches" aria-hidden="true">
+                <span v-for="swatch in swatches(adoptItem.theme)" :key="swatch" :style="{ background: swatch }"></span>
+              </span>
+              <span>
+                <strong>{{ adoptItem.theme.name }}</strong>
+                <span class="wall-adopt-preview__meta">@{{ adoptItem.account.name }} · {{ adoptItem.theme.mode === 'light' ? 'Light' : 'Dark' }}</span>
+              </span>
+            </div>
+          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat no-caps label="Cancel" v-close-popup />
+            <q-btn unelevated no-caps color="primary" icon="palette" label="Use this palette" @click="confirmAdopt" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
   </q-page>
 </template>
@@ -158,6 +207,18 @@
   color: var(--c-text-muted);
   font-size: 0.9rem;
   line-height: 1.5;
+}
+
+.wall-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) repeat(3, minmax(120px, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.wall-filters__search,
+.wall-filters__select {
+  min-width: 0;
 }
 
 .wall-tabs {
@@ -250,6 +311,28 @@
   line-height: 1.4;
 }
 
+.wall-card__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--c-positive);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.wall-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: auto;
+  padding-top: 0.3rem;
+}
+
+.wall-card__actions .q-btn {
+  font-size: 0.72rem;
+}
+
 .wall-card__action {
   display: inline-flex;
   align-items: center;
@@ -260,6 +343,11 @@
   font-size: 0.74rem;
   font-weight: 700;
   text-decoration: none;
+}
+
+.wall-card__actions .wall-card__action {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .wall-card__action:hover {
@@ -318,7 +406,58 @@
   padding: 1.6rem 1rem;
 }
 
+.wall-dialog {
+  width: min(520px, 94vw);
+  background: var(--c-surface);
+}
+
+.wall-dialog__title {
+  margin: 0.2rem 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.wall-dialog__text {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.wall-adopt-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--wall-bg);
+  color: var(--c-text);
+}
+
+.wall-adopt-preview__swatches {
+  display: flex;
+  gap: 3px;
+}
+
+.wall-adopt-preview__swatches span {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: 50%;
+}
+
+.wall-adopt-preview__meta {
+  display: block;
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+}
+
 @media (max-width: 599px) {
+  .wall-filters {
+    grid-template-columns: 1fr;
+  }
+
   .wall-shell {
     padding: var(--space-3) var(--space-2) var(--space-5);
   }
@@ -327,6 +466,7 @@
 
 <script>
 import { fetchAccounts, fetchFollowingNames } from 'src/services/chainData'
+import { isCredentialBadge } from 'src/data/badges/credentials'
 import { readAccountTheme } from 'src/themes/account'
 import { THEMES, getTheme } from 'src/themes/registry'
 import { tokensFor } from 'src/themes/tokens'
@@ -349,7 +489,24 @@ export default {
       skins: [],
       loading: false,
       error: '',
-      loadedFor: ''
+      loadedFor: '',
+      search: '',
+      modeFilter: 'all',
+      tagFilter: 'all',
+      kindFilter: 'all',
+      modeOptions: [
+        { label: 'Any mode', value: 'all' },
+        { label: 'Dark', value: 'dark' },
+        { label: 'Light', value: 'light' }
+      ],
+      kindOptions: [
+        { label: 'Any kind', value: 'all' },
+        { label: 'Credential', value: 'credential' },
+        { label: 'Achievement', value: 'achievement' },
+        { label: 'Minimal', value: 'minimal' }
+      ],
+      adoptOpen: false,
+      adoptItem: null
     }
   },
   computed: {
@@ -361,11 +518,34 @@ export default {
     },
     username () {
       return this.$hiveStore.user.username || ''
+    },
+    tagOptions () {
+      const tags = new Set()
+      for (const theme of [...this.builtIn, ...this.skins.map(item => item.theme)]) {
+        for (const tag of Array.isArray(theme.tags) ? theme.tags : []) tags.add(tag)
+      }
+      return [{ label: 'Any tag', value: 'all' }, ...[...tags].sort().map(tag => ({ label: tag, value: tag }))]
+    },
+    filteredBuiltIn () {
+      return this.builtIn.filter(theme => this.matchesFilters(theme, null))
+    },
+    filteredSkins () {
+      return this.skins.filter(item => this.matchesFilters(item.theme, item.account))
+    },
+    visibleSkins () {
+      const rows = this.filteredSkins
+      if (this.tab === 'recent') {
+        return [...rows].sort((a, b) => String(b.account.last_post || '').localeCompare(String(a.account.last_post || '')))
+      }
+      if (this.tab === 'featured') {
+        return rows.filter(item => this.isFeatured(item.theme))
+      }
+      return rows
     }
   },
   watch: {
     tab (value) {
-      if (value === 'following' && this.loggedIn && this.loadedFor !== this.username) {
+      if (value !== 'built-in' && this.loggedIn && this.loadedFor !== this.username) {
         this.loadFollowing(false)
       }
     }
@@ -380,12 +560,82 @@ export default {
         '--wall-accent': tokens['--c-accent']
       }
     },
+    previewVars (theme) {
+      const tokens = tokensFor(theme)
+      return {
+        '--wall-bg': tokens['--c-bg'],
+        '--wall-surface': tokens['--c-surface'],
+        '--wall-primary': tokens['--c-primary'],
+        '--wall-accent': tokens['--c-accent']
+      }
+    },
     swatches (theme) {
       return [theme.tokens.bg, theme.tokens.surface, theme.tokens.primary, theme.tokens.secondary, theme.tokens.accent, theme.tokens.text]
+    },
+    matchesFilters (theme, account) {
+      const query = this.search.trim().toLowerCase()
+      if (query) {
+        const haystack = [theme.name, theme.mood, account?.name || ''].join(' ').toLowerCase()
+        if (!haystack.includes(query)) return false
+      }
+      if (this.modeFilter !== 'all' && theme.mode !== this.modeFilter) return false
+      if (this.tagFilter !== 'all' && !(theme.tags || []).includes(this.tagFilter)) return false
+      if (this.kindFilter !== 'all' && this.kindFor(theme) !== this.kindFilter) return false
+      return true
+    },
+    kindFor (theme) {
+      const selected = Array.isArray(theme.profile?.badges?.selected) ? theme.profile.badges.selected : []
+      if (selected.some(badge => isCredentialBadge(badge.source, badge.id))) return 'credential'
+      if (selected.length) return 'achievement'
+      const atmosphere = theme.profile?.atmosphere?.source
+      const plain = theme.profile?.avatarFrame === 'none' &&
+        theme.profile?.nameplate === 'plain' &&
+        (!atmosphere || atmosphere === 'none') &&
+        !selected.length
+      return plain ? 'minimal' : 'achievement'
+    },
+    credentialLabel (theme) {
+      const selected = Array.isArray(theme.profile?.badges?.selected) ? theme.profile.badges.selected : []
+      const credential = selected.find(badge => isCredentialBadge(badge.source, badge.id))
+      return credential ? 'Verified credential' : ''
+    },
+    isFeatured (theme) {
+      if ((theme.tags || []).includes('featured')) return true
+      const selected = Array.isArray(theme.profile?.badges?.selected) ? theme.profile.badges.selected : []
+      return selected.some(badge => isCredentialBadge(badge.source, badge.id))
     },
     applyTheme (id) {
       this.$appearance.setTheme(id)
       this.$q.notify({ message: getTheme(id).name + ' applied.', color: 'primary', timeout: 1600 })
+    },
+    remixSkin (item) {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('ausbit:theme:remix', JSON.stringify({
+          theme: item.theme,
+          author: item.account.name
+        }))
+      }
+      this.$router.push('/settings/skin?remix=1')
+    },
+    openAdopt (item) {
+      this.adoptItem = item
+      this.adoptOpen = true
+    },
+    confirmAdopt () {
+      if (!this.adoptItem) return
+      const result = this.$appearance.adoptCustomTheme(this.adoptItem.theme, this.adoptItem.account.name)
+      this.adoptOpen = false
+      if (result.ok) {
+        this.$q.notify({
+          message: 'Palette adopted for this device.',
+          caption: 'Adopted from @' + this.adoptItem.account.name + '. Their published skin is unchanged.',
+          color: 'primary',
+          timeout: 3200
+        })
+      } else {
+        this.$q.notify({ type: 'negative', message: result.errors?.[0] || 'Could not adopt that palette.' })
+      }
+      this.adoptItem = null
     },
     avatarFor (account) {
       return hiveAvatarUrl(account, 'small')
