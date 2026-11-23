@@ -1,7 +1,7 @@
 # W70 — Composer editor polish
 
 Date: 2026-11-23
-Status: implemented and verified locally; deploy pending
+Status: deployed and live-smoked
 Issue: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/82>
 
 ## Scope
@@ -80,6 +80,21 @@ changes:
   390px.
 - `bun run perf:check` — all budgets passed; compose 401.6 KB total.
 - Manual Chromium smoke: topic drag reorder and the lazy emoji dialog.
+
+## Deployment
+
+- Deployed 2026-11-23 from commit `cf797c4` with `./scripts/deploy.sh`.
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261123T102942Z.tar.gz`.
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261123T102942Z.tar.gz`.
+- Production `index.html` SHA-256 `f91e3acb…9bc86` matches the local build.
+
+Live browser smoke (Chromium, 1440px, `/compose`):
+
+- A seeded draft loaded and the emoji picker inserted 🚀 at the caret.
+- The heading outline listed `H1 Intro` and `H2 Details`; choosing Details moved
+  the caret to offset 20.
+- Dragging `#alpha` from first to last produced `#beta, #gamma, #alpha`.
+- No page errors.
 
 ## Notes
 

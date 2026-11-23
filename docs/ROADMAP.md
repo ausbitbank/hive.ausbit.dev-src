@@ -238,8 +238,8 @@ W70 is a composer editor polish pass: a heading outline that jumps within the
 body, a lazy-loaded emoji picker, and drag reordering in the Topic order dialog
 (arrows kept for keyboard use). It also regenerates the icon subset for the new
 `toc` glyph. An autosave toggle is deliberately deferred until there is a
-navigation guard. See `docs/workstreams/W70-composer-editor-polish.md`.
-Implemented and verified locally; deploy pending.
+navigation guard. It is deployed and live-smoked. See
+`docs/workstreams/W70-composer-editor-polish.md`.
 
 ## Definition of done
 
