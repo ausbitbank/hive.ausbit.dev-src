@@ -1,7 +1,7 @@
 # W68 — Small wins: sats quote, metadata inspector, sats windows
 
 Date: 2026-11-23
-Status: implemented and verified locally; production deploy and live smoke pending
+Status: deployed and live-smoked
 
 ## Scope
 
@@ -77,6 +77,27 @@ Completes the W65 Phase 2 leftover "HIVE in sats on the market widget".
   unchanged route then measured 2.5–2.7s and no code on this pass touches
   `/browse`.
 
+## Deployment
+
+- Deployed 2026-11-23 from commit `ee3539a` with `./scripts/deploy.sh`.
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261123T065958Z.tar.gz`.
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261123T065958Z.tar.gz`.
+- Production `index.html` SHA-256 `b967805a…eb92b` matches the local build.
+
+Live browser smoke (Chromium, 1440px):
+
+- `/` returned 200 with the expected title and `h1`; the Coin prices footer rendered
+  `1 HIVE ≈ 55 sats`.
+- `/compose` loaded a seeded draft, the publish review opened, and **Raw
+  json_metadata** showed the expected `tags` and `description`.
+- No page errors on either route.
+- The wallet card itself could not be reached from the smoke: every
+  `/@account…` route currently returns a Cloudflare JS challenge to curl and
+  headless Chromium while static routes return 200. This predates the deploy and
+  is unrelated to the nginx file (deploy does not apply nginx config); real
+  browsers solve the challenge. Worth reviewing if that challenge on profile
+  routes is unintended.
+
 ## Notes
 
 - No new dependency, no new API host, no new background polling.
@@ -85,4 +106,8 @@ Completes the W65 Phase 2 leftover "HIVE in sats on the market widget".
 - Remaining W65 Phase 2 item: a merged "my communities" feed source for the
   posts widget. That needs bounded multi-community reads and is not part of this
   small-wins pass.
-- Production deploy and live smoke for W65–W67b remain the outstanding gate.
+- Production deploy and live smoke for W65–W67b: the same release puts that code
+  live, but a dedicated walkthrough of the theme wall, skin studio, profile
+  shelf, atmosphere and badges is still needed. Profile routes are currently
+  behind a Cloudflare JS challenge for non-browser clients, so use a real browser
+  for that smoke.
