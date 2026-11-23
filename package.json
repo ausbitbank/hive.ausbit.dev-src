@@ -22,6 +22,7 @@
     "perf": "node scripts/perf-baseline.mjs",
     "perf:check": "node scripts/perf-baseline.mjs --check",
     "prerender": "node scripts/prerender.mjs",
+    "nginx:ips": "node scripts/refresh-cloudflare-ips.mjs",
     "serve:dist": "node scripts/serve-dist.mjs",
     "v4vapp:contract": "node scripts/v4vapp-contract-check.mjs",
     "devlog": "node scripts/devlog.mjs",

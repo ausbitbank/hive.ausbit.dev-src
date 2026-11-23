@@ -230,6 +230,15 @@ command:
 Rollback first snapshots the current deployment, so a rollback is reversible.
 Override `REMOTE` and `REMOTE_DIR` for another host.
 
+The origin also trusts Cloudflare's `CF-Connecting-IP` header so access logs
+record real visitor IPs instead of edge IPs. The trusted ranges live in
+`deploy/nginx/cloudflare-realip.conf` and are refreshed from Cloudflare with
+`bun run nginx:ips`. Apply the real-IP and JSON access-log block with
+`bash scripts/apply-nginx-remote.sh hurgenburgen dry-run` first; the same script
+with `apply` backs up the live config, tests it and reloads nginx. See
+[`docs/analytics-review.md`](docs/analytics-review.md) for the traffic analysis
+that prompted it.
+
 ## Data sources
 
 - Public Hive API nodes: accounts, blocks, transactions, global properties,
