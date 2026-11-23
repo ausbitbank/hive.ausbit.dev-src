@@ -377,6 +377,7 @@ import { postPayoutValue, postUserVoteDirection } from 'src/services/posts'
 import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { trimPostsForSnapshot } from 'src/services/postSnapshot'
+import { isValidTag } from 'src/utils/hiveTag'
 import DataNotice from 'components/ui/DataNotice.vue'
 
 const DEFAULT_FILTERS = () => ({
@@ -571,6 +572,16 @@ export default {
         this.loading = this.posts.length === 0
       }
       this.error = null
+
+      if (this.method === 'bridge.get_ranked_posts' && this.tag && !isValidTag(this.tag)) {
+        this.posts = []
+        this.cachedAt = null
+        this.hasMore = false
+        this.loading = false
+        this.loadingMore = false
+        this.error = '#' + this.tag + ' is not a valid Hive tag. Hive tags use lowercase letters, numbers, hyphens and underscores, so there is no tag feed to show.'
+        return
+      }
 
       const params = {
         observer: this.loggedInUser || undefined,

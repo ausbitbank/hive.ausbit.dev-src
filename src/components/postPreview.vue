@@ -98,7 +98,10 @@
       <p v-if="summary" class="post-card__summary">{{ summary }}</p>
 
       <div v-if="tags.length" class="post-card__tags">
-        <router-link v-for="tag in tags" :key="tag" :to="linkTag(tag)" class="post-card__tag">#{{ tag }}</router-link>
+        <template v-for="tag in tags" :key="tag">
+          <router-link v-if="linkTag(tag)" :to="linkTag(tag)" class="post-card__tag">#{{ tag }}</router-link>
+          <span v-else class="post-card__tag" :title="'#' + tag + ' is not a valid Hive tag'">#{{ tag }}</span>
+        </template>
       </div>
 
       <footer class="post-card__footer">
@@ -532,6 +535,7 @@
 <script>
 import moment from 'src/utils/time'
 import { postImage, postIsThreeSpeakVideo, postSummary } from 'src/utils/postPreview'
+import { isValidTag } from 'src/utils/hiveTag'
 import { stripHtml } from 'src/utils/safeHtml'
 import {
   formatPostReputation,
@@ -702,7 +706,7 @@ export default {
       return '/@' + user
     },
     linkTag (tag) {
-      return '/trending/' + tag
+      return isValidTag(tag) ? '/trending/' + tag : null
     }
   }
 }

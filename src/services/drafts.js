@@ -5,6 +5,7 @@
 // normalisation and quota handling.
 
 import { byteLength, readingMinutes, wordCount } from '../utils/markdownEditor'
+import { sanitizeTag } from '../utils/hiveTag'
 import { safeExternalUrl } from '../utils/safeUrl'
 
 export const DRAFT_STORAGE_KEY = 'composeDrafts'
@@ -29,7 +30,6 @@ export const AI_TOOL_KEYS = [
 ]
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
-const TAG_RE = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/
 const ZERO_PAYOUT_RE = /^0(?:\.0+)?\s*(?:HBD)?$/i
 
 export const MAX_ACCEPTED_PAYOUT = '100000.000 HBD'
@@ -102,15 +102,7 @@ export function normalizeAuthorDisplay (value) {
 }
 
 export function normalizeTag (value) {
-  const text = cleanString(value, 60)
-    .trim()
-    .toLowerCase()
-    .replace(/^#+/, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9.-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^[-.]+|[-.]+$/g, '')
-  return TAG_RE.test(text) ? text : ''
+  return sanitizeTag(cleanString(value, 60))
 }
 
 export function normalizeTags (tags) {
@@ -169,13 +161,18 @@ export function normalizeEditing (value, editedBy = null) {
   const metadata = value.previousMetadata && typeof value.previousMetadata === 'object'
     ? value.previousMetadata
     : null
+  // Hive keeps parent_permlink immutable on edit, so an existing category is
+  // kept verbatim even when it is not a valid tag (e.g. `hive.ausbit.dev`).
+  const parentPermlink = cleanString(value.parentPermlink, 256).trim().toLowerCase()
   return {
     author,
     permlink,
     parentAuthor: typeof value.parentAuthor === 'string' && ACCOUNT_RE.test(value.parentAuthor.trim().toLowerCase())
       ? value.parentAuthor.trim().toLowerCase()
       : '',
-    parentPermlink: normalizeTag(value.parentPermlink) || normalizeTag(metadata && metadata.tags && metadata.tags[0]) || '',
+    parentPermlink: /^[a-z0-9][a-z0-9._-]{0,255}$/.test(parentPermlink)
+      ? parentPermlink
+      : normalizeTag(metadata && metadata.tags && metadata.tags[0]) || '',
     previousMetadata: metadata
   }
 }

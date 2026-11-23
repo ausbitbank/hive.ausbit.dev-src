@@ -71,6 +71,8 @@ describe('draft normalization', () => {
     expect(normalizeTag('hive-174578')).toBe('hive-174578')
     expect(normalizeTag('bad tag!')).toBe('bad-tag')
     expect(normalizeTag('!!!')).toBe('')
+    expect(normalizeTag('hive.ausbit.dev')).toBe('hive-ausbit-dev')
+    expect(normalizeTag('a'.repeat(40))).toHaveLength(24)
     expect(normalizeTags(['#Hive', 'hive', 'My Post', 'a', 'b', 'c', 'd'])).toEqual(['hive', 'my-post', 'a', 'b', 'c', 'd'])
     expect(normalizeTags('one, two three')).toEqual(['one', 'two', 'three'])
     expect(normalizeTags(Array.from({ length: 10 }, (_, index) => 'tag' + index))).toHaveLength(MAX_TAGS)
@@ -333,5 +335,15 @@ describe('draft length guidance', () => {
     expect(other.editing).toBeNull()
 
     expect(normalizeDraft({ owner: 'alice', title: 'T', body: 'B', editing: { author: 'alice', permlink: 'BAD PERMLINK' } }, 1000).editing).toBeNull()
+
+    // A category that is not a valid tag still has to survive editing: Hive
+    // keeps parent_permlink immutable.
+    const legacy = normalizeDraft({
+      owner: 'alice',
+      title: 'T',
+      body: 'B',
+      editing: { author: 'alice', permlink: 'legacy-post', parentPermlink: 'hive.ausbit.dev' }
+    }, 1000)
+    expect(legacy.editing.parentPermlink).toBe('hive.ausbit.dev')
   })
 })

@@ -268,9 +268,10 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
 
   // parent_permlink is a category tag for a top-level post, but the target's
   // permlink for a comment. Use the recorded value verbatim on an edit so a
-  // comment reply target is not mangled by tag normalisation.
+  // comment reply target or a legacy category is not mangled by tag
+  // normalisation (Hive keeps it immutable on edit).
   const category = parentPermlink
-    ? (isComment ? String(parentPermlink).trim().toLowerCase() : normalizeTag(parentPermlink))
+    ? String(parentPermlink).trim().toLowerCase()
     : resolveCategory(draft)
   if (!category) {
     throw new Error(isComment ? 'The comment parent is required to edit.' : 'A community or first tag is required to publish.')

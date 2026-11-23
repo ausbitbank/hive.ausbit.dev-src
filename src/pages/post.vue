@@ -144,7 +144,10 @@
               </div>
 
               <footer v-if="postTags.length" class="post-tags" aria-label="Post tags">
-                <router-link v-for="tag in postTags" :key="tag" :to="linkTag(tag)" class="post-tag">#{{ tag }}</router-link>
+                <template v-for="tag in postTags" :key="tag">
+                  <router-link v-if="linkTag(tag)" :to="linkTag(tag)" class="post-tag">#{{ tag }}</router-link>
+                  <span v-else class="post-tag" :title="'#' + tag + ' is not a valid Hive tag'">#{{ tag }}</span>
+                </template>
               </footer>
             </q-card>
           </article>
@@ -191,7 +194,10 @@
                 </div>
                 <div class="post-fact" v-if="post.category && post.category !== communityName">
                   <dt><q-icon name="label" aria-hidden="true" /><span>Tag</span></dt>
-                  <dd :title="post.category"><router-link :to="linkDetect(post.category)">{{ post.category }}</router-link></dd>
+                  <dd :title="post.category">
+                    <router-link v-if="linkDetect(post.category)" :to="linkDetect(post.category)">{{ post.category }}</router-link>
+                    <span v-else :title="'#' + post.category + ' is not a valid Hive tag'">{{ post.category }}</span>
+                  </dd>
                 </div>
                 <div class="post-fact" v-if="postMeta && postMeta.app">
                   <dt><q-icon name="fingerprint" aria-hidden="true" /><span>App</span></dt>
@@ -1070,6 +1076,7 @@ import { AI_TOOL_LABELS, readCrossPostMetadata } from 'src/services/publish'
 import { fetchHiveSenseSimilar } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { isValidTag } from 'src/utils/hiveTag'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 
 export default {
@@ -1385,7 +1392,7 @@ export default {
       return '/c/' + community + '/trending'
     },
     linkTag (tag) {
-      return '/trending/' + tag
+      return isValidTag(tag) ? '/trending/' + tag : null
     },
     linkDetect (link) {
       return link.startsWith('hive-') ? this.linkCommunity(link) : this.linkTag(link)

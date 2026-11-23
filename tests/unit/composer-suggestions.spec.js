@@ -32,4 +32,9 @@ describe('topic suggestions', () => {
     expect(suggestTopics({ title: 'one two three four', body: 'five six', limit: 2 }).length).toBeLessThanOrEqual(2)
     expect(suggestTopics({ title: '', body: '', tags: [] })).toEqual([])
   })
+
+  it('turns dotted hashtags into Hive-valid tags', () => {
+    const topics = suggestTopics({ title: 'Building hive.ausbit.dev #hive.ausbit.dev', body: '' })
+    expect(topics).toContain('hive-ausbit-dev')
+  })
 })

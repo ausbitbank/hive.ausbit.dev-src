@@ -6,6 +6,7 @@
 
 import { parseSearchRoute } from './search'
 import { postTags, postMetadata, postPayoutValue } from './posts'
+import { isValidTag } from '../utils/hiveTag'
 
 export const SEARCH_TYPES = ['all', 'accounts', 'posts', 'tags', 'communities', 'blocks', 'transactions', 'proposals', 'witnesses']
 export const SEARCH_TYPE_LABELS = {
@@ -513,6 +514,12 @@ export function buildSearchPlan (query) {
     return plan
   }
   if (/^[a-z][a-z0-9.-]{2,15}$/.test(text)) {
+    if (text.includes('.')) {
+      // Dotted tokens are neither accounts nor valid tags (e.g. a domain);
+      // only use them for keyword/post lookup.
+      plan.posts = text
+      return plan
+    }
     plan.accounts = text
     plan.tags = text
     plan.communities = text
@@ -572,7 +579,7 @@ export function tagFacets (posts, query = '', { limit = 24 } = {}) {
     const tags = [post.category, ...(Array.isArray(metadata.tags) ? metadata.tags : [])]
     for (const tag of tags) {
       const clean = normalizeText(tag)
-      if (!clean || clean.startsWith('hive-')) continue
+      if (!clean || clean.startsWith('hive-') || !isValidTag(clean)) continue
       counter.set(clean, (counter.get(clean) || 0) + 1)
     }
   }
@@ -647,7 +654,7 @@ export function exploreFacets (posts, { limit = 8 } = {}) {
     const metadata = postMetadata(post)
     for (const tag of Array.isArray(metadata.tags) ? metadata.tags : []) {
       const clean = normalizeText(tag)
-      if (!clean || clean.startsWith('hive-')) continue
+      if (!clean || clean.startsWith('hive-') || !isValidTag(clean)) continue
       tags.set(clean, (tags.get(clean) || 0) + 1)
     }
     const community = normalizeText(post.community)
@@ -696,7 +703,7 @@ export function tagAnalytics (posts, { now = Date.now(), days = 14, label = '' }
     const metadata = postMetadata(post)
     for (const tag of Array.isArray(metadata.tags) ? metadata.tags : []) {
       const clean = normalizeText(tag)
-      if (!clean || clean === normalizeText(label) || clean.startsWith('hive-')) continue
+      if (!clean || clean === normalizeText(label) || clean.startsWith('hive-') || !isValidTag(clean)) continue
       related.set(clean, (related.get(clean) || 0) + 1)
     }
   }

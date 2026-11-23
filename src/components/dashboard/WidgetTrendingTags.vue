@@ -174,6 +174,7 @@ import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { fetchRankedPosts } from 'src/services/chainData'
 import { postTags } from 'src/services/posts'
 import { trendingTagsSummary } from 'src/services/trendingTagsSummary'
+import { isValidTag } from 'src/utils/hiveTag'
 
 function payoutOf (post) {
   const paid = Number(post && post.payout)
@@ -226,7 +227,11 @@ export default {
   },
   computed: {
     summary () {
-      return trendingTagsSummary({ tags: this.tags, limit: this.limit })
+      // Tag rows come from post metadata and `get_trending_tags`, neither of
+      // which filters chain-invalid tags (e.g. `hive.ausbit.dev`).
+      const tags = (Array.isArray(this.tags) ? this.tags : [])
+        .filter(tag => isValidTag(String((tag && tag.name) || '')))
+      return trendingTagsSummary({ tags, limit: this.limit })
     },
     sourceLabel () {
       if (this.source === 'feed') return 'From trending posts'

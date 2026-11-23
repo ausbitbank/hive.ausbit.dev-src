@@ -159,6 +159,17 @@ describe('post construction', () => {
     expect(metadata.app).toBe('hive.ausbit.dev')
   })
 
+  it('keeps a legacy category verbatim when editing', () => {
+    const operation = buildPostOperation({
+      username: 'alice',
+      draft,
+      permlink: 'legacy-post',
+      parentPermlink: 'hive.ausbit.dev',
+      commentOptions: false
+    })
+    expect(operation[1].parent_permlink).toBe('hive.ausbit.dev')
+  })
+
   it('reports the edit category as ok or warn', () => {
     const base = {
       ...draft,

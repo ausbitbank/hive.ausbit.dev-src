@@ -1,4 +1,5 @@
 import { validateAccountName } from './hiveNames'
+import { isValidTag as isValidHiveTag } from '../utils/hiveTag'
 
 const URL_HOSTS = ['hive.ausbit.dev', 'hive.blog', 'peakd.com', 'ecency.com']
 const ACCOUNT_SUBPAGES = [
@@ -21,7 +22,7 @@ function isValidPermlink (permlink) {
 }
 
 function isValidTag (tag) {
-  return /^[a-z0-9][a-z0-9-]{0,23}$/i.test(tag || '')
+  return isValidHiveTag(String(tag || '').toLowerCase())
 }
 
 function tidyNumber (value) {
