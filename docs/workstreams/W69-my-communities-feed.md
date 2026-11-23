@@ -1,7 +1,7 @@
 # W69 — My communities feed
 
 Date: 2026-11-23
-Status: implemented and verified locally; deploy pending
+Status: deployed and live-smoked
 Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
 Builds on: W65 dashboard widget expansion, W62 public community browser
 
@@ -74,6 +74,21 @@ duplicating the posts widget with a "my posts" variant.
 - `bun run perf:check` — all budgets passed; home 410.8 KB total.
 - Browser smoke with mocked subscriptions/ranked feeds: four rows merged evenly
   from two communities, no page errors; guest layout shows the login prompt.
+
+## Deployment
+
+- Deployed 2026-11-23 from commit `f689f70` with `./scripts/deploy.sh`.
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261123T073206Z.tar.gz`.
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261123T073206Z.tar.gz`.
+- Production `index.html` SHA-256 `2875fdaa…f848f` matches the local build.
+
+Live browser smoke (Chromium, 1440px):
+
+- The signed-in dashboard with a `myCommunities` posts widget rendered the **My
+  communities** heading and four live posts round-robin across subscriptions.
+- **View all** pointed at `/@ausbitbank/communities`.
+- The guest dashboard showed "Log in to see posts across your communities."
+- Home returned 200 with no page errors.
 
 ## Notes
 
