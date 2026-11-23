@@ -627,6 +627,12 @@ export default {
           to: '/appearance'
         },
         {
+          title: 'Theme wall',
+          caption: 'browse looks from the Hive',
+          icon: 'collections',
+          to: '/themes'
+        },
+        {
           title: 'Lightning',
           caption: 'sats to Hive and back',
           icon: 'bolt',

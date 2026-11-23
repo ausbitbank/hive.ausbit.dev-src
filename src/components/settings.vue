@@ -33,8 +33,17 @@
             outline
             no-caps
             color="primary"
-            icon="open_in_new"
-            label="Open the theme gallery"
+            icon="collections"
+            label="Browse the theme wall"
+            to="/themes"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            dense
+            no-caps
+            icon="tune"
+            label="Appearance options"
             to="/appearance"
             v-close-popup
           />

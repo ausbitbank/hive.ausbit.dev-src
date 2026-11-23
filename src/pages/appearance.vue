@@ -11,6 +11,15 @@
           Pick a site theme for this device. Themes change colour, type, depth and texture,
           never the layout. Profile skins are chosen by the person whose profile you are visiting.
         </p>
+        <q-btn
+          class="theme-wall-link"
+          outline
+          no-caps
+          color="primary"
+          icon="collections"
+          label="Browse the theme wall"
+          to="/themes"
+        />
       </header>
 
       <section class="theme-section" aria-labelledby="theme-site-title">
@@ -310,6 +319,10 @@
   color: var(--c-text-muted);
   font-size: 0.94rem;
   line-height: 1.55;
+}
+
+.theme-wall-link {
+  margin-top: 0.9rem;
 }
 
 .theme-section {
