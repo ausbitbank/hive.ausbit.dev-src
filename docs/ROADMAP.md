@@ -215,15 +215,24 @@ W68 is a small-wins pass over the remaining issue #82/#93 and roadmap leftovers:
 the Coin prices widget shows HIVE in sats, the publish review exposes the exact
 `json_metadata`, and the wallet's sats-received card adds a loaded-rows 7-day
 total and largest payment. It is deployed and live-smoked. See
-`docs/workstreams/W68-small-wins.md`. The same release puts the W65–W67b theme,
-profile-shelf and badge code live; their dedicated theme/skin/badge live smoke
-and the merged "my communities" feed source remain open.
+`docs/workstreams/W68-small-wins.md`.
+
+W69 closes the last W65 Phase 2 item: the posts widget can show **My
+communities**, a merged feed across the signed-in account's community
+subscriptions. The mode is available as a settings source and as
+`/@me/communities`; it reads at most six communities, merges round-robin, shows a
+login prompt for guests, and loads its data code on demand so the default home
+bundle does not pay for it. See `docs/workstreams/W69-my-communities-feed.md`.
+Implemented and verified locally; deploy pending.
+
+The same release puts the W65–W67b theme, profile-shelf and badge code live;
+their dedicated theme/skin/badge live smoke remains open (profile routes
+currently sit behind a Cloudflare JS challenge for non-browser clients).
 
 The issue #92 work is live. Remaining follow-ups with no open workstream: the
-dedicated W65–W67b live smoke across themes, skins and badges (profile routes
-currently sit behind a Cloudflare JS challenge for non-browser clients), the
-optional on-chain balance-request UI, the optional #63 server-side existence
-check at the edge, and the optional visual editor from the composer roadmap.
+dedicated W65–W67b live smoke across themes, skins and badges, the optional
+on-chain balance-request UI, the optional #63 server-side existence check at the
+edge, and the optional visual editor from the composer roadmap.
 
 ## Definition of done
 

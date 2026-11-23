@@ -53,8 +53,20 @@ describe('feed reference parsing', () => {
     })
   })
 
-  it('reads short-form paths with a format', () => {
-    expect(parseFeedReference('/shorts/threads')).toMatchObject({
+  it('reads the merged my-communities feed from paths and the dashboard source', () => {
+    const expected = {
+      kind: 'communities',
+      method: 'communities',
+      heading: 'My communities',
+      requiresAccount: true,
+      sortable: false
+    }
+    expect(parseFeedReference('/@me/communities')).toMatchObject(expected)
+    expect(parseFeedReference('communities/mine')).toMatchObject(expected)
+    expect(resolvePostsFeed({ source: 'myCommunities' })).toMatchObject(expected)
+  })
+
+  it('reads short-form paths with a format', () => {    expect(parseFeedReference('/shorts/threads')).toMatchObject({
       kind: 'short',
       method: 'short',
       shortFormat: 'threads',

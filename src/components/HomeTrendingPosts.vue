@@ -66,7 +66,12 @@
       />
     </div>
 
-    <q-card-section v-if="loading" class="home-panel__body">
+    <q-card-section v-if="needsLogin" class="home-panel__state">
+      <q-icon name="lock_person" size="24px" aria-hidden="true" />
+      <span>Log in to see posts across your communities.</span>
+    </q-card-section>
+
+    <q-card-section v-else-if="loading" class="home-panel__body">
       <div v-for="i in 5" :key="i" class="home-post-skeleton">
         <q-skeleton type="rect" width="58px" height="44px" />
         <div class="home-post-skeleton__body">
@@ -84,7 +89,7 @@
 
     <q-card-section v-else-if="posts.length === 0" class="home-panel__state">
       <q-icon name="article" size="24px" aria-hidden="true" />
-      <span>No posts found right now.</span>
+      <span>{{ emptyMessage }}</span>
       <q-btn flat dense no-caps color="primary" icon="refresh" label="Refresh" @click="loadPosts" />
     </q-card-section>
 
@@ -109,7 +114,7 @@
       </template>
     </q-card-section>
 
-    <q-card-section v-if="!loading && !error" class="home-panel__footer">
+    <q-card-section v-if="!needsLogin && !loading && !error" class="home-panel__footer">
       <span>{{ pollingLabel }}</span>
       <span v-if="updatedLabel">Updated {{ updatedLabel }}</span>
       <span v-else>&nbsp;</span>
@@ -239,12 +244,25 @@ export default {
         )
       }
       return resolvePostsFeed(
-        { reference: this.reference, source: this.sort, tag: this.tag },
+        { reference: this.reference, source: this.feedSource, tag: this.tag },
         { loggedInUser: this.loggedInUser || '' }
       )
     },
+    feedSource () {
+      // Quick-sort sources follow the in-card switcher; an explicit mode such
+      // as "My communities" is not a sort and must survive it.
+      return QUICK_SORTS.includes(this.source) ? this.sort : this.source
+    },
     isAccountFeed () {
       return Boolean(String(this.account || '').trim())
+    },
+    needsLogin () {
+      return Boolean(this.feed?.requiresAccount) && !this.loggedInUser
+    },
+    emptyMessage () {
+      return this.feed?.kind === 'communities'
+        ? 'No posts from your communities yet. Join a community to fill this feed.'
+        : 'No posts found right now.'
     },
     showAccountSort () {
       return this.isAccountFeed && !String(this.reference || '').trim()
@@ -253,7 +271,9 @@ export default {
       return ACCOUNT_FEED_SORTS
     },
     feedKey () {
-      return this.feed.key + ':' + this.limit
+      // The merged community feed depends on the signed-in account, not on the
+      // feed path alone.
+      return this.feed.key + ':' + this.limit + (this.feed.requiresAccount ? ':' + this.loggedInUser : '')
     },
     communityKey () {
       return this.feed?.kind === 'community' ? this.feed.community : ''
@@ -279,6 +299,9 @@ export default {
       return SORT_OPTIONS
     },
     viewAllLink () {
+      if (this.feed?.kind === 'communities' && this.loggedInUser) {
+        return '/@' + this.loggedInUser + '/communities'
+      }
       return this.feed.link
     }
   },
@@ -327,6 +350,7 @@ export default {
   },
   methods: {
     applySnapshot (snapshot = getHomeSnapshot()) {
+      if (this.needsLogin) return false
       const feed = snapshotFeed(this.feed?.key)
       if (!snapshot || !feed?.posts?.length) return false
       this.posts = feed.posts
@@ -365,7 +389,8 @@ export default {
       this.sort = value
     },
     snapshotKey () {
-      return SNAPSHOT_PREFIX + this.feed.key + ':' + this.limit
+      return SNAPSHOT_PREFIX + this.feed.key + ':' + this.limit +
+        (this.feed.requiresAccount ? ':' + this.loggedInUser : '')
     },
     async loadCommunity () {
       const token = ++this.communityToken
@@ -385,6 +410,14 @@ export default {
       return this.loadPosts({ force: true })
     },
     async loadPosts ({ force = false } = {}) {
+      if (this.needsLogin) {
+        this.posts = []
+        this.loading = false
+        this.refreshing = false
+        this.error = ''
+        this.staleAt = null
+        return
+      }
       const token = ++this.requestToken
       this.error = ''
       if (this.posts.length) this.refreshing = true

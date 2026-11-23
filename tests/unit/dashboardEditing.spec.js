@@ -177,6 +177,7 @@ describe('widget settings', () => {
 
   it('keeps whitelisted feed sources and normalises tags', () => {
     expect(sanitiseWidgetSettings('posts', { source: 'hot' })).toEqual({ source: 'hot' })
+    expect(sanitiseWidgetSettings('posts', { source: 'myCommunities' })).toEqual({ source: 'myCommunities' })
     expect(sanitiseWidgetSettings('posts', { source: 'nonsense' })).toEqual({})
     expect(sanitiseWidgetSettings('posts', { tag: '  #hive-dev ' })).toEqual({ tag: 'hive-dev' })
   })

@@ -23,8 +23,7 @@ async function addWidget (page, label) {
   await page.getByRole('button', { name: 'Done' }).click()
 }
 
-test.describe('customisable dashboard', () => {
-  test.beforeEach(async ({ page }) => {
+test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await waitForApp(page)
     await page.evaluate(() => localStorage.clear())
@@ -567,5 +566,34 @@ test.describe('customisable dashboard', () => {
       document.documentElement.scrollWidth - document.documentElement.clientWidth
     ))
     expect(overflow).toBeLessThanOrEqual(1)
+  })
+
+  test('my communities feed merges subscriptions and asks guests to log in', async ({ page }) => {
+    const layout = id => ({
+      widgets: [{ id, type: 'posts', width: 'full', settings: { source: 'myCommunities', limit: 4, view: 'list' } }],
+      customised: true,
+      version: 1,
+      savedAt: Date.now(),
+      tiling: 'rows'
+    })
+
+    await page.evaluate(doc => {
+      localStorage.setItem('hive:dashboard:v1:default', JSON.stringify(doc))
+    }, layout('posts-guest'))
+    await page.reload()
+    await waitForApp(page)
+    await expect(page.getByText('Log in to see posts across your communities.')).toBeVisible()
+
+    await loginAs(page)
+    await page.evaluate(doc => {
+      localStorage.setItem('hive:dashboard:v1:ausbitbank', JSON.stringify(doc))
+    }, layout('posts-account'))
+    await page.reload()
+    await waitForApp(page)
+
+    const widget = page.locator('[data-widget-type="posts"]').first()
+    await expect(widget).toContainText('My communities')
+    await expect(widget.locator('.home-post-row')).toHaveCount(4, { timeout: 30000 })
+    await expect(widget.getByRole('link', { name: /View all/ })).toHaveAttribute('href', '/@ausbitbank/communities')
   })
 })

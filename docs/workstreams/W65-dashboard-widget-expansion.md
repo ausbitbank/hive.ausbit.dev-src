@@ -79,8 +79,8 @@ and the research document. This record tracks implementation and verification.
   Community (spotlight + tags), Governance (round), Developer (node health +
   Hive-Engine), Everyday (tags + spotlight).
 
-Still open for Phase 2: a "my communities" merged feed source for the existing
-posts widget. HIVE-in-sats now ships on the Coin prices widget (W68).
+Phase 2 is now complete: the posts widget can show a merged "my communities"
+feed (W69), and HIVE-in-sats ships on the Coin prices widget (W68).
 
 ## Phase 3 — actions and experiments
 

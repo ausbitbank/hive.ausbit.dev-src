@@ -17,6 +17,11 @@ export * from './feedReference'
 export async function fetchFeedPosts (feed, { limit = 6, observer = '', force = false } = {}) {
   if (!feed) return []
 
+  if (feed.method === 'communities') {
+    const { fetchMyCommunitiesFeed } = await import('./myCommunitiesFeed')
+    return fetchMyCommunitiesFeed(feed, { limit, observer, force })
+  }
+
   if (feed.method === 'short') {
     const items = await fetchShortFormFeed(feed.shortFormat, {
       sort: feed.sort === 'top' ? 'top' : 'new',

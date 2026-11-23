@@ -169,6 +169,23 @@ function shortFeed (formatId) {
   }
 }
 
+/** A merged feed across the signed-in account's community subscriptions. */
+function myCommunitiesFeed () {
+  return {
+    kind: 'communities',
+    method: 'communities',
+    sort: DEFAULT_RANKED_SORT,
+    tag: '',
+    key: 'communities:mine',
+    eyebrow: 'My communities',
+    heading: 'My communities',
+    link: '/communities',
+    linkLabel: 'Communities',
+    sortable: false,
+    requiresAccount: true
+  }
+}
+
 function applyMe (feed, loggedInUser) {
   const account = normaliseAccount(loggedInUser)
   if (!account || feed.kind !== 'account' || feed.account !== 'me') return feed
@@ -183,6 +200,12 @@ function applyMe (feed, loggedInUser) {
 export function parseFeedReference (reference, { sort = DEFAULT_RANKED_SORT } = {}) {
   const text = normaliseFeedReference(reference)
   if (!text) return null
+
+  // `/@me/communities` is the account's community page; treat it as the
+  // signed-in user's merged community feed for the posts widget.
+  if (/^\/?(?:@me|me)\/communities$/i.test(text) || /^\/?communities\/mine$/i.test(text)) {
+    return myCommunitiesFeed()
+  }
 
   const short = text.match(/^\/?(?:shorts?|short-form)(?:\/([a-z][a-z0-9-]*))?$/i)
   if (short) {
@@ -231,6 +254,7 @@ export function resolvePostsFeed ({ reference = '', source = DEFAULT_RANKED_SORT
   const sort = normaliseRankedSort(source)
   const parsed = parseFeedReference(reference, { sort })
   if (parsed) return applyMe(parsed, loggedInUser)
+  if (source === 'myCommunities') return myCommunitiesFeed()
   const cleanTag = normaliseTag(tag)
   if (cleanTag) return tagFeed(cleanTag, sort)
   return globalFeed(sort)

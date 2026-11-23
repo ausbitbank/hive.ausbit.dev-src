@@ -151,7 +151,8 @@ export function draftChanges (draft, original) {
 export const POST_SOURCE_OPTIONS = [
   { value: 'trending', label: 'Trending' },
   { value: 'created', label: 'New' },
-  { value: 'hot', label: 'Hot' }
+  { value: 'hot', label: 'Hot' },
+  { value: 'myCommunities', label: 'My communities' }
 ]
 
 const ACCOUNT_FIELD = {
