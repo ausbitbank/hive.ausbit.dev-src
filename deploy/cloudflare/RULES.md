@@ -3,11 +3,15 @@
 Draft rules based on the traffic analysis in [`docs/analytics-review.md`](../../docs/analytics-review.md).
 Apply in **Security → WAF → Custom rules** and **Security → WAF → Rate limiting rules**.
 The Free plan allows a small number of custom rules (currently 5) and limited
-rate limiting — prioritise in the order below.
+rate limiting — prioritise in the order below. Rules 1, 2, 3 and 4 fit in that
+budget; rule 3b replaces rule 3 if the crawler pivots, and rule 5 takes the last
+slot.
 
-> **Roll out in stages.** Every rule below starts as **Log**, not Block. Check
-> **Security Events** after 24 hours, confirm zero legitimate hits, then
-> escalate to Block. The one exception is the AI crawlers, which are safe to
+> **Roll out in stages.** Add one rule at a time and check **Security Events**
+> before adding the next. The Free plan has no **Log** action, so deploy the
+> lower-risk rules first (AI crawlers, exploit probes) and give every challenge
+> rule some observation time before moving on. Enterprise plans can use
+> **Log** instead. The one exception is the AI crawlers, which are safe to
 > block immediately.
 >
 > **Updated 2026-11-23:** the real-IP nginx log changed rules 3 and 4. The
@@ -26,6 +30,12 @@ This is the cheapest lever for distributed scraping: Cloudflare challenges
 traffic it already suspects is automated, with no per-IP state required. It is
 zone-wide, so watch Security Events for a day. On a niche site the risk of
 challenging a real user is low, and a challenge is invisible to real browsers.
+
+> **Watch link previews.** Bot Fight Mode runs outside the Ruleset Engine, so a
+> WAF `Skip` or `Allow` rule cannot exempt Discord, X/Twitter, Slack or Telegram
+> previews. Enable it last, then immediately test a post link in each. If the
+> previews degrade, turn Bot Fight Mode off; the custom rules below are the
+> controllable part.
 
 ---
 
@@ -50,9 +60,20 @@ The 404 list contains `/wp-includes/...`, `/file.php`, `/admin.php`,
 `/.well-known/assetlinks.json` scans and similar. They never succeed and never
 will on a static SPA.
 
+The Free plan has no regex support, so this uses `starts_with`/`eq`; Business
+plans can replace it with the shorter `matches` form.
+
 ```
 (http.host eq "hive.ausbit.dev" and
- http.request.uri.path matches "^/(wp-(admin|includes|content|login)|file\.php|admin\.php|xmlrpc\.php|\.env|\.git/)")
+ (starts_with(http.request.uri.path, "/wp-admin") or
+  starts_with(http.request.uri.path, "/wp-includes") or
+  starts_with(http.request.uri.path, "/wp-content") or
+  starts_with(http.request.uri.path, "/wp-login") or
+  http.request.uri.path eq "/file.php" or
+  http.request.uri.path eq "/admin.php" or
+  http.request.uri.path eq "/xmlrpc.php" or
+  http.request.uri.path eq "/.env" or
+  starts_with(http.request.uri.path, "/.git/")))
 ```
 
 **Action:** Block
