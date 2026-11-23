@@ -596,6 +596,9 @@ test.describe('action flows', () => {
     await page.getByRole('button', { name: /Use as cover/ }).last().click()
 
     await page.getByRole('button', { name: 'Queue post for signing' }).click()
+    await expect(page.getByRole('heading', { name: 'Queue this post?' })).toBeVisible()
+    await page.getByText('Raw json_metadata', { exact: true }).click()
+    await expect(page.locator('.compose-review__json')).toContainText('"description": "A short preview for cards."')
     await page.getByRole('button', { name: 'Queue for signing' }).click()
     await expect(page.getByRole('heading', { name: 'Post queued' })).toBeVisible()
     await expect.poll(async () => {

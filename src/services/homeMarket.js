@@ -120,6 +120,31 @@ export function convertCoinPrices (coins, rate) {
 
 const PREFERRED_ORDER = ['hive', 'hive_dollar']
 
+const SATS_PER_BTC = 100000000
+
+/**
+ * Derive sats per HIVE from the widget's own CoinGecko rows.
+ *
+ * Both rows are priced in the same quote currency (including converted forex),
+ * so their ratio is currency-independent. Returns null when either row is
+ * missing so the caller can fall back to the shared price feed.
+ */
+export function satsPerHiveFromCoins (coins) {
+  const rows = Array.isArray(coins) ? coins : []
+  const hive = rows.find(coin => coin?.id === 'hive')
+  const bitcoin = rows.find(coin => coin?.id === 'bitcoin')
+  if (!hive || !bitcoin) return null
+
+  const direct = Number(hive.price_btc)
+  if (Number.isFinite(direct) && direct > 0) return direct * SATS_PER_BTC
+
+  const hivePrice = Number(hive.current_price)
+  const btcPrice = Number(bitcoin.current_price)
+  if (!Number.isFinite(hivePrice) || !Number.isFinite(btcPrice) || hivePrice <= 0 || btcPrice <= 0) return null
+  return (hivePrice / btcPrice) * SATS_PER_BTC
+}
+
+
 export function defaultHomeMarketPrefs () {
   return {
     coinIds: [...DEFAULT_HOME_MARKET_PREFS.coinIds],

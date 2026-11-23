@@ -11,12 +11,29 @@ import {
   walletTransactionOperation
 } from './wallet'
 
-export function lightningReceivedStats (entries = [], username = '') {
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Chain timestamps are UTC even without a suffix; unknown values return 0. */
+function timestampMs (value) {
+  const text = String(value || '').trim()
+  if (!text) return 0
+  const parsed = Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(text) ? text : text + 'Z')
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+export function lightningReceivedStats (entries = [], username = '', { now = Date.now(), windowDays = 7 } = {}) {
   let count = 0
   let sats = 0
   let fees = 0
   let latest = ''
+  let windowSats = 0
+  let windowCount = 0
+  let largestSats = 0
+  let largestAt = ''
   const name = String(username || '').toLowerCase()
+  const days = Number(windowDays) > 0 ? Number(windowDays) : 7
+  const nowMs = Number.isFinite(Number(now)) ? Number(now) : Date.now()
+  const windowStart = nowMs - days * DAY_MS
 
   for (const entry of Array.isArray(entries) ? entries : []) {
     if (walletTransactionDirection(entry, name) !== 'in') continue
@@ -42,7 +59,26 @@ export function lightningReceivedStats (entries = [], username = '') {
     sats += amount
     const at = String(tx?.timestamp || '')
     if (at > latest) latest = at
+    const atMs = timestampMs(at)
+    if (atMs >= windowStart) {
+      windowCount += 1
+      windowSats += amount
+    }
+    if (amount > largestSats) {
+      largestSats = amount
+      largestAt = at
+    }
   }
 
-  return { count, sats, fees, latest }
+  return {
+    count,
+    sats,
+    fees,
+    latest,
+    windowDays: days,
+    windowSats,
+    windowCount,
+    largestSats,
+    largestAt
+  }
 }

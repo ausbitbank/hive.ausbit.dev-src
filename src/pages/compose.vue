@@ -1364,6 +1364,21 @@
             Queuing adds a posting-key <code>comment</code> operation to the action queue.
             Nothing is broadcast until you sign it.
           </p>
+          <q-expansion-item
+            icon="data_object"
+            label="Raw json_metadata"
+            caption="Exactly what the queue item will carry"
+            dense-toggle
+            class="compose-review__metadata"
+          >
+            <pre class="compose-review__json" tabindex="0">{{ metadataPreview }}</pre>
+            <div class="compose-review__metadata-actions">
+              <span class="compose-hint">
+                Keys written by another client are preserved on edit.
+              </span>
+              <q-btn flat dense no-caps icon="content_copy" label="Copy JSON" @click="copyMetadataPreview" />
+            </div>
+          </q-expansion-item>
         </q-card-section>
         <q-card-actions align="right" class="compose-review__actions">
           <q-btn flat no-caps label="Back" @click="reviewOpen = false" />
@@ -2133,6 +2148,36 @@
   padding: 0.6rem 0.9rem 0.8rem;
   border-top: 1px solid var(--border-subtle);
   background: color-mix(in srgb, var(--c-text) 2%, transparent);
+}
+
+.compose-review__metadata {
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.compose-review__json {
+  margin: 0.4rem 0 0;
+  max-height: 260px;
+  overflow: auto;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--c-code-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-code-bg);
+  color: var(--c-text-soft);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.compose-review__metadata-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
 }
 
 .compose-settings {
@@ -3105,6 +3150,7 @@ import {
 } from 'src/services/imageHealth'
 import {
   AI_TOOL_LABELS,
+  buildPostMetadata,
   canPublish as canPublishDraft,
   checklistErrors as collectChecklistErrors,
   createPostPermlink,
@@ -3112,7 +3158,8 @@ import {
   postQueueItem,
   publishChecklist,
   readCrossPostMetadata,
-  resolvedTags
+  resolvedTags,
+  stripManagedMetadata
 } from 'src/services/publish'
 import { isOnline } from 'src/services/connectivity'
 import { setPageMeta } from 'src/utils/pageMeta'
@@ -3454,6 +3501,25 @@ export default {
       if (draft.authorDisplay) rows.push({ label: 'Display author', value: draft.authorDisplay })
       if (draft.crossPost) rows.push({ label: 'Cross-post', value: '@' + draft.crossPost.author + '/' + draft.crossPost.permlink })
       return rows
+    },
+    /** The exact json_metadata the queue item will carry, merged like publish.js. */
+    metadataPreview () {
+      if (!this.draft) return '{}'
+      const editing = this.draft.editing || null
+      const previousMetadata = editing && editing.previousMetadata && typeof editing.previousMetadata === 'object'
+        ? editing.previousMetadata
+        : null
+      const previous = previousMetadata ? stripManagedMetadata(previousMetadata) : {}
+      // Comment edits keep only the app/format marker over preserved keys.
+      if (editing && editing.parentAuthor) {
+        return JSON.stringify({ ...previous, app: 'hive.ausbit.dev', format: 'markdown' }, null, 2)
+      }
+      const next = buildPostMetadata(this.draft)
+      // Edits keep an existing cover when the draft has no images of its own.
+      if (!next.image && Array.isArray(previousMetadata?.image) && previousMetadata.image.length) {
+        next.image = previousMetadata.image
+      }
+      return JSON.stringify({ ...previous, ...next }, null, 2)
     },
     canPublish () {
       return Boolean(this.draft) && canPublishDraft(this.draft, { username: this.loggedInUser })
@@ -4322,6 +4388,11 @@ export default {
       copyToClipboard(this.draft.body)
         .then(() => this.$q.notify({ type: 'positive', message: 'Post content copied as Markdown' }))
         .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the post content' }))
+    },
+    copyMetadataPreview () {
+      copyToClipboard(this.metadataPreview)
+        .then(() => this.$q.notify({ type: 'positive', message: 'json_metadata copied' }))
+        .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the metadata' }))
     },
     toggleFullscreen () {
       this.fullscreenEditor = !this.fullscreenEditor

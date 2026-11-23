@@ -1,6 +1,6 @@
 # hive.ausbit.dev roadmap
 
-Last updated: 2026-11-22
+Last updated: 2026-11-23
 
 This is the active roadmap. It contains only open work. Delivered features and
 their verification records live in `docs/workstreams/` and are not repeated
@@ -211,12 +211,17 @@ can calm effects and hide status or shelf extras while keeping per-author
 ignore and “Hide all skins”. See
 `docs/workstreams/W67b-sharing-viewer-control.md`.
 
+W68 is a small-wins pass over the remaining issue #82/#93 and roadmap leftovers:
+the Coin prices widget shows HIVE in sats, the publish review exposes the exact
+`json_metadata`, and the wallet's sats-received card adds a loaded-rows 7-day
+total and largest payment. See `docs/workstreams/W68-small-wins.md`. Those pieces
+are implemented and verified locally; the merged "my communities" feed source
+and the W65–W67b production deploy remain open.
+
 The issue #92 work is ready for the deployment gate. Remaining follow-ups with
-no open workstream: production deploy and live smoke for W65–W67b, creator
-analytics beyond the loaded-rows summary (weekly totals, top zaps, unique
-supporters), the optional on-chain balance-request UI, the optional #63
-server-side existence check at the edge, and the optional visual editor from the
-composer roadmap.
+no open workstream: production deploy and live smoke for W65–W67b, the optional
+on-chain balance-request UI, the optional #63 server-side existence check at the
+edge, and the optional visual editor from the composer roadmap.
 
 ## Definition of done
 

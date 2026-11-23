@@ -80,7 +80,7 @@ and the research document. This record tracks implementation and verification.
   Hive-Engine), Everyday (tags + spotlight).
 
 Still open for Phase 2: a "my communities" merged feed source for the existing
-posts widget, and HIVE-in-sats on the market widget.
+posts widget. HIVE-in-sats now ships on the Coin prices widget (W68).
 
 ## Phase 3 — actions and experiments
 

@@ -16,6 +16,14 @@
           <dd>{{ fees ? formatSats(fees) : '—' }}</dd>
         </div>
         <div>
+          <dt>Last {{ stats.windowDays }} days</dt>
+          <dd>{{ windowLabel }}</dd>
+        </div>
+        <div>
+          <dt>Largest</dt>
+          <dd>{{ largestLabel }}</dd>
+        </div>
+        <div>
           <dt>Latest</dt>
           <dd>{{ latestLabel }}</dd>
         </div>
@@ -23,7 +31,8 @@
       <p class="lightning-received__note">
         Incoming @v4vapp transfers and keepsats notifications from the wallet
         rows loaded on this page. This is not a global Lightning index and may
-        include a notification and its matching transfer.
+        include a notification and its matching transfer; the 7-day figure is
+        limited to the same loaded rows.
       </p>
     </div>
 
@@ -56,6 +65,12 @@ export default {
     },
     fees () {
       return this.stats.fees
+    },
+    windowLabel () {
+      return this.stats.windowCount ? formatSats(this.stats.windowSats) : '—'
+    },
+    largestLabel () {
+      return this.stats.largestSats ? formatSats(this.stats.largestSats) : '—'
     },
     latestLabel () {
       if (!this.stats.latest) return '—'

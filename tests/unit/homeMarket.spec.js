@@ -18,6 +18,7 @@ import {
   orderCoinIds,
   resetForexCache,
   saveHomeMarketPrefs,
+  satsPerHiveFromCoins,
   searchCoins,
   toggleCoinId
 } from '../../src/services/homeMarket'
@@ -186,5 +187,30 @@ describe('home market forex conversion', () => {
     } finally {
       delete globalThis.fetch
     }
+  })
+})
+
+describe('sats per HIVE from market rows', () => {
+  it('uses an explicit BTC price when present', () => {
+    expect(satsPerHiveFromCoins([
+      { id: 'hive', current_price: 0.31, price_btc: 0.0000041 },
+      { id: 'bitcoin', current_price: 75000 }
+    ])).toBeCloseTo(410)
+  })
+
+  it('derives the ratio from same-currency rows', () => {
+    expect(satsPerHiveFromCoins([
+      { id: 'hive', current_price: 0.3 },
+      { id: 'bitcoin', current_price: 60000 }
+    ])).toBeCloseTo(500)
+  })
+
+  it('returns null when either row is missing or unusable', () => {
+    expect(satsPerHiveFromCoins([{ id: 'hive', current_price: 0.3 }])).toBeNull()
+    expect(satsPerHiveFromCoins([
+      { id: 'hive', current_price: 0 },
+      { id: 'bitcoin', current_price: 60000 }
+    ])).toBeNull()
+    expect(satsPerHiveFromCoins(null)).toBeNull()
   })
 })

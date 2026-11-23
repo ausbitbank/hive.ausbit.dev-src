@@ -229,6 +229,10 @@
         <span class="home-market__footer-links">
           <router-link to="/market">Internal market</router-link>
           <router-link to="/markets#hbd-tools">HBD peg</router-link>
+          <span v-if="satsLabel" class="home-market__sats" :title="'HIVE priced in Bitcoin sats from the same price feed'">
+            <q-icon name="bolt" size="12px" aria-hidden="true" />
+            {{ satsLabel }}
+          </span>
           <span>24h change · {{ activeCurrency.toUpperCase() }}<template v-if="isForex"> (via USD)</template></span>
         </span>
         <span>via CoinGecko<span v-if="updatedLabel"> · {{ updatedLabel }}</span></span>
@@ -375,6 +379,14 @@
   align-items: center;
   gap: 0.25rem 0.8rem;
   flex-wrap: wrap;
+}
+
+.home-market__sats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--c-warning-soft);
+  font-variant-numeric: tabular-nums;
 }
 
 .home-market-settings {
@@ -544,6 +556,8 @@ import {
 import DataNotice from 'components/ui/DataNotice.vue'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { getHomeSnapshot, whenHomeSnapshot } from 'src/services/homeSnapshot'
+import { formatSats, satsRatesFromPrices } from 'src/services/lightning'
+import { getHivePrices } from 'src/services/prices'
 import {
   HOME_MARKET_COIN_SUGGESTIONS,
   HOME_MARKET_CURRENCIES,
@@ -559,6 +573,7 @@ import {
   loadHomeMarketPrefs,
   orderCoinIds,
   saveHomeMarketPrefs,
+  satsPerHiveFromCoins,
   searchCoins,
   toggleCoinId
 } from 'src/services/homeMarket'
@@ -596,6 +611,7 @@ export default {
       error: '',
       updatedAt: null,
       staleAt: null,
+      satsPerHive: null,
       // Chosen coins/currency when the widget is not configured by settings.
       selection: { coinIds: prefs.coinIds, currency: prefs.currency },
       settingsOpen: false,
@@ -679,6 +695,10 @@ export default {
     },
     updatedLabel () {
       return this.updatedAt ? moment.utc(this.updatedAt).fromNow() : ''
+    },
+    satsLabel () {
+      const rate = Number(this.satsPerHive)
+      return Number.isFinite(rate) && rate > 0 ? '1 HIVE ≈ ' + formatSats(Math.round(rate)) : ''
     }
   },
   created () {
@@ -698,6 +718,7 @@ export default {
       if (market.coinIds && market.coinIds.join(',') !== this.activeCoinIds.join(',')) return false
       this.coins = market.coins
       this.updatedAt = Number(snapshot.generatedAt) || Date.now()
+      this.satsPerHive = satsPerHiveFromCoins(market.coins) || this.satsPerHive
       this.loading = false
       return true
     },
@@ -788,6 +809,10 @@ export default {
         }
         const coins = this.isForex ? convertCoinPrices(data, forex) : data
         this.coins = coins
+        // Prefer the rows we already fetched; only ask the shared price feed
+        // when the selection has no Bitcoin row to compare against.
+        this.satsPerHive = satsPerHiveFromCoins(coins) || this.satsPerHive
+        if (!this.satsPerHive) this.loadSatsRate()
         this.updatedAt = Date.now()
         this.staleAt = null
         saveSnapshot(snapshotKey, { coins, updatedAt: this.updatedAt, forexRate: forex || null })
@@ -810,9 +835,20 @@ export default {
       if (!Array.isArray(data?.coins) || !data.coins.length) return false
       this.coins = data.coins
       this.updatedAt = Number(data.updatedAt) || snapshot.savedAt
+      this.satsPerHive = satsPerHiveFromCoins(data.coins) || this.satsPerHive
       this.staleAt = this.updatedAt
       this.error = ''
       return true
+    },
+    async loadSatsRate () {
+      try {
+        const prices = await getHivePrices()
+        const rate = Number(satsRatesFromPrices(prices).satsPerHive)
+        if (Number.isFinite(rate) && rate > 0) this.satsPerHive = rate
+      } catch (error) {
+        // The chip simply stays hidden; prices themselves are unaffected.
+        console.error('Failed to load the HIVE sats rate', error)
+      }
     }
   }
 }
