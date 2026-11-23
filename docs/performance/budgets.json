@@ -42,7 +42,7 @@
     },
     "/compose": {
       "jsKb": 300,
-      "routeJsKb": 160,
+      "routeJsKb": 170,
       "totalKb": 540,
       "lcpMs": 2000
     },

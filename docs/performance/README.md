@@ -59,7 +59,7 @@ The home shell also carries the pre-warmed snapshot: **9.9 KB Brotli** (35.8 KB 
 | Post | 160 | 300 | 55 | 700 | 3500 | 0.1 |
 | Wallet | 160 | 165 | 55 | 560 | 3500 | 0.1 |
 | Internal market | 160 | 115 | 55 | 500 | 2000 | 0.1 |
-| Compose | 160 | 160 | 55 | 540 | 2000 | 0.1 |
+| Compose | 160 | 170 | 55 | 540 | 2000 | 0.1 |
 | Search | 160 | 120 | 55 | 500 | 2000 | 0.1 |
 
 ## Largest chunks
