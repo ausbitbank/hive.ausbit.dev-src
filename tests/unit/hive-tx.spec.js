@@ -20,6 +20,18 @@ describe('hive-tx operation normalization', () => {
     }
   })
 
+  it('adds the authority arrays that custom_json requires', () => {
+    const [, body] = normalizeOperation(['custom_json', { id: 'follow' }])
+    expect(body.required_auths).toEqual([])
+    expect(body.required_posting_auths).toEqual([])
+
+    const [, withPosting] = normalizeOperation(['custom_json', {
+      id: 'follow',
+      required_posting_auths: ['alice']
+    }])
+    expect(withPosting.required_posting_auths).toEqual(['alice'])
+  })
+
   it('preserves existing extensions', () => {
     const extensions = [[0, { beneficiaries: [{ account: 'bob', weight: 500 }] }]]
     const [, body] = normalizeOperation(['comment_options', { extensions }])

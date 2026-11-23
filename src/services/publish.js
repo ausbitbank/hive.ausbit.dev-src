@@ -259,7 +259,7 @@ export function stripManagedMetadata (metadata) {
  *
  * The queue splits `comment_options` into the on-chain operation at broadcast.
  */
-export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null } = {}) {
+export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false } = {}) {
   const author = String(username || '').trim().toLowerCase()
   if (!ACCOUNT_RE.test(author)) throw new Error('A valid Hive account is required to publish.')
   // A comment edit keeps its parent author. Comments never have a title.
@@ -315,8 +315,11 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
     json_metadata: JSON.stringify(metadata)
   }
 
-  // Queue-only marker so the action list can label this as an edit.
+  // Queue-only markers. `_edit` labels an edit; `_reblog` asks the signer to
+  // append a `follow` reblog so the new community post also lands on the
+  // author's blog in the same transaction. Neither reaches the chain.
   if (!commentOptions) operation._edit = true
+  if (alsoReblog && commentOptions && !isComment) operation._reblog = true
 
   // Comments never carry comment_options on edit; a new top-level post does.
   if (commentOptions && !isComment) {
@@ -332,11 +335,11 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
 }
 
 /** Posting-key queue item for a top-level post (new or edited). */
-export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null } = {}) {
+export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false } = {}) {
   return [
     String(username || '').trim().toLowerCase(),
     'posting',
-    buildPostOperation({ username, draft, permlink, now, parentPermlink, parentAuthor, commentOptions, previousMetadata })
+    buildPostOperation({ username, draft, permlink, now, parentPermlink, parentAuthor, commentOptions, previousMetadata, alsoReblog })
   ]
 }
 

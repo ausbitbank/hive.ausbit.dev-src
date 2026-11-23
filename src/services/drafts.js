@@ -213,6 +213,8 @@ export function normalizeDraft (raw, now = Date.now()) {
     coverImage: normalizeCoverImage(source.coverImage),
     tags: normalizeTags(source.tags),
     community: normalizeTag(source.community),
+    // Opt-in per draft; the composer only offers it for community posts.
+    alsoReblog: source.alsoReblog === true,
     crossPost: normalizeCrossPost(source.crossPost),
     editing: normalizeEditing(source.editing, typeof source.owner === 'string' ? source.owner : null),
     beneficiaries: normalizeBeneficiaries(source.beneficiaries),
@@ -359,6 +361,7 @@ function snapshotFields (draft) {
     coverImage: draft.coverImage,
     tags: draft.tags,
     community: draft.community,
+    alsoReblog: draft.alsoReblog,
     crossPost: draft.crossPost,
     beneficiaries: draft.beneficiaries,
     rewards: draft.rewards,

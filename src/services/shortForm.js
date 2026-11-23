@@ -18,6 +18,7 @@
 
 import { byteLength } from '../utils/markdownEditor'
 import { postMetadata } from './posts'
+import { reblogOperation } from './queue'
 
 export const SHORT_FORM_FORMATS = ['snaps', 'waves', 'threads', 'dbuzz', 'moments']
 
@@ -507,23 +508,12 @@ export function shortFormVoteQueueItem ({ username, post, direction = 'up', perc
 /** Reblog or un-reblog a post (the `follow` custom_json convention). */
 export function shortFormReblogQueueItem ({ username, post, remove = false } = {}) {
   const account = asString(username).trim().toLowerCase()
-  const author = asString(post && post.author).trim().toLowerCase()
-  const permlink = asString(post && post.permlink).trim()
-  if (!/^[a-z][a-z0-9.-]{2,15}$/.test(account)) throw new Error('A valid Hive account is required to reblog.')
-  if (!author || !permlink) throw new Error('A post is required to reblog.')
-  // Hivemind removes a reblog when the `reblog` command carries
-  // `delete: "delete"`; the account still has to match the signer.
-  const payload = ['reblog', {
+  return [account, 'posting', reblogOperation({
     account,
-    author,
-    permlink,
-    ...(remove ? { delete: 'delete' } : {})
-  }]
-  return [account, 'posting', ['custom_json', {
-    required_posting_auths: [account],
-    id: 'follow',
-    json: JSON.stringify(payload)
-  }]]
+    author: post && post.author,
+    permlink: post && post.permlink,
+    remove
+  })]
 }
 
 // -- Chain reads --------------------------------------------------------------

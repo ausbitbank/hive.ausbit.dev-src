@@ -188,6 +188,7 @@ import {
   QUEUE_STATUS,
   canBroadcast,
   canRemove,
+  expandQueueOperation,
   keyRequirement,
   nextActionableIndex,
   normalizeQueueMeta,
@@ -427,6 +428,12 @@ export default {
         result = await keychain(window, 'requestVote', user, operation[1].permlink, operation[1].author, operation[1].weight)
       } else if (operation[0] === 'comment') {
         const isEdit = operation[1]._edit === true
+        // A post can ask for a self-reblog in the same transaction. Build the
+        // exact operations instead of requestPost, which only carries one.
+        if (operation[1]._reblog === true) {
+          result = await keychain(window, 'requestBroadcast', user, expandQueueOperation(operation), keyType)
+          return this.normalizeKeychainResult(result)
+        }
         // Keychain parses this string and hands it to hive-tx, which cannot
         // serialise a comment_options operation without `extensions`. Always
         // send the array, even when there are no beneficiaries.
@@ -439,8 +446,9 @@ export default {
             }
           : null
         delete operation[1].comment_options
-        // Queue-only edit marker; not a field of the on-chain operation.
+        // Queue-only markers; not fields of the on-chain operation.
         delete operation[1]._edit
+        delete operation[1]._reblog
 
         if (isEdit) {
           // Edits must be broadcast as a bare `comment` operation. requestPost

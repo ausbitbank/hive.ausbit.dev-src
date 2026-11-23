@@ -365,6 +365,18 @@
               </span>
             </div>
 
+            <div v-if="postingToCommunity && !isEditing" class="compose-toggle-row">
+              <q-toggle
+                v-model="draft.alsoReblog"
+                label="Also reblog to my blog"
+                aria-label="Also reblog to my blog"
+                dense
+              />
+              <span class="compose-hint">
+                After signing, the post stays in #{{ draft.community }} and is reblogged to your blog and followers' feeds.
+              </span>
+            </div>
+
             <q-select
               :model-value="draft.tags"
               :options="tagSuggestions"
@@ -1429,6 +1441,9 @@
           </p>
           <p v-if="publishedInfo" class="compose-published__link">
             <a :href="publishedInfo.url" target="_blank" rel="noopener noreferrer">{{ publishedInfo.url }}</a>
+          </p>
+          <p v-if="publishedInfo?.alsoReblog" class="compose-hint">
+            The same signed transaction also reblogs the post to your blog.
           </p>
           <p class="compose-hint">
             The link starts working after the queued action is signed and broadcast.
@@ -3723,6 +3738,9 @@ export default {
       if (draft.collection) rows.push({ label: 'Collection', value: 'Flagged' })
       if (draft.authorDisplay) rows.push({ label: 'Display author', value: draft.authorDisplay })
       if (draft.crossPost) rows.push({ label: 'Cross-post', value: '@' + draft.crossPost.author + '/' + draft.crossPost.permlink })
+      if (draft.alsoReblog && this.postingToCommunity && !this.isEditing) {
+        rows.push({ label: 'Blog', value: 'Also reblogged to your blog' })
+      }
       return rows
     },
     /** The exact json_metadata the queue item will carry, merged like publish.js. */
@@ -3759,6 +3777,10 @@ export default {
     /** Editing a reply: no title, no category, no reward settings. */
     isEditingComment () {
       return Boolean(this.draft && this.draft.editing && this.draft.editing.parentAuthor)
+    },
+    /** Only real community destinations offer the companion blog reblog. */
+    postingToCommunity () {
+      return Boolean(this.draft && /^hive-\d+$/.test(String(this.draft.community || '')))
     },
     visibleDrafts () {
       if (!this.loggedInUser) return this.drafts
@@ -5228,6 +5250,7 @@ export default {
         coverImage: draft.coverImage,
         tags: draft.tags,
         community: draft.community,
+        alsoReblog: draft.alsoReblog,
         crossPost: draft.crossPost,
         beneficiaries: draft.beneficiaries,
         rewards: draft.rewards,
@@ -5584,6 +5607,7 @@ export default {
       try {
         const editing = this.draft.editing
         const permlink = editing ? editing.permlink : createPostPermlink(this.draft.title)
+        const alsoReblog = Boolean(!editing && this.postingToCommunity && this.draft.alsoReblog)
         const item = postQueueItem({
           username: this.loggedInUser,
           draft: this.draft,
@@ -5592,7 +5616,8 @@ export default {
           parentPermlink: editing ? editing.parentPermlink : null,
           parentAuthor: editing ? editing.parentAuthor : '',
           commentOptions: !editing,
-          previousMetadata: editing ? editing.previousMetadata : null
+          previousMetadata: editing ? editing.previousMetadata : null,
+          alsoReblog
         })
         this.$hiveStore.addToQueue(item)
         this.rememberTags(this.draft.tags)
@@ -5601,6 +5626,7 @@ export default {
           author: this.loggedInUser,
           permlink,
           editing: Boolean(editing),
+          alsoReblog,
           url: 'https://hive.ausbit.dev/@' + this.loggedInUser + '/' + permlink
         }
         this.publishedOpen = true
@@ -5624,7 +5650,9 @@ export default {
         this.$q.notify({
           type: isOnline() ? 'positive' : 'warning',
           message: isOnline()
-            ? (editing ? 'Edit queued for signing' : 'Post queued for signing')
+            ? (editing
+                ? 'Edit queued for signing'
+                : (alsoReblog ? 'Post and blog reblog queued for signing' : 'Post queued for signing'))
             : 'Queued, but you are offline',
           caption: (isOnline()
             ? 'Open the action queue to sign and broadcast it.'

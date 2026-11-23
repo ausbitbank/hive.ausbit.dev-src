@@ -83,6 +83,22 @@ tools, while keeping the legacy shape readable:
   when it would replace existing text.
 - The publish checklist warns when you attribute a post to yourself.
 
+## Publish to a community and my blog (2026-11-23)
+
+PeakD's “publish in community and blog” is a reblog, not a second post. The
+composer now offers the same behaviour as **Also reblog to my blog**, shown only
+for community destinations (`hive-######`) and off by default.
+
+- `buildPostOperation()` adds a queue-only `_reblog` marker to a new community
+  post when the option is on. Edits never carry it.
+- `expandQueueOperation()` turns the queued `comment` into the exact chain
+  operations: `comment`, `comment_options`, then the `follow`/`reblog`
+  `custom_json`. All three signers (Keychain, SmartLock, HiveAuth) use it, so the
+  reblog is in the same transaction and Hivemind sees the post before the reblog.
+- The action queue labels the item “Publish … + reblog to blog”, and the review
+  dialog confirms the blog reblog.
+- Nothing is duplicated: votes, comments and rewards stay on the community post.
+
 ## Follow-up fixes (2026-11-19)
 
 Two bugs surfaced when editing a real comment:

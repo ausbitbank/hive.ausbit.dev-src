@@ -78,6 +78,28 @@ describe('post construction', () => {
     })
   })
 
+  it('marks a community post for a same-transaction blog reblog', () => {
+    const reblogged = postQueueItem({
+      username: 'alice',
+      draft,
+      permlink: 'a-useful-hive-post-1',
+      alsoReblog: true
+    })
+    expect(reblogged[2][1]._reblog).toBe(true)
+
+    const normal = postQueueItem({ username: 'alice', draft, permlink: 'a-useful-hive-post-1' })
+    expect(normal[2][1]._reblog).toBeUndefined()
+
+    const edit = buildPostOperation({
+      username: 'alice',
+      draft,
+      permlink: 'a-useful-hive-post-1',
+      commentOptions: false,
+      alsoReblog: true
+    })
+    expect(edit[1]._reblog).toBeUndefined()
+  })
+
   it('keeps an empty extensions array when no beneficiaries are configured', () => {
     const options = buildCommentOptions({
       username: 'alice',

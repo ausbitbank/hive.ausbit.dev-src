@@ -4,6 +4,7 @@ import {
   canBroadcast,
   canRemove,
   createQueueMeta,
+  expandQueueOperation,
   keyRequirement,
   nextActionableIndex,
   normalizeQueueAction,
@@ -13,6 +14,7 @@ import {
   postMetadataArgument,
   queueBadgeCount,
   queueCounts,
+  reblogOperation,
   statusMeta
 } from '../../src/services/queue'
 
@@ -121,6 +123,51 @@ describe('queue helpers', () => {
       }
     }]]
     expect(normalizeQueueAction(withBeneficiaries)).toBe(withBeneficiaries)
+  })
+
+  it('expands a post into comment, options and a same-transaction reblog', () => {
+    const options = {
+      author: 'alice',
+      permlink: 'hello',
+      max_accepted_payout: '100000.000 HBD',
+      percent_hbd: 10000,
+      allow_votes: true,
+      allow_curation_rewards: true,
+      extensions: []
+    }
+    const action = ['comment', {
+      parent_author: '',
+      parent_permlink: 'hive-174578',
+      author: 'alice',
+      permlink: 'hello',
+      title: 'Hello',
+      body: 'World',
+      json_metadata: '{}',
+      comment_options: options,
+      _reblog: true
+    }]
+    const operations = expandQueueOperation(action)
+    expect(operations).toHaveLength(3)
+    expect(operations[0][1]._reblog).toBeUndefined()
+    expect(operations[0][1].comment_options).toBeUndefined()
+    expect(operations[1]).toEqual(['comment_options', options])
+    expect(operations[2]).toEqual(reblogOperation({ account: 'alice', author: 'alice', permlink: 'hello' }))
+    expect(operationSummary(['alice', 'posting', action])).toBe('Publish Hello + reblog to blog')
+    // The queued action is not mutated; other signers may still read its markers.
+    expect(action[1]._reblog).toBe(true)
+    expect(action[1].comment_options).toBe(options)
+  })
+
+  it('builds a follow reblog and its undo payload', () => {
+    const reblog = reblogOperation({ account: 'Alice', author: 'Bob', permlink: 'post' })
+    expect(reblog[0]).toBe('custom_json')
+    expect(reblog[1].required_posting_auths).toEqual(['alice'])
+    expect(reblog[1].id).toBe('follow')
+    expect(JSON.parse(reblog[1].json)).toEqual(['reblog', { account: 'alice', author: 'bob', permlink: 'post' }])
+
+    const undo = reblogOperation({ account: 'alice', author: 'bob', permlink: 'post', remove: true })
+    expect(JSON.parse(undo[1].json)[1].delete).toBe('delete')
+    expect(() => reblogOperation({ account: 'alice' })).toThrow(/post/)
   })
 
   it('explains posting and active key requirements', () => {

@@ -96,6 +96,72 @@ export function normalizeQueueAction (action) {
   return action
 }
 
+const REBLOG_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
+
+/**
+ * The `follow`/`reblog` operation Hivemind reads to show a post on an account's
+ * blog and in their followers' feeds. Used for the composer's "also reblog to
+ * my blog" option and by the standalone reblog control.
+ */
+export function reblogOperation ({ account, author, permlink, remove = false } = {}) {
+  const owner = String(account || '').trim().toLowerCase()
+  const targetAuthor = String(author || '').trim().toLowerCase()
+  const targetPermlink = String(permlink || '').trim()
+  if (!REBLOG_ACCOUNT_RE.test(owner)) throw new Error('A valid Hive account is required to reblog.')
+  if (!targetAuthor || !targetPermlink) throw new Error('A post is required to reblog.')
+  const payload = ['reblog', {
+    account: owner,
+    author: targetAuthor,
+    permlink: targetPermlink,
+    ...(remove ? { delete: 'delete' } : {})
+  }]
+  return ['custom_json', {
+    required_auths: [],
+    required_posting_auths: [owner],
+    id: 'follow',
+    json: JSON.stringify(payload)
+  }]
+}
+
+/**
+ * Expand one queued operation into the exact chain operations to broadcast.
+ * A queued `comment` may carry app-only markers and nested `comment_options`:
+ * `_edit` labels an edit, `_reblog` asks for a same-transaction self-reblog,
+ * and `comment_options` is a separate on-chain operation. Keeping the reblog
+ * in the same transaction guarantees Hivemind sees the post first; a second
+ * queue item could be reblogged before the post is indexed.
+ */
+export function expandQueueOperation (operation) {
+  if (!Array.isArray(operation) || typeof operation[0] !== 'string' || !operation[1] || typeof operation[1] !== 'object') {
+    throw new Error('Invalid operation for broadcast.')
+  }
+  const normalized = JSON.parse(JSON.stringify(operation))
+  const operations = [normalized]
+  if (normalized[0] !== 'comment') return operations
+
+  const body = normalized[1]
+  const wantsReblog = body._reblog === true
+  delete body._edit
+  delete body._reblog
+
+  if (body.comment_options) {
+    const options = body.comment_options
+    delete body.comment_options
+    operations.push(['comment_options', {
+      ...options,
+      extensions: Array.isArray(options.extensions) ? options.extensions : []
+    }])
+  }
+  if (wantsReblog) {
+    operations.push(reblogOperation({
+      account: body.author,
+      author: body.author,
+      permlink: body.permlink
+    }))
+  }
+  return operations
+}
+
 export function operationType (action) {
   const op = Array.isArray(action) ? action[2] : null
   return Array.isArray(op) ? op[0] : ''
@@ -161,8 +227,7 @@ function mention (author, permlink) {
   return '@' + author + (permlink ? '/' + shorten(permlink, 28) : '')
 }
 
-/** A short human summary of the queued operation, independent of the raw JSON. */
-export function operationSummary (action) {
+function baseOperationSummary (action) {
   const type = operationType(action)
   const data = operationData(action)
 
@@ -230,6 +295,15 @@ export function operationSummary (action) {
     default:
       return operationLabel(action)
   }
+}
+
+/** A short human summary of the queued operation, independent of the raw JSON. */
+export function operationSummary (action) {
+  const summary = baseOperationSummary(action)
+  if (operationType(action) === 'comment' && operationData(action)._reblog === true) {
+    return summary + ' + reblog to blog'
+  }
+  return summary
 }
 
 export function keyRequirement (action) {

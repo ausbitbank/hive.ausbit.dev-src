@@ -71,6 +71,13 @@ export function normalizeOperation ([name, body]) {
   if (EXTENSION_OPERATIONS.has(name) && !Array.isArray(next.extensions)) {
     next.extensions = []
   }
+  // hive-tx's custom_json serializer reads both authority arrays. Older queue
+  // builders only set the posting list; an absent `required_auths` aborts the
+  // whole transaction during signing, so default it to an empty array.
+  if (name === 'custom_json') {
+    if (!Array.isArray(next.required_auths)) next.required_auths = []
+    if (!Array.isArray(next.required_posting_auths)) next.required_posting_auths = []
+  }
   if (name === 'limit_order_create' || name === 'limit_order_create2') {
     next.expiration = chainDate(next.expiration)
   }
