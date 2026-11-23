@@ -21,19 +21,27 @@ export const DEFAULTS = {
 
 export const SURFACES = [
   {
+    key: 'theme',
+    label: 'Themes and profile skins',
+    patterns: ['src/pages/appearance.vue', 'src/pages/themeWall.vue', 'src/pages/skinStudio.vue', 'src/components/theme/', 'src/stores/appearance.js', 'src/services/badges.js'],
+    routes: ['/appearance', '/themes', '/settings/skin'],
+    docs: ['W63', 'W66', 'W67', 'W67b'],
+    shots: ['appearance', 'theme-wall']
+  },
+  {
     key: 'home',
     label: 'Home dashboard',
     patterns: ['src/pages/Index.vue', 'src/components/dashboard/', 'src/components/Home'],
     routes: ['/'],
-    docs: ['W33', 'W37', 'W38', 'W39', 'W40'],
-    shots: ['home', 'home-content-browser', 'dashboard-editor', 'widget-library']
+    docs: ['W33', 'W37', 'W38', 'W39', 'W40', 'W65', 'W69'],
+    shots: ['home', 'home-content-browser', 'widget-library']
   },
   {
     key: 'post',
     label: 'Posts and comments',
     patterns: ['src/pages/post.vue', 'src/components/post', 'src/components/comment', 'src/components/Comment', 'src/components/render'],
     routes: ['/{{post}}'],
-    docs: ['W27', 'W30'],
+    docs: ['W27', 'W30', 'W44', 'W45'],
     shots: ['post-reading']
   },
   {
@@ -41,7 +49,7 @@ export const SURFACES = [
     label: 'Composer and drafts',
     patterns: ['src/pages/compose.vue', 'src/components/Markdown', 'src/services/drafts.js', 'src/services/publish.js'],
     routes: ['/compose'],
-    docs: ['W26'],
+    docs: ['W26', 'W46', 'W47', 'W48', 'W49', 'W50', 'W51', 'W59', 'W60', 'W61', 'W70'],
     shots: ['composer']
   },
   {
@@ -55,10 +63,10 @@ export const SURFACES = [
   {
     key: 'communities',
     label: 'Communities',
-    patterns: ['src/pages/communities.vue', 'src/components/community', 'src/services/community.js'],
-    routes: ['/@{{account}}/communities', '/c/hive-139531'],
-    docs: ['W29', 'W34', 'W38'],
-    shots: ['communities']
+    patterns: ['src/pages/communities.vue', 'src/pages/communityIndex.vue', 'src/components/community', 'src/services/community.js'],
+    routes: ['/@{{account}}/communities', '/communities', '/c/hive-139531'],
+    docs: ['W29', 'W34', 'W38', 'W62', 'W64'],
+    shots: ['community-directory']
   },
   {
     key: 'account',
@@ -135,10 +143,10 @@ export const SURFACES = [
   {
     key: 'lightning',
     label: 'Lightning',
-    patterns: ['src/pages/lightning.vue', 'src/components/lightning', 'src/services/lightning.js', 'src/services/v4vapp.js', 'src/services/bolt11.js'],
-    routes: ['/lightning', '/@{{account}}/lightning'],
-    docs: ['W36'],
-    shots: ['lightning']
+    patterns: ['src/pages/lightning.vue', 'src/pages/pos.vue', 'src/components/lightning', 'src/services/lightning.js', 'src/services/v4vapp.js', 'src/services/bolt11.js'],
+    routes: ['/lightning', '/@{{account}}/lightning', '/@{{account}}/pos'],
+    docs: ['W36', 'W52', 'W53', 'W54', 'W55', 'W57', 'W58'],
+    shots: ['lightning', 'pos']
   },
   {
     key: 'blocks',
@@ -159,6 +167,12 @@ export const SURFACES = [
 ]
 
 export const SECTIONS = [
+  {
+    key: 'theme',
+    title: 'A Hive that looks like you',
+    surfaces: ['theme'],
+    promise: 'Lead with the new theme system and profile skins: built-in palettes, a skin studio, badge shelf, atmosphere and viewer controls. Explain what is safe to share and what stays local.'
+  },
   {
     key: 'home',
     title: 'The home page is now your home page',
@@ -232,6 +246,22 @@ This update covers the last few days of dashboard, wallet, search and network wo
 | Nodes | Hive, Hive-Engine, Magi |`
 
 export const SHOT_RECIPES = {
+  appearance: {
+    route: '/appearance',
+    waitMs: 6000,
+    viewport: { width: 1440, height: 1300 },
+    crop: '1280x1200+80+50',
+    alt: 'The appearance page with site theme cards, mode controls and a profile skin panel',
+    caption: 'Site theme, mode and profile skin are separate: change how the site looks without changing your profile.'
+  },
+  'theme-wall': {
+    route: '/themes',
+    waitMs: 7000,
+    viewport: { width: 1440, height: 1200 },
+    crop: '1280x1050+80+50',
+    alt: 'The theme wall showing built-in palettes with swatches, modes and moods',
+    caption: 'The theme wall browses built-in palettes and, when signed in, skins from people you follow.'
+  },
   home: {
     route: '/',
     waitMs: 26000,
@@ -312,6 +342,14 @@ export const SHOT_RECIPES = {
     crop: '1280x1000+80+50',
     alt: 'The communities directory with roles, subscriber counts and per-community links',
     caption: 'The communities directory shows role, size, activity, rewards and quick feed links.'
+  },
+  'community-directory': {
+    route: '/communities',
+    waitMs: 16000,
+    viewport: { width: 1440, height: 1250 },
+    crop: '1280x1100+80+50',
+    alt: 'The public community directory with category filters, stats and community cards',
+    caption: 'The public community directory works before you sign in: categories, size, activity and a feed link.'
   },
   account: {
     route: '/@{{account}}',
@@ -426,6 +464,14 @@ export const SHOT_RECIPES = {
     crop: '1280x1040+80+50',
     alt: 'A Hive account Lightning page with address, QR code, receive card and fee explanation',
     caption: 'The Lightning page gives every account an address, QR code, receive flow and clear fee disclosure.'
+  },
+  pos: {
+    route: '/@{{account}}/pos',
+    waitMs: 7000,
+    viewport: { width: 1440, height: 1150 },
+    crop: '1280x1020+80+50',
+    alt: 'The Lightning point of sale with an amount keypad, memo field and invoice panel',
+    caption: 'The point of sale turns an account page into a till: amount, memo, a fresh invoice and a paid state.'
   },
   block: {
     route: '/b/{{block}}',
