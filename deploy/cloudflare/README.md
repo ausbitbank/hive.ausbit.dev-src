@@ -43,6 +43,19 @@ A successful lookup returns `x-hive-meta: hit`, the real post title and the
 cover image through the images.hive.blog proxy. `miss` means the chain lookup
 failed and the origin metadata was served unchanged.
 
+X/Twitter's card crawler sends `Accept: */*`, so the Worker also treats known
+preview user agents as HTML clients. Verify that path separately:
+
+```bash
+curl -sS -D - -o /dev/null \
+  -A 'Twitterbot/1.0' \
+  -H 'Accept: */*' \
+  'https://hive.ausbit.dev/@gtg/exchange-node-in-four-lines-hive-1-28-8'
+```
+
+It should return `x-hive-meta: hit`. If it returns `miss` or no header, X will
+fall back to the generic permlink title and avatar.
+
 `scripts/deploy.sh` does not deploy this Worker. It is independent of a SPA
 release and should be updated only when the metadata rules change.
 

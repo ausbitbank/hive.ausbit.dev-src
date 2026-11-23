@@ -37,9 +37,17 @@ const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|trans
 const LIGHTNING_PATH = /^\/lightning\/?$/i
 const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
 
+// Known link-preview fetchers. X/Twitter's card crawler sends
+// `Accept: */*` rather than `text/html`, so matching on the Accept header
+// alone gave Discord rich cards while X got the generic URL shell.
+const PREVIEW_BOT_RE = /(Twitterbot|facebookexternalhit|Discordbot|Slackbot|TelegramBot|WhatsApp|LinkedInBot|Bluesky|Mastodon|Pinterest|RedditBot|Embedly|Iframely|SkypeUriPreview|vkShare)/i
+
 function hasHtml (request) {
+  if (request.method !== 'GET') return false
   const accept = request.headers.get('accept') || ''
-  return request.method === 'GET' && accept.includes('text/html')
+  if (accept.includes('text/html')) return true
+  const userAgent = request.headers.get('user-agent') || ''
+  return PREVIEW_BOT_RE.test(userAgent)
 }
 
 
