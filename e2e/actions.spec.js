@@ -288,8 +288,39 @@ test.describe('action flows', () => {
     }
   })
 
-  test('compose inserts a media embed and shows the split preview', async ({ page }) => {
-    test.setTimeout(120000)
+  test('compose inserts an emoji and jumps to headings from the outline', async ({ page }) => {
+    await loginAs(page)
+    const body = '# Intro\n\nSome text\n\n## Details\n\nMore'
+    await seedDrafts(page, [{
+      id: 'e2e-outline-emoji',
+      owner: 'ausbitbank',
+      title: 'Outline and emoji',
+      body,
+      tags: ['testing'],
+      community: '',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByLabel('Post title')).toHaveValue('Outline and emoji')
+
+    const editor = page.getByLabel('Post body in Markdown')
+    await editor.click()
+    await page.keyboard.press('Control+End')
+    await page.getByRole('button', { name: 'Insert emoji' }).click()
+    await expect(page.getByRole('heading', { name: 'Insert emoji' })).toBeVisible()
+    await page.getByRole('button', { name: 'Insert rocket' }).click()
+    await expect(editor).toHaveValue(/🚀$/)
+
+    await page.getByRole('button', { name: 'Heading outline' }).click()
+    await expect(page.getByRole('heading', { name: 'Heading outline' })).toBeVisible()
+    await page.getByRole('button', { name: /Details/ }).click()
+    await expect(page.getByRole('heading', { name: 'Heading outline' })).toHaveCount(0)
+    expect(await editor.evaluate(element => element.selectionStart)).toBe(body.indexOf('## Details'))
+  })
+
+  test('compose inserts a media embed and shows the split preview', async ({ page }) => {    test.setTimeout(120000)
     await loginAs(page)
     await page.goto('/compose')
     await waitForApp(page)

@@ -109,6 +109,27 @@
                     dense
                     round
                     size="sm"
+                    icon="toc"
+                    aria-label="Heading outline"
+                    :title="headings.length ? 'Jump to a heading' : 'No headings yet'"
+                    :disable="!headings.length"
+                    @click="openOutline"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    icon="mood"
+                    aria-label="Insert emoji"
+                    title="Insert emoji"
+                    @click="openEmojiPicker"
+                  />
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
                     icon="content_paste"
                     aria-label="Insert snippet"
                     title="Insert snippet"
@@ -1109,10 +1130,24 @@
         <q-separator />
         <q-card-section class="compose-topics-order__body">
           <p class="compose-hint compose-hint--top">
-            The first five topics are the primary discovery tags. Use the arrows to reorder.
+            The first five topics are the primary discovery tags. Drag a row or use the arrows to reorder.
           </p>
           <div class="compose-topics-order__list">
-            <div v-for="(tag, index) in draft.tags" :key="tag" class="compose-topics-order__row">
+            <div
+              v-for="(tag, index) in draft.tags"
+              :key="tag"
+              class="compose-topics-order__row"
+              :class="{
+                'is-dragging': dragTagIndex === index,
+                'is-drop-target': dragTagOver === index && dragTagIndex !== null && dragTagIndex !== index
+              }"
+              draggable="true"
+              @dragstart="startTagDrag(index, $event)"
+              @dragover.prevent="overTagDrag(index)"
+              @drop.prevent="dropTag(index)"
+              @dragend="endTagDrag"
+            >
+              <q-icon name="drag_indicator" size="16px" class="compose-topics-order__grip" aria-hidden="true" />
               <span class="compose-topics-order__index">{{ index + 1 }}</span>
               <span class="compose-topics-order__tag">#{{ tag }}</span>
               <span v-if="index < 5" class="compose-pill compose-pill--ok">Primary</span>
@@ -1121,6 +1156,69 @@
               <q-btn flat dense round size="sm" icon="arrow_downward" :disable="index === draft.tags.length - 1" :aria-label="'Move ' + tag + ' down'" title="Move down" @click="moveTag(index, 1)" />
             </div>
           </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="outlineOpen">
+      <q-card class="compose-outline">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Editor</div>
+            <h2 class="home-panel__title">Heading outline</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close heading outline" title="Close" @click="outlineOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-outline__body">
+          <p class="compose-hint compose-hint--top">Jump to a heading in the post body.</p>
+          <div class="compose-outline__list">
+            <button
+              v-for="heading in headings"
+              :key="heading.index"
+              type="button"
+              class="compose-outline__item"
+              :style="{ paddingLeft: (0.55 + (heading.level - 1) * 0.7) + 'rem' }"
+              @click="jumpToHeading(heading)"
+            >
+              <span class="compose-outline__level">H{{ heading.level }}</span>
+              <span class="compose-outline__text">{{ heading.text }}</span>
+            </button>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="emojiOpen">
+      <q-card class="compose-emoji">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Editor</div>
+            <h2 class="home-panel__title">Insert emoji</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close emoji picker" title="Close" @click="emojiOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-emoji__body">
+          <div v-if="emojiLoading" class="compose-emoji__loading">
+            <q-spinner size="22px" aria-label="Loading emoji" />
+          </div>
+          <template v-else>
+            <div v-for="group in emojiGroups" :key="group.id" class="compose-emoji__group">
+              <div class="compose-emoji__label">{{ group.label }}</div>
+              <div class="compose-emoji__grid">
+                <button
+                  v-for="item in group.emoji"
+                  :key="item.char"
+                  type="button"
+                  class="compose-emoji__btn"
+                  :aria-label="'Insert ' + item.label"
+                  :title="item.label"
+                  @click="insertEmoji(item.char)"
+                >{{ item.char }}</button>
+              </div>
+            </div>
+          </template>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -2369,6 +2467,125 @@
   font-weight: 600;
 }
 
+.compose-topics-order__grip {
+  color: var(--c-text-faint);
+  cursor: grab;
+}
+
+.compose-topics-order__row.is-dragging {
+  opacity: 0.45;
+}
+
+.compose-topics-order__row.is-drop-target {
+  border-color: var(--c-link);
+  background: color-mix(in srgb, var(--c-link) 9%, transparent);
+}
+
+.compose-outline {
+  width: 460px;
+  max-width: 94vw;
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--c-surface-1);
+}
+
+.compose-outline__body {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-outline__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.compose-outline__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.compose-outline__item:hover,
+.compose-outline__item:focus-visible {
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+  color: var(--c-text);
+}
+
+.compose-outline__level {
+  flex: none;
+  color: var(--c-text-faint);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.compose-outline__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-emoji {
+  width: 520px;
+  max-width: 94vw;
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--c-surface-1);
+}
+
+.compose-emoji__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.compose-emoji__loading {
+  display: flex;
+  justify-content: center;
+  padding: 1.2rem 0;
+}
+
+.compose-emoji__label {
+  margin-bottom: 0.25rem;
+  color: var(--c-text-faint);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.compose-emoji__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  gap: 0.2rem;
+}
+
+.compose-emoji__btn {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-text) 2%, transparent);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.compose-emoji__btn:hover,
+.compose-emoji__btn:focus-visible {
+  border-color: var(--border-subtle);
+  background: color-mix(in srgb, var(--c-text) 8%, transparent);
+}
+
 .compose-reminder-dialog__body {
   display: flex;
   flex-direction: column;
@@ -3053,7 +3270,7 @@ import { LocalStorage, copyToClipboard, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { signImageUploadChallenge } from 'src/services/imageSigning'
-import { applyMarkdownAction, continueMarkdownList, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
+import { applyMarkdownAction, continueMarkdownList, markdownHeadings, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, imageFilesFromTransfer, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
 import { fetchAccountNameSearch, fetchCommunityInfoBatch } from 'src/services/chainData'
@@ -3262,6 +3479,12 @@ export default {
       recentCommunities: [],
       recentTags: [],
       topicsOrderOpen: false,
+      dragTagIndex: null,
+      dragTagOver: null,
+      outlineOpen: false,
+      emojiOpen: false,
+      emojiLoading: false,
+      emojiGroups: [],
       discardOpen: false,
       discardTarget: null,
       communityLoading: false,
@@ -3526,6 +3749,9 @@ export default {
     },
     activeDraftTitle () {
       return this.draft ? draftDisplayTitle(this.draft) : 'New draft'
+    },
+    headings () {
+      return this.draft ? markdownHeadings(this.draft.body) : []
     },
     isEditing () {
       return Boolean(this.draft && this.draft.editing)
@@ -3923,6 +4149,82 @@ export default {
       const [tag] = tags.splice(index, 1)
       tags.splice(next, 0, tag)
       this.draft.tags = tags
+    },
+    reorderTag (from, to) {
+      if (!this.draft) return
+      const tags = [...this.draft.tags]
+      if (from < 0 || to < 0 || from >= tags.length || to >= tags.length || from === to) return
+      const [tag] = tags.splice(from, 1)
+      tags.splice(to, 0, tag)
+      this.draft.tags = tags
+    },
+    startTagDrag (index, event) {
+      this.dragTagIndex = index
+      this.dragTagOver = index
+      if (event?.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move'
+        try {
+          event.dataTransfer.setData('text/plain', String(index))
+        } catch {
+          // Some browsers restrict DataTransfer writes; the index is in state.
+        }
+      }
+    },
+    overTagDrag (index) {
+      if (this.dragTagIndex !== null) this.dragTagOver = index
+    },
+    dropTag (index) {
+      const from = this.dragTagIndex
+      this.endTagDrag()
+      if (from !== null) this.reorderTag(from, index)
+    },
+    endTagDrag () {
+      this.dragTagIndex = null
+      this.dragTagOver = null
+    },
+    openOutline () {
+      if (!this.draft || !this.headings.length) return
+      if (this.mode === 'preview') this.mode = 'write'
+      this.outlineOpen = true
+    },
+    jumpToHeading (heading) {
+      this.outlineOpen = false
+      const element = this.$refs.body
+      if (!element || !heading) return
+      this.$nextTick(() => {
+        element.focus()
+        element.setSelectionRange(heading.index, heading.index)
+        const lineHeight = parseFloat(getComputedStyle(element).lineHeight) || 24
+        element.scrollTop = Math.max(0, (heading.line - 2) * lineHeight)
+      })
+    },
+    openEmojiPicker () {
+      if (!this.draft) return
+      if (this.mode === 'preview') this.mode = 'write'
+      this.captureSelection()
+      this.emojiOpen = true
+      if (this.emojiGroups.length) return
+      this.emojiLoading = true
+      import('src/utils/emoji')
+        .then(({ EMOJI_GROUPS }) => {
+          this.emojiGroups = EMOJI_GROUPS
+        })
+        .catch(error => {
+          console.error('Failed to load the emoji picker', error)
+        })
+        .finally(() => {
+          this.emojiLoading = false
+        })
+    },
+    insertEmoji (char) {
+      if (!this.draft || !char) return
+      const body = this.draft.body
+      const selection = this.savedSelection || { start: body.length, end: body.length }
+      const start = Math.max(0, Math.min(selection.start, body.length))
+      const end = Math.max(start, Math.min(selection.end, body.length))
+      const text = body.slice(0, start) + char + body.slice(end)
+      this.emojiOpen = false
+      this.replaceBody({ text, start: start + char.length, end: start + char.length })
     },
     refreshStorageUsage () {
       if (typeof localStorage === 'undefined') return

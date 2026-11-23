@@ -7,6 +7,7 @@ import {
   insertImage,
   insertLink,
   insertTable,
+  markdownHeadings,
   prefixLines,
   readingMinutes,
   shortcutMarkdownAction,
@@ -88,6 +89,33 @@ describe('markdown editing helpers', () => {
     expect(readingMinutes(Array.from({ length: 221 }, () => 'word').join(' '))).toBe(2)
     expect(byteLength('é')).toBe(2)
     expect(byteLength('hive')).toBe(4)
+  })
+
+  it('extracts a heading outline and skips fenced code', () => {
+    const body = [
+      '# Title',
+      'Intro text',
+      '',
+      '## Section one',
+      '```md',
+      '# not a heading',
+      '```',
+      '### Deep  ###',
+      '   #### Indented',
+      '    #### code block',
+      '#no-space'
+    ].join('\n')
+    const headings = markdownHeadings(body)
+    expect(headings.map(heading => [heading.level, heading.text])).toEqual([
+      [1, 'Title'],
+      [2, 'Section one'],
+      [3, 'Deep'],
+      [4, 'Indented']
+    ])
+    expect(headings[1].line).toBe(3)
+    expect(body.slice(headings[1].index, headings[1].index + 2)).toBe('##')
+    expect(markdownHeadings('')).toEqual([])
+    expect(markdownHeadings('plain text')).toEqual([])
   })
 
   it('maps composer keyboard shortcuts', () => {

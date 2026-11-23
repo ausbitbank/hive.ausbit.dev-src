@@ -167,6 +167,51 @@ export function byteLength (text) {
 }
 
 /**
+ * Headings in a Markdown document, for the composer outline.
+ *
+ * ATX headings up to six levels are recognised with up to three leading
+ * spaces. Fenced code blocks (``` or ~~~) are skipped so pasted code cannot
+ * pollute the outline. Each entry carries the source offset and line so the
+ * editor can jump straight to it.
+ */
+export function markdownHeadings (text) {
+  const source = String(text ?? '')
+  const lines = source.split('\n')
+  const headings = []
+  let offset = 0
+  let fence = null
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+    const trimmed = line.trim()
+    const fenceMatch = /^(```|~~~)/.exec(trimmed)
+    if (fenceMatch) {
+      if (!fence) fence = fenceMatch[1]
+      else if (fence === fenceMatch[1]) fence = null
+      offset += line.length + 1
+      continue
+    }
+    if (!fence) {
+      const match = /^ {0,3}(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line)
+      if (match) {
+        const label = match[2].trim()
+        if (label) {
+          headings.push({
+            level: match[1].length,
+            text: label,
+            line: index,
+            index: offset + line.indexOf('#')
+          })
+        }
+      }
+    }
+    offset += line.length + 1
+  }
+
+  return headings
+}
+
+/**
  * Apply a toolbar/shortcut action to the current text and selection.
  * Unknown actions return the input unchanged.
  */
