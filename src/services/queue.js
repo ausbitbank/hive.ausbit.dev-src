@@ -66,14 +66,34 @@ const OPERATION_LABELS = {
  * value back silently escalates the operation to active authority. Repair any
  * already-queued item (for example a failed retry from an older build) before
  * it can be broadcast again.
+ *
+ * `comment_options` must always carry an `extensions` array. hive-tx throws
+ * while serialising a missing field, which Keychain reports as the generic
+ * "An error occured while signing the transaction". Repair queued posts from
+ * older builds so retrying them does not need a fresh draft.
  */
 export function normalizeQueueAction (action) {
   if (!Array.isArray(action) || action.length !== 3) return action
   const [owner, keyType, operation] = action
-  if (keyType !== 'posting' || !Array.isArray(operation) || operation[0] !== 'account_update2') return action
-  const data = operation[1]
-  if (!data || typeof data !== 'object' || !data.json_metadata) return action
-  return [owner, keyType, ['account_update2', { ...data, json_metadata: '' }]]
+  if (keyType !== 'posting' || !Array.isArray(operation)) return action
+
+  if (operation[0] === 'account_update2') {
+    const data = operation[1]
+    if (!data || typeof data !== 'object' || !data.json_metadata) return action
+    return [owner, keyType, ['account_update2', { ...data, json_metadata: '' }]]
+  }
+
+  if (operation[0] === 'comment') {
+    const data = operation[1]
+    const options = data && data.comment_options
+    if (!options || typeof options !== 'object' || Array.isArray(options.extensions)) return action
+    return [owner, keyType, ['comment', {
+      ...data,
+      comment_options: { ...options, extensions: [] }
+    }]]
+  }
+
+  return action
 }
 
 export function operationType (action) {

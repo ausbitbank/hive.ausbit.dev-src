@@ -427,7 +427,17 @@ export default {
         result = await keychain(window, 'requestVote', user, operation[1].permlink, operation[1].author, operation[1].weight)
       } else if (operation[0] === 'comment') {
         const isEdit = operation[1]._edit === true
+        // Keychain parses this string and hands it to hive-tx, which cannot
+        // serialise a comment_options operation without `extensions`. Always
+        // send the array, even when there are no beneficiaries.
         const commentOptions = operation[1].comment_options
+          ? {
+              ...operation[1].comment_options,
+              extensions: Array.isArray(operation[1].comment_options.extensions)
+                ? operation[1].comment_options.extensions
+                : []
+            }
+          : null
         delete operation[1].comment_options
         // Queue-only edit marker; not a field of the on-chain operation.
         delete operation[1]._edit

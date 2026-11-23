@@ -154,7 +154,11 @@ export function buildCommentOptions ({ username, permlink, beneficiaries, reward
       : (normalizeMaxPayout(normalizedRewards.maxAcceptedPayout) || MAX_ACCEPTED_PAYOUT),
     percent_hbd: normalizedRewards.percentHbd,
     allow_votes: normalizedRewards.allowVotes,
-    allow_curation_rewards: normalizedRewards.allowCurationRewards
+    allow_curation_rewards: normalizedRewards.allowCurationRewards,
+    // hive-tx (and therefore Keychain's requestPost) cannot serialise a
+    // comment_options operation whose `extensions` field is missing. An empty
+    // array means "no extensions" on the chain, so always send one.
+    extensions: []
   }
   if (share.beneficiaries.length) {
     options.extensions = [[0, { beneficiaries: share.beneficiaries }]]

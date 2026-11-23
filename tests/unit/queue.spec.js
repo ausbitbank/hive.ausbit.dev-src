@@ -83,6 +83,46 @@ describe('queue helpers', () => {
     expect(normalizeQueueAction(activeUpdate)).toBe(activeUpdate)
   })
 
+  it('repairs queued posts whose comment options lack extensions', () => {
+    const stale = ['alice', 'posting', ['comment', {
+      parent_author: '',
+      parent_permlink: 'hive',
+      author: 'alice',
+      permlink: 'hello',
+      title: 'Hello',
+      body: 'World',
+      json_metadata: '{}',
+      comment_options: {
+        author: 'alice',
+        permlink: 'hello',
+        max_accepted_payout: '100000.000 HBD',
+        percent_hbd: 10000,
+        allow_votes: true,
+        allow_curation_rewards: true
+      }
+    }]]
+    const repaired = normalizeQueueAction(stale)
+    expect(repaired).not.toBe(stale)
+    expect(repaired[2][1].comment_options.extensions).toEqual([])
+    expect(repaired[2][1].title).toBe('Hello')
+
+    const withBeneficiaries = ['alice', 'posting', ['comment', {
+      parent_author: '',
+      parent_permlink: 'hive',
+      author: 'alice',
+      permlink: 'hello',
+      title: 'Hello',
+      body: 'World',
+      json_metadata: '{}',
+      comment_options: {
+        author: 'alice',
+        permlink: 'hello',
+        extensions: [[0, { beneficiaries: [{ account: 'bob', weight: 500 }] }]]
+      }
+    }]]
+    expect(normalizeQueueAction(withBeneficiaries)).toBe(withBeneficiaries)
+  })
+
   it('explains posting and active key requirements', () => {
     expect(keyRequirement(vote)).toMatchObject({ label: 'Posting key', color: 'green' })
     expect(keyRequirement(transfer)).toMatchObject({ label: 'Active key', color: 'orange' })

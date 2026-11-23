@@ -78,14 +78,16 @@ describe('post construction', () => {
     })
   })
 
-  it('omits beneficiary extensions when none are configured', () => {
+  it('keeps an empty extensions array when no beneficiaries are configured', () => {
     const options = buildCommentOptions({
       username: 'alice',
       permlink: 'post',
       beneficiaries: [],
       rewards: { percentHbd: 0, maxAcceptedPayout: 0 }
     })
-    expect(options.extensions).toBeUndefined()
+    // hive-tx cannot serialise comment_options without this field, so an
+    // empty array is required even when there is nothing to extend.
+    expect(options.extensions).toEqual([])
     expect(options.percent_hbd).toBe(0)
     expect(options.max_accepted_payout).toBe('0.000 HBD')
   })
