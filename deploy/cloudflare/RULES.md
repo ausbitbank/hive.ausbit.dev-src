@@ -102,7 +102,18 @@ verified bots get the 403 too. The expression below exempts them:
       http.user_agent contains "TelegramBot" or
       http.user_agent contains "WhatsApp" or
       http.user_agent contains "LinkedInBot" or
-      http.user_agent contains "Bluesky"))
+      http.user_agent contains "Bluesky" or
+      http.user_agent contains "Mastodon" or
+      http.user_agent contains "Pleroma" or
+      http.user_agent contains "Misskey" or
+      http.user_agent contains "Lemmy" or
+      http.user_agent contains "Friendica" or
+      http.user_agent contains "Pinterest" or
+      http.user_agent contains "redditbot" or
+      http.user_agent contains "SkypeUriPreview" or
+      http.user_agent contains "vkShare" or
+      http.user_agent contains "Embedly" or
+      http.user_agent contains "Iframely"))
 ```
 
 **Action:** Managed Challenge.
@@ -110,19 +121,26 @@ verified bots get the 403 too. The expression below exempts them:
 - `not cf.client.bot` lets Googlebot, Bingbot and other verified crawlers
   through. Without it, `/@` pages drop out of search and previews break.
 - The UA list covers the preview fetchers that are not always classified as
-  verified bots.
+  verified bots. Fediverse and aggregator fetchers are included because their
+  UA strings are the only reliable way to tell them apart from the crawler.
 - **Do not use a rate limit here.** There is nothing to rate-limit when each IP
   makes a single request.
 
 **Verify after saving:** the Chrome/155 UA should get `403` with
-`cf-mitigated: challenge`; Googlebot, Discordbot and a normal browser should
-get `200`.
+`cf-mitigated: challenge`, and a curl with a Discordbot or Twitterbot UA should
+get `200`. A curl with a `Googlebot` UA from your laptop **will also get
+challenged** — `cf.client.bot` is true only when the request comes from a
+verified crawler IP. Do not use curl to judge Googlebot: run a Search Console
+live-URL test, or check that the Googlebot request in **Security Events** has
+`Verified Bot = true`. A real browser silently solves the challenge; a `curl`
+403 is not a user-facing failure.
 
 ### 3b. If the crawler pivots
 
 It will. In testing, challenging `/tx/` and `/@` moved it to `/b/<block>` and
 `/trending/<tag>` within minutes. To cover every HTML route without listing
-them, add a second rule in **Log** mode first:
+them, replace the last rule with this one and watch **Security Events** after
+saving:
 
 ```
 (http.host eq "hive.ausbit.dev" and
@@ -133,7 +151,20 @@ them, add a second rule in **Log** mode first:
       http.user_agent contains "facebookexternalhit" or
       http.user_agent contains "Slackbot" or
       http.user_agent contains "TelegramBot" or
-      http.user_agent contains "WhatsApp") and
+      http.user_agent contains "WhatsApp" or
+      http.user_agent contains "LinkedInBot" or
+      http.user_agent contains "Bluesky" or
+      http.user_agent contains "Mastodon" or
+      http.user_agent contains "Pleroma" or
+      http.user_agent contains "Misskey" or
+      http.user_agent contains "Lemmy" or
+      http.user_agent contains "Friendica" or
+      http.user_agent contains "Pinterest" or
+      http.user_agent contains "redditbot" or
+      http.user_agent contains "SkypeUriPreview" or
+      http.user_agent contains "vkShare" or
+      http.user_agent contains "Embedly" or
+      http.user_agent contains "Iframely") and
  not starts_with(http.request.uri.path, "/assets/") and
  not starts_with(http.request.uri.path, "/statics/") and
  not starts_with(http.request.uri.path, "/fonts/") and
@@ -141,8 +172,8 @@ them, add a second rule in **Log** mode first:
 ```
 
 A managed challenge is invisible to real browsers, so a first-time visitor with
-no referrer still gets through. Watch Log mode for 24 hours before switching the
-action to Managed Challenge.
+no referrer still gets through. This rule is broad, so check Security Events for
+challenged preview fetchers in the first hours; add any missing UA to the list.
 
 ---
 

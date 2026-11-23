@@ -72,4 +72,14 @@ describe('metadata worker', () => {
     expect(calls.rpc).toBe(0)
     expect(html).toBe(ORIGIN_HTML)
   })
+
+  it('handles Fediverse preview fetchers that do not send text/html either', async () => {
+    const calls = stubNetwork()
+    const response = await worker.fetch(previewRequest('http.rb/5.1.1 (Mastodon/4.2.0; +https://mastodon.social/)'))
+    const html = await response.text()
+
+    expect(response.headers.get('x-hive-meta')).toBe('hit')
+    expect(calls.rpc).toBe(1)
+    expect(html).toContain('A real post title')
+  })
 })

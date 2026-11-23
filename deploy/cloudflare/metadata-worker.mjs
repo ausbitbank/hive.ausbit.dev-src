@@ -40,7 +40,7 @@ const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
 // Known link-preview fetchers. X/Twitter's card crawler sends
 // `Accept: */*` rather than `text/html`, so matching on the Accept header
 // alone gave Discord rich cards while X got the generic URL shell.
-const PREVIEW_BOT_RE = /(Twitterbot|facebookexternalhit|Discordbot|Slackbot|TelegramBot|WhatsApp|LinkedInBot|Bluesky|Mastodon|Pinterest|RedditBot|Embedly|Iframely|SkypeUriPreview|vkShare)/i
+const PREVIEW_BOT_RE = /(Twitterbot|facebookexternalhit|Discordbot|Slackbot|TelegramBot|WhatsApp|LinkedInBot|Bluesky|Mastodon|Pleroma|Misskey|Lemmy|Friendica|Akkoma|Kbin|mbin|Pinterest|RedditBot|Embedly|Iframely|SkypeUriPreview|vkShare)/i
 
 function hasHtml (request) {
   if (request.method !== 'GET') return false
