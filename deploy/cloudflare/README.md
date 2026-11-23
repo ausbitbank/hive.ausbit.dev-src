@@ -45,3 +45,10 @@ failed and the origin metadata was served unchanged.
 
 `scripts/deploy.sh` does not deploy this Worker. It is independent of a SPA
 release and should be updated only when the metadata rules change.
+
+## Traffic and WAF rules
+
+Edge traffic controls (AI crawlers, scraper challenges, exploit probes) are
+planned in [`RULES.md`](RULES.md). The analysis behind them, including the
+real-IP nginx logging that made per-IP behaviour visible, is in
+[`docs/analytics-review.md`](../../docs/analytics-review.md).
