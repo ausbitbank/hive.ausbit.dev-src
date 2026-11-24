@@ -149,9 +149,9 @@ Chromium.
 
 ## Remaining Phase 1 polish
 
-- Search rows show the label and hide the snippet when collapsed, but do not
-  offer a per-row “Show anyway” button because the row itself is the open
-  action. This needs a small row-action redesign.
+- Search rows now offer a per-row “Show anyway” action for collapsed or hidden
+  results; see [`W75-search-moderation-override.md`](W75-search-moderation-override.md).
+  Labelled but readable rows keep their label without an action.
 - Notification controls are not added; there is no new downvote notification
   channel in this phase.
 - The settings page surfaces followed lists read-only. Subscribing/unsubscribing

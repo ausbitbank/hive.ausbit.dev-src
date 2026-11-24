@@ -247,8 +247,8 @@ Numbering note: `docs/workstreams/W62-hiveauth.md` and
 `docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
 signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
-explicitly deferred items in that section; W74 is deployed and live-smoked. The
-next free workstream number is W75.
+explicitly deferred items in that section; W74 is deployed and live-smoked; W75
+is implemented locally. The next free workstream number is W76.
 
 ### W71 — Theme safety (complete)
 
@@ -409,6 +409,16 @@ publishing still work with autosave off. See
 
 W74 is deployed and live-smoked: the guard, discard path, reload and rename all
 worked against production, and the dialogs are axe clean at 1440px and 390px.
+
+### W75 — Search result moderation override
+
+The last Phase 1 moderation polish item. Collapsed or hidden search results gain
+a per-row **Show anyway** action as a sibling button, so the row itself stays the
+open action and no interactive control is nested. The override uses the existing
+local `showItems` policy, clears the label once shown, persists across reloads,
+and restores focus to the row when the action disappears. Post row keys now
+include the permlink, fixing duplicate keys for posts by the same author. See
+[`docs/workstreams/W75-search-moderation-override.md`](workstreams/W75-search-moderation-override.md).
 
 ## Definition of done
 

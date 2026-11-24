@@ -155,6 +155,7 @@
                 :empty="group.error || group.empty || 'No matches in this group.'"
                 @hover="setActive"
                 @open="openRow"
+                @show="showResult"
               />
               <div v-if="group.error" class="search-group__error" role="status">
                 <q-icon name="cloud_off" size="15px" aria-hidden="true" />
@@ -1146,8 +1147,11 @@ export default {
         type: 'posts',
         label: 'Posts',
         eyebrow: 'Content',
-        rows: (result.posts.items || []).slice(0, this.postsVisible).map((post, index) => ({
-          key: rowKey('post', post, index),
+        rows: (result.posts.items || []).slice(0, this.postsVisible).map(post => ({
+          // Posts share an author, so the permlink must be part of the key; the
+          // generic rowKey fallback would give every post by one author the
+          // same key.
+          key: 'post-' + post.author + '-' + post.permlink,
           title: post.title || 'Untitled post',
           description: '@' + post.author + ' · ' + moment.utc(post.created).fromNow() + ' · ' + (post.community_title || post.category || 'Hive'),
           badge: post.pending_payout_value || null,
@@ -1514,6 +1518,10 @@ export default {
     focusActive () {
       const element = this.$el?.querySelector('.result-row--active')
       if (element) element.focus()
+    },
+    showResult (row) {
+      if (!row?.moderation) return
+      this.moderationShowItem(row.moderation)
     },
     openRow (row) {
       if (row.path) this.$router.push(row.path).catch(() => {})
