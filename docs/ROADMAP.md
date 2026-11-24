@@ -247,8 +247,8 @@ Numbering note: `docs/workstreams/W62-hiveauth.md` and
 `docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
 signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
-explicitly deferred items in that section; W74 is implemented locally. The next
-free workstream number is W75.
+explicitly deferred items in that section; W74 is deployed and live-smoked. The
+next free workstream number is W75.
 
 ### W71 — Theme safety (complete)
 
@@ -406,6 +406,9 @@ local draft can be renamed from the draft list, including the active draft.
 No draft schema, signing or publish-path change. The explicit Save button and
 publishing still work with autosave off. See
 [`docs/workstreams/W74-composer-draft-safety.md`](workstreams/W74-composer-draft-safety.md).
+
+W74 is deployed and live-smoked: the guard, discard path, reload and rename all
+worked against production, and the dialogs are axe clean at 1440px and 390px.
 
 ## Definition of done
 

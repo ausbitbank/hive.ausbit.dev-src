@@ -1,7 +1,7 @@
 # W74 — Composer autosave control, leave guard and draft rename
 
 Date: 2026-11-24
-Status: implemented locally; automated verification green. Deployment pending.
+Status: implemented, deployed and live-smoked.
 
 Issue: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/82>. Follows
 [`W70-composer-editor-polish.md`](W70-composer-editor-polish.md), which deferred
@@ -68,6 +68,10 @@ the queue is untouched.
 
 ## Verification
 
+Verified in a clean worktree at commit `7a17928` because another process was
+editing dashboard files in the shared checkout. The worktree contained only this
+workstream's commit.
+
 - `bun run lint` — clean; theme-token scan clean.
 - `bun run test` — 154 files, 1,360 tests passed.
 - `bun run build` — succeeded.
@@ -75,6 +79,25 @@ the queue is untouched.
 - `bunx playwright test e2e/a11y.spec.js --project=chromium -g "compose unsaved-changes"` — axe clean for both dialogs.
 - Obscura targeted run of the two new action tests — 2 passed.
 - `bun run perf:check` — all budgets passed.
+
+## Deployment
+
+Deployed on 2026-11-24 from commit `7a17928` with `scripts/deploy.sh` run in the
+clean worktree.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T073948Z.tar.gz`
+  (`sha256 22cb0c7e…a20593`).
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261124T073948Z.tar.gz`.
+- Production `index.html` SHA-256 `a43dbd40…697c9` matches the clean build.
+- Live Chromium smoke on `/compose`:
+  - autosave off, edit, then leaving showed “Unsaved changes” with Stay, Leave
+    without saving and Save and leave;
+  - Stay kept `/compose` and the unsaved body;
+  - Leave without saving navigated home and the reloaded draft still had the
+    last saved body;
+  - renaming the draft updated the editor title and the stored draft;
+  - no page errors.
+- Live HTTP: `/`, `/compose` and `/market` return 200.
 
 ## Notes and follow-ups
 
