@@ -175,3 +175,74 @@ describe('moderation store context', () => {
     expect(decision.code).toBe('negative-reputation')
   })
 })
+
+describe('moderation store content decisions', () => {
+  it('uses the loaded viewer context and preset for content', async () => {
+    mocks.fetchViewerModerationContext.mockResolvedValue(context({ muted: ['alice'] }))
+    const store = freshStore('viewer')
+    await store.ensureContext()
+
+    const balanced = store.decisionForContent({
+      author: 'alice',
+      post: { author: 'alice', author_reputation: 60, stats: {} },
+      surface: 'feed'
+    })
+    expect(balanced.display).toBe('collapse')
+    expect(balanced.primary.label).toBe('Muted by you')
+
+    store.setPreset('open')
+    const open = store.decisionForContent({
+      author: 'alice',
+      post: { author: 'alice', author_reputation: 60, stats: {} },
+      surface: 'feed'
+    })
+    expect(open.display).toBe('label')
+  })
+
+  it('persists item, custom-rule and voter overrides', async () => {
+    const store = freshStore('viewer')
+    await store.ensureContext()
+
+    store.showItem('alice/post')
+    expect(store.showItems).toEqual(['alice/post'])
+    const shown = store.decisionForContent({
+      author: 'alice',
+      post: { author: 'alice', author_reputation: 60, stats: {} },
+      surface: 'feed',
+      itemKey: 'alice/post'
+    })
+    expect(shown.display).toBe('show')
+
+    store.setCustomRule('feed', 'mute', 'hide')
+    expect(store.contentCustom.feed.mute).toBe('hide')
+    store.ignoreVoter('@BadActor')
+    expect(store.ignoredVoters).toEqual(['badactor'])
+    store.unignoreVoter('badactor')
+    expect(store.ignoredVoters).toEqual([])
+  })
+
+  it('exports and imports a policy document', async () => {
+    const store = freshStore('viewer')
+    await store.ensureContext()
+    store.setPreset('strict')
+    store.showItem('alice/post')
+
+    const text = store.exportPolicyText()
+    store.setPreset('open')
+    store.showItem('bob/post')
+    expect(store.contentPreset).toBe('open')
+
+    const result = store.importPolicyText(text)
+    expect(result.error).toBe('')
+    expect(store.contentPreset).toBe('strict')
+    expect(store.showItems).toContain('alice/post')
+    expect(store.showItems).not.toContain('bob/post')
+  })
+
+  it('marks the first-use disclosure seen once', () => {
+    const store = freshStore('viewer')
+    expect(store.shouldDisclose).toBe(true)
+    store.markDisclosureSeen()
+    expect(store.shouldDisclose).toBe(false)
+  })
+})

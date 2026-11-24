@@ -11,6 +11,17 @@
       <profile-skin :account="account" :author="account.name" context="profile">
       <template #default="{ theme }">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
+      <div v-if="profileModeration.primary" class="account-moderation">
+        <moderation-notice
+          :decision="profileModeration"
+          :show-disclosure="moderationStore && moderationStore.shouldDisclose"
+          @dismiss-disclosure="moderationMarkDisclosure"
+          @show="moderationShowItem(profileModeration)"
+          @show-author="moderationShowAuthor(profileModeration)"
+          @hide-author="moderationHideAuthor(profileModeration)"
+          @ignore-voter="moderationIgnoreVoter(profileModeration)"
+        />
+      </div>
       <profile-shelf v-if="theme" :theme="theme" :account="account" />
       <div class="account-shell">
         <q-card flat bordered class="account-card account-overview">
@@ -256,6 +267,13 @@
 .account-page {
   min-width: 0;
   padding-bottom: var(--space-6);
+}
+
+.account-moderation {
+  width: 100%;
+  max-width: 900px;
+  margin: var(--space-3) auto 0;
+  padding: 0 var(--space-3);
 }
 
 .account-shell {
@@ -649,6 +667,7 @@ import propsList from 'components/propsList.vue'
 import propsEditor from 'components/propsEditor.vue'
 import accountOperations from 'components/accountOperations.vue'
 import accountHeader from 'components/accountHeader.vue'
+import moderation from 'src/mixins/moderation'
 import accountAuthorities from 'components/accountAuthorities.vue'
 import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
 import MagiAccountSummary from 'components/account/MagiAccountSummary.vue'
@@ -666,6 +685,7 @@ import ProfileShelf from 'components/theme/ProfileShelf.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 export default {
   name: 'accountPage',
+  mixins: [moderation],
   components: {
     jsonViewer,
     HomeRecentPosts,
@@ -673,6 +693,7 @@ export default {
     propsEditor,
     accountOperations,
     accountHeader,
+    ModerationNotice: defineAsyncComponent(() => import('components/moderation/ModerationNotice.vue')),
     rc,
     accountAuthorities,
     AuthorityRiskCard,
@@ -729,6 +750,15 @@ export default {
     }
   },
   computed: {
+    profileModeration () {
+      if (!this.account) return { display: 'show', primary: null, reasons: [], overrides: [] }
+      return this.moderationDecision({
+        author: this.account.name,
+        post: { author_reputation: this.account.reputation, stats: {} },
+        surface: 'profile',
+        itemKey: 'profile:' + this.account.name
+      })
+    },
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
     },

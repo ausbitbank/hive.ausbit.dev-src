@@ -56,6 +56,7 @@
         :showAccount="showAccount"
         :showTag="showTag"
         :showToolbar="false"
+        :moderation-surface="isCommunity ? 'community' : 'feed'"
       />
     </div>
     </component>

@@ -343,20 +343,26 @@ moderation layer, not a site-wide ban list. W71 is the narrow skin-safety slice;
 W73 generalises it into a policy engine that covers feeds, comments, community
 mutes, skins and reputation-gated features.
 
-Phase 1 is implementation-ready:
+Phase 1 is implemented, deployed and live-smoked:
 
-- [ ] Add a pure `moderationPolicy` module with Open/Balanced/Strict/Follow-only/
-      Custom presets and per-surface decisions.
-- [ ] Keep direct mutes, direct blacklists, followed mute lists, followed
+- [x] Add a pure `moderationPolicy`/`moderationContent` module with
+      Open/Balanced/Strict/Follow-only/Custom presets and per-surface decisions.
+- [x] Keep direct mutes, direct blacklists, followed mute lists, followed
       blacklists and community muted roles/post mutes as distinct layers.
-- [ ] Add explainability and overrides to feeds, comments, profiles, community
+- [x] Add explainability and overrides to feeds, comments, profiles, community
       feeds and skins; follows beat subscribed mute lists with a conflict badge.
-- [ ] Add the first-use Balanced disclosure; label/collapse negative-rep content,
+- [x] Add the first-use Balanced disclosure; label/collapse negative-rep content,
       never hide on reputation alone.
-- [ ] Give every reputation-gated feature an override, not only skins.
-- [ ] Cache relationship/list flags and keep the policy check off the critical
+- [x] Give every reputation-gated feature an override, not only skins. The image
+      host's gate is server-side and is explained rather than overridden.
+- [x] Cache relationship/list flags and keep the policy check off the critical
       path for post pages.
-- [ ] Export/import the local policy as versioned JSON.
+- [x] Export/import the local policy as versioned JSON.
+
+Phase 1 remaining polish: search results label a moderated post but do not yet
+offer a per-row Show anyway action, and notification opt-ins are deferred. The
+settings page is `/settings/moderation`; the record is
+[`docs/workstreams/W73-moderation-policy.md`](workstreams/W73-moderation-policy.md).
 
 Phase 2 (after Phase 1 is green): profile downvote views with voter, weight,
 target and time; evidence-backed pattern hints; downvote-to-upvote context;

@@ -69,6 +69,9 @@ export function trimPost (post, { bodyLimit = DEFAULT_BODY_LIMIT } = {}) {
     reblogs: Number(post.reblogs) || 0,
     net_votes: Number(post.net_votes) || 0,
     author_reputation: post.author_reputation ?? 0,
+    author_role: post.author_role || '',
+    author_title: post.author_title || '',
+    blacklists: Array.isArray(post.blacklists) ? post.blacklists.filter(Boolean).slice(0, 20) : [],
     payout: numberOrNull(post.payout) ?? 0,
     pending_payout_value: post.pending_payout_value || '0.000 HBD',
     total_payout_value: post.total_payout_value || '0.000 HBD',
@@ -81,7 +84,17 @@ export function trimPost (post, { bodyLimit = DEFAULT_BODY_LIMIT } = {}) {
     active_votes: [],
     reblogged_by: [],
     stats: post.stats && typeof post.stats === 'object'
-      ? { total_votes: Number(post.stats.total_votes) || 0 }
+      ? {
+          total_votes: Number(post.stats.total_votes) || 0,
+          hide: post.stats.hide === true,
+          hidden: post.stats.hidden === true,
+          gray: post.stats.gray === true,
+          flag_weight: Number(post.stats.flag_weight) || 0,
+          is_pinned: post.stats.is_pinned === true,
+          muted_reasons: Array.isArray(post.stats.muted_reasons)
+            ? post.stats.muted_reasons.map(Number).filter(Number.isFinite).slice(0, 8)
+            : undefined
+        }
       : undefined
   }
 }

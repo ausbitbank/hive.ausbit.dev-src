@@ -1056,6 +1056,7 @@ import {
 } from 'src/services/savedSearches'
 import { parseSearchRoute } from 'src/services/search'
 import { setPageMeta } from 'src/utils/pageMeta'
+import moderation from 'src/mixins/moderation'
 
 const EXAMPLES = [
   { label: 'Popular tags', value: '#photography', icon: 'tag' },
@@ -1071,6 +1072,7 @@ function rowKey (group, item, index) {
 
 export default {
   name: 'SearchPage',
+  mixins: [moderation],
   components: { ResultList },
   data () {
     return {
@@ -1150,7 +1152,13 @@ export default {
           description: '@' + post.author + ' · ' + moment.utc(post.created).fromNow() + ' · ' + (post.community_title || post.category || 'Hive'),
           badge: post.pending_payout_value || null,
           icon: post.semantic ? 'auto_awesome' : 'article',
-          path: '/@' + post.author + '/' + post.permlink
+          path: '/@' + post.author + '/' + post.permlink,
+          moderation: this.moderationDecision({
+            author: post.author,
+            post,
+            surface: 'search',
+            itemKey: post.author + '/' + post.permlink
+          })
         })),
         moreRows: Math.max(0, (result.posts.items || []).length - this.postsVisible),
         moreLabel: 'Show ' + Math.min(POSTS_PAGE_SIZE, Math.max(0, (result.posts.items || []).length - this.postsVisible)) + ' more',

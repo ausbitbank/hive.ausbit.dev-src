@@ -46,6 +46,7 @@
 import moment from 'src/utils/time'
 import { stripHtml } from 'src/utils/safeHtml'
 import { fetchFollowingNames, rememberFollowing } from 'src/services/chainData'
+import { followOperation } from 'src/services/followOps'
 import { vestToHive } from 'src/services/wallet'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 
@@ -176,20 +177,18 @@ export default {
         .catch(() => {})
     },
     followUser (who) {
-      const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
+      this.$hiveStore.addToQueue(followOperation(this.loggedInUser, who, this.relationship || {}, { blog: true }))
       this.relationship = { ...(this.relationship || {}), follows: true }
       if (Array.isArray(this.followingNames) && !this.followingNames.includes(who)) this.followingNames.push(who)
       rememberFollowing(this.loggedInUser, who, true)
       this.syncModeration(store => store.noteFollowChange(who, true))
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     },
     unfollowUser (who) {
-      const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
+      this.$hiveStore.addToQueue(followOperation(this.loggedInUser, who, this.relationship || {}, { blog: false }))
       this.relationship = { ...(this.relationship || {}), follows: false }
       if (Array.isArray(this.followingNames)) this.followingNames = this.followingNames.filter(name => name !== who)
       rememberFollowing(this.loggedInUser, who, false)
       this.syncModeration(store => store.noteFollowChange(who, false))
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     }
   }
 }

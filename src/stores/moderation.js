@@ -11,9 +11,12 @@ import {
   normalizeName,
   SKIN_DEFAULT_SETTINGS
 } from 'src/services/moderationPolicy'
+import { decideContent } from 'src/services/moderationContent'
 import {
   defaultModerationPolicy,
+  parseModerationExport,
   readModerationPolicy,
+  serializeModerationExport,
   writeModerationPolicy,
   scopeFor
 } from 'src/services/moderationSettings'
@@ -35,6 +38,7 @@ function emptyContext (status = 'ready') {
     followedMuteOwners: [],
     followedBlacklistOwners: [],
     followedMuteLists: [],
+    followedBlacklistLists: [],
     listErrors: 0,
     loadedAt: 0,
     error: ''
@@ -111,6 +115,7 @@ function readSnapshot (scope) {
       followedMuteOwners: normalizeOwnerList(parsed.followedMuteOwners),
       followedBlacklistOwners: normalizeOwnerList(parsed.followedBlacklistOwners),
       followedMuteLists: normalizeFollowedLists(parsed.followedMuteLists),
+      followedBlacklistLists: normalizeFollowedLists(parsed.followedBlacklistLists),
       listErrors: Math.max(0, Number(parsed.listErrors) || 0),
       loadedAt: savedAt,
       error: ''
@@ -132,6 +137,7 @@ function writeSnapshot (scope, context) {
       followedMuteOwners: normalizeOwnerList(context.followedMuteOwners),
       followedBlacklistOwners: normalizeOwnerList(context.followedBlacklistOwners),
       followedMuteLists: normalizeFollowedLists(context.followedMuteLists),
+      followedBlacklistLists: normalizeFollowedLists(context.followedBlacklistLists),
       listErrors: Math.max(0, Number(context.listErrors) || 0)
     }))
   } catch {
@@ -166,6 +172,27 @@ export const useModerationStore = defineStore('moderation', {
     },
     skinHideAuthors (state) {
       return state.policy.overrides?.hideAuthors || []
+    },
+    showItems (state) {
+      return state.policy.overrides?.showItems || []
+    },
+    hideItems (state) {
+      return state.policy.overrides?.hideItems || []
+    },
+    ignoredVoters (state) {
+      return state.policy.overrides?.ignoredVoters || []
+    },
+    contentPreset (state) {
+      return state.policy.preset || 'balanced'
+    },
+    contentCustom (state) {
+      return state.policy.custom || null
+    },
+    listsOverrideFollows (state) {
+      return state.policy.lists?.listsOverrideFollows === true
+    },
+    shouldDisclose (state) {
+      return state.policy.preset === 'balanced' && state.policy.disclosureSeen !== true
     },
     isGuest (state) {
       return state.scope === 'guest'
@@ -279,10 +306,176 @@ export const useModerationStore = defineStore('moderation', {
       })
     },
 
+    decisionForContent ({ author, post = null, surface = 'feed', itemKey = '' } = {}) {
+      const name = normalizeName(author || (post && post.author))
+      return decideContent({
+        surface,
+        author: name,
+        reputation: post ? post.author_reputation : null,
+        post,
+        viewer: {
+          status: this.context.status,
+          muted: this.context.muted,
+          blacklisted: this.context.blacklisted,
+          following: this.context.following,
+          followedMuteLists: this.context.followedMuteLists,
+          followedBlacklistLists: this.context.followedBlacklistLists,
+          showAuthors: this.skinShowAuthors,
+          hideAuthors: this.skinHideAuthors,
+          showItems: this.showItems,
+          hideItems: this.hideItems,
+          listErrors: this.context.listErrors
+        },
+        preset: this.contentPreset,
+        custom: this.contentCustom,
+        listsOverrideFollows: this.listsOverrideFollows,
+        itemKey
+      })
+    },
+
     isFollowing (author) {
       const name = normalizeName(author)
       if (!name) return false
       return (this.context.following || []).includes(name)
+    },
+
+    setPreset (preset) {
+      this.policy = { ...this.policy, preset }
+      this.persistPolicy()
+      return true
+    },
+
+    setCustomRule (surface, signal, display) {
+      const current = this.policy.custom || {}
+      const surfaceRules = current[surface]
+      if (!surfaceRules) return false
+      this.policy = {
+        ...this.policy,
+        custom: {
+          ...current,
+          [surface]: { ...surfaceRules, [signal]: display }
+        }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    setListsOverrideFollows (value) {
+      this.policy = {
+        ...this.policy,
+        lists: { ...(this.policy.lists || {}), listsOverrideFollows: value === true }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    markDisclosureSeen () {
+      this.policy = { ...this.policy, disclosureSeen: true }
+      this.persistPolicy()
+      return true
+    },
+
+    resetDisclosure () {
+      this.policy = { ...this.policy, disclosureSeen: false }
+      this.persistPolicy()
+      return true
+    },
+
+    resetOverrides () {
+      this.policy = {
+        ...this.policy,
+        overrides: {
+          showAuthors: [],
+          hideAuthors: [],
+          showItems: [],
+          hideItems: [],
+          ignoredVoters: []
+        }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    resetPolicy () {
+      this.policy = defaultModerationPolicy()
+      this.persistPolicy()
+      return true
+    },
+
+    showItem (itemKey) {
+      const key = String(itemKey || '').trim().slice(0, 200)
+      if (!key) return false
+      const show = new Set(this.showItems)
+      show.add(key)
+      this.policy.overrides = {
+        ...this.policy.overrides,
+        showItems: [...show].slice(-300),
+        hideItems: (this.hideItems || []).filter(item => item !== key)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    hideItem (itemKey) {
+      const key = String(itemKey || '').trim().slice(0, 200)
+      if (!key) return false
+      const hide = new Set(this.hideItems)
+      hide.add(key)
+      this.policy.overrides = {
+        ...this.policy.overrides,
+        hideItems: [...hide].slice(-300),
+        showItems: (this.showItems || []).filter(item => item !== key)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    clearItemOverride (itemKey) {
+      const key = String(itemKey || '').trim().slice(0, 200)
+      if (!key) return false
+      this.policy.overrides = {
+        ...this.policy.overrides,
+        showItems: (this.showItems || []).filter(item => item !== key),
+        hideItems: (this.hideItems || []).filter(item => item !== key)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    ignoreVoter (voter) {
+      const name = normalizeName(voter)
+      if (!name) return false
+      const next = new Set(this.ignoredVoters)
+      next.add(name)
+      this.policy.overrides = {
+        ...this.policy.overrides,
+        ignoredVoters: [...next].slice(-500)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    unignoreVoter (voter) {
+      const name = normalizeName(voter)
+      if (!name) return false
+      this.policy.overrides = {
+        ...this.policy.overrides,
+        ignoredVoters: (this.ignoredVoters || []).filter(item => item !== name)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    exportPolicyText () {
+      return serializeModerationExport(this.policy)
+    },
+
+    importPolicyText (text) {
+      const result = parseModerationExport(text)
+      if (!result.policy) return result
+      this.policy = result.policy
+      this.persistPolicy()
+      return result
     },
 
     persistPolicy () {

@@ -33,7 +33,15 @@ describe('home snapshot shaping', () => {
     const post = trimPost(POST)
     expect(post.author).toBe('alice')
     expect(post.body.length).toBeLessThan(POST.body.length)
-    expect(post.stats).toEqual({ total_votes: 12 })
+    expect(post.stats).toEqual({
+      total_votes: 12,
+      hide: false,
+      hidden: false,
+      gray: false,
+      flag_weight: 0,
+      is_pinned: false,
+      muted_reasons: undefined
+    })
     expect(post.active_votes).toEqual([])
     expect(post.json_metadata.image).toEqual(['https://images.example/a.png'])
     expect(post.json_metadata.tags).toEqual(['hive', 'test'])

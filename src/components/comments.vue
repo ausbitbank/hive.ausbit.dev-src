@@ -105,6 +105,7 @@
             :key="item.key"
             :comment="item.comment"
             :depth="item.depth"
+            :force-show="showFiltered"
             @posted="onCommentPosted"
           />
         </div>

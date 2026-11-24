@@ -18,11 +18,6 @@ const SORTERS = {
   replies: (a, b) => Number(b?.children || 0) - Number(a?.children || 0)
 }
 
-function passesFilter (comment, showFiltered) {
-  if (showFiltered) return true
-  return !comment?.stats?.gray && !comment?.stats?.hide
-}
-
 /**
  * Flatten a discussion into depth-tagged comments in display order.
  *
@@ -38,7 +33,6 @@ export function flattenDiscussion (discussion, rootKey, options = {}) {
   if (!discussion || typeof discussion !== 'object') return []
 
   const sortFn = SORTERS[options.sort] || SORTERS.best
-  const showFiltered = Boolean(options.showFiltered)
   const out = []
   const seen = new Set()
 
@@ -49,7 +43,6 @@ export function flattenDiscussion (discussion, rootKey, options = {}) {
     seen.add(key)
 
     if (depth > 0) {
-      if (!passesFilter(comment, showFiltered)) return
       out.push({ key, comment, depth })
     }
 
@@ -70,7 +63,6 @@ export function flattenDiscussion (discussion, rootKey, options = {}) {
 
   // Defensive fallback for a response that does not include the root post.
   return Object.entries(discussion)
-    .filter(([, comment]) => passesFilter(comment, showFiltered))
     .sort(([, a], [, b]) => sortFn(a, b))
     .map(([key, comment]) => ({
       key,

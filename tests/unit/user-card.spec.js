@@ -72,7 +72,7 @@ describe('userCard follow state', () => {
 
     expect(store.queue).toHaveLength(1)
     expect(store.queue[0][2][0]).toBe('custom_json')
-    expect(store.queue[0][2][1].json).toContain('"what": []')
+    expect(JSON.parse(store.queue[0][2][1].json)[1].what).toEqual([])
     expect(rememberFollowing).toHaveBeenCalledWith('viewer', 'alice', false)
     expect(wrapper.vm.isFollowing).toBe(false)
   })
@@ -86,7 +86,7 @@ describe('userCard follow state', () => {
     await flushPromises()
 
     expect(store.queue).toHaveLength(1)
-    expect(store.queue[0][2][1].json).toContain('"what": ["blog"]')
+    expect(JSON.parse(store.queue[0][2][1].json)[1].what).toEqual(['blog'])
     expect(rememberFollowing).toHaveBeenCalledWith('viewer', 'alice', true)
     expect(wrapper.vm.isFollowing).toBe(true)
     expect(wrapper.vm.followingNames).toContain('alice')

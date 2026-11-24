@@ -1,7 +1,7 @@
 <template>
   <article
     class="post-card"
-    :class="cardClasses"
+    :class="[cardClasses, { 'post-card--moderated': moderation.display !== 'show' }]"
     :aria-labelledby="titleId"
   >
     <div v-if="rebloggers.length" class="post-card__reblog">
@@ -17,7 +17,7 @@
     </div>
 
     <router-link
-      v-if="styleType === 'list' && hasImage"
+      v-if="!moderationCollapsed && styleType === 'list' && hasImage"
       :to="postLink"
       class="post-card__thumb"
       :aria-label="openLabel"
@@ -36,7 +36,7 @@
     </router-link>
 
     <router-link
-      v-if="styleType === 'cards'"
+      v-if="!moderationCollapsed && styleType === 'cards'"
       :to="postLink"
       class="post-card__media"
       :aria-label="openLabel"
@@ -91,13 +91,25 @@
         </router-link>
       </div>
 
+      <moderation-notice
+        v-if="moderation.primary && moderation.display !== 'show'"
+        :decision="moderation"
+        compact
+        :show-disclosure="moderationStore && moderationStore.shouldDisclose"
+        @dismiss-disclosure="moderationMarkDisclosure"
+        @show="moderationShowItem(moderation)"
+        @show-author="moderationShowAuthor(moderation)"
+        @hide-author="moderationHideAuthor(moderation)"
+        @ignore-voter="moderationIgnoreVoter(moderation)"
+      />
+
       <h3 :id="titleId" class="post-card__title">
         <router-link :to="postLink">{{ displayTitle }}</router-link>
       </h3>
 
-      <p v-if="summary" class="post-card__summary">{{ summary }}</p>
+      <p v-if="summary && !moderationCollapsed" class="post-card__summary">{{ summary }}</p>
 
-      <div v-if="tags.length" class="post-card__tags">
+      <div v-if="tags.length && !moderationCollapsed" class="post-card__tags">
         <template v-for="tag in tags" :key="tag">
           <router-link v-if="linkTag(tag)" :to="linkTag(tag)" class="post-card__tag">#{{ tag }}</router-link>
           <span v-else class="post-card__tag" :title="'#' + tag + ' is not a valid Hive tag'">#{{ tag }}</span>
@@ -133,6 +145,10 @@
 </template>
 
 <style scoped>
+.post-card--moderated {
+  border-color: color-mix(in srgb, var(--c-warning) 28%, var(--c-border));
+}
+
 .post-card {
   position: relative;
   display: flex;
@@ -550,13 +566,20 @@ import {
   postUserVoteDirection,
   postVotes
 } from 'src/services/posts'
+import { defineAsyncComponent } from 'vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import moderation from 'src/mixins/moderation'
 
 export default {
   name: 'postPreview',
+  components: {
+    ModerationNotice: defineAsyncComponent(() => import('components/moderation/ModerationNotice.vue'))
+  },
+  mixins: [moderation],
   props: {
     post: { type: Object, required: true },
-    styleType: { type: String, default: 'cards' }
+    styleType: { type: String, default: 'cards' },
+    moderationSurface: { type: String, default: 'feed' }
   },
   data () {
     return {
@@ -564,6 +587,17 @@ export default {
     }
   },
   computed: {
+    moderation () {
+      return this.moderationDecision({
+        author: this.post.author,
+        post: this.post,
+        surface: this.moderationSurface,
+        itemKey: this.post.author + '/' + this.post.permlink
+      })
+    },
+    moderationCollapsed () {
+      return this.moderation.display === 'collapse' || this.moderation.display === 'hide'
+    },
     postMeta () {
       return postMetadata(this.post)
     },

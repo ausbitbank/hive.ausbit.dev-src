@@ -15,9 +15,21 @@
       <q-btn flat dense round size="sm" icon="more_horiz" aria-label="Open on front end" :href="externalUrl" target="_blank" rel="noopener noreferrer" />
     </header>
 
-    <p v-if="preview" class="sfc-body" @click="$emit('open', post)">{{ preview }}</p>
+    <moderation-notice
+      v-if="moderation.primary && moderation.display !== 'show'"
+      :decision="moderation"
+      compact
+      :show-disclosure="moderationStore && moderationStore.shouldDisclose"
+      @dismiss-disclosure="moderationMarkDisclosure"
+      @show="moderationShowItem(moderation)"
+      @show-author="moderationShowAuthor(moderation)"
+      @hide-author="moderationHideAuthor(moderation)"
+      @ignore-voter="moderationIgnoreVoter(moderation)"
+    />
 
-    <short-form-media :items="media" :author="post.author" :linked="true" />
+    <p v-if="preview && !moderationCollapsed" class="sfc-body" @click="$emit('open', post)">{{ preview }}</p>
+
+    <short-form-media v-if="!moderationCollapsed" :items="media" :author="post.author" :linked="true" />
 
     <footer class="sfc-foot">
       <!-- The same control as blog posts: shows totals and your own vote, and
@@ -57,12 +69,20 @@ import { shortFormUrl, shortMedia, shortPreview } from 'src/services/shortForm'
 import ShortFormMedia from 'components/shortForm/ShortFormMedia.vue'
 import Vote from 'components/vote.vue'
 import Reblog from 'components/reblog.vue'
+import { defineAsyncComponent } from 'vue'
+import moderation from 'src/mixins/moderation'
 
 const DEFAULT_ACCENT = 'var(--c-link)'
 
 export default {
   name: 'ShortFormCard',
-  components: { ShortFormMedia, Vote, Reblog },
+  mixins: [moderation],
+  components: {
+    ShortFormMedia,
+    Vote,
+    Reblog,
+    ModerationNotice: defineAsyncComponent(() => import('components/moderation/ModerationNotice.vue'))
+  },
   props: {
     post: { type: Object, required: true },
     format: { type: Object, default: null },
@@ -70,6 +90,17 @@ export default {
   },
   emits: ['open', 'voted', 'reblog'],
   computed: {
+    moderation () {
+      return this.moderationDecision({
+        author: this.post.author,
+        post: this.post,
+        surface: 'feed',
+        itemKey: this.post.author + '/' + this.post.permlink
+      })
+    },
+    moderationCollapsed () {
+      return this.moderation.display === 'collapse' || this.moderation.display === 'hide'
+    },
     accentColor () {
       return (this.format && this.format.color) || DEFAULT_ACCENT
     },

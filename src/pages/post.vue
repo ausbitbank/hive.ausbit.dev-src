@@ -37,6 +37,17 @@
       </div>
 
       <profile-skin v-else :account="account" :author="author" context="post" :reputation="post && post.author_reputation">
+      <div v-if="postModeration.primary" class="post-moderation">
+        <moderation-notice
+          :decision="postModeration"
+          :show-disclosure="moderationStore && moderationStore.shouldDisclose"
+          @dismiss-disclosure="moderationMarkDisclosure"
+          @show="moderationShowItem(postModeration)"
+          @show-author="moderationShowAuthor(postModeration)"
+          @hide-author="moderationHideAuthor(postModeration)"
+          @ignore-voter="moderationIgnoreVoter(postModeration)"
+        />
+      </div>
       <div class="post-grid">
           <article class="post-article">
             <q-card flat bordered class="post-article-card">
@@ -344,6 +355,13 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: var(--space-4) var(--space-4) var(--space-6);
+}
+
+.post-moderation {
+  width: 100%;
+  max-width: 960px;
+  margin: var(--space-3) auto 0;
+  padding: 0 var(--space-3);
 }
 
 .post-grid {
@@ -1078,10 +1096,13 @@ import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { isValidTag } from 'src/utils/hiveTag'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
+import moderation from 'src/mixins/moderation'
 
 export default {
   name: 'postView',
+  mixins: [moderation],
   components: {
+    ModerationNotice: defineAsyncComponent(() => import('components/moderation/ModerationNotice.vue')),
     render,
     comments,
     vote,
@@ -1117,6 +1138,15 @@ export default {
     }
   },
   computed: {
+    postModeration () {
+      if (!this.post) return { display: 'show', primary: null, reasons: [], overrides: [] }
+      return this.moderationDecision({
+        author: this.post.author || this.author,
+        post: this.post,
+        surface: 'post',
+        itemKey: (this.post.author || this.author) + '/' + this.post.permlink
+      })
+    },
     account () {
       return this.$hiveStore.accounts[this.author]
     },

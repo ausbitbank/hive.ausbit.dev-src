@@ -7,7 +7,9 @@ import {
   moderationStorageKey,
   normalizeModerationPolicy,
   readModerationPolicy,
+  parseModerationExport,
   scopeFor,
+  serializeModerationExport,
   writeModerationPolicy
 } from '../../src/services/moderationSettings'
 
@@ -32,7 +34,15 @@ describe('moderation settings schema', () => {
       followedMuteListOverride: true,
       followedReputationOverride: false
     })
-    expect(policy.overrides).toEqual({ showAuthors: [], hideAuthors: [] })
+    expect(policy.overrides).toEqual({
+      showAuthors: [],
+      hideAuthors: [],
+      showItems: [],
+      hideItems: [],
+      ignoredVoters: []
+    })
+    expect(policy.custom.feed.mute).toBe('collapse')
+    expect(policy.lists.listsOverrideFollows).toBe(false)
   })
 
   it('normalizes unknown keys, enums and author lists', () => {
@@ -130,5 +140,70 @@ describe('moderation settings storage', () => {
     expect(clearModerationPolicy('alice', { storage })).toBe(true)
     expect(storage.getItem(moderationStorageKey('alice'))).toBeNull()
     expect(storage.getItem(moderationStorageKey('bob'))).not.toBeNull()
+  })
+})
+
+describe('moderation settings custom rules', () => {
+  it('normalizes custom display values and drops unknown signals', () => {
+    const policy = normalizeModerationPolicy({
+      preset: 'custom',
+      custom: {
+        feed: { mute: 'hide', listMute: 'nope', reputation: 'label', junk: 'collapse' },
+        unknown: { mute: 'hide' }
+      },
+      lists: { muteOwners: ['@Hive.Blog', 'hive.blog'], listsOverrideFollows: true },
+      overrides: {
+        showItems: ['alice/post', 'alice/post', ''],
+        hideItems: ['bob/post'],
+        ignoredVoters: ['@BadActor', 'badactor']
+      }
+    })
+    expect(policy.preset).toBe('custom')
+    expect(policy.custom.feed.mute).toBe('hide')
+    expect(policy.custom.feed.listMute).toBe('collapse')
+    expect(policy.custom.feed.reputation).toBe('label')
+    expect(policy.custom.feed.junk).toBeUndefined()
+    expect(policy.lists).toEqual({ muteOwners: ['hive.blog'], blacklistOwners: [], listsOverrideFollows: true })
+    expect(policy.overrides.showItems).toEqual(['alice/post'])
+    expect(policy.overrides.hideItems).toEqual(['bob/post'])
+    expect(policy.overrides.ignoredVoters).toEqual(['badactor'])
+  })
+
+  it('caps item and voter overrides', () => {
+    const items = Array.from({ length: 400 }, (_, index) => 'item-' + index)
+    const voters = Array.from({ length: 700 }, (_, index) => 'voter' + index)
+    const policy = normalizeModerationPolicy({
+      overrides: { showItems: items, hideItems: items, ignoredVoters: voters }
+    })
+    expect(policy.overrides.showItems).toHaveLength(300)
+    expect(policy.overrides.hideItems).toHaveLength(300)
+    expect(policy.overrides.ignoredVoters).toHaveLength(500)
+  })
+})
+
+describe('moderation settings export/import', () => {
+  it('round-trips a versioned envelope', () => {
+    const policy = defaultModerationPolicy()
+    policy.preset = 'strict'
+    policy.overrides.showAuthors = ['alice']
+    policy.custom.feed.mute = 'label'
+
+    const text = serializeModerationExport(policy)
+    const envelope = JSON.parse(text)
+    expect(envelope.type).toBe('hive-moderation-policy')
+    expect(envelope.version).toBe(MODERATION_VERSION)
+
+    const parsed = parseModerationExport(text)
+    expect(parsed.error).toBe('')
+    expect(parsed.policy.preset).toBe('strict')
+    expect(parsed.policy.overrides.showAuthors).toEqual(['alice'])
+    expect(parsed.policy.custom.feed.mute).toBe('label')
+  })
+
+  it('accepts a bare policy object and rejects foreign or future files', () => {
+    expect(parseModerationExport({ preset: 'open' }).policy.preset).toBe('open')
+    expect(parseModerationExport('{bad json').error).toContain('valid JSON')
+    expect(parseModerationExport({ type: 'hive-saved-searches', version: 1 }).error).toContain('not a')
+    expect(parseModerationExport({ type: 'hive-moderation-policy', version: 99, policy: {} }).error).toContain('newer')
   })
 })

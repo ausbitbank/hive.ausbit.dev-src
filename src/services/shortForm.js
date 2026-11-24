@@ -238,7 +238,6 @@ export function containerTimeline (discussion, containerKey, { limit = 40 } = {}
     )
   }
   const sorted = items
-    .filter(post => !post.stats?.gray && !post.stats?.hide)
     .sort((a, b) => Date.parse(b.created || '') - Date.parse(a.created || ''))
   return { container, items: limit ? sorted.slice(0, limit) : sorted }
 }

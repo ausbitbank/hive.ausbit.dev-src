@@ -66,7 +66,7 @@ describe('comment helpers', () => {
     expect(flattenDiscussion(map, 'poster/post', { sort: 'old' }).map(i => i.key)).toEqual(['a/one', 'b/two', 'c/three'])
   })
 
-  it('skips hidden comments and their subtrees unless asked to show them', () => {
+  it('includes hidden comments and their subtrees so the UI can collapse them', () => {
     const hidden = comment({ author: 'spam', permlink: 'hidden', stats: { gray: false, hide: true }, replies: ['kid/reply'] })
     const kid = comment({ author: 'kid', permlink: 'reply' })
     const visible = comment({ author: 'ok', permlink: 'visible' })
@@ -77,7 +77,7 @@ describe('comment helpers', () => {
       'ok/visible': visible
     }
 
-    expect(flattenDiscussion(map, 'poster/post').map(i => i.key)).toEqual(['ok/visible'])
+    expect(flattenDiscussion(map, 'poster/post').map(i => i.key)).toEqual(['spam/hidden', 'kid/reply', 'ok/visible'])
     expect(flattenDiscussion(map, 'poster/post', { showFiltered: true }).map(i => i.key)).toEqual(['spam/hidden', 'kid/reply', 'ok/visible'])
   })
 

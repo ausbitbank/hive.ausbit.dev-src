@@ -65,14 +65,14 @@ export function displayedReputation (value) {
   return numeric
 }
 
-function includesName (list, name) {
+export function includesName (list, name) {
   if (!list || !name) return false
   if (typeof list.has === 'function') return list.has(name)
   if (Array.isArray(list)) return list.some(item => normalizeName(item) === name)
   return false
 }
 
-function normalizeList (value) {
+export function normalizeList (value) {
   if (!value) return []
   const list = typeof value.values === 'function' ? [...value.values()] : value
   if (!Array.isArray(list)) return []
@@ -87,7 +87,7 @@ function normalizeList (value) {
   return out
 }
 
-function listHits (lists, author) {
+export function listHits (lists, author) {
   if (!Array.isArray(lists)) return []
   const owners = []
   for (const list of lists) {

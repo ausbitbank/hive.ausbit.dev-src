@@ -154,6 +154,7 @@
           :key="postKey(post)"
           :post="post"
           :style-type="styleType"
+          moderation-surface="community"
         />
       </div>
 

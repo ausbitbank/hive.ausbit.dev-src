@@ -1,8 +1,9 @@
 # W71 + W73 moderation implementation plan
 
 Date: 2026-11-24
-Status: **W71 implemented and locally verified** (2026-11-24); W73 Phases 1–3
-remain. This is still the pre-implementation brief for W73.
+Status: **W71 and W73 Phase 1 implemented** (2026-11-24); Phase 2–3 remain.
+See [`W73-moderation-policy.md`](W73-moderation-policy.md) for the Phase 1
+verification record.
 Covers: roadmap **W71** (skin safety), issue **#94** / roadmap **W73**
 Phases 1–3, and the small data spikes the issue asks for.
 

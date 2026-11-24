@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import * as contentModule from '../../src/services/moderationContent'
 import {
   decideSkin,
   displayedReputation,
@@ -263,5 +264,176 @@ describe('normalizeViewerContext', () => {
 
   it('defaults an unknown status to idle', () => {
     expect(normalizeViewerContext({ status: 'weird' }).status).toBe('idle')
+  })
+})
+
+describe('decideContent', () => {
+  const { decideContent, CONTENT_LAYER } = contentModule
+
+  function contentViewer (overrides = {}) {
+    return {
+      status: 'ready',
+      muted: [],
+      blacklisted: [],
+      following: [],
+      followedMuteLists: [],
+      followedBlacklistLists: [],
+      showAuthors: [],
+      hideAuthors: [],
+      showItems: [],
+      hideItems: [],
+      listErrors: 0,
+      ...overrides
+    }
+  }
+
+  function decide (overrides = {}) {
+    return decideContent({
+      surface: 'feed',
+      author: 'alice',
+      reputation: 60,
+      post: { author_reputation: 60, stats: {} },
+      viewer: contentViewer(),
+      preset: 'balanced',
+      ...overrides
+    })
+  }
+
+  it('collapses a directly muted author in Balanced', () => {
+    const decision = decide({ viewer: contentViewer({ muted: ['alice'] }) })
+    expect(decision.display).toBe('collapse')
+    expect(decision.visible).toBe(true)
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.PERSONAL_MUTE)
+  })
+
+  it('labels a direct mute in Open instead of hiding it', () => {
+    const decision = decide({ preset: 'open', viewer: contentViewer({ muted: ['alice'] }) })
+    expect(decision.display).toBe('label')
+  })
+
+  it('keeps a blacklist as a warning label, not a mute', () => {
+    const decision = decide({ viewer: contentViewer({ blacklisted: ['alice'] }) })
+    expect(decision.display).toBe('label')
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.PERSONAL_BLACKLIST)
+  })
+
+  it('shows a followed author on a subscribed mute list with a conflict', () => {
+    const decision = decide({
+      viewer: contentViewer({
+        following: ['alice'],
+        followedMuteLists: [{ owner: 'hive.blog', members: ['alice'] }]
+      })
+    })
+    expect(decision.display).toBe('show')
+    expect(decision.conflict).toEqual({ kind: 'follow-vs-mutelist', owners: ['hive.blog'] })
+  })
+
+  it('lets a list win when the viewer opts in', () => {
+    const decision = decide({
+      listsOverrideFollows: true,
+      viewer: contentViewer({
+        following: ['alice'],
+        followedMuteLists: [{ owner: 'hive.blog', members: ['alice'] }]
+      })
+    })
+    expect(decision.display).toBe('collapse')
+  })
+
+  it('never collapses a deliberate profile or post visit', () => {
+    for (const surface of ['profile', 'post']) {
+      const decision = decide({
+        surface,
+        viewer: contentViewer({ muted: ['alice'] }),
+        post: { author_reputation: -500, stats: { hide: true } }
+      })
+      expect(decision.display).toBe('label')
+    }
+  })
+
+  it('collapses rather than removes a comment', () => {
+    const decision = decide({
+      surface: 'comment',
+      viewer: contentViewer({ showAuthors: ['alice'], hideAuthors: ['alice'] })
+    })
+    expect(decision.display).toBe('collapse')
+  })
+
+  it('maps muted reasons to a specific layer', () => {
+    const reputation = decide({ post: { author_reputation: 60, stats: { muted_reasons: [3] } } })
+    expect(reputation.reasons.some(reason => reason.layer === CONTENT_LAYER.REPUTATION)).toBe(true)
+    expect(reputation.primary.label).toBe('Low reputation')
+
+    const community = decide({ post: { author_reputation: 60, stats: { muted_reasons: [0] } } })
+    expect(community.reasons.some(reason => reason.layer === CONTENT_LAYER.COMMUNITY_POST_MUTE)).toBe(true)
+  })
+
+  it('labels negative reputation but never hides on it alone', () => {
+    const balanced = decide({ reputation: -500, post: { author_reputation: -500, stats: {} } })
+    expect(balanced.display).toBe('collapse')
+    const open = decide({ preset: 'open', reputation: -500, post: { author_reputation: -500, stats: {} } })
+    expect(open.display).toBe('label')
+    const strict = decide({ preset: 'strict', reputation: -500, post: { author_reputation: -500, stats: {} } })
+    expect(strict.display).toBe('collapse')
+  })
+
+  it('labels downvotes and allows equipment-specific evidence later', () => {
+    const decision = decide({ post: { author_reputation: 60, net_rshares: -10, stats: {} } })
+    expect(decision.display).toBe('label')
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.overrides).toContain('ignore-voter')
+  })
+
+  it('collapses NSFW in Balanced and labels it in Follow-only', () => {
+    expect(decide({ post: { author_reputation: 60, nsfw: true, stats: {} } }).display).toBe('collapse')
+    expect(decide({
+      preset: 'follow-only',
+      post: { author_reputation: 60, nsfw: true, stats: {} },
+      viewer: contentViewer({ following: ['alice'] })
+    }).display).toBe('label')
+  })
+
+  it('collapses non-followed content in Follow-only but not on a deliberate visit', () => {
+    expect(decide({ preset: 'follow-only' }).display).toBe('collapse')
+    expect(decide({ preset: 'follow-only', surface: 'post' }).display).toBe('show')
+  })
+
+  it('honours item and author overrides', () => {
+    const key = 'alice/a-long-permlink-that-exceeds-a-hive-username'
+    const shown = decide({
+      itemKey: key,
+      viewer: contentViewer({ muted: ['alice'], showItems: [key] })
+    })
+    expect(shown.display).toBe('show')
+    const hidden = decide({
+      itemKey: key,
+      viewer: contentViewer({ showItems: [key], hideItems: [key] })
+    })
+    expect(hidden.display).toBe('hide')
+  })
+
+  it('uses custom per-surface rules', () => {
+    const custom = JSON.parse(JSON.stringify(contentModule.DEFAULT_CONTENT_CUSTOM))
+    custom.feed.mute = 'label'
+    const decision = decide({
+      preset: 'custom',
+      custom,
+      viewer: contentViewer({ muted: ['alice'] })
+    })
+    expect(decision.display).toBe('label')
+  })
+
+  it('fails open with an explanation when the viewer context is unavailable', () => {
+    const decision = decide({
+      viewer: contentViewer({ status: 'error', muted: ['alice'] })
+    })
+    expect(decision.unknownContext).toBe(true)
+    expect(decision.reasons.some(reason => reason.layer === CONTENT_LAYER.CONTEXT_UNAVAILABLE)).toBe(true)
+    expect(decision.display).toBe('collapse')
+  })
+
+  it('does not mutate the viewer input', () => {
+    const viewerValue = contentViewer({ muted: ['alice'], following: ['bob'] })
+    decide({ viewer: viewerValue })
+    expect(viewerValue).toEqual(contentViewer({ muted: ['alice'], following: ['bob'] }))
   })
 })

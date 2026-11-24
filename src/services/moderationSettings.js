@@ -8,17 +8,31 @@
 // W71 only needs the skin rules and per-author skin overrides.
 
 import { MODERATION_PRESETS, normalizeName } from './moderationPolicy'
+import {
+  CONTENT_CUSTOM_SURFACES,
+  CONTENT_DISPLAY,
+  CONTENT_SIGNALS,
+  DEFAULT_CONTENT_CUSTOM
+} from './moderationContent'
 
 export const MODERATION_VERSION = 1
 export const MODERATION_STORAGE_PREFIX = 'hive:moderation:v1:'
 export const GUEST_SCOPE = 'guest'
 export const MAX_AUTHOR_OVERRIDES = 200
+export const MAX_ITEM_OVERRIDES = 300
+export const MAX_IGNORED_VOTERS = 500
 
 export function defaultModerationPolicy () {
   return {
     version: MODERATION_VERSION,
     preset: 'balanced',
     disclosureSeen: false,
+    custom: JSON.parse(JSON.stringify(DEFAULT_CONTENT_CUSTOM)),
+    lists: {
+      muteOwners: [],
+      blacklistOwners: [],
+      listsOverrideFollows: false
+    },
     skins: {
       blockMuted: true,
       blockNegativeReputation: true,
@@ -27,7 +41,10 @@ export function defaultModerationPolicy () {
     },
     overrides: {
       showAuthors: [],
-      hideAuthors: []
+      hideAuthors: [],
+      showItems: [],
+      hideItems: [],
+      ignoredVoters: []
     }
   }
 }
@@ -68,6 +85,33 @@ function booleanOr (value, fallback) {
   return typeof value === 'boolean' ? value : fallback
 }
 
+function normalizeItems (value, cap = MAX_ITEM_OVERRIDES) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const out = []
+  for (const item of value) {
+    const key = typeof item === 'string' ? item.trim().slice(0, 200) : ''
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(key)
+    if (out.length >= cap) break
+  }
+  return out
+}
+
+function normalizeCustom (value) {
+  const result = JSON.parse(JSON.stringify(DEFAULT_CONTENT_CUSTOM))
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return result
+  for (const surface of CONTENT_CUSTOM_SURFACES) {
+    const rules = value[surface]
+    if (!rules || typeof rules !== 'object' || Array.isArray(rules)) continue
+    for (const signal of CONTENT_SIGNALS) {
+      if (CONTENT_DISPLAY.includes(rules[signal])) result[surface][signal] = rules[signal]
+    }
+  }
+  return result
+}
+
 /**
  * Turn any stored/imported value into a safe policy document. Unknown keys are
  * dropped; a future schema version falls back to defaults rather than guessing.
@@ -85,11 +129,20 @@ export function normalizeModerationPolicy (value) {
   const overrides = value.overrides && typeof value.overrides === 'object' && !Array.isArray(value.overrides)
     ? value.overrides
     : {}
+  const lists = value.lists && typeof value.lists === 'object' && !Array.isArray(value.lists)
+    ? value.lists
+    : {}
 
   return {
     version: MODERATION_VERSION,
     preset: MODERATION_PRESETS.includes(value.preset) ? value.preset : defaults.preset,
     disclosureSeen: value.disclosureSeen === true,
+    custom: normalizeCustom(value.custom),
+    lists: {
+      muteOwners: normalizeAuthorList(lists.muteOwners),
+      blacklistOwners: normalizeAuthorList(lists.blacklistOwners),
+      listsOverrideFollows: lists.listsOverrideFollows === true
+    },
     skins: {
       blockMuted: booleanOr(skins.blockMuted, defaults.skins.blockMuted),
       blockNegativeReputation: booleanOr(skins.blockNegativeReputation, defaults.skins.blockNegativeReputation),
@@ -105,7 +158,10 @@ export function normalizeModerationPolicy (value) {
     },
     overrides: {
       showAuthors: normalizeAuthorList(overrides.showAuthors),
-      hideAuthors: normalizeAuthorList(overrides.hideAuthors)
+      hideAuthors: normalizeAuthorList(overrides.hideAuthors),
+      showItems: normalizeItems(overrides.showItems),
+      hideItems: normalizeItems(overrides.hideItems),
+      ignoredVoters: normalizeAuthorList(overrides.ignoredVoters, MAX_IGNORED_VOTERS)
     }
   }
 }
@@ -142,4 +198,43 @@ export function clearModerationPolicy (scope, { storage = null } = {}) {
   } catch {
     return false
   }
+}
+
+export const MODERATION_EXPORT_TYPE = 'hive-moderation-policy'
+
+export function serializeModerationExport (policy) {
+  return JSON.stringify({
+    app: 'hive.ausbit.dev',
+    type: MODERATION_EXPORT_TYPE,
+    version: MODERATION_VERSION,
+    exportedAt: new Date().toISOString(),
+    policy: normalizeModerationPolicy(policy)
+  }, null, 2)
+}
+
+/**
+ * Parse an exported policy. Accepts the envelope, a bare policy object or a
+ * JSON string. Never throws; returns a normal policy or a clear error.
+ */
+export function parseModerationExport (input) {
+  let value = input
+  if (typeof input === 'string') {
+    try {
+      value = JSON.parse(input)
+    } catch {
+      return { policy: null, error: 'That file is not valid JSON.' }
+    }
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { policy: null, error: 'That file does not contain a moderation policy.' }
+  }
+  if (value.type && value.type !== MODERATION_EXPORT_TYPE) {
+    return { policy: null, error: 'That file is not a hive.ausbit.dev moderation policy.' }
+  }
+  const version = Number(value.version)
+  if (Number.isFinite(version) && version > MODERATION_VERSION) {
+    return { policy: null, error: 'That policy was made by a newer version of this site.' }
+  }
+  const payload = value.policy && typeof value.policy === 'object' ? value.policy : value
+  return { policy: normalizeModerationPolicy(payload), error: '' }
 }

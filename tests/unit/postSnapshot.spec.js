@@ -7,7 +7,9 @@ const POST = {
   title: 'Hello',
   body: 'word '.repeat(600),
   json_metadata: { image: ['https://images.example/a.png'], tags: ['hive'], secret: 'drop' },
-  stats: { total_votes: 4, hide: true },
+  stats: { total_votes: 4, hide: true, gray: true, flag_weight: 3, muted_reasons: [0] },
+  author_role: 'member',
+  blacklists: ['watchlist'],
   payout: '1.000 HBD'
 }
 
@@ -17,7 +19,17 @@ describe('post snapshots', () => {
     expect(post.author).toBe('alice')
     expect(post.body.length).toBeLessThanOrEqual(100)
     expect(post.json_metadata).toEqual({ image: ['https://images.example/a.png'], tags: ['hive'] })
-    expect(post.stats).toEqual({ total_votes: 4 })
+    expect(post.stats).toEqual({
+      total_votes: 4,
+      hide: true,
+      hidden: false,
+      gray: true,
+      flag_weight: 3,
+      is_pinned: false,
+      muted_reasons: [0]
+    })
+    expect(post.author_role).toBe('member')
+    expect(post.blacklists).toEqual(['watchlist'])
     expect(post.payout).toBe(0)
   })
 

@@ -52,6 +52,15 @@
             dense
             no-caps
             icon="shield"
+            label="Moderation"
+            to="/settings/moderation"
+            v-close-popup
+          />
+          <q-btn
+            flat
+            dense
+            no-caps
+            icon="palette"
             label="Skin safety"
             to="/appearance#skin-safety"
             v-close-popup

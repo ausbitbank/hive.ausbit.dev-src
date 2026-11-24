@@ -28,9 +28,21 @@
       <q-badge v-else-if="comment.stats && comment.stats.gray" color="grey-9" class="comment__flag">gray</q-badge>
     </header>
 
-    <render :input="comment.body" class="postbody comment__body" />
+    <moderation-notice
+      v-if="moderation.primary && moderation.display !== 'show'"
+      :decision="moderation"
+      compact
+      :show-disclosure="moderationStore && moderationStore.shouldDisclose"
+      @dismiss-disclosure="moderationMarkDisclosure"
+      @show="moderationShowItem(moderation)"
+      @show-author="moderationShowAuthor(moderation)"
+      @hide-author="moderationHideAuthor(moderation)"
+      @ignore-voter="moderationIgnoreVoter(moderation)"
+    />
 
-    <post-footer :post="comment" compact class="comment__footer" @posted="$emit('posted')" />
+    <render v-if="!collapsed" :input="comment.body" class="postbody comment__body" />
+
+    <post-footer v-if="!collapsed" :post="comment" compact class="comment__footer" @posted="$emit('posted')" />
   </article>
 </template>
 
@@ -40,19 +52,35 @@ import render from 'components/render.vue'
 import moment from 'src/utils/time'
 import { formatReputation } from 'src/services/comments'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import moderation from 'src/mixins/moderation'
 
 export default {
   name: 'comment',
   emits: ['posted'],
+  mixins: [moderation],
   components: {
     render,
+    ModerationNotice: defineAsyncComponent(() => import('components/moderation/ModerationNotice.vue')),
     postFooter: defineAsyncComponent(() => import('components/postFooter.vue'))
   },
   props: {
     comment: { type: Object, required: true },
-    depth: { type: Number, default: 1 }
+    depth: { type: Number, default: 1 },
+    forceShow: { type: Boolean, default: false }
   },
   computed: {
+    moderation () {
+      return this.moderationDecision({
+        author: this.comment.author,
+        post: this.comment,
+        surface: 'comment',
+        itemKey: this.comment.author + '/' + this.comment.permlink
+      })
+    },
+    collapsed () {
+      if (this.forceShow) return false
+      return this.moderation.display === 'collapse' || this.moderation.display === 'hide'
+    },
     reputation () {
       return formatReputation(this.comment.author_reputation)
     },

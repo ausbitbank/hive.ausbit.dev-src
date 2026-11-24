@@ -168,6 +168,7 @@
           :key="postKey(post)"
           :post="post"
           :style-type="styleType"
+          :moderation-surface="moderationSurface"
         />
       </div>
 
@@ -416,7 +417,8 @@ export default {
     Ppage: Number,
     showToolbar: Boolean,
     showTag: String,
-    showAccount: String
+    showAccount: String,
+    moderationSurface: { type: String, default: 'feed' }
   },
   components: {
     postPreview: defineAsyncComponent(() => import('components/postPreview.vue')),

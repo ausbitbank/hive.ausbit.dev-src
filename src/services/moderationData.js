@@ -92,6 +92,7 @@ function emptyContext (status = 'ready') {
     followedMuteOwners: [],
     followedBlacklistOwners: [],
     followedMuteLists: [],
+    followedBlacklistLists: [],
     listErrors: 0,
     loadedAt: 0
   }
@@ -147,6 +148,24 @@ export async function fetchViewerModerationContext (account, {
     })
   })
 
+  const blacklistOwners = followBlacklist.map(entry => entry.name).filter(Boolean)
+  const resolvableBlacklists = blacklistOwners.slice(0, Math.max(0, Number(maxFollowedLists) || 0))
+  const blacklistResults = await Promise.allSettled(
+    resolvableBlacklists.map(owner => fetchModerationListEntries(owner, 'blacklisted', { force }))
+  )
+  const followedBlacklistLists = []
+  listErrors += Math.max(0, blacklistOwners.length - resolvableBlacklists.length)
+  blacklistResults.forEach((result, index) => {
+    if (result.status !== 'fulfilled') {
+      listErrors += 1
+      return
+    }
+    followedBlacklistLists.push({
+      owner: resolvableBlacklists[index],
+      members: result.value.map(entry => entry.name)
+    })
+  })
+
   return {
     status: 'ready',
     muted: mutedEntries.map(entry => entry.name),
@@ -155,6 +174,7 @@ export async function fetchViewerModerationContext (account, {
     followedMuteOwners: followMuted,
     followedBlacklistOwners: followBlacklist,
     followedMuteLists,
+    followedBlacklistLists,
     listErrors,
     loadedAt: Date.now()
   }

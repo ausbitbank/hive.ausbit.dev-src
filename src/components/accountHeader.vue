@@ -278,6 +278,8 @@ import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import { vestToHive } from 'src/services/wallet'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { followOperation } from 'src/services/followOps'
+import { rememberFollowing } from 'src/services/chainData'
 import { previewImageUrl } from 'src/utils/postPreview'
 export default {
   name: 'accountHeader',
@@ -402,28 +404,30 @@ export default {
         })
         .catch(() => {})
     },
+    queueFollow (who, changes) {
+      this.$hiveStore.addToQueue(followOperation(this.loggedInUser, who, this.relationship || {}, changes))
+    },
     followUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
-      this.relationship.follows = true
+      this.queueFollow(who, { blog: true })
+      this.relationship = { ...(this.relationship || {}), follows: true }
+      rememberFollowing(this.loggedInUser, who, true)
       this.syncModeration(store => store.noteFollowChange(who, true))
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unfollowUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
-      this.relationship.follows = false
+      this.queueFollow(who, { blog: false })
+      this.relationship = { ...(this.relationship || {}), follows: false }
+      rememberFollowing(this.loggedInUser, who, false)
       this.syncModeration(store => store.noteFollowChange(who, false))
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     ignoreUser (who) {
-      var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
-      this.relationship.ignores = true
+      this.queueFollow(who, { ignore: true })
+      this.relationship = { ...(this.relationship || {}), ignores: true }
       this.syncModeration(store => store.noteMuteChange(who, true))
-      this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unignoreUser (who) {
-      this.relationship.ignores = false
+      this.queueFollow(who, { ignore: false })
+      this.relationship = { ...(this.relationship || {}), ignores: false }
       this.syncModeration(store => store.noteMuteChange(who, false))
-      this.unfollowUser(who)
     }
   },
   computed: {

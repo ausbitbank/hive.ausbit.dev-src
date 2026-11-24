@@ -38,6 +38,7 @@ Wallet:
 | `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast, profile-skin visibility, calm effects, status/extras visibility and adopted palettes |
 | `/themes` | Theme wall with built-in themes and published profile skins, filters for mode/tag/credential and recent/featured views, remixing and local palette adoption |
 | `/settings/skin` | Skin Studio: palette, light/dark variants, status line, Hive Circle, badges, atmosphere, visual language, latest/pinned post, theme codes and publishing with posting authority |
+| `/settings/moderation` | Local moderation policy: Open/Balanced/Strict/Follow-only/Custom presets, per-surface rules, mute/blacklist list context, overrides and versioned JSON export/import |
 | `/compose` | Local-first creator workflow: autosaved drafts, markdown editor with preview and tables, community/tags, cross-post attribution, beneficiaries, publish checklist and JSON backup |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals and witnesses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
 | `/browse`, `/trending`, `/created`, `/hot` | Post discovery with cards/list/table layouts and filters |

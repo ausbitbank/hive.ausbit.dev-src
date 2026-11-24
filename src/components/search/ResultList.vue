@@ -19,7 +19,14 @@
         </span>
         <span class="result-row__body">
           <span class="result-row__title">{{ row.title }}</span>
-          <span v-if="row.description" class="result-row__description">{{ row.description }}</span>
+          <span
+            v-if="row.description && row.moderation?.display !== 'collapse' && row.moderation?.display !== 'hide'"
+            class="result-row__description"
+          >{{ row.description }}</span>
+          <span v-if="row.moderation?.primary" class="result-row__moderation">
+            <q-icon name="shield" size="11px" aria-hidden="true" />
+            {{ row.moderation.primary.label }}
+          </span>
         </span>
         <span v-if="row.badge" class="result-row__badge">{{ row.badge }}</span>
         <q-icon name="arrow_forward" size="16px" class="result-row__arrow" aria-hidden="true" />
@@ -104,6 +111,15 @@
   font-size: 0.73rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+.result-row__moderation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: var(--c-warning);
+  font-size: 0.68rem;
+  font-weight: 600;
 }
 
 .result-row__badge {

@@ -101,20 +101,20 @@ describe('detectShortForm', () => {
 describe('containerTimeline', () => {
   const root = 'peak.snaps/snap-container-1'
   const discussion = {
-    [root]: { author: 'peak.snaps', permlink: 'snap-container-1', depth: 0, replies: ['alice/older', 'bob/newer'] },
+    [root]: { author: 'peak.snaps', permlink: 'snap-container-1', depth: 0, replies: ['alice/older', 'bob/newer', 'carol/hidden'] },
     'alice/older': post({ author: 'alice', permlink: 'older', depth: 1, created: '2026-01-01T00:00:00' }),
     'bob/newer': post({ author: 'bob', permlink: 'newer', depth: 1, created: '2026-01-02T00:00:00' }),
     'carol/hidden': post({ author: 'carol', permlink: 'hidden', depth: 1, stats: { gray: true } })
   }
 
-  it('returns direct comments newest first and drops hidden ones', () => {
+  it('returns direct comments newest first, including ones the UI will collapse', () => {
     const { container, items } = containerTimeline(discussion, root)
     expect(container.author).toBe('peak.snaps')
-    expect(items.map(item => item.permlink)).toEqual(['newer', 'older'])
+    expect(items.map(item => item.permlink)).toEqual(['newer', 'older', 'hidden'])
   })
 
   it('caps the timeline at the requested limit', () => {
-    expect(containerTimeline(discussion, root, { limit: 1 }).items).toHaveLength(1)
+    expect(containerTimeline(discussion, root, { limit: 2 }).items).toHaveLength(2)
   })
 
   it('falls back to depth when the root is absent', () => {

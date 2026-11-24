@@ -67,7 +67,8 @@ async function mockChain (page, {
   muted = [],
   followMuted = [],
   followedMuteMembers = {},
-  following = []
+  following = [],
+  rankedPosts = null
 } = {}) {
   await page.route('https://images.hive.blog/**', route => route.fulfill({
     status: 200,
@@ -79,6 +80,14 @@ async function mockChain (page, {
     await page.route(host + '/**', async route => {
       const payload = route.request().postDataJSON?.() || {}
       const params = payload.params || {}
+
+      if (payload.method === 'bridge.get_ranked_posts' && rankedPosts) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: rankedPosts })
+        })
+      }
 
       if (payload.method === 'condenser_api.get_following') {
         const observer = Array.isArray(params) ? params[0] : params.account
@@ -242,4 +251,63 @@ test('theme wall marks a blocked skin and can show it', async ({ page }) => {
   await card.getByRole('button', { name: 'Show skin' }).click()
   await expect(page.locator('.wall-card--blocked')).toHaveCount(0)
   await expect(page.locator('.wall-card__swatches').first()).toBeVisible()
+})
+
+
+test('moderation settings page switches presets and persists', async ({ page }) => {
+  await page.goto('/settings/moderation')
+  await waitForApp(page)
+  await expect(page.getByRole('heading', { level: 1, name: 'Moderation' })).toBeVisible()
+  await page.locator('.mod-preset').filter({ hasText: 'Strict' }).click()
+  await expect(page.locator('.mod-preset').filter({ hasText: 'Strict' })).toHaveAttribute('aria-pressed', 'true')
+
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('hive:moderation:v1:guest') || '{}'))
+  expect(stored.preset).toBe('strict')
+
+  await page.reload()
+  await waitForApp(page)
+  await expect(page.locator('.mod-preset').filter({ hasText: 'Strict' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('a negative-reputation feed card collapses with an explanation and can be shown', async ({ page }) => {
+  test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
+  const post = {
+    author: 'alice',
+    permlink: 'moderated-post',
+    title: 'A moderated post',
+    body: 'This body should be collapsed until the viewer chooses to show it.',
+    created: '2026-11-24T00:00:00',
+    category: 'hive',
+    community: 'hive-1',
+    community_title: 'Hive',
+    children: 0,
+    net_votes: 1,
+    author_reputation: -500,
+    payout: 0,
+    pending_payout_value: '0.000 HBD',
+    total_payout_value: '0.000 HBD',
+    curator_payout_value: '0.000 HBD',
+    max_accepted_payout: '1000000.000 HBD',
+    percent_hbd: 10000,
+    json_metadata: { tags: ['hive'] },
+    stats: {},
+    active_votes: [],
+    reblogged_by: []
+  }
+  await mockChain(page, { rankedPosts: [post] })
+
+  await page.goto('/created')
+  await waitForApp(page)
+  const card = page.locator('.post-card').first()
+  await expect(card).toBeVisible({ timeout: 20000 })
+  await expect(card.locator('.mod-notice')).toContainText('Negative reputation')
+  await expect(card.locator('.post-card__summary')).toHaveCount(0)
+
+  await card.getByRole('button', { name: 'Show anyway' }).click()
+  await expect(card.locator('.mod-notice')).toHaveCount(0)
+  await expect(card.locator('.post-card__summary')).toBeVisible()
+
+  await page.reload()
+  await waitForApp(page)
+  await expect(page.locator('.post-card').first().locator('.mod-notice')).toHaveCount(0)
 })

@@ -67,6 +67,7 @@ const routes = [
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: 'appearance', name: 'appearance', component: () => import('pages/appearance.vue') },
       { path: 'settings/skin', name: 'skin-studio', component: () => import('pages/skinStudio.vue') },
+      { path: 'settings/moderation', name: 'moderation', component: () => import('pages/moderation.vue') },
       { path: 'themes', name: 'theme-wall', component: () => import('pages/themeWall.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
       { path: 'communities', name: 'communities', component: () => import('pages/communityIndex.vue') },
