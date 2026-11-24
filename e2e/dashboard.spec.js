@@ -13,7 +13,10 @@ async function readDashboard (page, key) {
 }
 
 async function openEditor (page) {
-  await page.getByRole('button', { name: 'Customise', exact: true }).click()
+  // The button is replaced by the editor bar as soon as the handler runs.
+  // Obscura's actionability loop can see that replacement as a detached node
+  // and retry a button that no longer exists, so dispatch the click directly.
+  await page.getByRole('button', { name: 'Customise', exact: true }).dispatchEvent('click')
   await expect(page.getByRole('region', { name: 'Dashboard editing' })).toBeVisible()
 }
 
@@ -392,6 +395,7 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
       'notifications',
       'network',
       'hbd',
+      'portfolioTrend',
       'draftsQueue',
       'followerGrowth'
     ])
@@ -452,7 +456,9 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
 
     const actions = page.locator('[data-widget-type="walletActions"]')
     await actions.scrollIntoViewIfNeeded()
-    await expect(actions).toContainText('Power down')
+    // Live account state changes: the card is either listing pending actions
+    // or explicitly saying it is all clear. Both prove it loaded real data.
+    await expect(actions).toContainText(/Power down|All clear/)
     await expect(actions).not.toContainText('needs an account')
 
     const creator = page.locator('[data-widget-type="creatorStats"]')
@@ -507,7 +513,18 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
   test('offers the phase-3 widgets in the drawer', async ({ page }) => {
     await openEditor(page)
     await page.getByRole('button', { name: 'Add widget' }).click()
-    for (const label of ['Magi network', 'Account watchlist', 'Price alert', 'Follower growth']) {
+    for (const label of [
+      'Magi network',
+      'Account watchlist',
+      'Price alert',
+      'Follower growth',
+      'Portfolio trend',
+      'Community growth',
+      'Lightning balance',
+      'Accountability view',
+      'Account safety',
+      'Hive news digest'
+    ]) {
       await expect(page.getByRole('button', { name: 'Add ' + label })).toBeVisible()
     }
     await page.getByRole('button', { name: 'Done' }).click()
@@ -532,6 +549,65 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
     await alert.scrollIntoViewIfNeeded()
     await expect(alert).toContainText('Price alert')
     await expect(alert).toContainText('No target set')
+  })
+
+  test('shows an honest guest state for the phase-3 action and context widgets', async ({ page }) => {
+    await openEditor(page)
+    await addWidget(page, 'Portfolio trend')
+    await addWidget(page, 'Accountability view')
+    await addWidget(page, 'Account safety')
+    await addWidget(page, 'Lightning balance')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const guests = [
+      ['portfolioTrend', 'Portfolio trend'],
+      ['keRatio', 'Accountability view'],
+      ['accountSafety', 'Account safety'],
+      ['keepsats', 'Lightning balance']
+    ]
+    for (const [type, label] of guests) {
+      const card = page.locator('[data-widget-type="' + type + '"]')
+      await card.scrollIntoViewIfNeeded()
+      await expect(card).toContainText(label + ' needs an account')
+    }
+  })
+
+  test('renders the public phase-3 discovery widgets after save', async ({ page }) => {
+    await openEditor(page)
+    await addWidget(page, 'Hive news digest')
+    await addWidget(page, 'Community growth')
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const news = page.locator('[data-widget-type="newsDigest"]')
+    await news.scrollIntoViewIfNeeded()
+    await expect(news).toContainText('Hive news')
+
+    const growth = page.locator('[data-widget-type="communityGrowth"]')
+    await growth.scrollIntoViewIfNeeded()
+    await expect(growth).toContainText('Choose a community in widget settings')
+  })
+
+  test('persists the wallet-actions signing opt-in across a reload', async ({ page }) => {
+    await loginAs(page)
+    await page.goto('/')
+    await waitForApp(page)
+    const notNow = page.getByRole('button', { name: 'Not now' })
+    if (await notNow.isVisible().catch(() => false)) await notNow.click()
+
+    await openEditor(page)
+    await addWidget(page, 'Wallet actions')
+    const card = page.locator('[data-widget-type="walletActions"]')
+    await card.getByRole('button', { name: /^Options for Wallet actions/ }).click()
+    await page.getByText('Configure', { exact: true }).click()
+    const dialog = page.locator('.dw-settings')
+    await expect(dialog.getByText('Enable claim and cancel buttons')).toBeVisible()
+    await dialog.getByText('Enable claim and cancel buttons').click()
+    await page.getByRole('button', { name: 'Apply' }).click()
+    await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
+
+    const stored = await readDashboard(page, ACCOUNT_KEY)
+    const widget = stored.widgets.find(entry => entry.type === 'walletActions')
+    expect(widget.settings.enableActions).toBe(true)
   })
 
   test('renders follower growth for a signed-in account', async ({ page }) => {
