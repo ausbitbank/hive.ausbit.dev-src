@@ -1,7 +1,7 @@
 # W67b — Sharing and viewer control
 
 Date: 2026-11-23
-Status: implemented locally
+Status: implemented, deployed and live-smoked
 
 ## Scope
 
@@ -65,3 +65,39 @@ report action.
 - Axe at 1440px and 390px — all 23 routes, including `/appearance`, `/themes`
   and `/settings/skin`. One full run reported a transient `/browse` violation;
   the route passed immediately on a focused re-run.
+
+## Final gate and production smoke (2026-11-24)
+
+- `bun run test` — 162 files, 1,416 tests passed on current master.
+- `bunx playwright test e2e/themes.spec.js e2e/badges.spec.js e2e/theme-share.spec.js --project=chromium`
+  — 8 passed.
+- `bunx playwright test e2e/a11y.spec.js --project=chromium -g "axe clean: (/appearance|/themes|/settings/skin|/@ausbitbank$)"`
+  — 4 passed, both widths per route.
+- Deployed with the 2026-11-24 release; backup
+  `hive.ausbit.dev-20261124T094544Z.tar.gz`, production `index.html` hash
+  `07ccb17a…1f7571`.
+- Production origin smoke (the deployed origin over an SSH tunnel; Cloudflare
+  challenges direct automated profile requests):
+  - `@ausbitbank` loaded its published skin: “Skin by @ausbitbank”, a halftone
+    atmosphere and five selected badge chips (PeakD and HiveBuzz). No sticker
+    tray or ticker was present.
+  - “Hide all skins” removed the skin scope; clearing the local appearance
+    preference restored it on reload.
+  - `/themes` showed 10 built-in cards and the Built-in/Following/Recent/Featured
+    tabs; searching “hive” narrowed the wall to 3 cards.
+  - `/appearance` exposed the status and shelf-extras controls; toggling the
+    status preference persisted.
+  - `/settings/skin` rendered the Skin Studio as a guest.
+  - No page errors.
+
+## Deliberate simplifications
+
+- PeakD membership is confirmed with the chain-native follow relationship for
+  the six selected badge accounts instead of a Worker proxy; the Studio
+  suggestion scan paginates the author's followers.
+- The Studio lists earned badges only. Unearned HiveBuzz catalog entries are not
+  shown because they cannot be selected.
+- Named skin drafts and skin version history are not implemented; the Studio
+  keeps the active draft and a remix snapshot. This is the only section 7 item
+  not shipped.
+- “Used by people you follow” is not shown; the Following tab is the signal.

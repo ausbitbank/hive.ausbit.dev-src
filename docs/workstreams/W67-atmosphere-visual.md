@@ -1,7 +1,7 @@
 # W67 — Atmosphere and visual language
 
 Date: 2026-11-23
-Status: implemented locally
+Status: implemented, deployed and live-smoked
 
 ## Scope
 

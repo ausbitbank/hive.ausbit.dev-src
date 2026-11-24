@@ -1,7 +1,7 @@
 # W65 — Profile identity cleanup
 
 Date: 2026-11-23
-Status: implemented locally
+Status: implemented, deployed and live-smoked
 
 ## Scope
 

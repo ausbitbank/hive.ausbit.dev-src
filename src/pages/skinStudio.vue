@@ -1393,7 +1393,7 @@ export default {
   mounted () {
     setPageMeta({
       title: 'Skin Studio — design your Hive profile skin',
-      description: 'Design a palette, backdrop, type, avatar frame and ticker for your Hive profile, then publish it with posting authority.',
+      description: 'Design a palette, backdrop, type, avatar frame, status line and profile shelf for your Hive profile, then publish it with posting authority.',
       url: '/settings/skin'
     })
     this.loadAccount()
