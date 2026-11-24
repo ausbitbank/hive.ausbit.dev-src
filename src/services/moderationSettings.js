@@ -202,14 +202,22 @@ export function clearModerationPolicy (scope, { storage = null } = {}) {
 
 export const MODERATION_EXPORT_TYPE = 'hive-moderation-policy'
 
-export function serializeModerationExport (policy) {
-  return JSON.stringify({
+export function serializeModerationExport (policy, { subscriptions = null } = {}) {
+  const normalized = normalizeModerationPolicy(policy)
+  const exported = {
     app: 'hive.ausbit.dev',
     type: MODERATION_EXPORT_TYPE,
     version: MODERATION_VERSION,
     exportedAt: new Date().toISOString(),
-    policy: normalizeModerationPolicy(policy)
-  }, null, 2)
+    policy: normalized
+  }
+  if (subscriptions && typeof subscriptions === 'object') {
+    exported.subscriptions = {
+      muteOwners: normalizeAuthorList(subscriptions.muteOwners),
+      blacklistOwners: normalizeAuthorList(subscriptions.blacklistOwners)
+    }
+  }
+  return JSON.stringify(exported, null, 2)
 }
 
 /**
@@ -236,5 +244,15 @@ export function parseModerationExport (input) {
     return { policy: null, error: 'That policy was made by a newer version of this site.' }
   }
   const payload = value.policy && typeof value.policy === 'object' ? value.policy : value
-  return { policy: normalizeModerationPolicy(payload), error: '' }
+  const policy = normalizeModerationPolicy(payload)
+  const subscriptions = value.subscriptions && typeof value.subscriptions === 'object'
+    ? {
+        muteOwners: normalizeAuthorList(value.subscriptions.muteOwners || policy.lists.muteOwners),
+        blacklistOwners: normalizeAuthorList(value.subscriptions.blacklistOwners || policy.lists.blacklistOwners)
+      }
+    : {
+        muteOwners: policy.lists.muteOwners,
+        blacklistOwners: policy.lists.blacklistOwners
+      }
+  return { policy, subscriptions, error: '' }
 }

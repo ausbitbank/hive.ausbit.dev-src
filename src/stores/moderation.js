@@ -360,6 +360,44 @@ export const useModerationStore = defineStore('moderation', {
       return true
     },
 
+    noteListSubscription (owner, type = 'mute', subscribed = true) {
+      const name = normalizeName(owner)
+      if (!name) return false
+      const blacklist = type === 'blacklist'
+      const contextKey = blacklist ? 'followedBlacklistOwners' : 'followedMuteOwners'
+      const membersKey = blacklist ? 'followedBlacklistLists' : 'followedMuteLists'
+      const policyKey = blacklist ? 'blacklistOwners' : 'muteOwners'
+      const entries = Array.isArray(this.context[contextKey]) ? this.context[contextKey] : []
+      const lists = Array.isArray(this.context[membersKey]) ? this.context[membersKey] : []
+      let nextEntries
+      let nextLists
+      if (subscribed) {
+        nextEntries = entries.some(item => normalizeName(item?.name || item) === name)
+          ? entries
+          : [...entries, { name, description: '' }]
+        nextLists = lists.some(item => normalizeName(item?.owner) === name)
+          ? lists
+          : [...lists, { owner: name, members: [] }]
+      } else {
+        nextEntries = entries.filter(item => normalizeName(item?.name || item) !== name)
+        nextLists = lists.filter(item => normalizeName(item?.owner) !== name)
+      }
+      this.context = {
+        ...this.context,
+        [contextKey]: nextEntries,
+        [membersKey]: nextLists,
+        loadedAt: Date.now()
+      }
+      const owners = nextEntries.map(item => normalizeName(item?.name || item)).filter(Boolean)
+      this.policy = {
+        ...this.policy,
+        lists: { ...(this.policy.lists || {}), [policyKey]: owners }
+      }
+      this.persistPolicy()
+      writeSnapshot(this.scope, this.context)
+      return true
+    },
+
     setListsOverrideFollows (value) {
       this.policy = {
         ...this.policy,
@@ -467,7 +505,21 @@ export const useModerationStore = defineStore('moderation', {
     },
 
     exportPolicyText () {
-      return serializeModerationExport(this.policy)
+      const muteOwners = [...new Set([
+        ...(this.policy.lists?.muteOwners || []),
+        ...(this.context.followedMuteOwners || []).map(item => normalizeName(item?.name || item))
+      ].filter(Boolean))]
+      const blacklistOwners = [...new Set([
+        ...(this.policy.lists?.blacklistOwners || []),
+        ...(this.context.followedBlacklistOwners || []).map(item => normalizeName(item?.name || item))
+      ].filter(Boolean))]
+      const policy = {
+        ...this.policy,
+        lists: { ...(this.policy.lists || {}), muteOwners, blacklistOwners }
+      }
+      return serializeModerationExport(policy, {
+        subscriptions: { muteOwners, blacklistOwners }
+      })
     },
 
     importPolicyText (text) {

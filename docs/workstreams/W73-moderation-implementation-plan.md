@@ -1,9 +1,11 @@
 # W71 + W73 moderation implementation plan
 
 Date: 2026-11-24
-Status: **W71, W73 Phase 1 and Phase 2 implemented** (2026-11-24); Phase 3
-remains. See [`W73-moderation-policy.md`](W73-moderation-policy.md) and
-[`W73-downvote-transparency.md`](W73-downvote-transparency.md).
+Status: **W71 and W73 Phase 1–3 implemented** (2026-11-24); only the
+explicitly optional on-chain list creation and aggregate-signal items remain.
+See [`W73-moderation-policy.md`](W73-moderation-policy.md),
+[`W73-downvote-transparency.md`](W73-downvote-transparency.md) and
+[`W73-lists-community.md`](W73-lists-community.md).
 Covers: roadmap **W71** (skin safety), issue **#94** / roadmap **W73**
 Phases 1–3, and the small data spikes the issue asks for.
 

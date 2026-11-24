@@ -377,11 +377,12 @@ Phase 2 is implemented, deployed and live-smoked:
 
 See [`docs/workstreams/W73-downvote-transparency.md`](workstreams/W73-downvote-transparency.md).
 
-Phase 3's data spike is complete in
-[`docs/workstreams/W73-list-spike.md`](workstreams/W73-list-spike.md): the live
-node rejects `limit`, `follow_muted` exposes owner descriptions, and muted feeds
-expose `stats.muted_reasons`. List subscriptions, community-moderation context
-and shareable profiles remain.
+Phase 3 is implemented, deployed and live-smoked: explicit mute/blacklist list
+subscriptions with provenance and owner-only export references, multiple-list
+conflict handling, community context links, and the reason/`get_follow_list`
+spike. Optional on-chain list creation and aggregate signals remain deferred.
+See [`docs/workstreams/W73-lists-community.md`](workstreams/W73-lists-community.md)
+and [`docs/workstreams/W73-list-spike.md`](workstreams/W73-list-spike.md).
 
 Do not ship a hidden global list, automatic punishment from heuristics, or a
 global downvoter leaderboard. See #94 for the full research, data sources and

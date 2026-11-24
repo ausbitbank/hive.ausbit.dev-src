@@ -430,6 +430,7 @@ export function decideContent ({
     visible: display !== 'hide',
     author: name,
     itemKey: key,
+    community: typeof metadata.community === 'string' ? metadata.community : '',
     primary,
     reasons,
     conflict,

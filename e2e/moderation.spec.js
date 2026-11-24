@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { loginAs, runAxe, waitForApp } from './helpers'
+import { loginAs, readQueue, runAxe, waitForApp } from './helpers'
 
 test.use({ serviceWorkers: 'block' })
 
@@ -324,6 +324,8 @@ test('a negative-reputation feed card collapses with an explanation and can be s
   await expect(card).toBeVisible({ timeout: 20000 })
   await expect(card.locator('.mod-notice')).toContainText('Negative reputation')
   await expect(card.locator('.post-card__summary')).toHaveCount(0)
+  await card.getByRole('button', { name: 'Why?' }).click()
+  await expect(card.getByRole('link', { name: 'Community context' })).toHaveAttribute('href', '/c/hive-1')
 
   await card.getByRole('button', { name: 'Show anyway' }).click()
   await expect(card.locator('.mod-notice')).toHaveCount(0)
@@ -375,4 +377,26 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
 
   await page.getByLabel('Show locally ignored voters').check()
   await expect(page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()).toBeVisible()
+})
+
+
+test('list subscriptions are explicit, queued with posting authority and preserve flags', async ({ page }) => {
+  await loginAs(page, 'viewer')
+  await mockChain(page)
+  await page.goto('/settings/moderation')
+  await waitForApp(page)
+  await expect(page.getByRole('heading', { level: 1, name: 'Moderation' })).toBeVisible()
+
+  await page.getByLabel('List owner account').fill('hive.blog')
+  await page.getByRole('button', { name: 'Subscribe', exact: true }).click()
+  await expect(page.locator('.mod-list-owner')).toContainText('@hive.blog')
+
+  const queue = await readQueue(page)
+  expect(queue?.items).toHaveLength(1)
+  const operation = queue.items[0]
+  expect(operation[1]).toBe('posting')
+  expect(operation[2][0]).toBe('custom_json')
+  const follow = JSON.parse(operation[2][1].json)[1]
+  expect(follow).toMatchObject({ follower: 'viewer', following: 'hive.blog' })
+  expect(follow.what).toContain('follow_muted')
 })

@@ -50,6 +50,7 @@
         <button v-if="decision.overrides.includes('ignore-voter')" type="button" @click="$emit('ignore-voter')">
           Ignore this voter's downvotes
         </button>
+        <router-link v-if="decision.community" :to="'/c/' + decision.community">Community context</router-link>
         <router-link to="/settings/moderation">Manage moderation</router-link>
       </div>
     </div>

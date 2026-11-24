@@ -246,3 +246,42 @@ describe('moderation store content decisions', () => {
     expect(store.shouldDisclose).toBe(false)
   })
 })
+
+describe('moderation store list subscriptions', () => {
+  it('tracks a subscription optimistically and exports owner references only', async () => {
+    mocks.fetchViewerModerationContext.mockResolvedValue(context({
+      followedMuteOwners: [{ name: 'hive.blog', description: 'Phishing accounts' }],
+      followedMuteLists: [{ owner: 'hive.blog', members: ['alice'] }]
+    }))
+    const store = freshStore('viewer')
+    await store.ensureContext()
+
+    store.noteListSubscription('newlist', 'mute', true)
+    expect(store.context.followedMuteOwners.map(item => item.name)).toEqual(['hive.blog', 'newlist'])
+    expect(store.policy.lists.muteOwners).toEqual(['hive.blog', 'newlist'])
+
+    const exported = JSON.parse(store.exportPolicyText())
+    expect(exported.subscriptions.muteOwners).toEqual(['hive.blog', 'newlist'])
+    expect(exported.subscriptions.blacklistOwners).toEqual([])
+    expect(JSON.stringify(exported)).not.toContain('"members"')
+
+    store.noteListSubscription('newlist', 'mute', false)
+    expect(store.context.followedMuteOwners.map(item => item.name)).toEqual(['hive.blog'])
+  })
+
+  it('imports list owner references without subscribing automatically', async () => {
+    const store = freshStore('viewer')
+    await store.ensureContext()
+    const text = JSON.stringify({
+      type: 'hive-moderation-policy',
+      version: 1,
+      policy: { preset: 'balanced', lists: { muteOwners: ['hive.blog'], blacklistOwners: ['watchlist'] } },
+      subscriptions: { muteOwners: ['hive.blog'], blacklistOwners: ['watchlist'] }
+    })
+    const result = store.importPolicyText(text)
+    expect(result.error).toBe('')
+    expect(store.policy.lists.muteOwners).toEqual(['hive.blog'])
+    expect(store.policy.lists.blacklistOwners).toEqual(['watchlist'])
+    expect(store.context.followedMuteOwners).toEqual([])
+  })
+})

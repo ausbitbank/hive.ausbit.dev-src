@@ -328,6 +328,20 @@ describe('decideContent', () => {
     expect(decision.conflict).toEqual({ kind: 'follow-vs-mutelist', owners: ['hive.blog'] })
   })
 
+  it('shows every subscribed list in a follow conflict', () => {
+    const decision = decide({
+      viewer: contentViewer({
+        following: ['alice'],
+        followedMuteLists: [
+          { owner: 'hive.blog', members: ['alice'] },
+          { owner: 'watchlist', members: ['alice'] }
+        ]
+      })
+    })
+    expect(decision.conflict.owners).toEqual(['hive.blog', 'watchlist'])
+    expect(decision.reasons.some(reason => reason.evidence?.owners?.length === 2)).toBe(true)
+  })
+
   it('lets a list win when the viewer opts in', () => {
     const decision = decide({
       listsOverrideFollows: true,

@@ -128,6 +128,33 @@
               <router-link :to="'/@' + list.owner">@{{ list.owner }}</router-link>
               <q-badge color="blue-grey-9">{{ list.type }}</q-badge>
               <span v-if="list.description">{{ list.description }}</span>
+              <span v-if="list.members !== null" class="mod-list__count">{{ list.members }} member{{ list.members === 1 ? '' : 's' }}</span>
+              <button type="button" class="mod-link" @click="subscribeList(list.owner, list.type, false)">Unsubscribe</button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="mod-subscribe">
+          <h3 class="mod-subtitle">Subscribe to a list</h3>
+          <p class="mod-section__hint">
+            Explicit and opt-in. The action is queued with your posting key and preserves
+            your existing follow, mute and blacklist flags. Provenance is the list owner's profile.
+          </p>
+          <div class="mod-subscribe__row">
+            <q-input v-model="newListOwner" dense outlined label="List owner account" aria-label="List owner account" />
+            <q-select v-model="newListType" :options="listTypeOptions" dense outlined emit-value map-options label="List type" aria-label="List type" />
+            <q-btn unelevated no-caps color="primary" icon="add" label="Subscribe" :disable="!newListOwner.trim()" @click="subscribeList(newListOwner, newListType, true)" />
+          </div>
+          <p v-if="!$hiveStore.user.username" class="mod-section__hint">Sign in to subscribe; the action uses posting authority.</p>
+        </div>
+
+        <div v-if="suggestedLists.length" class="mod-list-owner">
+          <h3 class="mod-subtitle">Referenced by an imported profile</h3>
+          <ul class="mod-list">
+            <li v-for="list in suggestedLists" :key="'suggested-' + list.type + ':' + list.owner">
+              <router-link :to="'/@' + list.owner">@{{ list.owner }}</router-link>
+              <q-badge color="blue-grey-9">{{ list.type }}</q-badge>
+              <button type="button" class="mod-link" @click="subscribeList(list.owner, list.type, true)">Subscribe</button>
             </li>
           </ul>
         </div>
@@ -422,6 +449,29 @@
   margin-top: var(--space-3);
 }
 
+.mod-subscribe {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--c-border);
+}
+
+.mod-subscribe__row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.mod-subscribe__row .q-field {
+  min-width: 190px;
+}
+
+.mod-list__count {
+  color: var(--c-text-faint);
+  font-size: 0.72rem;
+}
+
 .mod-subtitle {
   margin: 0 0 0.35rem;
   font-size: 0.82rem;
@@ -510,6 +560,12 @@ import { CONTENT_CUSTOM_SURFACES, CONTENT_DISPLAY, CONTENT_SIGNALS } from 'src/s
 import { exportFile } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useModerationStore } from 'src/stores/moderation'
+import {
+  buildListSubscription,
+  isSubscribed,
+  isValidListOwner,
+  listMemberCount
+} from 'src/services/followLists'
 
 const PRESETS = [
   { value: 'open', label: 'Open', detail: 'Show everything. Label downvotes, reputation and NSFW; hide only a safety floor.' },
@@ -546,7 +602,13 @@ export default {
       customSurfaces: CONTENT_CUSTOM_SURFACES,
       displayOptions: CONTENT_DISPLAY.map(value => ({ label: value, value })),
       importText: '',
-      refreshing: false
+      refreshing: false,
+      newListOwner: '',
+      newListType: 'mute',
+      listTypeOptions: [
+        { label: 'Mute list', value: 'mute' },
+        { label: 'Blacklist / warning list', value: 'blacklist' }
+      ]
     }
   },
   computed: {
@@ -556,10 +618,32 @@ export default {
     followedLists () {
       const rows = []
       for (const owner of this.moderation.context.followedMuteOwners || []) {
-        rows.push({ type: 'mute', owner: owner.name, description: owner.description })
+        rows.push({
+          type: 'mute',
+          owner: owner.name,
+          description: owner.description,
+          members: listMemberCount(owner.name, 'mute', this.moderation.context)
+        })
       }
       for (const owner of this.moderation.context.followedBlacklistOwners || []) {
-        rows.push({ type: 'blacklist', owner: owner.name, description: owner.description })
+        rows.push({
+          type: 'blacklist',
+          owner: owner.name,
+          description: owner.description,
+          members: listMemberCount(owner.name, 'blacklist', this.moderation.context)
+        })
+      }
+      return rows
+    },
+    suggestedLists () {
+      const context = this.moderation.context
+      const refs = this.moderation.policy.lists || {}
+      const rows = []
+      for (const owner of refs.muteOwners || []) {
+        if (!isSubscribed(owner, 'mute', context)) rows.push({ owner, type: 'mute' })
+      }
+      for (const owner of refs.blacklistOwners || []) {
+        if (!isSubscribed(owner, 'blacklist', context)) rows.push({ owner, type: 'blacklist' })
       }
       return rows
     },
@@ -601,6 +685,39 @@ export default {
     },
     selectPreset (preset) {
       this.moderation.setPreset(preset)
+    },
+    subscribeList (owner, type, subscribe) {
+      const username = this.$hiveStore.user.username
+      if (!username) {
+        this.$q.notify({ type: 'negative', message: 'Sign in to manage list subscriptions.' })
+        return
+      }
+      const name = String(owner || '').trim()
+      if (!isValidListOwner(name)) {
+        this.$q.notify({ type: 'negative', message: 'Enter a valid Hive account name.' })
+        return
+      }
+      if (subscribe && isSubscribed(name, type, this.moderation.context)) {
+        this.$q.notify({ message: 'You already follow that list.', color: 'primary', timeout: 1800 })
+        return
+      }
+      const op = buildListSubscription(username, name, type, {
+        subscribe,
+        context: this.moderation.context
+      })
+      if (!op) {
+        this.$q.notify({ type: 'negative', message: 'That list subscription cannot be built.' })
+        return
+      }
+      this.$hiveStore.addToQueue(op)
+      this.moderation.noteListSubscription(name, type, subscribe)
+      this.newListOwner = ''
+      this.$q.notify({
+        message: (subscribe ? 'Subscription' : 'Unsubscribe') + ' queued with your posting key.',
+        caption: 'Review it in the signing queue before broadcast.',
+        color: 'primary',
+        timeout: 3200
+      })
     },
     ruleFor (surface, signal) {
       return this.moderation.contentCustom?.[surface]?.[signal] || 'collapse'
