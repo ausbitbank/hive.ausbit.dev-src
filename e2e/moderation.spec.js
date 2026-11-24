@@ -68,7 +68,9 @@ async function mockChain (page, {
   followMuted = [],
   followedMuteMembers = {},
   following = [],
-  rankedPosts = null
+  rankedPosts = null,
+  voteHistory = null,
+  accountOverride = null
 } = {}) {
   await page.route('https://images.hive.blog/**', route => route.fulfill({
     status: 200,
@@ -80,6 +82,14 @@ async function mockChain (page, {
     await page.route(host + '/**', async route => {
       const payload = route.request().postDataJSON?.() || {}
       const params = payload.params || {}
+
+      if (payload.method === 'condenser_api.get_account_history' && voteHistory) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: voteHistory })
+        })
+      }
 
       if (payload.method === 'bridge.get_ranked_posts' && rankedPosts) {
         return route.fulfill({
@@ -119,6 +129,18 @@ async function mockChain (page, {
       }
 
       if (payload.method !== 'condenser_api.get_accounts') return route.continue()
+
+      if (accountOverride) {
+        const names = Array.isArray(params) ? (params[0] || []) : []
+        const result = names
+          .filter(name => name === 'ausbitbank')
+          .map(name => ({ ...accountOverride, name }))
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result })
+        })
+      }
 
       const response = await route.fetch()
       const json = await response.json()
@@ -310,4 +332,47 @@ test('a negative-reputation feed card collapses with an explanation and can be s
   await page.reload()
   await waitForApp(page)
   await expect(page.locator('.post-card').first().locator('.mod-notice')).toHaveCount(0)
+})
+
+
+test('downvotes tab shows voter evidence and local voter exclusion', async ({ page }) => {
+  test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
+  const now = new Date().toISOString()
+  const rows = ['bob', 'carol', 'dave'].flatMap((voter, voterIndex) =>
+    ['one', 'two', 'three'].map((permlink, index) => [
+      voterIndex * 10 + index + 1,
+      {
+        op: ['vote', { voter, author: 'ausbitbank', permlink, weight: -1000 }],
+        timestamp: now,
+        trx_id: voter + '-' + permlink
+      }
+    ])
+  )
+  await mockChain(page, {
+    voteHistory: rows,
+    accountOverride: {
+      reputation: 60,
+      posting_json_metadata: '{}',
+      balance: '0.000 HIVE',
+      hbd_balance: '0.000 HBD',
+      vesting_shares: '0.000000 VESTS',
+      post_count: 0,
+      created: '2020-01-01T00:00:00'
+    }
+  })
+
+  await page.goto('/@ausbitbank/downvotes')
+  await waitForApp(page)
+  await expect(page.getByRole('heading', { level: 2, name: '@ausbitbank downvotes' })).toBeVisible({ timeout: 20000 })
+  await expect(page.locator('.dv-summary')).toContainText('9')
+  await expect(page.locator('.dv-evidence')).toContainText('Possible coordinated downvotes')
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
+
+  const firstRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()
+  await firstRow.getByRole('button', { name: 'Ignore voter' }).click()
+  await expect(page.locator('.dv-table tbody tr').filter({ hasText: '@bob' })).toHaveCount(0)
+  await expect(page.locator('.dv-summary')).toContainText('9')
+
+  await page.getByLabel('Show locally ignored voters').check()
+  await expect(page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()).toBeVisible()
 })

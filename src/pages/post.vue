@@ -298,7 +298,7 @@
     </div>
 
     <q-dialog v-model="showVotes">
-      <votes-dialog v-if="post" :votes="post.active_votes || []" />
+      <votes-dialog v-if="post" :votes="post.active_votes || []" :author="post.author" :permlink="post.permlink" />
     </q-dialog>
 
     <q-dialog v-model="showReply">

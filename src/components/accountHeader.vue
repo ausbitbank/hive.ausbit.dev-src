@@ -27,7 +27,7 @@
           <user-services :username="account.name" />
         </div>
       </div>
-      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs text-center" :class="{ 'account-tabs--overflow': tabsOverflow }" v-if="showNavBar">
+      <q-toolbar :dense="$q.screen.lt.md" class="account-tabs text-center" :class="{ 'account-tabs--overflow': tabsOverflow, 'account-tabs--five': tabsPerRow === 5 }" v-if="showNavBar">
         <q-tabs
           ref="tabs"
           :dense="$q.screen.lt.md"
@@ -156,6 +156,9 @@
     min-width: 0 !important;
     min-height: 36px;
     padding: 0;
+  }
+  .account-tabs--five :deep(.q-tab) {
+    flex-basis: 19% !important;
   }
   .account-tabs :deep(.q-tab__content) {
     padding: 0;
@@ -447,6 +450,7 @@ export default {
         { name: 'feed', label: 'feed', icon: 'rss_feed', to: '/@' + name + '/feed' },
         { name: 'replies', label: 'replies', icon: 'comment', to: '/@' + name + '/replies' },
         { name: 'comments', label: 'comments', icon: 'message', to: '/@' + name + '/comments' },
+        { name: 'downvotes', label: 'downvotes', icon: 'thumb_down_alt', to: '/@' + name + '/downvotes' },
         { name: 'communities', label: 'communities', icon: 'forum', to: '/@' + name + '/communities' },
         { name: 'wallet', label: 'wallet', icon: 'account_balance', to: '/@' + name + '/wallet' },
         { name: 'explorer', label: 'profile', icon: 'perm_identity', to: '/@' + name, exact: true }

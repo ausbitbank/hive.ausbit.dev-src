@@ -380,6 +380,14 @@ export function apiGetAccountHistory (account, from = -1, limit = 100, options =
   return rpcRequest('condenser_api.get_account_history', [account, from, limit], options)
 }
 
+export function apiGetAccountHistoryFiltered (account, from = -1, limit = 100, low = null, high = null, options = {}) {
+  return rpcRequest('condenser_api.get_account_history', [account, from, limit, low, high], options)
+}
+
+export function apiGetActiveVotes (author, permlink, options = {}) {
+  return rpcRequest('condenser_api.get_active_votes', [author, permlink], options)
+}
+
 export function apiGetFollowers (account, start = '', limit = 100, options = {}) {
   return rpcRequest('condenser_api.get_followers', [account, start, 'blog', limit], options)
 }

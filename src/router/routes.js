@@ -22,6 +22,7 @@ const routes = [
       { path: '@:account/lightning', name: 'account-lightning', component: () => import('pages/lightning.vue') },
       { path: '@:account/pos', name: 'account-pos', component: () => import('pages/pos.vue') },
       { path: '@:username/delegations', name: 'account-delegations', component: () => import('pages/delegations.vue') },
+      { path: '@:username/downvotes', name: 'account-downvotes', component: () => import('pages/downvotes.vue') },
       { path: '@:username/transfers', name: 'wallet-transfers', component: () => import('pages/wallet.vue') },
       { path: 'account/@:username', name: 'account-alias', component: () => import('pages/account.vue') },
       { path: '@:account/trail', name: 'trail', component: () => import('pages/trail.vue') },

@@ -364,13 +364,24 @@ offer a per-row Show anyway action, and notification opt-ins are deferred. The
 settings page is `/settings/moderation`; the record is
 [`docs/workstreams/W73-moderation-policy.md`](workstreams/W73-moderation-policy.md).
 
-Phase 2 (after Phase 1 is green): profile downvote views with voter, weight,
-target and time; evidence-backed pattern hints; downvote-to-upvote context;
-per-voter local exclusion; no global downvoter leaderboard.
+Phase 2 is implemented, deployed and live-smoked:
 
-Phase 3 needs a short spike before UI work: community mute-reason exposure and
-`bridge.get_follow_list` pagination (the live node rejects the documented
-`limit` argument). Then add list subscriptions and community-moderation context.
+- [x] Profile Downvotes tab with received/given rows: voter, weight, target and
+      time, plus local relationship context.
+- [x] Evidence-backed “possible coordinated downvotes” hint with voters,
+      targets, count, window and overlap.
+- [x] Downvote-to-upvote context: distinct voters, stake concentration and net
+      direction in the post vote dialog.
+- [x] Per-voter local exclusion while raw chain impact stays visible.
+- [x] No global downvoter leaderboard.
+
+See [`docs/workstreams/W73-downvote-transparency.md`](workstreams/W73-downvote-transparency.md).
+
+Phase 3's data spike is complete in
+[`docs/workstreams/W73-list-spike.md`](workstreams/W73-list-spike.md): the live
+node rejects `limit`, `follow_muted` exposes owner descriptions, and muted feeds
+expose `stats.muted_reasons`. List subscriptions, community-moderation context
+and shareable profiles remain.
 
 Do not ship a hidden global list, automatic punishment from heuristics, or a
 global downvoter leaderboard. See #94 for the full research, data sources and

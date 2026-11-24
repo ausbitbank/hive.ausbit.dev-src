@@ -31,6 +31,13 @@
       </div>
     </div>
 
+    <div v-if="downvotesOnly.length" class="votes-dialog__context" aria-label="Downvote context">
+      <span><strong>{{ context.distinctDown }}</strong> distinct downvoters</span>
+      <span><strong>{{ context.distinctUp }}</strong> distinct upvoters</span>
+      <span>top stake share <strong>{{ context.stakeConcentration }}%</strong></span>
+      <span>net direction <strong>{{ context.netDirection }}</strong></span>
+    </div>
+
     <q-tabs
       v-model="view"
       dense
@@ -117,6 +124,8 @@
 <script>
 import moment from 'src/utils/time'
 import { formatReputation } from 'src/services/comments'
+import { downvoteContext } from 'src/services/downvotes'
+import { fetchActiveVotes } from 'src/services/accountDownvotes'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { normalizeVotes, voteDirection } from 'src/services/voteBreakdown'
 
@@ -133,18 +142,26 @@ export default {
         { name: 'rshares', label: 'rshares', field: 'rshares', sortable: true, align: 'right' },
         { name: 'reputation', label: 'Reputation', field: 'reputation', sortable: true, align: 'right' },
         { name: 'time', label: 'When', field: 'time', sortable: true, align: 'right' }
-      ]
+      ],
+      activeVotes: [],
+      activeLoading: false,
+      activeError: ''
     }
   },
   props: {
     // A post loaded from a partial cache/snapshot can arrive without vote
     // rows, so never require a populated array here.
     votes: { type: Array, required: false, default: () => [] },
-    simple: { type: Boolean, required: false, default: false }
+    simple: { type: Boolean, required: false, default: false },
+    author: { type: String, default: '' },
+    permlink: { type: String, default: '' }
+  },
+  mounted () {
+    if (!this.votes.length && this.author && this.permlink) this.loadActiveVotes()
   },
   computed: {
     safeVotes () {
-      return normalizeVotes(this.votes)
+      return normalizeVotes(this.votes.length ? this.votes : this.activeVotes)
     },
     sortedVotes () {
       return [...this.safeVotes].sort(this.sortByRshares)
@@ -152,6 +169,7 @@ export default {
     upvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === 1) },
     downvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === -1) },
     unvotesOnly () { return this.safeVotes.filter(v => voteDirection(v) === 0) },
+    context () { return downvoteContext(this.safeVotes) },
     totalRshares () {
       return this.upvotesOnly.reduce((sum, vote) => sum + (Number(vote.rshares) || 0), 0)
     },
@@ -163,6 +181,18 @@ export default {
     }
   },
   methods: {
+    async loadActiveVotes () {
+      if (this.activeLoading) return
+      this.activeLoading = true
+      this.activeError = ''
+      try {
+        this.activeVotes = await fetchActiveVotes(this.author, this.permlink)
+      } catch (error) {
+        this.activeError = error?.message || 'Could not load active votes.'
+      } finally {
+        this.activeLoading = false
+      }
+    },
     sortByRshares (a, b) { return Math.abs(Number(b.rshares) || 0) - Math.abs(Number(a.rshares) || 0) },
     getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     linkAccount (username) { return username ? '/@' + username : '/' },
@@ -287,6 +317,19 @@ export default {
 
 .votes-summary--muted .q-icon {
   color: var(--c-text-faint);
+}
+
+.votes-dialog__context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  padding: 0.45rem 0.75rem;
+  color: var(--c-text-muted);
+  font-size: 0.74rem;
+}
+
+.votes-dialog__context strong {
+  color: var(--c-text);
 }
 
 .votes-dialog__tabs {
