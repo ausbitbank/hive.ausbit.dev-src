@@ -136,6 +136,8 @@ Final wave:
 - `bun run build` — succeeded; home snapshot generated.
 - `bunx playwright test e2e/dashboard.spec.js` — 32 passed (Chromium), including
   the new drawer, guest-state, public-discovery and signing-opt-in cases.
+- `bunx playwright test` — the full Chromium suite passed: 167 tests, including
+  all dashboard, axe, perf, PWA and resilience specs.
 - `bunx playwright test e2e/a11y.spec.js -g "custom dashboard templates"` —
   axe clean at 1440px and 390px for the Everyday and Creator templates. The
   deferred-widget skeleton lost its invalid `aria-label` (generic divs cannot
