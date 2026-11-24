@@ -41,6 +41,8 @@
         <q-tab name="featured" label="Featured" icon="star" />
       </q-tabs>
 
+      <p v-if="tab !== 'built-in' && loggedIn" class="wall-view-hint">{{ viewHint }}</p>
+
       <q-tab-panels v-model="tab" animated class="wall-panels">
         <q-tab-panel name="built-in">
           <div v-if="filteredBuiltIn.length" class="wall-grid">
@@ -136,8 +138,12 @@
 
             <div v-else-if="!loading" class="wall-empty wall-empty--small">
               <q-icon name="palette" size="1.6rem" aria-hidden="true" />
-              <h2>No skins here yet</h2>
-              <p>When someone you follow publishes a skin that matches this view, it will appear here.</p>
+              <h2>{{ tab === 'featured' ? 'No featured skins from your follows' : 'No skins here yet' }}</h2>
+              <p v-if="tab === 'featured'">
+                Featured is not a global gallery. It only shows skins from accounts you follow that
+                carry the <code>featured</code> tag or a verified credential badge.
+              </p>
+              <p v-else>When someone you follow publishes a skin that matches this view, it will appear here.</p>
               <q-btn unelevated no-caps color="primary" icon="brush" label="Open Skin Studio" to="/settings/skin" />
             </div>
           </div>
@@ -238,6 +244,13 @@
 
 .wall-tabs {
   border-bottom: 1px solid var(--c-border-subtle);
+}
+
+.wall-view-hint {
+  margin: var(--space-2) 0 0;
+  color: var(--c-text-subtle);
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .wall-panels {
@@ -520,6 +533,7 @@ import { isCredentialBadge } from 'src/data/badges/credentials'
 import { readAccountTheme } from 'src/themes/account'
 import { THEMES, getTheme } from 'src/themes/registry'
 import { tokensFor } from 'src/themes/tokens'
+import { byRecentActivity, isFeaturedSkin } from 'src/themes/wall'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useModerationStore } from 'src/stores/moderation'
@@ -577,6 +591,11 @@ export default {
     moderation () {
       return useModerationStore()
     },
+    viewHint () {
+      if (this.tab === 'recent') return 'Skins from accounts you follow, ordered by their last profile metadata update.'
+      if (this.tab === 'featured') return 'Skins from accounts you follow that carry the featured tag or a verified credential badge.'
+      return 'Skins published by the accounts you follow.'
+    },
     tagOptions () {
       const tags = new Set()
       for (const theme of [...this.builtIn, ...this.skins.map(item => item.theme)]) {
@@ -593,10 +612,10 @@ export default {
     visibleSkins () {
       const rows = this.filteredSkins
       if (this.tab === 'recent') {
-        return [...rows].sort((a, b) => String(b.account.last_post || '').localeCompare(String(a.account.last_post || '')))
+        return [...rows].sort(byRecentActivity)
       }
       if (this.tab === 'featured') {
-        return rows.filter(item => this.isFeatured(item.theme))
+        return rows.filter(item => isFeaturedSkin(item.theme))
       }
       return rows
     },
@@ -672,11 +691,6 @@ export default {
       const credential = selected.find(badge => isCredentialBadge(badge.source, badge.id))
       return credential ? 'Verified credential' : ''
     },
-    isFeatured (theme) {
-      if ((theme.tags || []).includes('featured')) return true
-      const selected = Array.isArray(theme.profile?.badges?.selected) ? theme.profile.badges.selected : []
-      return selected.some(badge => isCredentialBadge(badge.source, badge.id))
-    },
     applyTheme (id) {
       this.$appearance.setTheme(id)
       this.$q.notify({ message: getTheme(id).name + ' applied.', color: 'primary', timeout: 1600 })
@@ -742,7 +756,9 @@ export default {
         this.moderation.setScope(this.username || 'guest')
         await this.moderation.ensureContext()
         const names = await fetchFollowingNames(this.username, { force })
-        const wanted = names.slice(0, 80)
+        // Read every followed account. `fetchAccounts` batches the chain reads
+        // and keeps its own results, so a large follow list is not truncated.
+        const wanted = names
         if (!wanted.length) {
           this.skins = []
           this.loadedFor = this.username

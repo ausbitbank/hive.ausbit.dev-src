@@ -76,21 +76,39 @@ function cacheAccounts (response) {
 /**
  * Fetch many accounts using individual cache entries. Missing accounts are
  * requested in batches and stale entries can be refreshed in the background.
+ *
+ * Results are collected locally as well as cached. The cache is deliberately
+ * small, so callers such as the Theme Wall must still receive every account
+ * when a follow list is larger than the cache. Returning only values that
+ * survived in `apiCache` silently dropped the oldest accounts in that case.
  */
 export async function fetchAccounts (names, { force = false } = {}) {
   const unique = [...new Set((Array.isArray(names) ? names : []).filter(Boolean))]
   if (unique.length === 0) return []
 
-  const missing = unique.filter(name => force || !apiCache.get(accountKey(name)))
+  const resolved = new Map()
+  if (!force) {
+    for (const name of unique) {
+      const account = apiCache.get(accountKey(name))?.value
+      if (account) resolved.set(name.toLowerCase(), account)
+    }
+  }
+
+  const missing = unique.filter(name => !resolved.has(name.toLowerCase()))
   const stale = unique.filter(name => {
     const entry = apiCache.get(accountKey(name))
     return entry && entry.age > CACHE_TTL.account
   })
 
   if (missing.length > 0) {
-    const requested = force ? unique : missing
-    for (let index = 0; index < requested.length; index += ACCOUNT_BATCH_SIZE) {
-      cacheAccounts(await apiGetAccounts(requested.slice(index, index + ACCOUNT_BATCH_SIZE)))
+    for (let index = 0; index < missing.length; index += ACCOUNT_BATCH_SIZE) {
+      const response = await apiGetAccounts(missing.slice(index, index + ACCOUNT_BATCH_SIZE))
+      cacheAccounts(response)
+      if (Array.isArray(response)) {
+        for (const account of response) {
+          if (account?.name) resolved.set(account.name.toLowerCase(), account)
+        }
+      }
     }
   } else if (stale.length > 0 && !force) {
     // Stale-while-revalidate for batch callers such as follower lists.
@@ -103,7 +121,7 @@ export async function fetchAccounts (names, { force = false } = {}) {
       .catch(() => {})
   }
 
-  return unique.map(name => apiCache.get(accountKey(name))?.value).filter(Boolean)
+  return unique.map(name => resolved.get(name.toLowerCase())).filter(Boolean)
 }
 
 export function fetchWitnessesByVote (limit = 200, { force = false, onStale = null } = {}) {

@@ -71,6 +71,17 @@ describe('chain data cache', () => {
     expect(apiGetAccounts).toHaveBeenLastCalledWith(['carol'])
   })
 
+  it('returns every account even when the cache evicts older entries', async () => {
+    const names = Array.from({ length: 450 }, (_, index) => 'user' + String(index).padStart(3, '0'))
+    apiGetAccounts.mockImplementation(async batch => batch.map(name => ({ name })))
+    const data = await chainData()
+
+    const accounts = await data.fetchAccounts(names)
+    expect(accounts).toHaveLength(names.length)
+    expect(accounts[0].name).toBe(names[0])
+    expect(accounts[accounts.length - 1].name).toBe(names[names.length - 1])
+  })
+
   it('caches global properties and witnesses', async () => {
     apiGetGlobalProps.mockResolvedValue({ head_block_number: 100 })
     apiGetWitnessesByVote.mockResolvedValue([{ owner: 'alice' }])
