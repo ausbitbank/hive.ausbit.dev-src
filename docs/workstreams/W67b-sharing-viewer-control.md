@@ -73,9 +73,11 @@ report action.
   — 8 passed.
 - `bunx playwright test e2e/a11y.spec.js --project=chromium -g "axe clean: (/appearance|/themes|/settings/skin|/@ausbitbank$)"`
   — 4 passed, both widths per route.
-- Deployed with the 2026-11-24 release; backup
-  `hive.ausbit.dev-20261124T094544Z.tar.gz`, production `index.html` hash
-  `07ccb17a…1f7571`.
+- Deployed with the 2026-11-24 release. The functional smoke ran on build
+  `07ccb17a…1f7571` (backup `hive.ausbit.dev-20261124T094544Z.tar.gz`); a final
+  copy-only deploy `84aa4e53…f1f4c` (backup
+  `hive.ausbit.dev-20261124T103050Z.tar.gz`) updated the Studio description and
+  was rechecked live.
 - Production origin smoke (the deployed origin over an SSH tunnel; Cloudflare
   challenges direct automated profile requests):
   - `@ausbitbank` loaded its published skin: “Skin by @ausbitbank”, a halftone
