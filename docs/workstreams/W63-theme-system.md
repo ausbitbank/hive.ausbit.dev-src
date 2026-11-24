@@ -1,7 +1,7 @@
 # W63 — Theme system and profile skins
 
 Date: 2026-11-22
-Status: implemented, deployed and verified
+Status: complete — implemented, deployed and live-smoked
 
 ## Scope
 
@@ -192,8 +192,28 @@ site palette. See `docs/workstreams/W71-theme-safety.md`.
   nginx. The edge Worker already covers the three routes, so this is an
   infrastructure tidy-up rather than a functional blocker.
 - Community skins (the community account already has metadata; the mechanism is
-  ready, the route scope is intentionally disabled).
-- Named theme libraries and a curated public gallery (theme codes, import and
-  collage atmosphere landed in W67b).
+  ready, the route scope is intentionally disabled). This was a phase 4
+  extension in #91, not a launch requirement.
+- Named local theme libraries remain optional. Theme codes, import/export,
+  remixing, palette adoption and the wall filters landed in W67b.
 - Optional self-hosted display fonts if the measured bundle budget allows.
-- Deployment and production live smoke.
+
+## Status against issue #91
+
+The #91 proposal is delivered by W63 plus the follow-ups:
+
+- W65–W67b added the Profile Shelf, Hive Circle, badge shelf, atmosphere,
+  visual controls, dual variants, theme codes, remixing, palette adoption and
+  viewer controls.
+- W71 added fail-closed skin safety.
+- W73 generalised the same viewer policy to content.
+
+Two #91 details were deliberately superseded by #92: the animated ticker and
+sticker tray were removed, and the skin badge's report action was replaced by
+local ignore/override. Automatic contrast repair replaced a separate “make AA”
+button. Community skins remain an optional phase 4 extension.
+
+Deployment and production smoke are recorded above and in
+[`W67b-sharing-viewer-control.md`](W67b-sharing-viewer-control.md); the current
+release passes the theme/badge/share E2E suite, axe on the theme routes, and a
+live origin smoke.
