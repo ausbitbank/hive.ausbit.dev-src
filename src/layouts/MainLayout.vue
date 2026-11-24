@@ -749,6 +749,12 @@ export default {
           link: 'https://swapzone.io/?refId=HQhLzavlXg'
         },
         {
+          title: 'Buy gift cards & pay bills with Bitrefill',
+          caption: 'Bitrefill.com affiliate link',
+          icon: 'shopping_bag',
+          link: 'https://www.bitrefill.com/invite/cs7elmlq'
+        },
+        {
           title: 'Anonymous Servers for Crypto',
           caption: 'Privex.io affiliate link',
           icon: 'monetization_on',
