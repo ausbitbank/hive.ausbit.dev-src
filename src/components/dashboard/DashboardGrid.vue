@@ -85,9 +85,26 @@
             v-else-if="entry.widget.type === 'vitals'"
             v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, refreshSeconds: entry.widget.settings?.refreshSeconds, showVoteValue: entry.widget.settings?.showVoteValue })"
           />
+          <widget-news-digest
+            v-else-if="entry.widget.type === 'newsDigest'"
+            v-bind="settingsFor(entry.widget, { accounts: entry.widget.settings?.accounts, limit: entry.widget.settings?.limit, showPayout: entry.widget.settings?.showPayout })"
+          />
+          <widget-ke-ratio
+            v-else-if="entry.widget.type === 'keRatio'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, windowDays: entry.widget.settings?.windowDays, showBreakdown: entry.widget.settings?.showBreakdown })"
+          />
+          <widget-account-safety
+            v-else-if="entry.widget.type === 'accountSafety'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, sources: entry.widget.settings?.sources, showCaution: entry.widget.settings?.showCaution })"
+          />
+          <widget-keepsats v-else-if="entry.widget.type === 'keepsats'" />
+          <widget-portfolio-trend
+            v-else-if="entry.widget.type === 'portfolioTrend'"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, windowDays: entry.widget.settings?.windowDays, showPrice: entry.widget.settings?.showPrice })"
+          />
           <widget-wallet-actions
             v-else-if="entry.widget.type === 'walletActions'"
-            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, showPowerDown: entry.widget.settings?.showPowerDown, showSavings: entry.widget.settings?.showSavings, showConversions: entry.widget.settings?.showConversions, showOrders: entry.widget.settings?.showOrders, showRewards: entry.widget.settings?.showRewards })"
+            v-bind="settingsFor(entry.widget, { account: entry.widget.settings?.account, showPowerDown: entry.widget.settings?.showPowerDown, showSavings: entry.widget.settings?.showSavings, showConversions: entry.widget.settings?.showConversions, showOrders: entry.widget.settings?.showOrders, showRewards: entry.widget.settings?.showRewards, enableActions: entry.widget.settings?.enableActions })"
           />
           <widget-creator-stats
             v-else-if="entry.widget.type === 'creatorStats'"
@@ -104,6 +121,10 @@
           <widget-community-pulse
             v-else-if="entry.widget.type === 'communityPulse'"
             v-bind="settingsFor(entry.widget, { community: entry.widget.settings?.community, mode: entry.widget.settings?.mode, showTopPost: entry.widget.settings?.showTopPost })"
+          />
+          <widget-community-growth
+            v-else-if="entry.widget.type === 'communityGrowth'"
+            v-bind="settingsFor(entry.widget, { community: entry.widget.settings?.community, showAuthors: entry.widget.settings?.showAuthors, showPending: entry.widget.settings?.showPending })"
           />
           <widget-delegation-snapshot
             v-else-if="entry.widget.type === 'delegations'"
@@ -287,11 +308,17 @@ import { defineAsyncComponent } from 'vue'
 // The default home therefore stays under the route budget and a custom
 // dashboard only downloads the cards it actually uses.
 const WidgetAccountVitals = defineAsyncComponent(() => import('components/dashboard/WidgetAccountVitals.vue'))
+const WidgetNewsDigest = defineAsyncComponent(() => import('components/dashboard/WidgetNewsDigest.vue'))
+const WidgetKeRatio = defineAsyncComponent(() => import('components/dashboard/WidgetKeRatio.vue'))
+const WidgetAccountSafety = defineAsyncComponent(() => import('components/dashboard/WidgetAccountSafety.vue'))
+const WidgetKeepsats = defineAsyncComponent(() => import('components/dashboard/WidgetKeepsats.vue'))
+const WidgetPortfolioTrend = defineAsyncComponent(() => import('components/dashboard/WidgetPortfolioTrend.vue'))
 const WidgetWalletActions = defineAsyncComponent(() => import('components/dashboard/WidgetWalletActions.vue'))
 const WidgetCreatorStats = defineAsyncComponent(() => import('components/dashboard/WidgetCreatorStats.vue'))
 const WidgetGovernanceWatch = defineAsyncComponent(() => import('components/dashboard/WidgetGovernanceWatch.vue'))
 const WidgetHbdPeg = defineAsyncComponent(() => import('components/dashboard/WidgetHbdPeg.vue'))
 const WidgetCommunityPulse = defineAsyncComponent(() => import('components/dashboard/WidgetCommunityPulse.vue'))
+const WidgetCommunityGrowth = defineAsyncComponent(() => import('components/dashboard/WidgetCommunityGrowth.vue'))
 const WidgetDelegationSnapshot = defineAsyncComponent(() => import('components/dashboard/WidgetDelegationSnapshot.vue'))
 const WidgetWitnessRound = defineAsyncComponent(() => import('components/dashboard/WidgetWitnessRound.vue'))
 const WidgetNodeHealth = defineAsyncComponent(() => import('components/dashboard/WidgetNodeHealth.vue'))
@@ -328,11 +355,17 @@ const RENDERED_TYPES = [
   'notifications',
   'operations',
   'vitals',
+  'newsDigest',
+  'keRatio',
+  'accountSafety',
+  'keepsats',
+  'portfolioTrend',
   'walletActions',
   'creatorStats',
   'governance',
   'hbd',
   'communityPulse',
+  'communityGrowth',
   'delegations',
   'witnessRound',
   'nodeHealth',
@@ -367,11 +400,17 @@ export default {
     WidgetOperations,
     WidgetWallet,
     WidgetAccountVitals,
+    WidgetNewsDigest,
+    WidgetKeRatio,
+    WidgetAccountSafety,
+    WidgetKeepsats,
+    WidgetPortfolioTrend,
     WidgetWalletActions,
     WidgetCreatorStats,
     WidgetGovernanceWatch,
     WidgetHbdPeg,
     WidgetCommunityPulse,
+    WidgetCommunityGrowth,
     WidgetDelegationSnapshot,
     WidgetWitnessRound,
     WidgetNodeHealth,

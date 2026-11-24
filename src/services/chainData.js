@@ -3,6 +3,7 @@
 import { apiCache, clearCache, invalidateCache, loadCached } from './cache'
 import {
   apiBlockHeader,
+  apiGetAccountHistory,
   apiGetAccounts,
   apiGetFollowCount,
   apiGetFollowers,
@@ -37,7 +38,8 @@ export const CACHE_TTL = {
   communities: 300000,
   subscriptions: 60000,
   searchPosts: 60000,
-  blockHeader: 600000
+  blockHeader: 600000,
+  accountHistory: 60000
 }
 
 function accountKey (name) {
@@ -259,6 +261,29 @@ export function fetchAccountPosts (params, { force = false } = {}) {
     ttl: CACHE_TTL.posts,
     force
   })
+}
+
+/**
+ * One page of account history, cached briefly.
+ *
+ * Two dashboard widgets (creator stats and the contextual KE view) read the
+ * same 1,000-row page, so sharing the read keeps a dashboard from fetching it
+ * twice. `historyTruncated` is the caller's concern: the returned count is the
+ * honest signal.
+ */
+export function fetchAccountHistory (account, {
+  from = -1,
+  limit = 1000,
+  force = false
+} = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  if (!name) return Promise.resolve([])
+  const count = Math.max(1, Math.min(1000, Number(limit) || 1000))
+  return loadCached(
+    'history:' + name + ':' + from + ':' + count,
+    () => apiGetAccountHistory(name, from, count),
+    { ttl: CACHE_TTL.accountHistory, force }
+  ).then(rows => (Array.isArray(rows) ? rows : []))
 }
 
 export function fetchCommunity (name, observer = null, { force = false } = {}) {

@@ -295,7 +295,10 @@
 <script>
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
-import { fetchAccountPosts } from 'src/services/chainData'
+import {
+  fetchAccountHistory,
+  fetchAccountPosts
+} from 'src/services/chainData'
 import { creatorStatsSummary } from 'src/services/creatorStats'
 import { formatUsd, tidyNumber } from 'src/services/wallet'
 
@@ -458,11 +461,9 @@ export default {
           if (token === this.requestToken) this.postsLoading = false
         })
 
-      const historyRequest = this.$hive.api
-        .callAsync('condenser_api.get_account_history', [name, -1, HISTORY_LIMIT])
-        .then(rows => {
+      const historyRequest = fetchAccountHistory(name, { limit: HISTORY_LIMIT, force })
+        .then(list => {
           if (token !== this.requestToken) return
-          const list = Array.isArray(rows) ? rows : []
           this.history = list
           this.historyTruncated = list.length >= HISTORY_LIMIT
         })

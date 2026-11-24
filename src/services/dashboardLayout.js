@@ -195,6 +195,84 @@ export const WIDGET_REGISTRY = [
     live: true
   },
   {
+    type: 'newsDigest',
+    component: 'WidgetNewsDigest',
+    label: 'Hive news digest',
+    description: 'Newest posts from a curated set of ecosystem accounts.',
+    category: 'community',
+    icon: 'newspaper',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: {
+      accounts: ['hiveio', 'ecency', 'peakd', 'leofinance'],
+      limit: 6,
+      showPayout: true
+    },
+    singleton: true,
+    defer: true
+  },
+  {
+    type: 'keRatio',
+    component: 'WidgetKeRatio',
+    label: 'Accountability view',
+    description: 'Contextual reward-retention ratio with sources and limits — never a score.',
+    category: 'account',
+    icon: 'balance',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', windowDays: 90, showBreakdown: true },
+    singleton: true,
+    requiresAccount: true,
+    defer: true
+  },
+  {
+    type: 'accountSafety',
+    component: 'WidgetAccountSafety',
+    label: 'Account safety',
+    description: 'Warning-only check against curated public phishing and abuse lists.',
+    category: 'account',
+    icon: 'gpp_maybe',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: {
+      account: '',
+      sources: ['hive-blog-phishing', 'plentyofphish', 'spaminator-blacklist'],
+      showCaution: true
+    },
+    singleton: true,
+    requiresAccount: true,
+    defer: true
+  },
+  {
+    type: 'keepsats',
+    component: 'WidgetKeepsats',
+    label: 'Lightning balance',
+    description: 'Read-only keepsats balance from an existing v4v.app session.',
+    category: 'account',
+    icon: 'bolt',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: {},
+    singleton: true,
+    requiresAccount: true,
+    defer: true,
+    configurable: false
+  },
+  {
+    type: 'portfolioTrend',
+    component: 'WidgetPortfolioTrend',
+    label: 'Portfolio trend',
+    description: 'Portfolio value plus public HIVE price history and a local balance baseline.',
+    category: 'account',
+    icon: 'auto_graph',
+    defaultWidth: 'half',
+    minWidth: 'third',
+    defaultSettings: { account: '', windowDays: 30, showPrice: true },
+    singleton: true,
+    requiresAccount: true,
+    defer: true
+  },
+  {
     type: 'walletActions',
     component: 'WidgetWalletActions',
     label: 'Wallet actions',
@@ -209,7 +287,8 @@ export const WIDGET_REGISTRY = [
       showSavings: true,
       showConversions: true,
       showOrders: true,
-      showRewards: true
+      showRewards: true,
+      enableActions: false
     },
     singleton: true,
     requiresAccount: true
@@ -263,6 +342,18 @@ export const WIDGET_REGISTRY = [
     minWidth: 'third',
     defaultSettings: { community: '', mode: 'single', showTopPost: true },
     singleton: false
+  },
+  {
+    type: 'communityGrowth',
+    component: 'WidgetCommunityGrowth',
+    label: 'Community growth',
+    description: 'Subscriber, author and pending-reward growth from a local baseline.',
+    category: 'community',
+    icon: 'trending_up',
+    defaultWidth: 'third',
+    minWidth: 'third',
+    defaultSettings: { community: '', showAuthors: true, showPending: true },
+    singleton: true
   },
   {
     type: 'delegations',
@@ -493,6 +584,7 @@ export const DASHBOARD_PRESETS = [
       { type: 'posts', width: 'half', settings: { source: 'trending', limit: 6, view: 'cards', showBody: true } },
       { type: 'communityPulse', width: 'half', settings: {} },
       { type: 'governance', width: 'full', settings: {} },
+      { type: 'newsDigest', width: 'half', settings: {} },
       { type: 'trendingTags', width: 'third', settings: {} },
       { type: 'communitySpotlight', width: 'third', settings: {} }
     ]
@@ -511,6 +603,7 @@ export const DASHBOARD_PRESETS = [
       { type: 'notifications', width: 'third', settings: {} },
       { type: 'network', width: 'third', settings: {} },
       { type: 'hbd', width: 'third', settings: {} },
+      { type: 'portfolioTrend', width: 'half', settings: {} },
       { type: 'draftsQueue', width: 'third', settings: {} },
       { type: 'followerGrowth', width: 'third', settings: {} }
     ]
@@ -546,6 +639,7 @@ export const DASHBOARD_PRESETS = [
       { type: 'block', width: 'half', settings: {} },
       { type: 'witnesses', width: 'half', settings: { limit: 8 } },
       { type: 'hiveEngine', width: 'half', settings: {} },
+      { type: 'portfolioTrend', width: 'half', settings: {} },
       { type: 'priceAlert', width: 'half', settings: {} }
     ]
   },
@@ -562,6 +656,7 @@ export const DASHBOARD_PRESETS = [
       { type: 'notifications', width: 'half', settings: {} },
       { type: 'governance', width: 'half', settings: {} },
       { type: 'network', width: 'half', settings: {} },
+      { type: 'communityGrowth', width: 'third', settings: {} },
       { type: 'communitySpotlight', width: 'third', settings: {} },
       { type: 'trendingTags', width: 'third', settings: {} }
     ]

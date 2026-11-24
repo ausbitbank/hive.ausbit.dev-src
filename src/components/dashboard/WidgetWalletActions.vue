@@ -36,6 +36,11 @@
         <span>{{ staleNotice }}</span>
       </p>
 
+      <p v-if="queuedAction" class="dw-wa__notice dw-wa__notice--queued" role="status">
+        <q-icon name="playlist_add_check" size="16px" aria-hidden="true" />
+        <span>{{ queuedAction }} was added to the signing queue. Review and send it from the queue; errors stay on the queue item.</span>
+      </p>
+
       <div v-if="!summary.hasAnything" class="dw-wa__clear">
         <q-icon :name="checking ? 'hourglass_top' : 'check_circle'" size="22px" aria-hidden="true" />
         <div>
@@ -56,7 +61,16 @@
         <section v-if="showPowerDown && summary.powerdown.active" class="dw-wa__item" aria-labelledby="dw-wa-powerdown-title">
           <div class="dw-wa__item-head">
             <h3 id="dw-wa-powerdown-title"><q-icon name="arrow_circle_down" aria-hidden="true" /> Power down</h3>
-            <router-link :to="pendingPath" class="dw-wa__link" aria-label="Manage power down in the wallet">Wallet</router-link>
+            <span class="dw-wa__item-actions">
+              <widget-action-button
+                v-if="canAct"
+                :action="actions.cancelPowerdown"
+                :account="accountName"
+                label="Cancel"
+                @queued="onQueued"
+              />
+              <router-link :to="pendingPath" class="dw-wa__link" aria-label="Manage power down in the wallet">Wallet</router-link>
+            </span>
           </div>
           <div class="dw-wa__facts">
             <div><span>Total</span><strong>{{ amountLabel(summary.powerdown.toWithdraw) }}</strong></div>
@@ -85,11 +99,20 @@
           </div>
           <ul class="dw-wa__list">
             <li v-for="item in summary.savingsWithdrawals" :key="'savings-' + item.id">
-              <strong>{{ item.amount }}</strong>
-              <span class="dw-wa__row-meta">
-                <span>{{ item.to && item.to !== accountName ? 'to @' + item.to : 'to you' }}</span>
-                <span>{{ item.countdown || '—' }}</span>
+              <span class="dw-wa__row-main">
+                <strong>{{ item.amount }}</strong>
+                <span class="dw-wa__row-meta">
+                  <span>{{ item.to && item.to !== accountName ? 'to @' + item.to : 'to you' }}</span>
+                  <span>{{ item.countdown || '—' }}</span>
+                </span>
               </span>
+              <widget-action-button
+                v-if="canAct"
+                :action="actions.cancelSavings(item.id)"
+                :account="accountName"
+                label="Cancel"
+                @queued="onQueued"
+              />
             </li>
           </ul>
         </section>
@@ -114,8 +137,17 @@
           </div>
           <ul class="dw-wa__list">
             <li v-for="order in summary.orders" :key="'order-' + order.id">
-              <strong>{{ order.sell }} → {{ order.receive }}</strong>
-              <span class="dw-wa__row-meta">{{ orderPrice(order) }}</span>
+              <span class="dw-wa__row-main">
+                <strong>{{ order.sell }} → {{ order.receive }}</strong>
+                <span class="dw-wa__row-meta">{{ orderPrice(order) }}</span>
+              </span>
+              <widget-action-button
+                v-if="canAct"
+                :action="actions.cancelOrder(order.id)"
+                :account="accountName"
+                label="Cancel"
+                @queued="onQueued"
+              />
             </li>
           </ul>
         </section>
@@ -131,6 +163,13 @@
           <p class="dw-wa__hint">
             <router-link :to="pendingPath">Claim in the wallet</router-link>
           </p>
+          <widget-action-button
+            v-if="canAct"
+            :action="actions.claimRewards"
+            :account="accountName"
+            label="Claim rewards"
+            @queued="onQueued"
+          />
         </section>
 
         <section v-if="showSavings && summary.interest.amount > 0.01" class="dw-wa__item" aria-labelledby="dw-wa-interest-title">
@@ -148,12 +187,19 @@
             Interest is paid once per month into HBD savings.
             <router-link :to="pendingPath">Claim in the wallet</router-link>
           </p>
+          <widget-action-button
+            v-if="canAct"
+            :action="actions.claimInterest"
+            :account="accountName"
+            label="Claim interest"
+            @queued="onQueued"
+          />
         </section>
       </q-card-section>
 
       <q-card-section class="home-panel__footer dw-wa__footer">
         <router-link :to="pendingPath">Manage in wallet</router-link>
-        <span>{{ extrasLoading ? 'Refreshing…' : 'Read-only · no signing' }}</span>
+        <span>{{ extrasLoading ? 'Refreshing…' : canAct ? 'Actions queue for signing' : 'Read-only · no signing' }}</span>
       </q-card-section>
     </template>
   </div>
@@ -173,6 +219,16 @@
   color: var(--c-warning-soft);
   font-size: 0.7rem;
   line-height: 1.4;
+}
+
+.dw-wa__notice--queued {
+  color: var(--c-positive);
+}
+
+.dw-wa__item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .dw-wa__clear {
@@ -309,6 +365,13 @@
   font-size: 0.73rem;
 }
 
+.dw-wa__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
 .dw-wa__list li:first-child {
   padding-top: 0;
   border-top: 0;
@@ -403,13 +466,21 @@
 <script>
 import moment from 'src/utils/time'
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
+import WidgetActionButton from 'components/dashboard/WidgetActionButton.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
 import { walletActionsSummary } from 'src/services/walletActions'
 import { tidyNumber } from 'src/services/wallet'
+import {
+  cancelOrderAction,
+  cancelPowerdownAction,
+  cancelSavingsWithdrawalAction,
+  claimInterestAction,
+  claimRewardsAction
+} from 'src/services/widgetActions'
 
 export default {
   name: 'WidgetWalletActions',
-  components: { DashboardWidgetState },
+  components: { DashboardWidgetState, WidgetActionButton },
   mixins: [accountWidgetMixin],
   props: {
     account: { type: String, default: '' },
@@ -417,7 +488,8 @@ export default {
     showSavings: { type: Boolean, default: true },
     showConversions: { type: Boolean, default: true },
     showOrders: { type: Boolean, default: true },
-    showRewards: { type: Boolean, default: true }
+    showRewards: { type: Boolean, default: true },
+    enableActions: { type: Boolean, default: false }
   },
   data () {
     return {
@@ -429,7 +501,8 @@ export default {
       extrasLoaded: false,
       extrasFailed: false,
       extrasError: '',
-      extrasAccount: ''
+      extrasAccount: '',
+      queuedAction: ''
     }
   },
   computed: {
@@ -486,10 +559,31 @@ export default {
     },
     pendingPath () {
       return '/@' + this.accountName + '/wallet#pending'
+    },
+    /**
+     * Actions are only offered for the signed-in user's own account. A widget
+     * pointing at someone else stays a read-only view, and the setting is off
+     * by default.
+     */
+    canAct () {
+      return Boolean(this.enableActions && this.accountName && this.signedInUser === this.accountName)
+    },
+    actions () {
+      const name = this.accountName
+      return {
+        claimRewards: this.canAct ? claimRewardsAction(name, this.accountRecord) : null,
+        claimInterest: this.canAct ? claimInterestAction(name) : null,
+        cancelPowerdown: this.canAct ? cancelPowerdownAction(name) : null,
+        cancelSavings: id => (this.canAct ? cancelSavingsWithdrawalAction(name, id) : null),
+        cancelOrder: id => (this.canAct ? cancelOrderAction(name, id) : null)
+      }
     }
   },
   methods: {
     tidyNumber,
+    onQueued (action) {
+      this.queuedAction = action?.label || 'Action'
+    },
     amountLabel (value) {
       return tidyNumber(value, 2) + ' HIVE'
     },

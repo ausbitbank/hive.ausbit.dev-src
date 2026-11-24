@@ -1,7 +1,7 @@
 <template>
   <div ref="root" class="dw-viewport" :style="{ minHeight: visible ? null : minHeight }">
     <slot v-if="visible" />
-    <div v-else class="dw-viewport__placeholder" aria-busy="true" aria-label="Loading widget">
+    <div v-else class="dw-viewport__placeholder" aria-busy="true">
       <q-skeleton type="rect" height="16px" width="36%" />
       <q-skeleton type="rect" height="46px" />
       <q-skeleton type="text" width="62%" />

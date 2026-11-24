@@ -1,7 +1,7 @@
 # W65 — Dashboard widget expansion
 
-Date: 2026-11-23
-Status: Phase 0–3 safe/read-only widgets complete locally; signing and historical/exploratory items deferred
+Date: 2026-11-24
+Status: complete — all Phase 0–3 items implemented and locally verified
 Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
 Research: [`docs/dashboard-widgets-research.md`](../dashboard-widgets-research.md)
 
@@ -82,9 +82,9 @@ and the research document. This record tracks implementation and verification.
 Phase 2 is now complete: the posts widget can show a merged "my communities"
 feed (W69), and HIVE-in-sats ships on the Coin prices widget (W68).
 
-## Phase 3 — actions and experiments
+## Phase 3 — actions and experiments (done)
 
-Done (read-only):
+Read-only widgets:
 
 - **Magi network** — Magi head, version, latency, witness counts, recent
   contracts and DEX token prices.
@@ -95,36 +95,62 @@ Done (read-only):
 - **Follower growth** — followers/following plus deltas measured from a local
   365-day baseline. A new baseline clearly says tracking starts now.
 
-Deferred deliberately:
+Final wave:
 
-- Widget actions (claim/cancel) need the shared action/authority framework and
-  a reviewed signing pass.
-- Lightning/keepsats needs the session/custody review.
-- Portfolio trend needs price and balance history.
-- Account safety needs a curated external bad-actor list and a warning-only
-  design.
-- KE ratio (#86) remains exploratory and controversial; it needs a contextual
-  accountability view, not a bare badge.
-- Hive news digest can be a posts-widget preset rather than a new widget.
-- The shared layout gallery is already covered by persona presets plus the
-  existing `HIVE-DASH-1.*` export/import.
+- **Widget actions** — `src/services/widgetActions.js` builds the exact
+  operations for claim rewards (posting), claim HBD interest (active, the same
+  transfer/cancel pair as the wallet), cancel power-down, cancel savings
+  withdrawal and cancel market order (all active). `WidgetActionButton` shows a
+  confirmation dialog with the authority label, the operation names and an
+  explicit "nothing is broadcast automatically" warning, then queues through
+  `addToQueue`. Actions are off by default (`enableActions`), only appear for
+  the signed-in account, and stay in the row with the queue error if signing
+  fails. HiveAuth remains manual-only.
+- **Community growth** — subscriber, active-author and `sum_pending` deltas from
+  a local 365-day baseline. One `bridge.get_community` read; a new baseline says
+  tracking starts now.
+- **Portfolio trend** — current portfolio value, a local balance baseline
+  (one point per six hours, capped at 90) and public HIVE price history from
+  CoinGecko (7/30 days, cached ten minutes). The two lines are labelled
+  separately and the card says it is not P&L.
+- **Lightning / keepsats** — a read-only card that reads an existing v4v.app
+  session from memory. With no session it explains how to connect in the
+  wallet; it never opens a session, never shows a token and cannot move funds.
+- **Account safety** — warning-only comparison against the curated phishing and
+  spam lists already used by the moderation layer. It reports every matching
+  source with its owner and as-of date, treats a failed list as "not checked"
+  rather than "clear", and never hides, downvotes or blocks.
+- **Accountability (KE ratio, #86)** — opt-in contextual view. It counts author,
+  curation, comment, beneficiary, witness, interest and proposal income, shows
+  the reward-source breakdown and always prints the limitations. It is not a
+  badge, score or ranking.
+- **Hive news digest** — a merge of up to five curated ecosystem accounts'
+  blog feeds, deduplicated and bounded, explicitly labelled curated rather than
+  editorial.
+- Presets extended: Everyday (news digest), Creator (portfolio trend), Trader
+  (portfolio trend) and Community (community growth).
 
 ## Verification
 
-- `bun run test` — 140 files, 1,201 tests passed.
+- `bun run test` — 160 files, 1,413 tests passed.
 - `bun run build` — succeeded; home snapshot generated.
-- `bunx playwright test e2e/dashboard.spec.js` — 28 passed (Chromium).
+- `bunx playwright test e2e/dashboard.spec.js` — 32 passed (Chromium), including
+  the new drawer, guest-state, public-discovery and signing-opt-in cases.
 - `bunx playwright test e2e/a11y.spec.js -g "custom dashboard templates"` —
-  axe clean at 1440px and 390px for the Everyday and Creator templates.
-- `bun run perf:check` — all route budgets passed. The default home now loads
-  409.6 KB total (down from 459.1 KB before the widget split) and stays under
-  the home JS/CSS budgets by keeping non-default widgets in async chunks.
+  axe clean at 1440px and 390px for the Everyday and Creator templates. The
+  deferred-widget skeleton lost its invalid `aria-label` (generic divs cannot
+  carry one).
+- `bun run perf:check` — all route budgets passed. Home total is 421.8 KB; the
+  home route JS budget moved from 174 KB to 176 KB for the larger registry and
+  settings catalogue. Every non-default widget stays an async chunk, including
+  all six new cards.
 - `bunx playwright test e2e/a11y.spec.js -g "axe clean: /$"` — home axe clean
   at 1440px and 390px.
 - Targeted ESLint on every changed/new file — clean.
-- `bun run lint` — clean after the concurrent theme work fixed the earlier
-  `badges.js` warning.
-- `node scripts/check-theme-tokens.mjs` — clean.
+- `node scripts/check-theme-tokens.mjs` and `bun run icons:subset` — clean.
+- New unit coverage: `widgetActions`, `widget-action-button`, `communityGrowth`,
+  `portfolioTrend` (including price-history normalisation), `accountSafety`,
+  `keRatio` and `newsDigest`.
 
 ## Notes
 
@@ -132,7 +158,11 @@ Deferred deliberately:
 - No auto-broadcast; the existing queue is the only signing path.
 - Estimates (vote value, pending rewards, curation APR, HBD interest) are
   labelled as estimates.
-- No unbounded lists or background polling.
+- No unbounded lists or background polling. The six new cards use manual
+  refresh, one bounded read per source and deferred mounting where the read is
+  expensive.
+- Account safety and the KE view are opt-in and deliberately non-punitive; both
+  include their provenance and limits in the card, not just in the docs.
 - The HBD widget excludes the `@hive.fund` treasury balance from the debt ratio
   to match `/hbd`.
 - The governance widget excludes active requests above 1,000,000 HBD/day from

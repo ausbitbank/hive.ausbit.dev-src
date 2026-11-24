@@ -19,6 +19,7 @@ import {
   widthChoicesFor
 } from './dashboardLayout'
 import { HOME_MARKET_CURRENCIES, MAX_HOME_MARKET_COINS } from './homeMarket'
+import { SAFETY_SOURCES } from './accountSafety'
 import { OPERATION_FILTER_CHOICES } from './operationsFeed'
 import { ACCOUNT_FEED_SORTS, FEED_REFERENCE_PLACEHOLDER } from './feedReference'
 
@@ -284,6 +285,20 @@ export function settingsFieldsFor (type) {
         },
         { key: 'showVoteValue', kind: 'toggle', label: 'Show vote value', hint: 'Estimate based on the current reward fund and voting power.' }
       ]
+    case 'portfolioTrend':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'windowDays',
+          kind: 'window',
+          label: 'Price history window',
+          options: [
+            { value: 7, label: 'Last 7 days' },
+            { value: 30, label: 'Last 30 days' }
+          ]
+        },
+        { key: 'showPrice', kind: 'toggle', label: 'Show HIVE price history', hint: 'Public CoinGecko history. The portfolio line is always a local baseline.' }
+      ]
     case 'walletActions':
       return [
         ACCOUNT_FIELD,
@@ -291,7 +306,13 @@ export function settingsFieldsFor (type) {
         { key: 'showSavings', kind: 'toggle', label: 'Show savings withdrawals' },
         { key: 'showConversions', kind: 'toggle', label: 'Show conversions' },
         { key: 'showOrders', kind: 'toggle', label: 'Show open market orders' },
-        { key: 'showRewards', kind: 'toggle', label: 'Show claimable rewards' }
+        { key: 'showRewards', kind: 'toggle', label: 'Show claimable rewards' },
+        {
+          key: 'enableActions',
+          kind: 'toggle',
+          label: 'Enable claim and cancel buttons',
+          hint: 'Only for your own account. Each action opens a confirmation, shows the required authority and is added to the signing queue. Nothing is broadcast automatically.'
+        }
       ]
     case 'creatorStats':
       return [
@@ -341,6 +362,58 @@ export function settingsFieldsFor (type) {
           ]
         },
         { key: 'showTopPost', kind: 'toggle', label: 'Show the top post' }
+      ]
+    case 'communityGrowth':
+      return [
+        { key: 'community', kind: 'text', label: 'Community', placeholder: 'hive-139531', stripHash: true, hint: 'Community name, for example hive-139531. Growth is measured from a baseline saved in this browser.' },
+        { key: 'showAuthors', kind: 'toggle', label: 'Show active authors' },
+        { key: 'showPending', kind: 'toggle', label: 'Show pending rewards' }
+      ]
+    case 'newsDigest':
+      return [
+        {
+          key: 'accounts',
+          kind: 'accounts',
+          label: 'Curated accounts',
+          hint: 'Up to 5 accounts whose blog posts are merged. This is a curated list, not an editorial news desk.',
+          maxItems: 5
+        },
+        LIMIT_FIELD(12, 'Posts to show'),
+        { key: 'showPayout', kind: 'toggle', label: 'Show payouts' }
+      ]
+    case 'keRatio':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'windowDays',
+          kind: 'window',
+          label: 'History window',
+          options: [
+            { value: 30, label: 'Last 30 days' },
+            { value: 90, label: 'Last 90 days' },
+            { value: 365, label: 'Last 365 days' }
+          ]
+        },
+        { key: 'showBreakdown', kind: 'toggle', label: 'Show the reward-source breakdown', hint: 'The breakdown and the limitations are what keep this contextual; leave them visible unless the card is very narrow.' }
+      ]
+    case 'accountSafety':
+      return [
+        ACCOUNT_FIELD,
+        {
+          key: 'sources',
+          kind: 'multi',
+          label: 'Warning lists',
+          options: SAFETY_SOURCES.map(source => ({
+            value: source.id,
+            label: source.title
+          }))
+        },
+        {
+          key: 'showCaution',
+          kind: 'toggle',
+          label: 'Show each list’s caveat',
+          hint: 'These lists are curated by other Hive apps and communities. A match is a warning, never a block.'
+        }
       ]
     case 'delegations':
       return [
