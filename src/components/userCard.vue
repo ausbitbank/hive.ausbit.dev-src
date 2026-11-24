@@ -166,11 +166,21 @@ export default {
         this.followBusy = false
       }
     },
+    syncModeration (mutator) {
+      import('src/stores/moderation')
+        .then(({ useModerationStore }) => {
+          const store = useModerationStore()
+          store.setScope(this.loggedInUser || 'guest')
+          mutator(store)
+        })
+        .catch(() => {})
+    },
     followUser (who) {
       const json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
       this.relationship = { ...(this.relationship || {}), follows: true }
       if (Array.isArray(this.followingNames) && !this.followingNames.includes(who)) this.followingNames.push(who)
       rememberFollowing(this.loggedInUser, who, true)
+      this.syncModeration(store => store.noteFollowChange(who, true))
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     },
     unfollowUser (who) {
@@ -178,6 +188,7 @@ export default {
       this.relationship = { ...(this.relationship || {}), follows: false }
       if (Array.isArray(this.followingNames)) this.followingNames = this.followingNames.filter(name => name !== who)
       rememberFollowing(this.loggedInUser, who, false)
+      this.syncModeration(store => store.noteFollowChange(who, false))
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json }]])
     }
   }

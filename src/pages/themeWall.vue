@@ -93,8 +93,14 @@
             <div v-if="error" class="wall-error" role="alert">{{ error }}</div>
 
             <div v-if="visibleSkins.length" class="wall-grid">
-              <article v-for="item in visibleSkins" :key="item.account.name" class="wall-card wall-card--skin" :style="styleFor(item.theme)">
-                <span class="wall-card__swatches" aria-hidden="true">
+              <article
+                v-for="item in visibleSkins"
+                :key="item.account.name"
+                class="wall-card wall-card--skin"
+                :class="{ 'wall-card--blocked': isSkinBlocked(item) }"
+                :style="isSkinBlocked(item) ? null : styleFor(item.theme)"
+              >
+                <span v-if="!isSkinBlocked(item)" class="wall-card__swatches" aria-hidden="true">
                   <span v-for="swatch in swatches(item.theme)" :key="swatch" :style="{ background: swatch }"></span>
                 </span>
                 <span class="wall-card__body">
@@ -111,8 +117,13 @@
                     <q-icon name="verified" size="13px" aria-hidden="true" />
                     {{ credentialLabel(item.theme) }}
                   </span>
+                  <span v-if="isSkinBlocked(item)" class="wall-card__moderation">
+                    <q-icon name="shield" size="13px" aria-hidden="true" />
+                    {{ skinDecisionFor(item).label }}
+                  </span>
                 </span>
                 <span class="wall-card__actions">
+                  <q-btn v-if="isSkinBlocked(item)" flat dense no-caps icon="visibility" label="Show skin" @click="showSkinAnyway(item)" />
                   <q-btn flat dense no-caps icon="tune" label="Remix" @click="remixSkin(item)" />
                   <q-btn flat dense no-caps icon="palette" label="Use palette" @click="openAdopt(item)" />
                   <router-link class="wall-card__action" :to="'/@' + item.account.name">
@@ -140,6 +151,10 @@
             <h2 class="wall-dialog__title">Use this palette on this device?</h2>
             <p class="wall-dialog__text">
               This previews {{ adoptItem?.theme?.name }} as your site theme. The author's published skin is not changed.
+            </p>
+            <p v-if="adoptWarning" class="wall-dialog__warning" role="status">
+              <q-icon name="shield" size="15px" aria-hidden="true" />
+              Your moderation policy hides this author's skin. Adopting the palette is a deliberate local choice; nothing is published.
             </p>
             <div v-if="adoptItem" class="wall-adopt-preview" :style="previewVars(adoptItem.theme)">
               <span class="wall-adopt-preview__swatches" aria-hidden="true">
@@ -265,6 +280,17 @@
   cursor: default;
 }
 
+.wall-card--blocked {
+  border-style: dashed;
+  background: var(--c-surface-2);
+}
+
+.wall-card--blocked .wall-card__name,
+.wall-card--blocked .wall-card__mode,
+.wall-card--blocked .wall-card__mood {
+  color: var(--c-text-muted);
+}
+
 .wall-card__swatches {
   display: flex;
   overflow: hidden;
@@ -318,6 +344,16 @@
   color: var(--c-positive);
   font-size: 0.68rem;
   font-weight: 650;
+}
+
+.wall-card__moderation {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  color: var(--c-warning);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .wall-card__actions {
@@ -423,6 +459,20 @@
   line-height: 1.5;
 }
 
+.wall-dialog__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 35%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--c-warning) 10%, transparent);
+  color: var(--c-text);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
 .wall-adopt-preview {
   display: flex;
   align-items: center;
@@ -472,6 +522,9 @@ import { THEMES, getTheme } from 'src/themes/registry'
 import { tokensFor } from 'src/themes/tokens'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { useModerationStore } from 'src/stores/moderation'
+
+const EMPTY_SKIN_DECISION = { allowed: true, code: 'allowed', label: '', overrides: [] }
 
 export default {
   name: 'ThemeWall',
@@ -481,6 +534,7 @@ export default {
       description: 'Built-in Hive themes and profile skins published by accounts you follow on hive.ausbit.dev.',
       url: '/themes'
     })
+    this.syncModeration()
   },
   data () {
     return {
@@ -506,7 +560,8 @@ export default {
         { label: 'Minimal', value: 'minimal' }
       ],
       adoptOpen: false,
-      adoptItem: null
+      adoptItem: null,
+      adoptWarning: false
     }
   },
   computed: {
@@ -518,6 +573,9 @@ export default {
     },
     username () {
       return this.$hiveStore.user.username || ''
+    },
+    moderation () {
+      return useModerationStore()
     },
     tagOptions () {
       const tags = new Set()
@@ -541,6 +599,15 @@ export default {
         return rows.filter(item => this.isFeatured(item.theme))
       }
       return rows
+    },
+    skinDecisionsByAuthor () {
+      const out = {}
+      for (const item of this.visibleSkins) {
+        out[item.account.name] = this.moderation.decisionForSkin
+          ? this.moderation.decisionForSkin({ author: item.account.name, account: item.account })
+          : EMPTY_SKIN_DECISION
+      }
+      return out
     }
   },
   watch: {
@@ -548,6 +615,12 @@ export default {
       if (value !== 'built-in' && this.loggedIn && this.loadedFor !== this.username) {
         this.loadFollowing(false)
       }
+    },
+    username (value) {
+      this.skins = []
+      this.loadedFor = ''
+      this.syncModeration()
+      if (value && this.tab !== 'built-in') this.loadFollowing(false)
     }
   },
   methods: {
@@ -617,8 +690,29 @@ export default {
       }
       this.$router.push('/settings/skin?remix=1')
     },
+    skinDecisionFor (item) {
+      if (!item || !item.account) return EMPTY_SKIN_DECISION
+      return this.skinDecisionsByAuthor[item.account.name] || EMPTY_SKIN_DECISION
+    },
+    isSkinBlocked (item) {
+      return !this.skinDecisionFor(item).allowed
+    },
+    syncModeration () {
+      this.moderation.setScope(this.username || 'guest')
+      this.moderation.ensureContext()
+    },
+    showSkinAnyway (item) {
+      if (!item || !item.account) return
+      this.moderation.showSkinAuthor(item.account.name)
+      this.$q.notify({
+        message: 'Skin shown. You can change this in Appearance.',
+        color: 'primary',
+        timeout: 3000
+      })
+    },
     openAdopt (item) {
       this.adoptItem = item
+      this.adoptWarning = this.isSkinBlocked(item)
       this.adoptOpen = true
     },
     confirmAdopt () {
@@ -645,6 +739,8 @@ export default {
       this.loading = true
       this.error = ''
       try {
+        this.moderation.setScope(this.username || 'guest')
+        await this.moderation.ensureContext()
         const names = await fetchFollowingNames(this.username, { force })
         const wanted = names.slice(0, 80)
         if (!wanted.length) {

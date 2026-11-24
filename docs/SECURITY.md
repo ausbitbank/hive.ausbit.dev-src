@@ -139,6 +139,45 @@ and asset caching instead.
   `wss://hive-auth.arcange.eu` explicitly. QR images use a `data:` URI, which
   `img-src` already allows.
 
+## Profile skin safety
+
+A profile skin is untrusted account metadata that changes the visual surface a
+visitor sees. It is not allowed to load unconditionally.
+
+- The safety decision is bound to the **account that owns the metadata**, not
+  the self-declared `theme.author` field. A theme that credits a different
+  account is shown with a warning and never inherits that account's standing.
+- A custom skin does not apply when the viewer has the author on their Hive
+  mute list (`follow` with `what: ["ignore"]`) or when the author's displayed
+  reputation is below zero. A raw reputation of `0` displays as `25` and is
+  not negative.
+- The rule **fails closed**: if the viewer's mute list, the author's
+  reputation, or a subscribed mute list cannot be resolved, the built-in theme
+  stays in place. A follow beats a subscribed mute list by default; it does not
+  lift a negative-reputation block unless the viewer explicitly turns on
+  "Trust followed reputation". It never lifts a direct mute. The viewer can
+  show a specific skin anyway; that override is local and reversible.
+- Guests have no mute list, so only reputation and community signals apply.
+  The signed-in viewer's list is read once per session with
+  `bridge.get_follow_list` and cached in memory plus a bounded sessionStorage
+  snapshot (10 minutes). The live node rejects a `limit` argument and returns
+  the whole list, so the cache is bounded by entry count and never read per
+  card.
+- The check reuses the post's `author_reputation` or the cached account record;
+  it does not add a chain request to every post page.
+- The Skin Studio preview is an authoring surface and requires an explicit
+  "Preview anyway" when the owner is blocked. The theme wall omits a blocked
+  author's palette and asks for confirmation before adopting it as a site
+  palette. Neither path publishes anything.
+- This is a local viewer policy, not a site-wide ban list. No list is shared
+  with other users, no account is punished, and no chain state is changed.
+
+Implementation: `src/services/moderationPolicy.js` (pure gate),
+`src/services/moderationData.js` (cached reads),
+`src/services/moderationSettings.js` (local per-account settings),
+`src/stores/moderation.js` (viewer snapshot) and
+`src/components/theme/ProfileSkin.vue` (rendering and overrides).
+
 ## General rules for contributors
 
 - Never pass chain metadata (profiles, community descriptions, token metadata)

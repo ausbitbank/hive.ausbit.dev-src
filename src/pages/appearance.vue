@@ -203,6 +203,82 @@
         </div>
       </section>
 
+      <section id="skin-safety" class="theme-section" aria-labelledby="theme-safety-title">
+        <div class="theme-section__head">
+          <div>
+            <h2 id="theme-safety-title" class="theme-section__title">Skin safety</h2>
+            <p class="theme-section__hint">
+              Custom skins never load from accounts you mute or accounts with negative reputation.
+              If the check cannot run, the site keeps its own theme. You can override any single skin.
+            </p>
+          </div>
+        </div>
+
+        <div class="theme-options">
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Muted accounts</div>
+              <div class="theme-option__hint">Blocked by default. Use “Show this skin anyway” on a profile to allow one author.</div>
+            </div>
+            <q-icon name="shield" size="20px" color="primary" aria-hidden="true" />
+          </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Negative reputation</div>
+              <div class="theme-option__hint">Blocked by default. A per-author override is available in the same notice.</div>
+            </div>
+            <q-icon name="shield" size="20px" color="primary" aria-hidden="true" />
+          </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Follows beat mute lists</div>
+              <div class="theme-option__hint">Show a followed account's skin even when a mute list you subscribe to includes them.</div>
+            </div>
+            <q-toggle
+              :model-value="moderation.skinSettings.followedMuteListOverride"
+              color="primary"
+              aria-label="Show skins from accounts I follow when a mute list includes them"
+              @update:model-value="moderation.setSkinSetting('followedMuteListOverride', $event)"
+            />
+          </div>
+
+          <div class="theme-option">
+            <div class="theme-option__text">
+              <div class="theme-option__label">Trust followed reputation</div>
+              <div class="theme-option__hint">Also show skins from accounts you follow when their reputation is negative. Off by default.</div>
+            </div>
+            <q-toggle
+              :model-value="moderation.skinSettings.followedReputationOverride"
+              color="primary"
+              aria-label="Show skins from followed accounts with negative reputation"
+              @update:model-value="moderation.setSkinSetting('followedReputationOverride', $event)"
+            />
+          </div>
+        </div>
+
+        <p class="theme-section__hint" role="status">{{ moderationContextNote }}</p>
+
+        <div v-if="shownSkinAuthors.length" class="theme-ignored">
+          <p class="theme-section__hint">Skins you chose to show anyway:</p>
+          <ul class="theme-ignored">
+            <li v-for="author in shownSkinAuthors" :key="author" class="theme-ignored__row">
+              <router-link :to="'/@' + author" class="theme-ignored__author">@{{ author }}</router-link>
+              <q-btn
+                flat
+                dense
+                no-caps
+                icon="shield"
+                label="Use default safety"
+                :aria-label="'Use default skin safety for @' + author"
+                @click="clearSkinOverride(author)"
+              />
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section v-if="customThemeActive" class="theme-section" aria-labelledby="theme-adopted-title">
         <div class="theme-section__head">
           <div>
@@ -644,6 +720,7 @@
 <script>
 import { THEMES, DEFAULT_THEME_ID } from 'src/themes/registry'
 import { setPageMeta } from 'src/utils/pageMeta'
+import { useModerationStore } from 'src/stores/moderation'
 
 export default {
   name: 'AppearancePage',
@@ -653,6 +730,7 @@ export default {
       description: 'Choose a site theme, follow your system appearance, and control profile skins, motion and contrast on hive.ausbit.dev.',
       url: '/appearance'
     })
+    this.syncModeration()
   },
   data () {
     return {
@@ -680,11 +758,45 @@ export default {
     loggedIn () {
       return Boolean(this.$hiveStore.user.username)
     },
+    moderation () {
+      return useModerationStore()
+    },
     ignoredSkinAuthors () {
       return this.$appearance.ignoredSkinAuthors
     },
     customThemeActive () {
       return this.$appearance.customThemeActive
+    },
+    shownSkinAuthors () {
+      return this.moderation.skinShowAuthors || []
+    },
+    moderationContextNote () {
+      const moderation = this.moderation
+      if (!moderation) return ''
+      if (!this.loggedIn) {
+        return 'Sign in to apply your Hive mute list. Reputation checks still apply while signed out.'
+      }
+      if (moderation.context.status === 'loading' || moderation.context.status === 'idle') {
+        return 'Checking your Hive mute list…'
+      }
+      if (moderation.context.status === 'error') {
+        return 'Your mute list could not be loaded, so custom skins stay on the built-in theme until it can be checked.'
+      }
+      const muted = moderation.context.muted.length
+      const lists = moderation.context.followedMuteOwners.length
+      const base = 'Checked ' + muted + ' muted account' + (muted === 1 ? '' : 's') +
+        ' and ' + lists + ' followed mute list' + (lists === 1 ? '' : 's') + '.'
+      const errors = Number(moderation.context.listErrors) || 0
+      if (errors > 0) {
+        return base + ' ' + errors + ' followed list' + (errors === 1 ? '' : 's') +
+          ' could not be read, so some authors may stay on the built-in theme.'
+      }
+      return base
+    }
+  },
+  watch: {
+    '$hiveStore.user.username' () {
+      this.syncModeration()
     }
   },
   methods: {
@@ -701,6 +813,18 @@ export default {
     },
     restoreSkin (author) {
       this.$appearance.unignoreSkinAuthor(author)
+    },
+    syncModeration () {
+      this.moderation.setScope(this.$hiveStore.user.username || 'guest')
+      this.moderation.ensureContext()
+    },
+    clearSkinOverride (author) {
+      this.moderation.clearSkinOverride(author)
+      this.$q.notify({
+        message: 'Default skin safety restored for @' + author + '.',
+        color: 'primary',
+        timeout: 2200
+      })
     },
     previewStyle (theme) {
       const t = theme.tokens

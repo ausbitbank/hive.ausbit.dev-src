@@ -1,6 +1,6 @@
 # hive.ausbit.dev roadmap
 
-Last updated: 2026-11-23
+Last updated: 2026-11-24
 
 This is the active roadmap. It contains only open work. Delivered features and
 their verification records live in `docs/workstreams/` and are not repeated
@@ -240,6 +240,139 @@ body, a lazy-loaded emoji picker, and drag reordering in the Topic order dialog
 `toc` glyph. An autosave toggle is deliberately deferred until there is a
 navigation guard. It is deployed and live-smoked. See
 `docs/workstreams/W70-composer-editor-polish.md`.
+
+## Follow-ups from the 2026-11-23 “Looks, Words and Sats” response
+
+Numbering note: `docs/workstreams/W62-hiveauth.md` and
+`docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
+signing work as **W62-hiveauth**. W71 is complete; W72 and W73 are open; the
+next free workstream numbers are W74 and W75.
+
+### W71 — Theme safety (complete)
+
+W71 is implemented, deployed and live-smoked: a custom skin does not apply
+from a muted author or an author with negative displayed reputation; the check
+fails closed while unresolved; follows beat subscribed mute lists, negative
+reputation needs an explicit trust choice, and the viewer can show a specific
+skin anyway. It covers profile, blog, post, the theme wall and the Studio
+preview. See
+[`docs/workstreams/W71-theme-safety.md`](workstreams/W71-theme-safety.md) and
+the rule in [`docs/SECURITY.md`](SECURITY.md).
+
+### W72 — HiveAuth device matrix and background-resume hardening
+
+This is a follow-up to **W62-hiveauth**. Login, voting, commenting, rejection,
+keepsats and queue auto-send are working on the initial device; the remaining
+work is a repeatable matrix and a resume path that survives a backgrounded
+mobile tab.
+
+Current client behaviour:
+
+- One logical HiveAuth request at a time, keyed by the relay `uuid`.
+- After an unexpected socket close with a pending request, reconnect with
+  backoff (500 ms → 4 s) and send `attach_req`.
+- `attach_ack` resumes waiting; `attach_nack` fails with “request expired before
+  it could be resumed — check the chain before retrying a transaction”.
+- The relay's 60-second expiry is the hard deadline. There is no blind retry
+  after an ambiguous `attach_nack`, to avoid duplicate broadcasts.
+- Image uploads use the image host's `/cs/` checksum endpoint, so the HiveAuth
+  request is a 47-byte challenge rather than the whole file.
+- Queue auto-send/send-all process HiveAuth actions one at a time and wait for
+  each phone approval.
+
+The gap: a suspended mobile tab may not emit a clean socket close. The resume
+path currently reacts to `onclose`, so it can wait for a close that never
+arrives, or reconnect later than necessary.
+
+Open work:
+
+- [ ] On `visibilitychange`, `pageshow` and `online`, if a request is pending and
+      the socket is not `OPEN`, close it and reconnect immediately, then
+      `attach_req`. Do not wait for `onclose` or the next backoff tick.
+- [ ] Persist a small pending record in `sessionStorage`:
+      `{uuid, kind, account, expire}`. For login, also keep the temporary auth
+      key (the same trust level as the session key) so a reload within 60
+      seconds can `attach_req` and finish the login.
+- [ ] For signing, if resume fails, mark the queue item failed and tell the user
+      to check the chain before retrying. Never auto-retry a transaction after
+      an ambiguous `attach_nack`.
+- [ ] Show explicit status: “Waiting for wallet… reconnecting (attempt 2)…
+      expires in 34s”. If the tab was hidden past expiry, cancel cleanly and
+      explain.
+- [ ] Before an auto-send batch, show: “Keep Keychain Mobile open in the
+      foreground; each request has a 60-second approval window.”
+- [ ] Add automated tests for socket drop → reconnect → `attach_ack`, tab
+      reload → pending attach, `attach_nack`, expiry during reconnect, and
+      duplicate-response suppression.
+- [ ] Record every manual run with build SHA, device/OS/browser, wallet version,
+      network (Wi-Fi/cellular) and background duration (10s, 30s, 55s), plus a
+      screenshot for failures.
+
+Device matrix:
+
+| Tier | Devices / wallets | What we test |
+| --- | --- | --- |
+| **1 — release gate** | Keychain Mobile on Android + iOS; Safari iOS and Chrome Android; desktop Chrome/Firefox with QR | Login, vote, comment, transfer, image upload, keepsats, reject, timeout, session expiry, 3-action auto-send |
+| **2 — supported** | HiveAuth Mobile; Keychain Mobile's in-app browser; Safari/Edge desktop; older Android/iOS | Same core flows, best-effort |
+| **3 — resilience** | Page reload, OS tab discard, airplane-mode toggle, low-power mode, multi-account, account without an active key | Correct failure and no duplicate broadcast |
+
+Known limitations to state plainly:
+
+- The relay only holds a request for 60 seconds; the app cannot extend it.
+- Keychain Mobile only surfaces a pending request when it is foregrounded or
+  reopened. There is no site-side push; that is wallet behaviour.
+- If the OS kills the page entirely, an in-flight request is lost unless the
+  pending metadata was persisted; signing can only resume while the session key
+  is valid.
+- An ambiguous `attach_nack` can mean “expired” or “already processed”. The user
+  must check the chain before retrying a transaction.
+
+Acceptance:
+
+- [ ] Tier 1 matrix passes on Android and iOS, including 10/30/55-second
+      background cycles.
+- [ ] Mocked socket-drop, tab-reload and `attach_nack` tests pass.
+- [ ] A 3-action HiveAuth auto-send completes one approval at a time; a timeout
+      stops the batch without duplicate transactions.
+- [ ] A real HiveAuth image upload succeeds through `/cs/` on Android and iOS.
+
+### W73 — Moderation policy engine and downvote transparency
+
+Implementation contract: issue **#94**. This is a local-first, user-configurable
+moderation layer, not a site-wide ban list. W71 is the narrow skin-safety slice;
+W73 generalises it into a policy engine that covers feeds, comments, community
+mutes, skins and reputation-gated features.
+
+Phase 1 is implementation-ready:
+
+- [ ] Add a pure `moderationPolicy` module with Open/Balanced/Strict/Follow-only/
+      Custom presets and per-surface decisions.
+- [ ] Keep direct mutes, direct blacklists, followed mute lists, followed
+      blacklists and community muted roles/post mutes as distinct layers.
+- [ ] Add explainability and overrides to feeds, comments, profiles, community
+      feeds and skins; follows beat subscribed mute lists with a conflict badge.
+- [ ] Add the first-use Balanced disclosure; label/collapse negative-rep content,
+      never hide on reputation alone.
+- [ ] Give every reputation-gated feature an override, not only skins.
+- [ ] Cache relationship/list flags and keep the policy check off the critical
+      path for post pages.
+- [ ] Export/import the local policy as versioned JSON.
+
+Phase 2 (after Phase 1 is green): profile downvote views with voter, weight,
+target and time; evidence-backed pattern hints; downvote-to-upvote context;
+per-voter local exclusion; no global downvoter leaderboard.
+
+Phase 3 needs a short spike before UI work: community mute-reason exposure and
+`bridge.get_follow_list` pagination (the live node rejects the documented
+`limit` argument). Then add list subscriptions and community-moderation context.
+
+Do not ship a hidden global list, automatic punishment from heuristics, or a
+global downvoter leaderboard. See #94 for the full research, data sources and
+acceptance criteria.
+
+The implementation brief for W71 + W73 (module map, preset matrix, data-source
+spike results, test plan and release order) is
+[`docs/workstreams/W73-moderation-implementation-plan.md`](workstreams/W73-moderation-implementation-plan.md).
 
 ## Definition of done
 

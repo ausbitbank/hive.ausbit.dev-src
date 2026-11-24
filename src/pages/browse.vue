@@ -1,6 +1,6 @@
 <template>
   <q-page class="browse-page">
-    <profile-skin :account="account" :author="account && account.name" :context="'blog'" :enabled="isAccount">
+    <component :is="skinShell" :account="account" :author="account && account.name" :context="'blog'" :enabled="isAccount">
     <account-header
       v-if="isAccount && account !== undefined"
       :globalProps="globalProps"
@@ -58,7 +58,7 @@
         :showToolbar="false"
       />
     </div>
-    </profile-skin>
+    </component>
   </q-page>
 </template>
 
@@ -150,8 +150,26 @@ import { defineAsyncComponent } from 'vue'
 import browseContainer from 'components/browseContainer.vue'
 import accountHeader from 'components/accountHeader.vue'
 import CommunityInsights from 'components/community/CommunityInsights.vue'
-import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import { setPageMeta } from 'src/utils/pageMeta'
+
+const NoSkin = {
+  name: 'NoSkin',
+  props: {
+    account: { type: Object, default: null },
+    author: { type: String, default: '' },
+    context: { type: String, default: '' },
+    enabled: { type: Boolean, default: false }
+  },
+  render () {
+    return this.$slots.default?.({ theme: null, calm: false, visible: false })
+  }
+}
+
+const ProfileSkin = defineAsyncComponent({
+  loader: () => import('components/theme/ProfileSkin.vue'),
+  loadingComponent: NoSkin,
+  delay: 0
+})
 
 const SORT_LABELS = {
   trending: 'Trending',
@@ -196,6 +214,7 @@ export default {
     accountHeader,
     CommunityInsights,
     ProfileSkin,
+    NoSkin,
     communityHeader: defineAsyncComponent(() => import('components/communityHeader.vue'))
   },
   data () {
@@ -219,6 +238,9 @@ export default {
     },
     isGlobal () {
       return !this.isAccount && !this.isCommunity
+    },
+    skinShell () {
+      return this.isAccount ? 'ProfileSkin' : 'NoSkin'
     },
     accountName () {
       return this.$route.params.account || ''

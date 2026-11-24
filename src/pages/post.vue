@@ -36,7 +36,7 @@
         </aside>
       </div>
 
-      <profile-skin v-else :account="account" :author="author" context="post">
+      <profile-skin v-else :account="account" :author="author" context="post" :reputation="post && post.author_reputation">
       <div class="post-grid">
           <article class="post-article">
             <q-card flat bordered class="post-article-card">

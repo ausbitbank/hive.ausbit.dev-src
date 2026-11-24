@@ -314,7 +314,7 @@
             <span>Live preview</span>
             <span class="studio-preview__hint">Profile surfaces only</span>
           </div>
-          <profile-skin :preview-theme="previewTheme" :author="username" context="profile">
+          <profile-skin :preview-theme="previewTheme" :author="username" :reputation="account && account.reputation" context="profile">
             <template #default="{ theme }">
             <div class="studio-mock">
               <div class="studio-mock__cover"></div>

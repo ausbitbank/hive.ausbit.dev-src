@@ -47,6 +47,15 @@
             to="/appearance"
             v-close-popup
           />
+          <q-btn
+            flat
+            dense
+            no-caps
+            icon="shield"
+            label="Skin safety"
+            to="/appearance#skin-safety"
+            v-close-popup
+          />
         </div>
       </section>
 

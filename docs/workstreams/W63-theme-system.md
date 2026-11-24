@@ -171,6 +171,21 @@ Deployed on 2026-11-22 with `./scripts/deploy.sh`.
   the global switch. Live smoke confirmed the badge actions, per-author
   persistence and restore with no page errors.
 
+## W71 safety follow-up
+
+W71 adds a fail-closed safety gate on top of the original skin renderer. A
+custom skin no longer applies when the owner is on the viewer's Hive mute list
+or has negative displayed reputation, when a subscribed mute list cannot be
+read, or while the viewer's context is unresolved. The gate binds to the
+account that owns the metadata, not the self-declared `theme.author`.
+
+The viewer can show a specific skin anyway; the override is local, per
+account and reversible from `/appearance#skin-safety`. A follow beats a
+subscribed mute list and a negative-reputation block by default, but never a
+direct mute. The Studio asks for an explicit preview override, and the theme
+wall omits a blocked palette and asks for confirmation before applying it as a
+site palette. See `docs/workstreams/W71-theme-safety.md`.
+
 ## Follow-ups
 
 - Install the updated `deploy/nginx/hive.ausbit.dev.conf` with sudo and reload

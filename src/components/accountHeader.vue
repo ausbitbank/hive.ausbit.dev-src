@@ -393,23 +393,36 @@ export default {
     getFollowCount (who) {
       this.$hiveStore.getFollowCount(who)
     },
+    syncModeration (mutator) {
+      import('src/stores/moderation')
+        .then(({ useModerationStore }) => {
+          const store = useModerationStore()
+          store.setScope(this.loggedInUser || 'guest')
+          mutator(store)
+        })
+        .catch(() => {})
+    },
     followUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["blog"] }]'
       this.relationship.follows = true
+      this.syncModeration(store => store.noteFollowChange(who, true))
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unfollowUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": [] }]'
       this.relationship.follows = false
+      this.syncModeration(store => store.noteFollowChange(who, false))
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     ignoreUser (who) {
       var json = '["follow", { "follower": "' + this.loggedInUser + '", "following": "' + who + '", "what": ["ignore"] }]'
       this.relationship.ignores = true
+      this.syncModeration(store => store.noteMuteChange(who, true))
       this.$hiveStore.addToQueue([this.loggedInUser, 'posting', ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'follow', json: json }]])
     },
     unignoreUser (who) {
       this.relationship.ignores = false
+      this.syncModeration(store => store.noteMuteChange(who, false))
       this.unfollowUser(who)
     }
   },
