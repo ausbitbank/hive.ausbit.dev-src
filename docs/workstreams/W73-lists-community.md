@@ -154,6 +154,12 @@ Deployed on 2026-11-24 with `./scripts/deploy.sh`.
   the very-large list showed the approximate 70,963 with **no Subscribe
   button** and the “not supported in this client” explanation; `@hive3/downvotes`
   renders 40 rows; no page errors.
-- Direct `/settings/moderation` and `/@account/downvotes` still return the
-  404/403 shell status until root installs the nginx exact location/sub-route
-  regex. Client navigation works.
+- The Cloudflare metadata Worker now has the `/settings/moderation*` route and
+  a `settings/moderation.html` shell mapping. A normal browser GET returns
+  **200** with `x-hive-meta: theme-shell` and the correct title.
+- Non-HTML requests (for example `curl -H 'Accept: application/json'`) still
+  reach the origin and return 404 until root installs the nginx exact
+  location. The Worker intentionally only serves HTML clients.
+- Direct `/@account/downvotes` is still behind the Cloudflare challenge for
+  automated clients; the account-subroute nginx regex includes `downvotes` for
+  the eventual origin install.

@@ -31,9 +31,10 @@ const ACCOUNT_PATH = /^\/@([a-z0-9.-]+)\/?$/i
 const THEME_SHELLS = new Map([
   ['/appearance', '/appearance.html'],
   ['/themes', '/themes.html'],
-  ['/settings/skin', '/settings/skin.html']
+  ['/settings/skin', '/settings/skin.html'],
+  ['/settings/moderation', '/settings/moderation.html']
 ])
-const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|tip|trail)(?:\/|$)/i
+const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|pos|downvotes|tip|trail)(?:\/|$)/i
 const LIGHTNING_PATH = /^\/lightning\/?$/i
 const ACCOUNT_LIGHTNING_PATH = /^\/@([a-z0-9.-]+)\/lightning\/?$/i
 
