@@ -209,6 +209,13 @@
       </q-card-section>
       <q-card-section class="login-hiveauth-body">
         <div v-if="hiveauthError" class="login-hiveauth-error" role="alert">{{ hiveauthError }}</div>
+        <template v-else-if="hiveauthResuming">
+          <div class="login-hiveauth-wait">
+            <q-spinner color="primary" size="32px" />
+            <span aria-live="polite">{{ hiveauthStatusAnnouncement }}</span>
+            <span aria-hidden="true">{{ hiveauthCountdown }}</span>
+          </div>
+        </template>
         <template v-else-if="!hiveauthQr && !hiveauthQrError">
           <div class="login-hiveauth-wait">
             <q-spinner color="primary" size="32px" />
@@ -220,7 +227,10 @@
           <p class="login-hiveauth-copy">
             {{ hiveauthQr ? 'Scan this QR code with Hive Keychain Mobile, or open the link on this phone.' : 'Open the link on this phone with Hive Keychain Mobile.' }}
           </p>
-          <p class="login-hiveauth-expiry" aria-live="polite">Request expires in {{ hiveauthSecondsLeft }}s.</p>
+          <p class="login-hiveauth-expiry">
+            <span aria-live="polite">{{ hiveauthStatusAnnouncement }}</span>
+            <span aria-hidden="true">{{ hiveauthCountdown }}</span>
+          </p>
           <p v-if="hiveauthQrError" class="login-hiveauth-hint">{{ hiveauthQrError }}</p>
           <div class="login-hiveauth-actions">
             <a class="login-hiveauth-link" :href="hiveauthUri">Open Hive Keychain</a>
@@ -740,7 +750,7 @@ import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
 import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
-import { clearSession as clearHiveAuthSession, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
+import { clearPending, clearSession as clearHiveAuthSession, loadPending, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
 import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 
@@ -787,7 +797,9 @@ export default {
       hiveauthExpiresAt: 0,
       hiveauthClock: Date.now(),
       hiveauthTimer: null,
-      hiveauthController: null
+      hiveauthController: null,
+      hiveauthStatus: null,
+      hiveauthResuming: false
     }
   },
   computed: {
@@ -852,6 +864,21 @@ export default {
     hiveauthSecondsLeft () {
       if (!this.hiveauthExpiresAt) return 0
       return Math.max(0, Math.ceil((this.hiveauthExpiresAt - this.hiveauthClock) / 1000))
+    },
+    hiveauthStatusAnnouncement () {
+      if (this.hiveauthStatus?.state === 'reconnecting') {
+        const attempt = this.hiveauthStatus.attempt ? ' (attempt ' + this.hiveauthStatus.attempt + ')' : ''
+        return 'Waiting for wallet… reconnecting to the HiveAuth relay' + attempt + '.'
+      }
+      if (this.hiveauthStatus?.state === 'resumed') {
+        return 'Wallet connected. Waiting for approval in your phone wallet.'
+      }
+      if (this.hiveauthStatus?.state === 'expired') return 'The HiveAuth request expired.'
+      return 'Waiting for wallet… approve on your phone.'
+    },
+    hiveauthCountdown () {
+      if (!this.hiveauthExpiresAt || this.hiveauthStatus?.state === 'expired') return ''
+      return ' · expires in ' + this.hiveauthSecondsLeft + 's'
     },
     menuLinks () {
       const user = this.loggedInUser
@@ -1054,7 +1081,8 @@ export default {
         await hiveauth.authenticate(user, {
           signal: controller.signal,
           challenge,
-          onPayload: payload => this.prepareHiveAuthPayload(payload)
+          onPayload: payload => this.prepareHiveAuthPayload(payload),
+          onStatus: status => this.applyHiveAuthStatus(status)
         })
         this.loggedInUser = user
         this.loginType = 'hiveauth'
@@ -1076,7 +1104,94 @@ export default {
         })
       } finally {
         this.hiveauthBusy = false
+        this.hiveauthStatus = null
         if (this.hiveauthController === controller) this.hiveauthController = null
+        this.stopHiveAuthClock()
+      }
+    },
+    applyHiveAuthStatus (status) {
+      this.hiveauthStatus = status
+      if (status?.expiresAt) this.hiveauthExpiresAt = status.expiresAt
+    },
+    async inspectInterruptedHiveAuth () {
+      const pending = loadPending({ includeExpired: true })
+      if (!pending) return
+      if (pending.expire <= Date.now()) {
+        clearPending(pending.uuid)
+        const isLogin = pending.kind === 'login'
+        this.$q.notify({
+          type: 'warning',
+          icon: 'smartphone',
+          message: isLogin
+            ? 'The pending HiveAuth login expired while the page was closed.'
+            : 'The pending HiveAuth request expired while the page was closed.',
+          caption: isLogin
+            ? 'Start the login again to get a new approval window.'
+            : pending.kind === 'sign'
+              ? 'Check the chain before retrying.'
+              : 'Retry the action to get a new approval window.',
+          position: 'top',
+          timeout: 8000
+        })
+        return
+      }
+      if (pending.kind !== 'login') {
+        clearPending(pending.uuid)
+        this.$q.notify({
+          type: 'warning',
+          icon: 'smartphone',
+          message: 'A HiveAuth request was interrupted by the page reload.',
+          caption: pending.kind === 'sign'
+            ? 'If your wallet showed an approval, check the chain before retrying.'
+            : 'Retry the action if your wallet did not show an approval.',
+          position: 'top',
+          timeout: 10000
+        })
+        return
+      }
+      await this.resumeHiveAuthLogin(pending)
+    },
+    async resumeHiveAuthLogin (pending) {
+      if (this.hiveauthBusy || this.hiveauthResuming) return
+      this.hiveauthResuming = true
+      this.hiveauthBusy = true
+      this.hiveauthAccount = pending.account
+      this.hiveauthError = ''
+      this.hiveauthQr = ''
+      this.hiveauthQrError = ''
+      this.hiveauthUri = ''
+      this.hiveauthExpiresAt = pending.expire
+      this.hiveauthStatus = { state: 'reconnecting', attempt: 0, expiresAt: pending.expire }
+      this.hiveauthDialog = true
+      this.startHiveAuthClock()
+      const controller = new AbortController()
+      this.hiveauthController = controller
+      try {
+        const hiveauth = await loadHiveAuth()
+        const session = await hiveauth.resumeAuthentication(pending.account, {
+          signal: controller.signal,
+          onStatus: status => this.applyHiveAuthStatus(status)
+        })
+        if (!session) return
+        this.loggedInUser = pending.account
+        this.loginType = 'hiveauth'
+        this.hiveauthDialog = false
+        this.$q.notify({
+          type: 'positive',
+          message: 'HiveAuth login resumed.',
+          caption: 'Approved on your phone after the page reloaded.',
+          icon: 'smartphone',
+          position: 'top',
+          timeout: 6000
+        })
+      } catch (error) {
+        if (error?.code === 'cancelled') return
+        this.hiveauthError = error?.message || 'The interrupted HiveAuth login could not be resumed.'
+      } finally {
+        if (this.hiveauthController === controller) this.hiveauthController = null
+        this.hiveauthResuming = false
+        this.hiveauthBusy = false
+        this.hiveauthStatus = null
         this.stopHiveAuthClock()
       }
     },
@@ -1190,6 +1305,7 @@ export default {
       this.refreshSmartlockStatus()
       this.restoreHiveAuthSession()
     }
+    this.inspectInterruptedHiveAuth().catch(() => {})
   },
   beforeUnmount () {
     this.stopHiveAuthClock()

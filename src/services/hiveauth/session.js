@@ -8,8 +8,13 @@
 // is unavailable or full (private mode, quota). It is never shared between tabs.
 
 export const SESSION_PREFIX = 'hiveauth:session:'
+export const PENDING_KEY = 'hiveauth:pending'
 
+const PENDING_KINDS = new Set(['login', 'sign', 'challenge'])
 const memory = new Map()
+// One logical HiveAuth request at a time per tab, so the pending record is a
+// single key rather than one per account.
+let pendingMemory = null
 
 function storage () {
   try {
@@ -113,8 +118,82 @@ export function clearSession (account) {
   removeStored(account)
 }
 
+function normalizePending (value, { allowExpired = false } = {}) {
+  if (!value || typeof value !== 'object') return null
+  if (typeof value.account !== 'string' || !value.account) return null
+  if (typeof value.uuid !== 'string' || !value.uuid) return null
+  if (!PENDING_KINDS.has(value.kind)) return null
+  const expire = Number(value.expire)
+  if (!Number.isFinite(expire)) return null
+  if (!allowExpired && expire <= Date.now()) return null
+  if (value.kind === 'login' && (typeof value.key !== 'string' || !value.key)) return null
+  return {
+    account: value.account,
+    uuid: value.uuid,
+    kind: value.kind,
+    expire,
+    // Only a login has to survive a reload with the temporary auth key, so it
+    // can decrypt the `auth_ack` that arrives after the page is restored. The
+    // signing session key already lives in the account session record.
+    key: value.kind === 'login' ? value.key : null
+  }
+}
+
+export function savePending (pending) {
+  const record = normalizePending(pending)
+  if (!record) return null
+  pendingMemory = record
+  const store = storage()
+  if (!store) return record
+  try {
+    store.setItem(PENDING_KEY, JSON.stringify(record))
+  } catch {
+    // The in-memory copy still covers a resume within this page load.
+  }
+  return record
+}
+
+export function loadPending ({ includeExpired = false } = {}) {
+  const store = storage()
+  if (store) {
+    const raw = store.getItem(PENDING_KEY)
+    if (raw) {
+      try {
+        const record = normalizePending(JSON.parse(raw), { allowExpired: includeExpired })
+        if (record) {
+          if (!includeExpired) pendingMemory = record
+          return record
+        }
+      } catch {}
+      removePendingStored()
+    }
+  }
+  const cached = normalizePending(pendingMemory, { allowExpired: includeExpired })
+  if (cached) return cached
+  pendingMemory = null
+  return null
+}
+
+// `uuid` guards a late completion from clearing a newer request's record.
+export function clearPending (uuid) {
+  const current = loadPending()
+  if (uuid && current && current.uuid !== uuid) return
+  pendingMemory = null
+  removePendingStored()
+}
+
+function removePendingStored () {
+  const store = storage()
+  if (!store) return
+  try {
+    store.removeItem(PENDING_KEY)
+  } catch {}
+}
+
 export function clearAllSessions () {
   memory.clear()
+  pendingMemory = null
+  removePendingStored()
   const store = storage()
   if (!store) return
   try {

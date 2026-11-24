@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures'
+import { installMockRelay, openHiveAuthLogin } from './hiveauth-mock'
 import { runAxe, waitForApp } from './helpers'
 
 const POST_ROUTE = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
@@ -65,5 +66,19 @@ test('axe clean: custom dashboard templates', async ({ page }) => {
       const violations = await runAxe(page)
       expect(violations, label + ' template at ' + viewport.width + 'px').toEqual([])
     }
+  }
+})
+
+test('axe clean: HiveAuth login dialog', async ({ page }) => {
+  test.setTimeout(120000)
+  await installMockRelay(page)
+  await openHiveAuthLogin(page)
+  await expect(page.locator('.login-hiveauth-qr')).toBeVisible()
+
+  for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(500)
+    const violations = await runAxe(page, { context: '.login-hiveauth-card' })
+    expect(violations, 'HiveAuth dialog at ' + viewport.width + 'px').toEqual([])
   }
 })

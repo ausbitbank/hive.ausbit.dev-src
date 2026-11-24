@@ -51,6 +51,16 @@
             />
           </div>
 
+          <div v-if="hiveauthStatus" class="queue-hiveauth">
+            <q-icon name="smartphone" size="14px" aria-hidden="true" />
+            <span role="status" aria-live="polite">{{ hiveauthStatusAnnouncement }}</span>
+            <span class="queue-hiveauth__count" aria-hidden="true">{{ hiveauthCountdown }}</span>
+          </div>
+          <div v-else-if="loginType === 'hiveauth' && timerEnabled" class="queue-hiveauth queue-hiveauth--hint">
+            <q-icon name="smartphone" size="14px" aria-hidden="true" />
+            <span>Keep Keychain Mobile open in the foreground. Each request has a 60-second approval window, and auto-send waits for each approval.</span>
+          </div>
+
           <div class="queue-toolbar">
             <q-btn
               no-caps
@@ -217,7 +227,12 @@ export default {
       timerEnabled: true,
       bulkSending: false,
       broadcastingIndex: null,
-      broadcastTimer: null
+      broadcastTimer: null,
+      hiveauthStatus: null,
+      hiveauthClock: Date.now(),
+      hiveauthStatusTimer: null,
+      hiveauthToast: null,
+      hiveauthBatchWarned: false
     }
   },
   computed: {
@@ -252,6 +267,22 @@ export default {
     queueButtonLabel () {
       const active = this.badgeCount
       return active > 0 ? active + ' queued action' + (active === 1 ? '' : 's') : 'Action queue'
+    },
+    hiveauthStatusAnnouncement () {
+      if (this.hiveauthStatus?.state === 'reconnecting') {
+        const attempt = this.hiveauthStatus.attempt ? ' (attempt ' + this.hiveauthStatus.attempt + ')' : ''
+        return 'Waiting for wallet… reconnecting' + attempt + '.'
+      }
+      if (this.hiveauthStatus?.state === 'resumed') {
+        return 'Wallet connected. Waiting for approval in your phone wallet.'
+      }
+      if (this.hiveauthStatus?.state === 'expired') return 'The HiveAuth request expired.'
+      return 'Waiting for wallet… approve on your phone.'
+    },
+    hiveauthCountdown () {
+      if (!this.hiveauthStatus?.expiresAt || this.hiveauthStatus?.state === 'expired') return ''
+      const seconds = Math.max(0, Math.ceil((this.hiveauthStatus.expiresAt - this.hiveauthClock) / 1000))
+      return ' · expires in ' + seconds + 's'
     }
   },
   watch: {
@@ -277,6 +308,8 @@ export default {
   },
   beforeUnmount () {
     this.clearBroadcastTimer()
+    this.stopHiveauthClock()
+    this.dismissHiveauthToast()
   },
   methods: {
     operationLabel,
@@ -310,6 +343,40 @@ export default {
         clearTimeout(this.broadcastTimer)
         this.broadcastTimer = null
       }
+    },
+    startHiveauthClock () {
+      this.stopHiveauthClock()
+      this.hiveauthClock = Date.now()
+      this.hiveauthStatusTimer = setInterval(() => {
+        this.hiveauthClock = Date.now()
+      }, 1000)
+    },
+    stopHiveauthClock () {
+      if (this.hiveauthStatusTimer) clearInterval(this.hiveauthStatusTimer)
+      this.hiveauthStatusTimer = null
+    },
+    applyHiveauthStatus (status) {
+      this.hiveauthStatus = status
+      this.hiveauthClock = Date.now()
+      const message = status?.state === 'reconnecting'
+        ? 'HiveAuth: reconnecting to your wallet…'
+        : status?.state === 'resumed'
+          ? 'HiveAuth: wallet connected. Waiting for approval…'
+          : 'HiveAuth: waiting for approval on your phone…'
+      this.hiveauthToast?.()
+      this.hiveauthToast = this.$q.notify({
+        group: 'hiveauth-status',
+        type: 'ongoing',
+        spinner: true,
+        timeout: 0,
+        position: 'top',
+        message,
+        caption: 'Keep Keychain Mobile in the foreground.'
+      })
+    },
+    dismissHiveauthToast () {
+      this.hiveauthToast?.()
+      this.hiveauthToast = null
     },
     scheduleNext () {
       this.clearBroadcastTimer()
@@ -363,6 +430,18 @@ export default {
       if (!action) return
       const status = this.metaFor(index).status
       if (!canBroadcast(status)) return
+
+      if (auto && this.loginType === 'hiveauth' && !this.hiveauthBatchWarned) {
+        this.hiveauthBatchWarned = true
+        this.$q.notify({
+          type: 'info',
+          icon: 'smartphone',
+          position: 'top',
+          timeout: 10000,
+          message: 'HiveAuth auto-send: keep Keychain Mobile open in the foreground.',
+          caption: 'Each request has a 60-second approval window and is approved one at a time.'
+        })
+      }
 
       this.broadcastingIndex = index
       this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.BROADCASTING)
@@ -495,16 +574,25 @@ export default {
       return { success: false, error: result.message || result.msg || result.error || 'Keychain did not approve the action.' }
     },
     async sendWithHiveAuth (user, keyType, operation) {
+      this.hiveauthStatus = { state: 'waiting', attempt: 0, expiresAt: 0 }
+      this.startHiveauthClock()
+      this.applyHiveauthStatus(this.hiveauthStatus)
       try {
         const hiveauth = await loadHiveAuth()
         const operations = hiveauth.normalizeBroadcastOperation(operation)
-        const result = await hiveauth.broadcast(user, keyType, operations)
+        const result = await hiveauth.broadcast(user, keyType, operations, {
+          onStatus: status => this.applyHiveauthStatus(status)
+        })
         return { success: true, txId: result?.txId || '' }
       } catch (error) {
         return {
           success: false,
           error: error?.message || 'HiveAuth did not broadcast the action.'
         }
+      } finally {
+        this.hiveauthStatus = null
+        this.stopHiveauthClock()
+        this.dismissHiveauthToast()
       }
     },
     async sendWithSmartlock (user, keyType, operation, { auto }) {
@@ -658,6 +746,24 @@ export default {
 
 .queue-offline {
   padding: 0.45rem 0.9rem 0;
+}
+
+.queue-hiveauth {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin: 0.45rem 0.9rem 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--c-link) 30%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--c-link-hover);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.queue-hiveauth--hint {
+  border-color: var(--border-subtle);
+  color: var(--c-text-muted);
 }
 
 .queue-toolbar {

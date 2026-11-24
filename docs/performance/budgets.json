@@ -36,7 +36,7 @@
     },
     "/market": {
       "jsKb": 255,
-      "routeJsKb": 115,
+      "routeJsKb": 116,
       "totalKb": 500,
       "lcpMs": 2000
     },

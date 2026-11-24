@@ -5,10 +5,11 @@ import {
   authenticate,
   broadcast,
   isAvailable,
+  resumeAuthentication,
   signChallenge
 } from '../../src/services/hiveauth/client'
 import { decryptPayload, encryptPayload } from '../../src/services/hiveauth/crypto'
-import { clearAllSessions, loadSession, saveSession } from '../../src/services/hiveauth/session'
+import { clearAllSessions, loadPending, loadSession, saveSession } from '../../src/services/hiveauth/session'
 
 class MockWebSocket {
   static instances = []
@@ -257,5 +258,168 @@ describe('HiveAuth client', () => {
     await expect(broadcast('alice', 'posting', [['vote', {}]])).rejects.toMatchObject({
       code: 'login'
     })
+  })
+
+  it('reconnects immediately on pageshow and reports the attempt', async () => {
+    const statuses = []
+    let payload
+    const promise = authenticate('alice', {
+      onPayload: value => { payload = value },
+      onStatus: status => statuses.push(status)
+    })
+    const first = await requestSocket(0)
+    first.emit({ cmd: 'auth_wait', uuid: 'auth-wake', expire: Date.now() + 60_000 })
+    await waitFor(() => Boolean(payload))
+    expect(loadPending()).toMatchObject({ uuid: 'auth-wake', kind: 'login', key: payload.key })
+
+    // A suspended tab often has a dead socket without a close event.
+    first.readyState = 3
+    window.dispatchEvent(new Event('pageshow'))
+
+    await waitFor(() => MockWebSocket.instances.length > 1)
+    const second = MockWebSocket.instances[1]
+    await waitFor(() => second.sent.length > 0)
+    expect(second.sent[0]).toEqual({ cmd: 'attach_req', uuid: 'auth-wake' })
+    expect(statuses.some(status => status.state === 'reconnecting' && status.attempt === 1)).toBe(true)
+
+    second.emit({ cmd: 'attach_ack', uuid: 'auth-wake' })
+    const encrypted = await encryptPayload(JSON.stringify({
+      token: 'token-wake',
+      expire: Date.now() + 60_000
+    }), payload.key)
+    second.emit({ cmd: 'auth_ack', uuid: 'auth-wake', data: encrypted })
+    await expect(promise).resolves.toMatchObject({ token: 'token-wake' })
+    expect(loadPending()).toBeNull()
+  })
+
+  it('waits for the page to be visible before reconnecting', async () => {
+    let payload
+    const promise = authenticate('alice', { onPayload: value => { payload = value } })
+    const first = await requestSocket(0)
+    first.emit({ cmd: 'auth_wait', uuid: 'auth-hidden', expire: Date.now() + 60_000 })
+    await waitFor(() => Boolean(payload))
+
+    first.readyState = 3
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' })
+    window.dispatchEvent(new Event('visibilitychange'))
+    expect(MockWebSocket.instances.length).toBe(1)
+
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' })
+    window.dispatchEvent(new Event('visibilitychange'))
+    await waitFor(() => MockWebSocket.instances.length > 1)
+    const second = MockWebSocket.instances[1]
+    await waitFor(() => second.sent.length > 0)
+    expect(second.sent[0]).toEqual({ cmd: 'attach_req', uuid: 'auth-hidden' })
+
+    second.emit({ cmd: 'attach_ack', uuid: 'auth-hidden' })
+    second.emit({ cmd: 'auth_nack', uuid: 'auth-hidden' })
+    await expect(promise).rejects.toMatchObject({ code: 'rejected' })
+  })
+
+  it('reconnects immediately when the network comes back', async () => {
+    let payload
+    const promise = authenticate('alice', { onPayload: value => { payload = value } })
+    const first = await requestSocket(0)
+    first.emit({ cmd: 'auth_wait', uuid: 'auth-online', expire: Date.now() + 60_000 })
+    await waitFor(() => Boolean(payload))
+
+    first.readyState = 3
+    window.dispatchEvent(new Event('online'))
+    await waitFor(() => MockWebSocket.instances.length > 1)
+    const second = MockWebSocket.instances[1]
+    await waitFor(() => second.sent.length > 0)
+    expect(second.sent[0]).toEqual({ cmd: 'attach_req', uuid: 'auth-online' })
+
+    second.emit({ cmd: 'attach_ack', uuid: 'auth-online' })
+    second.emit({ cmd: 'auth_nack', uuid: 'auth-online' })
+    await expect(promise).rejects.toMatchObject({ code: 'rejected' })
+  })
+
+  it('resumes a login from the persisted pending record after a reload', async () => {
+    const controller = new AbortController()
+    let payload
+    const original = authenticate('alice', {
+      signal: controller.signal,
+      onPayload: value => { payload = value }
+    })
+    const first = await requestSocket(0)
+    first.emit({ cmd: 'auth_wait', uuid: 'auth-reload', expire: Date.now() + 60_000 })
+    await waitFor(() => Boolean(payload))
+    expect(loadPending()).toMatchObject({ uuid: 'auth-reload', kind: 'login', key: payload.key })
+
+    const resumed = resumeAuthentication('alice')
+    await waitFor(() => MockWebSocket.instances.length > 1)
+    const second = MockWebSocket.instances[1]
+    await waitFor(() => second.sent.length > 0)
+    expect(second.sent[0]).toEqual({ cmd: 'attach_req', uuid: 'auth-reload' })
+
+    second.emit({ cmd: 'attach_ack', uuid: 'auth-reload' })
+    const encrypted = await encryptPayload(JSON.stringify({
+      token: 'token-reload',
+      expire: Date.now() + 60_000
+    }), payload.key)
+    second.emit({ cmd: 'auth_ack', uuid: 'auth-reload', data: encrypted })
+    await expect(resumed).resolves.toMatchObject({ token: 'token-reload' })
+    expect(loadSession('alice')).toMatchObject({ token: 'token-reload' })
+    expect(loadPending()).toBeNull()
+
+    controller.abort()
+    await expect(original).rejects.toMatchObject({ code: 'cancelled' })
+  })
+
+  it('fails a resumed login clearly when the relay cannot attach', async () => {
+    const controller = new AbortController()
+    let payload
+    const original = authenticate('alice', {
+      signal: controller.signal,
+      onPayload: value => { payload = value }
+    })
+    const first = await requestSocket(0)
+    first.emit({ cmd: 'auth_wait', uuid: 'auth-nack', expire: Date.now() + 60_000 })
+    await waitFor(() => Boolean(payload))
+
+    const resumed = resumeAuthentication('alice')
+    await waitFor(() => MockWebSocket.instances.length > 1)
+    const second = MockWebSocket.instances[1]
+    await waitFor(() => second.sent.length > 0)
+    second.emit({ cmd: 'attach_nack', uuid: 'auth-nack' })
+
+    await expect(resumed).rejects.toMatchObject({
+      code: 'expired',
+      message: expect.stringContaining('expired before it could be resumed')
+    })
+    expect(loadPending()).toBeNull()
+
+    controller.abort()
+    await expect(original).rejects.toMatchObject({ code: 'cancelled' })
+  })
+
+  it('expires during reconnect instead of waiting for the next backoff tick', async () => {
+    const promise = broadcast('alice', 'posting', [['vote', { voter: 'alice', author: 'bob', permlink: 'x', weight: 10000 }]])
+    const socket = await requestSocket()
+    socket.emit({ cmd: 'sign_wait', uuid: 'sign-expire', expire: Date.now() + 40 })
+    await waitFor(() => Boolean(loadPending()))
+    socket.onclose?.({ code: 1006 })
+    await expect(promise).rejects.toMatchObject({ code: 'expired' })
+    expect(loadPending()).toBeNull()
+  })
+
+  it('records a pending signing request and clears it on response', async () => {
+    const promise = broadcast('alice', 'posting', [['vote', { voter: 'alice', author: 'bob', permlink: 'x', weight: 10000 }]])
+    const socket = await requestSocket()
+    socket.emit({ cmd: 'sign_wait', uuid: 'sign-pending', expire: Date.now() + 60_000 })
+    expect(loadPending()).toMatchObject({ uuid: 'sign-pending', kind: 'sign', key: null })
+    socket.emit({ cmd: 'sign_ack', uuid: 'sign-pending', broadcast: true, data: 'tx-p' })
+    await expect(promise).resolves.toEqual({ txId: 'tx-p' })
+    expect(loadPending()).toBeNull()
+  })
+
+  it('suppresses a duplicate response for the same request', async () => {
+    const promise = broadcast('alice', 'posting', [['vote', { voter: 'alice', author: 'bob', permlink: 'x', weight: 10000 }]])
+    const socket = await requestSocket()
+    socket.emit({ cmd: 'sign_wait', uuid: 'sign-dupe', expire: Date.now() + 60_000 })
+    socket.emit({ cmd: 'sign_ack', uuid: 'sign-dupe', broadcast: true, data: 'tx-first' })
+    socket.emit({ cmd: 'sign_ack', uuid: 'sign-dupe', broadcast: true, data: 'tx-second' })
+    await expect(promise).resolves.toEqual({ txId: 'tx-first' })
   })
 })

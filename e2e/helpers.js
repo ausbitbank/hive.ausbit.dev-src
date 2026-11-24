@@ -3,18 +3,20 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 export const axePath = require.resolve('axe-core/axe.min.js')
 
-export async function runAxe (page, { disableRules = [] } = {}) {
+export async function runAxe (page, { disableRules = [], context = null } = {}) {
   await page.addScriptTag({ path: axePath })
   const rules = Object.fromEntries(disableRules.map(id => [id, { enabled: false }]))
-  const violations = await page.evaluate(async (rules) => {
-    const result = await window.axe.run(document, { runOnly: ['wcag2a', 'wcag2aa'], rules })
+  const violations = await page.evaluate(async ({ rules, context }) => {
+    const root = context ? document.querySelector(context) : document
+    if (!root) throw new Error('No axe context matched ' + context)
+    const result = await window.axe.run(root, { runOnly: ['wcag2a', 'wcag2aa'], rules })
     return result.violations.map(violation => ({
       id: violation.id,
       impact: violation.impact,
       help: violation.help,
       targets: violation.nodes.slice(0, 5).map(node => node.target.join(' '))
     }))
-  }, rules)
+  }, { rules, context })
   return violations
 }
 

@@ -245,8 +245,10 @@ navigation guard. It is deployed and live-smoked. See
 
 Numbering note: `docs/workstreams/W62-hiveauth.md` and
 `docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
-signing work as **W62-hiveauth**. W71 is complete; W72 and W73 are open; the
-next free workstream numbers are W74 and W75.
+signing work as **W62-hiveauth**. W71 is complete; W72 is implemented locally
+with its physical-device matrix still open; W73 is complete apart from the
+explicitly deferred items in that section. The next free workstream numbers are
+W74 and W75.
 
 ### W71 — Theme safety (complete)
 
@@ -259,51 +261,52 @@ preview. See
 [`docs/workstreams/W71-theme-safety.md`](workstreams/W71-theme-safety.md) and
 the rule in [`docs/SECURITY.md`](SECURITY.md).
 
-### W72 — HiveAuth device matrix and background-resume hardening
+### W72 — HiveAuth device matrix and background-resume hardening (implemented locally)
 
 This is a follow-up to **W62-hiveauth**. Login, voting, commenting, rejection,
-keepsats and queue auto-send are working on the initial device; the remaining
-work is a repeatable matrix and a resume path that survives a backgrounded
-mobile tab.
+keepsats and queue auto-send are working on the initial device. The client-side
+resume work and its automated tests are implemented; the repeatable physical
+device matrix and the live operator smokes remain open. Record:
+[`docs/workstreams/W72-hiveauth-resume.md`](workstreams/W72-hiveauth-resume.md).
 
 Current client behaviour:
 
 - One logical HiveAuth request at a time, keyed by the relay `uuid`.
 - After an unexpected socket close with a pending request, reconnect with
   backoff (500 ms → 4 s) and send `attach_req`.
+- On `visibilitychange` (when visible), `pageshow` and `online`, a pending
+  request whose socket is not `OPEN` closes the stale socket and reconnects
+  immediately, then sends `attach_req`.
+- A single per-tab pending record in `sessionStorage`
+  (`hiveauth:pending`, `{account, uuid, kind, expire}`) remembers the request.
+  A login also keeps the temporary auth key so a reload within 60 seconds can
+  finish it. Signing and challenge records never store a key.
 - `attach_ack` resumes waiting; `attach_nack` fails with “request expired before
   it could be resumed — check the chain before retrying a transaction”.
 - The relay's 60-second expiry is the hard deadline. There is no blind retry
   after an ambiguous `attach_nack`, to avoid duplicate broadcasts.
+- The queue, login dialog and HiveAuth toast show “Waiting for wallet…”,
+  “reconnecting (attempt N)…”, “expires in Ns” and clean expiry.
 - Image uploads use the image host's `/cs/` checksum endpoint, so the HiveAuth
   request is a 47-byte challenge rather than the whole file.
 - Queue auto-send/send-all process HiveAuth actions one at a time and wait for
-  each phone approval.
-
-The gap: a suspended mobile tab may not emit a clean socket close. The resume
-path currently reacts to `onclose`, so it can wait for a close that never
-arrives, or reconnect later than necessary.
+  each phone approval; the first auto-send warns to keep Keychain Mobile in the
+  foreground.
 
 Open work:
 
-- [ ] On `visibilitychange`, `pageshow` and `online`, if a request is pending and
-      the socket is not `OPEN`, close it and reconnect immediately, then
-      `attach_req`. Do not wait for `onclose` or the next backoff tick.
-- [ ] Persist a small pending record in `sessionStorage`:
-      `{uuid, kind, account, expire}`. For login, also keep the temporary auth
-      key (the same trust level as the session key) so a reload within 60
-      seconds can `attach_req` and finish the login.
-- [ ] For signing, if resume fails, mark the queue item failed and tell the user
-      to check the chain before retrying. Never auto-retry a transaction after
-      an ambiguous `attach_nack`.
-- [ ] Show explicit status: “Waiting for wallet… reconnecting (attempt 2)…
-      expires in 34s”. If the tab was hidden past expiry, cancel cleanly and
-      explain.
-- [ ] Before an auto-send batch, show: “Keep Keychain Mobile open in the
-      foreground; each request has a 60-second approval window.”
-- [ ] Add automated tests for socket drop → reconnect → `attach_ack`, tab
-      reload → pending attach, `attach_nack`, expiry during reconnect, and
-      duplicate-response suppression.
+- [x] Reconnect immediately on `visibilitychange`, `pageshow` and `online`
+      instead of waiting for `onclose` or the next backoff tick.
+- [x] Persist the pending `{uuid, kind, account, expire}` record in
+      `sessionStorage`; keep the temporary auth key only for a login.
+- [x] Mark a failed signing resume as a failed queue item with a
+      check-the-chain message; never auto-retry an ambiguous `attach_nack`.
+- [x] Show explicit waiting, reconnecting and expiry status; explain an expiry
+      that happens while the page is closed.
+- [x] Warn before an auto-send batch to keep Keychain Mobile in the foreground.
+- [x] Add automated tests for socket drop → reconnect → `attach_ack`, tab
+      reload → pending attach, `attach_nack`, expiry during reconnect, duplicate
+      responses and the pending record lifecycle.
 - [ ] Record every manual run with build SHA, device/OS/browser, wallet version,
       network (Wi-Fi/cellular) and background duration (10s, 30s, 55s), plus a
       screenshot for failures.
@@ -331,7 +334,7 @@ Acceptance:
 
 - [ ] Tier 1 matrix passes on Android and iOS, including 10/30/55-second
       background cycles.
-- [ ] Mocked socket-drop, tab-reload and `attach_nack` tests pass.
+- [x] Mocked socket-drop, tab-reload and `attach_nack` tests pass.
 - [ ] A 3-action HiveAuth auto-send completes one approval at a time; a timeout
       stops the batch without duplicate transactions.
 - [ ] A real HiveAuth image upload succeeds through `/cs/` on Android and iOS.

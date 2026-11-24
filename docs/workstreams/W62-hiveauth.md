@@ -74,15 +74,16 @@ re-enabled in normal queue auto-send.
 - Real-device matrix: desktop QR scan, mobile deep link (including backgrounding
   the browser while the wallet is open), vote/comment/transfer, image upload,
   v4v.app keepsats, reject/timeout, reload/expiry, and queue auto-send with
-  multiple approvals.
+  multiple approvals. The client-side resume work is W72; only the physical
+  matrix remains open.
 - Keychain Mobile only surfaces a pending HiveAuth request when the app is
   foregrounded/reopened; push notification behaviour belongs to the wallet, not
   the site.
 - Login challenge signature verification is not enforced client-side. The
   `auth_ack` is authenticated by the shared key; add local `Signature` recovery
   if we want explicit proof-of-key beyond HAS registration.
-- Reconnection is covered by unit tests but not yet by a real mobile background
-  cycle. If the OS kills the browser page entirely, the request cannot resume.
+- Reconnection and reload resume are covered by unit and browser tests; a real
+  mobile background cycle remains to be observed on hardware.
 - HiveAuth sessions are per tab. A "remember this device" option would need its
   own threat review because the token/AES key would move to `localStorage`.
 - Real-device testing should include HiveAuth Mobile as a secondary PKSA.

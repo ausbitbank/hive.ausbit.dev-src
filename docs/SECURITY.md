@@ -119,6 +119,12 @@ and asset caching instead.
   in-memory fallback when storage is unavailable), never in `localStorage`.
   They can request signatures but cannot sign without the phone; logout and
   session expiry clear them.
+- One pending request record per tab is stored in `sessionStorage` under
+  `hiveauth:pending` as `{account, uuid, kind, expire, key}`. It lets a reload
+  or a woken tab attach to the same relay request. Only a pending login keeps
+  the temporary auth key; signing and challenge records store no key. The
+  record is cleared on completion, cancellation, timeout or `attach_nack`, and
+  `clearAllSessions()` removes it.
 - Every broadcast is approved in the wallet. Auto-send and "send all" process one
   HiveAuth action at a time and wait for the phone approval; if the phone is not
   available the request times out instead of sending silently. PKSA-side

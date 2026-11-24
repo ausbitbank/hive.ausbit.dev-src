@@ -6,7 +6,14 @@ import {
   bytesToBase64
 } from './crypto'
 import { HiveAuthError } from './errors'
-import { clearSession, loadSession, saveSession } from './session'
+import {
+  clearPending,
+  clearSession,
+  loadPending,
+  loadSession,
+  savePending,
+  saveSession
+} from './session'
 
 // The docs still show `has.hiveauth.com`, but that host currently fails TLS
 // hostname verification. This is the relay the wrapper and Keychain Mobile use.
@@ -152,11 +159,29 @@ async function readError (message, authKey, command) {
   return 'The HiveAuth request was rejected in your wallet.'
 }
 
+function parseAuthAck (authKey) {
+  return async message => {
+    const payload = JSON.parse(await decryptPayload(message.data, authKey))
+    const expire = payload?.expire === null || payload?.expire === undefined
+      ? null
+      : Number(payload.expire)
+    return {
+      token: typeof payload?.token === 'string' && payload.token ? payload.token : null,
+      expire: Number.isFinite(expire) && expire > 0 ? expire : null,
+      challenge: payload?.challenge || null
+    }
+  }
+}
+
 /**
  * One logical request at a time. The socket can be recreated when a mobile
  * browser suspends the tab while the wallet is in front; after reconnecting we
  * send `attach_req` for the pending uuid, which lets the relay deliver the
  * PKSA's response instead of losing the approval.
+ *
+ * On `visibilitychange`, `pageshow` and `online` a pending request reconnects
+ * immediately instead of waiting for a close event or the next backoff tick.
+ * The pending uuid is kept in sessionStorage so a reload can resume a login.
  */
 function runRequest ({
   command,
@@ -165,13 +190,17 @@ function runRequest ({
   authKey,
   token,
   signal,
+  kind = 'sign',
+  resume = null,
+  onStatus,
   waitCommand,
   ackCommand,
   nackCommand,
   errCommand,
   onWait,
   parseAck,
-  timeoutMessage
+  timeoutMessage,
+  attachNackMessage
 }) {
   if (signal?.aborted) {
     return Promise.reject(new HiveAuthError('Cancelled.', { code: 'cancelled' }))
@@ -179,15 +208,29 @@ function runRequest ({
 
   return new Promise((resolve, reject) => {
     let socket = null
-    let uuid = null
-    let deadline = Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
+    let uuid = resume?.uuid || null
+    let deadline = resume?.expire || Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
     let timer = null
     let reconnectTimer = null
     let reconnectAttempt = 0
     let connecting = false
     let settled = false
 
+    const wakeTarget = typeof window !== 'undefined' ? window : null
     const onAbort = () => finish(reject, new HiveAuthError('Cancelled.', { code: 'cancelled' }))
+
+    function emitStatus (state, extra = {}) {
+      if (!onStatus) return
+      try {
+        onStatus({
+          state,
+          attempt: reconnectAttempt,
+          expiresAt: deadline,
+          remainingMs: Math.max(0, deadline - Date.now()),
+          ...extra
+        })
+      } catch {}
+    }
 
     function finish (handler, value) {
       if (settled) return
@@ -196,7 +239,13 @@ function runRequest ({
       if (reconnectTimer) clearTimeout(reconnectTimer)
       timer = null
       reconnectTimer = null
+      if (wakeTarget) {
+        wakeTarget.removeEventListener('visibilitychange', wakeReconnect)
+        wakeTarget.removeEventListener('pageshow', wakeReconnect)
+        wakeTarget.removeEventListener('online', wakeReconnect)
+      }
       signal?.removeEventListener('abort', onAbort)
+      if (uuid) clearPending(uuid)
       if (socket) {
         socket.onmessage = null
         socket.onerror = null
@@ -210,6 +259,7 @@ function runRequest ({
     function arm (until) {
       if (timer) clearTimeout(timer)
       timer = setTimeout(() => {
+        emitStatus('expired')
         finish(reject, new HiveAuthError(
           timeoutMessage || 'The HiveAuth request expired.',
           { code: 'expired' }
@@ -227,6 +277,7 @@ function runRequest ({
       }
       const delay = Math.min(500 * 2 ** reconnectAttempt, 4000)
       reconnectAttempt += 1
+      emitStatus('reconnecting', { attempt: reconnectAttempt, retryInMs: delay })
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null
         connectAndSend()
@@ -239,7 +290,50 @@ function runRequest ({
       scheduleReconnect()
     }
 
+    // A suspended mobile tab may not emit a clean `close`. When the page wakes,
+    // rebuild the socket and attach immediately rather than waiting for one.
+    function wakeReconnect (event) {
+      if (settled || connecting) return
+      if (event?.type === 'visibilitychange' &&
+        typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      if (!uuid) return
+      if (Date.now() >= deadline) {
+        emitStatus('expired')
+        finish(reject, new HiveAuthError(
+          timeoutMessage || 'The HiveAuth request expired.',
+          { code: 'expired' }
+        ))
+        return
+      }
+      if (socket && socket.readyState === 1) {
+        emitStatus('waiting')
+        return
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      if (socket) {
+        socket.onmessage = null
+        socket.onerror = null
+        socket.onclose = null
+        try { socket.close() } catch {}
+        socket = null
+      }
+      reconnectAttempt += 1
+      emitStatus('reconnecting', { attempt: reconnectAttempt, immediate: true })
+      connectAndSend()
+    }
+
+    function registerWakeListeners () {
+      if (!wakeTarget) return
+      wakeTarget.addEventListener('visibilitychange', wakeReconnect)
+      wakeTarget.addEventListener('pageshow', wakeReconnect)
+      wakeTarget.addEventListener('online', wakeReconnect)
+    }
+
     async function handleMessage (event) {
+      if (settled) return
       const message = parseMessage(event.data)
       if (!message) return
       try {
@@ -250,11 +344,17 @@ function runRequest ({
           ))
           return
         }
-        if (message.cmd === 'attach_ack') return
+        if (message.cmd === 'attach_ack') {
+          reconnectAttempt = 0
+          emitStatus('resumed')
+          return
+        }
         if (message.cmd === 'attach_nack') {
           if (message.uuid && uuid && message.uuid !== uuid) return
+          emitStatus('expired')
           finish(reject, new HiveAuthError(
-            'The HiveAuth request expired before it could be resumed. Check the chain before retrying a transaction.',
+            attachNackMessage ||
+              'The HiveAuth request expired before it could be resumed. Check the chain before retrying a transaction.',
             { code: 'expired' }
           ))
           return
@@ -269,6 +369,14 @@ function runRequest ({
             ? expire
             : Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
           arm(deadline)
+          savePending({
+            account,
+            uuid,
+            kind,
+            expire: deadline,
+            key: kind === 'login' ? authKey : null
+          })
+          emitStatus('waiting')
           if (onWait) {
             try {
               const result = onWait({ uuid, expire: deadline, key: authKey, account })
@@ -310,6 +418,7 @@ function runRequest ({
           return
         }
         socket = connection.socket
+        reconnectAttempt = 0
         socket.onerror = () => {}
         socket.onclose = handleClose
         socket.onmessage = handleMessage
@@ -343,6 +452,11 @@ function runRequest ({
     }
 
     signal?.addEventListener('abort', onAbort, { once: true })
+    registerWakeListeners()
+    if (resume) {
+      arm(deadline)
+      emitStatus('reconnecting', { attempt: 0, immediate: true })
+    }
     connectAndSend()
   })
 }
@@ -353,7 +467,7 @@ export function isAvailable () {
     typeof globalThis.crypto?.getRandomValues === 'function'
 }
 
-export async function authenticate (account, { signal, onPayload, challenge } = {}) {
+export async function authenticate (account, { signal, onPayload, onStatus, challenge } = {}) {
   checkAccount(account)
   const authKey = createAuthKey()
   const authData = { app: APP_META }
@@ -368,28 +482,62 @@ export async function authenticate (account, { signal, onPayload, challenge } = 
     data,
     authKey,
     signal,
+    kind: 'login',
+    onStatus,
     waitCommand: 'auth_wait',
     ackCommand: 'auth_ack',
     nackCommand: 'auth_nack',
     errCommand: 'auth_err',
     timeoutMessage: 'The HiveAuth login request expired.',
+    attachNackMessage: 'The HiveAuth login request expired before it could be resumed. Approve a new login request.',
     onWait: payload => {
       const authPayload = { ...payload, host: HAS_HOST }
       onPayload?.({ ...authPayload, uri: authUri(authPayload) })
     },
-    parseAck: async message => {
-      const payload = JSON.parse(await decryptPayload(message.data, authKey))
-      const expire = payload?.expire === null || payload?.expire === undefined
-        ? null
-        : Number(payload.expire)
-      return {
-        token: typeof payload?.token === 'string' && payload.token ? payload.token : null,
-        expire: Number.isFinite(expire) && expire > 0 ? expire : null,
-        challenge: payload?.challenge || null
-      }
-    }
+    parseAck: parseAuthAck(authKey)
   })
 
+  const session = {
+    account,
+    token: result.token,
+    expire: result.expire,
+    key: authKey,
+    host: HAS_HOST
+  }
+  saveSession(account, session)
+  return { ...session, challenge: result.challenge }
+}
+
+/**
+ * Finish a login whose page was reloaded while the wallet approval was still
+ * pending. The temporary auth key and uuid live in sessionStorage for at most
+ * the relay's 60-second window; this attaches to the same request instead of
+ * starting a second one.
+ */
+export async function resumeAuthentication (account, { signal, onStatus } = {}) {
+  checkAccount(account)
+  const pending = loadPending()
+  if (!pending || pending.kind !== 'login' || pending.account !== account || !pending.key) {
+    return null
+  }
+  const authKey = pending.key
+  const result = await runRequest({
+    command: 'auth_req',
+    account,
+    data: null,
+    authKey,
+    signal,
+    kind: 'login',
+    resume: pending,
+    onStatus,
+    waitCommand: 'auth_wait',
+    ackCommand: 'auth_ack',
+    nackCommand: 'auth_nack',
+    errCommand: 'auth_err',
+    timeoutMessage: 'The HiveAuth login request expired.',
+    attachNackMessage: 'The HiveAuth login request expired before it could be resumed. Approve a new login request.',
+    parseAck: parseAuthAck(authKey)
+  })
   const session = {
     account,
     token: result.token,
@@ -418,7 +566,7 @@ function requireSession (account) {
   return session
 }
 
-export async function broadcast (account, keyType, operations, { signal } = {}) {
+export async function broadcast (account, keyType, operations, { signal, onStatus } = {}) {
   checkKeyType(keyType)
   if (keyType !== 'posting' && keyType !== 'active') {
     throw new HiveAuthError('HiveAuth can only broadcast with posting or active keys.', {
@@ -443,6 +591,8 @@ export async function broadcast (account, keyType, operations, { signal } = {}) 
     authKey: session.key,
     token: session.token,
     signal,
+    kind: 'sign',
+    onStatus,
     waitCommand: 'sign_wait',
     ackCommand: 'sign_ack',
     nackCommand: 'sign_nack',
@@ -465,7 +615,7 @@ export async function broadcast (account, keyType, operations, { signal } = {}) 
   })
 }
 
-export async function signChallenge (account, { keyType = 'posting', challenge, signal } = {}) {
+export async function signChallenge (account, { keyType = 'posting', challenge, signal, onStatus } = {}) {
   checkKeyType(keyType)
   if (typeof challenge !== 'string' || !challenge) {
     throw new HiveAuthError('The signature challenge is missing.', { code: 'protocol' })
@@ -483,11 +633,14 @@ export async function signChallenge (account, { keyType = 'posting', challenge, 
     authKey: session.key,
     token: session.token,
     signal,
+    kind: 'challenge',
+    onStatus,
     waitCommand: 'challenge_wait',
     ackCommand: 'challenge_ack',
     nackCommand: 'challenge_nack',
     errCommand: 'challenge_err',
     timeoutMessage: 'The HiveAuth signature request expired.',
+    attachNackMessage: 'The HiveAuth signature request expired before it could be resumed. Try the action again.',
     parseAck: async message => {
       const payload = JSON.parse(await decryptPayload(message.data, session.key))
       const signature = payload?.challenge || payload?.signature
