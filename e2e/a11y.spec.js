@@ -58,7 +58,7 @@ test('axe clean: custom dashboard templates', async ({ page }) => {
     await expect(page.locator('.dw-grid--packed')).toBeVisible()
   }
 
-  for (const label of ['Everyday', 'Creator']) {
+  for (const label of ['Everyday', 'Creator', 'Community', 'Trader']) {
     await applyTemplate(label)
     for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
       await page.setViewportSize(viewport)

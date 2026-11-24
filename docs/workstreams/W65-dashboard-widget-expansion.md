@@ -139,9 +139,10 @@ Final wave:
 - `bunx playwright test` — the full Chromium suite passed: 167 tests, including
   all dashboard, axe, perf, PWA and resilience specs.
 - `bunx playwright test e2e/a11y.spec.js -g "custom dashboard templates"` —
-  axe clean at 1440px and 390px for the Everyday and Creator templates. The
-  deferred-widget skeleton lost its invalid `aria-label` (generic divs cannot
-  carry one).
+  axe clean at 1440px and 390px for the Everyday, Creator, Community and Trader
+  templates. The deferred-widget skeleton lost its invalid `aria-label` (generic
+  divs cannot carry one), and the price-alert "no target" badge moved to
+  `--c-text-subtle` to meet contrast.
 - `bun run perf:check` — all route budgets passed. Home total is 421.8 KB; the
   home route JS budget moved from 174 KB to 176 KB for the larger registry and
   settings catalogue. Every non-default widget stays an async chunk, including

@@ -179,7 +179,7 @@
 
 .dw-pa__badge.is-muted {
   background: color-mix(in srgb, var(--c-text) 6%, transparent);
-  color: var(--c-text-faint);
+  color: var(--c-text-subtle);
 }
 
 .dw-pa__facts {
