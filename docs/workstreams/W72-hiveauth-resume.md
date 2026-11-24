@@ -134,6 +134,21 @@ transaction is auto-retried after an ambiguous `attach_nack`.
   The HiveAuth spec passes in Obscura when run on its own; the Chromium checks
   above are the release gate for this workstream.
 
+## Deployment
+
+Deployed on 2026-11-24 from commit `4465037` with `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T071643Z.tar.gz`
+  (`sha256 79f8bf59…1fb34`).
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261124T071643Z.tar.gz`.
+- Production `index.html` SHA-256 `8297df0c…cb797` matches the local build.
+- Live Chromium smoke: `/` rendered “Hive at a glance”; the HiveAuth dialog
+  showed the QR and “Waiting for wallet… approve on your phone. · expires in
+  61s”, Cancel closed it, and there were no page errors.
+- Live HTTP: `/`, `/market`, `/compose` and `/settings/moderation` return 200.
+  `/@ausbitbank` and `/@ausbitbank/downvotes` still return the known Cloudflare
+  challenge (403) to non-browser clients.
+
 ## Still open
 
 - Tier 1 physical matrix on Android and iOS: login, vote, comment, transfer,

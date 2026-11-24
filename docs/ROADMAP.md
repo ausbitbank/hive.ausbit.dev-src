@@ -245,8 +245,8 @@ navigation guard. It is deployed and live-smoked. See
 
 Numbering note: `docs/workstreams/W62-hiveauth.md` and
 `docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
-signing work as **W62-hiveauth**. W71 is complete; W72 is implemented locally
-with its physical-device matrix still open; W73 is complete apart from the
+signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
+physical-device matrix still open; W73 is complete apart from the
 explicitly deferred items in that section. The next free workstream numbers are
 W74 and W75.
 
@@ -261,13 +261,13 @@ preview. See
 [`docs/workstreams/W71-theme-safety.md`](workstreams/W71-theme-safety.md) and
 the rule in [`docs/SECURITY.md`](SECURITY.md).
 
-### W72 — HiveAuth device matrix and background-resume hardening (implemented locally)
+### W72 — HiveAuth device matrix and background-resume hardening (deployed, device matrix open)
 
 This is a follow-up to **W62-hiveauth**. Login, voting, commenting, rejection,
 keepsats and queue auto-send are working on the initial device. The client-side
-resume work and its automated tests are implemented; the repeatable physical
-device matrix and the live operator smokes remain open. Record:
-[`docs/workstreams/W72-hiveauth-resume.md`](workstreams/W72-hiveauth-resume.md).
+resume work and its automated tests are implemented, deployed and live-smoked;
+the repeatable physical device matrix and the live operator smokes remain open.
+Record: [`docs/workstreams/W72-hiveauth-resume.md`](workstreams/W72-hiveauth-resume.md).
 
 Current client behaviour:
 
