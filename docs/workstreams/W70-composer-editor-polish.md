@@ -50,12 +50,11 @@ changes:
 
 ## Deliberately not included
 
-- **Autosave toggle**: autosave (with flush on tab hide and unload) is the
-  composer's data-loss safety net. A toggle needs a navigation guard and an
-  unsaved-changes flow first; shipping the switch alone would make losing work
-  easy. The #82 item stays open as an optional follow-up.
-- Gallery/grid insertion, undo/redo, draft rename/trash and cross-post polish
-  remain in #82.
+- **Autosave toggle**: autosave (with flush on tab hide and unload) remains the
+  composer's data-loss safety net. The toggle and its navigation guard shipped
+  in W74; see `W74-composer-draft-safety.md`.
+- Gallery/grid insertion, undo/redo, draft trash and cross-post polish remain in
+  #82.
 
 ## Files
 

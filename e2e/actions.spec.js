@@ -40,6 +40,90 @@ test.describe('action flows', () => {
     expect(runtimeErrors).toEqual([])
   })
 
+  test('compose autosave toggle guards unsaved navigation', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByRole('heading', { level: 1, name: 'Write a post' })).toBeVisible({ timeout: 30000 })
+
+    const title = page.getByLabel('Post title')
+    const body = page.getByLabel('Post body in Markdown')
+    await title.fill('Guard draft')
+    await body.fill('Saved body')
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.title === 'Guard draft' && draft.body === 'Saved body')
+    }).toBe(true)
+
+    await page.getByRole('button', { name: 'Editor settings' }).dispatchEvent('click')
+    await expect(page.getByRole('heading', { name: 'Editor settings' })).toBeVisible()
+    await page.getByLabel('Autosave drafts').click()
+    await page.getByRole('button', { name: 'Close editor settings' }).click()
+
+    await body.fill('Unsaved body')
+    await page.locator('.site-brand').click()
+    const leave = page.getByRole('dialog').filter({ hasText: 'Unsaved changes' })
+    await expect(leave).toBeVisible()
+    await leave.getByRole('button', { name: 'Stay' }).click()
+    await expect(leave).toBeHidden()
+    await expect(page).toHaveURL(/\/compose$/)
+    await expect(body).toHaveValue('Unsaved body')
+
+    await page.locator('.site-brand').click()
+    await expect(leave).toBeVisible()
+    await leave.getByRole('button', { name: 'Save and leave' }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.title === 'Guard draft' && draft.body === 'Unsaved body')
+    }).toBe(true)
+
+    // The discard branch leaves the last saved copy untouched.
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByLabel('Post body in Markdown')).toHaveValue('Unsaved body')
+    await page.getByLabel('Post body in Markdown').fill('Discarded body')
+    await page.locator('.site-brand').click()
+    await expect(leave).toBeVisible()
+    await leave.getByRole('button', { name: 'Leave without saving' }).click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.title === 'Guard draft' && draft.body === 'Unsaved body')
+    }).toBe(true)
+  })
+
+  test('compose renames a local draft', async ({ page }) => {
+    test.setTimeout(120000)
+    await loginAs(page)
+    await seedDrafts(page, [{
+      id: 'e2e-rename-draft',
+      owner: 'ausbitbank',
+      title: 'Old draft title',
+      body: 'Rename this local draft.',
+      tags: ['hive'],
+      community: '',
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }])
+    await page.goto('/compose')
+    await waitForApp(page)
+    await expect(page.getByLabel('Post title')).toHaveValue('Old draft title')
+
+    await page.getByRole('button', { name: 'Rename draft Old draft title' }).click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Rename draft' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel('Draft title').fill('New draft title')
+    await dialog.getByRole('button', { name: 'Save title' }).click()
+    await expect(dialog).toBeHidden()
+    await expect(page.getByLabel('Post title')).toHaveValue('New draft title')
+    await expect.poll(async () => {
+      const stored = await readDrafts(page)
+      return stored?.drafts?.some(draft => draft.id === 'e2e-rename-draft' && draft.title === 'New draft title')
+    }).toBe(true)
+  })
+
   test('compose queues a top-level posting comment', async ({ page }) => {
     test.setTimeout(120000)
     await loginAs(page)

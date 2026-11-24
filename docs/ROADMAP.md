@@ -247,8 +247,8 @@ Numbering note: `docs/workstreams/W62-hiveauth.md` and
 `docs/workstreams/W62-public-community-browser.md` share a prefix. Refer to the
 signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
-explicitly deferred items in that section. The next free workstream numbers are
-W74 and W75.
+explicitly deferred items in that section; W74 is implemented locally. The next
+free workstream number is W75.
 
 ### W71 — Theme safety (complete)
 
@@ -394,6 +394,18 @@ acceptance criteria.
 The implementation brief for W71 + W73 (module map, preset matrix, data-source
 spike results, test plan and release order) is
 [`docs/workstreams/W73-moderation-implementation-plan.md`](workstreams/W73-moderation-implementation-plan.md).
+
+### W74 — Composer autosave control, leave guard and draft rename
+
+This closes the draft-safety half of the composer backlog. The editor settings
+gain an autosave on/off switch (default on); turning it off saves the current
+draft once, then in-app navigation and tab close ask before leaving unsaved
+changes. The guard offers Save and leave, Leave without saving and Stay. Any
+local draft can be renamed from the draft list, including the active draft.
+
+No draft schema, signing or publish-path change. The explicit Save button and
+publishing still work with autosave off. See
+[`docs/workstreams/W74-composer-draft-safety.md`](workstreams/W74-composer-draft-safety.md).
 
 ## Definition of done
 

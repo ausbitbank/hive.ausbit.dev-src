@@ -772,6 +772,16 @@
                   dense
                   round
                   size="sm"
+                  icon="edit"
+                  :aria-label="'Rename draft ' + draftDisplayTitle(item)"
+                  title="Rename draft"
+                  @click="requestRename(item)"
+                />
+                <q-btn
+                  flat
+                  dense
+                  round
+                  size="sm"
                   icon="content_copy"
                   :aria-label="'Duplicate draft ' + draftDisplayTitle(item)"
                   title="Duplicate draft"
@@ -1037,6 +1047,13 @@
         </q-card-section>
         <q-separator />
         <q-card-section class="compose-settings__body">
+          <div class="compose-setting-row">
+            <div>
+              <div class="compose-setting__label">Autosave drafts</div>
+              <div class="compose-setting__hint">Save locally as you type. When this is off, use Save, and leaving the page asks first. The current draft is saved once when you turn autosave off.</div>
+            </div>
+            <q-toggle v-model="autosaveEnabled" aria-label="Autosave drafts" dense />
+          </div>
           <div class="compose-setting-row">
             <div>
               <div class="compose-setting__label">Source mode</div>
@@ -1503,6 +1520,51 @@
             :label="isEditing ? 'Queue edit for signing' : 'Queue for signing'"
             @click="confirmPublish"
           />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="leavePromptOpen" persistent @before-hide="cancelLeavePrompt">
+      <q-card class="compose-confirm">
+        <q-card-section>
+          <div class="home-eyebrow">Draft</div>
+          <h2 class="home-panel__title">Unsaved changes</h2>
+          <p class="compose-confirm__text">
+            <template v-if="draft">“{{ draftDisplayTitle(draft) }}”</template>
+            <template v-else>This draft</template>
+            has changes that are not saved in this browser.
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Stay" @click="resolveLeave('stay')" />
+          <q-btn flat no-caps color="negative" label="Leave without saving" @click="resolveLeave('discard')" />
+          <q-btn flat no-caps color="primary" icon="save" label="Save and leave" @click="resolveLeave('save')" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="renameOpen">
+      <q-card class="compose-confirm">
+        <q-card-section>
+          <div class="home-eyebrow">Draft</div>
+          <h2 class="home-panel__title">Rename draft</h2>
+          <p class="compose-confirm__text">
+            The title is stored with the local draft and becomes the post title when you publish or queue it.
+          </p>
+          <q-input
+            v-model="renameTitle"
+            outlined
+            dense
+            autofocus
+            label="Draft title"
+            aria-label="Draft title"
+            :maxlength="255"
+            @keyup.enter="confirmRename"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Cancel" @click="renameOpen = false" />
+          <q-btn flat no-caps color="primary" icon="save" label="Save title" @click="confirmRename" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -3502,6 +3564,11 @@ export default {
       emojiGroups: [],
       discardOpen: false,
       discardTarget: null,
+      renameOpen: false,
+      renameTarget: null,
+      renameTitle: '',
+      leavePromptOpen: false,
+      leaveNext: null,
       communityLoading: false,
       communityLoadedFor: null,
       communityStats: {},
@@ -3531,6 +3598,7 @@ export default {
       fullscreenEditor: false,
       previewBody: '',
       previewTimer: null,
+      autosaveEnabled: LocalStorage.getItem('composeAutosave') !== false,
       autoUpdatePreview: LocalStorage.getItem('composeAutoPreview') !== false,
       previewEmbeds: LocalStorage.getItem('composePreviewEmbeds') !== false,
       topDownPreview: LocalStorage.getItem('composeTopDownPreview') === true,
@@ -3868,7 +3936,7 @@ export default {
     saveLabel () {
       if (this.saveState === 'error') return 'Draft not saved — storage unavailable'
       if (this.saveState === 'saving') return 'Saving…'
-      if (this.saveState === 'dirty') return 'Unsaved changes'
+      if (this.saveState === 'dirty') return this.autosaveEnabled ? 'Unsaved changes' : 'Unsaved changes — autosave off'
       if (this.lastSavedAt) return 'Saved ' + moment(this.lastSavedAt).format('HH:mm')
       return 'Not saved yet'
     },
@@ -3941,6 +4009,18 @@ export default {
       LocalStorage.set('composeAutoPreview', value === true)
       if (value) this.refreshPreview()
     },
+    autosaveEnabled (value) {
+      LocalStorage.set('composeAutosave', value === true)
+      if (value) {
+        this.scheduleAutosave()
+        return
+      }
+      // Save once when the writer turns autosave off so the switch itself
+      // cannot lose the work on the screen.
+      if (this.draft && draftHasContent(this.draft) && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
+        this.saveDraft({ silent: true })
+      }
+    },
     previewEmbeds (value) {
       LocalStorage.set('composePreviewEmbeds', value === true)
     },
@@ -3972,7 +4052,7 @@ export default {
     this.loadChecklistWarnings()
     this.refreshStorageUsage()
     window.addEventListener('keydown', this.onGlobalKeydown)
-    window.addEventListener('beforeunload', this.flushAutosave)
+    window.addEventListener('beforeunload', this.onBeforeUnload)
     window.addEventListener('storage', this.onStorageChange)
     document.addEventListener('visibilitychange', this.onVisibilityChange)
   },
@@ -3981,9 +4061,23 @@ export default {
     if (this.previewTimer) clearTimeout(this.previewTimer)
     if (this.imageProbeTimer) clearTimeout(this.imageProbeTimer)
     window.removeEventListener('keydown', this.onGlobalKeydown)
-    window.removeEventListener('beforeunload', this.flushAutosave)
+    window.removeEventListener('beforeunload', this.onBeforeUnload)
     window.removeEventListener('storage', this.onStorageChange)
     document.removeEventListener('visibilitychange', this.onVisibilityChange)
+  },
+  beforeRouteLeave (to, from, next) {
+    if (!this.hasUnsavedDraft()) {
+      next()
+      return
+    }
+    // With autosave on the leave is a normal end of the debounce window; flush
+    // and go. With autosave off, or when storage just failed, ask first.
+    if (this.autosaveEnabled && this.flushAutosave() !== false) {
+      next()
+      return
+    }
+    this.leaveNext = next
+    this.leavePromptOpen = true
   },
   methods: {
     wordCount,
@@ -4529,6 +4623,58 @@ export default {
       if (!draft) return
       this.pinnedDraftIds = togglePinnedDraftId(LocalStorage, this.loggedInUser, draft.id)
       writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
+    },
+    resolveLeave (choice) {
+      const next = this.leaveNext
+      this.leaveNext = null
+      this.leavePromptOpen = false
+      if (!next) return
+      if (choice === 'save') {
+        if (this.saveDraft()) next()
+        else next(false)
+        return
+      }
+      if (choice === 'discard') next()
+      else next(false)
+    },
+    cancelLeavePrompt () {
+      if (!this.leaveNext) return
+      const next = this.leaveNext
+      this.leaveNext = null
+      next(false)
+    },
+    requestRename (draft) {
+      if (!draft) return
+      this.renameTarget = draft
+      this.renameTitle = draft.title || ''
+      this.renameOpen = true
+    },
+    confirmRename () {
+      const target = this.renameTarget
+      if (!target) return
+      const title = this.renameTitle.trim()
+      if (!title) {
+        this.$q.notify({ message: 'Add a title for the draft.' })
+        return
+      }
+      const stored = this.drafts.find(item => item.id === target.id)
+      if (stored) {
+        const renamed = normalizeDraft({ ...stored, title, updatedAt: Date.now() })
+        this.drafts = upsertDraft(this.drafts, renamed)
+        writeDrafts(LocalStorage, this.drafts, Date.now())
+      }
+      if (this.draft && this.draft.id === target.id) {
+        this.draft.title = title
+        // With autosave on, an immediate silent save keeps the list and the
+        // stored draft in step. With autosave off the change stays dirty and
+        // the leave guard protects it.
+        if (this.autosaveEnabled) this.saveDraft({ silent: true })
+      }
+      this.renameOpen = false
+      this.renameTarget = null
+      this.renameTitle = ''
+      this.refreshStorageUsage()
+      this.$q.notify({ type: 'positive', message: 'Draft renamed' })
     },
     duplicateDraft (draft) {
       if (!draft) return
@@ -5262,13 +5408,24 @@ export default {
         scheduledAt: draft.scheduledAt
       })
     },
+    hasUnsavedDraft () {
+      return Boolean(this.draft) &&
+        draftHasContent(this.draft) &&
+        this.snapshotDraft(this.draft) !== this.lastSavedSnapshot
+    },
     scheduleAutosave () {
       if (this.snapshotDraft(this.draft) === this.lastSavedSnapshot) return
-      if (!draftHasContent(this.draft)) {
-        this.saveState = 'dirty'
+      this.saveState = 'dirty'
+      if (!this.autosaveEnabled) {
+        if (this.autosaveTimer) {
+          clearTimeout(this.autosaveTimer)
+          this.autosaveTimer = null
+        }
         return
       }
-      this.saveState = 'dirty'
+      if (!draftHasContent(this.draft)) {
+        return
+      }
       if (this.autosaveTimer) clearTimeout(this.autosaveTimer)
       this.autosaveTimer = setTimeout(() => {
         this.autosaveTimer = null
@@ -5329,9 +5486,19 @@ export default {
         clearTimeout(this.autosaveTimer)
         this.autosaveTimer = null
       }
+      if (!this.autosaveEnabled) return true
       if (this.draft && draftHasContent(this.draft) && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
-        this.saveDraft({ silent: true })
+        return this.saveDraft({ silent: true })
       }
+      return true
+    },
+    onBeforeUnload (event) {
+      if (!this.autosaveEnabled && this.hasUnsavedDraft()) {
+        event.preventDefault()
+        event.returnValue = ''
+        return ''
+      }
+      this.flushAutosave()
     },
     onVisibilityChange () {
       if (document.visibilityState === 'hidden') this.flushAutosave()

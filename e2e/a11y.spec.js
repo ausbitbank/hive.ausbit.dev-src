@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures'
 import { installMockRelay, openHiveAuthLogin } from './hiveauth-mock'
-import { runAxe, waitForApp } from './helpers'
+import { loginAs, readDrafts, runAxe, waitForApp } from './helpers'
 
 const POST_ROUTE = '/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
 const ROUTES = [
@@ -80,5 +80,44 @@ test('axe clean: HiveAuth login dialog', async ({ page }) => {
     await page.waitForTimeout(500)
     const violations = await runAxe(page, { context: '.login-hiveauth-card' })
     expect(violations, 'HiveAuth dialog at ' + viewport.width + 'px').toEqual([])
+  }
+})
+
+test('axe clean: compose unsaved-changes and rename dialogs', async ({ page }) => {
+  test.setTimeout(180000)
+  await loginAs(page)
+  await page.goto('/compose')
+  await waitForApp(page)
+  await page.getByLabel('Post title').fill('Accessibility guard draft')
+  await page.getByLabel('Post body in Markdown').fill('Saved body')
+  await expect.poll(async () => {
+    const stored = await readDrafts(page)
+    return stored?.drafts?.some(draft => draft.title === 'Accessibility guard draft')
+  }).toBe(true)
+
+  await page.getByRole('button', { name: 'Editor settings' }).dispatchEvent('click')
+  await page.getByLabel('Autosave drafts').click()
+  await page.getByRole('button', { name: 'Close editor settings' }).click()
+  await page.getByLabel('Post body in Markdown').fill('Unsaved body')
+  await page.locator('.site-brand').click()
+  const leave = page.getByRole('dialog').filter({ hasText: 'Unsaved changes' })
+  await expect(leave).toBeVisible()
+
+  for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(300)
+    const violations = await runAxe(page)
+    expect(violations, 'unsaved-changes dialog at ' + viewport.width + 'px').toEqual([])
+  }
+  await leave.getByRole('button', { name: 'Stay' }).click()
+
+  await page.getByRole('button', { name: /^Rename draft/ }).click()
+  const rename = page.getByRole('dialog').filter({ hasText: 'Rename draft' })
+  await expect(rename).toBeVisible()
+  for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(300)
+    const violations = await runAxe(page)
+    expect(violations, 'rename dialog at ' + viewport.width + 'px').toEqual([])
   }
 })
