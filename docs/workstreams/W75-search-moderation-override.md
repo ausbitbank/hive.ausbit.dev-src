@@ -1,7 +1,7 @@
 # W75 — Search result moderation override
 
 Date: 2026-11-24
-Status: implemented locally; automated verification green. Deployment pending.
+Status: implemented, deployed and live-smoked.
 
 Follows the remaining Phase 1 polish in
 [`W73-moderation-policy.md`](W73-moderation-policy.md). The policy engine already
@@ -51,12 +51,29 @@ changes the chain.
 ## Verification
 
 - `bun run lint` — clean; theme-token scan clean.
-- `bun run test` — see the release run below.
+- `bun run test` — 162 files, 1,416 tests passed.
 - `bun run build` — succeeded.
 - `bunx playwright test e2e/search.spec.js --project=chromium` — 5 passed.
 - Obscura `bun run test:e2e -- e2e/search.spec.js` — 5 passed.
 - Axe on the result list at 1440px and 390px — clean before and after the
   override.
+- `bun run perf:check` — all budgets passed (one transient `/browse` LCP
+  outlier passed on the rerun).
+
+## Deployment
+
+Deployed on 2026-11-24 from commit `ce38d36` with `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T094544Z.tar.gz`
+  (`sha256 b8d5083d…5f7448`).
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261124T094544Z.tar.gz`.
+- Production `index.html` SHA-256 `07ccb17a…1f7571` matches the local build.
+- Live Chromium smoke on `/search?q=hive&type=posts` at 390px:
+  - a follow-only collapsed row showed “Not followed” with no snippet;
+  - **Show anyway** revealed the snippet, cleared the label, restored focus to
+    the row and persisted one local `showItems` key;
+  - no page errors.
+- Live HTTP: `/` and `/search?q=hive&type=posts` return 200.
 
 ## Notes and follow-ups
 
