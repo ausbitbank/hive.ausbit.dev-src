@@ -70,7 +70,8 @@ async function mockChain (page, {
   following = [],
   rankedPosts = null,
   voteHistory = null,
-  accountOverride = null
+  accountOverride = null,
+  listCounts = null
 } = {}) {
   await page.route('https://images.hive.blog/**', route => route.fulfill({
     status: 200,
@@ -110,6 +111,20 @@ async function mockChain (page, {
       }
 
       if (payload.method === 'bridge.get_follow_list') {
+        if (listCounts && Number.isFinite(listCounts[params.observer])) {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              result: Array.from({ length: listCounts[params.observer] }, (_, index) => ({
+                name: 'listed' + index,
+                muted_list_description: ''
+              }))
+            })
+          })
+        }
         let result = []
         if (params.observer === 'viewer' && params.follow_type === 'muted') {
           result = muted.map(name => ({ name, muted_list_description: '' }))
@@ -132,9 +147,7 @@ async function mockChain (page, {
 
       if (accountOverride) {
         const names = Array.isArray(params) ? (params[0] || []) : []
-        const result = names
-          .filter(name => name === 'ausbitbank')
-          .map(name => ({ ...accountOverride, name }))
+        const result = names.map(name => ({ ...accountOverride, name }))
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -277,9 +290,15 @@ test('theme wall marks a blocked skin and can show it', async ({ page }) => {
 
 
 test('moderation settings page switches presets and persists', async ({ page }) => {
+  await mockChain(page, { listCounts: { 'hive.blog': 2, plentyofphish: 1, ecency: 1, spaminator: 1 } })
   await page.goto('/settings/moderation')
   await waitForApp(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Moderation' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Discover lists' })).toBeVisible()
+  await expect(page.getByText('Phishing accounts', { exact: true })).toBeVisible()
+  await expect(page.getByText('Plenty of Phish — source list')).toBeVisible()
+  await expect(page.getByText('Hive Analytics blacklist (very large)')).toBeVisible()
+  await expect(page.getByText('2 names')).toBeVisible()
   await page.locator('.mod-preset').filter({ hasText: 'Strict' }).click()
   await expect(page.locator('.mod-preset').filter({ hasText: 'Strict' })).toHaveAttribute('aria-pressed', 'true')
 
@@ -382,13 +401,23 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
 
 test('list subscriptions are explicit, queued with posting authority and preserve flags', async ({ page }) => {
   await loginAs(page, 'viewer')
-  await mockChain(page)
+  await mockChain(page, {
+    accountOverride: {
+      reputation: 60,
+      posting_json_metadata: '{}',
+      balance: '0.000 HIVE',
+      hbd_balance: '0.000 HBD',
+      vesting_shares: '0.000000 VESTS',
+      post_count: 0,
+      created: '2020-01-01T00:00:00'
+    }
+  })
   await page.goto('/settings/moderation')
   await waitForApp(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Moderation' })).toBeVisible()
 
   await page.getByLabel('List owner account').fill('hive.blog')
-  await page.getByRole('button', { name: 'Subscribe', exact: true }).click()
+  await page.locator('.mod-subscribe').getByRole('button', { name: 'Subscribe', exact: true }).click()
   await expect(page.locator('.mod-list-owner')).toContainText('@hive.blog')
 
   const queue = await readQueue(page)

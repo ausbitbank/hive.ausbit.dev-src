@@ -33,6 +33,34 @@ Shipped:
   type, muted parent, low reputation and muted role.
 - Export includes owner references only (`subscriptions.muteOwners`,
   `subscriptions.blacklistOwners`); no member lists and no account data.
+- A curated, default-unsubscribed discovery set with live counts where
+  practical.
+
+## Discovered lists (verified 2026-11-24)
+
+Hive has no global on-chain directory of lists. The practical discovery surface
+is a curated seed set, verified against the chain, shown default-unsubscribed.
+
+| Owner | Type | Names | State | Why show it |
+| --- | --- | ---: | --- | --- |
+| `hive.blog` | mute | 956 | maintained | Hive.blog phishing/hacked-account list; overlaps Plenty of Phish (785 shared) and adds newer entries. |
+| `plentyofphish` | mute | 914 | static source | The Plenty of Phish GitHub-backed phishing source used by hive.blog and anti-abuse tools; last on-chain update 2021. |
+| `ecency` | mute | 71 | active | Ecency's active team spam/bot mute list (41 updates in the last 90 days at probe time). Broader than phishing. |
+| `spaminator` | blacklist | 35 | legacy | Spaminator/Hivewatchers warning list with a documented Discord appeal path; last on-chain update 2023. |
+| `themarkymark` | blacklist | 70,963 | active / very large | Hive Analytics bot/spam warning set (88 updates in 90 days). The client indexes at most 10,000 names; advanced use only. |
+
+Excluded from the default set:
+
+- `hivewatchers` — profile says the project is shut down.
+- `steemcleaners` — legacy and inactive.
+- `hive.blog`'s 8-entry blacklist — too narrow to be a useful discovery card.
+- `blocktrades`, `peakd`, `deathwing` and similar small personal lists — not
+  published anti-abuse lists.
+
+The discovery cards show known counts immediately, refresh the smaller lists
+live, and never subscribe automatically. `themarkymark` is deliberately not
+fetched because the full list is very large; its known count is labelled
+approximate and it is placed under “Advanced / very large”.
 
 ## Implementation
 
@@ -42,7 +70,8 @@ Shipped:
 | `src/services/followOps.js` | Full `what` array composition shared by follow/mute/list actions. |
 | `src/stores/moderation.js` | Optimistic list context update, policy owner references, export subscriptions. |
 | `src/services/moderationSettings.js` | Export/import `subscriptions` references with the versioned policy. |
-| `src/pages/moderation.vue` | Subscribe form, provenance/member count, unsubscribe, imported suggestions. |
+| `src/pages/moderation.vue` | Subscribe form, provenance/member count, unsubscribe, imported suggestions, discovery cards. |
+| `src/services/moderationLists.js` | Curated discovery seeds, status/caution labels, grouping. |
 | `src/services/moderationContent.js` | Community id on decisions. |
 | `src/components/moderation/ModerationNotice.vue` | Community context link. |
 
@@ -95,13 +124,15 @@ Shipped:
 
 Deployed on 2026-11-24 with `./scripts/deploy.sh`.
 
-- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T034359Z.tar.gz`
-  (`sha256 d0f9d2e2…91ce0`).
-- Production index matches local `assets/index-DBi3Q3AN.js`.
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T052725Z.tar.gz`
+  (`sha256 d8590bad…9770c`).
+- Production index matches local `assets/index-*.js` for this build.
 - Live browser smoke through the SPA router (account routes are behind the
   existing Cloudflare challenge for direct automated requests): the moderation
-  page renders its h1, five presets, matrix, export control and list subscribe
-  form; `@hive3/downvotes` renders 40 rows; no page errors.
+  page renders its h1, five presets, matrix, export control, subscribe form and
+  discovery cards; the discovery counts were live **956 / 914 / 71 / 35** and
+  the very-large list showed the approximate 70,963; `@hive3/downvotes` renders
+  40 rows; no page errors.
 - Direct `/settings/moderation` and `/@account/downvotes` still return the
   404/403 shell status until root installs the nginx exact location/sub-route
   regex. Client navigation works.

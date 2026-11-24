@@ -148,6 +148,49 @@
           <p v-if="!$hiveStore.user.username" class="mod-section__hint">Sign in to subscribe; the action uses posting authority.</p>
         </div>
 
+        <div class="mod-discovery">
+          <div class="mod-section__head">
+            <div>
+              <h3 class="mod-subtitle">Discover lists</h3>
+              <p class="mod-section__hint">
+                Hive has no global list directory. These are curated seeds verified against the chain;
+                none is subscribed by default. Counts refresh from the live lists where practical.
+              </p>
+            </div>
+            <q-btn flat dense no-caps icon="refresh" label="Refresh counts" :loading="discoveryLoading" @click="loadDiscoveryCounts" />
+          </div>
+
+          <div v-for="group in discoveryGroups" :key="'discover-' + group.key" class="mod-discovery__group">
+            <h4 class="mod-discovery__group-title">{{ group.label }}</h4>
+            <div class="mod-discovery__grid">
+              <article v-for="item in group.items" :key="item.id" class="mod-discovery__card">
+                <div class="mod-discovery__head">
+                  <div>
+                    <div class="mod-discovery__title">{{ item.title }}</div>
+                    <router-link :to="'/@' + item.owner" class="mod-discovery__owner">@{{ item.owner }}</router-link>
+                  </div>
+                  <div class="mod-discovery__badges">
+                    <q-badge color="blue-grey-9">{{ item.type }}</q-badge>
+                    <q-badge :color="item.status === 'legacy' ? 'grey-8' : item.status === 'large' ? 'orange-9' : 'green-9'" :text-color="item.status === 'large' ? 'black' : undefined">{{ item.statusLabel }}</q-badge>
+                  </div>
+                </div>
+                <p class="mod-discovery__text">{{ item.description }}</p>
+                <p class="mod-discovery__count">
+                  {{ item.count.toLocaleString() }} names
+                  <span v-if="!item.live">· approx. as of {{ item.asOf }}</span>
+                  <span v-else>· live</span>
+                </p>
+                <p class="mod-discovery__caution">{{ item.caution }}</p>
+                <div class="mod-discovery__actions">
+                  <q-btn v-if="!item.subscribed" flat dense no-caps color="primary" icon="add" label="Subscribe" @click="subscribeList(item.owner, item.type, true)" />
+                  <span v-else class="mod-discovery__subscribed">Subscribed</span>
+                  <router-link :to="'/@' + item.owner" class="mod-link">Owner profile</router-link>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
         <div v-if="suggestedLists.length" class="mod-list-owner">
           <h3 class="mod-subtitle">Referenced by an imported profile</h3>
           <ul class="mod-list">
@@ -449,6 +492,100 @@
   margin-top: var(--space-3);
 }
 
+.mod-discovery {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--c-border);
+}
+
+.mod-discovery__group {
+  margin-top: var(--space-3);
+}
+
+.mod-discovery__group-title {
+  margin: 0 0 var(--space-2);
+  color: var(--c-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mod-discovery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-2);
+}
+
+.mod-discovery__card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: var(--space-3);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  background: var(--c-surface);
+}
+
+.mod-discovery__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.mod-discovery__title {
+  color: var(--c-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.mod-discovery__owner {
+  color: var(--c-link);
+  font-size: 0.74rem;
+  text-decoration: none;
+}
+
+.mod-discovery__badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: flex-end;
+}
+
+.mod-discovery__text,
+.mod-discovery__count,
+.mod-discovery__caution {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.mod-discovery__count {
+  color: var(--c-text);
+  font-weight: 600;
+}
+
+.mod-discovery__caution {
+  color: var(--c-warning);
+  font-size: 0.72rem;
+}
+
+.mod-discovery__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.3rem;
+}
+
+.mod-discovery__subscribed {
+  color: var(--c-positive);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
 .mod-subscribe {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
@@ -566,6 +703,8 @@ import {
   isValidListOwner,
   listMemberCount
 } from 'src/services/followLists'
+import { DISCOVERY_GROUP_LABELS, DISCOVERY_LISTS } from 'src/services/moderationLists'
+import { fetchModerationListEntries } from 'src/services/moderationData'
 
 const PRESETS = [
   { value: 'open', label: 'Open', detail: 'Show everything. Label downvotes, reputation and NSFW; hide only a safety floor.' },
@@ -605,6 +744,8 @@ export default {
       refreshing: false,
       newListOwner: '',
       newListType: 'mute',
+      discoveryCounts: {},
+      discoveryLoading: false,
       listTypeOptions: [
         { label: 'Mute list', value: 'mute' },
         { label: 'Blacklist / warning list', value: 'blacklist' }
@@ -634,6 +775,22 @@ export default {
         })
       }
       return rows
+    },
+    discoveryGroups () {
+      const context = this.moderation.context
+      const groups = []
+      for (const [key, label] of Object.entries(DISCOVERY_GROUP_LABELS)) {
+        const items = DISCOVERY_LISTS
+          .filter(item => item.group === key)
+          .map(item => ({
+            ...item,
+            count: this.discoveryCounts[item.id] ?? item.knownCount,
+            live: Object.prototype.hasOwnProperty.call(this.discoveryCounts, item.id),
+            subscribed: isSubscribed(item.owner, item.type, context)
+          }))
+        if (items.length) groups.push({ key, label, items })
+      }
+      return groups
     },
     suggestedLists () {
       const context = this.moderation.context
@@ -668,6 +825,7 @@ export default {
       url: '/settings/moderation'
     })
     this.sync()
+    this.loadDiscoveryCounts()
   },
   watch: {
     '$hiveStore.user.username' () {
@@ -678,6 +836,27 @@ export default {
     sync () {
       this.moderation.setScope(this.$hiveStore.user.username || 'guest')
       this.moderation.ensureContext()
+    },
+    async loadDiscoveryCounts () {
+      if (this.discoveryLoading) return
+      this.discoveryLoading = true
+      try {
+        const targets = DISCOVERY_LISTS.filter(item => item.fetchCount)
+        const results = await Promise.allSettled(targets.map(async item => {
+          const entries = await fetchModerationListEntries(
+            item.owner,
+            item.type === 'mute' ? 'muted' : 'blacklisted'
+          )
+          return [item.id, entries.length]
+        }))
+        const next = { ...this.discoveryCounts }
+        for (const result of results) {
+          if (result.status === 'fulfilled') next[result.value[0]] = result.value[1]
+        }
+        this.discoveryCounts = next
+      } finally {
+        this.discoveryLoading = false
+      }
     },
     refreshLists () {
       this.refreshing = true
