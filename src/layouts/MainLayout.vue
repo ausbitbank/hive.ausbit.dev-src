@@ -751,7 +751,7 @@ export default {
         {
           title: 'Buy gift cards & pay bills with Bitrefill',
           caption: 'Bitrefill.com affiliate link',
-          icon: 'shopping_bag',
+          icon: 'monetization_on',
           link: 'https://www.bitrefill.com/invite/cs7elmlq'
         },
         {
