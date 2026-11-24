@@ -1,7 +1,7 @@
 # W65 — Dashboard widget expansion
 
 Date: 2026-11-24
-Status: complete — all Phase 0–3 items implemented and locally verified
+Status: complete — all Phase 0–3 items implemented, deployed and live-smoked
 Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
 Research: [`docs/dashboard-widgets-research.md`](../dashboard-widgets-research.md)
 
@@ -27,12 +27,13 @@ and the research document. This record tracks implementation and verification.
   mounted and defers only the widget body. Widgets outside the default layout
   are also async chunks, so a default home never downloads the expanded
   catalogue.
-- Settings kinds for `list`, `accounts`, `window` and `amount`, with
-  sanitisation and unit tests.
+- Settings kinds `list`, `accounts`, `window` and `amount`, with sanitisation
+  and unit tests.
 - Deep-copied default settings so array defaults (the governance watchlist) are
   not shared between widget instances.
-- Shared widget-action pattern is still pending; read-only widgets shipped
-  first, as planned.
+- Shared widget-action pattern: `WidgetActionButton` with an explicit authority
+  label, operation list, confirmation and queue hand-off. Read-only widgets
+  shipped before it; Phase 3 wires the actions through it.
 
 ## Phase 1 — account, creator, governance, community, HBD (done)
 
@@ -80,7 +81,9 @@ and the research document. This record tracks implementation and verification.
   Hive-Engine), Everyday (tags + spotlight).
 
 Phase 2 is now complete: the posts widget can show a merged "my communities"
-feed (W69), and HIVE-in-sats ships on the Coin prices widget (W68).
+feed (W69), Community pulse's "mine" mode shows a three-community overview with
+the full list on the account's communities page, and HIVE-in-sats ships on the
+Coin prices widget (W68).
 
 ## Phase 3 — actions and experiments (done)
 
@@ -154,6 +157,23 @@ Final wave:
 - New unit coverage: `widgetActions`, `widget-action-button`, `communityGrowth`,
   `portfolioTrend` (including price-history normalisation), `accountSafety`,
   `keRatio` and `newsDigest`.
+
+## Deployment and live smoke
+
+The dashboard shipped with the 2026-11-24 production release (feature commit
+`17a2f13`, deployed inside master `ce38d36`).
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T094544Z.tar.gz`
+  (`sha256 b8d5083d…5f7448`).
+- Rollback: `./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261124T094544Z.tar.gz`.
+- Production `index.html` SHA-256 `07ccb17a…1f7571` matches the local build.
+- Live Chromium smoke on `/` with a saved guest layout:
+  - Hive news digest rendered curated account posts.
+  - Community growth loaded `hive-139531` (3,622 subscribers, 76 active
+    authors) and showed “Tracking starts now” with a local baseline.
+  - Portfolio trend, Accountability view, Account safety and Lightning balance
+    each showed the honest signed-out state.
+  - No horizontal overflow at 1440px and no page errors.
 
 ## Notes
 
