@@ -74,6 +74,8 @@ export const DISCOVERY_LISTS = [
     knownCount: 70963,
     asOf: '2026-11-24',
     fetchCount: false,
+    supported: false,
+    unsupportedReason: '70,963 names is a 5.9 MB response and exceeds the client’s 10,000-name index cap. Only about 14% would be recognised, so this client does not offer the subscription.',
     caution: 'Advanced use only. This is a broad bot/spam label set; it can add a label to a large share of accounts.'
   }
 ]

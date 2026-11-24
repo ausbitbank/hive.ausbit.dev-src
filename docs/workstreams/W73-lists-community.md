@@ -47,7 +47,7 @@ is a curated seed set, verified against the chain, shown default-unsubscribed.
 | `plentyofphish` | mute | 914 | static source | The Plenty of Phish GitHub-backed phishing source used by hive.blog and anti-abuse tools; last on-chain update 2021. |
 | `ecency` | mute | 71 | active | Ecency's active team spam/bot mute list (41 updates in the last 90 days at probe time). Broader than phishing. |
 | `spaminator` | blacklist | 35 | legacy | Spaminator/Hivewatchers warning list with a documented Discord appeal path; last on-chain update 2023. |
-| `themarkymark` | blacklist | 70,963 | active / very large | Hive Analytics bot/spam warning set (88 updates in 90 days). The client indexes at most 10,000 names; advanced use only. |
+| `themarkymark` | blacklist | 70,963 | active / not supported | Hive Analytics bot/spam warning set (88 updates in 90 days). Too large for this client: **not offered for subscription**. |
 
 Excluded from the default set:
 
@@ -59,8 +59,28 @@ Excluded from the default set:
 
 The discovery cards show known counts immediately, refresh the smaller lists
 live, and never subscribe automatically. `themarkymark` is deliberately not
-fetched because the full list is very large; its known count is labelled
-approximate and it is placed under “Advanced / very large”.
+fetched because the full list is too large; its known count is labelled
+approximate, the Subscribe action is disabled and the card explains why.
+
+### Large-list limit (measured)
+
+The `themarkymark` list does **not** fit the current client model:
+
+- The live `bridge.get_follow_list` response is **5.86 MB / 70,963 names** and
+  took about **3.6 seconds** in the probe.
+- `MODERATION_LIST_MAX` is **10,000** names, so only about 14% would be
+  recognised; names after the cap would be silently unlabelled.
+- The session snapshot caps at **5,000** names, so a reload would preserve
+  roughly 7% of the list.
+- A pure policy benchmark with 70k array members cost about **4.9 ms per
+  decision** (10k was about 1.1 ms), before multiple lists or a feed of cards.
+- The member count would show 10,000, not 70,963, making the list look complete
+  when it is not.
+
+Supporting a list this size would need a separate design: a live `Set`-based
+index, no array-normalisation per decision, IndexedDB or a server-side index,
+and an explicit “partial index” state. That is outside Phase 3. The UI therefore
+shows the list as advanced context but does not offer the subscription.
 
 ## Implementation
 
@@ -124,15 +144,16 @@ approximate and it is placed under “Advanced / very large”.
 
 Deployed on 2026-11-24 with `./scripts/deploy.sh`.
 
-- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T052725Z.tar.gz`
-  (`sha256 d8590bad…9770c`).
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261124T053841Z.tar.gz`
+  (`sha256 87d824be…1cc1b0b`).
 - Production index matches local `assets/index-*.js` for this build.
 - Live browser smoke through the SPA router (account routes are behind the
   existing Cloudflare challenge for direct automated requests): the moderation
   page renders its h1, five presets, matrix, export control, subscribe form and
   discovery cards; the discovery counts were live **956 / 914 / 71 / 35** and
-  the very-large list showed the approximate 70,963; `@hive3/downvotes` renders
-  40 rows; no page errors.
+  the very-large list showed the approximate 70,963 with **no Subscribe
+  button** and the “not supported in this client” explanation; `@hive3/downvotes`
+  renders 40 rows; no page errors.
 - Direct `/settings/moderation` and `/@account/downvotes` still return the
   404/403 shell status until root installs the nginx exact location/sub-route
   regex. Client navigation works.

@@ -182,10 +182,12 @@
                 </p>
                 <p class="mod-discovery__caution">{{ item.caution }}</p>
                 <div class="mod-discovery__actions">
-                  <q-btn v-if="!item.subscribed" flat dense no-caps color="primary" icon="add" label="Subscribe" @click="subscribeList(item.owner, item.type, true)" />
+                  <q-btn v-if="item.supported !== false && !item.subscribed" flat dense no-caps color="primary" icon="add" label="Subscribe" @click="subscribeList(item.owner, item.type, true)" />
+                  <span v-else-if="item.supported === false" class="mod-discovery__unsupported">Not supported in this client</span>
                   <span v-else class="mod-discovery__subscribed">Subscribed</span>
                   <router-link :to="'/@' + item.owner" class="mod-link">Owner profile</router-link>
                 </div>
+                <p v-if="item.unsupportedReason" class="mod-discovery__unsupported-reason">{{ item.unsupportedReason }}</p>
               </article>
             </div>
           </div>
@@ -586,6 +588,19 @@
   font-weight: 600;
 }
 
+.mod-discovery__unsupported {
+  color: var(--c-warning);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.mod-discovery__unsupported-reason {
+  margin: 0;
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 .mod-subscribe {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
@@ -874,6 +889,16 @@ export default {
       const name = String(owner || '').trim()
       if (!isValidListOwner(name)) {
         this.$q.notify({ type: 'negative', message: 'Enter a valid Hive account name.' })
+        return
+      }
+      const known = DISCOVERY_LISTS.find(item => item.owner === name && item.type === type)
+      if (known && known.supported === false) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'That list is too large for this client.',
+          caption: known.unsupportedReason,
+          timeout: 5000
+        })
         return
       }
       if (subscribe && isSubscribed(name, type, this.moderation.context)) {
