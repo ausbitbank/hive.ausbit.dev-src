@@ -456,9 +456,11 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
 
     const actions = page.locator('[data-widget-type="walletActions"]')
     await actions.scrollIntoViewIfNeeded()
-    // Live account state changes: the card is either listing pending actions
-    // or explicitly saying it is all clear. Both prove it loaded real data.
-    await expect(actions).toContainText(/Power down|All clear/)
+    // Live account state changes: the card is either listing pending actions,
+    // explicitly saying it is all clear, still checking, or reporting a failed
+    // refresh. All four prove the account component mounted rather than showing
+    // the guest gate.
+    await expect(actions).toContainText(/Power down|All clear|Checking the chain|Could not load/)
     await expect(actions).not.toContainText('needs an account')
 
     const creator = page.locator('[data-widget-type="creatorStats"]')
@@ -576,18 +578,28 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
     await openEditor(page)
     await addWidget(page, 'Hive news digest')
     await addWidget(page, 'Community growth')
+
+    // Configure while the editor is still open: the Options menu only exists
+    // in edit mode.
+    const growth = page.locator('[data-widget-type="communityGrowth"]')
+    await growth.getByRole('button', { name: /^Options for Community growth/ }).click()
+    await page.getByText('Configure', { exact: true }).click()
+    const dialog = page.locator('.dw-settings')
+    await dialog.getByLabel('Community').fill('hive-139531')
+    await page.getByRole('button', { name: 'Apply' }).click()
     await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
 
     const news = page.locator('[data-widget-type="newsDigest"]')
     await news.scrollIntoViewIfNeeded()
     await expect(news).toContainText('Hive news')
 
-    const growth = page.locator('[data-widget-type="communityGrowth"]')
     await growth.scrollIntoViewIfNeeded()
-    await expect(growth).toContainText('Choose a community in widget settings')
+    await expect(growth).toContainText('Subscribers')
+    await expect(growth).toContainText('Tracking starts now')
   })
 
-  test('persists the wallet-actions signing opt-in across a reload', async ({ page }) => {
+  test('mounts the signed-in phase-3 context widgets', async ({ page }) => {
+    test.setTimeout(120000)
     await loginAs(page)
     await page.goto('/')
     await waitForApp(page)
@@ -595,19 +607,32 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
     if (await notNow.isVisible().catch(() => false)) await notNow.click()
 
     await openEditor(page)
-    await addWidget(page, 'Wallet actions')
-    const card = page.locator('[data-widget-type="walletActions"]')
-    await card.getByRole('button', { name: /^Options for Wallet actions/ }).click()
-    await page.getByText('Configure', { exact: true }).click()
-    const dialog = page.locator('.dw-settings')
-    await expect(dialog.getByText('Enable claim and cancel buttons')).toBeVisible()
-    await dialog.getByText('Enable claim and cancel buttons').click()
-    await page.getByRole('button', { name: 'Apply' }).click()
+    await addWidget(page, 'Portfolio trend')
+    await addWidget(page, 'Accountability view')
+    await addWidget(page, 'Account safety')
+    await addWidget(page, 'Lightning balance')
     await page.locator('.dw-bar').getByRole('button', { name: 'Save', exact: true }).click()
 
-    const stored = await readDashboard(page, ACCOUNT_KEY)
-    const widget = stored.widgets.find(entry => entry.type === 'walletActions')
-    expect(widget.settings.enableActions).toBe(true)
+    const trend = page.locator('[data-widget-type="portfolioTrend"]')
+    await trend.scrollIntoViewIfNeeded()
+    await expect(trend).toContainText('Current value')
+
+    const ratio = page.locator('[data-widget-type="keRatio"]')
+    await ratio.scrollIntoViewIfNeeded()
+    await expect(ratio).toContainText('Kept-reward ratio')
+    await expect(ratio).toContainText('not a score')
+
+    const safety = page.locator('[data-widget-type="accountSafety"]')
+    await safety.scrollIntoViewIfNeeded()
+    await expect(safety).toContainText(/No warning found|On a warning list|Partial check|Not checked/)
+
+    const sats = page.locator('[data-widget-type="keepsats"]')
+    await sats.scrollIntoViewIfNeeded()
+    await expect(sats).toContainText('No read-only session')
+
+    for (const type of ['portfolioTrend', 'keRatio', 'accountSafety', 'keepsats']) {
+      await expect(page.locator('[data-widget-type="' + type + '"]')).not.toContainText('needs an account')
+    }
   })
 
   test('renders follower growth for a signed-in account', async ({ page }) => {
