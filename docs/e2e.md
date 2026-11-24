@@ -2,10 +2,10 @@
 
 The repository has two Playwright suites that share the same spec files:
 
-| Command | Browser | Scope | Typical time |
-| --- | --- | --- | --- |
-| `bun run test:e2e` | Obscura (CDP) | Functional flows, 22 tests (23 found, 1 Chromium-only skip) | ~45s |
-| `bun run test:e2e:full` | Chromium | Everything, 50 tests | ~7m |
+| Command | Browser | Scope |
+| --- | --- | --- |
+| `bun run test:e2e` | Obscura (CDP) | Functional flows (Chromium-only specs skipped) |
+| `bun run test:e2e:full` | Chromium | Every spec |
 
 CI runs the full Chromium suite. Use the Obscura suite for the local edit/run
 loop.
@@ -33,13 +33,16 @@ present. The config uses four workers because Obscura is cheap to run.
 
 The fast suite covers:
 
-- login/session simulation and queue actions
+- login/session simulation, HiveAuth login and queue actions
 - comment, proposal and transfer flows
-- compose autosave/restore and a queued top-level post
-- unified search, shared URLs, saved searches and the palette deep link
-- browse filters and layout controls
+- compose autosave/restore, queueing, cover/checklist warnings, uploads and post metadata
+- unified search, Lightning search, shared URLs, saved searches and the palette deep link
+- browse filters, layout controls and infinite scroll
 - 404 search, keyboard shortcuts, back-to-top and share actions
 - witness/proposal analytics, delegations, authority risk and community insights
+- dashboard layout editing, connections and profile badges
+- moderation, downvote transparency, list subscriptions, theme wall, theme sharing and skin safety
+- keepsats, POS, market sats quotes, vote directions and retry states
 
 ## Why not migrate everything?
 
