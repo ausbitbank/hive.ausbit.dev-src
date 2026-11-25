@@ -17,6 +17,10 @@ REMOTE_NAME="$(basename "$REMOTE_DIR")"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 STAGE="hive-deploy-$TS"
 BACKUP="hive-backups/$REMOTE_NAME-$TS.tar.gz"
+# Hashed asset files are never overwritten, only superseded. Keeping them for a
+# while means a tab opened before this deploy can still lazy-load its chunks
+# instead of failing the navigation.
+KEEP_DAYS="${KEEP_DAYS:-45}"
 
 echo "==> Lint"
 bun run lint
@@ -33,8 +37,13 @@ ssh "$REMOTE" "mkdir -p ~/hive-backups && tar -C '$REMOTE_PARENT' -czf ~/'$BACKU
 echo "==> Uploading to $REMOTE:~/$STAGE"
 rsync -az --delete --stats dist/spa/ "$REMOTE:~/$STAGE/"
 
-echo "==> Activating release"
-ssh "$REMOTE" "rsync -a --checksum --delete-delay --delay-updates ~/'$STAGE'/ '$REMOTE_DIR'/ && sha256sum '$REMOTE_DIR'/index.html"
+echo "==> Activating release (keeping ${KEEP_DAYS}d of previous hashed assets)"
+ssh "$REMOTE" "set -e
+  rsync -a --checksum --delete-delay --delay-updates --exclude '/assets/' ~/'$STAGE'/ '$REMOTE_DIR'/
+  rsync -a --checksum ~/'$STAGE'/assets/ '$REMOTE_DIR'/assets/
+  find '$REMOTE_DIR'/assets -mindepth 1 -maxdepth 1 -type f -mtime +$KEEP_DAYS -delete
+  find '$REMOTE_DIR'/assets -mindepth 1 -maxdepth 1 -type d -empty -delete
+  sha256sum '$REMOTE_DIR'/index.html"
 
 echo
 echo "Deployed $REMOTE_DIR"

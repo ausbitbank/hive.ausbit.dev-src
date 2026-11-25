@@ -35,3 +35,19 @@ describe('nginx prerender coverage', () => {
     expect(missing).toEqual([])
   })
 })
+
+describe('nginx cache policy', () => {
+  it('revalidates the HTML shell so a deploy is picked up immediately', () => {
+    expect(CONFIG).toContain('add_header Cache-Control $hive_cache_control always;')
+    expect(CONFIG).toMatch(/map \$uri \$hive_cache_control \{/)
+    expect(CONFIG).toMatch(/default\s+"no-cache"/)
+  })
+
+  it('marks content-hashed assets immutable', () => {
+    expect(CONFIG).toMatch(/"~\^\/assets\/"\s+"public, max-age=31536000, immutable"/)
+  })
+
+  it('does not let expires directives emit a competing Cache-Control header', () => {
+    expect(CONFIG).not.toMatch(/^\s*expires\s/m)
+  })
+})

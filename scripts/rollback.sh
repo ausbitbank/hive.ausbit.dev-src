@@ -20,6 +20,9 @@ REMOTE_PARENT="$(dirname "$REMOTE_DIR")"
 REMOTE_NAME="$(basename "$REMOTE_DIR")"
 BACKUP="$1"
 REMOTE_BACKUP="$BACKUP"
+# Match scripts/deploy.sh: keep hashed assets from both the bad and restored
+# builds so tabs opened against either one can still load their chunks.
+KEEP_DAYS="${KEEP_DAYS:-45}"
 if [[ "$REMOTE_BACKUP" == "~/"* ]]; then
   REMOTE_BACKUP='$HOME/'"${REMOTE_BACKUP#\~/}"
 fi
@@ -36,7 +39,10 @@ ssh "$REMOTE" "set -e
   test -f \"$REMOTE_BACKUP\"
   TMP=\$(mktemp -d)
   tar -xzf \"$REMOTE_BACKUP\" -C \"\$TMP\"
-  rsync -a --checksum --delete-delay --delay-updates \"\$TMP/$REMOTE_NAME/\" '$REMOTE_DIR'/
+  rsync -a --checksum --delete-delay --delay-updates --exclude '/assets/' \"\$TMP/$REMOTE_NAME/\" '$REMOTE_DIR'/
+  rsync -a --checksum \"\$TMP/$REMOTE_NAME/assets/\" '$REMOTE_DIR'/assets/
+  find '$REMOTE_DIR'/assets -mindepth 1 -maxdepth 1 -type f -mtime +$KEEP_DAYS -delete
+  find '$REMOTE_DIR'/assets -mindepth 1 -maxdepth 1 -type d -empty -delete
   rm -rf \"\$TMP\"
   sha256sum '$REMOTE_DIR'/index.html"
 

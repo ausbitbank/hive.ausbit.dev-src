@@ -273,6 +273,21 @@ command:
 Rollback first snapshots the current deployment, so a rollback is reversible.
 Override `REMOTE` and `REMOTE_DIR` for another host.
 
+Activation deliberately keeps the previous builds' content-hashed `/assets/`
+files for `KEEP_DAYS` days (default 45) and prunes only older files. A tab that
+was opened before a deploy can therefore still load the lazy chunks its old
+bundle asks for. In front of that, the vhost serves HTML shells `no-cache` and
+`/assets/` as `immutable`, and `src/boot/chunkRecovery.js` turns any remaining
+chunk-load failure into one automatic reload instead of a dead navigation. If
+Cloudflare is caching HTML (a Cache Everything rule or a fixed Browser Cache
+TTL), set it back to "Respect Existing Headers": a pinned shell defeats all of
+the above.
+
+The build stamps a unique id into `sw.js` and `version.json`
+(`scripts/stamp-build.mjs`), which is what makes the existing "Update
+available" prompt fire for normal deploys rather than only when `sw.js` is
+edited.
+
 The origin also trusts Cloudflare's `CF-Connecting-IP` header so access logs
 record real visitor IPs instead of edge IPs. The trusted ranges live in
 `deploy/nginx/cloudflare-realip.conf` and are refreshed from Cloudflare with
