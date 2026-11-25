@@ -37,7 +37,7 @@
     "buffer": "^6.0.3",
     "dayjs": "^1.11.23",
     "dompurify": "^3.4.18",
-    "hive-tx": "^7.4.1",
+    "hive-tx": "^7.4.2",
     "linkify-it": "^6.1.0",
     "pinia": "^4.1.0",
     "quasar": "^2.35.6",
