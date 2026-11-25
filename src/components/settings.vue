@@ -68,6 +68,24 @@
         </div>
       </section>
 
+      <section class="settings-section" aria-labelledby="settings-images-title">
+        <div class="settings-section__head">
+          <q-icon name="image" size="18px" color="teal" aria-hidden="true" />
+          <div>
+            <h3 id="settings-images-title" class="settings-section__title">Images</h3>
+            <p class="settings-section__hint">Choose which server resizes post, card and gallery images. Direct loads the original file with no proxy.</p>
+          </div>
+        </div>
+        <q-option-group
+          v-model="imageProxy"
+          :options="imageProxyOptions"
+          color="primary"
+          class="settings-image-proxy"
+          aria-label="Image proxy"
+        />
+        <p class="settings-section__hint settings-image-proxy__hint">{{ selectedImageProxyHint }}</p>
+      </section>
+
       <section class="settings-section" aria-labelledby="settings-voting-title">
         <div class="settings-section__head">
           <q-icon name="how_to_vote" size="18px" color="primary" aria-hidden="true" />
@@ -319,6 +337,16 @@
   text-align: right;
 }
 
+.settings-image-proxy {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.5rem;
+}
+
+.settings-image-proxy__hint {
+  margin-top: 0.4rem;
+}
+
 .settings-bene-list,
 .settings-fields,
 .settings-bene-add {
@@ -467,6 +495,11 @@
 <script>
 import { setHiveNode } from 'src/services/hive'
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE, MAGI_NODES } from 'src/services/hiveNodes'
+import {
+  IMAGE_PROXY_OPTIONS,
+  imageProxyHint as imageProxyHintFor,
+  normalizeImageProxyMode
+} from 'src/services/imageProxy'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { themeOptions } from 'src/themes/registry'
 
@@ -491,6 +524,8 @@ export default {
       magiApiNode: this.$hiveStore.user.settings.magiApiNode || DEFAULT_MAGI_NODE,
       magiNodeOptions: [...MAGI_NODES],
       ahNode: this.$hiveStore.user.settings.ahNode || 'https://api.hive.blog',
+      imageProxy: normalizeImageProxyMode(this.$hiveStore.user.settings.imageProxy),
+      imageProxyOptions: IMAGE_PROXY_OPTIONS.map(option => ({ value: option.value, label: option.label })),
       smartlockSessionMinutes: Number(this.$hiveStore.user.settings.smartlockSessionMinutes) || 15,
       themeSelectOptions: themeOptions(),
       smartlockTimeoutOptions: [
@@ -520,6 +555,9 @@ export default {
         !this.beneficiaries.some(bene => bene.account === account) &&
         Number.isFinite(percent) && percent > 0 && percent <= 100 &&
         this.beneficiaryTotal + percent <= 100
+    },
+    selectedImageProxyHint () {
+      return imageProxyHintFor(this.imageProxy)
     }
   },
   methods: {
@@ -560,6 +598,7 @@ export default {
         ahNode: this.ahNode.trim() || 'https://api.hive.blog',
         heApiNode: this.heApiNode.trim() || DEFAULT_HIVE_ENGINE_NODE,
         magiApiNode: String(this.magiApiNode || '').trim() || DEFAULT_MAGI_NODE,
+        imageProxy: normalizeImageProxyMode(this.imageProxy),
         smartlockSessionMinutes: Number(this.smartlockSessionMinutes) || 15
       }
       this.$hiveStore.updateSettings(settings)

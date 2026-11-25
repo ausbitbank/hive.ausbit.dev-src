@@ -1,6 +1,7 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { normalizeQueueAction, normalizeQueueMeta, normalizeQueueMetaEntry, QUEUE_STATUSES } from '../../services/queue'
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE } from '../../services/hiveNodes'
+import { DEFAULT_IMAGE_PROXY } from '../../services/imageProxy'
 import dashboardState from './dashboard'
 
 export const DEFAULT_SETTINGS = {
@@ -10,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   ahNode: 'https://api.hive.blog',
   heApiNode: DEFAULT_HIVE_ENGINE_NODE,
   magiApiNode: DEFAULT_MAGI_NODE,
+  imageProxy: DEFAULT_IMAGE_PROXY,
   smartlockSessionMinutes: 15
 }
 

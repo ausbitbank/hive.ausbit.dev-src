@@ -8,7 +8,7 @@ const root = dirname(fileURLToPath(import.meta.url))
 const src = (...parts) => resolve(root, 'src', ...parts)
 
 export default defineConfig(() => ({
-  boot: ['theme', 'hivejs', 'hiveStore', 'smartlock', 'pwa', 'safetyFloor', 'prefetch'],
+  boot: ['theme', 'hivejs', 'hiveStore', 'imageProxy', 'smartlock', 'pwa', 'safetyFloor', 'prefetch'],
 
   // The Material Icons font is self-hosted and subset to the icons the app
   // uses; see scripts/subset-icons.mjs and src/css/material-icons.scss.

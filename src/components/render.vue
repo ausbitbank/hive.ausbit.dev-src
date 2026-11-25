@@ -10,6 +10,15 @@
 <script>
 import DOMPurify from 'dompurify'
 import { EMBED_HOSTS } from 'src/utils/embedHosts'
+import {
+  getImageProxyMode,
+  IMAGE_PROXY_DIRECT,
+  IMAGE_PROXY_HIVE,
+  isProxiedImageUrl,
+  normalizeImageProxyMode,
+  rewriteProxiedImageUrl,
+  rewriteSrcset
+} from 'src/services/imageProxy'
 
 // The render-helper bundle carries a very large serializer. Loading it lazily
 // keeps it out of the initial JavaScript for the home, block and account
@@ -148,6 +157,55 @@ export function twitchChannelFromEmbed (src) {
 }
 
 let hooksInstalled = false
+
+/** True when the element has at least one proxy transform URL to rewrite. */
+function hasProxiedCandidate (node) {
+  const values = [node.getAttribute('src'), node.getAttribute('srcset')].filter(Boolean)
+  return values.some(value => String(value)
+    .split(',')
+    .some(part => isProxiedImageUrl(part.trim().split(/\s+/)[0])))
+}
+
+/**
+ * Move a rendered image onto the reader's chosen proxy.
+ *
+ * The render helper always emits `<proxy>/p/<base58-url>` URLs (plus a
+ * `<picture>` with AVIF/WebP sources). Swapping the host keeps the hash and
+ * query intact; direct mode decodes back to the original file. The Hive image
+ * host does not produce AVIF, so its format `<source>` elements are dropped and
+ * the `<img>` fallback is used. Hand-written image markup with direct sources is
+ * left untouched.
+ */
+function applyImageProxy (node) {
+  const mode = getImageProxyMode()
+  // Leave hand-written <picture>/<img> markup with direct sources alone.
+  if (!hasProxiedCandidate(node)) return
+
+  if (node.tagName === 'SOURCE') {
+    if (mode === IMAGE_PROXY_HIVE || mode === IMAGE_PROXY_DIRECT) {
+      node.remove()
+      return
+    }
+  }
+
+  if (node.tagName === 'IMG') {
+    const src = node.getAttribute('src')
+    if (src) node.setAttribute('src', rewriteProxiedImageUrl(src, mode))
+    if (mode === IMAGE_PROXY_DIRECT) {
+      node.removeAttribute('srcset')
+      node.removeAttribute('sizes')
+      return
+    }
+  }
+
+  const srcset = node.getAttribute('srcset')
+  if (srcset) {
+    const next = rewriteSrcset(srcset, mode)
+    if (next) node.setAttribute('srcset', next)
+    else node.removeAttribute('srcset')
+  }
+}
+
 function installPurifyHooks () {
   if (hooksInstalled) return
   hooksInstalled = true
@@ -176,6 +234,9 @@ function installPurifyHooks () {
   })
 
   DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'IMG' || node.tagName === 'SOURCE') {
+      applyImageProxy(node)
+    }
     if (node.tagName === 'IMG') {
       if (!node.getAttribute('alt')) node.setAttribute('alt', '')
       node.setAttribute('loading', 'lazy')
@@ -232,9 +293,15 @@ export default {
       renderToken: 0
     }
   },
+  computed: {
+    imageProxyMode () {
+      return normalizeImageProxyMode(this.$hiveStore?.user?.settings?.imageProxy)
+    }
+  },
   watch: {
     input: 'render',
-    embeds: 'render'
+    embeds: 'render',
+    imageProxyMode: 'render'
   },
   mounted () {
     installPurifyHooks()

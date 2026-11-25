@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useHiveStore } from '../../src/stores/hive'
 import PostPreview from '../../src/components/postPreview.vue'
 import { postImage, postIsThreeSpeakVideo, postSummary, previewImageUrl } from '../../src/utils/postPreview'
+import { setImageProxyMode } from '../../src/services/imageProxy'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
 // This suite only covers card helpers and the vote indicator. Stub the card's
@@ -29,6 +30,9 @@ vi.mock('../../src/mixins/moderation', () => ({
 }))
 
 describe('postImage', () => {
+  beforeEach(() => setImageProxyMode('hive'))
+  afterEach(() => setImageProxyMode('hive'))
+
   it('prefers metadata thumbnails, then image arrays', () => {
     expect(postImage({
       json_metadata: JSON.stringify({ thumbnails: ['https://cdn.example/thumb.jpg'], image: ['https://cdn.example/full.jpg'] })
@@ -87,6 +91,15 @@ describe('postImage', () => {
         image: 'https://i.ytimg.com/vi/4mvf4Bguquo/maxresdefault.jpg'
       })
     })).toBe('https://i.ytimg.com/vi/4mvf4Bguquo/hqdefault.jpg')
+  })
+
+  it('follows the reader image proxy choice', () => {
+    setImageProxyMode('ecency')
+    expect(previewImageUrl('https://files.peakd.com/file/peakd-hive/alice/photo.png', 480))
+      .toBe('https://i.ecency.com/480x0/https://files.peakd.com/file/peakd-hive/alice/photo.png')
+    setImageProxyMode('direct')
+    expect(previewImageUrl('https://files.peakd.com/file/peakd-hive/alice/photo.png', 480))
+      .toBe('https://files.peakd.com/file/peakd-hive/alice/photo.png')
   })
 })
 

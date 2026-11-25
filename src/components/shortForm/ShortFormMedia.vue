@@ -34,11 +34,7 @@
 </template>
 
 <script>
-// Images are re-encoded and resized by the Hive image proxy so a feed of
-// phone-sized JPEGs does not cost several megabytes. Hosts that already serve
-// sized assets are passed through unchanged.
-const IMAGE_PROXY = 'https://images.hive.blog/'
-const DIRECT_HOSTS = ['images.hive.blog', 'i.ecency.com', 'files.peakd.com', 'media.giphy.com', 'media0.giphy.com']
+import { shortFormImageUrl } from 'src/services/imageProxy'
 
 export default {
   name: 'ShortFormMedia',
@@ -75,15 +71,7 @@ export default {
       return this.resize(item.url, 900, 560)
     },
     resize (url, width, height) {
-      if (!/^https?:\/\//i.test(url)) return url
-      try {
-        const { hostname } = new URL(url)
-        if (DIRECT_HOSTS.includes(hostname)) return url
-      } catch {
-        return url
-      }
-      const size = height ? width + 'x' + height : width + 'x0'
-      return IMAGE_PROXY + size + '/' + url
+      return shortFormImageUrl(url, width, height)
     },
     cellStyle (item) {
       // Single media keeps its own shape inside a capped box; grids use a

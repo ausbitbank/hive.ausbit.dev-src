@@ -2,6 +2,7 @@ import { LocalStorage, SessionStorage } from 'quasar'
 import { persistQueue } from './state'
 import { createQueueMeta, normalizeQueueAction, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
 import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
+import { setImageProxyMode } from '../../services/imageProxy'
 
 function ensureQueueMeta (state) {
   if (!Array.isArray(state.queueMeta)) state.queueMeta = []
@@ -77,6 +78,7 @@ export function updateCommunitySubscriptions (communitySubscriptions) {
 export function updateSettings (settings) {
   this.user.settings = settings
   LocalStorage.set('settings', settings)
+  setImageProxyMode(settings?.imageProxy)
 }
 
 export function addToQueue (newItem, options = {}) {

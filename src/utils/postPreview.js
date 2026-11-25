@@ -6,20 +6,10 @@
 // home, browse and account surfaces.
 
 import { safeJsonParse } from './safeHtml'
+import { resizeImageUrl } from '../services/imageProxy'
 
 const IMAGE_EXTENSION = /\.(?:tiff?|jpe?g|gif|png|svg|ico|heic|webp|arw)(?:[?#][^\s)"'<>]*)?/i
 const SAFE_IMAGE_URL = /^https?:\/\//i
-// Hosts that images.hive.blog is known to resize for us. Unknown hosts are left
-// alone so a broken proxy cannot replace an image that would otherwise load.
-const PROXY_HOSTS = [
-  'images.hive.blog',
-  'files.peakd.com',
-  'images.ecency.com',
-  'i.ecency.com',
-  'cdn.steemitimages.com',
-  'steemitimages.com',
-  'images.3speak.tv'
-]
 
 function decodeEntities (value) {
   return String(value || '')
@@ -109,10 +99,7 @@ export function previewImageUrl (url, width = 480) {
   try {
     const parsed = new URL(url)
     if (!['http:', 'https:'].includes(parsed.protocol)) return url
-    if (!PROXY_HOSTS.includes(parsed.hostname)) return url
-    // images.hive.blog already serves a transformed copy.
-    if (parsed.pathname.startsWith('/p/')) return url
-    return 'https://images.hive.blog/' + Number(width) + 'x0/' + url
+    return resizeImageUrl(url, Number(width))
   } catch {
     return url
   }
