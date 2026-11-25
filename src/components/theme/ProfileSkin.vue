@@ -106,7 +106,7 @@
 </style>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, h } from 'vue'
 import Atmosphere from 'components/theme/Atmosphere.vue'
 import { readAccountTheme } from 'src/themes/account'
 import { loadModerationStore } from 'src/services/moderationStoreLoader'
@@ -147,11 +147,31 @@ const UNAVAILABLE_DECISION = {
   overrides: []
 }
 
+// A lazy chunk can fail to load when the device is offline or a tab is still
+// open from an older deploy. The skin stays hidden either way, so explain that
+// instead of letting the rejection blank the whole view via the error boundary.
+const SkinSafetyNoticeFallback = {
+  name: 'SkinSafetyNoticeFallback',
+  render () {
+    return h('section', {
+      class: 'skin-blocked',
+      role: 'status',
+      'aria-label': 'Profile skin hidden',
+      style: 'margin:1rem 0;padding:1rem;border:1px solid var(--c-border);border-radius:var(--radius-card);background:var(--c-surface-2);color:var(--c-text)'
+    }, [
+      h('p', { style: 'margin:0;font-weight:600' }, 'Profile skin hidden'),
+      h('p', { style: 'margin:.25rem 0 0;color:var(--c-text-muted)' }, 'The safety notice could not load. The skin stays hidden; reload when you are back online.')
+    ])
+  }
+}
+
 export default {
   name: 'ProfileSkin',
   components: {
     Atmosphere,
-    SkinSafetyNotice: defineAsyncComponent(() => import('components/theme/SkinSafetyNotice.vue'))
+    SkinSafetyNotice: defineAsyncComponent(() =>
+      import('components/theme/SkinSafetyNotice.vue').catch(() => SkinSafetyNoticeFallback)
+    )
   },
   props: {
     account: { type: Object, default: null },
