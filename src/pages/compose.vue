@@ -301,7 +301,7 @@
                     </q-item-label>
                   </q-item-section>
                   <q-item-section v-if="scope.opt.subscribed" side>
-                    <q-badge color="primary" label="Subscribed" />
+                    <span class="compose-community-pick__tag">Subscribed</span>
                   </q-item-section>
                   <q-item-section v-else-if="scope.opt.recent" side>
                     <q-badge color="grey-8" text-color="white" label="Recent" />
@@ -2125,6 +2125,16 @@
   flex-wrap: wrap;
   color: var(--c-text-subtle);
   font-size: 0.68rem;
+}
+
+.compose-community-pick__tag {
+  padding: 0.05rem 0.42rem;
+  border-radius: 999px;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .compose-community-card__tag {
