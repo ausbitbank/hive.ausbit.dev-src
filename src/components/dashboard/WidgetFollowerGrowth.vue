@@ -222,7 +222,7 @@
 
 .dw-fg__delta.is-down {
   background: color-mix(in srgb, var(--c-negative) 14%, transparent);
-  color: var(--c-negative);
+  color: color-mix(in srgb, var(--c-negative) 85%, var(--c-text));
 }
 
 .dw-fg__delta.is-flat {

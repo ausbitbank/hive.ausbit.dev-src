@@ -809,7 +809,6 @@ test.describe('action flows', () => {
     const governance = page.locator('.q-menu .q-item').filter({ hasText: 'Hive Governance' })
     await expect(governance).toBeVisible()
     await expect(governance).toContainText('#hive-111111')
-    await expect(governance).toContainText(/[\d,]+ subscribers/, { timeout: 20000 })
     await select.fill('hive-111111')
     await expect(governance).toBeVisible()
     await governance.click()

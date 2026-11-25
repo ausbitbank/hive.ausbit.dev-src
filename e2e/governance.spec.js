@@ -61,7 +61,7 @@ test.describe('W25 governance and community intelligence', () => {
     await waitForApp(page)
     await expect(page.getByRole('heading', { name: 'Activity and moderation signals' })).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('Top recent authors')).toBeVisible()
-    await expect(page.getByText('Visible signals')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Community moderation context' })).toBeVisible()
     await expect(page.getByText('Sample:')).toBeVisible()
     const postsCard = page.locator('.community-stat').filter({ hasText: 'Posts · 30 days' })
     await expect(postsCard.locator('.community-stat__value')).not.toHaveText('0', { timeout: 30000 })

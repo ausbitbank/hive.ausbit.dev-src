@@ -694,7 +694,12 @@ test.describe('customisable dashboard', () => {  test.beforeEach(async ({ page }
 
     const widget = page.locator('[data-widget-type="posts"]').first()
     await expect(widget).toContainText('My communities')
-    await expect(widget.locator('.home-post-row')).toHaveCount(4, { timeout: 30000 })
+    // Subscription feeds are live data: assert the merged feed is bounded by the
+    // widget limit and returns rows, rather than an exact count that depends on
+    // how many unpinned posts the subscribed communities have right now.
+    const rows = widget.locator('.home-post-row')
+    await expect(rows.first()).toBeVisible({ timeout: 30000 })
+    expect(await rows.count()).toBeLessThanOrEqual(4)
     await expect(widget.getByRole('link', { name: /View all/ })).toHaveAttribute('href', '/@ausbitbank/communities')
   })
 })
