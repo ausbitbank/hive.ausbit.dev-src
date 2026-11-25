@@ -324,7 +324,8 @@ export default {
           const html = renderPostBody(this.input, false, false)
           const safe = DOMPurify.sanitize(html, {
             ADD_TAGS: ['iframe'],
-            ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href']
+            ADD_ATTR: ['allowfullscreen', 'frameborder', 'data-embed-src', 'data-video-href'],
+            FORBID_TAGS: ['form']
           })
           const enhanced = this.embeds
             ? this.enhanceEmbeds(this.deembedTwitchProfiles(safe))

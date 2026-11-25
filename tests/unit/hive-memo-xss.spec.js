@@ -39,6 +39,12 @@ describe('Hive memo XSS family', () => {
   it('leaves javascript: links inert', () => {
     expect(sanitizeRichHtml('<a href="javascript:alert(1)">x</a>')).not.toMatch(/javascript:/i)
   })
+
+  it('drops forms from rich text', () => {
+    expect(
+      sanitizeRichHtml('<form action="https://evil.example"><input name="x"></form>')
+    ).not.toMatch(/<form/i)
+  })
 })
 
 describe('metadata worker JSON-LD', () => {

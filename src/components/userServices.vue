@@ -75,110 +75,112 @@ export default {
   methods: {
     getHiveAvatarUrl (user) { return hiveAvatarUrl(user) },
     returnServiceLink (service, data) {
-      var d = stripHtml(data)
+      const raw = stripHtml(data).trim()
+      const seg = encodeURIComponent(raw)
+      const schemeValue = raw.replace(/[\s<>"'`\\]/g, '')
+      const mailValue = raw.replace(/[\s<>"'`\\]/g, '').split(/[?#]/)[0]
       switch (service) {
         case 'twitter':
-          return 'https://x.com/' + d
+          return 'https://x.com/' + seg
         case 'twitch':
-          return 'https://twitch.tv/' + d
+          return 'https://twitch.tv/' + seg
         case 'github':
-          return 'https://github.com/' + d
+          return 'https://github.com/' + seg
         case 'discord':
-          if (!isNaN(d)) {
-            return 'https://discordapp.com/users/' + d // If it's a number, its a user
+          if (!isNaN(raw)) {
+            return 'https://discordapp.com/users/' + seg // If it's a number, its a user
           } else {
-            return 'https://discord.gg/' + d // If not, it's an invite code
+            return 'https://discord.gg/' + seg // If not, it's an invite code
           }
         case 'telegram':
-          return 'https://www.t.me/' + d
+          return 'https://www.t.me/' + seg
         case 'email':
-          return 'mailto:' + d
+          return 'mailto:' + mailValue
         case 'protonmail':
-          return 'mailto:' + d
+          return 'mailto:' + mailValue
         case 'bitcoin':
-          return 'bitcoin:' + d
+          return 'bitcoin:' + schemeValue
         case 'lightning':
-          return 'lightning:' + d
+          return 'lightning:' + schemeValue
         case 'litecoin':
-          return 'litecoin:' + d
+          return 'litecoin:' + schemeValue
         case 'ethereum':
-          return 'ethereum:' + d
+          return 'ethereum:' + schemeValue
         case 'dogecoin':
-          return 'dogecoin:' + d
+          return 'dogecoin:' + schemeValue
         case 'ipfs':
-          return 'https://ipfs.io/ipfs/' + d
+          return 'https://ipfs.io/ipfs/' + seg
         case 'xbox':
-          return 'https://account.xbox.com/en-us/profile?gamertag=' + d
+          return 'https://account.xbox.com/en-us/profile?gamertag=' + seg
         case 'psn':
-          return 'https://my.playstation.com/profile/' + d
+          return 'https://my.playstation.com/profile/' + seg
         case 'steam':
-          return 'https://steamcommunity.com/id/' + d
+          return 'https://steamcommunity.com/id/' + seg
         case 'flickr':
-          return 'https://www.flickr.com/photos/' + d
+          return 'https://www.flickr.com/photos/' + seg
         case 'facebook':
-          return 'https://facebook.com/' + d
+          return 'https://facebook.com/' + seg
         case 'tumblr':
-          return 'https://' + d + '.tumblr.com'
+          return 'https://' + seg + '.tumblr.com'
         case 'linkedin':
-          return 'https://linkedin.com/in/' + d
+          return 'https://linkedin.com/in/' + seg
         case 'instagram':
-          return 'https://instagram.com/' + d
+          return 'https://instagram.com/' + seg
         case 'reddit':
-          return 'https://reddit.com/user/' + d
+          return 'https://reddit.com/user/' + seg
         case 'tiktok':
-          return 'https://tiktok.com/@' + d
+          return 'https://tiktok.com/@' + seg
         case 'soundcloud':
-          return 'https://soundcloud.com/' + d
+          return 'https://soundcloud.com/' + seg
         case 'vimeo':
-          return 'https://vimeo.com/' + d
+          return 'https://vimeo.com/' + seg
         case 'spotify':
-          return 'https://open.spotify.com/artist/' + d
+          return 'https://open.spotify.com/artist/' + seg
         case 'youtube':
-          return 'https://youtube.com/channel/' + d
+          return 'https://youtube.com/channel/' + seg
         case 'bandcamp':
-          return 'https://' + d + '.bandcamp.com'
+          return 'https://' + seg + '.bandcamp.com'
         case 'medium':
-          return 'https://medium.com/@' + d
+          return 'https://medium.com/@' + seg
         case 'keybase':
-          return 'https://keybase.io/' + d
-        case 'mastodon':
-          // Officially, a full mastodon identifier is in this format @[Username]@[Server]  -> https://MastodonInstance.Domain/@Username
-          switch (d.indexOf('@')) {
-            case -1: // No @, assuming just username on largest server
-              return 'https://mstdn.social/@' + d
-            case 0:
-              if (d.indexOf('@', (d.indexOf('@') + 1)) === -1) { // Only one @ at index 0, asssume just username
-                return 'https://mstdn.social/' + d
-              } else { // Assume official format of @[Username]@[Server]
-                return 'https://' + d.substr(d.indexOf('@', 1) + 1, d.length) + '/@' + d.substr(1, (d.indexOf('@', 1) - 1), 2)
-              }
-            default: // Assuming shortened format of [Username]@[Server]
-              return 'https://' + d.substr(d.indexOf('@', 1) + 1, d.length) + '/@' + d.substr(0, (d.indexOf('@', 1)), 2)
-          }
+          return 'https://keybase.io/' + seg
+        case 'mastodon': {
+          // Accept @user@server, user@server, or a bare username. The server
+          // must look like a hostname; the username is always encoded so it
+          // cannot inject a different host or path.
+          const handle = raw.replace(/^@/, '')
+          const at = handle.indexOf('@')
+          const user = at === -1 ? handle : handle.slice(0, at)
+          const host = at === -1 ? '' : handle.slice(at + 1)
+          if (!user) return 'https://mstdn.social/@' + seg
+          if (!host) return 'https://mstdn.social/@' + encodeURIComponent(user)
+          if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host)) return 'https://mstdn.social/@' + seg
+          return 'https://' + host.toLowerCase() + '/@' + encodeURIComponent(user)
+        }
         case 'vimm':
-          return 'https://vimm.tv/@' + d
+          return 'https://vimm.tv/@' + seg
         case 'threespeak':
-          return 'https://3speak.co/user/' + d
+          return 'https://3speak.co/user/' + seg
         case 'gab':
-          return 'https://gab.com/' + d
+          return 'https://gab.com/' + seg
         case 'dbuzz':
-          return 'https://d.buzz/#/@' + d
+          return 'https://d.buzz/#/@' + seg
         case 'wordpress':
-          return 'https://' + d + '.wordpress.com'
+          return 'https://' + seg + '.wordpress.com'
         case 'nftshowroom':
-          return 'https://nftshowroom.com/' + d
+          return 'https://nftshowroom.com/' + seg
         case 'palnet':
-          return 'https://palnet.io/@' + d
+          return 'https://palnet.io/@' + seg
         case 'leofinance':
-          return 'https://leofinance.io/@' + d
+          return 'https://leofinance.io/@' + seg
         case 'pgp':
-          if (d.indexOf('0x') === 0) { // Key fingerprint, link to server
-            return 'https://keys.openpgp.org/search?q=' + d
+          if (raw.indexOf('0x') === 0) { // Key fingerprint, link to server
+            return 'https://keys.openpgp.org/search?q=' + seg
           } else { // Assume hive post authperm to full key, link it  (@username/permlink)
-            return 'https://hive.ausbit.dev/' + d
+            return 'https://hive.ausbit.dev/' + seg
           }
         case 'pinned':
-          return 'https://hive.ausbit.dev/@' + this.account.name + '/' + d
+          return 'https://hive.ausbit.dev/@' + this.account.name + '/' + seg
       }
     }
 

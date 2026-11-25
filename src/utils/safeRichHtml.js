@@ -50,6 +50,8 @@ export function sanitizeRichHtml (html) {
 
   return DOMPurify.sanitize(html, {
     ADD_TAGS: ['iframe'],
-    ADD_ATTR: IFRAME_ATTRS
+    ADD_ATTR: IFRAME_ATTRS,
+    // A form inside a post has no legitimate use and only invites UI redress.
+    FORBID_TAGS: ['form']
   })
 }
