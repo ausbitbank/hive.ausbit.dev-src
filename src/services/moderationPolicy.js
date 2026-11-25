@@ -19,6 +19,7 @@ export const SKIN_DECISION = {
   NEGATIVE_REPUTATION: 'negative-reputation',
   REPUTATION_UNAVAILABLE: 'reputation-unavailable',
   FOLLOWED_MUTE_LIST: 'followed-mute-list',
+  LIST_TRUNCATED: 'list-truncated',
   CONTEXT_UNAVAILABLE: 'context-unavailable',
   AUTHOR_UNAVAILABLE: 'author-unavailable'
 }
@@ -156,6 +157,12 @@ function decision (code, allowed, { author, reputation, owners = [], followed = 
         label: 'Skin hidden: @' + author + ' is on @' + (owners[0] || 'a list') + "'s mute list",
         overrides: ['show-author', 'followed-override', 'manage']
       }
+    case SKIN_DECISION.LIST_TRUNCATED:
+      return {
+        ...base,
+        label: 'Skin hidden: some mute list entries could not be indexed',
+        overrides: ['show-author', 'followed-override', 'manage']
+      }
     case SKIN_DECISION.CONTEXT_UNAVAILABLE:
       return {
         ...base,
@@ -203,6 +210,8 @@ export function decideSkin ({
   const ownersInLists = listHits(viewer.followedMuteLists, name)
   const showAuthors = normalizeList(viewer.showAuthors)
   const hideAuthors = normalizeList(viewer.hideAuthors)
+  const truncatedMuteLists = (Array.isArray(viewer.listTruncated) ? viewer.listTruncated : [])
+    .filter(item => item && item.type === 'muted')
   const listErrors = Math.max(0, Number(viewer.listErrors) || 0)
   const status = String(viewer.status || 'ready')
   const rules = { ...SKIN_DEFAULT_SETTINGS, ...(settings && typeof settings === 'object' ? settings : {}) }
@@ -252,6 +261,30 @@ export function decideSkin ({
     return decision(SKIN_DECISION.FOLLOWED_MUTE_LIST, false, base)
   }
 
+  // A subscribed mute list was read but only partly indexed. The author may be
+  // in the unindexed tail, so the skin still fails closed unless a follow wins
+  // the conflict. A partial index must never look like a clean list.
+  if (truncatedMuteLists.length) {
+    const truncatedOwners = [...new Set(
+      truncatedMuteLists.map(item => normalizeName(item.owner)).filter(Boolean)
+    )]
+    const detail = truncatedOwners.length === 1
+      ? '@' + truncatedOwners[0] + "'s mute list is only partly indexed."
+      : truncatedOwners.length + ' mute lists you follow are only partly indexed.'
+    if (rules.followedMuteListOverride && followed) {
+      return decision(SKIN_DECISION.FOLLOWED_OVERRIDE, true, {
+        ...base,
+        owners: truncatedOwners,
+        detail
+      })
+    }
+    return decision(SKIN_DECISION.LIST_TRUNCATED, false, {
+      ...base,
+      owners: truncatedOwners,
+      detail
+    })
+  }
+
   // A subscribed list could not be read. A follow that wins the conflict can
   // still allow the skin; otherwise we cannot prove the author is not on it.
   if (listErrors > 0) {
@@ -280,6 +313,18 @@ export function normalizeViewerContext (context = {}) {
       }))
       .filter(list => list.owner)
     : []
+  const truncated = Array.isArray(context.listTruncated)
+    ? context.listTruncated
+      .map(item => ({
+        owner: normalizeName(item && item.owner),
+        type: ['muted', 'blacklisted', 'follow_muted', 'follow_blacklist'].includes(item && item.type)
+          ? item.type
+          : '',
+        indexed: Math.max(0, Number(item && item.indexed) || 0),
+        total: Math.max(0, Number(item && item.total) || 0)
+      }))
+      .filter(item => item.owner && item.type)
+    : []
   return {
     status: ['idle', 'loading', 'ready', 'error'].includes(context.status) ? context.status : 'idle',
     muted: normalizeList(context.muted),
@@ -287,6 +332,8 @@ export function normalizeViewerContext (context = {}) {
     followedMuteLists: lists,
     showAuthors: normalizeList(context.showAuthors),
     hideAuthors: normalizeList(context.hideAuthors),
-    listErrors: Math.max(0, Number(context.listErrors) || 0)
+    ignoredVoters: normalizeList(context.ignoredVoters),
+    listErrors: Math.max(0, Number(context.listErrors) || 0),
+    listTruncated: truncated
   }
 }

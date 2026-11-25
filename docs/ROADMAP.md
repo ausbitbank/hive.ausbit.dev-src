@@ -248,7 +248,8 @@ Numbering note: `docs/workstreams/W62-hiveauth.md` and
 signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
 explicitly deferred items in that section; W74 and W75 are deployed and
-live-smoked. The next free workstream number is W76.
+live-smoked; W76 is a local hardening pass on W73. The next free workstream
+number is W77.
 
 ### W71 — Theme safety (complete)
 
@@ -423,6 +424,20 @@ include the permlink, fixing duplicate keys for posts by the same author. See
 W75 is deployed and live-smoked: a guest follow-only search row collapsed with
 “Not followed”, Show anyway revealed the snippet, cleared the label, restored
 focus and persisted the local override.
+
+### W76 — Moderation transparency and honest partial indexes
+
+A hardening pass on W73. It makes the per-voter exclusion control on content
+notices real when `active_votes` identifies voters (and removes the dead control
+when it does not), reports bounded 10k/5k list indexes as partial instead of
+treating unindexed members as safe, fails skins closed for a partial mute list
+unless a follow wins, exposes the coordination-hint thresholds in the downvotes
+UI, adds a minimum-weight filter, and removes the Open preset's claim that a
+safety floor is shipped. See
+[`docs/workstreams/W76-moderation-transparency.md`](workstreams/W76-moderation-transparency.md).
+
+The optional safety floor, notification opt-ins, on-chain list creation and
+aggregate community signals remain follow-ups.
 
 ## Definition of done
 

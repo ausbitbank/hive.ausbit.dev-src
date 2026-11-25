@@ -12,6 +12,7 @@ import {
   normalizeList,
   normalizeName
 } from './moderationPolicy'
+import { normalizeVotes, voteDirection } from './voteBreakdown'
 
 // ---------------------------------------------------------------------------
 // Content decisions (W73 Phase 1)
@@ -221,12 +222,15 @@ export function decideContent ({
   const muteHits = listHits(viewer.followedMuteLists, name)
   const blacklistHits = listHits(viewer.followedBlacklistLists, name)
   const listErrors = Math.max(0, Number(viewer.listErrors) || 0)
+  const listTruncated = Array.isArray(viewer.listTruncated) ? viewer.listTruncated : []
+  const ignoredVoters = normalizeList(viewer.ignoredVoters)
 
   const stats = post && typeof post.stats === 'object' && post.stats ? post.stats : {}
   const metadata = post && typeof post === 'object' ? post : {}
   const reasons = []
   let display = 'show'
   let conflict = null
+  const downvoters = []
 
   const add = (signal, reason) => {
     display = strongest(display, contentRule(safePreset, safeSurface, signal, custom))
@@ -351,15 +355,49 @@ export function decideContent ({
       ))
     }
 
-    const netRshares = Number(metadata.net_rshares ?? stats.net_rshares)
-    const downvoteCount = Number(metadata.downvote_count ?? stats.downvote_count)
+    const rawNetRshares = Number(metadata.net_rshares ?? stats.net_rshares)
+    const rawDownvoteCount = Number(metadata.downvote_count ?? stats.downvote_count)
+    const activeDownVotes = normalizeVotes(metadata.active_votes)
+      .filter(vote => voteDirection(vote) < 0)
+    const ignoredDownVotes = []
+    for (const vote of activeDownVotes) {
+      const voter = normalizeName(vote.voter)
+      if (!voter) continue
+      const ignored = ignoredVoters.includes(voter)
+      if (ignored) ignoredDownVotes.push(vote)
+      if (!downvoters.some(row => row.voter === voter)) downvoters.push({ voter, ignored })
+    }
+
+    // A local ignored voter is excluded from the local downvote label, but the
+    // raw chain values stay in the evidence. Without active_votes we cannot
+    // identify voters, so the local value falls back to the chain value.
+    let netRshares = rawNetRshares
+    let downvoteCount = rawDownvoteCount
+    if (ignoredDownVotes.length) {
+      const excludedRshares = ignoredDownVotes.reduce((sum, vote) => sum + vote.rshares, 0)
+      if (Number.isFinite(netRshares)) netRshares -= excludedRshares
+      if (Number.isFinite(downvoteCount)) downvoteCount = Math.max(0, downvoteCount - ignoredDownVotes.length)
+    }
+    if (!Number.isFinite(downvoteCount) && activeDownVotes.length) {
+      downvoteCount = Math.max(0, activeDownVotes.length - ignoredDownVotes.length)
+    }
+
     if ((Number.isFinite(netRshares) && netRshares < 0) || (Number.isFinite(downvoteCount) && downvoteCount > 0)) {
       add('downvotes', contentReason(
         CONTENT_LAYER.DOWNVOTES,
         'chain',
         'Downvoted',
-        'This item has net-negative votes. Open the votes view for the voter evidence.',
-        { netRshares: Number.isFinite(netRshares) ? netRshares : null, downvoteCount: Number.isFinite(downvoteCount) ? downvoteCount : null }
+        ignoredDownVotes.length
+          ? 'This item still has net-negative votes after excluding ' + ignoredDownVotes.length + ' downvote(s) from voters you ignore locally. Raw chain weight is unchanged.'
+          : 'This item has net-negative votes. Open the votes view for the voter evidence.',
+        {
+          netRshares: Number.isFinite(netRshares) ? netRshares : null,
+          rawNetRshares: Number.isFinite(rawNetRshares) ? rawNetRshares : null,
+          downvoteCount: Number.isFinite(downvoteCount) ? downvoteCount : null,
+          rawDownvoteCount: Number.isFinite(rawDownvoteCount) ? rawDownvoteCount : null,
+          ignoredDownvotes: ignoredDownVotes.length,
+          downvoters: downvoters.slice(0, 8)
+        }
       ))
     }
 
@@ -413,6 +451,23 @@ export function decideContent ({
     ))
   }
 
+  if (listTruncated.length && !followed) {
+    const partialMute = listTruncated.some(item => item && item.type === 'muted')
+    reasons.push(contentReason(
+      CONTENT_LAYER.CONTEXT_UNAVAILABLE,
+      'site',
+      'Some list entries are not indexed',
+      listTruncated.length + ' list index' + (listTruncated.length === 1 ? ' is' : 'es are') +
+        ' partial. Members beyond the indexed cap are treated as unknown, not as safe' +
+        (partialMute ? ' (including mute-list membership)' : '') + '.',
+      {
+        listTruncated: listTruncated.length,
+        owners: [...new Set(listTruncated.map(item => normalizeName(item && item.owner)).filter(Boolean))].slice(0, 8)
+      },
+      null
+    ))
+  }
+
   if (reasons.some(reason => reason.layer === CONTENT_LAYER.VIEWER_SHOW)) {
     display = 'show'
   }
@@ -423,7 +478,9 @@ export function decideContent ({
 
   const primary = reasons.find(reason => reason.layer !== CONTENT_LAYER.CONTEXT_UNAVAILABLE) || reasons[0] || null
   const overrides = ['show-item', 'always-show-author', 'always-hide-author', 'manage']
-  if (reasons.some(reason => reason.layer === CONTENT_LAYER.DOWNVOTES)) overrides.push('ignore-voter')
+  if (reasons.some(reason => reason.layer === CONTENT_LAYER.DOWNVOTES) && downvoters.length) {
+    overrides.push('ignore-voter')
+  }
 
   return {
     display,
@@ -434,6 +491,7 @@ export function decideContent ({
     primary,
     reasons,
     conflict,
+    downvoters,
     overrides,
     unknownContext: status !== 'ready',
     disclosureKey: safePreset + ':' + safeSurface

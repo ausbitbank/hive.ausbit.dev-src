@@ -24,7 +24,7 @@
       @show="moderationShowItem(moderation)"
       @show-author="moderationShowAuthor(moderation)"
       @hide-author="moderationHideAuthor(moderation)"
-      @ignore-voter="moderationIgnoreVoter(moderation)"
+      @ignore-voter="moderationToggleIgnoredVoter"
     />
 
     <p v-if="preview && !moderationCollapsed" class="sfc-body" @click="$emit('open', post)">{{ preview }}</p>

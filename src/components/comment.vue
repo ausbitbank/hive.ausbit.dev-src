@@ -37,7 +37,7 @@
       @show="moderationShowItem(moderation)"
       @show-author="moderationShowAuthor(moderation)"
       @hide-author="moderationHideAuthor(moderation)"
-      @ignore-voter="moderationIgnoreVoter(moderation)"
+      @ignore-voter="moderationToggleIgnoredVoter"
     />
 
     <render v-if="!collapsed" :input="comment.body" class="postbody comment__body" />

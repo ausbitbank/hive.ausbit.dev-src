@@ -22,6 +22,7 @@ function context (overrides = {}) {
     followedBlacklistOwners: [],
     followedMuteLists: [],
     listErrors: 0,
+    listTruncated: [],
     loadedAt: Date.now(),
     ...overrides
   }
@@ -116,6 +117,22 @@ describe('moderation store context', () => {
     expect(restored.context.followedMuteLists).toEqual([
       { owner: 'hive.blog', members: ['alice'] }
     ])
+  })
+
+  it('restores a partial list index and fails skins closed from the snapshot', async () => {
+    mocks.fetchViewerModerationContext.mockResolvedValue(context({
+      listTruncated: [{ owner: 'hive.blog', type: 'muted', indexed: 10000, total: 70000 }]
+    }))
+    const first = freshStore('viewer')
+    await first.ensureContext()
+
+    const restored = freshStore('viewer')
+    expect(restored.context.listTruncated).toEqual([
+      { owner: 'hive.blog', type: 'muted', indexed: 10000, total: 70000 }
+    ])
+    const decision = restored.decisionForSkin({ author: 'alice', reputation: 60 })
+    expect(decision.allowed).toBe(false)
+    expect(decision.code).toBe('list-truncated')
   })
 
   it('keeps viewer contexts separate when the account changes', async () => {

@@ -40,6 +40,7 @@ function emptyContext (status = 'ready') {
     followedMuteLists: [],
     followedBlacklistLists: [],
     listErrors: 0,
+    listTruncated: [],
     loadedAt: 0,
     error: ''
   }
@@ -94,6 +95,66 @@ function normalizeFollowedLists (value) {
     .slice(0, 50)
 }
 
+function normalizeTruncatedLists (value) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  const out = []
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') continue
+    const owner = normalizeName(entry.owner)
+    const type = ['muted', 'blacklisted', 'follow_muted', 'follow_blacklist'].includes(entry.type)
+      ? entry.type
+      : ''
+    if (!owner || !type) continue
+    const key = type + ':' + owner
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      owner,
+      type,
+      indexed: Math.max(0, Number(entry.indexed) || 0),
+      total: Math.max(0, Number(entry.total) || 0)
+    })
+    if (out.length >= 50) break
+  }
+  return out
+}
+
+function truncationRow (owner, type, members) {
+  if (!Array.isArray(members) || members.length <= SNAPSHOT_LIST_MAX) return null
+  return {
+    owner: normalizeName(owner),
+    type,
+    indexed: SNAPSHOT_LIST_MAX,
+    total: members.length
+  }
+}
+
+function mergeTruncatedLists (scope, context) {
+  const rows = normalizeTruncatedLists(context.listTruncated)
+  const add = row => {
+    if (!row || !row.owner) return
+    const existing = rows.find(item => item.owner === row.owner && item.type === row.type)
+    if (existing) {
+      // The session snapshot may hold fewer names than the live read. Report
+      // the smaller effective index, not the count from the earlier read.
+      if (row.indexed < existing.indexed) existing.indexed = row.indexed
+      existing.total = Math.max(existing.total, row.total)
+      return
+    }
+    rows.push(row)
+  }
+  add(truncationRow(scope, 'muted', context.muted))
+  add(truncationRow(scope, 'blacklisted', context.blacklisted))
+  for (const list of Array.isArray(context.followedMuteLists) ? context.followedMuteLists : []) {
+    add(truncationRow(list && list.owner, 'muted', list && list.members))
+  }
+  for (const list of Array.isArray(context.followedBlacklistLists) ? context.followedBlacklistLists : []) {
+    add(truncationRow(list && list.owner, 'blacklisted', list && list.members))
+  }
+  return rows
+}
+
 function readSnapshot (scope) {
   const store = session()
   if (!store) return null
@@ -117,6 +178,7 @@ function readSnapshot (scope) {
       followedMuteLists: normalizeFollowedLists(parsed.followedMuteLists),
       followedBlacklistLists: normalizeFollowedLists(parsed.followedBlacklistLists),
       listErrors: Math.max(0, Number(parsed.listErrors) || 0),
+      listTruncated: normalizeTruncatedLists(parsed.listTruncated),
       loadedAt: savedAt,
       error: ''
     }
@@ -138,7 +200,8 @@ function writeSnapshot (scope, context) {
       followedBlacklistOwners: normalizeOwnerList(context.followedBlacklistOwners),
       followedMuteLists: normalizeFollowedLists(context.followedMuteLists),
       followedBlacklistLists: normalizeFollowedLists(context.followedBlacklistLists),
-      listErrors: Math.max(0, Number(context.listErrors) || 0)
+      listErrors: Math.max(0, Number(context.listErrors) || 0),
+      listTruncated: mergeTruncatedLists(scope, context)
     }))
   } catch {
     // Quota/private mode: the in-memory snapshot still works.
@@ -300,7 +363,8 @@ export const useModerationStore = defineStore('moderation', {
           followedMuteLists: this.context.followedMuteLists,
           showAuthors: this.skinShowAuthors,
           hideAuthors: this.skinHideAuthors,
-          listErrors: this.context.listErrors
+          listErrors: this.context.listErrors,
+          listTruncated: this.context.listTruncated
         },
         settings: this.skinSettings
       })
@@ -324,7 +388,9 @@ export const useModerationStore = defineStore('moderation', {
           hideAuthors: this.skinHideAuthors,
           showItems: this.showItems,
           hideItems: this.hideItems,
-          listErrors: this.context.listErrors
+          ignoredVoters: this.ignoredVoters,
+          listErrors: this.context.listErrors,
+          listTruncated: this.context.listTruncated
         },
         preset: this.contentPreset,
         custom: this.contentCustom,
@@ -382,10 +448,13 @@ export const useModerationStore = defineStore('moderation', {
         nextEntries = entries.filter(item => normalizeName(item?.name || item) !== name)
         nextLists = lists.filter(item => normalizeName(item?.owner) !== name)
       }
+      const truncatedType = blacklist ? 'blacklisted' : 'muted'
       this.context = {
         ...this.context,
         [contextKey]: nextEntries,
         [membersKey]: nextLists,
+        listTruncated: (this.context.listTruncated || [])
+          .filter(item => !(normalizeName(item?.owner) === name && item?.type === truncatedType)),
         loadedAt: Date.now()
       }
       const owners = nextEntries.map(item => normalizeName(item?.name || item)).filter(Boolean)

@@ -179,6 +179,10 @@ Deployed on 2026-11-24 with `./scripts/deploy.sh`.
 
 ## Follow-ups
 
+- W76 (2026-11-25) hardens this phase: content-level per-voter exclusion now
+  works when `active_votes` is present, and bounded list indexes report a
+  partial state instead of treating unindexed names as safe. See
+  [`W76-moderation-transparency.md`](W76-moderation-transparency.md).
 - Phase 2: downvote transparency (received/given, voter evidence, pattern hints,
   downvote-to-upvote context, per-voter local exclusion).
 - Phase 3: list subscriptions with provenance, community moderation context,

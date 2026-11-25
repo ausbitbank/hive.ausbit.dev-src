@@ -87,10 +87,22 @@
         <section class="dv-controls" aria-label="Downvote filters">
           <q-select v-model="range" :options="rangeOptions" dense outlined emit-value map-options label="Time range" class="dv-control" />
           <q-select v-model="relationshipFilter" :options="relationshipOptions" dense outlined emit-value map-options label="Voter relationship" class="dv-control" />
+          <q-select v-model="minWeight" :options="weightOptions" dense outlined emit-value map-options label="Minimum weight" class="dv-control" />
           <q-select v-model="groupBy" :options="groupOptions" dense outlined emit-value map-options label="Group by" class="dv-control" />
           <q-toggle v-model="showIgnored" label="Show locally ignored voters" dense class="dv-control" />
           <span class="dv-controls__count">{{ filtered.length }} of {{ allDownvotes.length }} loaded</span>
         </section>
+
+        <details class="dv-help">
+          <summary>How pattern hints work</summary>
+          <p>
+            A hint appears only when at least <strong>3 distinct voters</strong> each downvote at least
+            <strong>3 shared targets</strong> inside a <strong>72-hour</strong> window, with
+            <strong>60% or more pairwise target overlap</strong>. The card lists the voters, targets,
+            count, window and overlap. It is evidence for human review, never an automatic hide,
+            downvote or punishment.
+          </p>
+        </details>
 
         <div v-if="groupBy !== 'none' && grouped.length" class="dv-groups">
           <article v-for="group in grouped" :key="group.key" class="dv-group">
@@ -182,6 +194,9 @@
 .dv-controls { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
 .dv-control { min-width: 150px; }
 .dv-controls__count { color: var(--c-text-muted); font-size: 0.76rem; margin-left: auto; }
+.dv-help { margin-top: var(--space-2); color: var(--c-text-muted); font-size: 0.78rem; }
+.dv-help summary { color: var(--c-link); font-weight: 600; cursor: pointer; }
+.dv-help p { max-width: 820px; margin: 0.35rem 0 0; line-height: 1.55; }
 .dv-groups { display: grid; gap: var(--space-2); margin-top: var(--space-3); }
 .dv-group { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--c-border); border-radius: var(--radius-card); background: var(--c-surface-2); }
 .dv-group__key { color: var(--c-text); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
@@ -228,6 +243,7 @@ export default {
       direction: 'received',
       range: '30',
       relationshipFilter: 'all',
+      minWeight: '0',
       groupBy: 'none',
       showIgnored: false,
       visibleCount: PAGE_ROWS,
@@ -242,7 +258,17 @@ export default {
         { label: 'Accounts I follow', value: 'follows' },
         { label: 'Accounts I mute', value: 'muted' },
         { label: 'My blacklist', value: 'blacklist' },
+        { label: 'Followed mute list', value: 'followed list' },
+        { label: 'Followed blacklist', value: 'followed blacklist' },
         { label: 'Unknown', value: 'unknown' }
+      ],
+      weightOptions: [
+        { label: 'Any weight', value: '0' },
+        { label: 'At least 1%', value: '1' },
+        { label: 'At least 5%', value: '5' },
+        { label: 'At least 10%', value: '10' },
+        { label: 'At least 25%', value: '25' },
+        { label: 'At least 50%', value: '50' }
       ],
       groupOptions: [
         { label: 'No grouping', value: 'none' },
@@ -292,6 +318,10 @@ export default {
       if (this.relationshipFilter !== 'all') {
         list = list.filter(row => relationshipFor(row.voter, this.moderation.context) === this.relationshipFilter)
       }
+      const minWeight = Number(this.minWeight) * 100
+      if (Number.isFinite(minWeight) && minWeight > 0) {
+        list = list.filter(row => Math.abs(Number(row.weight) || 0) >= minWeight)
+      }
       if (!this.showIgnored && this.ignoredVoters.length) {
         list = filterIgnoredVoters(list, this.ignoredVoters)
       }
@@ -313,6 +343,9 @@ export default {
       this.visibleCount = PAGE_ROWS
     },
     range () {
+      this.visibleCount = PAGE_ROWS
+    },
+    minWeight () {
       this.visibleCount = PAGE_ROWS
     },
     groupBy () {

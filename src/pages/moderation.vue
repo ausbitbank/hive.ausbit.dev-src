@@ -128,8 +128,28 @@
               <router-link :to="'/@' + list.owner">@{{ list.owner }}</router-link>
               <q-badge color="blue-grey-9">{{ list.type }}</q-badge>
               <span v-if="list.description">{{ list.description }}</span>
-              <span v-if="list.members !== null" class="mod-list__count">{{ list.members }} member{{ list.members === 1 ? '' : 's' }}</span>
+              <span v-if="list.truncated" class="mod-list__count">
+                {{ list.truncated.indexed.toLocaleString() }} of {{ list.truncated.total.toLocaleString() }} names indexed
+              </span>
+              <span v-else-if="list.members !== null" class="mod-list__count">{{ list.members }} member{{ list.members === 1 ? '' : 's' }}</span>
               <button type="button" class="mod-link" @click="subscribeList(list.owner, list.type, false)">Unsubscribe</button>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="truncatedLists.length" class="mod-list-owner">
+          <h3 class="mod-subtitle">Partial list index</h3>
+          <p class="mod-section__hint">
+            This client checks a bounded number of names per list. Members beyond the cap are treated as
+            unknown, not as safe. A partial mute list also keeps custom skins fail-closed unless you follow the author.
+          </p>
+          <ul class="mod-list">
+            <li v-for="entry in truncatedLists" :key="'truncated-' + entry.type + ':' + entry.owner">
+              <router-link :to="'/@' + entry.owner">@{{ entry.owner }}</router-link>
+              <q-badge color="orange-9" text-color="black">{{ entry.type }}</q-badge>
+              <span class="mod-list__count">
+                {{ entry.indexed.toLocaleString() }} of {{ entry.total.toLocaleString() }} names indexed
+              </span>
             </li>
           </ul>
         </div>
@@ -722,7 +742,7 @@ import { DISCOVERY_GROUP_LABELS, DISCOVERY_LISTS } from 'src/services/moderation
 import { fetchModerationListEntries } from 'src/services/moderationData'
 
 const PRESETS = [
-  { value: 'open', label: 'Open', detail: 'Show everything. Label downvotes, reputation and NSFW; hide only a safety floor.' },
+  { value: 'open', label: 'Open', detail: 'Show everything. Label downvotes, reputation and NSFW; no content is hidden by the preset.' },
   { value: 'balanced', label: 'Balanced', detail: 'Collapse muted, low-reputation and community-muted content. Label downvotes and blacklists.' },
   { value: 'strict', label: 'Strict', detail: 'Collapse muted, low-reputation, heavily downvoted and NSFW content. Blacklists stay labels.' },
   { value: 'follow-only', label: 'Follow-only', detail: 'Collapse content from accounts you do not follow in feeds, comments and search.' },
@@ -778,7 +798,8 @@ export default {
           type: 'mute',
           owner: owner.name,
           description: owner.description,
-          members: listMemberCount(owner.name, 'mute', this.moderation.context)
+          members: listMemberCount(owner.name, 'mute', this.moderation.context),
+          truncated: this.truncatedList(owner.name, 'mute')
         })
       }
       for (const owner of this.moderation.context.followedBlacklistOwners || []) {
@@ -786,10 +807,16 @@ export default {
           type: 'blacklist',
           owner: owner.name,
           description: owner.description,
-          members: listMemberCount(owner.name, 'blacklist', this.moderation.context)
+          members: listMemberCount(owner.name, 'blacklist', this.moderation.context),
+          truncated: this.truncatedList(owner.name, 'blacklist')
         })
       }
       return rows
+    },
+    truncatedLists () {
+      return Array.isArray(this.moderation.context.listTruncated)
+        ? this.moderation.context.listTruncated
+        : []
     },
     discoveryGroups () {
       const context = this.moderation.context
@@ -830,7 +857,11 @@ export default {
       if (status === 'loading' || status === 'idle') return 'Reading your Hive lists…'
       if (status === 'error') return 'Your lists could not be loaded. Content is shown with the signals available in the payload.'
       const errors = Number(this.moderation.context.listErrors) || 0
-      return errors ? errors + ' subscribed list(s) could not be read.' : ''
+      const truncated = this.truncatedLists.length
+      const parts = []
+      if (errors) parts.push(errors + ' subscribed list(s) could not be read.')
+      if (truncated) parts.push(truncated + ' list index(es) are partial; members beyond the indexed cap are treated as unknown, not as safe.')
+      return parts.join(' ')
     }
   },
   mounted () {
@@ -922,6 +953,11 @@ export default {
         color: 'primary',
         timeout: 3200
       })
+    },
+    truncatedList (owner, type) {
+      const name = String(owner || '').toLowerCase()
+      const wanted = type === 'mute' ? 'muted' : 'blacklisted'
+      return this.truncatedLists.find(item => item.owner === name && item.type === wanted) || null
     },
     ruleFor (surface, signal) {
       return this.moderation.contentCustom?.[surface]?.[signal] || 'collapse'

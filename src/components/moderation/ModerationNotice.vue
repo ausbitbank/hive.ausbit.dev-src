@@ -39,6 +39,18 @@
         <span v-if="reason.detail"> {{ reason.detail }}</span>
         <span v-if="evidenceLabel(reason)" class="mod-notice__evidence">{{ evidenceLabel(reason) }}</span>
       </p>
+      <div v-if="downvoters.length" class="mod-notice__voters">
+        <span class="mod-notice__evidence">Downvoters (local exclusion only):</span>
+        <button
+          v-for="voter in downvoters"
+          :key="'voter-' + voter.voter"
+          type="button"
+          class="mod-notice__voter"
+          @click="$emit('ignore-voter', voter.voter)"
+        >
+          {{ voter.ignored ? 'Unignore' : 'Ignore' }} @{{ voter.voter }}
+        </button>
+      </div>
       <div class="mod-notice__actions">
         <button v-if="canShowAnyway" type="button" @click="$emit('show')">Show this item</button>
         <button v-if="decision.overrides.includes('always-show-author')" type="button" @click="$emit('show-author')">
@@ -46,9 +58,6 @@
         </button>
         <button v-if="decision.overrides.includes('always-hide-author')" type="button" @click="$emit('hide-author')">
           Always hide @{{ decision.author }}
-        </button>
-        <button v-if="decision.overrides.includes('ignore-voter')" type="button" @click="$emit('ignore-voter')">
-          Ignore this voter's downvotes
         </button>
         <router-link v-if="decision.community" :to="'/c/' + decision.community">Community context</router-link>
         <router-link to="/settings/moderation">Manage moderation</router-link>
@@ -140,6 +149,25 @@
   gap: 0.6rem;
   margin-top: 0.4rem;
 }
+
+.mod-notice__voters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.mod-notice__voter {
+  border: 0;
+  background: none;
+  color: var(--c-link);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 </style>
 
 <script>
@@ -159,6 +187,9 @@ export default {
   computed: {
     canShowAnyway () {
       return this.decision.display === 'collapse' || this.decision.display === 'hide'
+    },
+    downvoters () {
+      return Array.isArray(this.decision.downvoters) ? this.decision.downvoters : []
     }
   },
   methods: {
@@ -171,7 +202,13 @@ export default {
       if (Number.isFinite(Number(evidence.listErrors)) && Number(evidence.listErrors) > 0) {
         return Number(evidence.listErrors) + ' list(s) unavailable'
       }
+      if (Number.isFinite(Number(evidence.listTruncated)) && Number(evidence.listTruncated) > 0) {
+        return Number(evidence.listTruncated) + ' list index(es) partial'
+      }
       if (Number.isFinite(Number(evidence.reputation))) return 'Reputation: ' + evidence.reputation
+      if (Number.isFinite(Number(evidence.ignoredDownvotes)) && Number(evidence.ignoredDownvotes) > 0) {
+        return Number(evidence.ignoredDownvotes) + ' ignored downvote(s) excluded locally; raw chain weight unchanged'
+      }
       if (Number.isFinite(Number(evidence.netRshares)) && Number(evidence.netRshares) < 0) {
         return 'Net vote weight is negative'
       }

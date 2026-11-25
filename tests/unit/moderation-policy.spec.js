@@ -212,6 +212,32 @@ describe('decideSkin', () => {
     expect(result.code).toBe(SKIN_DECISION.FOLLOWED_OVERRIDE)
   })
 
+  it('fails closed when a mute list index is partial and the author is not followed', () => {
+    const result = decideSkin({
+      author: 'alice',
+      reputation: 60,
+      viewer: viewer({
+        listTruncated: [{ owner: 'hive.blog', type: 'muted', indexed: 10000, total: 70000 }]
+      })
+    })
+    expect(result.allowed).toBe(false)
+    expect(result.code).toBe(SKIN_DECISION.LIST_TRUNCATED)
+    expect(result.detail).toContain('only partly indexed')
+  })
+
+  it('lets a follow beat a partial mute-list index', () => {
+    const result = decideSkin({
+      author: 'alice',
+      reputation: 60,
+      viewer: viewer({
+        following: ['alice'],
+        listTruncated: [{ owner: 'hive.blog', type: 'muted', indexed: 10000, total: 70000 }]
+      })
+    })
+    expect(result.allowed).toBe(true)
+    expect(result.code).toBe(SKIN_DECISION.FOLLOWED_OVERRIDE)
+  })
+
   it('can be configured to ignore mute and reputation rules', () => {
     const muted = decideSkin({
       author: 'alice',
@@ -252,14 +278,23 @@ describe('normalizeViewerContext', () => {
       followedMuteLists: [{ owner: '@hive.blog', members: ['@Alice', 'alice'] }],
       showAuthors: ['@Carol'],
       hideAuthors: 'nope',
-      listErrors: -2
+      ignoredVoters: ['@BadActor', 'badactor'],
+      listErrors: -2,
+      listTruncated: [
+        { owner: '@hive.blog', type: 'muted', indexed: 10, total: 20 },
+        { owner: '', type: 'muted', indexed: 1, total: 2 }
+      ]
     })
     expect(result.muted).toEqual(['alice'])
     expect(result.following).toEqual(['bob'])
     expect(result.followedMuteLists).toEqual([{ owner: 'hive.blog', members: ['alice'] }])
     expect(result.showAuthors).toEqual(['carol'])
     expect(result.hideAuthors).toEqual([])
+    expect(result.ignoredVoters).toEqual(['badactor'])
     expect(result.listErrors).toBe(0)
+    expect(result.listTruncated).toEqual([
+      { owner: 'hive.blog', type: 'muted', indexed: 10, total: 20 }
+    ])
   })
 
   it('defaults an unknown status to idle', () => {
@@ -282,7 +317,9 @@ describe('decideContent', () => {
       hideAuthors: [],
       showItems: [],
       hideItems: [],
+      ignoredVoters: [],
       listErrors: 0,
+      listTruncated: [],
       ...overrides
     }
   }
@@ -390,11 +427,83 @@ describe('decideContent', () => {
     expect(strict.display).toBe('collapse')
   })
 
-  it('labels downvotes and allows equipment-specific evidence later', () => {
+  it('labels downvotes but does not offer voter exclusion without voter evidence', () => {
     const decision = decide({ post: { author_reputation: 60, net_rshares: -10, stats: {} } })
     expect(decision.display).toBe('label')
     expect(decision.primary.layer).toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.downvoters).toEqual([])
+    expect(decision.overrides).not.toContain('ignore-voter')
+  })
+
+  it('offers per-voter exclusion when active votes are present', () => {
+    const decision = decide({
+      post: {
+        author_reputation: 60,
+        net_rshares: -10,
+        stats: {},
+        active_votes: [
+          { voter: 'bob', rshares: -10 },
+          { voter: 'carol', rshares: 5 }
+        ]
+      }
+    })
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.downvoters).toEqual([{ voter: 'bob', ignored: false }])
     expect(decision.overrides).toContain('ignore-voter')
+    expect(decision.primary.evidence.rawNetRshares).toBe(-10)
+  })
+
+  it('excludes a locally ignored voter from the local downvote label', () => {
+    const decision = decide({
+      post: {
+        author_reputation: 60,
+        net_rshares: -10,
+        stats: {},
+        active_votes: [
+          { voter: 'bob', rshares: -10 },
+          { voter: 'carol', rshares: 5 }
+        ]
+      },
+      viewer: contentViewer({ ignoredVoters: ['bob'] })
+    })
+    expect(decision.primary).not.toBeNull()
+    expect(decision.primary.layer).not.toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.downvoters).toEqual([{ voter: 'bob', ignored: true }])
+  })
+
+  it('derives a downvote label from active votes when the payload omits the aggregate count', () => {
+    const decision = decide({
+      post: {
+        author_reputation: 60,
+        stats: {},
+        active_votes: [
+          { voter: 'bob', rshares: -10 },
+          { voter: 'carol', rshares: 50 }
+        ]
+      }
+    })
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.primary.evidence.downvoteCount).toBe(1)
+    expect(decision.downvoters).toEqual([{ voter: 'bob', ignored: false }])
+  })
+
+  it('keeps the raw chain weight in evidence when other downvotes remain', () => {
+    const decision = decide({
+      post: {
+        author_reputation: 60,
+        net_rshares: -20,
+        stats: {},
+        active_votes: [
+          { voter: 'bob', rshares: -15 },
+          { voter: 'mallory', rshares: -5 }
+        ]
+      },
+      viewer: contentViewer({ ignoredVoters: ['bob'] })
+    })
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.DOWNVOTES)
+    expect(decision.primary.evidence.rawNetRshares).toBe(-20)
+    expect(decision.primary.evidence.ignoredDownvotes).toBe(1)
+    expect(decision.primary.detail).toContain('Raw chain weight is unchanged')
   })
 
   it('collapses NSFW in Balanced and labels it in Follow-only', () => {
@@ -443,6 +552,19 @@ describe('decideContent', () => {
     expect(decision.unknownContext).toBe(true)
     expect(decision.reasons.some(reason => reason.layer === CONTENT_LAYER.CONTEXT_UNAVAILABLE)).toBe(true)
     expect(decision.display).toBe('collapse')
+  })
+
+  it('labels a partial list index but still fails open for content', () => {
+    const decision = decide({
+      viewer: contentViewer({
+        listTruncated: [{ owner: 'hive.blog', type: 'muted', indexed: 10000, total: 70000 }]
+      })
+    })
+    expect(decision.display).toBe('show')
+    const reason = decision.reasons.find(item => item.layer === CONTENT_LAYER.CONTEXT_UNAVAILABLE)
+    expect(reason).toBeTruthy()
+    expect(reason.label).toBe('Some list entries are not indexed')
+    expect(reason.evidence.listTruncated).toBe(1)
   })
 
   it('does not mutate the viewer input', () => {

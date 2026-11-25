@@ -19,7 +19,7 @@
           @show="moderationShowItem(profileModeration)"
           @show-author="moderationShowAuthor(profileModeration)"
           @hide-author="moderationHideAuthor(profileModeration)"
-          @ignore-voter="moderationIgnoreVoter(profileModeration)"
+          @ignore-voter="moderationToggleIgnoredVoter"
         />
       </div>
       <profile-shelf v-if="theme" :theme="theme" :account="account" />

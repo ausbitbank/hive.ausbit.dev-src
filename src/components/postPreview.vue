@@ -100,7 +100,7 @@
         @show="moderationShowItem(moderation)"
         @show-author="moderationShowAuthor(moderation)"
         @hide-author="moderationHideAuthor(moderation)"
-        @ignore-voter="moderationIgnoreVoter(moderation)"
+        @ignore-voter="moderationToggleIgnoredVoter"
       />
 
       <h3 :id="titleId" class="post-card__title">

@@ -6,6 +6,7 @@
 // item disappears while the policy is loading.
 
 import { decideContent } from 'src/services/moderationContent'
+import { normalizeName } from 'src/services/moderationPolicy'
 import { loadModerationStore } from 'src/services/moderationStoreLoader'
 
 const GUEST_KEY = 'hive:moderation:v1:guest'
@@ -111,7 +112,8 @@ export default {
           showAuthors: policy.overrides?.showAuthors || [],
           hideAuthors: policy.overrides?.hideAuthors || [],
           showItems: policy.overrides?.showItems || [],
-          hideItems: policy.overrides?.hideItems || []
+          hideItems: policy.overrides?.hideItems || [],
+          ignoredVoters: policy.overrides?.ignoredVoters || []
         },
         preset: policy.preset || 'balanced',
         custom: policy.custom || null,
@@ -155,14 +157,19 @@ export default {
       this.moderationGuestPolicy = policy
     },
 
-    moderationIgnoreVoter (decision) {
-      const voter = decision?.primary?.evidence?.voter
-      if (!voter) return
+    moderationToggleIgnoredVoter (voter) {
+      const name = normalizeName(voter)
+      if (!name) return
+      const current = this.moderationStore
+        ? this.moderationStore.ignoredVoters
+        : (this.moderationGuestPolicy?.overrides?.ignoredVoters || [])
+      const ignored = Array.isArray(current) && current.includes(name)
       if (this.moderationStore) {
-        this.moderationStore.ignoreVoter(voter)
+        if (ignored) this.moderationStore.unignoreVoter(name)
+        else this.moderationStore.ignoreVoter(name)
         return
       }
-      this.moderationGuestPolicy = guestOverride('ignoredVoters', voter, 'add')
+      this.moderationGuestPolicy = guestOverride('ignoredVoters', name, ignored ? 'remove' : 'add')
     },
 
     moderationMarkDisclosure () {

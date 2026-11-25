@@ -29,9 +29,16 @@ function normalizeListEntries (response) {
   }
   const seen = new Set()
   const entries = []
+  let truncated = false
   for (const row of response) {
     const name = normalizeName(row && typeof row === 'object' ? row.name : row)
     if (!name || seen.has(name)) continue
+    if (entries.length >= MODERATION_LIST_MAX) {
+      // There is at least one more unique member beyond the index cap. Keep
+      // scanning only to report an honest state, never to retain the names.
+      truncated = true
+      break
+    }
     seen.add(name)
     entries.push({
       name,
@@ -41,9 +48,12 @@ function normalizeListEntries (response) {
           : ''
       )
     })
-    if (entries.length >= MODERATION_LIST_MAX) break
   }
-  return entries
+  return {
+    entries,
+    truncated,
+    total: response.length
+  }
 }
 
 function assertFollowType (followType) {
@@ -59,13 +69,14 @@ export function moderationListCacheKey (account, followType) {
 }
 
 /**
- * Cached `bridge.get_follow_list` entries for one account and list type.
- * Entries keep the list description when the node provides one.
+ * Cached `bridge.get_follow_list` snapshot for one account and list type.
+ * The snapshot keeps the list description and whether the client's bounded
+ * index dropped any unique names. A partial index must be visible, not silent.
  */
-export function fetchModerationListEntries (account, followType, { force = false } = {}) {
+export function fetchModerationListSnapshot (account, followType, { force = false } = {}) {
   const name = normalizeName(account)
   const type = assertFollowType(followType)
-  if (!name) return Promise.resolve([])
+  if (!name) return Promise.resolve({ entries: [], truncated: false, total: 0 })
   return loadCached(moderationListCacheKey(name, type), async () => {
     const response = await bridgeRequest('get_follow_list', {
       observer: name,
@@ -76,6 +87,10 @@ export function fetchModerationListEntries (account, followType, { force = false
     ttl: MODERATION_LIST_TTL_MS,
     force
   })
+}
+
+export function fetchModerationListEntries (account, followType, options = {}) {
+  return fetchModerationListSnapshot(account, followType, options).then(snapshot => snapshot.entries)
 }
 
 export async function fetchModerationListNames (account, followType, { force = false } = {}) {
@@ -94,8 +109,25 @@ function emptyContext (status = 'ready') {
     followedMuteLists: [],
     followedBlacklistLists: [],
     listErrors: 0,
+    listTruncated: [],
     loadedAt: 0
   }
+}
+
+function truncationRow (owner, type, snapshot) {
+  if (!snapshot || snapshot.truncated !== true) return null
+  return {
+    owner: normalizeName(owner),
+    type,
+    indexed: snapshot.entries.length,
+    total: Math.max(snapshot.entries.length, Number(snapshot.total) || 0)
+  }
+}
+
+function addTruncation (rows, row) {
+  if (!row || !row.owner) return
+  if (rows.some(item => item.owner === row.owner && item.type === row.type)) return
+  rows.push(row)
 }
 
 /**
@@ -112,27 +144,35 @@ export async function fetchViewerModerationContext (account, {
   const viewer = normalizeName(account)
   if (!viewer) return emptyContext()
 
-  const [following, mutedEntries, followMuted] = await Promise.all([
+  const [following, mutedSnapshot, followMutedSnapshot] = await Promise.all([
     fetchFollowingNames(viewer, { force }),
-    fetchModerationListEntries(viewer, 'muted', { force }),
-    fetchModerationListEntries(viewer, 'follow_muted', { force })
+    fetchModerationListSnapshot(viewer, 'muted', { force }),
+    fetchModerationListSnapshot(viewer, 'follow_muted', { force })
   ])
 
   // Blacklists are warning labels, not mutes. A failure there must not block
   // every skin; Phase 1 can surface the missing warning context separately.
   const [blacklistResult, followBlacklistResult] = await Promise.allSettled([
-    fetchModerationListEntries(viewer, 'blacklisted', { force }),
-    fetchModerationListEntries(viewer, 'follow_blacklist', { force })
+    fetchModerationListSnapshot(viewer, 'blacklisted', { force }),
+    fetchModerationListSnapshot(viewer, 'follow_blacklist', { force })
   ])
-  const blacklistEntries = blacklistResult.status === 'fulfilled' ? blacklistResult.value : []
-  const followBlacklist = followBlacklistResult.status === 'fulfilled' ? followBlacklistResult.value : []
+  const blacklistSnapshot = blacklistResult.status === 'fulfilled'
+    ? blacklistResult.value
+    : { entries: [], truncated: false, total: 0 }
+  const followBlacklistSnapshot = followBlacklistResult.status === 'fulfilled'
+    ? followBlacklistResult.value
+    : { entries: [], truncated: false, total: 0 }
 
-  const owners = followMuted
+  const listTruncated = []
+  addTruncation(listTruncated, truncationRow(viewer, 'muted', mutedSnapshot))
+  addTruncation(listTruncated, truncationRow(viewer, 'blacklisted', blacklistSnapshot))
+
+  const owners = followMutedSnapshot.entries
     .map(entry => entry.name)
     .filter(Boolean)
   const resolvable = owners.slice(0, Math.max(0, Number(maxFollowedLists) || 0))
   const results = await Promise.allSettled(
-    resolvable.map(owner => fetchModerationListEntries(owner, 'muted', { force }))
+    resolvable.map(owner => fetchModerationListSnapshot(owner, 'muted', { force }))
   )
 
   const followedMuteLists = []
@@ -144,14 +184,15 @@ export async function fetchViewerModerationContext (account, {
     }
     followedMuteLists.push({
       owner: resolvable[index],
-      members: result.value.map(entry => entry.name)
+      members: result.value.entries.map(entry => entry.name)
     })
+    addTruncation(listTruncated, truncationRow(resolvable[index], 'muted', result.value))
   })
 
-  const blacklistOwners = followBlacklist.map(entry => entry.name).filter(Boolean)
+  const blacklistOwners = followBlacklistSnapshot.entries.map(entry => entry.name).filter(Boolean)
   const resolvableBlacklists = blacklistOwners.slice(0, Math.max(0, Number(maxFollowedLists) || 0))
   const blacklistResults = await Promise.allSettled(
-    resolvableBlacklists.map(owner => fetchModerationListEntries(owner, 'blacklisted', { force }))
+    resolvableBlacklists.map(owner => fetchModerationListSnapshot(owner, 'blacklisted', { force }))
   )
   const followedBlacklistLists = []
   listErrors += Math.max(0, blacklistOwners.length - resolvableBlacklists.length)
@@ -162,20 +203,22 @@ export async function fetchViewerModerationContext (account, {
     }
     followedBlacklistLists.push({
       owner: resolvableBlacklists[index],
-      members: result.value.map(entry => entry.name)
+      members: result.value.entries.map(entry => entry.name)
     })
+    addTruncation(listTruncated, truncationRow(resolvableBlacklists[index], 'blacklisted', result.value))
   })
 
   return {
     status: 'ready',
-    muted: mutedEntries.map(entry => entry.name),
-    blacklisted: blacklistEntries.map(entry => entry.name),
+    muted: mutedSnapshot.entries.map(entry => entry.name),
+    blacklisted: blacklistSnapshot.entries.map(entry => entry.name),
     following: [...new Set((Array.isArray(following) ? following : []).map(normalizeName).filter(Boolean))],
-    followedMuteOwners: followMuted,
-    followedBlacklistOwners: followBlacklist,
+    followedMuteOwners: followMutedSnapshot.entries,
+    followedBlacklistOwners: followBlacklistSnapshot.entries,
     followedMuteLists,
     followedBlacklistLists,
     listErrors,
+    listTruncated,
     loadedAt: Date.now()
   }
 }

@@ -21,7 +21,9 @@ vi.mock('../../src/services/cache', () => ({
 const {
   fetchModerationListEntries,
   fetchModerationListNames,
+  fetchModerationListSnapshot,
   fetchViewerModerationContext,
+  MODERATION_LIST_MAX,
   moderationListCacheKey
 } = await import('../../src/services/moderationData')
 
@@ -55,6 +57,27 @@ describe('moderation list reads', () => {
   it('maps entries to names', async () => {
     mocks.bridgeRequest.mockResolvedValue([{ name: 'Alice' }, { name: 'bob' }])
     await expect(fetchModerationListNames('viewer', 'blacklisted')).resolves.toEqual(['alice', 'bob'])
+  })
+
+  it('reports a bounded list index instead of silently truncating it', async () => {
+    mocks.bridgeRequest.mockResolvedValue(
+      Array.from({ length: MODERATION_LIST_MAX + 2 }, (_, index) => ({ name: 'user' + index }))
+    )
+
+    const snapshot = await fetchModerationListSnapshot('viewer', 'muted')
+    expect(snapshot.entries).toHaveLength(MODERATION_LIST_MAX)
+    expect(snapshot.truncated).toBe(true)
+    expect(snapshot.total).toBe(MODERATION_LIST_MAX + 2)
+  })
+
+  it('does not mark an exactly-capped list as truncated', async () => {
+    mocks.bridgeRequest.mockResolvedValue(
+      Array.from({ length: MODERATION_LIST_MAX }, (_, index) => ({ name: 'user' + index }))
+    )
+
+    const snapshot = await fetchModerationListSnapshot('viewer', 'muted')
+    expect(snapshot.entries).toHaveLength(MODERATION_LIST_MAX)
+    expect(snapshot.truncated).toBe(false)
   })
 
   it('rejects a malformed list instead of pretending it is empty', async () => {
@@ -111,6 +134,30 @@ describe('viewer moderation context', () => {
       { owner: 'hive.blog', members: ['alice', 'spam'] }
     ])
     expect(context.listErrors).toBe(0)
+    expect(context.listTruncated).toEqual([])
+  })
+
+  it('records a partial subscribed list index in the viewer context', async () => {
+    const large = Array.from({ length: MODERATION_LIST_MAX + 1 }, (_, index) => ({ name: 'user' + index }))
+    mocks.bridgeRequest.mockImplementation((_method, params) => {
+      if (params.observer === 'viewer' && params.follow_type === 'follow_muted') {
+        return Promise.resolve([{ name: 'hive.blog' }])
+      }
+      if (params.observer === 'hive.blog' && params.follow_type === 'muted') {
+        return Promise.resolve(large)
+      }
+      return Promise.resolve([])
+    })
+    mocks.fetchFollowingNames.mockResolvedValue([])
+
+    const context = await fetchViewerModerationContext('viewer')
+    expect(context.listTruncated).toEqual([{
+      owner: 'hive.blog',
+      type: 'muted',
+      indexed: MODERATION_LIST_MAX,
+      total: MODERATION_LIST_MAX + 1
+    }])
+    expect(context.followedMuteLists[0].members).toHaveLength(MODERATION_LIST_MAX)
   })
 
   it('counts a failed subscribed list instead of failing the whole context', async () => {

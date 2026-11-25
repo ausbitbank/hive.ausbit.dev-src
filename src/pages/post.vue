@@ -45,7 +45,7 @@
           @show="moderationShowItem(postModeration)"
           @show-author="moderationShowAuthor(postModeration)"
           @hide-author="moderationHideAuthor(postModeration)"
-          @ignore-voter="moderationIgnoreVoter(postModeration)"
+          @ignore-voter="moderationToggleIgnoredVoter"
         />
       </div>
       <div class="post-grid">

@@ -65,4 +65,22 @@ describe('ModerationNotice', () => {
     })
     expect(wrapper.text()).not.toContain('Show anyway')
   })
+
+  it('lists known downvoters and emits the chosen local exclusion', async () => {
+    const wrapper = mountNotice({
+      decision: {
+        ...decision,
+        downvoters: [
+          { voter: 'bob', ignored: false },
+          { voter: 'carol', ignored: true }
+        ]
+      }
+    })
+    await wrapper.findAll('button').find(button => button.text() === 'Why?').trigger('click')
+    expect(wrapper.text()).toContain('Ignore @bob')
+    expect(wrapper.text()).toContain('Unignore @carol')
+
+    await wrapper.findAll('button').find(button => button.text() === 'Ignore @bob').trigger('click')
+    expect(wrapper.emitted('ignore-voter')).toEqual([['bob']])
+  })
 })
