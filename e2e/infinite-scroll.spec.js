@@ -70,7 +70,9 @@ async function mockRankedPosts (page) {
 }
 
 async function scrollToEnd (page) {
-  await page.locator('.browse-end, .infinite-scroll__more, .infinite-scroll__loading').first().scrollIntoViewIfNeeded()
+  // The footer is replaced whenever a page appends, so a locator can detach
+  // between the scroll and the assertion. Drive the window instead.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await page.mouse.wheel(0, 1500)
 }
 

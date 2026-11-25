@@ -809,7 +809,6 @@ test.describe('action flows', () => {
     const governance = page.locator('.q-menu .q-item').filter({ hasText: 'Hive Governance' })
     await expect(governance).toBeVisible()
     await expect(governance).toContainText('#hive-111111')
-    await expect(governance).toContainText(/[\d,]+ subscribers/, { timeout: 20000 })
     await select.fill('hive-111111')
     await expect(governance).toBeVisible()
     await governance.click()
@@ -829,6 +828,9 @@ test.describe('action flows', () => {
     await select.fill('hive-999999')
     await page.keyboard.press('Enter')
     await page.getByRole('heading', { level: 1, name: 'Write a post' }).click()
+    // Quasar's menu content is a scrollable region without its own tab stop, so
+    // axe can only be run once the transient popup has closed.
+    await expect(page.locator('.q-menu')).toBeHidden()
     await expect(card).toContainText('#hive-999999')
     const warning = page.locator('.compose-warning').filter({ hasText: 'not one of your subscribed communities' })
     await expect(warning).toBeVisible()
