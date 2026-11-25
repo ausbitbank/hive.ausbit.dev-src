@@ -17,7 +17,7 @@ lines intact. `always` makes sure the headers are also sent on error responses.
 ```nginx
 # Deny framing in both the legacy and CSP forms.
 add_header X-Frame-Options "DENY" always;
-add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com https://s3.tradingview.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' https: blob:; connect-src 'self' https: wss: https://cloudflareinsights.com https://*.tradingview.com; manifest-src 'self'; worker-src 'self' blob:; frame-src https://youtube.com https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be https://player.vimeo.com https://vimeo.com https://3speak.tv https://www.3speak.tv https://play.3speak.tv https://odysee.com https://rumble.com https://www.bitchute.com https://d.tube https://ipfs.io https://gateway.ipfs.io https://open.spotify.com https://w.soundcloud.com https://platform.twitter.com https://player.twitch.tv https://s.tradingview.com https://www.tradingview.com; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" always;
+add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://s3.tradingview.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' https: blob:; connect-src 'self' https: wss: https://cloudflareinsights.com https://*.tradingview.com; manifest-src 'self'; worker-src 'self' blob:; frame-src https://youtube.com https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be https://player.vimeo.com https://vimeo.com https://3speak.tv https://www.3speak.tv https://play.3speak.tv https://odysee.com https://rumble.com https://www.bitchute.com https://d.tube https://ipfs.io https://gateway.ipfs.io https://open.spotify.com https://w.soundcloud.com https://platform.twitter.com https://player.twitch.tv https://s.tradingview.com https://www.tradingview.com; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" always;
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -27,11 +27,12 @@ add_header Cross-Origin-Opener-Policy "same-origin" always;
 
 Notes:
 
-- Inline script is forbidden. The pre-paint theme bootstrap lives in
-  `/statics/boot-theme.js`, so `script-src` stays `'self'` plus the two vendor
-  origins and `script-src-attr 'none'` blocks inline event handlers such as the
-  `onerror=` used in memo-injection attacks. Add a nonce/hash only if a future
-  script genuinely must be inlined.
+- `script-src-attr 'none'` is the load-bearing line: it blocks inline event
+  handlers (`onerror=`, `onclick=`) and `javascript:` navigations. `script-src`
+  still tolerates inline `<script>` elements because Cloudflare injects a
+  per-request bot-detection snippet; the pre-paint theme bootstrap lives in
+  `/statics/boot-theme.js`. Once Cloudflare's inline injection is disabled,
+  drop `'unsafe-inline'` from `script-src` to make the policy fully strict.
 - `style-src 'unsafe-inline'` is required by Vue/Quasar inline styles and by the
   animated background.
 - `img-src https:` is intentionally broad: avatars and post images come from

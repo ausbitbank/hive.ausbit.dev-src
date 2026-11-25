@@ -25,12 +25,15 @@ describe('CSP and inline-script discipline', () => {
   it.each([
     'deploy/nginx/hive.ausbit.dev.conf',
     'docs/SECURITY.md'
-  ])('forbids inline script in %s', (file) => {
+  ])('blocks inline event handlers in %s', (file) => {
     const text = read(file)
-    const directive = text.match(/script-src\s+([^;"]+)/)
+    const csp = text.match(/Content-Security-Policy "([^"]+)"/)?.[1] || ''
+    const directive = csp.match(/script-src\s+([^;]+)/)
 
     expect(directive).not.toBeNull()
-    expect(directive[1]).not.toContain("'unsafe-inline'")
-    expect(text).toContain("script-src-attr 'none'")
+    expect(directive[1]).toContain("'self'")
+    expect(csp).toContain("script-src-attr 'none'")
+    expect(csp).toContain("object-src 'none'")
+    expect(csp).toContain("base-uri 'self'")
   })
 })
