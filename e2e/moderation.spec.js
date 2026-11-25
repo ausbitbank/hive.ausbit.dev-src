@@ -72,7 +72,8 @@ async function mockChain (page, {
   voteHistory = null,
   accountOverride = null,
   listCounts = null,
-  safetyFloorNames = null
+  safetyFloorNames = null,
+  communityInfo = null
 } = {}) {
   await page.route('https://images.hive.blog/**', route => route.fulfill({
     status: 200,
@@ -84,6 +85,30 @@ async function mockChain (page, {
     await page.route(host + '/**', async route => {
       const payload = route.request().postDataJSON?.() || {}
       const params = payload.params || {}
+
+      if (payload.method === 'bridge.get_community' && communityInfo) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: communityInfo })
+        })
+      }
+
+      if (payload.method === 'bridge.list_subscribers' && communityInfo) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: [] })
+        })
+      }
+
+      if (payload.method === 'bridge.account_notifications' && communityInfo) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: [] })
+        })
+      }
 
       if (payload.method === 'condenser_api.get_account_history' && voteHistory) {
         return route.fulfill({
@@ -368,7 +393,7 @@ test('a negative-reputation feed card collapses with an explanation and can be s
   await expect(card.locator('.mod-notice')).toContainText('Negative reputation')
   await expect(card.locator('.post-card__summary')).toHaveCount(0)
   await card.getByRole('button', { name: 'Why?' }).click()
-  await expect(card.getByRole('link', { name: 'Community context' })).toHaveAttribute('href', '/c/hive-1')
+  await expect(card.getByRole('link', { name: 'Community context' })).toHaveAttribute('href', '/c/hive-1#moderation-context')
 
   await card.getByRole('button', { name: 'Show anyway' }).click()
   await expect(card.locator('.mod-notice')).toHaveCount(0)
@@ -425,6 +450,92 @@ test('the default safety floor collapses a listed phishing account and can be sh
   await page.reload()
   await waitForApp(page)
   await expect(page.locator('.post-card').first().locator('.mod-notice')).toHaveCount(0)
+})
+
+test('community moderation context explains muted posts, roles and rules', async ({ page }) => {
+  test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
+  const base = {
+    parent_author: '',
+    created: '2026-11-25T00:00:00',
+    category: 'hive-1',
+    community: 'hive-1',
+    community_title: 'Test community',
+    children: 0,
+    net_votes: 1,
+    author_reputation: 60,
+    payout: 0,
+    pending_payout_value: '0.000 HBD',
+    total_payout_value: '0.000 HBD',
+    curator_payout_value: '0.000 HBD',
+    max_accepted_payout: '1000000.000 HBD',
+    percent_hbd: 10000,
+    json_metadata: { tags: ['hive-1'] },
+    active_votes: [],
+    reblogged_by: []
+  }
+  const mutedPosts = [
+    {
+      ...base,
+      author: 'muted-one',
+      permlink: 'muted-one',
+      title: 'A post muted by community moderation',
+      stats: { muted_reasons: [0], hide: true }
+    },
+    {
+      ...base,
+      author: 'muted-two',
+      permlink: 'muted-two',
+      title: 'A post muted by a community role',
+      stats: { muted_reasons: [4], gray: true }
+    }
+  ]
+  await mockChain(page, {
+    rankedPosts: mutedPosts,
+    communityInfo: {
+      id: 1,
+      name: 'hive-1',
+      title: 'Test community',
+      about: 'A test community.',
+      description: '',
+      flag_text: 'Be kind and stay on topic.',
+      is_nsfw: false,
+      subscribers: 10,
+      num_authors: 2,
+      num_pending: 0,
+      sum_pending: 0,
+      created_at: '2020-01-01 00:00:00',
+      settings: { flag_text: 'Be kind and stay on topic.' },
+      team: [
+        ['hive-1', 'owner', 'Test community'],
+        ['mod-one', 'mod', '']
+      ]
+    },
+    accountOverride: {
+      reputation: 60,
+      posting_json_metadata: '{}',
+      balance: '0.000 HIVE',
+      hbd_balance: '0.000 HBD',
+      vesting_shares: '0.000000 VESTS',
+      post_count: 0,
+      created: '2020-01-01T00:00:00'
+    }
+  })
+
+  await page.goto('/c/hive-1')
+  await waitForApp(page)
+  const context = page.locator('#moderation-context')
+  await expect(context.getByRole('heading', { name: 'Community moderation context' })).toBeVisible({ timeout: 20000 })
+  await expect(context).toContainText('Hidden by community moderation')
+  await expect(context).toContainText('Muted community role')
+  await expect(context).toContainText('Recent muted posts')
+  await expect(context).toContainText('@muted-one')
+  await expect(context).toContainText('Be kind and stay on topic.')
+  await expect(context).toContainText('1 owner · 1 mod')
+  await expect(context.getByRole('link', { name: 'Open muted feed' })).toHaveAttribute('href', '/muted/hive-1')
+  await expect(context.getByRole('link', { name: 'Rules and team' })).toHaveAttribute('href', '/c/hive-1?tab=about')
+  expect(await runAxe(page)).toEqual([])
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await runAxe(page)).toEqual([])
 })
 
 test('downvotes tab shows voter evidence and local voter exclusion', async ({ page }) => {

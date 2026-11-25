@@ -59,7 +59,7 @@
         <button v-if="decision.overrides.includes('always-hide-author')" type="button" @click="$emit('hide-author')">
           Always hide @{{ decision.author }}
         </button>
-        <router-link v-if="decision.community" :to="'/c/' + decision.community">Community context</router-link>
+        <router-link v-if="decision.community" :to="'/c/' + decision.community + '#moderation-context'">Community context</router-link>
         <router-link to="/settings/moderation">Manage moderation</router-link>
       </div>
     </div>

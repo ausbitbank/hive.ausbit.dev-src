@@ -249,7 +249,8 @@ signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
 explicitly deferred items in that section; W74 and W75 are deployed and
 live-smoked; W76 is a local hardening pass on W73; W77 adds the default-on
-phishing floor. The next free workstream number is W78.
+phishing floor; W78 adds community moderation context. The next free workstream
+number is W79.
 
 ### W71 — Theme safety (complete)
 
@@ -450,6 +451,22 @@ viewer deliberately opens are labelled rather than removed. The settings page
 shows the source, live check status and an on/off toggle, and the policy
 exports/imports with the local document. See
 [`docs/workstreams/W77-safety-floor.md`](workstreams/W77-safety-floor.md).
+
+### W78 — Community moderation context
+
+The first slice of the optional community/aggregate signals item. The community
+page's moderation card now explains the current muted feed: counts by bridge
+reason (community moderation, type restriction, muted parent, low reputation,
+muted role), honest fallbacks when no reason is exposed, recent muted posts,
+team role counts, rules/flag text and links to the muted feed and the viewer's
+own settings. It explicitly separates community mutes from personal mutes and
+subscribed lists, and it does not invent per-post moderator notes or treat the
+sample as a full history. The content notice's Community context link now
+targets `#moderation-context`. See
+[`docs/workstreams/W78-community-moderation-context.md`](workstreams/W78-community-moderation-context.md).
+
+Cross-account aggregate downvote patterns and optional third-party labelers
+remain separate follow-ups.
 
 ## Definition of done
 

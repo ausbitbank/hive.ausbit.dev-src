@@ -6,10 +6,26 @@ import PostPreview from '../../src/components/postPreview.vue'
 import { postImage, postIsThreeSpeakVideo, postSummary, previewImageUrl } from '../../src/utils/postPreview'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
-// This suite only covers card helpers and the vote indicator. Keep the card's
-// lazy moderation store out of the test so it cannot resolve after teardown.
-vi.mock('../../src/services/moderationStoreLoader', () => ({
-  loadModerationStore: () => Promise.reject(new Error('moderation store disabled in this unit test'))
+// This suite only covers card helpers and the vote indicator. Stub the card's
+// moderation wiring so no lazy store or notice module resolves after teardown.
+vi.mock('../../src/mixins/moderation', () => ({
+  default: {
+    data: () => ({ moderationStore: null, moderationError: false }),
+    methods: {
+      moderationDecision ({ author = '', post = null, itemKey = '' } = {}) {
+        return {
+          display: 'show',
+          primary: null,
+          reasons: [],
+          overrides: [],
+          author,
+          itemKey: itemKey || (post ? post.author + '/' + post.permlink : author),
+          conflict: null,
+          downvoters: []
+        }
+      }
+    }
+  }
 }))
 
 describe('postImage', () => {

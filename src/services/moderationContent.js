@@ -13,6 +13,7 @@ import {
   normalizeName
 } from './moderationPolicy'
 import { normalizeVotes, voteDirection } from './voteBreakdown'
+import { COMMUNITY_MUTE_REASON_LABELS } from './communityModeration'
 
 // ---------------------------------------------------------------------------
 // Content decisions (W73 Phase 1)
@@ -118,14 +119,6 @@ export const DEFAULT_CONTENT_CUSTOM = {
   comment: { ...BALANCED_RULES },
   community: { ...BALANCED_RULES },
   search: { ...BALANCED_RULES }
-}
-
-const MUTED_REASON_LABELS = {
-  0: 'Hidden by community moderation',
-  1: 'Restricted by the community type',
-  2: 'Reply to a post the community muted',
-  3: 'Low reputation',
-  4: 'Muted community role'
 }
 
 const MUTED_REASON_LAYERS = {
@@ -344,7 +337,7 @@ export function decideContent ({
         add(layer === CONTENT_LAYER.REPUTATION ? 'reputation' : 'community', contentReason(
           layer,
           layer === CONTENT_LAYER.REPUTATION ? 'bridge' : 'community',
-          MUTED_REASON_LABELS[code] || 'Muted by the community',
+          COMMUNITY_MUTE_REASON_LABELS[code] || 'Muted by the community',
           'Hive bridge reports mute reason ' + code + ' for this post.',
           { reason: code }
         ))

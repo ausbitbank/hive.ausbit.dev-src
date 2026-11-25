@@ -86,41 +86,91 @@
         </q-card-section>
       </q-card>
 
-      <q-card flat bordered class="community-insights__card">
-        <q-card-section>
+      <q-card
+        id="moderation-context"
+        flat
+        bordered
+        class="community-insights__card community-insights__card--wide"
+      >
+        <q-card-section aria-labelledby="community-moderation-title">
           <div class="community-insights__card-head">
             <div>
               <div class="community-insights__card-eyebrow">Moderation</div>
-              <h3 class="community-insights__card-title">Visible signals</h3>
+              <h3 id="community-moderation-title" class="community-insights__card-title">Community moderation context</h3>
             </div>
             <q-badge
-              :color="insights.moderationSignals ? 'orange-9' : 'green-9'"
-              :text-color="insights.moderationSignals ? 'black' : 'white'"
+              :color="moderation.mutedCount ? 'orange-9' : 'grey-7'"
+              :text-color="moderation.mutedCount ? 'black' : 'white'"
             >
-              {{ insights.moderationSignals }} signal{{ insights.moderationSignals === 1 ? '' : 's' }}
+              {{ moderation.mutedCount }} in muted feed
             </q-badge>
           </div>
 
+          <p class="community-insights__note">
+            Community mutes are decisions by this community's moderators. They are separate
+            from your personal mute list, lists you follow, and your local display policy.
+          </p>
+
+          <div class="community-moderation__section">
+            <h4 class="community-moderation__subtitle">Muted posts by reason</h4>
+            <ul v-if="moderation.reasons.length" class="community-moderation">
+              <li v-for="reason in moderation.reasons" :key="reason.key" class="community-moderation__reason">
+                <div>
+                  <strong>{{ reason.label }}</strong>
+                  <span class="community-moderation__hint">{{ reason.hint }}</span>
+                </div>
+                <q-badge color="grey-7">{{ reason.count }}</q-badge>
+              </li>
+            </ul>
+            <p v-else class="community-insights__note">
+              No muted posts were returned in the current bridge sample.
+            </p>
+            <p v-if="moderation.reasons.length" class="community-insights__note">
+              A post can have more than one bridge reason.
+            </p>
+          </div>
+
+          <div v-if="moderation.recent.length" class="community-moderation__section">
+            <h4 class="community-moderation__subtitle">Recent muted posts</h4>
+            <ul class="community-moderation__recent-list">
+              <li v-for="row in moderation.recent" :key="row.author + '/' + row.permlink">
+                <router-link :to="'/@' + row.author + '/' + row.permlink">{{ row.title }}</router-link>
+                <span>@{{ row.author }} · {{ row.reasonLabel }}</span>
+              </li>
+            </ul>
+          </div>
+
           <ul class="community-moderation">
-            <li>
-              <q-icon name="volume_off" size="15px" aria-hidden="true" />
-              <span>{{ insights.mutedCount }} muted post{{ insights.mutedCount === 1 ? '' : 's' }} in the current muted feed.</span>
+            <li v-if="moderation.teamSize">
+              <q-icon name="groups" size="15px" aria-hidden="true" />
+              <span>{{ roleSummary }}.</span>
+              <router-link :to="aboutLink">Rules and team</router-link>
             </li>
-            <li v-if="insights.nsfw">
+            <li v-if="moderation.nsfw">
               <q-icon name="visibility_off" size="15px" aria-hidden="true" />
               <span>The community is marked NSFW.</span>
             </li>
-            <li v-if="insights.restricted">
+            <li v-if="moderation.restricted">
               <q-icon name="lock" size="15px" aria-hidden="true" />
               <span>Posting is restricted by community settings.</span>
             </li>
           </ul>
 
-          <div v-if="insights.flagText" class="community-flag-text">
+          <div v-if="moderation.flagText" class="community-flag-text">
             <div class="community-flag-text__label">Flag text</div>
-            <p>{{ insights.flagText }}</p>
+            <p>{{ moderation.flagText }}</p>
           </div>
           <p v-else class="community-insights__note">No community flag text is published.</p>
+
+          <div class="community-moderation__actions">
+            <router-link v-if="moderation.mutedFeed" :to="moderation.mutedFeed">Open muted feed</router-link>
+            <router-link to="/settings/moderation">Your moderation settings</router-link>
+          </div>
+
+          <p class="community-insights__note">
+            This is the current bridge muted feed, not a complete moderation history.
+            Per-post moderator notes are not exposed, so this view does not invent them.
+          </p>
         </q-card-section>
       </q-card>
     </div>
@@ -129,6 +179,7 @@
 
 <script>
 import { communityInsights, fetchCommunityInsightData } from 'src/services/community'
+import { communityModerationContext } from 'src/services/communityModeration'
 
 export default {
   name: 'CommunityInsights',
@@ -151,6 +202,22 @@ export default {
         communityInfo: this.communityInfo,
         mutedPosts: this.mutedPosts
       })
+    },
+    moderation () {
+      return communityModerationContext({
+        community: this.communityInfo,
+        posts: this.mutedPosts
+      })
+    },
+    aboutLink () {
+      return '/c/' + this.communityName + '?tab=about'
+    },
+    roleSummary () {
+      const rows = this.moderation.roles.map(row => {
+        const label = row.role === 'mod' ? 'mod' : row.role
+        return row.count + ' ' + label + (row.count === 1 ? '' : 's')
+      })
+      return 'Team: ' + rows.join(' · ')
     }
   },
   watch: {
@@ -422,6 +489,78 @@ export default {
   align-items: flex-start;
   gap: 0.35rem;
   padding: 0.22rem 0;
+}
+
+.community-moderation__section {
+  margin-top: 0.55rem;
+}
+
+.community-moderation__subtitle {
+  margin: 0;
+  color: var(--c-text);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.community-moderation__reason {
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.community-moderation__reason > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.community-moderation__hint {
+  color: var(--c-text-subtle);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.community-moderation__recent-list {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.community-moderation__recent-list li {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.72rem;
+}
+
+.community-moderation__recent-list li:last-child {
+  border-bottom: 0;
+}
+
+.community-moderation__recent-list a {
+  color: var(--c-link);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.community-moderation__recent-list span {
+  color: var(--c-text-subtle);
+  overflow-wrap: anywhere;
+}
+
+.community-moderation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.55rem;
+  font-size: 0.72rem;
+}
+
+.community-moderation__actions a {
+  color: var(--c-link);
+  font-weight: 600;
 }
 
 .community-flag-text {
