@@ -49,6 +49,19 @@ export function escapeHtml (value) {
     .replaceAll('"', '&quot;')
 }
 
+/**
+ * JSON-LD is injected into a <script> block, not an HTML attribute. Escaping
+ * `<` keeps a `</script>` sequence inside a chain-controlled string (for
+ * example an Open Graph image URL) from closing the block.
+ */
+export function safeJsonLd (value) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value)
+  return String(text ?? '')
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
 function escapeRegExp (value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
@@ -173,7 +186,7 @@ export function applyMetadata (shell, metadata) {
   html = replaceMeta(html, 'name', 'twitter:image', metadata.twitterImage)
   html = removeJsonLd(html)
   if (metadata.jsonLd) {
-    html = html.replace('</head>', '  <script type="application/ld+json">' + metadata.jsonLd + '</script>\n  </head>')
+    html = html.replace('</head>', '  <script type="application/ld+json">' + safeJsonLd(metadata.jsonLd) + '</script>\n  </head>')
   }
   html = applyBodySkeleton(html, metadata.title, metadata.description)
   if (!html.includes(MARKER)) html = html.replace('<head>', '<head>\n  ' + MARKER)

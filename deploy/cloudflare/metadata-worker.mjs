@@ -113,17 +113,34 @@ function stripMarkdown (value, length = 160) {
   return text.slice(0, length - 1).trimEnd() + '…'
 }
 
-function firstImage (metadata) {
+/**
+ * Normalise an untrusted image URL. `new URL` percent-encodes characters such
+ * as `<` and `>` that would otherwise let a chain-controlled value break out of
+ * an HTML attribute or a JSON-LD script block. Returns '' for anything that is
+ * not an absolute http(s) URL.
+ */
+export function normalizeImageUrl (value) {
+  if (typeof value !== 'string') return ''
+  try {
+    const url = new URL(value)
+    if (!['http:', 'https:'].includes(url.protocol)) return ''
+    return url.href
+  } catch {
+    return ''
+  }
+}
+
+export function firstImage (metadata) {
   const images = Array.isArray(metadata?.image) ? metadata.image : [metadata?.image]
   const value = images.find(item => typeof item === 'string' && /^https?:\/\//i.test(item))
-  return value || ''
+  return normalizeImageUrl(value)
 }
 
 function proxiedImage (url, width = 800) {
-  if (!url) return ''
-  if (!/^https?:\/\//i.test(url)) return ''
-  if (/^https:\/\/images\.hive\.blog\/p\//i.test(url)) return url
-  return 'https://images.hive.blog/' + width + 'x0/' + url
+  const clean = normalizeImageUrl(url)
+  if (!clean) return ''
+  if (/^https:\/\/images\.hive\.blog\/p\//i.test(clean)) return clean
+  return 'https://images.hive.blog/' + width + 'x0/' + clean
 }
 
 async function postMetadata (author, permlink) {
@@ -194,6 +211,19 @@ function escapeHtml (value) {
     .replaceAll('"', '&quot;')
 }
 
+/**
+ * Serialise a value for an inline `<script>` block. JSON.stringify leaves `<`
+ * untouched, so a chain-controlled string containing `</script>` would close
+ * the block and inject a sibling script. Escaping `<` (and the JS line
+ * separators) keeps the payload inert while remaining valid JSON.
+ */
+export function scriptJson (value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
 /** Pass the origin response through with an observability tag. */
 function tagged (response, value) {
   const copy = new Response(response.body, response)
@@ -201,7 +231,7 @@ function tagged (response, value) {
   return copy
 }
 
-function rewriteHead (html, meta) {
+export function rewriteHead (html, meta) {
   let next = html
   const title = escapeHtml(meta.title)
   next = next.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + title + '</title>')
@@ -224,7 +254,7 @@ function rewriteHead (html, meta) {
   setMeta('name', 'twitter:image', meta.image)
   next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="https://hive.ausbit.dev' + meta.path + '">')
   next = next.replace(/<script\b[^>]*type=["']?application\/ld\+json["']?[^>]*>[\s\S]*?<\/script>/gi, '')
-  next = next.replace('</head>', '<script type="application/ld+json">' + JSON.stringify(meta.jsonLd) + '</script>\n  </head>')
+  next = next.replace('</head>', '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
   // Replace the static crawler shell heading and summary as well.
   next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<h1>)[\s\S]*?(<\/h1>)/i, '$1' + title + '$2')
   next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<\/h1><p>)[\s\S]*?(<\/p>)/i, '$1' + escapeHtml(meta.description) + '$2')
