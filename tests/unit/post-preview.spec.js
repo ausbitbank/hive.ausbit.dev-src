@@ -6,6 +6,12 @@ import PostPreview from '../../src/components/postPreview.vue'
 import { postImage, postIsThreeSpeakVideo, postSummary, previewImageUrl } from '../../src/utils/postPreview'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
 
+// This suite only covers card helpers and the vote indicator. Keep the card's
+// lazy moderation store out of the test so it cannot resolve after teardown.
+vi.mock('../../src/services/moderationStoreLoader', () => ({
+  loadModerationStore: () => Promise.reject(new Error('moderation store disabled in this unit test'))
+}))
+
 describe('postImage', () => {
   it('prefers metadata thumbnails, then image arrays', () => {
     expect(postImage({

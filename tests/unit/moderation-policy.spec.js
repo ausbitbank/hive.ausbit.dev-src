@@ -320,6 +320,19 @@ describe('decideContent', () => {
       ignoredVoters: [],
       listErrors: 0,
       listTruncated: [],
+      safetyFloor: {
+        enabled: true,
+        status: 'ready',
+        names: [],
+        total: 0,
+        truncated: false,
+        source: {
+          id: 'hive-blog-phishing',
+          owner: 'hive.blog',
+          title: 'hive.blog phishing and hacked-account list',
+          asOf: '2026-11-24'
+        }
+      },
       ...overrides
     }
   }
@@ -346,6 +359,109 @@ describe('decideContent', () => {
   it('labels a direct mute in Open instead of hiding it', () => {
     const decision = decide({ preset: 'open', viewer: contentViewer({ muted: ['alice'] }) })
     expect(decision.display).toBe('label')
+  })
+
+  it('collapses the default phishing safety floor in every preset', () => {
+    const viewer = contentViewer({
+      safetyFloor: {
+        enabled: true,
+        status: 'ready',
+        names: ['phish'],
+        total: 1,
+        truncated: false,
+        source: {
+          id: 'hive-blog-phishing',
+          owner: 'hive.blog',
+          title: 'hive.blog phishing and hacked-account list',
+          asOf: '2026-11-24'
+        }
+      }
+    })
+    for (const preset of ['open', 'balanced', 'strict', 'follow-only']) {
+      const decision = decide({ author: 'phish', preset, viewer })
+      expect(decision.display).toBe('collapse')
+      expect(decision.primary.layer).toBe(CONTENT_LAYER.SAFETY_FLOOR)
+      expect(decision.primary.label).toBe('Known phishing or compromised account')
+      expect(decision.primary.evidence.sourceOwner).toBe('hive.blog')
+      expect(decision.primary.evidence.sourceAsOf).toBe('2026-11-24')
+    }
+  })
+
+  it('labels the safety floor on a deliberate profile or post visit', () => {
+    for (const surface of ['profile', 'post']) {
+      const decision = decide({
+        surface,
+        author: 'phish',
+        viewer: contentViewer({
+          safetyFloor: {
+            enabled: true,
+            status: 'ready',
+            names: ['phish'],
+            total: 1,
+            truncated: false,
+            source: { id: 'hive-blog-phishing', owner: 'hive.blog', asOf: '2026-11-24' }
+          }
+        })
+      })
+      expect(decision.display).toBe('label')
+      expect(decision.primary.layer).toBe(CONTENT_LAYER.SAFETY_FLOOR)
+    }
+  })
+
+  it('honours an explicit show override above the safety floor', () => {
+    const decision = decide({
+      author: 'phish',
+      viewer: contentViewer({
+        showAuthors: ['phish'],
+        safetyFloor: {
+          enabled: true,
+          status: 'ready',
+          names: ['phish'],
+          total: 1,
+          source: { id: 'hive-blog-phishing', owner: 'hive.blog' }
+        }
+      })
+    })
+    expect(decision.display).toBe('show')
+    expect(decision.reasons.some(reason => reason.layer === CONTENT_LAYER.SAFETY_FLOOR)).toBe(true)
+  })
+
+  it('does not apply the safety floor when the viewer turns it off', () => {
+    const decision = decide({
+      author: 'phish',
+      viewer: contentViewer({
+        safetyFloor: {
+          enabled: false,
+          status: 'ready',
+          names: ['phish'],
+          total: 1,
+          source: { id: 'hive-blog-phishing', owner: 'hive.blog' }
+        }
+      })
+    })
+    expect(decision.display).toBe('show')
+    expect(decision.reasons.some(reason => reason.layer === CONTENT_LAYER.SAFETY_FLOOR)).toBe(false)
+  })
+
+  it('allows a custom show rule to label the safety floor without collapsing', () => {
+    const custom = JSON.parse(JSON.stringify(contentModule.DEFAULT_CONTENT_CUSTOM))
+    custom.feed.safetyFloor = 'show'
+    const decision = decide({
+      preset: 'custom',
+      custom,
+      author: 'phish',
+      viewer: contentViewer({
+        safetyFloor: {
+          enabled: true,
+          status: 'ready',
+          names: ['phish'],
+          total: 1,
+          source: { id: 'hive-blog-phishing', owner: 'hive.blog' }
+        }
+      })
+    })
+    expect(decision.display).toBe('show')
+    expect(decision.primary.layer).toBe(CONTENT_LAYER.SAFETY_FLOOR)
   })
 
   it('keeps a blacklist as a warning label, not a mute', () => {

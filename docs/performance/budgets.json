@@ -5,26 +5,26 @@
   "cls": 0.1,
   "routes": {
     "/": {
-      "jsKb": 308,
-      "routeJsKb": 178,
+      "jsKb": 312,
+      "routeJsKb": 181,
       "totalKb": 560,
       "lcpMs": 2500
     },
     "/browse": {
-      "jsKb": 280,
-      "routeJsKb": 146,
+      "jsKb": 282,
+      "routeJsKb": 151,
       "totalKb": 560,
       "lcpMs": 3500
     },
     "/b/1": {
       "jsKb": 265,
-      "routeJsKb": 125,
+      "routeJsKb": 127,
       "totalKb": 520,
       "lcpMs": 2500
     },
     "/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more": {
       "jsKb": 440,
-      "routeJsKb": 306,
+      "routeJsKb": 310,
       "totalKb": 700,
       "lcpMs": 3500
     },
@@ -36,7 +36,7 @@
     },
     "/market": {
       "jsKb": 255,
-      "routeJsKb": 116,
+      "routeJsKb": 120,
       "totalKb": 500,
       "lcpMs": 2000
     },
@@ -48,7 +48,7 @@
     },
     "/search?q=hive": {
       "jsKb": 260,
-      "routeJsKb": 127,
+      "routeJsKb": 130,
       "totalKb": 500,
       "lcpMs": 2000
     }

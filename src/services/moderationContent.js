@@ -26,6 +26,7 @@ import { normalizeVotes, voteDirection } from './voteBreakdown'
 export const CONTENT_SURFACES = ['feed', 'comment', 'community', 'search', 'profile', 'post']
 export const CONTENT_DISPLAY = ['show', 'label', 'collapse', 'hide']
 export const CONTENT_SIGNALS = [
+  'safetyFloor',
   'mute',
   'listMute',
   'blacklist',
@@ -41,6 +42,7 @@ const DISPLAY_RANK = { show: 0, label: 1, collapse: 2, hide: 3 }
 export const CONTENT_LAYER = {
   VIEWER_SHOW: 'viewer-show',
   VIEWER_HIDE: 'viewer-hide',
+  SAFETY_FLOOR: 'safety-floor',
   PERSONAL_MUTE: 'personal-mute',
   PERSONAL_BLACKLIST: 'personal-blacklist',
   FOLLOWED_MUTE_LIST: 'followed-mute-list',
@@ -55,6 +57,7 @@ export const CONTENT_LAYER = {
 }
 
 const BALANCED_RULES = {
+  safetyFloor: 'collapse',
   mute: 'collapse',
   listMute: 'collapse',
   blacklist: 'label',
@@ -66,6 +69,7 @@ const BALANCED_RULES = {
 }
 
 const OPEN_RULES = {
+  safetyFloor: 'collapse',
   mute: 'label',
   listMute: 'label',
   blacklist: 'label',
@@ -77,6 +81,7 @@ const OPEN_RULES = {
 }
 
 const STRICT_RULES = {
+  safetyFloor: 'collapse',
   mute: 'collapse',
   listMute: 'collapse',
   blacklist: 'label',
@@ -224,6 +229,11 @@ export function decideContent ({
   const listErrors = Math.max(0, Number(viewer.listErrors) || 0)
   const listTruncated = Array.isArray(viewer.listTruncated) ? viewer.listTruncated : []
   const ignoredVoters = normalizeList(viewer.ignoredVoters)
+  const safetyFloor = viewer.safetyFloor && typeof viewer.safetyFloor === 'object'
+    ? viewer.safetyFloor
+    : null
+  const safetyFloorEnabled = Boolean(safetyFloor && safetyFloor.enabled !== false)
+  const safetyFloorNames = safetyFloor && Array.isArray(safetyFloor.names) ? safetyFloor.names : []
 
   const stats = post && typeof post.stats === 'object' && post.stats ? post.stats : {}
   const metadata = post && typeof post === 'object' ? post : {}
@@ -252,6 +262,30 @@ export function decideContent ({
         'viewer',
         'Shown by your override',
         'You chose to show this author or item locally.'
+      ))
+    }
+
+    if (safetyFloorEnabled && includesName(safetyFloorNames, name)) {
+      const source = safetyFloor.source && typeof safetyFloor.source === 'object'
+        ? safetyFloor.source
+        : {}
+      const sourceOwner = normalizeName(source.owner)
+      add('safetyFloor', contentReason(
+        CONTENT_LAYER.SAFETY_FLOOR,
+        'site',
+        'Known phishing or compromised account',
+        'This account is on the ' +
+          (sourceOwner ? '@' + sourceOwner + ' phishing/hacked-account list' : 'site phishing safety list') +
+          '. The item is collapsed by default so links and media are not shown; you can show it anyway.',
+        {
+          safetyFloor: true,
+          sourceId: String(source.id || ''),
+          sourceOwner,
+          sourceTitle: String(source.title || ''),
+          sourceAsOf: String(source.asOf || ''),
+          total: Number(safetyFloor.total) || safetyFloorNames.length
+        },
+        'show-item'
       ))
     }
 

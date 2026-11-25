@@ -71,7 +71,8 @@ async function mockChain (page, {
   rankedPosts = null,
   voteHistory = null,
   accountOverride = null,
-  listCounts = null
+  listCounts = null,
+  safetyFloorNames = null
 } = {}) {
   await page.route('https://images.hive.blog/**', route => route.fulfill({
     status: 200,
@@ -111,6 +112,17 @@ async function mockChain (page, {
       }
 
       if (payload.method === 'bridge.get_follow_list') {
+        if (Array.isArray(safetyFloorNames) && params.observer === 'hive.blog' && params.follow_type === 'muted') {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              result: safetyFloorNames.map(name => ({ name, muted_list_description: '' }))
+            })
+          })
+        }
         if (listCounts && Number.isFinite(listCounts[params.observer])) {
           return route.fulfill({
             status: 200,
@@ -294,11 +306,16 @@ test('moderation settings page switches presets and persists', async ({ page }) 
   await page.goto('/settings/moderation')
   await waitForApp(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Moderation' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Phishing safety floor' })).toBeVisible()
+  await expect(page.getByLabel('Enable the phishing safety floor')).toBeChecked()
+  await page.getByLabel('Enable the phishing safety floor').uncheck()
+  await expect(page.getByText('Off: known phishing and compromised accounts are not collapsed')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Discover lists' })).toBeVisible()
   await expect(page.getByText('Phishing accounts', { exact: true })).toBeVisible()
   await expect(page.getByText('Plenty of Phish — source list')).toBeVisible()
   await expect(page.getByText('Hive Analytics blacklist (very large)')).toBeVisible()
-  await expect(page.getByText('2 names')).toBeVisible()
+  const phishingCard = page.locator('.mod-discovery__card').filter({ hasText: 'Phishing accounts' })
+  await expect(phishingCard.locator('.mod-discovery__count')).toContainText('2 names')
   const largeCard = page.locator('.mod-discovery__card').filter({ hasText: 'Hive Analytics blacklist' })
   await expect(largeCard).toContainText('Not supported in this client')
   await expect(largeCard.getByRole('button', { name: 'Subscribe' })).toHaveCount(0)
@@ -307,10 +324,14 @@ test('moderation settings page switches presets and persists', async ({ page }) 
 
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('hive:moderation:v1:guest') || '{}'))
   expect(stored.preset).toBe('strict')
+  expect(stored.safetyFloor.enabled).toBe(false)
 
   await page.reload()
   await waitForApp(page)
   await expect(page.locator('.mod-preset').filter({ hasText: 'Strict' })).toHaveAttribute('aria-pressed', 'true')
+  expect(await runAxe(page)).toEqual([])
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(await runAxe(page)).toEqual([])
 })
 
 test('a negative-reputation feed card collapses with an explanation and can be shown', async ({ page }) => {
@@ -358,6 +379,53 @@ test('a negative-reputation feed card collapses with an explanation and can be s
   await expect(page.locator('.post-card').first().locator('.mod-notice')).toHaveCount(0)
 })
 
+
+test('the default safety floor collapses a listed phishing account and can be shown', async ({ page }) => {
+  test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
+  const post = {
+    author: 'phish',
+    permlink: 'phishing-post',
+    title: 'A phishing post',
+    body: 'This body should be collapsed by the default safety floor.',
+    created: '2026-11-25T00:00:00',
+    category: 'hive',
+    community: 'hive-1',
+    community_title: 'Hive',
+    children: 0,
+    net_votes: 1,
+    author_reputation: 60,
+    payout: 0,
+    pending_payout_value: '0.000 HBD',
+    total_payout_value: '0.000 HBD',
+    curator_payout_value: '0.000 HBD',
+    max_accepted_payout: '1000000.000 HBD',
+    percent_hbd: 10000,
+    json_metadata: { tags: ['hive'] },
+    stats: {},
+    active_votes: [],
+    reblogged_by: []
+  }
+  await mockChain(page, { rankedPosts: [post], safetyFloorNames: ['phish'] })
+
+  await page.goto('/created')
+  await waitForApp(page)
+  const card = page.locator('.post-card').first()
+  await expect(card).toBeVisible({ timeout: 20000 })
+  await expect(card.locator('.mod-notice')).toContainText('Known phishing or compromised account')
+  await expect(card.locator('.post-card__summary')).toHaveCount(0)
+
+  await card.getByRole('button', { name: 'Why?' }).click()
+  await expect(card.locator('.mod-notice')).toContainText('Source: @hive.blog')
+  await expect(card.locator('.mod-notice')).toContainText('as of 2026-11-24')
+
+  await card.getByRole('button', { name: 'Show anyway' }).click()
+  await expect(card.locator('.mod-notice')).toHaveCount(0)
+  await expect(card.locator('.post-card__summary')).toBeVisible()
+
+  await page.reload()
+  await waitForApp(page)
+  await expect(page.locator('.post-card').first().locator('.mod-notice')).toHaveCount(0)
+})
 
 test('downvotes tab shows voter evidence and local voter exclusion', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')

@@ -248,8 +248,8 @@ Numbering note: `docs/workstreams/W62-hiveauth.md` and
 signing work as **W62-hiveauth**. W71 is complete; W72 is deployed with its
 physical-device matrix still open; W73 is complete apart from the
 explicitly deferred items in that section; W74 and W75 are deployed and
-live-smoked; W76 is a local hardening pass on W73. The next free workstream
-number is W77.
+live-smoked; W76 is a local hardening pass on W73; W77 adds the default-on
+phishing floor. The next free workstream number is W78.
 
 ### W71 — Theme safety (complete)
 
@@ -438,6 +438,17 @@ safety floor is shipped. See
 
 The optional safety floor, notification opt-ins, on-chain list creation and
 aggregate community signals remain follow-ups.
+
+### W77 — Default-on phishing safety floor
+
+The safety-floor decision is settled: on by default and collapsed on a match.
+It reads only `@hive.blog`'s documented phishing/hacked-account mute list,
+labels every match with the source and date, applies in every preset (including
+Open), and keeps Show anyway / Always show author. Profiles and posts the
+viewer deliberately opens are labelled rather than removed. The settings page
+shows the source, live check status and an on/off toggle, and the policy
+exports/imports with the local document. See
+[`docs/workstreams/W77-safety-floor.md`](workstreams/W77-safety-floor.md).
 
 ## Definition of done
 

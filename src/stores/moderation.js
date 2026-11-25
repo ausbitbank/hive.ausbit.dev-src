@@ -254,6 +254,9 @@ export const useModerationStore = defineStore('moderation', {
     listsOverrideFollows (state) {
       return state.policy.lists?.listsOverrideFollows === true
     },
+    safetyFloorEnabled (state) {
+      return state.policy.safetyFloor?.enabled !== false
+    },
     shouldDisclose (state) {
       return state.policy.preset === 'balanced' && state.policy.disclosureSeen !== true
     },
@@ -370,7 +373,7 @@ export const useModerationStore = defineStore('moderation', {
       })
     },
 
-    decisionForContent ({ author, post = null, surface = 'feed', itemKey = '' } = {}) {
+    decisionForContent ({ author, post = null, surface = 'feed', itemKey = '', safetyFloor = null } = {}) {
       const name = normalizeName(author || (post && post.author))
       return decideContent({
         surface,
@@ -390,7 +393,11 @@ export const useModerationStore = defineStore('moderation', {
           hideItems: this.hideItems,
           ignoredVoters: this.ignoredVoters,
           listErrors: this.context.listErrors,
-          listTruncated: this.context.listTruncated
+          listTruncated: this.context.listTruncated,
+          safetyFloor: {
+            ...(safetyFloor && typeof safetyFloor === 'object' ? safetyFloor : {}),
+            enabled: this.safetyFloorEnabled
+          }
         },
         preset: this.contentPreset,
         custom: this.contentCustom,
@@ -471,6 +478,15 @@ export const useModerationStore = defineStore('moderation', {
       this.policy = {
         ...this.policy,
         lists: { ...(this.policy.lists || {}), listsOverrideFollows: value === true }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    setSafetyFloorEnabled (value) {
+      this.policy = {
+        ...this.policy,
+        safetyFloor: { ...(this.policy.safetyFloor || {}), enabled: value === true }
       }
       this.persistPolicy()
       return true

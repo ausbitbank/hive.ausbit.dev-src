@@ -205,6 +205,10 @@ export default {
       if (Number.isFinite(Number(evidence.listTruncated)) && Number(evidence.listTruncated) > 0) {
         return Number(evidence.listTruncated) + ' list index(es) partial'
       }
+      if (evidence.sourceOwner) {
+        return 'Source: @' + evidence.sourceOwner +
+          (evidence.sourceAsOf ? ' · as of ' + evidence.sourceAsOf : '')
+      }
       if (Number.isFinite(Number(evidence.reputation))) return 'Reputation: ' + evidence.reputation
       if (Number.isFinite(Number(evidence.ignoredDownvotes)) && Number(evidence.ignoredDownvotes) > 0) {
         return Number(evidence.ignoredDownvotes) + ' ignored downvote(s) excluded locally; raw chain weight unchanged'

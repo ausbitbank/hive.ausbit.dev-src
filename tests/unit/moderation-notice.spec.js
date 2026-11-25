@@ -66,6 +66,28 @@ describe('ModerationNotice', () => {
     expect(wrapper.text()).not.toContain('Show anyway')
   })
 
+  it('shows the safety-floor source in the evidence details', async () => {
+    const wrapper = mountNotice({
+      decision: {
+        ...decision,
+        primary: {
+          layer: 'safety-floor',
+          label: 'Known phishing or compromised account',
+          detail: 'This account is on the @hive.blog phishing/hacked-account list.',
+          evidence: { sourceOwner: 'hive.blog', sourceAsOf: '2026-11-24' }
+        },
+        reasons: [{
+          layer: 'safety-floor',
+          label: 'Known phishing or compromised account',
+          detail: 'This account is on the @hive.blog phishing/hacked-account list.',
+          evidence: { sourceOwner: 'hive.blog', sourceAsOf: '2026-11-24' }
+        }]
+      }
+    })
+    await wrapper.findAll('button').find(button => button.text() === 'Why?').trigger('click')
+    expect(wrapper.text()).toContain('Source: @hive.blog · as of 2026-11-24')
+  })
+
   it('lists known downvoters and emits the chosen local exclusion', async () => {
     const wrapper = mountNotice({
       decision: {

@@ -8,6 +8,7 @@
 import { decideContent } from 'src/services/moderationContent'
 import { normalizeName } from 'src/services/moderationPolicy'
 import { loadModerationStore } from 'src/services/moderationStoreLoader'
+import { safetyFloorState } from 'src/services/safetyFloor'
 
 const GUEST_KEY = 'hive:moderation:v1:guest'
 
@@ -17,6 +18,7 @@ function guestPolicy () {
     custom: null,
     listsOverrideFollows: false,
     disclosureSeen: false,
+    safetyFloor: { enabled: true },
     overrides: { showAuthors: [], hideAuthors: [], showItems: [], hideItems: [], ignoredVoters: [] }
   }
   try {
@@ -25,6 +27,7 @@ function guestPolicy () {
     return {
       ...fallback,
       ...parsed,
+      safetyFloor: { enabled: parsed?.safetyFloor?.enabled !== false },
       overrides: { ...fallback.overrides, ...(parsed.overrides || {}) }
     }
   } catch {
@@ -99,7 +102,13 @@ export default {
     moderationDecision ({ author = '', post = null, surface = 'feed', itemKey = '' } = {}) {
       const key = itemKey || (post ? post.author + '/' + post.permlink : author)
       if (this.moderationStore) {
-        return this.moderationStore.decisionForContent({ author, post, surface, itemKey: key })
+        return this.moderationStore.decisionForContent({
+          author,
+          post,
+          surface,
+          itemKey: key,
+          safetyFloor: safetyFloorState
+        })
       }
       const policy = this.moderationGuestPolicy || guestPolicy()
       return decideContent({
@@ -113,7 +122,11 @@ export default {
           hideAuthors: policy.overrides?.hideAuthors || [],
           showItems: policy.overrides?.showItems || [],
           hideItems: policy.overrides?.hideItems || [],
-          ignoredVoters: policy.overrides?.ignoredVoters || []
+          ignoredVoters: policy.overrides?.ignoredVoters || [],
+          safetyFloor: {
+            ...safetyFloorState,
+            enabled: policy.safetyFloor?.enabled !== false
+          }
         },
         preset: policy.preset || 'balanced',
         custom: policy.custom || null,

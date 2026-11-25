@@ -27,6 +27,10 @@ export function defaultModerationPolicy () {
     version: MODERATION_VERSION,
     preset: 'balanced',
     disclosureSeen: false,
+    safetyFloor: {
+      // On by default: a narrow, documented phishing/compromised-account list.
+      enabled: true
+    },
     custom: JSON.parse(JSON.stringify(DEFAULT_CONTENT_CUSTOM)),
     lists: {
       muteOwners: [],
@@ -132,11 +136,17 @@ export function normalizeModerationPolicy (value) {
   const lists = value.lists && typeof value.lists === 'object' && !Array.isArray(value.lists)
     ? value.lists
     : {}
+  const safetyFloor = value.safetyFloor && typeof value.safetyFloor === 'object' && !Array.isArray(value.safetyFloor)
+    ? value.safetyFloor
+    : {}
 
   return {
     version: MODERATION_VERSION,
     preset: MODERATION_PRESETS.includes(value.preset) ? value.preset : defaults.preset,
     disclosureSeen: value.disclosureSeen === true,
+    safetyFloor: {
+      enabled: booleanOr(safetyFloor.enabled, defaults.safetyFloor.enabled)
+    },
     custom: normalizeCustom(value.custom),
     lists: {
       muteOwners: normalizeAuthorList(lists.muteOwners),

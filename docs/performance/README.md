@@ -63,16 +63,23 @@ content policy by about 1 KB on Home, Browse, Post and Search; those route JS
 budgets (and Home's total JS) were raised by 1–4 KB. Initial JS and LCP/CLS
 budgets are unchanged.
 
+The 2026-11-25 W77 default-on phishing floor adds a small dynamically imported
+safety-floor chunk that starts its cached list read at boot, before the first
+feed render. It adds roughly 2–5 KB to the route transfer for every route
+because the floor protects guests on any content surface; the route JS and Home
+total budgets were raised accordingly. Initial JS, CSS, LCP and CLS budgets are
+unchanged.
+
 | Route | Initial JS KB | Route JS KB | CSS KB | Total KB | LCP ms | CLS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Home | 160 | 178 | 55 | 560 | 2500 | 0.1 |
-| Browse | 160 | 146 | 55 | 560 | 3500 | 0.1 |
-| Block 1 | 160 | 125 | 55 | 520 | 2500 | 0.1 |
-| Post | 160 | 306 | 55 | 700 | 3500 | 0.1 |
+| Home | 160 | 181 | 55 | 560 | 2500 | 0.1 |
+| Browse | 160 | 151 | 55 | 560 | 3500 | 0.1 |
+| Block 1 | 160 | 127 | 55 | 520 | 2500 | 0.1 |
+| Post | 160 | 310 | 55 | 700 | 3500 | 0.1 |
 | Wallet | 160 | 165 | 55 | 560 | 3500 | 0.1 |
-| Internal market | 160 | 115 | 55 | 500 | 2000 | 0.1 |
+| Internal market | 160 | 120 | 55 | 500 | 2000 | 0.1 |
 | Compose | 160 | 170 | 55 | 540 | 2000 | 0.1 |
-| Search | 160 | 127 | 55 | 500 | 2000 | 0.1 |
+| Search | 160 | 130 | 55 | 500 | 2000 | 0.1 |
 
 ## Largest chunks
 

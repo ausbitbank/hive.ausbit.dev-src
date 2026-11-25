@@ -28,6 +28,7 @@ describe('moderation settings schema', () => {
     const policy = defaultModerationPolicy()
     expect(policy.version).toBe(MODERATION_VERSION)
     expect(policy.preset).toBe('balanced')
+    expect(policy.safetyFloor).toEqual({ enabled: true })
     expect(policy.skins).toEqual({
       blockMuted: true,
       blockNegativeReputation: true,
@@ -50,6 +51,7 @@ describe('moderation settings schema', () => {
       version: '1',
       preset: 'strict',
       disclosureSeen: true,
+      safetyFloor: { enabled: false },
       extra: 'drop me',
       skins: {
         blockMuted: false,
@@ -65,6 +67,7 @@ describe('moderation settings schema', () => {
     })
     expect(policy.preset).toBe('strict')
     expect(policy.disclosureSeen).toBe(true)
+    expect(policy.safetyFloor).toEqual({ enabled: false })
     expect(policy.extra).toBeUndefined()
     expect(policy.skins).toEqual({
       blockMuted: false,
@@ -75,6 +78,11 @@ describe('moderation settings schema', () => {
     expect(policy.overrides.showAuthors).toEqual(['alice', 'b'.repeat(16)])
     expect(policy.overrides.hideAuthors).toEqual(['carol'])
     expect(policy.overrides.unknown).toBeUndefined()
+  })
+
+  it('enables the safety floor for policies written before it existed', () => {
+    const policy = normalizeModerationPolicy({ preset: 'balanced', skins: { blockMuted: true } })
+    expect(policy.safetyFloor).toEqual({ enabled: true })
   })
 
   it('migrates the pre-release single followed-skin flag', () => {
@@ -187,6 +195,7 @@ describe('moderation settings export/import', () => {
     policy.preset = 'strict'
     policy.overrides.showAuthors = ['alice']
     policy.custom.feed.mute = 'label'
+    policy.safetyFloor.enabled = false
 
     const text = serializeModerationExport(policy)
     const envelope = JSON.parse(text)
@@ -198,6 +207,7 @@ describe('moderation settings export/import', () => {
     expect(parsed.policy.preset).toBe('strict')
     expect(parsed.policy.overrides.showAuthors).toEqual(['alice'])
     expect(parsed.policy.custom.feed.mute).toBe('label')
+    expect(parsed.policy.safetyFloor.enabled).toBe(false)
   })
 
   it('accepts a bare policy object and rejects foreign or future files', () => {

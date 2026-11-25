@@ -38,6 +38,41 @@
         </div>
       </section>
 
+      <section class="mod-section" aria-labelledby="mod-floor-title">
+        <div class="mod-section__head">
+          <div>
+            <h2 id="mod-floor-title" class="mod-section__title">Phishing safety floor</h2>
+            <p class="mod-section__hint">
+              On by default. A narrow safety floor collapses known phishing and compromised accounts
+              in feeds and comments. Profiles and posts you deliberately open are labelled rather than
+              removed. Every item still has “Show anyway”.
+            </p>
+          </div>
+          <q-toggle
+            :model-value="moderation.safetyFloorEnabled"
+            color="primary"
+            label="Enabled"
+            dense
+            aria-label="Enable the phishing safety floor"
+            @update:model-value="moderation.setSafetyFloorEnabled($event)"
+          />
+        </div>
+        <div class="mod-option">
+          <div>
+            <div class="mod-option__label">
+              Source: <router-link :to="safetyFloorSource.url">@{{ safetyFloorSource.owner }}</router-link>
+              — {{ safetyFloorSource.title }}
+            </div>
+            <div class="mod-option__hint">
+              {{ safetyFloorSource.caution }} The list owner maintains it; this client only reads the
+              public list and never writes to it.
+            </div>
+          </div>
+          <span class="mod-section__hint" role="status">{{ safetyFloorStatus }}</span>
+        </div>
+        <p v-if="safetyFloorNote" class="mod-section__hint" role="status">{{ safetyFloorNote }}</p>
+      </section>
+
       <section class="mod-section" aria-labelledby="mod-matrix-title">
         <div class="mod-section__head">
           <div>
@@ -740,16 +775,22 @@ import {
 } from 'src/services/followLists'
 import { DISCOVERY_GROUP_LABELS, DISCOVERY_LISTS } from 'src/services/moderationLists'
 import { fetchModerationListEntries } from 'src/services/moderationData'
+import {
+  SAFETY_FLOOR_SOURCE,
+  ensureSafetyFloor,
+  safetyFloorState
+} from 'src/services/safetyFloor'
 
 const PRESETS = [
-  { value: 'open', label: 'Open', detail: 'Show everything. Label downvotes, reputation and NSFW; no content is hidden by the preset.' },
-  { value: 'balanced', label: 'Balanced', detail: 'Collapse muted, low-reputation and community-muted content. Label downvotes and blacklists.' },
-  { value: 'strict', label: 'Strict', detail: 'Collapse muted, low-reputation, heavily downvoted and NSFW content. Blacklists stay labels.' },
-  { value: 'follow-only', label: 'Follow-only', detail: 'Collapse content from accounts you do not follow in feeds, comments and search.' },
+  { value: 'open', label: 'Open', detail: 'Show everything except a narrow phishing safety floor. The floor collapses known phishing/hacked accounts and can be shown item by item.' },
+  { value: 'balanced', label: 'Balanced', detail: 'Collapse the phishing safety floor, muted, low-reputation and community-muted content. Label downvotes and blacklists.' },
+  { value: 'strict', label: 'Strict', detail: 'Collapse the phishing safety floor, muted, low-reputation, heavily downvoted and NSFW content. Blacklists stay labels.' },
+  { value: 'follow-only', label: 'Follow-only', detail: 'Collapse the phishing safety floor and content from accounts you do not follow in feeds, comments and search.' },
   { value: 'custom', label: 'Custom', detail: 'Use the per-surface table below. Every rule is editable.' }
 ]
 
 const SIGNAL_LABELS = {
+  safetyFloor: 'Safety floor',
   mute: 'Direct mute',
   listMute: 'Followed mute list',
   blacklist: 'Blacklist',
@@ -818,6 +859,30 @@ export default {
         ? this.moderation.context.listTruncated
         : []
     },
+    safetyFloorSource () {
+      return SAFETY_FLOOR_SOURCE
+    },
+    safetyFloorStatus () {
+      if (safetyFloorState.status === 'ready') {
+        if (safetyFloorState.error) return 'Showing the last checked list; the refresh failed.'
+        if (safetyFloorState.truncated) {
+          return 'Partial index: ' + safetyFloorState.names.length.toLocaleString() +
+            ' of ' + safetyFloorState.total.toLocaleString() + ' names checked.'
+        }
+        return safetyFloorState.names.length.toLocaleString() + ' names checked.'
+      }
+      if (safetyFloorState.status === 'error') return 'The list could not be checked.'
+      return 'Checking the list…'
+    },
+    safetyFloorNote () {
+      if (!this.moderation.safetyFloorEnabled) {
+        return 'Off: known phishing and compromised accounts are not collapsed by the safety floor. Your mute lists and other rules still apply.'
+      }
+      if (safetyFloorState.status === 'error') {
+        return 'The safety floor list could not be loaded. Content is shown with the signals available in the payload; retry or check the source profile.'
+      }
+      return ''
+    },
     discoveryGroups () {
       const context = this.moderation.context
       const groups = []
@@ -872,6 +937,7 @@ export default {
     })
     this.sync()
     this.loadDiscoveryCounts()
+    ensureSafetyFloor()
   },
   watch: {
     '$hiveStore.user.username' () {

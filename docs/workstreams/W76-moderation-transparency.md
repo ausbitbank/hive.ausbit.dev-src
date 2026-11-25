@@ -132,8 +132,9 @@ Home/Browse/Post/Search route chunks.
 
 ## Follow-ups
 
-- The optional safety floor is still not implemented; if it ships it needs a
-  documented, visible source and an override path.
+- The safety floor landed separately in
+  [`W77-safety-floor.md`](W77-safety-floor.md): default-on, source-visible and
+  overridable.
 - Notification opt-ins remain deferred.
 - On-chain list creation and aggregate community signals remain the explicitly
   deferred Phase 3 items.

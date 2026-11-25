@@ -11,6 +11,7 @@ vi.mock('../../src/services/moderationData', () => ({
 
 const { useModerationStore } = await import('../../src/stores/moderation')
 const { moderationStorageKey } = await import('../../src/services/moderationSettings')
+const { resetSafetyFloorState, safetyFloorState } = await import('../../src/services/safetyFloor')
 
 function context (overrides = {}) {
   return {
@@ -38,6 +39,7 @@ function freshStore (scope = 'guest') {
 beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
+  resetSafetyFloorState()
   mocks.fetchViewerModerationContext.mockReset()
   mocks.fetchViewerModerationContext.mockResolvedValue(context())
 })
@@ -61,6 +63,31 @@ describe('moderation store context', () => {
     await pending
     expect(store.context.status).toBe('ready')
     expect(mocks.fetchViewerModerationContext).toHaveBeenCalledWith('alice', { force: false })
+  })
+
+  it('applies the shared safety floor and persists the per-account toggle', async () => {
+    safetyFloorState.status = 'ready'
+    safetyFloorState.names = ['phish']
+    safetyFloorState.total = 1
+    safetyFloorState.source = {
+      id: 'hive-blog-phishing',
+      owner: 'hive.blog',
+      title: 'hive.blog phishing and hacked-account list',
+      asOf: '2026-11-24'
+    }
+    const store = freshStore('guest')
+    expect(store.safetyFloorEnabled).toBe(true)
+
+    const post = { author_reputation: 60, stats: {} }
+    const collapsed = store.decisionForContent({ author: 'phish', post, safetyFloor: safetyFloorState })
+    expect(collapsed.display).toBe('collapse')
+    expect(collapsed.primary.layer).toBe('safety-floor')
+
+    store.setSafetyFloorEnabled(false)
+    expect(store.safetyFloorEnabled).toBe(false)
+    const shown = store.decisionForContent({ author: 'phish', post, safetyFloor: safetyFloorState })
+    expect(shown.display).toBe('show')
+    expect(shown.reasons.some(reason => reason.layer === 'safety-floor')).toBe(false)
   })
 
   it('blocks a muted author and lets a local show override lift it', async () => {
