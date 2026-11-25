@@ -1,7 +1,7 @@
 # W77 — Default-on phishing safety floor
 
 Date: 2026-11-25
-Status: implemented; local verification green (not deployed in this pass).
+Status: implemented, deployed and live-smoked.
 
 Contract: issue #94. Follows
 [`W73-moderation-policy.md`](W73-moderation-policy.md) and
@@ -129,6 +129,18 @@ The notice's evidence line reads, for example,
 
 Initial JS remains 160 KB. The floor's dynamic chunk is about 2–5 KB of route
 transfer on every route because guests are protected on any content surface.
+
+## Deployment
+
+Deployed on 2026-11-25 from commit `9c134c9` with `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261125T035114Z.tar.gz`
+  (`sha256 2f8899df…51b40d`).
+- Production `index.html` SHA-256 `36367f9b…77bae4` matches the local build.
+- Live `/` and `/settings/moderation` return 200.
+- Live smoke: the settings page shows the **Phishing safety floor** section,
+  source `@hive.blog` and the on-by-default toggle; the public list loaded and
+  cached **956 names** locally (`hive:safety-floor:v1`), with no page errors.
 
 ## Follow-ups
 

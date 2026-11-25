@@ -442,6 +442,7 @@ aggregate community signals remain follow-ups.
 ### W77 — Default-on phishing safety floor
 
 The safety-floor decision is settled: on by default and collapsed on a match.
+W77 is deployed and live-smoked.
 It reads only `@hive.blog`'s documented phishing/hacked-account mute list,
 labels every match with the source and date, applies in every preset (including
 Open), and keeps Show anyway / Always show author. Profiles and posts the
