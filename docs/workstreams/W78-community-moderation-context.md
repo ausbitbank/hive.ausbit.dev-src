@@ -1,7 +1,7 @@
 # W78 — Community moderation context
 
 Date: 2026-11-25
-Status: implemented; local verification green (not deployed in this pass).
+Status: implemented, deployed and live-smoked.
 
 Contract: issue #94. Prior records:
 [`W73-lists-community.md`](W73-lists-community.md),
@@ -92,6 +92,19 @@ states this explicitly.
 | `bun run perf:check` | all budgets pass |
 | `e2e/moderation.spec.js` | **12/12** green, including the community context and axe |
 | axe `/c/:community` | green in the community context test |
+
+## Deployment
+
+Deployed on 2026-11-25 from commit `3187378` with `./scripts/deploy.sh`.
+
+- Backup: `hurgenburgen:~/hive-backups/hive.ausbit.dev-20261125T041222Z.tar.gz`
+  (`sha256 2cec8363…5b4204d`).
+- Production `index.html` SHA-256 `ffadaf3c…59f58bc` matches the local build.
+- Live `/` and `/c/hive-139531` return 200.
+- Live smoke: the community page renders **Community moderation context**,
+  team counts (`1 owner · 5 admins · 19 mods`), the muted-feed link
+  `/muted/hive-139531`, the Rules and team link and the honest empty state,
+  with no page errors.
 
 ## Follow-ups
 
