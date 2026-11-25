@@ -70,16 +70,21 @@ because the floor protects guests on any content surface; the route JS and Home
 total budgets were raised accordingly. Initial JS, CSS, LCP and CLS budgets are
 unchanged.
 
+The 2026-11-25 W78 image-proxy preference is imported by the shared render,
+short-form media and post-preview paths, so it adds roughly 1–2 KB to every
+route's JS. Route JS (and the affected total-JS) budgets were raised by 2–4 KB
+with 1 KB headroom. Initial JS, CSS, LCP and CLS budgets are unchanged.
+
 | Route | Initial JS KB | Route JS KB | CSS KB | Total KB | LCP ms | CLS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Home | 160 | 182 | 55 | 560 | 2500 | 0.1 |
-| Browse | 160 | 151 | 55 | 560 | 3500 | 0.1 |
-| Block 1 | 160 | 127 | 55 | 520 | 2500 | 0.1 |
-| Post | 160 | 311 | 55 | 700 | 3500 | 0.1 |
-| Wallet | 160 | 165 | 55 | 560 | 3500 | 0.1 |
-| Internal market | 160 | 120 | 55 | 500 | 2000 | 0.1 |
+| Home | 160 | 185 | 55 | 560 | 2500 | 0.1 |
+| Browse | 160 | 155 | 55 | 560 | 3500 | 0.1 |
+| Block 1 | 160 | 130 | 55 | 520 | 2500 | 0.1 |
+| Post | 160 | 314 | 55 | 700 | 3500 | 0.1 |
+| Wallet | 160 | 167 | 55 | 560 | 3500 | 0.1 |
+| Internal market | 160 | 122 | 55 | 500 | 2000 | 0.1 |
 | Compose | 160 | 170 | 55 | 540 | 2000 | 0.1 |
-| Search | 160 | 131 | 55 | 500 | 2000 | 0.1 |
+| Search | 160 | 133 | 55 | 500 | 2000 | 0.1 |
 
 ## Largest chunks
 

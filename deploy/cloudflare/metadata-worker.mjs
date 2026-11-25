@@ -308,9 +308,72 @@ async function lightningShell (request, account = '') {
   return out
 }
 
+const CSP_REPORT_LIMIT = 8192
+
+function clip (value, max) {
+  return typeof value === 'string' ? value.replace(/[\r\n]+/g, ' ').slice(0, max) : ''
+}
+
+/**
+ * Accept CSP violation reports. Legacy `report-uri` posts a single
+ * `application/csp-report` object; `report-to` posts a
+ * `application/reports+json` array. Only a compact, whitespace-collapsed line
+ * is logged so `wrangler tail` output stays readable and cannot be forged into
+ * multi-line entries.
+ */
+export async function handleCspReport (request) {
+  const headers = { 'x-hive-meta': 'csp-report' }
+
+  if (request.method !== 'POST') {
+    return new Response(null, { status: 405, headers: { ...headers, allow: 'POST' } })
+  }
+
+  const type = (request.headers.get('content-type') || '').toLowerCase()
+  if (!type.includes('application/csp-report') && !type.includes('application/reports+json')) {
+    return new Response(null, { status: 415, headers })
+  }
+
+  let text
+  try {
+    text = await request.text()
+  } catch {
+    return new Response(null, { status: 400, headers })
+  }
+  if (text.length > CSP_REPORT_LIMIT) {
+    return new Response(null, { status: 413, headers })
+  }
+
+  let payload
+  try {
+    payload = JSON.parse(text)
+  } catch {
+    return new Response(null, { status: 400, headers })
+  }
+
+  const reports = Array.isArray(payload) ? payload : [payload]
+  for (const report of reports.slice(0, 5)) {
+    const body = report && typeof report === 'object' ? (report['csp-report'] || report.body || report) : {}
+    console.log(JSON.stringify({
+      type: 'csp-report',
+      directive: clip(body['violated-directive'] || body.effectiveDirective, 200),
+      blocked: clip(body['blocked-uri'] || body.blockedURL, 300),
+      document: clip(body['document-uri'] || body.documentURL, 300),
+      referrer: clip(body.referrer, 300),
+      sample: clip(body['script-sample'] || body.sample, 200),
+      disposition: clip(body.disposition, 30)
+    }))
+  }
+
+  return new Response(null, { status: 204, headers })
+}
+
 export default {
   async fetch (request) {
     const url = new URL(request.url)
+    if (url.pathname === '/csp-report' || url.pathname.startsWith('/csp-report/')) {
+      return handleCspReport(request)
+    }
+
     const theme = await themeShell(request).catch(() => null)
     if (theme) return theme
 
