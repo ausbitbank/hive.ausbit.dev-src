@@ -45,6 +45,23 @@ The existing content notice's **Community context** link now targets
 `/c/:community#moderation-context`, so a viewer can jump from a muted or
 labelled item to the explanation.
 
+## Real examples (verified 2026-11-25)
+
+A scan of the top 1,000 communities found that most communities have an empty
+muted feed. Non-empty examples at review time:
+
+| Community | Muted posts | Reasons seen |
+| --- | ---: | --- |
+| `hive-167922` LeoFinance | 13 | low reputation |
+| `hive-101690` Sports Talk Social | 10 | low reputation |
+| `hive-193552` Actifit | 7 | low reputation |
+| `hive-152524` Cinnamon Cup Coffee | 1 | low reputation + muted community role |
+
+The muted feed is dominated by bridge-level low-reputation judgments rather
+than community moderator mutes. The panel therefore describes the feed as the
+community's muted feed, names the source of each reason, and says explicitly
+that “low reputation” is a bridge judgment rather than a moderator action.
+
 ## Data
 
 No new network request was added. `fetchCommunityInsightData` already reads the

@@ -107,8 +107,10 @@
           </div>
 
           <p class="community-insights__note">
-            Community mutes are decisions by this community's moderators. They are separate
-            from your personal mute list, lists you follow, and your local display policy.
+            This is the community's current muted feed. It can include community moderator
+            actions and bridge-level judgments such as low reputation, a muted parent or a
+            muted role; the reason hints below name the source. All of it is separate from
+            your personal mute list, lists you follow, and your local display policy.
           </p>
 
           <div class="community-moderation__section">
@@ -126,7 +128,8 @@
               No muted posts were returned in the current bridge sample.
             </p>
             <p v-if="moderation.reasons.length" class="community-insights__note">
-              A post can have more than one bridge reason.
+              A post can have more than one bridge reason. “Low reputation” is a bridge
+              judgment, not a community moderator action.
             </p>
           </div>
 
