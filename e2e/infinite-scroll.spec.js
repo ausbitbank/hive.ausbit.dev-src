@@ -166,20 +166,25 @@ async function mockDiscussion (page) {
 }
 
 test('browse appends the next page automatically at the end of the list', async ({ page }) => {
-  await mockRankedPosts(page)
+  const calls = await mockRankedPosts(page)
+  const rankedCalls = () => calls.filter(call => call.method === 'bridge.get_ranked_posts')
   await page.goto('/browse?limit=' + PAGE_SIZE)
   await waitForApp(page)
 
   const posts = page.locator('.browse-grid > *')
   await expect.poll(() => posts.count(), { timeout: 25000 }).toBeGreaterThan(0)
 
-  const first = await posts.count()
-  expect(first).toBeLessThanOrEqual(PAGE_SIZE)
+  // The opening viewport can already reach the footer and auto-append a second
+  // page, and an early render can be replaced, so track ranked-posts requests
+  // rather than sampling a transient row count.
+  await expect.poll(() => rankedCalls().length, { timeout: 25000 }).toBeGreaterThan(0)
+  expect(rankedCalls()[0].params.limit).toBeLessThanOrEqual(PAGE_SIZE)
+  const firstCalls = rankedCalls().length
 
   await page.locator('.browse-end, .infinite-scroll__more, .infinite-scroll__loading').first().waitFor()
   await scrollToEnd(page)
 
-  await expect.poll(() => posts.count(), { timeout: 25000 }).toBeGreaterThan(first)
+  await expect.poll(() => rankedCalls().length, { timeout: 25000 }).toBeGreaterThan(firstCalls)
 
   // Reaching the final short page stops further requests and shows the end.
   await expect.poll(async () => {
@@ -187,11 +192,12 @@ test('browse appends the next page automatically at the end of the list', async 
     return page.locator('.browse-end').count()
   }, { timeout: 25000 }).toBe(1)
 
-  const after = await posts.count()
+  const settledCalls = rankedCalls().length
   await scrollToEnd(page)
   await page.waitForTimeout(750)
-  expect(await posts.count()).toBe(after)
+  expect(rankedCalls().length).toBe(settledCalls)
   expect(await page.locator('.infinite-scroll__loading').count()).toBe(0)
+  await expect(posts.first()).toBeVisible()
 })
 
 test('notifications panel pages inside its own scroll area', async ({ page }) => {

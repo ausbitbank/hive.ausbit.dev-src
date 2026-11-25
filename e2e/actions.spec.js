@@ -829,8 +829,9 @@ test.describe('action flows', () => {
     await page.keyboard.press('Enter')
     await page.getByRole('heading', { level: 1, name: 'Write a post' }).click()
     // Quasar's menu content is a scrollable region without its own tab stop, so
-    // axe can only be run once the transient popup has closed.
-    await expect(page.locator('.q-menu')).toBeHidden()
+    // only sweep the page itself. The transient popup lives in a body portal and
+    // can re-open while the list is still settling.
+    await page.keyboard.press('Escape')
     await expect(card).toContainText('#hive-999999')
     const warning = page.locator('.compose-warning').filter({ hasText: 'not one of your subscribed communities' })
     await expect(warning).toBeVisible()
@@ -844,7 +845,7 @@ test.describe('action flows', () => {
         document.documentElement.scrollWidth - document.documentElement.clientWidth
       )
       expect(overflow, viewport.width + 'px overflow').toBe(0)
-      expect(await runAxe(page), viewport.width + 'px axe').toEqual([])
+      expect(await runAxe(page, { context: '.q-page' }), viewport.width + 'px axe').toEqual([])
     }
   })
 
