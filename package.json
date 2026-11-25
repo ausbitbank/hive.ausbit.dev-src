@@ -24,6 +24,7 @@
     "prerender": "node scripts/prerender.mjs",
     "nginx:ips": "node scripts/refresh-cloudflare-ips.mjs",
     "serve:dist": "node scripts/serve-dist.mjs",
+    "verify:deploy": "node scripts/verify-deploy.mjs",
     "v4vapp:contract": "node scripts/v4vapp-contract-check.mjs",
     "devlog": "node scripts/devlog.mjs",
     "icons:subset": "node scripts/subset-icons.mjs"

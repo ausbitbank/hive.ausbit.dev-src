@@ -90,7 +90,7 @@ and asset caching instead.
 ## SmartLock key model
 
 - Imported posting/active/memo keys are encrypted in the browser with SJCL
-  (AES-CCM, PBKDF2 key derivation, 100,000 iterations for new imports) and
+  (AES-CCM, PBKDF2 key derivation, 310,000 iterations for new imports) and
   stored as base58 ciphertext in `localStorage` under
   `ausbitdev_peaklock_v2`. Existing ciphertext records keep their original KDF
   parameters and still decrypt.

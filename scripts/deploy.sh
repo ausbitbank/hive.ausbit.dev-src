@@ -46,6 +46,14 @@ ssh "$REMOTE" "set -e
   sha256sum '$REMOTE_DIR'/index.html"
 
 echo
-echo "Deployed $REMOTE_DIR"
 echo "Backup:   $REMOTE:~/$BACKUP"
 echo "Rollback: ./scripts/rollback.sh ~/$BACKUP"
+
+echo "==> Verifying deployment"
+ORIGIN_IP="${VERIFY_ORIGIN_IP:-$(ssh "$REMOTE" "hostname -I 2>/dev/null | awk '{print \$1}'" || true)}"
+VERIFY_URL="${VERIFY_URL:-https://hive.ausbit.dev/}" \
+  VERIFY_ORIGIN_IP="$ORIGIN_IP" \
+  node scripts/verify-deploy.mjs
+
+echo
+echo "Deployed $REMOTE_DIR"
