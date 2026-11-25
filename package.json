@@ -59,7 +59,7 @@
     "eslint-plugin-vue": "^10.12.1",
     "globals": "^16.0.0",
     "jsdom": "^31.0.1",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   },
   "engines": {
     "node": ">= 20",
