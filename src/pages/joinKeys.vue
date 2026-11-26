@@ -115,6 +115,15 @@
               <div class="join-key-actions">
                 <q-btn no-caps outline color="primary" icon="download" label="Download backup" @click="downloadKeys()" />
                 <q-btn no-caps outline color="primary" icon="content_copy" label="Copy all" @click="copy(JSON.stringify(keys, null, 2), 'keys')" />
+                <q-btn
+                  no-caps
+                  outline
+                  color="primary"
+                  icon="img:/statics/hive-keychain.svg"
+                  label="Import keys to Hive Keychain"
+                  :loading="keychainImporting"
+                  @click="importKeysToKeychain()"
+                />
               </div>
 
               <q-checkbox v-model="confirmedSaved" label="I saved my password and keys in a secure place" class="join-confirm" />
@@ -226,6 +235,7 @@ import { copyToClipboard, exportFile } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
+import { importKeysToKeychain as importKeysToKeychainService } from 'src/services/keychainAccounts'
 import {
   buildClaimLink,
   buildClaimPayload,
@@ -250,7 +260,8 @@ export default {
       claimLink: '',
       fingerprint: '',
       confirmedSaved: false,
-      checkingCreated: false
+      checkingCreated: false,
+      keychainImporting: false
     }
   },
   computed: {
@@ -362,6 +373,21 @@ export default {
         this.$q.notify({ message: 'Downloaded ' + this.keys.username + '-HiveKeys.txt', color: 'primary', icon: 'download', position: 'top' })
       } else {
         this.$q.notify({ message: 'Could not download the backup: ' + status, color: 'negative', icon: 'error', position: 'top' })
+      }
+    },
+    async importKeysToKeychain () {
+      if (!this.keys || this.keychainImporting) return
+      this.keychainImporting = true
+      try {
+        const result = await importKeysToKeychainService(this.keys)
+        this.$q.notify({
+          message: result.message,
+          color: result.success ? 'green' : 'orange',
+          icon: result.success ? 'check_circle' : 'info',
+          position: 'top'
+        })
+      } finally {
+        this.keychainImporting = false
       }
     },
     async checkCreated () {

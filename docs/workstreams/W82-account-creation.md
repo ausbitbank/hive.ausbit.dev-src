@@ -89,6 +89,12 @@
   - Status reducer (`new`/`waiting`/`paying`/`paid`/`expired`/`unknown`).
   - Timeout and error mapping; public-key-only invoice body.
   - No signing/private-key code.
+- `src/services/keychainAccounts.js`
+  - Central `requestAddAccount` import for generated keys.
+  - Available on `/create`, `/join/keys` and the Hivedex key step before the
+    account exists on-chain.
+  - Imports active/posting/memo only; the owner key stays offline.
+  - Normalises success, cancel and missing-extension results.
 
 ### Routing / SEO / tests
 
@@ -99,12 +105,14 @@
   authority conversion, fingerprint and age.
 - `tests/unit/hivedex.spec.js` covers status normalisation, invoice-body
   validation, mocked invoice/status calls and error mapping.
+- `tests/unit/keychainAccounts.spec.js` covers Keychain result normalisation and
+  the missing-extension path.
 - Material Icons subset regenerated.
 
 ## Verification
 
 - `bun run lint` → clean.
-- `bun run test` → 179 files / 1541 tests passed.
+- `bun run test` → 182 files / 1563 tests passed.
 - `bun run build` → succeeded.
 - Browser smoke test:
   - `/join` renders the four providers and the internal Hivedex link; no

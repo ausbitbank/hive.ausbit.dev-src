@@ -156,6 +156,15 @@
                 <div class="hivedex-actions">
                   <q-btn no-caps outline color="primary" icon="download" label="Download backup" @click="downloadKeys()" />
                   <q-btn no-caps outline color="primary" icon="content_copy" label="Copy all" @click="copy(JSON.stringify(keys, null, 2), 'keys')" />
+                  <q-btn
+                    no-caps
+                    outline
+                    color="primary"
+                    icon="img:/statics/hive-keychain.svg"
+                    label="Import keys to Hive Keychain"
+                    :loading="keychainImporting"
+                    @click="importToKeychain()"
+                  />
                 </div>
 
                 <q-checkbox v-model="confirmedSaved" label="I saved my password and keys in a secure place" class="hivedex-confirm" />
@@ -283,7 +292,7 @@
                   <div class="hivedex-actions">
                     <q-btn no-caps outline color="primary" :to="'/@' + username" :label="'View @' + username" />
                     <q-btn v-if="keys" no-caps flat color="primary" icon="lock" label="Import to SmartLock" @click="importToSmartlock()" />
-                    <q-btn v-if="keys" no-caps flat color="primary" icon="img:/statics/hive-keychain.svg" label="Import to Keychain" @click="importToKeychain()" />
+                    <q-btn v-if="keys" no-caps flat color="primary" icon="img:/statics/hive-keychain.svg" label="Import keys to Hive Keychain" :loading="keychainImporting" @click="importToKeychain()" />
                   </div>
                 </div>
               </div>
@@ -352,10 +361,10 @@
 
 <script>
 import { copyToClipboard, exportFile } from 'quasar'
-import { keychain } from '@hiveio/keychain'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
+import { importKeysToKeychain } from 'src/services/keychainAccounts'
 import { buildClaimPayload, claimFingerprint, publicKeysFromAuthorities } from 'src/services/accountClaim'
 import {
   createInvoice,
@@ -401,6 +410,7 @@ export default {
       keys: null,
       generatedAuthorities: null,
       confirmedSaved: false,
+      keychainImporting: false,
       fingerprint: '',
       priceInfo: null,
       priceLoading: false,
@@ -718,16 +728,18 @@ export default {
         (account?.memo_key || '') === publicKeys.memo
     },
     async importToKeychain () {
-      if (!this.keys) return
-      const { success, msg } = await keychain(window, 'requestAddAccount', this.keys.username, {
-        active: this.keys.active,
-        posting: this.keys.posting,
-        memo: this.keys.memo
-      })
-      if (success) {
-        this.$q.notify({ message: 'Imported active, posting and memo keys into Hive Keychain.', color: 'green', icon: 'img:/statics/hive-keychain.svg', position: 'top' })
-      } else if (msg) {
-        this.$q.notify({ message: msg, color: 'orange', icon: 'info', position: 'top' })
+      if (!this.keys || this.keychainImporting) return
+      this.keychainImporting = true
+      try {
+        const result = await importKeysToKeychain(this.keys)
+        this.$q.notify({
+          message: result.message,
+          color: result.success ? 'green' : 'orange',
+          icon: result.success ? 'check_circle' : 'info',
+          position: 'top'
+        })
+      } finally {
+        this.keychainImporting = false
       }
     },
     async importToSmartlock () {

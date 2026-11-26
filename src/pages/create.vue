@@ -90,7 +90,7 @@
               :disable="!loggedInUser || !confirmedSaved"
               v-if="liquidHiveBalance >= accountCreationFeeAmount"
             />
-            <q-btn dense label="Import to Keychain" color="primary" icon="img:/statics/hive-keychain.svg" @click="importToKeychain()" />
+            <q-btn dense label="Import keys to Hive Keychain" color="primary" icon="img:/statics/hive-keychain.svg" :loading="keychainImporting" @click="importToKeychain()" />
             <q-btn dense label="Import to SmartLock" color="primary" icon="lock" :loading="smartlockImporting" @click="importToSmartlock()" />
           </q-card-actions>
         </q-card>
@@ -134,10 +134,10 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard, exportFile } from 'quasar'
-import { keychain } from '@hiveio/keychain'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
+import { importKeysToKeychain } from 'src/services/keychainAccounts'
 export default {
   name: 'createAccountPage',
   components: {
@@ -153,7 +153,8 @@ export default {
       roles: ['active', 'owner', 'posting', 'memo'],
       confirmedSaved: false,
       chainProperties: null,
-      smartlockImporting: false
+      smartlockImporting: false,
+      keychainImporting: false
     }
   },
   watch: {
@@ -326,9 +327,19 @@ export default {
       this.$q.notify({ message: 'Account creation queued. Approve it in your wallet.', color: 'primary', icon: 'person_add', position: 'top' })
     },
     async importToKeychain () {
-      const { success, msg } = await keychain(window, 'requestAddAccount', this.keys.username, { active: this.keys.active, posting: this.keys.posting, memo: this.keys.memo })
-      if (success) { this.$q.notify('Imported active, posting & memo keys to hive-keychain') }
-      if (msg) { this.$q.notify(msg) }
+      if (!this.keys || this.keychainImporting) return
+      this.keychainImporting = true
+      try {
+        const result = await importKeysToKeychain(this.keys)
+        this.$q.notify({
+          message: result.message,
+          color: result.success ? 'green' : 'orange',
+          icon: result.success ? 'check_circle' : 'info',
+          position: 'top'
+        })
+      } finally {
+        this.keychainImporting = false
+      }
     },
     saveKeys () {
       if (this.keys) {
