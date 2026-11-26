@@ -173,7 +173,7 @@ async function scanPeakdBadgeNames (account) {
   for (let page = 0; page < PEAKD_MAX_FOLLOWER_PAGES; page += 1) {
     let rows
     try {
-      rows = await apiGetFollowers(account, start, 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
+      rows = await apiGetFollowers(account, start, PEAKD_FOLLOWER_PAGE_SIZE)
     } catch {
       break
     }
@@ -350,12 +350,21 @@ export async function resolveProfileBadges (theme, account, { force = false, sig
 }
 
 /** Every earned badge for the Studio picker, with the level kept separate. */
-export async function fetchBadgeSuggestions (account, { force = false } = {}) {
+export async function fetchBadgeSuggestions (account, { force = false, onUpdate = null } = {}) {
   const name = normalizeAccount(account)
   if (!name) return { peakd: [], hivebuzz: [], level: null }
+  const emit = patch => {
+    if (typeof onUpdate === 'function') onUpdate(patch)
+  }
   const [peakd, hivebuzz] = await Promise.all([
-    fetchPeakdBadges(name, { force }),
-    fetchHiveBuzzCatalog(name, { force })
+    fetchPeakdBadges(name, { force }).then(value => {
+      emit({ peakd: value })
+      return value
+    }),
+    fetchHiveBuzzCatalog(name, { force }).then(value => {
+      emit({ hivebuzz: value, level: hivebuzzLevelBadge(name) })
+      return value
+    })
   ])
   return {
     peakd,

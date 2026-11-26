@@ -83,10 +83,25 @@
               <q-btn v-if="remixOriginal" flat dense no-caps icon="undo" label="Reset to original" @click="resetRemix" />
             </div>
             <div class="studio-row q-mt-sm">
-              <q-input v-model="draft.profile.status.text" dense outlined label="Status line (optional, plain text)" maxlength="80" class="studio-grow" />
-              <q-select v-model="draft.profile.status.icon" :options="statusIconOptions" dense outlined emit-value map-options label="Status icon" class="studio-grow" />
+              <q-input v-model="draft.profile.status.text" dense outlined label="Status line (optional)" maxlength="80" class="studio-grow" />
+              <q-select
+                v-model="draft.profile.status.icon"
+                :options="statusIconOptions"
+                :disable="!statusText"
+                dense
+                outlined
+                emit-value
+                map-options
+                label="Status icon"
+                class="studio-grow"
+              />
             </div>
-            <p class="studio-section__hint q-mt-xs">Shown as a static line. No marquee, links or HTML.</p>
+            <p class="studio-section__hint q-mt-xs">
+              Shown as one centered line under your header tabs, above the Profile Shelf. Add status text first; the icon sits before the text.
+            </p>
+            <p v-if="!statusText && draft.profile.status.icon !== 'none'" class="studio-warning-note" role="note">
+              The icon does not appear on its own. Add status text to show it.
+            </p>
           </section>
 
           <section class="studio-section">
@@ -221,6 +236,18 @@
               </div>
               <p v-else class="studio-section__hint">No safe images found in your recent posts yet.</p>
             </div>
+            <div v-if="draft.profile.atmosphere.source !== 'none'" class="studio-atmosphere-preview">
+              <div class="studio-atmosphere-preview__head">
+                <span>Atmosphere preview</span>
+                <span>{{ atmospherePreviewLabel }}</span>
+              </div>
+              <div class="studio-atmosphere-preview__frame" :style="atmospherePreviewStyle">
+                <atmosphere :theme="previewTheme" :account="account" />
+              </div>
+              <p class="studio-section__hint q-mt-xs">
+                It sits behind your header and fades into the background under the readability scrim.
+              </p>
+            </div>
           </section>
 
           <section class="studio-section">
@@ -299,8 +326,12 @@
                 @update:model-value="draft.profile.badges.showLevel = $event"
               />
             </div>
-            <p v-if="badgeSuggestionsEmpty" class="studio-section__hint q-mt-xs">
-              No earned badges were returned. The shelf stays hidden until a badge resolves.
+            <p v-if="badgeLoading" class="studio-section__hint q-mt-xs">
+              Scanning your PeakD and HiveBuzz badges. Options appear as each source answers.
+            </p>
+            <p v-else-if="badgeSuggestionsEmpty" class="studio-section__hint q-mt-xs">
+              No earned badges were returned.
+              <q-btn flat dense no-caps icon="refresh" label="Try again" class="studio-inline-action" @click="loadBadges(true)" />
             </p>
           </section>
 
@@ -410,6 +441,7 @@
             <profile-skin
               :preview-theme="previewTheme"
               :preview-mode="previewMode"
+              :account="account"
               :author="username"
               :reputation="account && account.reputation"
               context="profile"
@@ -435,9 +467,10 @@
                     <div class="studio-mock__eyebrow">From your blog</div>
                     <h3>What I am building this week</h3>
                     <p>A short preview of a post, with the skin's links, borders and card material.</p>
-                    <div class="studio-mock__image post-card__cover">
+                    <div class="studio-mock__image postbody">
                       <img :src="previewImage" alt="" />
                     </div>
+                    <span class="studio-mock__caption">Post image · {{ imageLabel }}</span>
                     <a class="studio-mock__link" href="#" @click.prevent>Read the post →</a>
                   </article>
                   <article class="studio-mock__card account-card">
@@ -514,7 +547,7 @@
             <div v-for="warning in importWarnings" :key="warning">{{ warning }}</div>
           </div>
           <div v-if="importPreview" class="studio-import__preview">
-            <profile-skin :preview-theme="importPreview" :preview-mode="importPreview.mode" :author="importPreview.author || username" context="profile">
+            <profile-skin :preview-theme="importPreview" :preview-mode="importPreview.mode" :account="account" :author="importPreview.author || username" context="profile">
               <div class="studio-import__mock">
                 <span class="studio-import__name">{{ importPreview.name }}</span>
                 <span class="studio-import__mode">{{ importPreview.mode === 'light' ? 'Light' : 'Dark' }} · {{ importPreview.mood }}</span>
@@ -837,6 +870,38 @@
   color: var(--c-text);
 }
 
+.studio-atmosphere-preview {
+  margin-top: 0.7rem;
+}
+
+.studio-atmosphere-preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+  color: var(--c-text-subtle);
+  font-size: 0.7rem;
+}
+
+.studio-atmosphere-preview__frame {
+  position: relative;
+  isolation: isolate;
+  height: 150px;
+  overflow: hidden;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--c-bg);
+}
+
+.studio-inline-action {
+  margin-left: 0.25rem;
+  padding: 0 0.2rem;
+  color: var(--c-primary);
+  font-size: 0.7rem;
+}
+
 .studio-publish__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1109,15 +1174,25 @@
 }
 
 .studio-mock__image {
-  overflow: hidden;
-  margin-top: 0.45rem;
+  display: flex;
+  justify-content: center;
+  margin-top: 0.55rem;
 }
 
 .studio-mock__image img {
   display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: 176px;
+  max-width: 100%;
+  height: 132px;
   object-fit: cover;
+}
+
+.studio-mock__caption {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--skin-muted, var(--c-text-muted));
+  font-size: 0.62rem;
+  text-align: center;
 }
 
 .studio-mock__actions {
@@ -1234,6 +1309,7 @@
 <script>
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import ProfileShelf from 'components/theme/ProfileShelf.vue'
+import Atmosphere from 'components/theme/Atmosphere.vue'
 import { fetchAccount, fetchAccountPosts, fetchFollowingNames } from 'src/services/chainData'
 import { fetchBadgeSuggestions } from 'src/services/badges'
 import { readUploadHistory } from 'src/services/imageHost'
@@ -1247,6 +1323,7 @@ import { decodeThemeCode, encodeThemeCode } from 'src/themes/shareCode'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { safeJsonParse } from 'src/utils/safeHtml'
 import { contrast, ensureContrast, hslToHex, hueFor, isHexColor, mix, rgbToHsl } from 'src/themes/color'
+import { tokensFor } from 'src/themes/tokens'
 
 function clone (value) {
   return JSON.parse(JSON.stringify(value))
@@ -1389,7 +1466,7 @@ async function averageImageColor (url) {
 
 export default {
   name: 'SkinStudio',
-  components: { ProfileSkin, ProfileShelf },
+  components: { ProfileSkin, ProfileShelf, Atmosphere },
   data () {
     return {
       username: this.$hiveStore.user.username || '',
@@ -1416,6 +1493,7 @@ export default {
       circleLoading: false,
       badgeLoading: false,
       badgeSuggestions: { peakd: [], hivebuzz: [], level: null },
+      savedBadges: [],
       variantTarget: 'base',
       previewMode: 'dark',
       previewExpanded: false,
@@ -1608,9 +1686,13 @@ export default {
         caption: badge.source === 'peakd' ? 'PeakD' : 'HiveBuzz'
       }))
       const known = new Set(options.map(option => option.value))
-      for (const item of this.draft.profile.badges?.selected || []) {
+      const fallback = [...this.savedBadges, ...(this.draft.profile.badges?.selected || [])]
+      for (const item of fallback) {
         const value = item.source + ':' + item.id
-        if (!known.has(value)) options.push({ label: item.id, value, caption: item.source })
+        if (!known.has(value)) {
+          known.add(value)
+          options.push({ label: item.id, value, caption: item.source })
+        }
       }
       return options
     },
@@ -1637,6 +1719,34 @@ export default {
     remixNote () {
       if (!this.draft.remixedFrom) return ''
       return 'Remix of @' + this.draft.remixedFrom + ' — not yet published.'
+    },
+    statusText () {
+      return String(this.draft.profile?.status?.text || '').trim()
+    },
+    imageLabel () {
+      return this.imageOptions.find(option => option.value === this.draft.profile.visual.image)?.label || 'None'
+    },
+    atmospherePreviewLabel () {
+      const source = this.atmosphereSourceOptions.find(option => option.value === this.draft.profile.atmosphere.source)?.label || 'None'
+      const treatment = this.atmosphereTreatmentOptions.find(option => option.value === this.draft.profile.atmosphere.treatment)?.label || 'None'
+      const intensity = this.atmosphereIntensityOptions.find(option => option.value === this.draft.profile.atmosphere.intensity)?.label || 'Medium'
+      return `${source} · ${treatment} · ${intensity}`
+    },
+    atmospherePreviewStyle () {
+      const theme = this.previewTheme
+      if (!theme) return {}
+      const tokens = tokensFor(theme, { mode: this.previewMode })
+      return {
+        ...tokens,
+        '--skin-bg': tokens['--c-bg'],
+        '--skin-surface': tokens['--c-surface'],
+        '--skin-text': tokens['--c-text'],
+        '--skin-muted': tokens['--c-text-muted'],
+        '--skin-primary': tokens['--c-primary'],
+        '--skin-secondary': tokens['--c-secondary'],
+        '--skin-accent': tokens['--c-accent'],
+        '--skin-border': tokens['--c-border']
+      }
     },
     importSwatches () {
       if (!this.importPreview) return []
@@ -1792,6 +1902,8 @@ export default {
     '$hiveStore.user.username' (value) {
       this.username = value || ''
       this.followingNames = []
+      this.savedBadges = []
+      this.badgeSuggestions = { peakd: [], hivebuzz: [], level: null }
       this.loadAccount()
     }
   },
@@ -1830,11 +1942,13 @@ export default {
           this.draft.author = this.username
           this.draft.scope = 'profile'
           this.ensureDraftShape()
+          this.savedBadges = clone(existing.profile?.badges?.selected || [])
           this.legacyNote = stored.legacy?.stickers
             ? 'Legacy stickers are no longer displayed; use the Profile Shelf instead.'
             : ''
         } else {
           this.draft = baseDraft(this.username)
+          this.savedBadges = []
           this.legacyNote = ''
         }
         this.setPublished(this.draft)
@@ -1957,9 +2071,16 @@ export default {
     },
     async loadBadges (force = false) {
       if (!this.username) return
+      const name = this.username
       this.badgeLoading = true
       try {
-        this.badgeSuggestions = await fetchBadgeSuggestions(this.username, { force })
+        this.badgeSuggestions = await fetchBadgeSuggestions(name, {
+          force,
+          onUpdate: patch => {
+            if (this.username !== name) return
+            this.badgeSuggestions = { ...this.badgeSuggestions, ...patch }
+          }
+        })
       } catch {
         this.badgeSuggestions = { peakd: [], hivebuzz: [], level: null }
       } finally {
@@ -2164,6 +2285,7 @@ export default {
       // conflict message instead of queueing a duplicate update.
       this.loadedRaw = this.pendingMerged
       this.setPublished(this.validation.theme)
+      this.savedBadges = clone(this.draft.profile.badges?.selected || [])
       this.$q.notify({
         type: 'positive',
         message: 'Skin queued for broadcast.',

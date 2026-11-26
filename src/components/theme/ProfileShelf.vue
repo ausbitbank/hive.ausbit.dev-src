@@ -164,10 +164,10 @@ export default {
       return ['latest', 'pinned'].includes(this.theme?.profile?.post) ? this.theme.profile.post : 'none'
     },
     showStatus () {
-      return this.$appearance.showSkinStatus !== false
+      return this.preview || this.$appearance.showSkinStatus !== false
     },
     showExtras () {
-      return this.$appearance.showSkinExtras !== false
+      return this.preview || this.$appearance.showSkinExtras !== false
     },
     displayBadges () {
       return this.preview ? this.previewBadges : this.badges

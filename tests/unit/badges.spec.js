@@ -98,8 +98,8 @@ describe('PeakD membership', () => {
 
     const names = await fetchPeakdBadgeAccountNames('alice')
     expect(names).toEqual(['badge-424242', 'badge-069069'])
-    expect(apiGetFollowers).toHaveBeenNthCalledWith(1, 'alice', '', 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
-    expect(apiGetFollowers).toHaveBeenNthCalledWith(2, 'alice', 'badge-424242', 'blog', PEAKD_FOLLOWER_PAGE_SIZE)
+    expect(apiGetFollowers).toHaveBeenNthCalledWith(1, 'alice', '', PEAKD_FOLLOWER_PAGE_SIZE)
+    expect(apiGetFollowers).toHaveBeenNthCalledWith(2, 'alice', 'badge-424242', PEAKD_FOLLOWER_PAGE_SIZE)
   })
 
   it('omits images on unknown hosts and ignores invalid accounts', async () => {
@@ -137,6 +137,20 @@ describe('HiveBuzz badges', () => {
     const suggestions = await fetchBadgeSuggestions('alice')
     expect(suggestions.hivebuzz).toHaveLength(2)
     expect(suggestions.hivebuzz.filter(badge => badge.earned)).toHaveLength(1)
+  })
+
+  it('streams picker groups as each source resolves', async () => {
+    apiGetFollowers.mockResolvedValue([{ follower: 'badge-424242' }])
+    fetchAccounts.mockResolvedValue([
+      peakdAccount('badge-424242', { name: 'Hive Devs', profile_image: 'https://files.peakd.com/a.png' })
+    ])
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse([
+      { id: 'first-post', title: 'First post', state: 'on', url: 'https://hivebuzz.me/a.png' }
+    ])))
+    const updates = []
+    await fetchBadgeSuggestions('alice', { onUpdate: patch => updates.push(patch) })
+    expect(updates.some(patch => patch.peakd?.length === 1)).toBe(true)
+    expect(updates.some(patch => patch.hivebuzz?.length === 1)).toBe(true)
   })
 })
 
