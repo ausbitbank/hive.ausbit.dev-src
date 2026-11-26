@@ -117,6 +117,17 @@
       </div>
 
       <footer class="post-card__footer">
+        <q-btn
+          class="post-card__peek"
+          flat
+          dense
+          round
+          size="sm"
+          icon="visibility"
+          :aria-label="quickLookLabel"
+          title="Quick look"
+          @click.stop="openQuickLook"
+        />
         <span
           class="post-card__stat post-card__stat--votes"
           :class="userVote ? 'post-card__stat--voted-' + userVote : null"
@@ -432,6 +443,19 @@
   font-size: 0.71rem;
 }
 
+.post-card__peek.q-btn {
+  min-width: 26px;
+  min-height: 26px;
+  margin: -0.2rem 0 -0.2rem -0.2rem;
+  padding: 0;
+  color: var(--c-text-faint);
+}
+
+.post-card__peek.q-btn:hover {
+  background: color-mix(in srgb, var(--c-link) 12%, transparent);
+  color: var(--c-link-hover);
+}
+
 .post-card__stat {
   display: inline-flex;
   align-items: center;
@@ -569,6 +593,7 @@ import {
 import { defineAsyncComponent } from 'vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import moderation from 'src/mixins/moderation'
+import { localVoteFor, openPostPeek } from 'src/services/postPeek'
 
 export default {
   name: 'postPreview',
@@ -646,6 +671,9 @@ export default {
     openLabel () {
       return (this.isVideo ? 'Open video: ' : 'Open post: ') + this.displayTitle
     },
+    quickLookLabel () {
+      return 'Quick look: ' + this.displayTitle
+    },
     readLabel () {
       if (this.isVideo) return 'Watch'
       return this.isComment ? 'View' : 'Read'
@@ -685,8 +713,17 @@ export default {
     reputation () {
       return formatPostReputation(this.post.author_reputation)
     },
+    localVote () {
+      return localVoteFor(this.post, this.$hiveStore.user.username)
+    },
     votes () {
-      return postVotes(this.post)
+      const base = postVotes(this.post)
+      const local = this.localVote
+      if (!local) return base
+      const chainDirection = postUserVoteDirection(this.post, this.$hiveStore.user.username)
+      if (!chainDirection && local.direction) return base + 1
+      if (chainDirection && local.direction === 0) return Math.max(0, base - 1)
+      return base
     },
     commentCount () {
       return postCommentCount(this.post)
@@ -719,6 +756,12 @@ export default {
       }
     },
     userVote () {
+      const local = this.localVote
+      if (local) {
+        if (local.direction > 0) return 'up'
+        if (local.direction < 0) return 'down'
+        return null
+      }
       return postUserVoteDirection(this.post, this.$hiveStore.user.username)
     },
     userVoteTitle () {
@@ -733,6 +776,9 @@ export default {
     }
   },
   methods: {
+    openQuickLook () {
+      openPostPeek(this.post)
+    },
     avatarUrl (user) {
       return hiveAvatarUrl(user)
     },

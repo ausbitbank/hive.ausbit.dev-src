@@ -6,6 +6,12 @@ import PostPreview from '../../src/components/postPreview.vue'
 import { postImage, postIsThreeSpeakVideo, postSummary, previewImageUrl } from '../../src/utils/postPreview'
 import { setImageProxyMode } from '../../src/services/imageProxy'
 import { prefetchRoute, resetPrefetchCache } from '../../src/router/prefetch'
+import {
+  closePostPeek,
+  noteLocalPeekVote,
+  postPeek,
+  resetLocalPeekVotes
+} from '../../src/services/postPeek'
 
 // This suite only covers card helpers and the vote indicator. Stub the card's
 // moderation wiring so no lazy store or notice module resolves after teardown.
@@ -172,11 +178,47 @@ describe('post card vote indicator', () => {
           'q-avatar': true,
           'q-img': true,
           'q-icon': { template: '<i class="q-icon"><slot /></i>' },
-          'q-space': true
+          'q-space': true,
+          'q-btn': {
+            props: ['icon'],
+            emits: ['click'],
+            template: '<button class="q-btn" :data-icon="icon" @click="$emit(\'click\', $event)"><slot /></button>'
+          }
         }
       }
     })
   }
+
+  afterEach(() => {
+    closePostPeek()
+    resetLocalPeekVotes()
+  })
+
+  it('opens the quick look from the eye button', async () => {
+    const wrapper = mountCard(0)
+    const button = wrapper.find('.post-card__peek')
+    expect(button.exists()).toBe(true)
+    expect(button.attributes('aria-label')).toContain('Quick look')
+    await button.trigger('click')
+    expect(postPeek.open).toBe(true)
+    expect(postPeek.key).toBe('@bob/hello-world')
+    expect(postPeek.openedFromCard).toBe(true)
+  })
+
+  it('reflects an optimistic quick-look vote on the card', () => {
+    noteLocalPeekVote('bob', 'hello-world', 'alice', 100)
+    const wrapper = mountCard(0)
+    expect(wrapper.find('.post-card').classes()).toContain('post-card--voted-up')
+    expect(wrapper.find('.post-card__stat--votes').text()).toContain('13')
+    expect(wrapper.find('.post-card__voted-label').text()).toBe('Upvoted')
+  })
+
+  it('does not apply another account\'s optimistic quick-look vote', () => {
+    noteLocalPeekVote('bob', 'hello-world', 'carol', 100)
+    const wrapper = mountCard(0)
+    expect(wrapper.find('.post-card').classes()).not.toContain('post-card--voted-up')
+    expect(wrapper.find('.post-card__stat--votes').text()).toContain('12')
+  })
 
   it('marks an upvoted card', () => {
     const wrapper = mountCard(12345)

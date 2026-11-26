@@ -388,6 +388,10 @@ export function apiGetActiveVotes (author, permlink, options = {}) {
   return rpcRequest('condenser_api.get_active_votes', [author, permlink], options)
 }
 
+export function apiGetContent (author, permlink, options = {}) {
+  return rpcRequest('condenser_api.get_content', [author, permlink], options)
+}
+
 export function apiGetFollowers (account, start = '', limit = 100, options = {}) {
   return rpcRequest('condenser_api.get_followers', [account, start, 'blog', limit], options)
 }

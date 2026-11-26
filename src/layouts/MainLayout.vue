@@ -137,6 +137,7 @@
       </footer>
     </q-page-container>
     <command-palette ref="commandPalette" />
+    <post-peek />
     <perf-panel v-if="showPerfPanel" @close="closePerfPanel" />
     <back-to-top />
     <keyboard-shortcuts />
@@ -475,6 +476,7 @@ const Notifications = defineAsyncComponent(() => import('components/notification
 const Queue = defineAsyncComponent(() => import('components/queue.vue'))
 const Settings = defineAsyncComponent(() => import('components/settings.vue'))
 const PerfPanel = defineAsyncComponent(() => import('components/ui/PerfPanel.vue'))
+const PostPeek = defineAsyncComponent(() => import('components/PostPeek.vue'))
 
 export default {
   name: 'MainLayout',
@@ -486,6 +488,7 @@ export default {
     queue: Queue,
     settings: Settings,
     PerfPanel,
+    PostPeek,
     BackToTop,
     ErrorBoundary,
     KeyboardShortcuts

@@ -5,6 +5,7 @@ import {
   apiBlockHeader,
   apiGetAccountHistory,
   apiGetAccounts,
+  apiGetContent,
   apiGetFollowCount,
   apiGetFollowers,
   apiGetFollowing,
@@ -63,6 +64,21 @@ export function fetchAccount (name, { force = false, onStale = null } = {}) {
     ttl: CACHE_TTL.account,
     force,
     onStale
+  })
+}
+
+/**
+ * One post with its full body and full active-vote rows.
+ *
+ * Bridge feed rows omit vote timestamps/percentages and snapshots truncate the
+ * body, so the quick-look peek hydrates through condenser. The result is safe
+ * to merge into the feed card's existing post object.
+ */
+export function fetchPostContent (author, permlink, { force = false } = {}) {
+  if (!author || !permlink) return Promise.resolve(null)
+  return loadCached('post:content:' + author + '/' + permlink, () => apiGetContent(author, permlink), {
+    ttl: CACHE_TTL.posts,
+    force
   })
 }
 
