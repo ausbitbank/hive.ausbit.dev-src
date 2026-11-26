@@ -8,7 +8,7 @@
 
       <article v-if="post" class="skin-post" aria-labelledby="skin-post-title">
         <h2 id="skin-post-title" class="skin-shelf__label">{{ postMode === 'pinned' ? 'Pinned post' : 'Latest post' }}</h2>
-        <router-link :to="post.link" class="skin-post__link">
+        <router-link :to="post.link" class="skin-post__link" @click="preview && $event.preventDefault()">
           <img v-if="post.cover" :src="post.cover" alt="" class="skin-post__cover" loading="lazy" />
           <span class="skin-post__body">
             <span class="skin-post__title">{{ post.title }}</span>
@@ -202,7 +202,10 @@ export default {
     }
   },
   mounted () {
-    if (this.preview) return
+    if (this.preview) {
+      this.loadPost()
+      return
+    }
     this.load()
   },
   beforeUnmount () {
@@ -244,7 +247,19 @@ export default {
     },
     async loadPost () {
       this.post = null
-      if (this.preview || !this.author || this.postMode === 'none') return
+      if (this.postMode === 'none') return
+      if (this.preview) {
+        // The Studio shows a stand-in so the post-card controls have an effect
+        // without fetching (or navigating to) a real post mid-edit.
+        this.post = {
+          link: '/@' + (this.author || 'you'),
+          title: this.postMode === 'pinned' ? 'A pinned post on your shelf' : 'What I am building this week',
+          excerpt: 'A short excerpt shows how your type, links and card material read together.',
+          cover: ''
+        }
+        return
+      }
+      if (!this.author) return
       try {
         const limit = this.postMode === 'pinned' ? 20 : 1
         const posts = await fetchAccountPosts({ account: this.author, sort: 'blog', limit }, {})

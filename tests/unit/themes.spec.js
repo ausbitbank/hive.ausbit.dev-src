@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { contrast, ensureContrast, hslToHex, mix, parseHex } from '../../src/themes/color'
 import { THEMES, getTheme, DEFAULT_THEME_ID } from '../../src/themes/registry'
-import { highContrastTokens, tokensFor } from '../../src/themes/tokens'
+import { highContrastTokens, shapeVarsFor, tokensFor } from '../../src/themes/tokens'
 import {
   MAX_THEME_BYTES,
   THEME_SCHEMA,
@@ -97,6 +97,20 @@ describe('built-in themes', () => {
     expect(high['--c-bg']).not.toBe(normal['--c-bg'])
     expect(high['--c-text']).toBe('#ffffff')
     expect(highContrastTokens('light')['--c-bg']).toBe('#ffffff')
+  })
+
+  it('turns shape enums into scoped geometry tokens', () => {
+    expect(shapeVarsFor({ shape: { radius: 'sharp', border: 'none', shadow: 'none' } })).toMatchObject({
+      '--skin-radius-card': '0px',
+      '--skin-border-width': '0px',
+      '--skin-card-shadow': 'none'
+    })
+    expect(shapeVarsFor({ shape: { radius: 'pill', border: 'double', shadow: 'glow' } })).toMatchObject({
+      '--skin-radius-card': '999px',
+      '--skin-border-width': '3px',
+      '--skin-border-style': 'double'
+    })
+    expect(shapeVarsFor({ shape: { radius: 'pill', border: 'double', shadow: 'glow' } })['--skin-card-shadow']).toContain('var(--skin-primary')
   })
 })
 

@@ -215,6 +215,42 @@ export function tokensFor (theme, { highContrast = false, mode = '' } = {}) {
   return highContrast ? { ...merged, ...highContrastTokens(dark ? 'dark' : 'light') } : merged
 }
 
+/** Shape enums become scoped geometry tokens. The app owns the geometry. */
+const RADIUS_SHAPES = {
+  sharp: { card: '0px', pill: '2px' },
+  soft: { card: '12px', pill: '999px' },
+  round: { card: '22px', pill: '999px' },
+  pill: { card: '999px', pill: '999px' }
+}
+
+const BORDER_SHAPES = {
+  none: { width: '0px', style: 'solid' },
+  hairline: { width: '1px', style: 'solid' },
+  '2px': { width: '2px', style: 'solid' },
+  double: { width: '3px', style: 'double' }
+}
+
+const SHADOW_SHAPES = {
+  none: 'none',
+  soft: '0 6px 18px color-mix(in srgb, var(--c-shadow) 24%, transparent)',
+  crisp: '0 2px 0 color-mix(in srgb, var(--c-shadow) 46%, transparent)',
+  glow: '0 0 24px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 34%, transparent)'
+}
+
+export function shapeVarsFor (theme) {
+  const shape = theme?.shape || {}
+  const radius = RADIUS_SHAPES[shape.radius] || RADIUS_SHAPES.soft
+  const border = BORDER_SHAPES[shape.border] || BORDER_SHAPES.hairline
+  const shadow = SHADOW_SHAPES[shape.shadow] || SHADOW_SHAPES.soft
+  return {
+    '--skin-radius-card': radius.card,
+    '--skin-radius-pill': radius.pill,
+    '--skin-border-width': border.width,
+    '--skin-border-style': border.style,
+    '--skin-card-shadow': shadow
+  }
+}
+
 /** Quasar's own CSS variables. Keep these separate from the app tokens. */
 export function quasarVarsFor (theme, { mode = '' } = {}) {
   const resolved = resolveThemeTokens(theme, mode)

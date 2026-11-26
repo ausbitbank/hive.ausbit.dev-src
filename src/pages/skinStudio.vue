@@ -9,8 +9,10 @@
           </div>
           <h1 class="studio-title">Skin Studio</h1>
           <p class="studio-intro">
-            Design a look for your profile, blog and posts. It is published as public
-            <code>posting_json_metadata</code> on Hive, signed with your posting key.
+            Design a look for your profile, blog and posts. Every control on the left
+            is applied to the live preview as you change it. When it feels right, it is
+            published as public <code>posting_json_metadata</code> on Hive, signed with
+            your posting key.
           </p>
         </div>
         <div class="studio-head__actions">
@@ -37,7 +39,7 @@
           <section class="studio-section">
             <div class="studio-section__head">
               <h2 class="studio-section__title">Start from</h2>
-              <span class="studio-section__hint">Any built-in theme is a starting point, not a lock-in.</span>
+              <span class="studio-section__hint">Applying a preset replaces the palette, type, shape and effects.</span>
             </div>
             <div class="studio-row">
               <q-select
@@ -71,6 +73,10 @@
               />
             </div>
             <q-input v-model="draft.mood" dense outlined label="Mood" maxlength="80" class="q-mt-sm" />
+            <p class="studio-section__hint q-mt-xs">Name and mood label the skin on the Theme Wall; they are not drawn on your profile.</p>
+            <p v-if="isBoth" class="studio-section__hint q-mt-xs">
+              Visitors get the variant that matches their light or dark preference. Use the preview switch to check both.
+            </p>
             <div v-if="legacyNote" class="studio-legacy" role="note">{{ legacyNote }}</div>
             <div v-if="remixNote" class="studio-remix" role="note">
               {{ remixNote }}
@@ -96,10 +102,14 @@
                 outlined
                 emit-value
                 map-options
-                label="Edit palette for"
+                label="Editing palette"
                 class="studio-grow"
               />
+              <span class="studio-section__hint">The preview switches to the palette you edit.</span>
             </div>
+            <p v-else class="studio-section__hint q-mb-sm">
+              One palette for every visitor. Choose <strong>Both</strong> under Identity to design light and dark variants.
+            </p>
             <div class="studio-palette">
               <label v-for="field in colorFields" :key="field.key" class="studio-color">
                 <span class="studio-color__label">{{ field.label }}</span>
@@ -118,11 +128,13 @@
                     maxlength="7"
                     spellcheck="false"
                     :aria-label="field.label + ' hex value'"
-                    @change="setColor(field.key, $event.target.value)"
+                    @input="setColor(field.key, $event.target.value)"
+                    @change="commitColor(field.key, $event)"
                   />
                 </span>
               </label>
             </div>
+            <p class="studio-section__hint q-mt-sm">Pick a swatch or type a hex value; the preview updates as you type.</p>
             <div class="studio-meter">
               <span class="studio-meter__item" :class="contrastClass(contrastText)">
                 Text on surface {{ contrastText.toFixed(2) }}:1
@@ -142,33 +154,38 @@
           </section>
 
           <section class="studio-section">
-            <h2 class="studio-section__title">Type and shape</h2>
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Type and shape</h2>
+              <span class="studio-section__hint">Body sets text, display sets headings. Corners, borders and depth apply to cards.</span>
+            </div>
             <div class="studio-row">
-              <q-select v-model="draft.type.body" :options="typeBodyOptions" dense outlined label="Body type" class="studio-grow" />
-              <q-select v-model="draft.type.display" :options="typeDisplayOptions" dense outlined label="Display type" class="studio-grow" />
+              <q-select v-model="draft.type.body" :options="typeBodyOptions" dense outlined emit-value map-options label="Body type" class="studio-grow" />
+              <q-select v-model="draft.type.display" :options="typeDisplayOptions" dense outlined emit-value map-options label="Display type" class="studio-grow" />
             </div>
             <div class="studio-row q-mt-sm">
-              <q-select v-model="draft.shape.radius" :options="radiusOptions" dense outlined label="Corners" class="studio-grow" />
-              <q-select v-model="draft.shape.border" :options="borderOptions" dense outlined label="Borders" class="studio-grow" />
-              <q-select v-model="draft.shape.shadow" :options="shadowOptions" dense outlined label="Depth" class="studio-grow" />
+              <q-select v-model="draft.shape.radius" :options="radiusOptions" dense outlined emit-value map-options label="Corners" class="studio-grow" />
+              <q-select v-model="draft.shape.border" :options="borderOptions" dense outlined emit-value map-options label="Borders" class="studio-grow" />
+              <q-select v-model="draft.shape.shadow" :options="shadowOptions" dense outlined emit-value map-options label="Depth" class="studio-grow" />
             </div>
           </section>
 
           <section class="studio-section">
-            <h2 class="studio-section__title">Backdrop and personality</h2>
+            <div class="studio-section__head">
+              <h2 class="studio-section__title">Backdrop and personality</h2>
+              <span class="studio-section__hint">Backdrops are app-owned patterns; ambient adds slow movement to the pattern.</span>
+            </div>
             <div class="studio-row">
-              <q-select v-model="draft.profile.background" :options="backgroundOptions" dense outlined label="Backdrop" class="studio-grow" />
-              <q-select v-model="draft.effects.texture" :options="textureOptions" dense outlined label="Page texture" class="studio-grow" />
+              <q-select v-model="draft.profile.background" :options="backgroundOptions" dense outlined emit-value map-options label="Backdrop" class="studio-grow" />
+              <q-select v-model="draft.effects.ambient" :options="ambientOptions" dense outlined emit-value map-options label="Ambient motion" class="studio-grow" />
             </div>
             <div class="studio-row q-mt-sm">
-              <q-select v-model="draft.profile.avatarFrame" :options="avatarOptions" dense outlined label="Avatar frame" class="studio-grow" />
-              <q-select v-model="draft.profile.nameplate" :options="nameplateOptions" dense outlined label="Nameplate" class="studio-grow" />
-              <q-select v-model="draft.profile.card" :options="cardOptions" dense outlined label="Cards" class="studio-grow" />
+              <q-select v-model="draft.profile.avatarFrame" :options="avatarOptions" dense outlined emit-value map-options label="Avatar frame" class="studio-grow" />
+              <q-select v-model="draft.profile.nameplate" :options="nameplateOptions" dense outlined emit-value map-options label="Nameplate" class="studio-grow" />
+              <q-select v-model="draft.profile.card" :options="cardOptions" dense outlined emit-value map-options label="Cards" class="studio-grow" />
             </div>
-            <div class="studio-row q-mt-sm">
-              <q-select v-model="draft.effects.motion" :options="motionOptions" dense outlined label="Motion" class="studio-grow" />
-              <q-select v-model="draft.effects.ambient" :options="ambientOptions" dense outlined label="Ambient" class="studio-grow" />
-            </div>
+            <p class="studio-section__hint q-mt-xs">
+              Site-wide page texture and reading motion stay under Appearance.
+            </p>
           </section>
 
           <section class="studio-section">
@@ -212,15 +229,18 @@
               <span class="studio-section__hint">Closed enums only; the app owns all layout and geometry.</span>
             </div>
             <div class="studio-row">
-              <q-select v-model="draft.profile.visual.link" :options="linkOptions" dense outlined label="Links" class="studio-grow" />
-              <q-select v-model="draft.profile.visual.button" :options="buttonOptions" dense outlined label="Buttons" class="studio-grow" />
-              <q-select v-model="draft.profile.visual.chip" :options="chipOptions" dense outlined label="Chips" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.link" :options="linkOptions" dense outlined emit-value map-options label="Links" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.button" :options="buttonOptions" dense outlined emit-value map-options label="Buttons" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.chip" :options="chipOptions" dense outlined emit-value map-options label="Chips" class="studio-grow" />
             </div>
             <div class="studio-row q-mt-sm">
-              <q-select v-model="draft.profile.visual.divider" :options="dividerOptions" dense outlined label="Dividers" class="studio-grow" />
-              <q-select v-model="draft.profile.visual.image" :options="imageOptions" dense outlined label="Post images" class="studio-grow" />
-              <q-select v-model="draft.profile.visual.gradient" :options="gradientOptions" dense outlined label="Gradient" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.divider" :options="dividerOptions" dense outlined emit-value map-options label="Dividers" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.image" :options="imageOptions" dense outlined emit-value map-options label="Post images" class="studio-grow" />
+              <q-select v-model="draft.profile.visual.gradient" :options="gradientOptions" dense outlined emit-value map-options label="Gradient" class="studio-grow" />
             </div>
+            <p class="studio-section__hint q-mt-xs">
+              The preview includes a link, button, chip, rule and image so each choice is visible.
+            </p>
           </section>
 
           <section class="studio-section">
@@ -247,7 +267,7 @@
               <q-select v-model="draft.profile.post" :options="postOptions" dense outlined emit-value map-options label="Latest or pinned post" class="studio-grow" />
             </div>
             <p class="studio-section__hint q-mt-xs">
-              Circle accounts come from your public following list.
+              Circle accounts come from your public following list. The preview uses sample content; your real account and posts load on your profile.
             </p>
           </section>
 
@@ -289,6 +309,29 @@
               <h2 class="studio-section__title">Publish</h2>
               <span class="studio-section__hint">{{ size }} / 6000 bytes</span>
             </div>
+            <div class="studio-publish__state" role="status">
+              <span v-if="isDirty" class="studio-publish__dirty">
+                <q-icon name="edit_note" size="15px" aria-hidden="true" />
+                Unpublished changes — only the preview shows them.
+              </span>
+              <span v-else-if="publishedFingerprint" class="studio-publish__saved">
+                <q-icon name="check_circle" size="15px" aria-hidden="true" />
+                Matches your published skin.
+              </span>
+              <span v-else class="studio-publish__saved">
+                <q-icon name="cloud_off" size="15px" aria-hidden="true" />
+                Not published yet — visitors still see their own theme.
+              </span>
+              <q-btn
+                v-if="isDirty"
+                flat
+                dense
+                no-caps
+                icon="undo"
+                label="Discard changes"
+                @click="resetDraft"
+              />
+            </div>
             <div v-if="validation.errors.length" class="studio-errors" role="alert">
               <div v-for="error in validation.errors" :key="error">{{ error }}</div>
             </div>
@@ -309,42 +352,109 @@
           </section>
         </div>
 
-        <aside class="studio-preview" aria-label="Live skin preview">
+        <div v-if="previewExpanded" class="studio-preview__backdrop" aria-hidden="true" @click="previewExpanded = false"></div>
+        <aside class="studio-preview" :class="{ 'is-expanded': previewExpanded, 'is-collapsed': previewCollapsed }" aria-label="Live skin preview">
           <div class="studio-preview__head">
-            <span>Live preview</span>
-            <span class="studio-preview__hint">Profile surfaces only</span>
+            <div class="studio-preview__title">
+              <span>Live preview</span>
+              <span class="studio-preview__hint">Updates as you edit</span>
+            </div>
+            <div class="studio-preview__controls">
+              <q-btn
+                class="studio-preview__collapse"
+                flat
+                dense
+                round
+                :icon="previewCollapsed ? 'expand_more' : 'expand_less'"
+                :aria-label="previewCollapsed ? 'Expand preview' : 'Collapse preview'"
+                @click="previewCollapsed = !previewCollapsed"
+              />
+              <q-btn-toggle
+                v-if="isBoth"
+                v-model="previewMode"
+                :options="[{ label: 'Dark', value: 'dark' }, { label: 'Light', value: 'light' }]"
+                dense
+                no-caps
+                toggle-color="primary"
+                color="transparent"
+                text-color="grey-6"
+                aria-label="Preview mode"
+              />
+              <q-btn
+                flat
+                dense
+                round
+                :icon="previewExpanded ? 'fullscreen_exit' : 'fullscreen'"
+                :aria-label="previewExpanded ? 'Close full preview' : 'Open full preview'"
+                @click="previewExpanded = !previewExpanded"
+              />
+            </div>
           </div>
-          <profile-skin :preview-theme="previewTheme" :author="username" :reputation="account && account.reputation" context="profile">
-            <template #default="{ theme }">
-            <div class="studio-mock">
-              <div class="studio-mock__cover"></div>
-              <div class="studio-mock__hero">
-                <q-avatar size="72px" class="studio-mock__avatar">
-                  <q-img :src="avatar" :alt="'Avatar of @' + username" />
-                </q-avatar>
-                <h2 class="account-header__name studio-mock__name">@{{ username }}</h2>
-                <p class="studio-mock__bio">A corner of the Hive with a look of its own.</p>
-                <div class="studio-mock__tabs">
-                  <span class="is-active">Blog</span><span>Posts</span><span>Wallet</span>
+          <div class="studio-preview__meta">
+            <span class="studio-preview__pill">{{ previewModeLabel }}</span>
+            <span v-if="isBoth" class="studio-preview__editing">Editing the {{ variantTargetLabel }}</span>
+            <span v-if="isDirty" class="studio-preview__dirty">
+              <q-icon name="edit_note" size="13px" aria-hidden="true" />
+              Unpublished
+            </span>
+            <span v-else-if="publishedFingerprint" class="studio-preview__saved">
+              <q-icon name="check_circle" size="13px" aria-hidden="true" />
+              Published
+            </span>
+            <span v-else class="studio-preview__saved">
+              <q-icon name="cloud_off" size="13px" aria-hidden="true" />
+              Not published yet
+            </span>
+          </div>
+          <div class="studio-preview__body">
+            <profile-skin
+              :preview-theme="previewTheme"
+              :preview-mode="previewMode"
+              :author="username"
+              :reputation="account && account.reputation"
+              context="profile"
+            >
+              <template #default="{ theme }">
+              <div class="studio-mock">
+                <div class="studio-mock__cover"></div>
+                <div class="studio-mock__hero">
+                  <div class="account-header__avatar studio-mock__avatar-wrap">
+                    <q-avatar size="76px" class="studio-mock__avatar">
+                      <q-img :src="avatar" :alt="'Avatar of @' + username" />
+                    </q-avatar>
+                  </div>
+                  <h2 class="account-header__name studio-mock__name">@{{ username }}</h2>
+                  <p class="studio-mock__bio">A corner of the Hive with a look of its own.</p>
+                  <div class="studio-mock__tabs">
+                    <span class="is-active">Blog</span><span>Posts</span><span>Wallet</span>
+                  </div>
+                </div>
+                <profile-shelf v-if="theme" :theme="theme" :account="account" :preview-badges="previewBadges" preview />
+                <div class="studio-mock__grid">
+                  <article class="studio-mock__card account-card">
+                    <div class="studio-mock__eyebrow">From your blog</div>
+                    <h3>What I am building this week</h3>
+                    <p>A short preview of a post, with the skin's links, borders and card material.</p>
+                    <div class="studio-mock__image post-card__cover">
+                      <img :src="previewImage" alt="" />
+                    </div>
+                    <a class="studio-mock__link" href="#" @click.prevent>Read the post →</a>
+                  </article>
+                  <article class="studio-mock__card account-card">
+                    <div class="studio-mock__eyebrow">About</div>
+                    <p>This is how your bio and links can feel. The layout stays the same; only the language changes.</p>
+                    <div class="studio-mock__actions">
+                      <q-btn unelevated no-caps color="primary" label="Follow" class="studio-mock__button" @click.prevent />
+                      <span class="skin-badge-chip studio-mock__chip">Hive</span>
+                    </div>
+                    <hr class="studio-mock__divider" />
+                    <span class="studio-mock__gradient" aria-hidden="true"></span>
+                  </article>
                 </div>
               </div>
-              <profile-shelf v-if="theme" :theme="theme" :account="account" :preview-badges="previewBadges" preview />
-              <div class="studio-mock__grid">
-                <article class="studio-mock__card">
-                  <div class="studio-mock__eyebrow">Latest post</div>
-                  <h3>What I am building this week</h3>
-                  <p>A short preview of a post, with the skin's links, borders and card material.</p>
-                  <span class="studio-mock__link">Read the post →</span>
-                </article>
-                <article class="studio-mock__card">
-                  <div class="studio-mock__eyebrow">About</div>
-                  <p>This is how your bio and links can feel. The layout stays the same; only the language changes.</p>
-                  <span class="studio-mock__chip">Hive</span>
-                </article>
-              </div>
-            </div>
-            </template>
-          </profile-skin>
+              </template>
+            </profile-skin>
+          </div>
         </aside>
       </div>
     </div>
@@ -404,7 +514,7 @@
             <div v-for="warning in importWarnings" :key="warning">{{ warning }}</div>
           </div>
           <div v-if="importPreview" class="studio-import__preview">
-            <profile-skin :preview-theme="importPreview" :author="importPreview.author || username" context="profile">
+            <profile-skin :preview-theme="importPreview" :preview-mode="importPreview.mode" :author="importPreview.author || username" context="profile">
               <div class="studio-import__mock">
                 <span class="studio-import__name">{{ importPreview.name }}</span>
                 <span class="studio-import__mode">{{ importPreview.mode === 'light' ? 'Light' : 'Dark' }} · {{ importPreview.mood }}</span>
@@ -765,10 +875,40 @@
   color: var(--c-warning);
 }
 
+.studio-publish__state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-height: 26px;
+  margin-top: 0.55rem;
+  font-size: 0.72rem;
+}
+
+.studio-publish__dirty,
+.studio-preview__dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--c-warning);
+}
+
+.studio-publish__saved,
+.studio-preview__saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--c-text-faint);
+}
+
 .studio-preview {
   position: sticky;
   top: 82px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  max-height: calc(100vh - 98px);
   border: 1px solid var(--c-border-subtle);
   border-radius: var(--radius-card);
   background: var(--c-surface-2);
@@ -780,11 +920,57 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
   padding: 0.6rem 0.8rem;
   border-bottom: 1px solid var(--c-border-subtle);
   color: var(--c-text-muted);
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.studio-preview__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.studio-preview__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.studio-preview__collapse {
+  display: none;
+}
+
+.studio-preview.is-collapsed {
+  max-height: none;
+}
+
+.studio-preview.is-collapsed .studio-preview__meta,
+.studio-preview.is-collapsed .studio-preview__body {
+  display: none;
+}
+
+.studio-preview__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  background: color-mix(in srgb, var(--c-bg-deep) 72%, transparent);
+}
+
+.studio-preview.is-expanded {
+  position: fixed;
+  inset: 2vh 2vw;
+  z-index: 2000;
+  max-height: none;
+  box-shadow: var(--c-shadow-pop);
+}
+
+.studio-preview.is-expanded .studio-mock {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .studio-preview__hint {
@@ -793,14 +979,49 @@
   font-weight: 400;
 }
 
+.studio-preview__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding: 0.35rem 0.8rem;
+  border-bottom: 1px solid var(--c-border-subtle);
+  color: var(--c-text-faint);
+  font-size: 0.66rem;
+}
+
+.studio-preview__pill {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--c-text-subtle);
+  font-weight: 600;
+}
+
+.studio-preview__editing {
+  color: var(--c-text-faint);
+}
+
+.studio-preview__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--c-bg);
+}
+
+/* The Studio already labels the preview; the authored-page chrome is noise here. */
+.studio-preview__body :deep(.skin-badge) {
+  display: none;
+}
+
 .studio-mock {
-  min-height: 520px;
-  background: var(--skin-bg, var(--c-bg));
+  min-height: 100%;
   color: var(--skin-text, var(--c-text));
 }
 
 .studio-mock__cover {
-  height: 110px;
+  height: 118px;
   background:
     linear-gradient(120deg, color-mix(in srgb, var(--skin-primary, var(--c-primary)) 35%, transparent), transparent 60%),
     linear-gradient(300deg, color-mix(in srgb, var(--skin-accent, var(--c-accent)) 28%, transparent), transparent 55%);
@@ -816,9 +1037,8 @@
   text-align: center;
 }
 
-.studio-mock__avatar {
-  border: 3px solid var(--skin-primary, var(--c-primary));
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--skin-primary, var(--c-primary)) 28%, transparent);
+.studio-mock__avatar-wrap {
+  display: inline-flex;
 }
 
 .studio-mock__name {
@@ -849,15 +1069,13 @@
 
 .studio-mock__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
   gap: 0.6rem;
   padding: 0.7rem;
 }
 
 .studio-mock__card {
   padding: 0.7rem;
-  border: 1px solid var(--skin-border, var(--c-border));
-  border-radius: var(--radius-card);
   background: var(--skin-surface, var(--c-surface));
 }
 
@@ -887,17 +1105,53 @@
   color: var(--skin-primary, var(--c-primary));
   font-size: 0.72rem;
   font-weight: 700;
+  text-decoration: none;
+}
+
+.studio-mock__image {
+  overflow: hidden;
+  margin-top: 0.45rem;
+}
+
+.studio-mock__image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.studio-mock__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 .studio-mock__chip {
   display: inline-block;
-  margin-top: 0.4rem;
-  padding: 0.12rem 0.4rem;
-  border-radius: var(--radius-pill);
+  padding: 0.14rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--skin-border, var(--c-border)) 70%, transparent);
   background: color-mix(in srgb, var(--skin-primary, var(--c-primary)) 18%, transparent);
   color: var(--skin-primary, var(--c-primary));
   font-size: 0.66rem;
   font-weight: 700;
+}
+
+.studio-mock__divider {
+  width: 100%;
+  height: 1px;
+  margin: 0.6rem 0 0;
+  border: 0;
+  background: var(--skin-border, var(--c-border));
+}
+
+.studio-mock__gradient {
+  display: block;
+  height: 6px;
+  margin-top: 0.55rem;
+  border-radius: var(--skin-radius-pill, var(--radius-pill));
+  background: var(--skin-gradient, var(--skin-primary, var(--c-primary)));
 }
 
 .studio-empty,
@@ -954,13 +1208,25 @@
   }
 
   .studio-preview {
-    position: static;
+    top: 62px;
+    order: -1;
+    max-height: 46vh;
+    z-index: 2;
+  }
+
+  .studio-preview__collapse {
+    display: inline-flex;
   }
 }
 
 @media (max-width: 599px) {
   .studio-shell {
     padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .studio-preview {
+    top: 56px;
+    max-height: 42vh;
   }
 }
 </style>
@@ -980,11 +1246,23 @@ import { BRAND } from 'src/config/brand'
 import { decodeThemeCode, encodeThemeCode } from 'src/themes/shareCode'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { safeJsonParse } from 'src/utils/safeHtml'
-import { contrast, ensureContrast, hslToHex, hueFor, mix, rgbToHsl } from 'src/themes/color'
+import { contrast, ensureContrast, hslToHex, hueFor, isHexColor, mix, rgbToHsl } from 'src/themes/color'
 
 function clone (value) {
   return JSON.parse(JSON.stringify(value))
 }
+
+// A local stand-in image so the image treatments (rounded, polaroid, stamp,
+// duotone) are visible in the Studio without touching the network.
+const PREVIEW_IMAGE = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">' +
+  '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+  '<stop offset="0" stop-color="#2b3a67"/><stop offset="1" stop-color="#8a5a44"/>' +
+  '</linearGradient></defs><rect width="640" height="360" fill="url(#g)"/>' +
+  '<circle cx="500" cy="88" r="52" fill="#f3d9a4" opacity="0.85"/>' +
+  '<path d="M0 300 L180 190 L320 265 L470 160 L640 280 V360 H0Z" fill="#141a2e" opacity="0.9"/>' +
+  '</svg>'
+)
 
 function baseDraft (username) {
   const base = getTheme('neon-tide')
@@ -1139,11 +1417,12 @@ export default {
       badgeLoading: false,
       badgeSuggestions: { peakd: [], hivebuzz: [], level: null },
       variantTarget: 'base',
-      variantTargetOptions: [
-        { label: 'Base fallback', value: 'base' },
-        { label: 'Dark variant', value: 'dark' },
-        { label: 'Light variant', value: 'light' }
-      ],
+      previewMode: 'dark',
+      previewExpanded: false,
+      previewCollapsed: false,
+      publishedDraft: null,
+      publishedFingerprint: '',
+      previewImage: PREVIEW_IMAGE,
       atmosphereImages: [],
       coverUrl: '',
       coverMeta: { width: 0, height: 0 },
@@ -1164,12 +1443,45 @@ export default {
         { label: 'Medium', value: 'medium' },
         { label: 'Strong', value: 'strong' }
       ],
-      linkOptions: ['underline', 'glow', 'highlighter', 'bracket'],
-      buttonOptions: ['solid', 'outline', 'pill', 'square', 'ticket'],
-      chipOptions: ['pill', 'square', 'stamp', 'ticket'],
-      dividerOptions: ['hairline', 'dots', 'wave', 'hex'],
-      imageOptions: ['none', 'rounded', 'polaroid', 'stamp', 'duotone'],
-      gradientOptions: ['none', 'to-right', 'to-bottom', 'diagonal', 'radial'],
+      linkOptions: [
+        { label: 'Underline', value: 'underline' },
+        { label: 'Glow', value: 'glow' },
+        { label: 'Highlighter', value: 'highlighter' },
+        { label: 'Brackets', value: 'bracket' }
+      ],
+      buttonOptions: [
+        { label: 'Solid', value: 'solid' },
+        { label: 'Outline', value: 'outline' },
+        { label: 'Pill', value: 'pill' },
+        { label: 'Square', value: 'square' },
+        { label: 'Ticket', value: 'ticket' }
+      ],
+      chipOptions: [
+        { label: 'Pill', value: 'pill' },
+        { label: 'Square', value: 'square' },
+        { label: 'Stamp', value: 'stamp' },
+        { label: 'Ticket', value: 'ticket' }
+      ],
+      dividerOptions: [
+        { label: 'Hairline', value: 'hairline' },
+        { label: 'Dots', value: 'dots' },
+        { label: 'Wave', value: 'wave' },
+        { label: 'Hex', value: 'hex' }
+      ],
+      imageOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Rounded', value: 'rounded' },
+        { label: 'Polaroid', value: 'polaroid' },
+        { label: 'Stamp', value: 'stamp' },
+        { label: 'Duotone', value: 'duotone' }
+      ],
+      gradientOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Left to right', value: 'to-right' },
+        { label: 'Top to bottom', value: 'to-bottom' },
+        { label: 'Diagonal', value: 'diagonal' },
+        { label: 'Radial', value: 'radial' }
+      ],
       statusIconOptions: [
         { label: 'No icon', value: 'none' },
         { label: 'Spark', value: 'spark' },
@@ -1200,18 +1512,78 @@ export default {
         { key: 'warning', label: 'Warning' },
         { key: 'info', label: 'Info' }
       ],
-      typeBodyOptions: ['sans', 'serif', 'mono', 'rounded'],
-      typeDisplayOptions: ['sans', 'serif', 'grotesk', 'mono'],
-      radiusOptions: ['sharp', 'soft', 'round', 'pill'],
-      borderOptions: ['none', 'hairline', '2px', 'double'],
-      shadowOptions: ['none', 'soft', 'crisp', 'glow'],
-      backgroundOptions: ['solid', 'mesh', 'aurora', 'horizon', 'starfield', 'hex', 'grid', 'scanlines', 'grain', 'paper', 'leaves'],
-      textureOptions: ['none', 'hex', 'grid', 'scanlines', 'grain', 'paper', 'leaves', 'aurora', 'stars'],
-      avatarOptions: ['none', 'ring', 'hex', 'halo', 'orbit', 'pixel', 'ticket'],
-      nameplateOptions: ['plain', 'gradient', 'neon', 'emboss', 'stamp'],
-      cardOptions: ['flat', 'glass', 'paper', 'terminal', 'ticket'],
-      motionOptions: ['none', 'subtle', 'lively'],
-      ambientOptions: ['none', 'drift', 'shimmer', 'pulse']
+      typeBodyOptions: [
+        { label: 'Sans', value: 'sans' },
+        { label: 'Serif', value: 'serif' },
+        { label: 'Mono', value: 'mono' },
+        { label: 'Rounded', value: 'rounded' }
+      ],
+      typeDisplayOptions: [
+        { label: 'Sans', value: 'sans' },
+        { label: 'Serif', value: 'serif' },
+        { label: 'Condensed', value: 'grotesk' },
+        { label: 'Mono', value: 'mono' }
+      ],
+      radiusOptions: [
+        { label: 'Sharp corners', value: 'sharp' },
+        { label: 'Soft', value: 'soft' },
+        { label: 'Round', value: 'round' },
+        { label: 'Pill', value: 'pill' }
+      ],
+      borderOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Hairline', value: 'hairline' },
+        { label: '2px', value: '2px' },
+        { label: 'Double', value: 'double' }
+      ],
+      shadowOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Soft', value: 'soft' },
+        { label: 'Crisp', value: 'crisp' },
+        { label: 'Glow', value: 'glow' }
+      ],
+      backgroundOptions: [
+        { label: 'Solid', value: 'solid' },
+        { label: 'Mesh glow', value: 'mesh' },
+        { label: 'Aurora', value: 'aurora' },
+        { label: 'Horizon lines', value: 'horizon' },
+        { label: 'Starfield', value: 'starfield' },
+        { label: 'Hexagons', value: 'hex' },
+        { label: 'Line grid', value: 'grid' },
+        { label: 'Scanlines', value: 'scanlines' },
+        { label: 'Grain', value: 'grain' },
+        { label: 'Paper', value: 'paper' },
+        { label: 'Leaves', value: 'leaves' }
+      ],
+      avatarOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Ring', value: 'ring' },
+        { label: 'Hexagon', value: 'hex' },
+        { label: 'Halo', value: 'halo' },
+        { label: 'Orbit', value: 'orbit' },
+        { label: 'Pixel', value: 'pixel' },
+        { label: 'Ticket', value: 'ticket' }
+      ],
+      nameplateOptions: [
+        { label: 'Plain', value: 'plain' },
+        { label: 'Gradient', value: 'gradient' },
+        { label: 'Neon', value: 'neon' },
+        { label: 'Embossed', value: 'emboss' },
+        { label: 'Stamp', value: 'stamp' }
+      ],
+      cardOptions: [
+        { label: 'Flat', value: 'flat' },
+        { label: 'Glass', value: 'glass' },
+        { label: 'Paper', value: 'paper' },
+        { label: 'Terminal', value: 'terminal' },
+        { label: 'Ticket', value: 'ticket' }
+      ],
+      ambientOptions: [
+        { label: 'None', value: 'none' },
+        { label: 'Drift', value: 'drift' },
+        { label: 'Shimmer', value: 'shimmer' },
+        { label: 'Pulse', value: 'pulse' }
+      ]
     }
   },
   computed: {
@@ -1295,11 +1667,36 @@ export default {
           this.draft.mode = value === 'light' ? 'light' : 'dark'
           delete this.draft.variants
           this.variantTarget = 'base'
+          this.previewMode = this.draft.mode
         }
       }
     },
     isBoth () {
       return Boolean(this.draft.variants && (this.draft.variants.dark || this.draft.variants.light))
+    },
+    variantTargetOptions () {
+      return [
+        { label: 'Dark palette', value: 'dark' },
+        { label: 'Light palette', value: 'light' }
+      ].filter(option => Boolean(this.draft.variants?.[option.value]))
+    },
+    variantTargetLabel () {
+      if (this.variantTarget === 'light') return 'light palette'
+      if (this.variantTarget === 'dark') return 'dark palette'
+      return 'palette'
+    },
+    previewModeLabel () {
+      if (this.isBoth) return this.previewMode === 'light' ? 'Light variant' : 'Dark variant'
+      return this.draft.mode === 'light' ? 'Light skin' : 'Dark skin'
+    },
+    isDirty () {
+      if (!this.publishedFingerprint) return false
+      const draft = this.validation.theme || this.draft
+      try {
+        return JSON.stringify(draft) !== this.publishedFingerprint
+      } catch {
+        return true
+      }
     },
     activeTokens () {
       if (this.isBoth && this.variantTarget !== 'base') {
@@ -1368,6 +1765,13 @@ export default {
     }
   },
   watch: {
+    previewExpanded (value) {
+      if (value) this.previewCollapsed = false
+      this.toggleBodyScroll(value)
+    },
+    variantTarget (value) {
+      if (value === 'dark' || value === 'light') this.previewMode = value
+    },
     'draft.profile.circle' (value) {
       if (Array.isArray(value) && value.length > 6) {
         this.draft.profile.circle = value.slice(0, 6)
@@ -1399,7 +1803,14 @@ export default {
     })
     this.loadAccount()
   },
+  beforeUnmount () {
+    this.toggleBodyScroll(false)
+  },
   methods: {
+    toggleBodyScroll (locked) {
+      if (typeof document === 'undefined') return
+      document.body.style.overflow = locked ? 'hidden' : ''
+    },
     async loadAccount () {
       if (!this.username) return
       this.busy = true
@@ -1426,7 +1837,9 @@ export default {
           this.draft = baseDraft(this.username)
           this.legacyNote = ''
         }
+        this.setPublished(this.draft)
         this.consumeRemix()
+        this.syncVariantTarget()
         this.loadFollowing()
         this.loadBadges()
         this.loadAtmosphereImages()
@@ -1460,6 +1873,7 @@ export default {
       if (!this.remixOriginal) return
       this.draft = clone(this.remixOriginal)
       this.ensureDraftShape()
+      this.syncVariantTarget()
     },
     openImport () {
       this.importOpen = true
@@ -1497,6 +1911,7 @@ export default {
       this.ensureDraftShape()
       this.remixOriginal = clone(this.draft)
       this.importOpen = false
+      this.syncVariantTarget()
       this.$q.notify({ message: 'Theme imported into the Studio. Review it before publishing.', color: 'primary', timeout: 3200 })
     },
     async copyThemeCode () {
@@ -1608,6 +2023,7 @@ export default {
       this.draft.mode = preset.mode
       delete this.draft.variants
       this.variantTarget = 'base'
+      this.previewMode = preset.mode === 'light' ? 'light' : 'dark'
       this.draft.tags = [...new Set([preset.mode, 'custom', ...preset.tags])].slice(0, 8)
       this.draft.remixedFrom = preset.author && preset.author !== BRAND.appId ? preset.author : null
       this.draft.profile.background = preset.effects.texture === 'none' ? 'mesh' : preset.effects.texture
@@ -1636,8 +2052,45 @@ export default {
       }
     },
     setColor (key, value) {
-      const next = String(value || '').trim().toLowerCase()
-      this.activeTokens[key] = next.startsWith('#') ? next : '#' + next
+      const raw = String(value || '').trim().toLowerCase()
+      const next = raw.startsWith('#') ? raw : '#' + raw
+      // Update while typing as soon as the value is a complete hex colour.
+      // A half-typed value leaves the last good colour in place.
+      if (isHexColor(next)) this.activeTokens[key] = next
+    },
+    commitColor (key, event) {
+      this.setColor(key, event.target.value)
+      // Show the canonical value again when the typed text was incomplete.
+      event.target.value = this.activeTokens[key] || ''
+    },
+    setPublished (theme) {
+      this.publishedDraft = theme ? clone(theme) : null
+      if (!theme) {
+        this.publishedFingerprint = ''
+        return
+      }
+      const result = validateTheme(theme, { requireProfile: true })
+      this.publishedFingerprint = result.ok ? JSON.stringify(result.theme) : ''
+    },
+    syncVariantTarget () {
+      if (!this.isBoth) {
+        this.variantTarget = 'base'
+        this.previewMode = this.draft.mode === 'light' ? 'light' : 'dark'
+        return
+      }
+      const modes = ['dark', 'light'].filter(mode => Boolean(this.draft.variants?.[mode]))
+      const preferred = modes.includes(this.draft.mode) ? this.draft.mode : modes[0]
+      this.variantTarget = preferred || 'base'
+      this.previewMode = preferred || (this.draft.mode === 'light' ? 'light' : 'dark')
+    },
+    resetDraft () {
+      if (!this.publishedDraft) return
+      this.draft = clone(this.publishedDraft)
+      this.ensureDraftShape()
+      this.remixOriginal = null
+      this.legacyNote = ''
+      this.syncVariantTarget()
+      this.$q.notify({ message: 'Changes discarded. The published skin is back in the preview.', color: 'primary', timeout: 2400 })
     },
     applyPalette (tokens) {
       if (this.isBoth && this.variantTarget !== 'base') {
@@ -1661,6 +2114,7 @@ export default {
         }
         this.variantTarget = 'light'
       }
+      this.previewMode = this.variantTarget
     },
     contrastClass (value) {
       if (value >= 4.5) return 'is-good'
@@ -1709,6 +2163,7 @@ export default {
       // before the broadcast confirms will then stop with the on-chain
       // conflict message instead of queueing a duplicate update.
       this.loadedRaw = this.pendingMerged
+      this.setPublished(this.validation.theme)
       this.$q.notify({
         type: 'positive',
         message: 'Skin queued for broadcast.',
@@ -1733,6 +2188,7 @@ export default {
       this.$hiveStore.addToQueue([this.username, 'posting', this.pendingUnpublish])
       this.unpublishOpen = false
       this.loadedRaw = this.pendingUnpublish[1].posting_json_metadata
+      this.setPublished(null)
       this.$q.notify({
         type: 'positive',
         message: 'Unpublish queued.',

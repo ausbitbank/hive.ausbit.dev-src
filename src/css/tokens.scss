@@ -538,23 +538,34 @@ html[data-motion='reduced'] .skin-scope::before {
 .skin-scope[data-card='paper'] .account-card {
   background: var(--skin-surface, var(--c-surface)) !important;
   border-color: color-mix(in srgb, var(--skin-border, var(--c-border)) 70%, transparent) !important;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--skin-text, var(--c-text)) 8%, transparent) !important;
 }
 
 .skin-scope[data-card='terminal'] .q-card,
 .skin-scope[data-card='terminal'] .home-card,
 .skin-scope[data-card='terminal'] .account-card {
   background: var(--skin-surface, var(--c-surface)) !important;
-  border: 1px solid var(--skin-primary, var(--c-primary)) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+  border-color: var(--skin-primary, var(--c-primary)) !important;
+  border-style: solid !important;
 }
 
 .skin-scope[data-card='ticket'] .q-card,
 .skin-scope[data-card='ticket'] .home-card,
 .skin-scope[data-card='ticket'] .account-card {
-  border: 2px dashed var(--skin-border, var(--c-border)) !important;
-  border-radius: 12px !important;
+  border-color: var(--skin-border, var(--c-border)) !important;
+  border-style: dashed !important;
+}
+
+/* Shape enums are scoped geometry, not author-supplied CSS. */
+.skin-scope :is(.q-card, .home-card, .account-card, .skin-post__link) {
+  border-radius: var(--skin-radius-card, var(--radius-card)) !important;
+  border-width: var(--skin-border-width, 1px);
+  border-style: var(--skin-border-style, solid);
+  border-color: var(--skin-border, var(--c-border));
+  box-shadow: var(--skin-card-shadow, var(--c-shadow-card));
+}
+
+.skin-scope .skin-badge-chip {
+  border-radius: var(--skin-radius-pill, var(--radius-pill));
 }
 
 .skin-badge {

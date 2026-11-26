@@ -110,7 +110,7 @@ import { defineAsyncComponent, h } from 'vue'
 import Atmosphere from 'components/theme/Atmosphere.vue'
 import { readAccountTheme } from 'src/themes/account'
 import { loadModerationStore } from 'src/services/moderationStoreLoader'
-import { quasarVarsFor, tokensFor } from 'src/themes/tokens'
+import { quasarVarsFor, shapeVarsFor, tokensFor } from 'src/themes/tokens'
 
 function normalizeAuthor (value) {
   return String(value ?? '')
@@ -178,6 +178,8 @@ export default {
     author: { type: String, default: '' },
     context: { type: String, default: 'profile' },
     previewTheme: { type: Object, default: null },
+    // Force a variant while authoring. Empty means "follow the viewer's mode".
+    previewMode: { type: String, default: '' },
     enabled: { type: Boolean, default: true },
     reputation: { type: [Number, String], default: null }
   },
@@ -267,6 +269,7 @@ export default {
       return Boolean(this.$appearance.skinCalm)
     },
     viewerMode () {
+      if (this.previewMode === 'dark' || this.previewMode === 'light') return this.previewMode
       return this.$appearance.isDark ? 'dark' : 'light'
     },
     motion () {
@@ -280,6 +283,7 @@ export default {
       return {
         ...tokens,
         ...quasar,
+        ...shapeVarsFor(this.theme),
         '--skin-bg': tokens['--c-bg'],
         '--skin-surface': tokens['--c-surface'],
         '--skin-text': tokens['--c-text'],
@@ -291,16 +295,27 @@ export default {
         '--skin-border': tokens['--c-border'],
         '--skin-avatar-radius': this.theme.profile.avatarFrame === 'none' ? '50%' : ''
       }
+    },
+    themeKey () {
+      const theme = this.theme
+      return theme ? `${theme.id || ''}|${theme.author || ''}` : ''
+    },
+    previewThemeKey () {
+      const theme = this.previewTheme
+      return theme ? `${theme.id || ''}|${theme.author || ''}` : ''
     }
   },
   mounted () {
     if (this.theme) this.attachModeration()
   },
   watch: {
-    theme (value) {
+    themeKey (value) {
       if (value) this.attachModeration()
     },
-    previewTheme () {
+    // A Studio edit validates into a fresh object on every keystroke. Only
+    // reset the explicit override when a *different* skin is previewed,
+    // otherwise typing would keep re-blocking the preview.
+    previewThemeKey () {
       this.previewOverride = false
     },
     author () {

@@ -222,4 +222,39 @@ describe('ProfileSkin safety gate', () => {
     expect(wrapper.find('.skin-blocked').exists()).toBe(false)
     expect(wrapper.find('.slot-content').exists()).toBe(true)
   })
+
+  it('keeps an explicit preview override while the same skin is edited', async () => {
+    const { wrapper } = await mountSkin({ decision: () => blockedDecision('context-unavailable') })
+    expect(wrapper.find('.skin-scope').exists()).toBe(false)
+
+    wrapper.findComponent(SafetyNoticeStub).vm.$emit('preview')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.skin-scope').exists()).toBe(true)
+
+    // The Studio validates into a fresh object on every keystroke. That must
+    // not count as previewing a different skin.
+    await wrapper.setProps({ previewTheme: { ...SKIN, mood: 'Edited mood' } })
+    expect(wrapper.find('.skin-scope').exists()).toBe(true)
+
+    // A genuinely different skin asks for the override again.
+    await wrapper.setProps({ previewTheme: { ...SKIN, id: 'another-skin' } })
+    expect(wrapper.find('.skin-scope').exists()).toBe(false)
+    expect(wrapper.find('.skin-blocked').exists()).toBe(true)
+  })
+
+  it('can force the variant shown in the preview', async () => {
+    const lightTokens = { ...SKIN.tokens, bg: '#faf7f2', surface: '#ffffff', text: '#1a1a1a', muted: '#4a4a4a' }
+    const skin = {
+      ...SKIN,
+      variants: {
+        dark: { tokens: { ...SKIN.tokens, bg: '#010203' } },
+        light: { tokens: lightTokens }
+      }
+    }
+    const { wrapper } = await mountSkin({ props: { previewTheme: skin, previewMode: 'light' } })
+    expect(wrapper.find('.skin-scope').attributes('style')).toContain('--c-bg: #faf7f2')
+
+    await wrapper.setProps({ previewMode: 'dark' })
+    expect(wrapper.find('.skin-scope').attributes('style')).toContain('--c-bg: #010203')
+  })
 })
