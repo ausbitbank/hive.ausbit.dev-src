@@ -112,27 +112,6 @@
             <span class="account-menu__meta">Use Keychain, SmartLock or HiveAuth</span>
           </div>
         </div>
-        <q-item class="login-key-guide">
-          <q-item-section>
-            <div class="login-key-guide__title">Which key do you need?</div>
-            <div class="login-key-guide__row">
-              <q-icon name="lock" color="green" size="16px" aria-hidden="true" />
-              <span><strong>Posting key</strong> — votes, comments, follows and notification read markers. It cannot move funds.</span>
-            </div>
-            <div class="login-key-guide__row">
-              <q-icon name="lock" color="orange" size="16px" aria-hidden="true" />
-              <span><strong>Active key</strong> — transfers, power, savings, market orders and witness/authority changes.</span>
-            </div>
-            <div class="login-key-guide__row">
-              <q-icon name="key" color="primary" size="16px" aria-hidden="true" />
-              <span><strong>Keychain</strong> keeps keys in the browser extension and asks for approval on each action.</span>
-            </div>
-            <div class="login-key-guide__row">
-              <q-icon name="smartphone" color="primary" size="16px" aria-hidden="true" />
-              <span><strong>HiveAuth</strong> keeps keys in your phone wallet and asks you to approve each action there.</span>
-            </div>
-          </q-item-section>
-        </q-item>
         <q-item>
           <userSearchBox @selectUsername="setUsername" label="Username" class="login-username text-center" />
         </q-item>
@@ -147,11 +126,34 @@
                 <p class="login-smartlock-card__hint">
                   Keys are encrypted locally with your unlock password. The posting key stays in memory while unlocked; the active key asks for the password each time it is used.
                 </p>
+                <div class="login-key-guide">
+                  <div class="login-key-guide__title">Which key do you need?</div>
+                  <div class="login-key-guide__row">
+                    <q-icon name="lock" color="green" size="16px" aria-hidden="true" />
+                    <span><strong>Posting key</strong> — votes, comments, follows and notification read markers. It cannot move funds.</span>
+                  </div>
+                  <div class="login-key-guide__row">
+                    <q-icon name="lock" color="orange" size="16px" aria-hidden="true" />
+                    <span><strong>Active key</strong> — transfers, power, savings, market orders and witness/authority changes.</span>
+                  </div>
+                  <div class="login-key-guide__row">
+                    <q-icon name="key" color="primary" size="16px" aria-hidden="true" />
+                    <span><strong>Keychain</strong> keeps keys in the browser extension and asks for approval on each action.</span>
+                  </div>
+                  <div class="login-key-guide__row">
+                    <q-icon name="smartphone" color="primary" size="16px" aria-hidden="true" />
+                    <span><strong>HiveAuth</strong> keeps keys in your phone wallet and asks you to approve each action there.</span>
+                  </div>
+                </div>
                 <q-input v-model="username" label="Username" />
                 <q-input v-model="postkey" label="Posting key (required)" filled type="password" :rules="[val => !!val || 'Field is required']"/>
                 <q-input v-model="activekey" label="Active key (optional)" filled type="password" />
                 <q-input v-model="memokey" label="Memo key (optional)" filled type="password" />
                 <q-input v-model="password" label="Unlock password (8+ characters)" filled type="password" :rules="[val => !!val && val.length >= 8 || 'At least 8 characters']"/>
+                <div class="login-timeout">
+                  <q-icon name="lock_clock" size="15px" aria-hidden="true" />
+                  SmartLock auto-locks after {{ smartlockTimeout }} minutes idle. Change this in Settings.
+                </div>
                 <q-btn flat glossy dense no-caps label="Save and log in" icon="save" color="primary" @click="smartLockImportAccount()"/>
               </q-card>
             </q-popup-proxy>
@@ -162,20 +164,12 @@
             <q-tooltip>Approve in Hive Keychain Mobile. Keys stay on your phone.</q-tooltip>
           </q-btn>
         </q-item>
-        <q-item dense v-if="username !== '' && username !== null" class="login-timeout-item">
-          <q-item-section>
-            <div class="login-timeout">
-              <q-icon name="lock_clock" size="15px" aria-hidden="true" />
-              SmartLock auto-locks after {{ smartlockTimeout }} minutes idle. Change this in Settings.
-            </div>
-          </q-item-section>
-        </q-item>
         <q-item v-if="username !== '' && username !== null">
           <q-item-section>
             <q-btn icon="img:/statics/member.webp" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
               <q-checkbox v-model="rememberLogin" />
             </q-btn>
-            <div class="text-caption text-faint">Saves only your username on this device. It never stores your posting, active or memo keys; SmartLock needs your password again after a reload.</div>
+            <div class="text-caption text-faint">Saves only your username on this device. It never stores your posting, active or memo keys.</div>
           </q-item-section>
         </q-item>
         <div class="account-menu__saved">
@@ -523,7 +517,7 @@ a.account-menu__name:hover {
 }
 
 .login-key-guide {
-  margin: 0.15rem 0.35rem 0.35rem;
+  margin: 0 0 0.6rem;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
@@ -592,6 +586,8 @@ a.account-menu__name:hover {
 .login-smartlock-card {
   width: 360px;
   max-width: 92vw;
+  max-height: min(84vh, 620px);
+  overflow-y: auto;
 }
 
 .login-smartlock-card__title {
@@ -614,9 +610,11 @@ a.account-menu__name:hover {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  padding: 0.15rem 0.3rem;
+  margin: 0.5rem 0 0.6rem;
+  padding: 0 0.3rem;
   color: var(--c-text-faint);
   font-size: 0.68rem;
+  line-height: 1.35;
   text-align: center;
 }
 
@@ -740,7 +738,7 @@ a.account-menu__name:hover {
   }
 
   .login-key-guide {
-    margin: 0.15rem 0.1rem 0.3rem;
+    margin: 0 0 0.5rem;
   }
 }
 </style>
