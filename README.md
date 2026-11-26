@@ -123,6 +123,7 @@ searches live in your browser.
 | `/magi` | Read-only Magi contract viewer: metadata, timelocked updates, recent outputs, state keys and call simulation |
 | `/join` | Verified Hive signup providers and the public-key-only claim-link flow |
 | `/join/keys` | Generate a master password and owner/active/posting/memo keys locally, then copy a claim link for a sponsor |
+| `/join/hivedex` | Paid instant signup: generate keys locally, pay Hivedex in crypto, and keep the private keys |
 | `/create` | Existing-user account gifting: create with an account token or HIVE, with Keychain/SmartLock import |
 | `/create/claim` | Sponsor path for a claim link: review public keys and create the account with a token or HIVE |
 | `/create/batch` | Advanced Keychain batch signing: create several claimed accounts from public-key-only links in one transaction |

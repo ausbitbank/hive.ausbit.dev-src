@@ -8,6 +8,7 @@
       >
         <template #actions>
           <q-btn no-caps outline color="primary" icon="key" label="Create keys & claim link" to="/join/keys" />
+          <q-btn no-caps outline color="primary" icon="paid" label="Buy with crypto" to="/join/hivedex" />
           <q-btn no-caps flat color="primary" icon="login" label="I already have an account" to="/create" />
         </template>
       </page-header>
@@ -77,10 +78,21 @@
             </q-card-section>
             <q-card-actions class="join-provider__actions">
               <q-btn
+                v-if="provider.id === 'hivedex'"
                 no-caps
                 unelevated
                 color="primary"
-                :label="'Open ' + provider.name"
+                icon="paid"
+                label="Pay with crypto here"
+                to="/join/hivedex"
+                class="join-provider__cta"
+              />
+              <q-btn
+                no-caps
+                :unelevated="provider.id !== 'hivedex'"
+                :outline="provider.id === 'hivedex'"
+                color="primary"
+                :label="provider.id === 'hivedex' ? 'hivedex.io' : 'Open ' + provider.name"
                 :href="provider.url"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -454,6 +466,9 @@ export default {
 }
 
 .join-provider__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   padding: 0 var(--space-4) var(--space-4);
 }
 

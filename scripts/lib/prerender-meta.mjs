@@ -25,6 +25,7 @@ export const PRERENDER_ROUTES = [
   '/magi',
   '/join',
   '/join/keys',
+  '/join/hivedex',
   '/create',
   '/create/claim',
   '/create/batch',

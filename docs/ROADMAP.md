@@ -15,7 +15,7 @@ principles that constrain it. Delivered work and its verification records live i
   restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
   reporting, vhost hardening, dependency updates and the repaired E2E suite.
 - Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,534 tests across 178 files.
+  with 1,541 tests across 179 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W83**.
@@ -153,8 +153,9 @@ no stored active authority. Remaining work:
 
 - Test the multi-operation `create_claimed_account` batch signing against Hive
   testnet before using it with live account tokens.
+- Run one small live Hivedex payment smoke (invoice → pay → account → status)
+  before advertising the paid flow.
 - Add opt-in `delegate_rc` / `delegate_vesting_shares` after account creation.
-- Embed Hivedex paid signup (the next phase in the plan).
 - Keyless Worker queue deferred by the operator; the static batch page is the
   current substitute.
 - Later experiments: Butter Auth Google/GitHub/Discord signup and v4vapp

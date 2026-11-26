@@ -67,6 +67,7 @@ const routes = [
       { path: 'drafts', redirect: { name: 'compose' } },
       { path: 'join', name: 'join', component: () => import('pages/join.vue') },
       { path: 'join/keys', name: 'join-keys', component: () => import('pages/joinKeys.vue') },
+      { path: 'join/hivedex', name: 'join-hivedex', component: () => import('pages/hivedexSignup.vue') },
       { path: 'create/claim', name: 'claim-account', component: () => import('pages/claimAccount.vue') },
       { path: 'create/batch', name: 'batch-create', component: () => import('pages/batchCreate.vue') },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },

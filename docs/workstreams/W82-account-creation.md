@@ -54,6 +54,18 @@
   - Requires Keychain; SmartLock/HiveAuth users use individual claim pages.
   - Reports tx id and polls the chain for completion.
 
+- **`/join/hivedex`** (`src/pages/hivedexSignup.vue`)
+  - Paid instant signup via the Hivedex API.
+  - Live price/assets from `GET /price`; keys generated locally; the invoice
+    request contains only public keys plus `returnUrl` and `referrer`.
+  - Creates an invoice with `POST /invoice`, opens the Hivedex/OxaPay checkout,
+    polls `GET /status/{trackId}`, then confirms the account and keys on-chain.
+  - Stores only the order metadata (username, trackId, payLink, fingerprint) in
+    local storage so an interrupted payment can be resumed; no private keys are
+    stored.
+  - Offers SmartLock/Keychain import once the account exists.
+  - Payment and refunds remain Hivedex's responsibility.
+
 ### Existing `/create` page
 
 - Retitled “Create an account for someone”; explains token/HIVE cost, key
@@ -72,28 +84,38 @@
   - Base64url encode/decode, URL fragment/query parsing.
   - Public-key format validation, authority conversion, fingerprint and age.
   - No signing/private-key code.
+- `src/services/hivedex.js`
+  - `GET /price` with a short cache, `POST /invoice`, `GET /status/{trackId}`.
+  - Status reducer (`new`/`waiting`/`paying`/`paid`/`expired`/`unknown`).
+  - Timeout and error mapping; public-key-only invoice body.
+  - No signing/private-key code.
 
 ### Routing / SEO / tests
 
-- Routes: `/join`, `/join/keys`, `/create/claim`, `/create/batch`.
+- Routes: `/join`, `/join/keys`, `/join/hivedex`, `/create/claim`, `/create/batch`.
 - Prerender list, nginx metadata locations and sitemap updated.
 - Claim/batch pages are `noindex`.
 - `tests/unit/accountClaim.spec.js` covers round-trip, URL parsing, validation,
   authority conversion, fingerprint and age.
+- `tests/unit/hivedex.spec.js` covers status normalisation, invoice-body
+  validation, mocked invoice/status calls and error mapping.
 - Material Icons subset regenerated.
 
 ## Verification
 
 - `bun run lint` → clean.
-- `bun run test` → 178 files / 1534 tests passed.
+- `bun run test` → 179 files / 1541 tests passed.
 - `bun run build` → succeeded.
 - Browser smoke test:
-  - `/join` renders the four providers; no `hiveonboard` links.
+  - `/join` renders the four providers and the internal Hivedex link; no
+    `hiveonboard` links.
   - `/join/keys` checks availability, generates keys and produces a claim link.
   - Opening the claim link shows the public-key summary and sign-in prompt.
   - The header Sign in button opens the existing login popup.
   - `/create` shows the new copy and no initial validation error.
   - `/create/batch` parses links, detects duplicates and shows the review table.
+  - `/join/hivedex` loads the live price/assets, checks availability and
+    generates keys; the saved-order banner and resume path render correctly.
 
 ## Security notes
 
@@ -109,9 +131,11 @@
 - **Test the batch transaction on Hive testnet** before using it with live
   tokens. Keychain accepts an operations array, but the multi-op
   `create_claimed_account` path has not been signed in this environment.
+- Run one small live Hivedex payment smoke (invoice → pay → account → status)
+  before advertising the paid flow; the API calls are mocked in unit tests and
+  the price/API path is verified live.
 - Add RC/HP delegation after creation (`delegate_rc` / `delegate_vesting_shares`)
   as an opt-in.
-- Embed Hivedex paid signup (next phase in the plan).
 - Keyless Worker queue deferred by the operator; static batch page is the
   current substitute.
 - Google/GitHub OAuth (Butter Auth) and v4vapp Lightning are later experiments.

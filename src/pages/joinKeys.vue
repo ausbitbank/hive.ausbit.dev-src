@@ -193,7 +193,10 @@
                 Use a verified provider instead. Ecency offers free email signup; Hivedex offers
                 anonymous paid signup from $0.49.
               </p>
-              <q-btn no-caps outline color="primary" icon="groups" label="See providers" to="/join" />
+              <div class="join-key-actions">
+                <q-btn no-caps outline color="primary" icon="groups" label="See providers" to="/join" />
+                <q-btn no-caps outline color="primary" icon="paid" label="Pay with crypto" to="/join/hivedex" />
+              </div>
             </q-card-section>
           </q-card>
 

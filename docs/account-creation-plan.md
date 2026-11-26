@@ -1,6 +1,7 @@
 # Account creation — refined implementation plan
 
-**Status:** static phase implemented — see `docs/workstreams/W82-account-creation.md`  
+**Status:** static phase and Hivedex paid embed implemented — see
+`docs/workstreams/W82-account-creation.md`  
 **Research:** 2026-11-26  
 **Constraints from the operator:**
 
@@ -333,7 +334,7 @@ Do not advertise recovery you cannot operationally provide.
 - Static batch page for Ausbitbank: paste/import claim links, pre-check, sign one
   batch in Keychain.
 
-### Phase 2 — Hivedex paid embed (3–5 days)
+### Phase 2 — Hivedex paid embed (implemented)
 
 - Reuse keygen/backup UI.
 - `GET /price` cache + live display.
