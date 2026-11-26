@@ -1,12 +1,89 @@
 <template>
     <div class="props-editor">
-        <q-input outlined class="props-editor__input" type="textarea" v-model="newjson" label="Edit your metadata directly here or use the tags below" />
-        <div class="props-editor__actions" v-if="newjson !== json && !edited">
-          <q-btn no-caps dense unelevated label="Submit changes" color="primary" icon="save" @click="submitChanges()" />
+        <div v-if="type === 'postingMeta'" class="props-editor__media">
+            <div class="props-editor__media-head">
+                <div class="props-editor__media-title">Profile images</div>
+                <div class="props-editor__media-hint">Uploaded through the same image host as post images.</div>
+            </div>
+            <div class="props-editor__media-grid">
+                <div class="props-editor__media-card">
+                    <div class="props-editor__preview props-editor__preview--avatar">
+                        <q-img v-if="profileImagePreview" :src="profileImagePreview" :alt="'Profile image for @' + username" fit="cover" />
+                        <q-icon v-else name="person" size="28px" aria-hidden="true" />
+                    </div>
+                    <div class="props-editor__media-body">
+                        <div class="props-editor__media-label">Profile image</div>
+                        <div class="props-editor__media-actions">
+                            <image-upload-button
+                                :username="username"
+                                :max-files="1"
+                                :round="false"
+                                label="Upload"
+                                title="Upload a profile image"
+                                aria-label="Upload a profile image"
+                                success-message="Profile image uploaded"
+                                success-caption="Save the metadata to publish it."
+                                @insert="setImageFromUpload('profile_image', $event)"
+                            />
+                            <q-btn v-if="profileImage" flat dense no-caps size="sm" icon="delete_outline" label="Remove" color="negative" @click="applyProfileField('profile_image', '')" />
+                        </div>
+                        <q-input v-model="profileImage" dense outlined clearable label="Image URL" class="props-editor__media-url" />
+                    </div>
+                </div>
+                <div class="props-editor__media-card props-editor__media-card--cover">
+                    <div class="props-editor__preview props-editor__preview--cover">
+                        <q-img v-if="coverImagePreview" :src="coverImagePreview" :alt="'Cover image for @' + username" fit="cover" />
+                        <q-icon v-else name="image" size="28px" aria-hidden="true" />
+                    </div>
+                    <div class="props-editor__media-body">
+                        <div class="props-editor__media-label">Cover image</div>
+                        <div class="props-editor__media-actions">
+                            <image-upload-button
+                                :username="username"
+                                :max-files="1"
+                                :round="false"
+                                label="Upload"
+                                title="Upload a cover image"
+                                aria-label="Upload a cover image"
+                                success-message="Cover image uploaded"
+                                success-caption="Save the metadata to publish it."
+                                @insert="setImageFromUpload('cover_image', $event)"
+                            />
+                            <q-btn v-if="coverImage" flat dense no-caps size="sm" icon="delete_outline" label="Remove" color="negative" @click="applyProfileField('cover_image', '')" />
+                        </div>
+                        <q-input v-model="coverImage" dense outlined clearable label="Image URL" class="props-editor__media-url" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <q-input
+            outlined
+            class="props-editor__input"
+            type="textarea"
+            v-model="newjson"
+            label="Edit your metadata directly here or use the helpers below"
+            :error="!parsed.ok"
+            :error-message="parsed.ok ? '' : parsed.error"
+            @update:model-value="onDraftInput"
+        />
+
+        <div v-if="type === 'postingMeta'" class="props-editor__note props-editor__note--info">
+            <q-icon name="info" size="15px" aria-hidden="true" />
+            <span>Saved with your posting key. Apps read profile details and images from this metadata.</span>
+        </div>
+        <div v-else class="props-editor__note props-editor__note--info">
+            <q-icon name="info" size="15px" aria-hidden="true" />
+            <span>Legacy metadata needs your active key. Profile images belong in the Posting metadata card.</span>
+        </div>
+
+        <div class="props-editor__actions" v-if="dirty">
+          <q-btn flat dense no-caps label="Discard" color="grey" icon="restart_alt" @click="discardChanges" />
+          <q-btn no-caps dense unelevated label="Submit changes" color="primary" icon="save" @click="submitChanges" />
         </div>
         <div class="props-editor__note props-editor__note--ok" v-if="edited">
             <q-icon name="check_circle" size="15px" aria-hidden="true" />
-            <span>Your posting JSON metadata has been edited. Refresh the page in a moment to see the changes.</span>
+            <span>Your {{ type === 'postingMeta' ? 'posting ' : '' }}JSON metadata has been edited. Refresh the page in a moment to see the changes.</span>
         </div>
         <div class="props-editor__note" :class="error ? 'props-editor__note--error' : 'props-editor__note--info'" v-if="log !== ''">
             <q-icon :name="error ? 'error_outline' : 'info'" size="15px" aria-hidden="true" />
@@ -20,7 +97,7 @@
             <div class="props-editor__tags-title">Extra props recognised by this site</div>
             <q-chip v-for="tag in myTags" :key="tag" dense clickable :class="{'is-selected': doesKeyExist(tag)}" :removable="doesKeyExist(tag)" @remove="removeKey(tag)" @click="showKeyPrompt(tag)">{{ tag }}</q-chip>
         </div>
-        <json-viewer class="props-editor__viewer" :data="JSON.parse(newjson)" />
+        <json-viewer v-if="parsed.ok" class="props-editor__viewer" :data="parsed.value" />
         <q-dialog v-model="keyDialog" persistent>
         <q-card flat class="props-editor__dialog">
             <div class="props-editor__dialog-head">
@@ -40,7 +117,34 @@
 </template>
 <script>
 import { defineAsyncComponent } from 'vue'
+import ImageUploadButton from 'components/ImageUploadButton.vue'
+import { safeExternalUrl } from 'src/utils/safeUrl'
+import {
+  MAX_ACCOUNT_METADATA_BYTES,
+  accountMetadataSize,
+  buildLegacyMetadataOperation,
+  buildPostingMetadataOperation,
+  canonicalAccountMetadata,
+  formatAccountMetadata,
+  hasProfileField,
+  parseAccountMetadata,
+  profileFromMetadata,
+  removeProfileField,
+  setProfileField
+} from 'src/services/accountMetadata'
+
 const jsonViewer = defineAsyncComponent(() => import('components/jsonViewer.vue'))
+
+function initialEditorState (raw) {
+  const parsed = parseAccountMetadata(raw)
+  return {
+    newjson: parsed.ok ? formatAccountMetadata(parsed.value) : String(raw || ''),
+    baselineValue: parsed.ok ? parsed.value : {},
+    baselineCanonical: parsed.ok ? canonicalAccountMetadata(parsed.value) : '',
+    baselineValid: parsed.ok
+  }
+}
+
 export default {
   name: 'propsEditor',
   props: {
@@ -62,10 +166,11 @@ export default {
       required: true
     }
   },
-  components: { jsonViewer },
+  components: { jsonViewer, ImageUploadButton },
   data () {
+    const initial = initialEditorState(this.json)
     return {
-      newjson: this.json,
+      ...initial,
       edited: false,
       error: false,
       keyDialog: false,
@@ -77,63 +182,135 @@ export default {
     }
   },
   computed: {
+    parsed () {
+      return parseAccountMetadata(this.newjson)
+    },
+    profile () {
+      return profileFromMetadata(this.parsed.ok ? this.parsed.value : {})
+    },
+    dirty () {
+      if (!this.parsed.ok) return true
+      return canonicalAccountMetadata(this.parsed.value) !== this.baselineCanonical
+    },
+    profileImage: {
+      get () { return this.profile.profile_image || '' },
+      set (value) { this.applyProfileField('profile_image', value) }
+    },
+    coverImage: {
+      get () { return this.profile.cover_image || '' },
+      set (value) { this.applyProfileField('cover_image', value) }
+    },
+    profileImagePreview () {
+      return safeExternalUrl(this.profileImage)
+    },
+    coverImagePreview () {
+      return safeExternalUrl(this.coverImage)
+    }
   },
   methods: {
+    applyProfileField (key, value) {
+      if (!this.parsed.ok) {
+        this.setLog('Fix the JSON error before using the metadata helpers.', true)
+        return
+      }
+      const text = value === null || value === undefined ? '' : String(value).trim()
+      const next = text
+        ? setProfileField(this.parsed.value, key, text)
+        : removeProfileField(this.parsed.value, key)
+      this.newjson = formatAccountMetadata(next)
+      this.edited = false
+      this.setLog('', false)
+    },
+    setImageFromUpload (key, images) {
+      const image = Array.isArray(images) ? images[0] : null
+      if (!image || !image.url) return
+      this.applyProfileField(key, image.url)
+    },
+    setLog (message, isError) {
+      this.log = message
+      this.error = isError
+    },
+    onDraftInput () {
+      if (this.edited) this.edited = false
+      if (this.log) this.setLog('', false)
+    },
     submitChanges () {
-      if (this.type === 'postingMeta') {
-        // Empty metadata means "leave unchanged" in account_update/account_update2.
-        // Sending the current value back would require active authority.
-        this.$hiveStore.addToQueue([this.username, 'posting', ['account_update2', { account: this.username, json_metadata: '', posting_json_metadata: this.newjson, extensions: [] }]])
-        this.$emit('editedProps')
+      if (!this.parsed.ok) {
+        this.setLog(this.parsed.error, true)
+        return
       }
-      if (this.type === 'jsonMeta') {
-        if (this.account.posting && this.account.memo_key) {
-          var p = {
-            account: this.username,
-            posting: this.account.posting,
-            memo_key: this.account.memo_key,
-            json_metadata: this.newjson
+      if (accountMetadataSize(this.parsed.value) > MAX_ACCOUNT_METADATA_BYTES) {
+        this.setLog('Metadata is larger than 16 KB. Remove some fields or shorten the values.', true)
+        return
+      }
+
+      const jsonMetadata = JSON.stringify(this.parsed.value)
+      try {
+        if (this.type === 'postingMeta') {
+          this.$hiveStore.addToQueue([
+            this.username,
+            'posting',
+            buildPostingMetadataOperation(this.username, jsonMetadata)
+          ])
+        } else if (this.type === 'jsonMeta') {
+          const operation = buildLegacyMetadataOperation(this.account, jsonMetadata)
+          if (!operation) {
+            this.setLog('The account is missing its posting authority or memo key, so legacy metadata cannot be updated safely.', true)
+            return
           }
-          this.$hiveStore.addToQueue([this.username, 'active', ['account_update', p]])
-          this.$emit('editedProps')
+          this.$hiveStore.addToQueue([this.username, 'active', operation])
         } else {
-          console.log('missing required info to update json meta')
+          this.setLog('Unknown metadata type.', true)
+          return
         }
+      } catch (error) {
+        this.setLog(error?.message || 'Could not queue the metadata update.', true)
+        return
       }
+
+      this.baselineValue = this.parsed.value
+      this.baselineCanonical = canonicalAccountMetadata(this.parsed.value)
+      this.baselineValid = true
+      this.newjson = formatAccountMetadata(this.parsed.value)
+      this.edited = true
+      this.setLog('', false)
+      this.$emit('editedProps')
+    },
+    discardChanges () {
+      if (!this.baselineValid) {
+        this.baselineValue = {}
+        this.baselineCanonical = canonicalAccountMetadata({})
+        this.baselineValid = true
+      }
+      this.newjson = formatAccountMetadata(this.baselineValue)
+      this.edited = false
+      this.setLog('', false)
     },
     doesKeyExist (key) {
-      if (key in JSON.parse(this.newjson).profile) {
-        return true
-      } else {
-        return false
-      }
+      return hasProfileField(this.parsed.ok ? this.parsed.value : {}, key)
     },
     removeKey (key) {
-      // remove key
-      console.log('remove key ' + key)
-      var obj = JSON.parse(this.newjson)
-      delete obj.profile[key]
-      this.newjson = JSON.stringify(obj)
+      if (!this.parsed.ok) {
+        this.setLog('Fix the JSON error before removing a prop.', true)
+        return
+      }
+      this.newjson = formatAccountMetadata(removeProfileField(this.parsed.value, key))
+      this.edited = false
     },
     addKey (key, data) {
-      // add key
-      if (key !== undefined && data !== undefined) {
-        console.log('add key: ' + key + ' with data ' + data)
-        var obj = JSON.parse(this.newjson)
-        obj.profile[key] = data
-        this.newjson = JSON.stringify(obj)
-      } else {
-        this.log = 'Not adding empty key'
+      if (key === undefined || data === undefined || String(data).trim() === '') {
+        this.setLog('Not adding empty key', true)
+        return
       }
+      this.applyProfileField(key, data)
     },
     showKeyPrompt (key) {
+      const value = this.profile[key]
       this.keyDialogCurrentKey = key
-      this.keyDialogCurrentData = JSON.parse(this.newjson).profile[key]
+      this.keyDialogCurrentData = typeof value === 'string'
+        ? value
+        : (value === null || value === undefined ? '' : JSON.stringify(value))
       this.keyDialog = true
-    },
-    mounted () {
-      console.log('json')
-      console.log(typeof (this.newjson))
     }
   }
 }
@@ -153,9 +330,105 @@ export default {
   font-size: 0.78rem;
 }
 
+.props-editor__media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-text) 3%, transparent);
+}
+
+.props-editor__media-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.props-editor__media-title {
+  color: var(--c-text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.props-editor__media-hint {
+  color: var(--c-text-faint);
+  font-size: 0.68rem;
+}
+
+.props-editor__media-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45rem;
+}
+
+.props-editor__media-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.props-editor__media-card--cover {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.props-editor__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-shadow) 20%, transparent);
+  color: var(--c-text-faint);
+}
+
+.props-editor__preview :deep(.q-img) {
+  width: 100%;
+  height: 100%;
+}
+
+.props-editor__preview--avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.props-editor__preview--cover {
+  width: 100%;
+  height: 88px;
+}
+
+.props-editor__media-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.props-editor__media-label {
+  color: var(--c-text-subtle);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.props-editor__media-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.props-editor__media-url :deep(input) {
+  font-size: 0.72rem;
+}
+
 .props-editor__actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.3rem;
 }
 
 .props-editor__note {

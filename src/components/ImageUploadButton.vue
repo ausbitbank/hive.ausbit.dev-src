@@ -61,6 +61,8 @@ export default {
     label: { type: String, default: '' },
     title: { type: String, default: 'Upload image' },
     ariaLabel: { type: String, default: 'Upload image' },
+    successMessage: { type: String, default: '' },
+    successCaption: { type: String, default: 'Inserted into your post.' },
     maxFiles: { type: Number, default: 4 },
     color: { type: String, default: '' },
     round: { type: Boolean, default: true },
@@ -211,8 +213,8 @@ export default {
         this.$emit('insert', uploaded)
         this.$q.notify({
           type: 'positive',
-          message: uploaded.length > 1 ? uploaded.length + ' images uploaded' : 'Image uploaded',
-          caption: 'Inserted into your post.'
+          message: this.successMessage || (uploaded.length > 1 ? uploaded.length + ' images uploaded' : 'Image uploaded'),
+          caption: this.successCaption
         })
       }
       return uploaded.length

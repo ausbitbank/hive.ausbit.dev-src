@@ -13,12 +13,13 @@ principles that constrain it. Delivered work and its verification records live i
 - The latest shipped slice covers local-first moderation (W71–W78), the
   user-selectable image proxy (W79), post quick look and feed position
   restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
-  reporting, vhost hardening, dependency updates and the repaired E2E suite.
+  reporting, vhost hardening, dependency updates, the repaired E2E suite, and
+  the profile metadata editor with image uploads (W83).
 - Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,541 tests across 179 files.
+  with 1,574 tests across 184 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W83**.
+- The next free workstream number is **W84**.
 
 ## Vision
 

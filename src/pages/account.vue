@@ -175,27 +175,30 @@
               </q-card-section>
             </q-card>
 
-            <q-card flat bordered class="account-card" v-if="account">
-              <q-card-section>
-                <div class="account-card__head">
-                  <h2 class="account-card__title account-card__title--small">JSON metadata</h2>
-                  <q-btn flat dense round icon="edit" title="Edit JSON metadata" aria-label="Edit JSON metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="account.name === loggedInUser" />
-                </div>
-                <json-viewer v-if="account.json_metadata" :data="JSON.parse(account.json_metadata)" />
-                <span v-else class="account-muted">JSON metadata is currently empty.</span>
-                <props-editor v-if="editJsonMeta" :json="account.json_metadata" :username="username" :account="account" type="jsonMeta" @editedProps="refreshAccount()" />
-              </q-card-section>
-            </q-card>
-
-            <q-card flat bordered class="account-card" v-if="account.posting_json_metadata">
+            <q-card flat bordered class="account-card" v-if="account.posting_json_metadata || canEditAccount">
               <q-card-section>
                 <div class="account-card__head">
                   <h2 class="account-card__title account-card__title--small">Posting metadata</h2>
-                  <q-btn flat dense round icon="edit" title="Edit posting JSON metadata" aria-label="Edit posting JSON metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="account.name === loggedInUser" />
+                  <q-btn flat dense round icon="edit" title="Edit posting JSON metadata" aria-label="Edit posting JSON metadata" color="orange" @click="editPostingJson = !editPostingJson" v-if="canEditAccount" />
                 </div>
-                <json-viewer v-if="account.posting_json_metadata && editPostingJson === false" :data="JSON.parse(account.posting_json_metadata)" />
-                <span v-else class="account-muted">Posting JSON metadata is currently empty.</span>
-                <props-editor v-if="account.posting_json_metadata && editPostingJson" :json="account.posting_json_metadata" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
+                <p v-if="canEditAccount && !editPostingJson" class="account-muted account-muted--hint">Profile name, about text, profile image and cover image live here. This is saved with your posting key.</p>
+                <json-viewer v-if="!editPostingJson && postingJsonMeta" :data="postingJsonMeta" />
+                <span v-else-if="!editPostingJson && postingJsonMetaError" class="account-muted account-muted--error">{{ postingJsonMetaError }} Use edit to repair it.</span>
+                <span v-else-if="!editPostingJson" class="account-muted">Posting JSON metadata is currently empty.</span>
+                <props-editor v-if="editPostingJson" :json="account.posting_json_metadata || '{}'" :username="username" :account="account" type="postingMeta" @editedProps="refreshAccount()" />
+              </q-card-section>
+            </q-card>
+
+            <q-card flat bordered class="account-card" v-if="account.json_metadata || canEditAccount">
+              <q-card-section>
+                <div class="account-card__head">
+                  <h2 class="account-card__title account-card__title--small">JSON metadata</h2>
+                  <q-btn flat dense round icon="edit" title="Edit JSON metadata" aria-label="Edit JSON metadata" color="orange" @click="editJsonMeta = !editJsonMeta" v-if="canEditAccount" />
+                </div>
+                <json-viewer v-if="!editJsonMeta && legacyJsonMeta" :data="legacyJsonMeta" />
+                <span v-else-if="!editJsonMeta && legacyJsonMetaError" class="account-muted account-muted--error">{{ legacyJsonMetaError }} Use edit to repair it.</span>
+                <span v-else-if="!editJsonMeta" class="account-muted">JSON metadata is currently empty.</span>
+                <props-editor v-if="editJsonMeta" :json="account.json_metadata || '{}'" :username="username" :account="account" type="jsonMeta" @editedProps="refreshAccount()" />
               </q-card-section>
             </q-card>
 
@@ -514,6 +517,15 @@
   font-size: 0.8rem;
 }
 
+.account-muted--hint {
+  margin: 0.35rem 0 0.5rem;
+  line-height: 1.45;
+}
+
+.account-muted--error {
+  color: var(--c-negative);
+}
+
 .account-muted--row {
   display: flex;
   align-items: center;
@@ -677,6 +689,7 @@ import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
+import { parseAccountMetadata } from 'src/services/accountMetadata'
 import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
@@ -762,6 +775,21 @@ export default {
     loggedInUser: {
       get () { return this.$hiveStore.user.username }
     },
+    canEditAccount: {
+      get () { return Boolean(this.account && this.loggedInUser && this.account.name === this.loggedInUser) }
+    },
+    legacyJsonMeta: {
+      get () { return this.visibleMetadata(this.account && this.account.json_metadata) }
+    },
+    postingJsonMeta: {
+      get () { return this.visibleMetadata(this.account && this.account.posting_json_metadata) }
+    },
+    legacyJsonMetaError: {
+      get () { return this.metadataError(this.account && this.account.json_metadata) }
+    },
+    postingJsonMetaError: {
+      get () { return this.metadataError(this.account && this.account.posting_json_metadata) }
+    },
     globalProps: {
       get () {
         return this.$hiveStore.globalProps
@@ -842,23 +870,8 @@ export default {
     },
     coverImage: function () {
       var defaultCover = 'https://files.peakd.com/file/peakd-hive/ausbitbank/8xq5izkP-cover-1.jpg'
-      if (this.account === null) {
-        return defaultCover
-      } else {
-        if (this.account.posting_json_metadata) {
-          if (JSON.parse(this.account.posting_json_metadata).profile) {
-            if (JSON.parse(this.account.posting_json_metadata).profile.cover_image) {
-              return JSON.parse(this.account.posting_json_metadata).profile.cover_image
-            } else {
-              return defaultCover
-            }
-          } else {
-            return defaultCover
-          }
-        } else {
-          return defaultCover
-        }
-      }
+      const profile = this.postingJsonMeta && this.postingJsonMeta.profile
+      return (profile && profile.cover_image) || defaultCover
     },
     coverImageStyle: function () {
       if (this.coverImage) {
@@ -942,12 +955,16 @@ export default {
   methods: {
     getProfileMeta () {
       if (!this.account || !this.account.posting_json_metadata) return null
-      try {
-        const metadata = JSON.parse(this.account.posting_json_metadata)
-        return metadata && metadata.profile ? metadata.profile : null
-      } catch {
-        return null
-      }
+      const parsed = parseAccountMetadata(this.account.posting_json_metadata)
+      return parsed.ok ? (parsed.value.profile || null) : null
+    },
+    visibleMetadata (raw) {
+      const parsed = parseAccountMetadata(raw)
+      return parsed.ok && !parsed.empty ? parsed.value : null
+    },
+    metadataError (raw) {
+      const parsed = parseAccountMetadata(raw)
+      return parsed.ok ? '' : parsed.error
     },
     setNotFoundMeta (description) {
       setPageMeta({
@@ -1186,6 +1203,8 @@ export default {
       // this.getRewardFundPost()
       this.page = this.$route.query.page || 1
       this.username = this.$route.params.username
+      this.editJsonMeta = false
+      this.editPostingJson = false
       this.updatePageMeta()
       await this.loadAccount()
       if (!this.error) this.getAccountHistoryMarker()
