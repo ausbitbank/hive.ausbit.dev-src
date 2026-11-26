@@ -214,6 +214,7 @@
 import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { claimAgeDays, claimFingerprint, claimFromLink, buildClaimLink, authoritiesFromPayload } from 'src/services/accountClaim'
+import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
 import PageHeader from 'components/ui/PageHeader.vue'
 
 const POLL_INTERVAL_MS = 5000
@@ -410,8 +411,8 @@ export default {
       return {
         new_account_name: this.payload.u,
         ...authorities,
-        json_metadata: JSON.stringify({
-          app: 'banksia.io',
+        json_metadata: buildAccountCreationMetadata({
+          sponsor: this.loggedInUser,
           via: 'claim-link',
           nonce: this.payload.n
         }),

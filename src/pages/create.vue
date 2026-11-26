@@ -138,6 +138,7 @@ import { setPageMeta } from 'src/utils/pageMeta'
 import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
 import { importKeysToKeychain } from 'src/services/keychainAccounts'
+import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
 export default {
   name: 'createAccountPage',
   components: {
@@ -300,7 +301,7 @@ export default {
         active,
         posting,
         memo_key: memoKey,
-        json_metadata: JSON.stringify({ app: 'banksia.io', via: 'create-page' }),
+        json_metadata: buildAccountCreationMetadata({ sponsor: this.loggedInUser, via: 'create-page' }),
         extensions: []
       }
       var tx = ['create_claimed_account', op]
@@ -319,7 +320,7 @@ export default {
         active,
         posting,
         memo_key: memoKey,
-        json_metadata: JSON.stringify({ app: 'banksia.io', via: 'create-page' }),
+        json_metadata: buildAccountCreationMetadata({ sponsor: this.loggedInUser, via: 'create-page' }),
         extensions: []
       }
       var tx = ['account_create', op]

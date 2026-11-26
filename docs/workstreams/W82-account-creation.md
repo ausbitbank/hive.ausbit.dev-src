@@ -95,6 +95,17 @@
     account exists on-chain.
   - Imports active/posting/memo only; the owner key stays offline.
   - Normalises success, cancel and missing-extension results.
+- `src/services/accountOnboarding.js` and
+  `src/components/onboarding/AccountWelcome.vue`
+  - Native create/claim/batch transactions now put `onboarding.sponsor` and
+    `via` in the creation `json_metadata` (small, valid JSON; no profile fields).
+  - A new-account dialog prompts the owner to complete `posting_json_metadata`
+    profile fields and links to the existing profile editor.
+  - If the account has an onboarding sponsor, the dialog offers an explicit
+    opt-in 5% default beneficiary for Banksia posts. It is not applied silently,
+    and it does not affect other Hive apps.
+  - The prompt is per-user, dismissible, and only targets recent accounts or
+    accounts carrying onboarding metadata.
 
 ### Routing / SEO / tests
 
@@ -107,12 +118,16 @@
   validation, mocked invoice/status calls and error mapping.
 - `tests/unit/keychainAccounts.spec.js` covers Keychain result normalisation and
   the missing-extension path.
+- `tests/unit/accountOnboarding.spec.js` covers creation metadata, sponsor
+  parsing, profile detection and new-account age.
+- `tests/unit/account-welcome.spec.js` covers the prompt state and the explicit
+  beneficiary opt-in.
 - Material Icons subset regenerated.
 
 ## Verification
 
 - `bun run lint` → clean.
-- `bun run test` → 182 files / 1563 tests passed.
+- `bun run test` → 184 files / 1572 tests passed.
 - `bun run build` → succeeded.
 - Browser smoke test:
   - `/join` renders the four providers and the internal Hivedex link; no

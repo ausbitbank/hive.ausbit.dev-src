@@ -144,6 +144,7 @@
         </div>
       </footer>
     </q-page-container>
+    <account-welcome v-if="loggedInUser !== null" />
     <command-palette ref="commandPalette" />
     <post-peek />
     <perf-panel v-if="showPerfPanel" @close="closePerfPanel" />
@@ -485,6 +486,7 @@ const Queue = defineAsyncComponent(() => import('components/queue.vue'))
 const Settings = defineAsyncComponent(() => import('components/settings.vue'))
 const PerfPanel = defineAsyncComponent(() => import('components/ui/PerfPanel.vue'))
 const PostPeek = defineAsyncComponent(() => import('components/PostPeek.vue'))
+const AccountWelcome = defineAsyncComponent(() => import('components/onboarding/AccountWelcome.vue'))
 
 export default {
   name: 'MainLayout',
@@ -497,6 +499,7 @@ export default {
     settings: Settings,
     PerfPanel,
     PostPeek,
+    AccountWelcome,
     BackToTop,
     ErrorBoundary,
     KeyboardShortcuts

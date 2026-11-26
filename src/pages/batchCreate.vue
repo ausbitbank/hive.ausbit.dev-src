@@ -216,6 +216,7 @@ import {
   claimFingerprint,
   claimFromLink
 } from 'src/services/accountClaim'
+import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
 import PageHeader from 'components/ui/PageHeader.vue'
 
 const MAX_BATCH = 10
@@ -438,8 +439,8 @@ export default {
       return {
         new_account_name: claim.payload.u,
         ...authoritiesFromPayload(claim.payload),
-        json_metadata: JSON.stringify({
-          app: 'banksia.io',
+        json_metadata: buildAccountCreationMetadata({
+          sponsor: this.loggedInUser,
           via: 'claim-batch',
           nonce: claim.payload.n
         }),
