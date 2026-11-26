@@ -71,3 +71,6 @@ See the **banksia.io cutover** section in `README.md`. The short version:
 - `www.banksia.io` is an alias that redirects to the apex.
 - The old `/var/www/hive.ausbit.dev` directory is only used as the seed for the
   first deploy; the new docroot is `/var/www/banksia.io`.
+- `scripts/check-nginx-host.sh` runs before every deploy and fails if the single
+  shared vhost stops serving both hosts, the docroot moves, `/about` is missing,
+  or another enabled vhost claims either hostname. SPA deploys never edit nginx.

@@ -403,7 +403,12 @@ The deploy script lints, builds, prerenders metadata-only crawler snapshots,
 creates a timestamped tarball backup, uploads the build to a staging directory and
 activates it with rsync. On the first run it seeds `/var/www/banksia.io` from the
 old `/var/www/hive.ausbit.dev` build if the new path is empty, so the domain switch
-is zero-downtime. It prints the backup path and matching rollback command:
+is zero-downtime. Before activation it runs
+[`scripts/check-nginx-host.sh`](scripts/check-nginx-host.sh), which aborts if the one
+shared vhost stops serving both `banksia.io` and `hive.ausbit.dev`, if the docroot
+moves, if the `/about` route is missing, or if a second enabled vhost claims either
+host. SPA deploys never write nginx config. It prints the backup path and matching
+rollback command:
 
 ```bash
 ./scripts/rollback.sh ~/banksia-backups/banksia.io-<timestamp>.tar.gz

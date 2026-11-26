@@ -31,6 +31,11 @@ bun run build
 echo "==> Prerender key routes (metadata only)"
 node scripts/prerender.mjs || echo "Prerender skipped"
 
+# SPA deploys never install or edit nginx. Fail before activation if the shared
+# banksia.io + hive.ausbit.dev vhost, docroot or /about route has drifted.
+echo "==> Checking nginx host config"
+bash scripts/check-nginx-host.sh "$REMOTE"
+
 echo "==> Ensuring $REMOTE_DIR exists"
 ssh "$REMOTE" "mkdir -p '$REMOTE_DIR'; if [ -d '/var/www/hive.ausbit.dev' ] && [ -z \"\$(ls -A '$REMOTE_DIR' 2>/dev/null)\" ]; then cp -a /var/www/hive.ausbit.dev/. '$REMOTE_DIR'/; fi"
 
