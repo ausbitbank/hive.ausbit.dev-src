@@ -186,6 +186,13 @@
             </div>
           </template>
         </div>
+        <div class="account-menu__rule" role="presentation" />
+        <nav class="account-menu account-menu__guest-footer" aria-label="Join Hive">
+          <q-item clickable to="/join" class="account-menu__tile account-menu__tile--row" @click="closeMenu">
+            <q-item-section avatar><q-icon name="person_add" aria-hidden="true" /></q-item-section>
+            <q-item-section>Join Hive</q-item-section>
+          </q-item>
+        </nav>
       </q-list>
       </q-card>
     </q-popup-proxy>
@@ -480,6 +487,10 @@ a.account-menu__name:hover {
   height: 1px;
   margin: 5px 0.9rem 1px;
   background: var(--border-subtle);
+}
+
+.account-menu__guest-footer {
+  padding-bottom: 0.35rem;
 }
 
 .account-menu .q-item.account-menu__tile--danger,
