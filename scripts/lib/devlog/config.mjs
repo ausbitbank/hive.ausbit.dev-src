@@ -480,6 +480,72 @@ export const SHOT_RECIPES = {
     alt: 'A block page with grouped transactions, friendly operation labels and raw JSON tabs',
     caption: 'Blocks group transactions and virtual operations and keep the raw JSON one click away.'
   },
+  about: {
+    route: '/about',
+    waitMs: 5000,
+    viewport: { width: 1440, height: 1500 },
+    crop: '1280x1300+80+50',
+    alt: 'The Banksia About page with the brand story, the flower-spike mark and the principles behind the app',
+    caption: 'The About page explains the name, the mark and what Banksia is for.'
+  },
+  'about-mark': {
+    route: '/about',
+    waitMs: 5000,
+    viewport: { width: 1440, height: 1500 },
+    actions: [{ scrollToText: 'The name and the mark', offset: 90 }],
+    crop: '1280x1050+80+50',
+    alt: 'The Banksia name and mark cards, including the flower-spike illustration and the app icon',
+    caption: 'A banksia flower spike built from honeycomb cells: the plant, the hive and the chain in one mark.'
+  },
+  join: {
+    route: '/join',
+    waitMs: 12000,
+    viewport: { width: 1440, height: 1600 },
+    crop: '1280x1400+80+50',
+    alt: 'The Join Hive page with key generation, sponsor and verified provider paths',
+    caption: 'There are now three honest ways in: make keys and a claim link, ask a sponsor, or buy from a verified provider.'
+  },
+  'join-keys': {
+    route: '/join/keys',
+    waitMs: 5000,
+    viewport: { width: 1440, height: 1500 },
+    crop: '1280x1300+80+50',
+    alt: 'The create-your-keys page with the username field, local key generation and claim-link explanation',
+    caption: 'Keys are generated in the browser; the claim link carries only the username and public keys.'
+  },
+  moderation: {
+    route: '/settings/moderation',
+    waitMs: 14000,
+    viewport: { width: 1440, height: 1500 },
+    crop: '1280x1300+80+50',
+    alt: 'The moderation settings page with presets, the phishing safety floor and per-surface rules',
+    caption: 'Moderation is local, visible and reversible: presets, a per-surface matrix, list subscriptions and a named safety floor.'
+  },
+  downvotes: {
+    route: '/@{{account}}/downvotes',
+    waitMs: 20000,
+    viewport: { width: 1440, height: 1400 },
+    crop: '1280x1200+80+50',
+    alt: 'The downvotes page with summary cards, relationship filters and an explicit no-pattern verdict',
+    caption: 'Downvote transparency shows the public votes, the relationships and the evidence behind a pattern hint; a missing pattern is stated plainly.'
+  },
+  'community-moderation': {
+    route: '/c/hive-167922',
+    waitMs: 22000,
+    viewport: { width: 1440, height: 1500 },
+    actions: [{ scrollToText: 'Community moderation context', offset: 90 }],
+    crop: '1280x1200+80+50',
+    alt: 'The community moderation context card with muted-reason counts, recent muted posts and team roles',
+    caption: 'A community page now explains what the community muted, which bridge reason applied, and what it does not know.'
+  },
+  'quick-look': {
+    route: '/created?peek=@worldmappin/travel-digest-3105',
+    waitMs: 24000,
+    viewport: { width: 1280, height: 1150 },
+    crop: '1280x1150+0+0',
+    alt: 'The quick-look sheet open over a feed, with the post title, body, vote control and a link to the full post',
+    caption: 'Quick look opens a reading sheet from the feed, so a vote or a closer read does not cost your place.'
+  },
   'mobile-home': {
     route: '/',
     waitMs: 26000,
