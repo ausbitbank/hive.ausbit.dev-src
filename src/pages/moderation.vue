@@ -931,8 +931,8 @@ export default {
   },
   mounted () {
     setPageMeta({
-      title: 'Moderation — local policy and list context — hive.ausbit.dev',
-      description: 'Choose how hive.ausbit.dev labels, collapses or hides content. Local-first presets, mute and blacklist layers, skin safety and versioned export/import.',
+      title: 'Moderation — local policy and list context — banksia.io',
+      description: 'Choose how banksia.io labels, collapses or hides content. Local-first presets, mute and blacklist layers, skin safety and versioned export/import.',
       url: '/settings/moderation'
     })
     this.sync()

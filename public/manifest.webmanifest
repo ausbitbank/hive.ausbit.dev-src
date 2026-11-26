@@ -1,7 +1,7 @@
 {
-  "name": "hive.ausbit.dev — Hive block explorer",
-  "short_name": "hive.ausbit.dev",
-  "description": "A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, wallets, witnesses, proposals and markets.",
+  "name": "Banksia — Hive explorer, wallet & creator toolkit",
+  "short_name": "Banksia",
+  "description": "A fast, local-first explorer, wallet and creator toolkit for the Hive blockchain: blocks, accounts, posts, communities, governance, markets, tokens and Lightning.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

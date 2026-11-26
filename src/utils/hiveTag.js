@@ -2,7 +2,7 @@
 //
 // Hivemind validates feed tags with `^[a-z0-9-_]+$` before running a
 // `bridge.get_ranked_posts` query. The chain itself does not, so a post can be
-// published with a tag like `hive.ausbit.dev` and never appear in a tag feed.
+// published with a tag like `banksia.io` and never appear in a tag feed.
 // The composer sanitises input to hyphens; read paths only validate, so
 // existing posts render instead of hitting an "invalid tag" API error.
 

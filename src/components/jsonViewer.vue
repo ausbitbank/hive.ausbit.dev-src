@@ -214,7 +214,7 @@ export default {
         case 'leofinance': return 'https://leofinance.io/@' + d
         case 'pgp': return data.startsWith('0x')
           ? 'https://keys.openpgp.org/search?q=' + d
-          : 'https://hive.ausbit.dev/' + d
+          : 'https://banksia.io/' + d
         default: return null
       }
     }

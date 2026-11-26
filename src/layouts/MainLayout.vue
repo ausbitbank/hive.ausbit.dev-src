@@ -5,16 +5,16 @@
       <q-toolbar class="site-toolbar">
         <q-btn class="site-toolbar__menu" flat dense round icon="menu" aria-label="Menu" title="Menu" @click="leftDrawerOpen = !leftDrawerOpen"/>
         <q-toolbar-title class="site-toolbar__brand">
-          <router-link to="/" class="site-brand" aria-label="hive.ausbit.dev home">
+          <router-link to="/" class="site-brand" aria-label="Banksia home">
             <img
-              src="/statics/hive.svg"
+              src="/statics/banksia-mark-small.svg"
               class="site-brand__mark"
               alt=""
-              width="30"
-              height="26"
+              width="14"
+              height="24"
               aria-hidden="true"
             />
-            <span class="site-brand__text gt-xs">hive.ausbit.dev</span>
+            <span class="site-brand__text gt-xs">Banksia</span>
           </router-link>
         </q-toolbar-title>
         <div class="site-toolbar__actions">
@@ -114,7 +114,7 @@
           <q-icon name="favorite" size="15px" class="site-nav__heart" aria-label="love" /> by
           <router-link to="/@ausbitbank">ausbitbank</router-link>
         </span>
-        <span class="site-nav__footer-tag">hive.ausbit.dev · open source Hive explorer</span>
+        <span class="site-nav__footer-tag">banksia.io · open source Hive explorer</span>
       </div>
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
@@ -569,7 +569,7 @@ export default {
       exploreLinks: [
         {
           title: 'Home',
-          caption: 'hive.ausbit.dev',
+          caption: 'banksia.io',
           icon: 'home',
           to: '/'
         },
@@ -767,7 +767,7 @@ export default {
           title: 'Project announcement post',
           caption: 'ANN',
           icon: 'help',
-          link: 'https://hive.ausbit.dev/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
+          link: 'https://banksia.io/@ausbitbank/hive-ausbit-dev-an-open-source-hive-block-explorer-post-viewer-and-more'
         }
       ]
     }

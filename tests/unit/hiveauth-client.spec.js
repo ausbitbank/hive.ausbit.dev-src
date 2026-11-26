@@ -127,7 +127,7 @@ describe('HiveAuth client', () => {
     })
 
     const authData = JSON.parse(await decryptPayload(socket.sent[0].data, payload.key))
-    expect(authData.app.name).toBe('hive.ausbit.dev')
+    expect(authData.app.name).toBe('Banksia')
     expect(authData.challenge).toEqual({ key_type: 'posting', challenge: 'login' })
 
     const encrypted = await encryptPayload(JSON.stringify({

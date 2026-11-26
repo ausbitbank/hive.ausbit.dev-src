@@ -36,6 +36,6 @@ describe('profile service links', () => {
   })
 
   it('encodes the pinned permlink', () => {
-    expect(link('pinned', 'my post')).toBe('https://hive.ausbit.dev/@alice/my%20post')
+    expect(link('pinned', 'my post')).toBe('https://banksia.io/@alice/my%20post')
   })
 })

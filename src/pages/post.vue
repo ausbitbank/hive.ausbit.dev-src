@@ -1361,7 +1361,7 @@ export default {
     },
     setNotFoundMeta () {
       setPageMeta({
-        title: 'Post @' + this.author + '/' + this.permlink + ' not found — hive.ausbit.dev',
+        title: 'Post @' + this.author + '/' + this.permlink + ' not found — banksia.io',
         description: 'This Hive post does not exist or has been removed.',
         noindex: true
       })
@@ -1376,7 +1376,7 @@ export default {
       const metaDescription = typeof metadata.description === 'string'
         ? stripHtmlForMeta(metadata.description, 160)
         : ''
-      const description = metaDescription || body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at hive.ausbit.dev.")
+      const description = metaDescription || body || ('Read @' + author + "'s post on the Hive blockchain — blocks, accounts, posts and tools at banksia.io.")
       const image = Array.isArray(metadata.image) ? metadata.image[0] : metadata.image
       const pageUrl = BASE_URL + '/@' + author + '/' + permlink
       const jsonLd = post

@@ -23,7 +23,9 @@ import { stripHomeSnapshot } from './lib/home-snapshot.mjs'
 const PORT = 4188
 const ROUTES = PRERENDER_ROUTES
 const DIST = resolve(process.cwd(), 'dist/spa')
-const DEFAULT_TITLE = 'hive.ausbit.dev — Hive block explorer'
+import { BRAND } from '../src/config/brand.js'
+
+const DEFAULT_TITLE = BRAND.name + ' — Hive block explorer'
 const DEFAULT_DESCRIPTION = 'A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.'
 const DIRECTORY_INDEX_ROUTES = new Set(['/appearance', '/themes', '/settings/skin'])
 

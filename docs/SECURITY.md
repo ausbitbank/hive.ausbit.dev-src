@@ -2,14 +2,14 @@
 
 This document is the reference for defensive HTTP headers and for the client-side
 key model. Nothing here needs a build step; apply the headers at the reverse
-proxy (nginx) and/or at Cloudflare. Replace `hive.ausbit.dev` if the canonical
-host changes.
+proxy (nginx) and/or at Cloudflare. Replace `banksia.io` if the canonical
+domain changes.
 
 ## Response headers
 
 The production header policy is applied by the nginx origin. The canonical
-virtual-host file lives at `deploy/nginx/hive.ausbit.dev.conf`; install it as
-`/etc/nginx/sites-available/hive.ausbit.dev` and keep the certbot-managed SSL
+virtual-host file lives at `deploy/nginx/banksia.io.conf`; install it as
+`/etc/nginx/sites-available/banksia.io` and keep the certbot-managed SSL
 lines intact. `always` makes sure the headers are also sent on error responses.
 
 ### nginx
@@ -18,8 +18,8 @@ lines intact. `always` makes sure the headers are also sent on error responses.
 # Deny framing in both the legacy and CSP forms.
 add_header X-Frame-Options "DENY" always;
 add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://s3.tradingview.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' https: blob:; connect-src 'self' https: wss: https://cloudflareinsights.com https://*.tradingview.com; manifest-src 'self'; worker-src 'self' blob:; frame-src https://youtube.com https://www.youtube.com https://www.youtube-nocookie.com https://youtu.be https://player.vimeo.com https://vimeo.com https://3speak.tv https://www.3speak.tv https://play.3speak.tv https://odysee.com https://rumble.com https://www.bitchute.com https://d.tube https://ipfs.io https://gateway.ipfs.io https://open.spotify.com https://w.soundcloud.com https://platform.twitter.com https://player.twitch.tv https://s.tradingview.com https://www.tradingview.com; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; report-uri /csp-report; report-to csp-endpoint" always;
-add_header Report-To '{"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"https://hive.ausbit.dev/csp-report"}]}' always;
-add_header Reporting-Endpoints 'csp-endpoint="https://hive.ausbit.dev/csp-report"' always;
+add_header Report-To '{"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"https://banksia.io/csp-report"}]}' always;
+add_header Reporting-Endpoints 'csp-endpoint="https://banksia.io/csp-report"' always;
 add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
@@ -35,9 +35,9 @@ Notes:
   per-request bot-detection snippet; the pre-paint theme bootstrap lives in
   `/statics/boot-theme.js`. Once Cloudflare's inline injection is disabled,
   drop `'unsafe-inline'` from `script-src` to make the policy fully strict.
-- Violations are posted to `/csp-report` on the `hive-metadata` Worker. It caps
+- Violations are posted to `/csp-report` on the `banksia-metadata` Worker. It caps
   bodies at 8 KB and logs one compact JSON line per report; read them with
-  `npx wrangler@4 tail hive-metadata`. `Report-To` and `Reporting-Endpoints` are
+  `npx wrangler@4 tail banksia-metadata`. `Report-To` and `Reporting-Endpoints` are
   both sent for browser coverage, with `report-uri` kept for older Safari.
 - The vhost sets `server_tokens off;` and denies dotfiles (except
   `/.well-known`).
@@ -84,7 +84,7 @@ listen 443 ssl;   # good
 
 Cloudflare terminates client HTTP/2/HTTP/3, so browsers still get it; the origin
 leg only speaks HTTP/1.1, which keeps the HTTP/2 and HTTP/3 code paths in
-nginx unreachable. `deploy/nginx/hive.ausbit.dev.conf` already follows this.
+nginx unreachable. `deploy/nginx/banksia.io.conf` already follows this.
 
 ## Cloudflare Rocket Loader
 

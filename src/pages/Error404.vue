@@ -52,8 +52,8 @@ export default {
   },
   mounted () {
     setPageMeta({
-      title: 'Page not found (404) — hive.ausbit.dev',
-      description: 'The requested page could not be found. Search accounts, posts, tags, blocks and transactions on hive.ausbit.dev.',
+      title: 'Page not found (404) — banksia.io',
+      description: 'The requested page could not be found. Search accounts, posts, tags, blocks and transactions on banksia.io.',
       noindex: true
     })
   },

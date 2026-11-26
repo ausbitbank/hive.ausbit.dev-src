@@ -1,4 +1,4 @@
-# hive.ausbit.dev roadmap
+# Banksia roadmap
 
 Last updated: 2026-11-26
 
@@ -8,20 +8,21 @@ principles that constrain it. Delivered work and its verification records live i
 
 ## Current snapshot
 
-- The 2026 revamp is deployed at <https://hive.ausbit.dev>.
+- The 2026 revamp is deployed at <https://banksia.io>; the legacy
+  <https://hive.ausbit.dev> host serves the same build.
 - The latest shipped slice covers local-first moderation (W71–W78), the
   user-selectable image proxy (W79), post quick look and feed position
-  restoration (W80), CSP reporting, vhost hardening, dependency updates and the
-  repaired E2E suite.
+  restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
+  reporting, vhost hardening, dependency updates and the repaired E2E suite.
 - Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,518 tests across 176 files.
+  with 1,524 tests across 177 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W81**.
+- The next free workstream number is **W82**.
 
 ## Vision
 
-Make hive.ausbit.dev the fastest, most trustworthy Hive explorer for people who
+Make Banksia the fastest, most trustworthy Hive explorer for people who
 use the chain every day: quick to open, resilient on weak or dead API nodes,
 comfortable on mobile, and deep enough for governance, discovery and publishing
 workflows.

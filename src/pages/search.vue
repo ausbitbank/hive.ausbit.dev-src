@@ -80,7 +80,7 @@
             <ol class="search-tips">
               <li>Type an account name to see its profile, posts and witness status.</li>
               <li>Use <code>#tag</code> or a community id such as <code>hive-174578</code> to explore a topic.</li>
-              <li>Paste a hive.blog, peakd or hive.ausbit.dev post link to jump straight to it.</li>
+              <li>Paste a hive.blog, peakd or banksia.io post link to jump straight to it.</li>
               <li>Paste a block number, transaction id or proposal number to verify it exists.</li>
             </ol>
           </div>
@@ -1331,10 +1331,10 @@ export default {
     setMeta () {
       const text = this.submittedQuery
       setPageMeta({
-        title: text ? 'Search: ' + text + ' — hive.ausbit.dev' : 'Search Hive — accounts, posts, tags and more',
+        title: text ? 'Search: ' + text + ' — banksia.io' : 'Search Hive — accounts, posts, tags and more',
         description: text
           ? 'Hive search results for “' + text + '”: accounts, posts, tags, communities, blocks, transactions, proposals and witnesses.'
-          : 'Search accounts, posts, tags, communities, blocks, transactions, proposals and witnesses on hive.ausbit.dev.',
+          : 'Search accounts, posts, tags, communities, blocks, transactions, proposals and witnesses on banksia.io.',
         url: '/search',
         noindex: true
       })

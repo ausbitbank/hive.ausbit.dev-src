@@ -28,7 +28,7 @@ esac
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SRC_CONF=deploy/nginx/hive.ausbit.dev.conf
+SRC_CONF=deploy/nginx/banksia.io.conf
 POLICY="$(grep -m1 'add_header Content-Security-Policy' "$SRC_CONF" | sed 's/^[[:space:]]*//')"
 [ -n "$POLICY" ] || { echo "error: no CSP line in $SRC_CONF" >&2; exit 1; }
 
@@ -42,19 +42,19 @@ MODE="$1"
 
 LIVE="${LIVE_CONF:-}"
 if [ -z "$LIVE" ]; then
-  LIVE="$(grep -rl 'server_name hive\.ausbit\.dev' /etc/nginx/sites-available 2>/dev/null \
+  LIVE="$(grep -rlE 'server_name (banksia\.io|hive\.ausbit\.dev)' /etc/nginx/sites-available 2>/dev/null \
     | grep -v '\.bak-' | head -1 || true)"
 fi
 if [ -z "$LIVE" ]; then
-  LIVE="$(grep -rl 'server_name hive\.ausbit\.dev' /etc/nginx/conf.d 2>/dev/null \
+  LIVE="$(grep -rlE 'server_name (banksia\.io|hive\.ausbit\.dev)' /etc/nginx/conf.d 2>/dev/null \
     | grep -v '\.bak-' | head -1 || true)"
 fi
-[ -n "$LIVE" ] || { echo "error: no nginx vhost with server_name hive.ausbit.dev" >&2; exit 1; }
+[ -n "$LIVE" ] || { echo "error: no nginx vhost with server_name banksia.io" >&2; exit 1; }
 echo "site config: $LIVE"
 
-STAGE=/tmp/hive-vhost.stage
+STAGE=/tmp/banksia-vhost.stage
 
-python3 - "$LIVE" "$STAGE" /tmp/hive-csp-policy.txt <<'PY'
+python3 - "$LIVE" "$STAGE" /tmp/banksia-csp-policy.txt <<'PY'
 import sys
 
 live, stage, policy_file = sys.argv[1:4]
@@ -63,11 +63,11 @@ text = open(live).read()
 
 report_to = (
     "add_header Report-To '{\"group\":\"csp-endpoint\",\"max_age\":10886400,"
-    "\"endpoints\":[{\"url\":\"https://hive.ausbit.dev/csp-report\"}]}' always;"
+    "\"endpoints\":[{\"url\":\"https://banksia.io/csp-report\"}]}' always;"
 )
 endpoints = (
     "add_header Reporting-Endpoints "
-    "'csp-endpoint=\"https://hive.ausbit.dev/csp-report\"' always;"
+    "'csp-endpoint=\"https://banksia.io/csp-report\"' always;"
 )
 
 has_report_to = 'add_header Report-To' in text
@@ -91,7 +91,7 @@ if hits != 1:
 text = ''.join(out)
 
 if 'server_tokens' not in text:
-    marker = 'server_name hive.ausbit.dev;\n'
+    marker = 'server_name banksia.io www.banksia.io hive.ausbit.dev;\n'
     if marker not in text:
         sys.exit('could not find the server_name line')
     text = text.replace(marker, marker + '    server_tokens off;\n', 1)
@@ -136,11 +136,11 @@ echo "reloaded nginx"
 echo "backup: $BAK"
 REMOTE
 
-scp -q "$TMP/policy.txt" "$HOST:/tmp/hive-csp-policy.txt"
-scp -q "$TMP/remote.sh" "$HOST:/tmp/hive-vhost-apply.sh"
+scp -q "$TMP/policy.txt" "$HOST:/tmp/banksia-csp-policy.txt"
+scp -q "$TMP/remote.sh" "$HOST:/tmp/banksia-vhost-apply.sh"
 
 if [ "$MODE" = "apply" ]; then
-  ssh -t "$HOST" "sudo bash /tmp/hive-vhost-apply.sh apply; rc=\$?; sudo rm -f /tmp/hive-vhost-apply.sh /tmp/hive-csp-policy.txt /tmp/hive-vhost.stage; exit \$rc"
+  ssh -t "$HOST" "sudo bash /tmp/banksia-vhost-apply.sh apply; rc=\$?; sudo rm -f /tmp/banksia-vhost-apply.sh /tmp/banksia-csp-policy.txt /tmp/banksia-vhost.stage; exit \$rc"
 else
-  ssh "$HOST" "bash /tmp/hive-vhost-apply.sh dry-run; rc=\$?; rm -f /tmp/hive-vhost-apply.sh /tmp/hive-csp-policy.txt /tmp/hive-vhost.stage; exit \$rc"
+  ssh "$HOST" "bash /tmp/banksia-vhost-apply.sh dry-run; rc=\$?; rm -f /tmp/banksia-vhost-apply.sh /tmp/banksia-csp-policy.txt /tmp/banksia-vhost.stage; exit \$rc"
 fi

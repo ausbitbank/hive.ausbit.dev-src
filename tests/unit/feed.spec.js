@@ -42,7 +42,7 @@ describe('RSS feed helpers', () => {
       posts: [{ ...POST, author: 'someone-else' }],
       now: new Date('2026-11-18T00:00:00Z')
     })
-    expect(xml).toContain('<title>hive.ausbit.dev</title>')
+    expect(xml).toContain('<title>Banksia</title>')
     expect(xml.match(/<item>/g)).toHaveLength(1)
   })
 })

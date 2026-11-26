@@ -228,7 +228,7 @@ export default {
   computed: {
     summary () {
       // Tag rows come from post metadata and `get_trending_tags`, neither of
-      // which filters chain-invalid tags (e.g. `hive.ausbit.dev`).
+      // which filters chain-invalid tags (e.g. `banksia.io`).
       const tags = (Array.isArray(this.tags) ? this.tags : [])
         .filter(tag => isValidTag(String((tag && tag.name) || '')))
       return trendingTagsSummary({ tags, limit: this.limit })

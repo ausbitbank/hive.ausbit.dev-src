@@ -1126,7 +1126,7 @@ export function parseLayoutText (text) {
     } else if (value.startsWith('{')) {
       json = value
     } else {
-      return { layout: null, error: 'That does not look like a hive.ausbit.dev layout string.' }
+      return { layout: null, error: 'That does not look like a banksia.io layout string.' }
     }
   } catch {
     return { layout: null, error: 'The layout string is damaged and could not be decoded.' }

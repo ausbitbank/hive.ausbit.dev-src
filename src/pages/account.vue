@@ -32,7 +32,7 @@
                 <h2 class="account-card__title">@{{ account.name }}</h2>
               </div>
               <div class="account-overview-actions">
-                <share-menu :title="'@' + account.name + ' on hive.ausbit.dev'" :path="'/@' + account.name" />
+                <share-menu :title="'@' + account.name + ' on banksia.io'" :path="'/@' + account.name" />
                 <nav class="account-quick-links" aria-label="Account quick links">
                   <router-link :to="linkWallet(username)">Wallet</router-link>
                   <router-link :to="'/@' + username + '/lightning'">Lightning</router-link>
@@ -951,7 +951,7 @@ export default {
     },
     setNotFoundMeta (description) {
       setPageMeta({
-        title: 'Account @' + this.username + ' not found — hive.ausbit.dev',
+        title: 'Account @' + this.username + ' not found — banksia.io',
         description: description || 'This Hive account does not exist.',
         noindex: true
       })

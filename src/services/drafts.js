@@ -162,7 +162,7 @@ export function normalizeEditing (value, editedBy = null) {
     ? value.previousMetadata
     : null
   // Hive keeps parent_permlink immutable on edit, so an existing category is
-  // kept verbatim even when it is not a valid tag (e.g. `hive.ausbit.dev`).
+  // kept verbatim even when it is not a valid tag (e.g. `banksia.io`).
   const parentPermlink = cleanString(value.parentPermlink, 256).trim().toLowerCase()
   return {
     author,
@@ -610,7 +610,7 @@ export function serializeDraftExport (drafts, { now = Date.now() } = {}) {
     .filter(Boolean)
     .map(item => normalizeDraft(item, now))
   return JSON.stringify({
-    app: 'hive.ausbit.dev',
+    app: 'banksia.io',
     type: DRAFT_EXPORT_TYPE,
     version: DRAFT_VERSION,
     exportedAt: new Date(now).toISOString(),

@@ -105,7 +105,7 @@
         <span class="wallet-lightning__note">
           Bridged by <a href="https://v4v.app" target="_blank" rel="noopener noreferrer">v4v.app</a>.
           Keep invoices at {{ preferredSatsLabel }} sats or more; the fixed {{ feeFixedLabel }} sat
-          fee eats small amounts. Keepsats are held by v4v.app, not by hive.ausbit.dev.
+          fee eats small amounts. Keepsats are held by v4v.app, not by banksia.io.
         </span>
         <q-btn
           flat

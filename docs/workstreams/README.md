@@ -137,3 +137,4 @@ The next free workstream number is **W81**.
 | [W78-community-moderation-context](W78-community-moderation-context.md) | Community moderation context |
 | [W79-image-proxy](W79-image-proxy.md) | User-selectable image proxy |
 | [W80-post-quick-look](W80-post-quick-look.md) | Post quick look and feed position restoration |
+| [W81-banksia-rebrand](W81-banksia-rebrand.md) | Banksia rebrand and banksia.io cutover |

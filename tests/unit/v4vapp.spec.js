@@ -60,7 +60,7 @@ describe('v4vapp client', () => {
       hive_accname: 'alice',
       hbd_amount: 1,
       receive_currency: 'hbd',
-      app_name: 'hiveausbit',
+      app_name: 'banksia',
       qr_image: true
     })
     expect(invoice).toMatchObject({

@@ -1,3 +1,10 @@
+> **Banksia rename (2026-11-26):** the production origin is now
+> `https://banksia.io`. v4v.app's CORS allowlist and client app id were originally
+> registered for `https://hive.ausbit.dev`; add `https://banksia.io` to the
+> allowlist and register the new app id before relying on Lightning from the new
+> origin. The legacy host remains allowlisted, so it keeps working during the
+> transition.
+
 # v4vapp / Lightning integration study
 
 Status: research + phased delivery. Phases 0–5 are largely implemented in
@@ -108,7 +115,7 @@ Authenticated (HTTP 401 without a token):
 
 Auth flow (reverse-engineered from the v4vapp frontend and verified live):
 
-1. `GET /auth/{account}?clientId=<10–100 chars>&appId=hive.ausbit.dev&scope=hive:posting`
+1. `GET /auth/{account}?clientId=<10–100 chars>&appId=banksia.io&scope=hive:posting`
    returns a challenge string, e.g.
    `patch eagle dwarf ausbitbank 1795139814.363781 <clientId> hive.ausbit.dev`.
 2. Sign that exact string with the **posting** key (Keychain `requestSignBuffer`
@@ -278,7 +285,7 @@ POST /v1/new_invoice_hive
   "hbd_amount": 1.0,
   "receive_currency": "hbd",
   "message": "Tip from hive.ausbit.dev",
-  "app_name": "hiveausbit",
+  "app_name": "banksia",
   "expiry": 600,
   "qr_image": true
 }
@@ -691,7 +698,7 @@ effective rate, and show the observed fixed fee warning for small amounts.
 
 - `LIGHTNING_ENABLED` (build/runtime flag) gates all UI.
 - Base URL in one place (`services/v4vapp.js`); allow a dev override.
-- `app_name=hiveausbit` on invoice creation; include a stable `clientId` for
+- `app_name=banksia` on invoice creation; include a stable `clientId` for
   auth (random, 10–100 chars, stored locally, not a secret).
 - Show bridge attribution and a link to v4v.app/terms near the first use.
 - Bridge capability is a state, not an exception: `unknown | available |
@@ -794,7 +801,7 @@ are explicit; no new dependency in the main bundle.
   acceptable? Is there a voucher/claim-ticket flow?
 - What are the exact memo length and character rules? (Pipe `|` is forbidden;
   `#` tags are interpreted.)
-- Can `app_name=hiveausbit` get dedicated rate limits or an allowlist entry?
+- Can `app_name=banksia` get dedicated rate limits or an allowlist entry?
 - What is the upgrade/deprecation policy for the `/v1` and `/v2` endpoints?
 
 **Testing**

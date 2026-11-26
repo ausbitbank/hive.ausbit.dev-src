@@ -1,7 +1,8 @@
+import { BRAND } from '../config/brand'
 import { validateAccountName } from './hiveNames'
 import { isValidTag as isValidHiveTag } from '../utils/hiveTag'
 
-const URL_HOSTS = ['hive.ausbit.dev', 'hive.blog', 'peakd.com', 'ecency.com']
+const URL_HOSTS = [BRAND.domain, 'www.' + BRAND.domain, BRAND.legacyHost, 'hive.blog', 'peakd.com', 'ecency.com']
 const ACCOUNT_SUBPAGES = [
   'wallet', 'posts', 'blog', 'feed', 'replies', 'comments', 'communities',
   'followers', 'following', 'tip', 'transfers', 'trail', 'lightning', 'pos'
@@ -118,7 +119,7 @@ function parseUrl (raw) {
     .map(segment => safeDecode(segment))
     .filter(segment => segment !== '')
   if (segments.length === 0) {
-    return { path: '/', label: 'hive.ausbit.dev', description: 'Home', icon: 'home', kind: 'home' }
+    return { path: '/', label: BRAND.name, description: 'Home', icon: 'home', kind: 'home' }
   }
 
   const atIndex = segments.findIndex(segment => segment.startsWith('@'))

@@ -124,7 +124,7 @@ describe('comment queue item', () => {
       title: '',
       body: 'Hello **world**'
     })
-    expect(JSON.parse(item[2][1].json_metadata)).toEqual({ app: 'hive.ausbit.dev', format: 'markdown' })
+    expect(JSON.parse(item[2][1].json_metadata)).toEqual({ app: 'banksia.io', format: 'markdown' })
     expect(item[2][1].comment_options).toMatchObject({
       author: 'alice',
       permlink: 're-bob-parent-comment-20261117t120000000z',
@@ -158,7 +158,7 @@ describe('comment queue item', () => {
     })
     expect(operation.comment_options).toBeUndefined()
     expect(JSON.parse(operation.json_metadata)).toMatchObject({
-      app: 'hive.ausbit.dev',
+      app: 'banksia.io',
       format: 'markdown',
       image: ['https://img.example/a.png']
     })

@@ -1,4 +1,7 @@
-# Cloudflare rules — hive.ausbit.dev
+# Cloudflare rules — banksia.io
+
+The examples use `banksia.io`. The legacy `hive.ausbit.dev` host serves the same
+app during the transition; duplicate any host-scoped rule for that host.
 
 Draft rules based on the traffic analysis in [`docs/analytics-review.md`](../../docs/analytics-review.md).
 Apply in **Security → WAF → Custom rules** and **Security → WAF → Rate limiting rules**.
@@ -45,7 +48,7 @@ Reflectionbot sent 1,348,640 requests in 30 days; ElevenlabsCrawler 124,300.
 Neither serves a user.
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  (http.user_agent contains "Reflectionbot" or
   http.user_agent contains "ElevenlabsCrawler"))
 ```
@@ -64,7 +67,7 @@ The Free plan has no regex support, so this uses `starts_with`/`eq`; Business
 plans can replace it with the shorter `matches` form.
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  (starts_with(http.request.uri.path, "/wp-admin") or
   starts_with(http.request.uri.path, "/wp-includes") or
   starts_with(http.request.uri.path, "/wp-content") or
@@ -91,7 +94,7 @@ A bare challenge on these paths **breaks link previews and search indexing** —
 verified bots get the 403 too. The expression below exempts them:
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  (starts_with(http.request.uri.path, "/tx/") or
   starts_with(http.request.uri.path, "/@")) and
  not cf.client.bot and
@@ -143,7 +146,7 @@ them, replace the last rule with this one and watch **Security Events** after
 saving:
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  http.referer eq "" and
  not cf.client.bot and
  not (http.user_agent contains "Discordbot" or
@@ -185,7 +188,7 @@ shows all of them doing **one request per IP, HTML only, no referrer, no
 assets** — a residential-proxy pool, not browsers.
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  http.user_agent contains "X11; Linux x86_64" and
  http.user_agent contains "Chrome/155.")
 ```
@@ -203,7 +206,7 @@ To see what the class is actually doing before you escalate:
 
 ```bash
 jq -r 'select(.class=="bot-linux155") | .uri' \
-  /var/log/nginx/hive.ausbit.dev.access.log \
+  /var/log/nginx/banksia.io.access.log \
   | sort | uniq -c | sort -rn | head
 ```
 
@@ -215,7 +218,7 @@ The macOS/Chrome-146 client sent 143,280 beacons (90% of all Web Analytics
 traffic) with **zero** HTML requests. It is poisoning your dashboard.
 
 ```
-(http.host eq "hive.ausbit.dev" and
+(http.host eq "banksia.io" and
  http.request.uri.path eq "/cdn-cgi/rum" and
  http.user_agent contains "Macintosh" and
  http.user_agent contains "Chrome/146.")
@@ -317,7 +320,7 @@ subtract it from every request total.
 After the first 24 hours with the new nginx log (`jq` required — `sudo apt install jq` if missing):
 
 ```bash
-LOG=/var/log/nginx/hive.ausbit.dev.access.log
+LOG=/var/log/nginx/banksia.io.access.log
 
 # traffic by class
 jq -r '.class' "$LOG" | sort | uniq -c | sort -rn

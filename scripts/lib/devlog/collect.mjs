@@ -635,26 +635,26 @@ function makeTitle (range, surfaces) {
 function makeTitleOptions (range, surfaces) {
   const labels = orderedSurfaces(surfaces).slice(0, 3).map(surface => surface.label.toLowerCase())
   return [
-    `${range.commits.length} commits in ${daysLabel(range.days)} on hive.ausbit.dev`,
+    `${range.commits.length} commits in ${daysLabel(range.days)} on banksia.io`,
     `${range.commits.length} commits in ${daysLabel(range.days)}: ${labels.join(', ')}`,
-    `Building on hive.ausbit.dev: ${labels.slice(0, 2).join(' and ')}`
+    `Building on banksia.io: ${labels.slice(0, 2).join(' and ')}`
   ]
 }
 
 function makeDescription (range, surfaces) {
   const labels = orderedSurfaces(surfaces).slice(0, 4).map(surface => surface.label.toLowerCase())
-  const base = `${range.commits.length} commits in ${daysLabel(range.days)}: ${labels.join(', ') || 'a faster, smarter Hive explorer'} on hive.ausbit.dev.`
+  const base = `${range.commits.length} commits in ${daysLabel(range.days)}: ${labels.join(', ') || 'a faster, smarter Hive explorer'} on banksia.io.`
   if (base.length <= DESCRIPTION_MAX) return base
-  const short = `${range.commits.length} commits in ${daysLabel(range.days)}: dashboards, search and Lightning on hive.ausbit.dev.`
+  const short = `${range.commits.length} commits in ${daysLabel(range.days)}: dashboards, search and Lightning on banksia.io.`
   return short.length <= DESCRIPTION_MAX ? short : truncate(short, DESCRIPTION_MAX)
 }
 
 function makeDescriptionOptions (range, surfaces) {
   const labels = orderedSurfaces(surfaces).slice(0, 4).map(surface => surface.label.toLowerCase())
   const options = [
-    `${range.commits.length} commits in ${daysLabel(range.days)}: ${labels.join(', ')} on hive.ausbit.dev.`,
-    `${range.commits.length} commits in ${daysLabel(range.days)}: dashboards, search and Lightning on hive.ausbit.dev.`,
-    `${range.commits.length} commits in ${daysLabel(range.days)}. Here is what changed on hive.ausbit.dev.`
+    `${range.commits.length} commits in ${daysLabel(range.days)}: ${labels.join(', ')} on banksia.io.`,
+    `${range.commits.length} commits in ${daysLabel(range.days)}: dashboards, search and Lightning on banksia.io.`,
+    `${range.commits.length} commits in ${daysLabel(range.days)}. Here is what changed on banksia.io.`
   ]
   return unique(options.map(option => option.length <= DESCRIPTION_MAX ? option : truncate(option, DESCRIPTION_MAX)))
 }

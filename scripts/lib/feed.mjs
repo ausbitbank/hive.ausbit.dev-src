@@ -1,5 +1,7 @@
+import { BRAND } from '../../src/config/brand.js'
+
 export const FEED_ACCOUNT = 'ausbitbank'
-export const FEED_BASE = 'https://hive.ausbit.dev'
+export const FEED_BASE = BRAND.url
 
 export function escapeXml (value) {
   return String(value ?? '')
@@ -52,17 +54,17 @@ export function buildFeedXml ({ posts = [], base = FEED_BASE, account = FEED_ACC
   const items = ownPosts.length > 0
     ? ownPosts.map(post => itemXml(post, { base })).join('\n')
     : `    <item>
-      <title>hive.ausbit.dev</title>
+      <title>${escapeXml(BRAND.name)}</title>
       <link>${base}/</link>
       <guid isPermaLink="true">${base}/</guid>
       <pubDate>${now.toUTCString()}</pubDate>
-      <description>Hive block explorer and toolkit.</description>
+      <description>${escapeXml(BRAND.shortDescription)}</description>
     </item>`
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>hive.ausbit.dev — project updates</title>
+    <title>${escapeXml(BRAND.name)} — project updates</title>
     <link>${base}/</link>
     <description>Project updates from @${account}: a Hive block explorer, wallet, governance and market toolkit.</description>
     <language>en-us</language>

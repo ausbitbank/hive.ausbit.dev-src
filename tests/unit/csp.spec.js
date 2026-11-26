@@ -23,7 +23,7 @@ describe('CSP and inline-script discipline', () => {
   })
 
   it.each([
-    'deploy/nginx/hive.ausbit.dev.conf',
+    'deploy/nginx/banksia.io.conf',
     'docs/SECURITY.md'
   ])('blocks inline event handlers in %s', (file) => {
     const text = read(file)

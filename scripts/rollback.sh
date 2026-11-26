@@ -4,7 +4,7 @@
 # The current (bad) deployment is backed up automatically before restoring.
 #
 # Usage:
-#   ./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-20261117T074127Z.tar.gz
+#   ./scripts/rollback.sh ~/banksia-backups/banksia.io-20261117T074127Z.tar.gz
 #   REMOTE=myhost ./scripts/rollback.sh /path/on/remote/backup.tar.gz
 #
 set -euo pipefail
@@ -15,7 +15,7 @@ if [ $# -lt 1 ]; then
 fi
 
 REMOTE="${REMOTE:-hurgenburgen}"
-REMOTE_DIR="${REMOTE_DIR:-/var/www/hive.ausbit.dev}"
+REMOTE_DIR="${REMOTE_DIR:-/var/www/banksia.io}"
 REMOTE_PARENT="$(dirname "$REMOTE_DIR")"
 REMOTE_NAME="$(basename "$REMOTE_DIR")"
 BACKUP="$1"
@@ -29,10 +29,10 @@ fi
 
 echo "==> Saving the current deployment before rollback"
 ssh "$REMOTE" "set -e
-  mkdir -p ~/hive-backups
+  mkdir -p ~/banksia-backups
   TS=\$(date -u +%Y%m%dT%H%M%SZ)
-  tar -C '$REMOTE_PARENT' -czf ~/hive-backups/pre-rollback-\$TS.tar.gz '$REMOTE_NAME'
-  echo \"pre-rollback backup: ~/hive-backups/pre-rollback-\$TS.tar.gz\""
+  tar -C '$REMOTE_PARENT' -czf ~/banksia-backups/pre-rollback-\$TS.tar.gz '$REMOTE_NAME'
+  echo \"pre-rollback backup: ~/banksia-backups/pre-rollback-\$TS.tar.gz\""
 
 echo "==> Restoring $BACKUP"
 ssh "$REMOTE" "set -e

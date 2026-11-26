@@ -217,7 +217,7 @@ export default {
     defaultCurrency: { type: String, default: 'hbd' },
     defaultAmount: { type: [Number, String], default: null },
     defaultReceiveCurrency: { type: String, default: '' },
-    defaultNote: { type: String, default: 'Tip from hive.ausbit.dev' },
+    defaultNote: { type: String, default: 'Tip from banksia.io' },
     intent: { type: String, default: 'receive' },
     presets: { type: Array, default: () => [] }
   },

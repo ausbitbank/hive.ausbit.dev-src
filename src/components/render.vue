@@ -126,7 +126,7 @@ function sizeMap () {
 /** Convert a 3Speak watch URL into the Snapie player embed URL. */
 export function threeSpeakEmbedUrl (href) {
   try {
-    const url = new URL(href, 'https://hive.ausbit.dev')
+    const url = new URL(href, 'https://banksia.io')
     if (!['3speak.tv', 'www.3speak.tv', 'play.3speak.tv'].includes(url.hostname)) return ''
     const video = url.searchParams.get('v') || (() => {
       const parts = url.pathname.split('/').filter(Boolean)
@@ -147,7 +147,7 @@ export function threeSpeakEmbedUrl (href) {
  */
 export function twitchChannelFromEmbed (src) {
   try {
-    const url = new URL(src, 'https://hive.ausbit.dev')
+    const url = new URL(src, 'https://banksia.io')
     if (url.hostname !== 'player.twitch.tv') return ''
     if (url.searchParams.get('video') || url.searchParams.get('clip')) return ''
     return (url.searchParams.get('channel') || '').trim()

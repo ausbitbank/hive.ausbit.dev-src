@@ -4,10 +4,10 @@
 // Every tag is looked up by a stable selector and updated in place, so client
 // side navigation replaces the existing tags instead of appending duplicates.
 
-export const SITE_NAME = 'hive.ausbit.dev'
-export const BASE_URL = 'https://hive.ausbit.dev'
-export const DEFAULT_DESCRIPTION = 'A block explorer and toolkit for the Hive blockchain: blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.'
-export const DEFAULT_IMAGE = '/statics/icons/icon-512x512.png'
+import { BRAND, SITE_NAME, BASE_URL, DEFAULT_IMAGE } from '../config/brand'
+
+export { SITE_NAME, BASE_URL, DEFAULT_IMAGE }
+export const DEFAULT_DESCRIPTION = BRAND.description
 
 const JSON_LD_ID = 'page-json-ld'
 const DEFAULT_MAX_LENGTH = 200

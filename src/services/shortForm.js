@@ -392,7 +392,7 @@ export function shortFormQueueItem ({
   permlink,
   parent = null,
   reply = null,
-  app = 'hive.ausbit.dev',
+  app = 'banksia.io',
   now = new Date(),
   random = Math.random
 } = {}) {

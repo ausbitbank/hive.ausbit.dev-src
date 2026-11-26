@@ -1,14 +1,21 @@
 {
-  "name": "hive-metadata",
+  "name": "banksia-metadata",
   "compatibility_date": "2026-11-18",
   "main": "deploy/cloudflare/metadata-worker.mjs",
   "routes": [
+    "banksia.io/@*",
     "hive.ausbit.dev/@*",
+    "banksia.io/appearance*",
     "hive.ausbit.dev/appearance*",
+    "banksia.io/themes*",
     "hive.ausbit.dev/themes*",
+    "banksia.io/lightning*",
     "hive.ausbit.dev/lightning*",
+    "banksia.io/settings/skin*",
     "hive.ausbit.dev/settings/skin*",
+    "banksia.io/settings/moderation*",
     "hive.ausbit.dev/settings/moderation*",
+    "banksia.io/csp-report*",
     "hive.ausbit.dev/csp-report*"
   ]
 }

@@ -28,8 +28,13 @@ The repository root contains `wrangler.jsonc`, so a deploy is one command:
 npx wrangler@4 deploy
 ```
 
-The Worker is bound to `hive.ausbit.dev/@*`, the theme/settings routes and their
-subpaths. It handles only `GET` requests that accept HTML; account subpages
+The Worker is renamed to `banksia-metadata`. After the new routes are verified,
+delete the old `hive-metadata` Worker in the Cloudflare dashboard so its legacy
+routes cannot shadow the new one.
+
+The Worker is named `banksia-metadata` and is bound to `banksia.io/@*`, the
+theme/settings routes and their subpaths. The legacy `hive.ausbit.dev` routes are
+kept so old shared links still get the same previews. It handles only `GET` requests that accept HTML; account subpages
 (`/wallet`, `/followers`, `/downvotes`, `/pos`, …) are left to the origin SSI
 shell.
 
@@ -39,7 +44,7 @@ Verify with a non-JS request:
 curl -sS -D - -o /tmp/post.html \
   -A 'Mozilla/5.0 (compatible; Discordbot/2.0)' \
   -H 'Accept: text/html' \
-  'https://hive.ausbit.dev/@gtg/exchange-node-in-four-lines-hive-1-28-8'
+  'https://banksia.io/@gtg/exchange-node-in-four-lines-hive-1-28-8'
 ```
 
 A successful lookup returns `x-hive-meta: hit`, the real post title and the
@@ -53,7 +58,7 @@ preview user agents as HTML clients. Verify that path separately:
 curl -sS -D - -o /dev/null \
   -A 'Twitterbot/1.0' \
   -H 'Accept: */*' \
-  'https://hive.ausbit.dev/@gtg/exchange-node-in-four-lines-hive-1-28-8'
+  'https://banksia.io/@gtg/exchange-node-in-four-lines-hive-1-28-8'
 ```
 
 It should return `x-hive-meta: hit`. If it returns `miss` or no header, X will

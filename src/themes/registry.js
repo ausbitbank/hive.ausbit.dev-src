@@ -17,9 +17,9 @@ const BASE_PROFILE = {
 
 function manifest (data) {
   return {
-    schema: 'hive.ausbit.dev/theme@1',
+    schema: 'banksia.io/theme@1',
     scope: 'site',
-    author: 'hive.ausbit.dev',
+    author: 'banksia.io',
     remixedFrom: null,
     type: { body: 'sans', display: 'sans', mono: 'mono' },
     shape: { radius: 'soft', border: 'hairline', shadow: 'soft' },
@@ -36,7 +36,7 @@ export const THEMES = [
     mood: 'The familiar midnight explorer',
     tags: ['dark', 'calm', 'default'],
     mode: 'dark',
-    description: 'Cool slate, soft cards and cyan links. The original hive.ausbit.dev look.',
+    description: 'Cool slate, soft cards and cyan links. The original Banksia look.',
     tokens: {
       bg: '#0d1114',
       surface: '#151c21',

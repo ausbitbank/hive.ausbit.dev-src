@@ -10,7 +10,9 @@
 //
 import { pathToFileURL } from 'node:url'
 
-const DEFAULT_URL = 'https://hive.ausbit.dev/'
+import { BRAND } from '../src/config/brand.js'
+
+const DEFAULT_URL = BRAND.url + '/'
 const REQUIRED = [
   [/default-src\s+'self'/, "default-src 'self'"],
   [/script-src-attr\s+'none'/, "script-src-attr 'none'"],
@@ -121,6 +123,20 @@ async function main () {
   const url = process.env.VERIFY_URL || DEFAULT_URL
   const originIp = process.env.VERIFY_ORIGIN_IP || ''
   const failures = []
+
+  // The legacy subdomain must keep working. A 200 means the app is still
+  // served there; 301/308 is accepted if the host is later redirected.
+  try {
+    const legacy = await fetch(BRAND.legacyUrl + '/', {
+      redirect: 'manual',
+      headers: { 'user-agent': 'Banksia deploy check' }
+    })
+    if (![200, 301, 302, 307, 308].includes(legacy.status)) {
+      failures.push('legacy host ' + BRAND.legacyHost + ' returned HTTP ' + legacy.status)
+    }
+  } catch (error) {
+    warn('legacy host check failed: ' + error.message)
+  }
 
   try {
     const edge = await edgeHeaders(url)

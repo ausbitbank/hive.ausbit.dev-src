@@ -356,7 +356,7 @@
           <h2 class="studio-dialog__title">Publish this skin?</h2>
           <p class="studio-dialog__text">
             This queues one <code>account_update2</code> with posting authority. It updates only
-            the <code>hive.ausbit.dev</code> key inside your posting metadata.
+            the <code>banksia.io</code> key inside your posting metadata.
           </p>
           <pre class="studio-diff">{{ publishDiff }}</pre>
         </q-card-section>
@@ -374,7 +374,7 @@
           <h2 class="studio-dialog__title">Remove your skin?</h2>
           <p class="studio-dialog__text">
             This queues an <code>account_update2</code> that removes the
-            <code>hive.ausbit.dev</code> key. Visitors will see your profile with their own theme again.
+            <code>banksia.io</code> key. Visitors will see your profile with their own theme again.
           </p>
         </q-card-section>
         <q-card-actions align="right">
@@ -973,9 +973,10 @@ import { fetchBadgeSuggestions } from 'src/services/badges'
 import { readUploadHistory } from 'src/services/imageHost'
 import { postMetadata } from 'src/services/posts'
 import { hiveAvatarUrl } from 'src/utils/avatar'
-import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata } from 'src/themes/account'
+import { buildThemeOperation, mergeThemeMetadata, readAccountTheme, removeThemeMetadata, THEME_NAMESPACE } from 'src/themes/account'
 import { getTheme, THEMES } from 'src/themes/registry'
-import { isSafeImageUrl, validateTheme } from 'src/themes/schema'
+import { isSafeImageUrl, validateTheme, THEME_SCHEMA } from 'src/themes/schema'
+import { BRAND } from 'src/config/brand'
 import { decodeThemeCode, encodeThemeCode } from 'src/themes/shareCode'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { safeJsonParse } from 'src/utils/safeHtml'
@@ -988,7 +989,7 @@ function clone (value) {
 function baseDraft (username) {
   const base = getTheme('neon-tide')
   return {
-    schema: 'hive.ausbit.dev/theme@1',
+    schema: THEME_SCHEMA,
     scope: 'profile',
     id: String(username || 'my').toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 40),
     name: 'My Hive skin',
@@ -1360,7 +1361,7 @@ export default {
       if (!this.pendingMerged) return ''
       try {
         const parsed = JSON.parse(this.pendingMerged)
-        return JSON.stringify({ 'hive.ausbit.dev': parsed['hive.ausbit.dev'] }, null, 2)
+        return JSON.stringify({ [THEME_NAMESPACE]: parsed[THEME_NAMESPACE] }, null, 2)
       } catch {
         return ''
       }
@@ -1608,7 +1609,7 @@ export default {
       delete this.draft.variants
       this.variantTarget = 'base'
       this.draft.tags = [...new Set([preset.mode, 'custom', ...preset.tags])].slice(0, 8)
-      this.draft.remixedFrom = preset.author && preset.author !== 'hive.ausbit.dev' ? preset.author : null
+      this.draft.remixedFrom = preset.author && preset.author !== BRAND.appId ? preset.author : null
       this.draft.profile.background = preset.effects.texture === 'none' ? 'mesh' : preset.effects.texture
     },
     async paletteFromAvatar () {

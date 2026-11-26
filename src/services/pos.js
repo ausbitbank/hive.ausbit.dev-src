@@ -46,7 +46,7 @@ export function posInvoiceMessage (memo = '') {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 220)
-  return [clean, 'POS via hive.ausbit.dev'].filter(Boolean).join(' · ')
+  return [clean, 'POS via banksia.io'].filter(Boolean).join(' · ')
 }
 
 export function posReceiveCurrency (currency, requested = '') {

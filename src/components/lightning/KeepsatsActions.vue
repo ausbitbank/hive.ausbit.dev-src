@@ -204,7 +204,7 @@
 
     <p class="keepsats-actions__custody">
       Keepsats are held by v4v.app. A failed payment is refunded by the bridge,
-      not by hive.ausbit.dev. Only queue what you are prepared to spend.
+      not by banksia.io. Only queue what you are prepared to spend.
     </p>
   </details>
 </template>
@@ -412,7 +412,7 @@ export default {
       return new Promise((resolve) => {
         this.$q.dialog({
           title: 'Keepsats are custodial',
-          message: 'This action moves sats held by v4v.app, not by hive.ausbit.dev. '
+          message: 'This action moves sats held by v4v.app, not by banksia.io. '
             + 'You still review and sign every action in the queue, and nothing auto-sends. '
             + 'If the bridge fails, it handles the refund.',
           ok: { label: 'I understand', color: 'orange-9', textColor: 'black' },

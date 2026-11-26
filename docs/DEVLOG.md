@@ -55,7 +55,7 @@ node scripts/devlog.mjs check docs/blog/2026-11-21.md --strict
 node scripts/devlog.mjs package --slug 2026-11-21 --amend --tag
 
 # 8. Record the published URL so the next post links back to it
-node scripts/devlog.mjs record --slug 2026-11-21 --url https://hive.ausbit.dev/@ausbitbank/...
+node scripts/devlog.mjs record --slug 2026-11-21 --url https://banksia.io/@ausbitbank/...
 ```
 
 `bun run devlog -- help` is equivalent. The working directory `.devlog/` is
@@ -295,7 +295,7 @@ After proof-reading and posting:
 git tag devlog-2026-11-21
 git push --tags
 node scripts/devlog.mjs record --slug 2026-11-21 \
-  --url https://hive.ausbit.dev/@ausbitbank/128-commits-in-three-days-...
+  --url https://banksia.io/@ausbitbank/128-commits-in-three-days-...
 ```
 
 `docs/devlog-posts.json` is the published-post history. `collect` reads the

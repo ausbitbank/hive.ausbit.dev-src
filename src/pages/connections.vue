@@ -96,7 +96,7 @@ export default {
     applyPageMeta () {
       const kind = this.tab === 'followers' ? 'followers' : 'following'
       setPageMeta({
-        title: '@' + this.username + "'s " + kind + ' — hive.ausbit.dev',
+        title: '@' + this.username + "'s " + kind + ' — banksia.io',
         description: 'Accounts ' + (kind === 'followers' ? 'following' : 'followed by') + ' @' + this.username + ' on the Hive blockchain.',
         url: '/@' + this.username + '/' + kind
       })

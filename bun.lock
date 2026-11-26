@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "hive.ausbit.dev",
+      "name": "banksia.io",
       "dependencies": {
         "@ecency/render-helper": "^2.5.47",
         "@hiveio/keychain": "^1.0.7",

@@ -5,8 +5,10 @@
 // is visible in the Skin Studio and a future field cannot sneak through.
 
 import { contrast, isHexColor } from './color'
+import { THEME_SCHEMA, LEGACY_THEME_SCHEMA } from '../config/brand'
 
-export const THEME_SCHEMA = 'hive.ausbit.dev/theme@1'
+export { THEME_SCHEMA }
+export const THEME_SCHEMAS = Object.freeze([THEME_SCHEMA, LEGACY_THEME_SCHEMA])
 export const MAX_THEME_BYTES = 6000
 export const MAX_DEPTH = 6
 
@@ -374,7 +376,7 @@ export function validateTheme (input, { requireProfile = false } = {}) {
     'remixedFrom', 'description', 'tokens', 'type', 'shape', 'effects', 'profile', 'variants'
   ], 'theme', errors)
 
-  if (input.schema !== THEME_SCHEMA) errors.push(`schema must be "${THEME_SCHEMA}"`)
+  if (!THEME_SCHEMAS.includes(input.schema)) errors.push(`schema must be "${THEME_SCHEMA}"`)
   const scope = enumValue(input.scope, ['site', 'profile'], 'scope', errors, 'profile')
   if (requireProfile && scope !== 'profile') errors.push('scope must be "profile" for an account skin')
 

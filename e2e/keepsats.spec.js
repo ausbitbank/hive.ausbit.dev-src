@@ -46,7 +46,7 @@ async function mockBridge (page, { rejectSignature = false } = {}) {
           })
     }
     if (url.includes('/auth/')) {
-      return json({ challenge: 'alpha beta gamma ausbitbank 1795256725.540959 client hive.ausbit.dev' })
+      return json({ challenge: 'alpha beta gamma ausbitbank 1795256725.540959 client banksia.io' })
     }
     if (url.includes('/v2/v4vapp/keepsats')) return json(keepsatsPayload())
     if (url.includes('/v1/cryptoprices/sats_to_hive/')) return json({ HIVE: 18.34, HBD: 0.673 })

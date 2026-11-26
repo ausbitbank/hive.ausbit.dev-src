@@ -1,5 +1,5 @@
 /*
- * Lightweight offline shell for hive.ausbit.dev.
+ * Lightweight offline shell for Banksia.
  *
  * The app remains a static SPA. Navigations are network-first with a cached
  * index.html fallback; same-origin assets and API-independent images use
@@ -10,9 +10,9 @@
 // scripts/stamp-build.mjs replaces the placeholder on every production build.
 // The changed worker is what tells an open tab (and the update prompt in
 // src/boot/pwa.js) that a new version is live.
-const CACHE = 'hive-ausbit-shell-__HIVE_BUILD_ID__'
+const CACHE = 'banksia-shell-__HIVE_BUILD_ID__'
 const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest']
-const OFFLINE_FALLBACK = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Offline — hive.ausbit.dev</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#121212;color:#e4eaed;font-family:Roboto,Helvetica,Arial,sans-serif}main{max-width:32rem;padding:2rem;text-align:center}a{color:#4fc3f7}</style></head><body><main><h1>Offline</h1><p>hive.ausbit.dev could not load this page. Reconnect and try again.</p><p><a href="/">Retry</a></p></main></body></html>'
+const OFFLINE_FALLBACK = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Offline — Banksia</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#121212;color:#e4eaed;font-family:Roboto,Helvetica,Arial,sans-serif}main{max-width:32rem;padding:2rem;text-align:center}a{color:#4fc3f7}</style></head><body><main><h1>Offline</h1><p>Banksia could not load this page. Reconnect and try again.</p><p><a href="/">Retry</a></p></main></body></html>'
 
 function textResponse (status) {
   return new Response(OFFLINE_FALLBACK, {

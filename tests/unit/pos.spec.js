@@ -30,9 +30,9 @@ describe('point of sale helpers', () => {
   })
 
   it('sanitises the public invoice message', () => {
-    expect(posInvoiceMessage('Coffee | table 4')).toBe('Coffee / table 4 · POS via hive.ausbit.dev')
-    expect(posInvoiceMessage('  ')).toBe('POS via hive.ausbit.dev')
-    expect(posInvoiceMessage('x'.repeat(400))).toHaveLength(246)
+    expect(posInvoiceMessage('Coffee | table 4')).toBe('Coffee / table 4 · POS via banksia.io')
+    expect(posInvoiceMessage('  ')).toBe('POS via banksia.io')
+    expect(posInvoiceMessage('x'.repeat(400))).toHaveLength(241)
   })
 
   it('picks the receive asset and currency defaults', () => {

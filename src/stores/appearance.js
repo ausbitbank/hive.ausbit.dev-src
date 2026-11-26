@@ -255,7 +255,7 @@ export const useAppearanceStore = defineStore('appearance', {
     },
     adoptCustomTheme (theme, source = '') {
       const result = validateTheme({
-        schema: 'hive.ausbit.dev/theme@1',
+        schema: 'banksia.io/theme@1',
         scope: 'site',
         id: 'custom',
         name: theme?.name || 'Adopted palette',

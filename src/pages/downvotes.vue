@@ -354,8 +354,8 @@ export default {
   },
   mounted () {
     setPageMeta({
-      title: '@' + this.username + ' downvotes — voter and target transparency — hive.ausbit.dev',
-      description: 'Public downvote activity for @' + this.username + ' on hive.ausbit.dev, with voter, weight, target, time and local relationship context.',
+      title: '@' + this.username + ' downvotes — voter and target transparency — banksia.io',
+      description: 'Public downvote activity for @' + this.username + ' on banksia.io, with voter, weight, target, time and local relationship context.',
       url: '/@' + this.username + '/downvotes'
     })
     this.moderation.setScope(this.loggedInUser || 'guest')

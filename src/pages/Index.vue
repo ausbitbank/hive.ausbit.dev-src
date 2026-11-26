@@ -307,7 +307,7 @@ export default {
   },
   mounted () {
     setPageMeta({
-      title: 'hive.ausbit.dev — Hive block explorer',
+      title: 'Banksia — Hive block explorer',
       description: 'Explore the Hive blockchain: live blocks, accounts, posts, witnesses, proposals, HBD, markets and API nodes.',
       url: '/'
     })

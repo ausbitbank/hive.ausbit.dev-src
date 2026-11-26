@@ -17,7 +17,7 @@ export default {
   methods: {
     returnServiceIcon (service) { return 'img:/statics/' + service + '.svg' },
     returnServiceLabel (service) { return service === 'x' ? 'X' : service },
-    returnCurrentUrl () { return 'https://hive.ausbit.dev' + this.$route.path },
+    returnCurrentUrl () { return 'https://banksia.io' + this.$route.path },
     copy () { var i = this.returnCurrentUrl(); copyToClipboard(i); this.$q.notify('Copied to clipboard: ' + i) },
     returnServiceUrl (service) {
       var url = this.returnCurrentUrl()

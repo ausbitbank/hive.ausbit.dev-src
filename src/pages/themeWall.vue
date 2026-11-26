@@ -545,7 +545,7 @@ export default {
   mounted () {
     setPageMeta({
       title: 'Theme Wall — looks from the Hive',
-      description: 'Built-in Hive themes and profile skins published by accounts you follow on hive.ausbit.dev.',
+      description: 'Built-in Hive themes and profile skins published by accounts you follow on banksia.io.',
       url: '/themes'
     })
     this.syncModeration()

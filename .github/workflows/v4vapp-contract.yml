@@ -1,7 +1,7 @@
 name: v4vapp contract
 
 # Read-only alarm for the external v4v.app Lightning bridge. It asserts the
-# CORS allowlist entry for https://hive.ausbit.dev, the POST preflight, the
+# CORS allowlist entry for https://banksia.io, the POST preflight, the
 # fee/limit config shape and the quote/address endpoints. It never creates an
 # invoice or authenticates, so it is safe to run unattended.
 #

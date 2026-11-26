@@ -1,8 +1,10 @@
+import { BRAND } from '../../src/config/brand.js'
+
 export const MARKER = '<!-- hive:metadata-only-prerender -->'
 export const META_TEMPLATE_FILE = '__meta.html'
 
 // Routes prerendered by scripts/prerender.mjs. The nginx config in
-// deploy/nginx/hive.ausbit.dev.conf must serve each one with a real 200 and
+// deploy/nginx/banksia.io.conf must serve each one with a real 200 and
 // its own metadata shell; a missing entry makes direct navigation return the
 // 404 shell (a title flash of "Page not found" before Vue mounts).
 export const PRERENDER_ROUTES = [
@@ -203,7 +205,7 @@ function ssi (variable, fallback) {
  * `page_*` variables after validating the URL segments, so crawlers get a
  * route-specific title and canonical even though the SPA data is client-side.
  */
-export function buildMetadataTemplate (shell, { title, description, type = 'website', image = 'https://hive.ausbit.dev/statics/icons/icon-512x512.png' } = {}) {
+export function buildMetadataTemplate (shell, { title, description, type = 'website', image = BRAND.url + '/statics/og-banksia.png' } = {}) {
   if (!title || !description) throw new Error('metadata template needs a default title and description')
 
   const pageTitle = ssi('page_title', title)
@@ -214,10 +216,10 @@ export function buildMetadataTemplate (shell, { title, description, type = 'webs
 
   let html = replaceTitle(shell, pageTitle, { raw: true })
   html = replaceMeta(html, 'name', 'description', pageDescription, { raw: true })
-  html = replaceLink(html, 'canonical', 'https://hive.ausbit.dev' + pagePath, { raw: true })
+  html = replaceLink(html, 'canonical', BRAND.url + pagePath, { raw: true })
   html = replaceMeta(html, 'property', 'og:title', pageTitle, { raw: true })
   html = replaceMeta(html, 'property', 'og:description', pageDescription, { raw: true })
-  html = replaceMeta(html, 'property', 'og:url', 'https://hive.ausbit.dev' + pagePath, { raw: true })
+  html = replaceMeta(html, 'property', 'og:url', BRAND.url + pagePath, { raw: true })
   html = replaceMeta(html, 'property', 'og:image', pageImage, { raw: true })
   html = replaceMeta(html, 'property', 'og:type', pageType, { raw: true })
   html = replaceMeta(html, 'name', 'twitter:title', pageTitle, { raw: true })

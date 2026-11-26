@@ -309,7 +309,7 @@ export default {
     setMeta () {
       if (!this.validAccount) return
       setPageMeta({
-        title: '@' + this.account + ' Lightning point of sale — hive.ausbit.dev',
+        title: '@' + this.account + ' Lightning point of sale — banksia.io',
         description: 'Accept Lightning payments as HBD or HIVE for @' + this.account + '. Create a fresh invoice for each sale; no login or keys.',
         url: '/@' + this.account + '/pos'
       })

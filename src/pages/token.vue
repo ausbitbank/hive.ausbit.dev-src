@@ -463,7 +463,7 @@ export default {
   mounted () {
     setPageMeta({
       title: this.token + ' — Hive-Engine token market',
-      description: 'Trade ' + this.token + ' on Hive-Engine: price, order book, market history and balances at hive.ausbit.dev.',
+      description: 'Trade ' + this.token + ' on Hive-Engine: price, order book, market history and balances at banksia.io.',
       url: this.$route.path
     })
     this.init()

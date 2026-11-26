@@ -8,6 +8,7 @@
 //
 // Failures are non-fatal: the app falls back to its normal live reads.
 
+import { BRAND } from '../src/config/brand.js'
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import {
@@ -68,7 +69,7 @@ async function rpc (method, params = []) {
         headers: {
           'content-type': 'application/json',
           accept: 'application/json',
-          'user-agent': 'hive.ausbit.dev home snapshot (+https://hive.ausbit.dev)'
+          'user-agent': BRAND.name + ' home snapshot (+' + BRAND.url + ')'
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
         signal: AbortSignal.timeout(RPC_TIMEOUT_MS)

@@ -6,7 +6,7 @@
 # Defaults: host=hurgenburgen, mode=dry-run (shows the diff, changes nothing).
 #
 # What it does:
-#   1. extracts the http-level block from deploy/nginx/hive.ausbit.dev.conf
+#   1. extracts the http-level block from deploy/nginx/banksia.io.conf
 #   2. installs /etc/nginx/cloudflare-realip.conf on the host
 #   3. inserts the include + map + log_format before the first `server {`
 #   4. inserts the access_log line after `index index.html;`
@@ -28,7 +28,7 @@ esac
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-SRC_CONF=deploy/nginx/hive.ausbit.dev.conf
+SRC_CONF=deploy/nginx/banksia.io.conf
 SRC_IPS=deploy/nginx/cloudflare-realip.conf
 [ -f "$SRC_CONF" ] || { echo "error: missing $SRC_CONF (run from the repo)" >&2; exit 1; }
 [ -f "$SRC_IPS" ] || { echo "error: missing $SRC_IPS" >&2; exit 1; }
@@ -47,26 +47,26 @@ MODE="${1:-dry-run}"
 
 LIVE="${LIVE_CONF:-}"
 if [ -z "$LIVE" ]; then
-  LIVE="$(grep -rl 'server_name hive\.ausbit\.dev' /etc/nginx/sites-available 2>/dev/null \
+  LIVE="$(grep -rlE 'server_name (banksia\.io|hive\.ausbit\.dev)' /etc/nginx/sites-available 2>/dev/null \
     | grep -v '\.bak-' | head -1 || true)"
 fi
 if [ -z "$LIVE" ]; then
-  LIVE="$(grep -rl 'server_name hive\.ausbit\.dev' /etc/nginx/conf.d 2>/dev/null \
+  LIVE="$(grep -rlE 'server_name (banksia\.io|hive\.ausbit\.dev)' /etc/nginx/conf.d 2>/dev/null \
     | grep -v '\.bak-' | head -1 || true)"
 fi
 if [ -z "$LIVE" ]; then
-  echo "error: no nginx config with 'server_name hive.ausbit.dev' found" >&2
+  echo "error: no nginx config with 'server_name banksia.io' found" >&2
   exit 1
 fi
 echo "site config: $LIVE"
 
-STAGE=/tmp/hive-site.stage
+STAGE=/tmp/banksia-site.stage
 cp "$LIVE" "$STAGE"
-BLOCK="${BLOCK_CONF:-/tmp/hive-cf-block.conf}"
+BLOCK="${BLOCK_CONF:-/tmp/banksia-cf-block.conf}"
 
 # The remote script runs as root, so it owns these temp files and must clean
 # them up itself; the SSH user cannot remove them afterwards.
-trap 'rm -f /tmp/hive-site.stage /tmp/hive-site.stage.2' EXIT
+trap 'rm -f /tmp/banksia-site.stage /tmp/banksia-site.stage.2' EXIT
 
 if grep -q '^# ---- Real client IPs' "$LIVE"; then
   # Replace the existing block so label changes reach the server too. The block
@@ -114,7 +114,7 @@ else
       print ""
       print indent "# JSON log for traffic analysis. Keep the default log too if other tooling"
       print indent "# reads it; this one is additive."
-      print indent "access_log /var/log/nginx/hive.ausbit.dev.access.log hive_analytics;"
+      print indent "access_log /var/log/nginx/banksia.io.access.log hive_analytics;"
       done = 1
       next
     }
@@ -133,7 +133,7 @@ if [ "$MODE" != "apply" ]; then
   exit 0
 fi
 
-install -m 644 /tmp/hive-cloudflare-realip.conf /etc/nginx/cloudflare-realip.conf
+install -m 644 /tmp/banksia-cloudflare-realip.conf /etc/nginx/cloudflare-realip.conf
 echo "installed /etc/nginx/cloudflare-realip.conf"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -150,11 +150,11 @@ fi
 systemctl reload nginx
 echo "reloaded nginx"
 echo "backup: $BAK"
-echo "log:    /var/log/nginx/hive.ausbit.dev.access.log"
+echo "log:    /var/log/nginx/banksia.io.access.log"
 REMOTE
 
 echo "==> $HOST ($MODE)"
-scp -q "$SRC_IPS" "$HOST:/tmp/hive-cloudflare-realip.conf"
-scp -q "$TMP/block.conf" "$HOST:/tmp/hive-cf-block.conf"
-scp -q "$TMP/remote.sh" "$HOST:/tmp/hive-nginx-apply.sh"
-ssh -t "$HOST" "sudo bash /tmp/hive-nginx-apply.sh $MODE; rc=\$?; rm -f /tmp/hive-nginx-apply.sh /tmp/hive-cf-block.conf /tmp/hive-cloudflare-realip.conf /tmp/hive-site.stage /tmp/hive-site.stage.2; exit \$rc"
+scp -q "$SRC_IPS" "$HOST:/tmp/banksia-cloudflare-realip.conf"
+scp -q "$TMP/block.conf" "$HOST:/tmp/banksia-cf-block.conf"
+scp -q "$TMP/remote.sh" "$HOST:/tmp/banksia-nginx-apply.sh"
+ssh -t "$HOST" "sudo bash /tmp/banksia-nginx-apply.sh $MODE; rc=\$?; rm -f /tmp/banksia-nginx-apply.sh /tmp/banksia-cf-block.conf /tmp/banksia-cloudflare-realip.conf /tmp/banksia-site.stage /tmp/banksia-site.stage.2; exit \$rc"

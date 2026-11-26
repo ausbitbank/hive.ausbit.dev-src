@@ -8,7 +8,7 @@
 //
 // Deploy (example):
 //   npx wrangler@4 deploy deploy/cloudflare/metadata-worker.mjs \
-//     --name hive-metadata --route "hive.ausbit.dev/@*"
+//     --name banksia-metadata --route "banksia.io/@*"
 //
 // It is intentionally dependency-free and fails open: any timeout, missing
 // post or API error returns the untouched origin response.
@@ -82,7 +82,7 @@ async function rpc (method, params) {
         headers: {
           'content-type': 'application/json',
           accept: 'application/json',
-          'user-agent': 'hive.ausbit.dev link-preview (+https://hive.ausbit.dev)'
+          'user-agent': 'banksia.io link-preview (+https://banksia.io)'
         },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
         signal: controller.signal
@@ -169,8 +169,8 @@ async function postMetadata (author, permlink) {
       image: [image],
       datePublished: post.created || undefined,
       dateModified: post.last_update || post.created || undefined,
-      author: { '@type': 'Person', name: '@' + author, url: 'https://hive.ausbit.dev/@' + author },
-      mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://hive.ausbit.dev/@' + author + '/' + permlink }
+      author: { '@type': 'Person', name: '@' + author, url: 'https://banksia.io/@' + author },
+      mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://banksia.io/@' + author + '/' + permlink }
     }
   }
 }
@@ -180,7 +180,7 @@ async function accountMetadata (name) {
   if (!profile || !profile.name) return null
   const meta = profile.metadata?.profile || profile.profile || {}
   const display = stripMarkdown(meta.name, 80) || name
-  const description = stripMarkdown(meta.about, 180) || ('Hive account @' + name + ' on hive.ausbit.dev.')
+  const description = stripMarkdown(meta.about, 180) || ('Hive account @' + name + ' on banksia.io.')
   const image = proxiedImage(meta.profile_image, 400) || ('https://images.hive.blog/u/' + name + '/avatar')
   return {
     title: display + ' (@' + name + ') — Hive account',
@@ -197,7 +197,7 @@ async function accountMetadata (name) {
         name: display,
         description,
         image,
-        url: 'https://hive.ausbit.dev/@' + name
+        url: 'https://banksia.io/@' + name
       }
     }
   }
@@ -247,12 +247,12 @@ export function rewriteHead (html, meta) {
   setMeta('property', 'og:title', meta.title)
   setMeta('property', 'og:description', meta.description)
   setMeta('property', 'og:image', meta.image)
-  setMeta('property', 'og:url', 'https://hive.ausbit.dev' + meta.path)
+  setMeta('property', 'og:url', 'https://banksia.io' + meta.path)
   setMeta('property', 'og:type', meta.type)
   setMeta('name', 'twitter:title', meta.title)
   setMeta('name', 'twitter:description', meta.description)
   setMeta('name', 'twitter:image', meta.image)
-  next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="https://hive.ausbit.dev' + meta.path + '">')
+  next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="https://banksia.io' + meta.path + '">')
   next = next.replace(/<script\b[^>]*type=["']?application\/ld\+json["']?[^>]*>[\s\S]*?<\/script>/gi, '')
   next = next.replace('</head>', '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
   // Replace the static crawler shell heading and summary as well.
@@ -264,7 +264,7 @@ export function rewriteHead (html, meta) {
 async function lightningShell (request, account = '') {
   const url = new URL(request.url)
   const cache = typeof caches !== 'undefined' ? caches.default : null
-  const cacheKey = new Request('https://hive.ausbit.dev/lightning.html?account=' + encodeURIComponent(account), { method: 'GET' })
+  const cacheKey = new Request('https://banksia.io/lightning.html?account=' + encodeURIComponent(account), { method: 'GET' })
   if (cache) {
     const cached = await cache.match(cacheKey)
     if (cached) return cached
@@ -278,7 +278,7 @@ async function lightningShell (request, account = '') {
   let html = await response.text()
   if (account) {
     html = rewriteHead(html, {
-      title: '@' + account + ' Lightning — hive.ausbit.dev',
+      title: '@' + account + ' Lightning — banksia.io',
       description: 'Receive sats as HIVE or HBD, or pay a Lightning invoice with Hive for @' + account + '.',
       image: 'https://images.hive.blog/u/' + account + '/avatar',
       type: 'website',
@@ -287,7 +287,7 @@ async function lightningShell (request, account = '') {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: '@' + account + ' Lightning',
-        url: 'https://hive.ausbit.dev/@' + account + '/lightning'
+        url: 'https://banksia.io/@' + account + '/lightning'
       }
     })
   }

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { PRERENDER_ROUTES } from '../../scripts/lib/prerender-meta.mjs'
 
 const CONFIG = readFileSync(
-  resolve(import.meta.dirname, '../../deploy/nginx/hive.ausbit.dev.conf'),
+  resolve(import.meta.dirname, '../../deploy/nginx/banksia.io.conf'),
   'utf8'
 )
 

@@ -1034,7 +1034,7 @@ export default {
       })
     },
     async checkLoginKeychain (user) {
-      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestSignBuffer', user, 'hive.ausbit.dev login for ' + user, 'Posting')
+      const { success, msg, cancel, notInstalled, notActive } = await keychain(window, 'requestSignBuffer', user, 'banksia.io login for ' + user, 'Posting')
       if (success) {
         this.loggedInUser = user
         this.$q.sessionStorage.set('loggedInUser', user)
@@ -1077,7 +1077,7 @@ export default {
         // HAS already validates key ownership during registration. The signed
         // challenge is kept in the response for future local verification
         // without adding another approval step.
-        const challenge = 'hive.ausbit.dev login for ' + user + ' at ' + new Date().toISOString()
+        const challenge = 'banksia.io login for ' + user + ' at ' + new Date().toISOString()
         await hiveauth.authenticate(user, {
           signal: controller.signal,
           challenge,

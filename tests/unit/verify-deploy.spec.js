@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { checkCspHeader } from '../../scripts/verify-deploy.mjs'
 
-const policy = readFileSync('deploy/nginx/hive.ausbit.dev.conf', 'utf8')
+const policy = readFileSync('deploy/nginx/banksia.io.conf', 'utf8')
   .match(/Content-Security-Policy "([^"]+)"/)[1]
 
 describe('deploy CSP check', () => {

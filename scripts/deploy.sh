@@ -11,12 +11,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REMOTE="${REMOTE:-hurgenburgen}"
-REMOTE_DIR="${REMOTE_DIR:-/var/www/hive.ausbit.dev}"
+REMOTE_DIR="${REMOTE_DIR:-/var/www/banksia.io}"
 REMOTE_PARENT="$(dirname "$REMOTE_DIR")"
 REMOTE_NAME="$(basename "$REMOTE_DIR")"
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
-STAGE="hive-deploy-$TS"
-BACKUP="hive-backups/$REMOTE_NAME-$TS.tar.gz"
+STAGE="banksia-deploy-$TS"
+BACKUP="banksia-backups/$REMOTE_NAME-$TS.tar.gz"
 # Hashed asset files are never overwritten, only superseded. Keeping them for a
 # while means a tab opened before this deploy can still lazy-load its chunks
 # instead of failing the navigation.
@@ -31,8 +31,11 @@ bun run build
 echo "==> Prerender key routes (metadata only)"
 node scripts/prerender.mjs || echo "Prerender skipped"
 
+echo "==> Ensuring $REMOTE_DIR exists"
+ssh "$REMOTE" "mkdir -p '$REMOTE_DIR'; if [ -d '/var/www/hive.ausbit.dev' ] && [ -z \"\$(ls -A '$REMOTE_DIR' 2>/dev/null)\" ]; then cp -a /var/www/hive.ausbit.dev/. '$REMOTE_DIR'/; fi"
+
 echo "==> Backing up $REMOTE:$REMOTE_DIR"
-ssh "$REMOTE" "mkdir -p ~/hive-backups && tar -C '$REMOTE_PARENT' -czf ~/'$BACKUP' '$REMOTE_NAME' && sha256sum ~/'$BACKUP'"
+ssh "$REMOTE" "mkdir -p ~/banksia-backups && tar -C '$REMOTE_PARENT' -czf ~/'$BACKUP' '$REMOTE_NAME' && sha256sum ~/'$BACKUP'"
 
 echo "==> Uploading to $REMOTE:~/$STAGE"
 rsync -az --delete --stats dist/spa/ "$REMOTE:~/$STAGE/"
@@ -51,7 +54,7 @@ echo "Rollback: ./scripts/rollback.sh ~/$BACKUP"
 
 echo "==> Verifying deployment"
 ORIGIN_IP="${VERIFY_ORIGIN_IP:-$(ssh "$REMOTE" "hostname -I 2>/dev/null | awk '{print \$1}'" || true)}"
-VERIFY_URL="${VERIFY_URL:-https://hive.ausbit.dev/}" \
+VERIFY_URL="${VERIFY_URL:-https://banksia.io/}" \
   VERIFY_ORIGIN_IP="$ORIGIN_IP" \
   node scripts/verify-deploy.mjs
 

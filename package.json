@@ -1,11 +1,11 @@
 {
-  "name": "hive.ausbit.dev",
+  "name": "banksia.io",
   "version": "1.0.0",
-  "description": "An open-source Hive block explorer, wallet and creator toolkit",
-  "productName": "hive.ausbit.dev",
+  "description": "Banksia is an open-source Hive explorer, wallet and creator toolkit.",
+  "productName": "Banksia",
   "author": "ausbitbank <ausbitbank@gmail.com>",
   "license": "Unlicense",
-  "homepage": "https://hive.ausbit.dev",
+  "homepage": "https://banksia.io",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ausbitbank/hive.ausbit.dev-src.git"
@@ -18,6 +18,7 @@
     "blockchain",
     "explorer",
     "wallet",
+    "banksia",
     "vue",
     "quasar"
   ],

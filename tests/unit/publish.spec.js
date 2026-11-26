@@ -63,7 +63,7 @@ describe('post construction', () => {
       body: draft.body
     })
     expect(JSON.parse(item[2][1].json_metadata)).toMatchObject({
-      app: 'hive.ausbit.dev',
+      app: 'banksia.io',
       format: 'markdown',
       tags: ['hive-174578', 'writing', 'hive']
     })
@@ -156,7 +156,7 @@ describe('post construction', () => {
     expect(operation[1].comment_options).toBeUndefined()
     const metadata = JSON.parse(operation[1].json_metadata)
     expect(metadata.image).toEqual(['https://img.example/one.jpg'])
-    expect(metadata.app).toBe('hive.ausbit.dev')
+    expect(metadata.app).toBe('banksia.io')
   })
 
   it('keeps a legacy category verbatim when editing', () => {
@@ -322,7 +322,7 @@ describe('composer metadata', () => {
 
   it('writes cover, body images, mentions, description, AI, countdown and flags', () => {
     const metadata = buildPostMetadata(richDraft)
-    expect(metadata.app).toBe('hive.ausbit.dev')
+    expect(metadata.app).toBe('banksia.io')
     expect(metadata.format).toBe('markdown')
     expect(metadata.tags[0]).toBe('c-c-c')
     expect(metadata.tags).toContain('hive-174578')

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Banksia — brand sheet</title>
+<style>
+  :root {
+    --ink: #0d1114; --surface: #151c21; --line: #2a3942;
+    --paper: #faf6ef; --white: #f6f1e7;
+    --red: #e31337; --red-bright: #ff5c75; --red-soft: #ff6b7a;
+    --maroon: #5a0f1b; --muted: #90a4ae;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ink); color: var(--white); }
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 56px 72px 52px;
+  }
+  .wrap { max-width: 1456px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 26px;
+  }
+  .hero img { width: 100%; height: auto; display: block; }
+  .lede {
+    margin: 8px 0 44px; max-width: 780px;
+    font-size: 20px; line-height: 1.55; color: #cfd8dc;
+  }
+  .lede b { color: var(--white); font-weight: 600; }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+  .tile-wrap { margin: 0; }
+  .tile {
+    border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+    background: var(--surface); aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .tile.light { background: var(--paper); }
+  .tile .art { width: 62%; height: auto; display: block; }
+  .tile.pattern { background-color: #10171b; }
+  .tile.pattern::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: url('banksia-pattern.svg'); background-size: 130px;
+    opacity: .7;
+  }
+  .fav-row { position: relative; display: flex; align-items: center; gap: 18px; }
+  .fav-row img { display: block; }
+  .tile-wrap figcaption {
+    margin-top: 10px; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .split { display: grid; grid-template-columns: 1.12fr .88fr; gap: 56px; margin-top: 42px; }
+  h2 {
+    font-size: 12px; letter-spacing: .24em; text-transform: uppercase;
+    color: var(--red-bright); font-weight: 600; margin: 0 0 14px;
+  }
+  h3 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 30px 0 10px; }
+  p { font-size: 16px; line-height: 1.65; color: #cfd8dc; margin: 0 0 14px; }
+  .taglines { list-style: none; margin: 0; padding: 0; }
+  .taglines li {
+    font-size: 26px; line-height: 1.35; letter-spacing: -.02em;
+    padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .taglines li span { color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .swatch { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .swatch .chip { height: 54px; }
+  .swatch .meta { padding: 9px 11px; font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .swatch .meta b { color: var(--white); font-weight: 500; }
+  .type { margin-top: 10px; }
+  .type .big { font-size: 40px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .type .small { font-size: 13px; color: var(--muted); margin-top: 9px; letter-spacing: .04em; }
+  .usage { margin-top: 38px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 40px; }
+  .usage p { font-size: 14px; margin: 0; padding-left: 18px; position: relative; }
+  .usage p::before { content: "·"; position: absolute; left: 0; color: var(--red-soft); }
+  footer {
+    margin-top: 46px; padding-top: 18px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 20px;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #60727c;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Banksia · brand system · 2026</div>
+  <div class="hero"><img class="art " src="banksia-lockup-dark.svg" alt="Banksia lockup"></div>
+  <p class="lede"><b>A fast, local-first explorer, wallet and creator toolkit for Hive.</b>
+  A banksia flower spike in Hive red, built from honeycomb cells: the Australian plant
+  that feeds the hive, inside the cell the hive is made of.</p>
+
+  <div class="row">
+    <figure class="tile-wrap"><div class="tile"><img class="art " src="banksia-icon-dark.svg" alt="App icon on dark"></div><figcaption>App icon · dark</figcaption></figure>
+    <figure class="tile-wrap"><div class="tile light"><img class="art " src="banksia-icon-light.svg" alt="App icon on light"></div><figcaption>App icon · light</figcaption></figure>
+    <figure class="tile-wrap"><div class="tile"><img class="art " src="banksia-mark.svg" alt="Banksia mark"></div><figcaption>Mark · transparent</figcaption></figure>
+    <figure class="tile-wrap"><div class="tile pattern">
+      <div class="fav-row">
+        <img src="banksia-favicon.svg" width="64" height="64" alt="Favicon 64">
+        <img src="banksia-favicon.svg" width="32" height="32" alt="Favicon 32">
+        <img src="banksia-favicon.svg" width="16" height="16" alt="Favicon 16">
+      </div>
+    </div><figcaption>Favicon · 64 / 32 / 16</figcaption></figure>
+  </div>
+
+  <div class="split">
+    <div>
+      <h2>The mark</h2>
+      <p>Banksia is the Australian wildflower genus that feeds the hive: nectar-rich,
+      fire-resilient, and named for Joseph Banks. The mark is a banksia spike built from
+      honeycomb cells and grounded by its woody cone.</p>
+      <p>The spike is Hive red, so the app reads as part of the Hive family at a glance
+      without reusing the Hive logo. It still reads as a flower, a hive and a single cell
+      at once — a plant that survives fire and comes back.</p>
+      <h3>Taglines</h3>
+      <ul class="taglines">
+        <li><span>Primary</span>Rooted in Hive.</li>
+        <li><span>Descriptor</span>The whole hive, gathered.</li>
+        <li><span>Listing</span>Explore, trade and create on Hive.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Palette</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#0d1114"></div><div class="meta"><b>Charcoal</b><span>#0D1114</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#e31337"></div><div class="meta"><b>Hive red</b><span>#E31337</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#ff6b7a"></div><div class="meta"><b>Light red</b><span>#FF6B7A</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#f6f1e7"></div><div class="meta"><b>Warm white</b><span>#F6F1E7</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#5a0f1b"></div><div class="meta"><b>Deep maroon</b><span>#5A0F1B</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#faf6ef"></div><div class="meta"><b>Paper</b><span>#FAF6EF</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#151c21"></div><div class="meta"><b>Surface</b><span>#151C21</span></div></div>
+        <div class="swatch"><div class="chip" style="background:#90a4ae"></div><div class="meta"><b>Muted</b><span>#90A4AE</span></div></div>
+      </div>
+      <h3>Type</h3>
+      <div class="type">
+        <div class="big">BANKSIA</div>
+        <div class="small">Inter Display Bold · tracked −2% · wordmark supplied as outlines</div>
+        <div class="small">UI: Inter Regular / Medium · numerals tabular</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="usage">
+    <p>Hive red is the brand colour: use it for the spike, primary actions and active states.</p>
+    <p>Light red is the cell highlight; deep maroon grounds the cone and works for quiet detail.</p>
+    <p>Keep the chain's own Hive badge separate from the app mark; this is a Hive-built product, not the chain itself.</p>
+    <p>Prefer the dark lockup on Hive Dark; the light lockup on paper and warm surfaces.</p>
+    <p>Clear space: at least one cell radius on every side. Minimum mark size: 24px; favicon: 16px.</p>
+    <p>Do not rotate, stretch or recolour the spike. Do not place the lockup on a busy photo without a scrim.</p>
+  </div>
+
+  <footer>
+    <span>banksia · hive.ausbit.dev</span>
+    <span>mark · lockups · icons · favicon · pattern</span>
+    <span>brand system · 2026</span>
+  </footer>
+</div>
+</body>
+</html>

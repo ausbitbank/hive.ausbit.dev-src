@@ -32,7 +32,7 @@
           :account="account.name"
           default-currency="hbd"
           :default-amount="5"
-          default-note="Lightning tip from hive.ausbit.dev"
+          default-note="Lightning tip from banksia.io"
         />
     </q-page>
 </template>

@@ -181,7 +181,7 @@ export function writeTemplates (storage, owner, templates, now = Date.now()) {
 
 export function serializeTemplateExport (templates, { now = Date.now() } = {}) {
   return JSON.stringify({
-    app: 'hive.ausbit.dev',
+    app: 'banksia.io',
     type: 'hive-templates',
     version: TEMPLATE_VERSION,
     exportedAt: new Date(now).toISOString(),

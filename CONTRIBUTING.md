@@ -1,6 +1,6 @@
-# Contributing to hive.ausbit.dev
+# Contributing to Banksia
 
-Thanks for helping improve hive.ausbit.dev. This is a production Hive explorer,
+Thanks for helping improve Banksia. This is a production Hive explorer,
 wallet and publishing toolkit, so changes are expected to be small, tested and
 safe to deploy.
 

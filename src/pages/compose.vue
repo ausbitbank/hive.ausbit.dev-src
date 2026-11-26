@@ -3831,7 +3831,7 @@ export default {
       const previous = previousMetadata ? stripManagedMetadata(previousMetadata) : {}
       // Comment edits keep only the app/format marker over preserved keys.
       if (editing && editing.parentAuthor) {
-        return JSON.stringify({ ...previous, app: 'hive.ausbit.dev', format: 'markdown' }, null, 2)
+        return JSON.stringify({ ...previous, app: 'banksia.io', format: 'markdown' }, null, 2)
       }
       const next = buildPostMetadata(this.draft)
       // Edits keep an existing cover when the draft has no images of its own.
@@ -5614,7 +5614,7 @@ export default {
       this.draft.beneficiaries.splice(index, 1)
     },
     postUrl (crossPost) {
-      return 'https://hive.ausbit.dev/@' + crossPost.author + '/' + crossPost.permlink
+      return 'https://banksia.io/@' + crossPost.author + '/' + crossPost.permlink
     },
     postLink (crossPost) {
       return '/@' + crossPost.author + '/' + crossPost.permlink
@@ -5804,7 +5804,7 @@ export default {
           permlink,
           editing: Boolean(editing),
           alsoReblog,
-          url: 'https://hive.ausbit.dev/@' + this.loggedInUser + '/' + permlink
+          url: 'https://banksia.io/@' + this.loggedInUser + '/' + permlink
         }
         this.publishedOpen = true
 

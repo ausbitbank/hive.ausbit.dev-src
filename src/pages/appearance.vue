@@ -726,8 +726,8 @@ export default {
   name: 'AppearancePage',
   mounted () {
     setPageMeta({
-      title: 'Appearance — themes and profile skins — hive.ausbit.dev',
-      description: 'Choose a site theme, follow your system appearance, and control profile skins, motion and contrast on hive.ausbit.dev.',
+      title: 'Appearance — themes and profile skins — banksia.io',
+      description: 'Choose a site theme, follow your system appearance, and control profile skins, motion and contrast on banksia.io.',
       url: '/appearance'
     })
     this.syncModeration()

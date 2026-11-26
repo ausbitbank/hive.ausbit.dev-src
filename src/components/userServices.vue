@@ -177,10 +177,10 @@ export default {
           if (raw.indexOf('0x') === 0) { // Key fingerprint, link to server
             return 'https://keys.openpgp.org/search?q=' + seg
           } else { // Assume hive post authperm to full key, link it  (@username/permlink)
-            return 'https://hive.ausbit.dev/' + seg
+            return 'https://banksia.io/' + seg
           }
         case 'pinned':
-          return 'https://hive.ausbit.dev/@' + this.account.name + '/' + seg
+          return 'https://banksia.io/@' + this.account.name + '/' + seg
       }
     }
 

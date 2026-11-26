@@ -36,7 +36,7 @@ body:
     id: route
     attributes:
       label: Affected route or URL
-      placeholder: https://hive.ausbit.dev/@ausbitbank/wallet
+      placeholder: https://banksia.io/@ausbitbank/wallet
   - type: dropdown
     id: area
     attributes:

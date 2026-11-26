@@ -233,7 +233,7 @@ export default {
   mounted () {
     setPageMeta({
       title: 'Hive markets — HIVE charts, HBD peg, APR and converter',
-      description: 'HIVE price charts, HBD peg and premium, savings APR and a HIVE/HBD conversion calculator on hive.ausbit.dev.',
+      description: 'HIVE price charts, HBD peg and premium, savings APR and a HIVE/HBD conversion calculator on banksia.io.',
       url: '/markets'
     })
   },

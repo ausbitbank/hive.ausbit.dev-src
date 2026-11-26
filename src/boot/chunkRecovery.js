@@ -27,7 +27,7 @@ export default defineBoot(({ router }) => {
     Dialog.create({
       dark: true,
       title: 'New version available',
-      message: 'This tab is running an older version of hive.ausbit.dev. Reload to pick up the current version and continue.',
+      message: 'This tab is running an older version of Banksia. Reload to pick up the current version and continue.',
       persistent: true,
       ok: { label: 'Reload now', color: 'primary', unelevated: true, noCaps: true },
       cancel: { label: 'Later', color: 'grey', flat: true, noCaps: true }

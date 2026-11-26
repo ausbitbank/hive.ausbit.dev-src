@@ -5,11 +5,13 @@
 // outage failure is reported consistently instead of leaking raw fetch errors
 // into components.
 //
-// CORS was the original blocker: https://hive.ausbit.dev is now on v4v.app's
-// allowlist (verified 2026-11-21, API 6.6.1). Keep the failure states below
-// distinct anyway — an offline browser, a slow bridge, a rate limit and a
-// lapsed allowlist need different copy, and only the last one is a browser
-// restriction.
+// CORS was the original blocker. The legacy origin https://hive.ausbit.dev is
+// on v4v.app's allowlist (verified 2026-11-21, API 6.6.1). The Banksia origin
+// https://banksia.io must be added to that allowlist before Lightning calls
+// from the new domain succeed; the legacy host keeps working meanwhile. Keep
+// the failure states below distinct anyway — an offline browser, a slow bridge,
+// a rate limit and a lapsed allowlist need different copy, and only the last
+// one is a browser restriction.
 
 import { loadCached, invalidateCache } from './cache'
 import {

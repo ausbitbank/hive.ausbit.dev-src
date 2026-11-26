@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>hive.ausbit.dev — project updates</title>
-    <link>https://hive.ausbit.dev/</link>
+    <title>Banksia — project updates</title>
+    <link>https://banksia.io/</link>
     <description>Hive block explorer, wallet, governance and market updates.</description>
     <language>en-us</language>
-    <atom:link href="https://hive.ausbit.dev/feed.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://banksia.io/feed.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>hive.ausbit.dev</title>
-      <link>https://hive.ausbit.dev/</link>
-      <guid isPermaLink="true">https://hive.ausbit.dev/</guid>
+      <title>Banksia</title>
+      <link>https://banksia.io/</link>
+      <guid isPermaLink="true">https://banksia.io/</guid>
       <description>Hive block explorer and toolkit.</description>
     </item>
   </channel>

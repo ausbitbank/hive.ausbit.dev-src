@@ -76,7 +76,7 @@
         </q-card-section>
 
         <p class="dw-sats__note">
-          Held by v4v.app as an IOU, not by hive.ausbit.dev. This card is read-only and cannot move funds.
+          Held by v4v.app as an IOU, not by banksia.io. This card is read-only and cannot move funds.
         </p>
 
         <q-card-section class="home-panel__footer dw-sats__footer">

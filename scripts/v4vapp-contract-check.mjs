@@ -2,7 +2,7 @@
 // Read-only contract check for the v4v.app Hive <-> Lightning bridge.
 //
 // This is the regression alarm for the integration constraints that live
-// outside our control: the CORS allowlist for https://hive.ausbit.dev, the
+// outside our control: the CORS allowlist for https://banksia.io, the
 // shape of GET /v1, and the public quote/address endpoints. It never creates an
 // invoice, authenticates, or writes anything.
 //
@@ -11,7 +11,9 @@
 // the single-maintainer API drifted.
 
 const API = (process.env.V4VAPP_API || 'https://api.v4v.app').replace(/\/+$/, '')
-const ORIGIN = process.env.V4VAPP_ORIGIN || 'https://hive.ausbit.dev'
+import { BRAND } from '../src/config/brand.js'
+
+const ORIGIN = process.env.V4VAPP_ORIGIN || BRAND.url
 const TIMEOUT_MS = 15000
 
 const failures = []

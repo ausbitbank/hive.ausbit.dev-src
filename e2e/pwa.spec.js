@@ -9,7 +9,7 @@ test('PWA manifest has install prerequisites and offline assets are published', 
   const manifest = await request.get('/manifest.webmanifest')
   expect(manifest.status()).toBe(200)
   const data = await manifest.json()
-  expect(data.name).toContain('hive.ausbit.dev')
+  expect(data.name).toContain('Banksia')
   expect(data.start_url).toBe('/')
   expect(data.scope).toBe('/')
   expect(data.display).toBe('standalone')

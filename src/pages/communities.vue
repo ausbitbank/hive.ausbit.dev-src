@@ -407,7 +407,7 @@ export default {
               '@type': 'ListItem',
               position: index + 1,
               name: card.title,
-              url: 'https://hive.ausbit.dev/c/' + card.name
+              url: 'https://banksia.io/c/' + card.name
             }))
           }
         }

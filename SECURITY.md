@@ -3,7 +3,7 @@
 ## Supported version
 
 The `master` branch is the supported version. Production deploys from it to
-<https://hive.ausbit.dev>.
+<https://banksia.io>.
 
 ## Reporting a vulnerability
 

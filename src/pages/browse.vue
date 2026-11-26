@@ -326,15 +326,15 @@ export default {
 
       if (this.isAccount) {
         title = '@' + this.accountName + "'s Hive " + label
-        description = 'Browse @' + this.accountName + "'s " + label + ' on the Hive blockchain at hive.ausbit.dev.'
+        description = 'Browse @' + this.accountName + "'s " + label + ' on the Hive blockchain at banksia.io.'
       } else if (this.isCommunity) {
         title = this.communityTitle + ' — ' + this.sortLabel + ' Hive posts'
-        description = 'Browse ' + label + ' posts in the ' + this.communityTitle + ' Hive community at hive.ausbit.dev.'
+        description = 'Browse ' + label + ' posts in the ' + this.communityTitle + ' Hive community at banksia.io.'
       } else {
         const tagLabel = this.tag ? '#' + this.tag : null
         title = tagLabel ? this.sortLabel + ' Hive posts in ' + tagLabel : this.sortLabel + ' Hive posts'
         description = tagLabel
-          ? 'Browse ' + label + ' Hive posts tagged ' + tagLabel + ' on hive.ausbit.dev.'
+          ? 'Browse ' + label + ' Hive posts tagged ' + tagLabel + ' on banksia.io.'
           : 'Browse ' + label + ' posts on the Hive blockchain: trending, new, hot and community content.'
       }
 

@@ -1,3 +1,4 @@
+import { BRAND } from '../../config/brand'
 import { validateAccountName } from '../hiveNames'
 import {
   createAuthKey,
@@ -20,9 +21,9 @@ import {
 export const HAS_HOST = 'wss://hive-auth.arcange.eu/'
 
 export const APP_META = Object.freeze({
-  name: 'hive.ausbit.dev',
-  description: 'A Hive block explorer and toolkit',
-  icon: 'https://hive.ausbit.dev/statics/hive.svg'
+  name: BRAND.name,
+  description: BRAND.shortDescription,
+  icon: BRAND.url + '/statics/icons/icon-512x512.png'
 })
 
 const CONNECT_TIMEOUT_MS = 12000

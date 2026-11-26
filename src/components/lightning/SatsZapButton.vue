@@ -46,7 +46,7 @@ export default {
   computed: {
     note () {
       const reference = String(this.permlink || '').slice(0, 48)
-      return ['Zap', reference, 'hive.ausbit.dev'].filter(Boolean).join(' · ')
+      return ['Zap', reference, 'banksia.io'].filter(Boolean).join(' · ')
     }
   }
 }

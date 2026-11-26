@@ -1,10 +1,10 @@
 <p align="center">
-  <a href="https://hive.ausbit.dev">
-    <img src="public/statics/app-logo-128x128.png" width="88" height="88" alt="hive.ausbit.dev logo">
+  <a href="https://banksia.io">
+    <img src="public/statics/app-logo-128x128.png" width="88" height="88" alt="Banksia logo">
   </a>
 </p>
 
-<h1 align="center">hive.ausbit.dev</h1>
+<h1 align="center">Banksia</h1>
 
 <p align="center">
   <strong>Explore, trade and create on Hive — from one fast, local-first app.</strong><br>
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://hive.ausbit.dev"><img alt="Live site" src="https://img.shields.io/badge/live-hive.ausbit.dev-E31349?style=flat-square"></a>
+  <a href="https://banksia.io"><img alt="Live site" src="https://img.shields.io/badge/live-banksia.io-E31337?style=flat-square"></a>
   <a href="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml/badge.svg?branch=master"></a>
   <a href="LICENSE"><img alt="License: Unlicense" src="https://img.shields.io/badge/license-Unlicense-blue?style=flat-square"></a>
   <a href="https://hive.io"><img alt="Hive" src="https://img.shields.io/badge/chain-Hive-E31349?style=flat-square"></a>
@@ -21,10 +21,10 @@
 </p>
 
 <p align="center">
-  <a href="https://hive.ausbit.dev"><img src="docs/screenshots/readme/home.webp" alt="hive.ausbit.dev home dashboard showing a live block, prices, witnesses and community posts" width="1200"></a>
+  <a href="https://banksia.io"><img src="docs/screenshots/readme/home.webp" alt="banksia.io home dashboard showing a live block, prices, witnesses and community posts" width="1200"></a>
 </p>
 
-**hive.ausbit.dev** is an open-source block explorer, wallet and creator toolkit
+**Banksia** is an open-source block explorer, wallet and creator toolkit
 for the [Hive](https://hive.io) blockchain. It reads from public Hive APIs, so
 most of the app works without an account. When you do sign in, keys stay under
 your control through Hive Keychain, HiveAuth on a mobile wallet, or the built-in
@@ -373,12 +373,16 @@ mounts.
 
 ## Deployment
 
-The production site is served by nginx from `/var/www/hive.ausbit.dev` on
+The production site is served by nginx from `/var/www/banksia.io` on
 `hurgenburgen`, with history-mode fallback to `index.html`. The canonical
-virtual-host file is [`deploy/nginx/hive.ausbit.dev.conf`](deploy/nginx/hive.ausbit.dev.conf);
+virtual-host file is [`deploy/nginx/banksia.io.conf`](deploy/nginx/banksia.io.conf);
 it owns the security headers, the no-trailing-slash redirect, real 404
 statuses, the manifest content type and the SSI metadata shell for dynamic
-routes. Keep the certbot-managed SSL lines when installing it.
+routes. The same vhost also lists `www.banksia.io` and the legacy
+`hive.ausbit.dev`, so old links keep working; canonical and Open Graph URLs always
+point at `banksia.io`. Install the vhost, then run
+`certbot --nginx -d banksia.io -d www.banksia.io -d hive.ausbit.dev` once on the
+host so the certificate covers all three names.
 
 Cloudflare sits in front of the origin. A metadata Worker
 ([`deploy/cloudflare/metadata-worker.mjs`](deploy/cloudflare/metadata-worker.mjs),
@@ -396,11 +400,12 @@ live in [`deploy/cloudflare/RULES.md`](deploy/cloudflare/RULES.md) and
 
 The deploy script lints, builds, prerenders metadata-only crawler snapshots,
 creates a timestamped tarball backup, uploads the build to a staging directory and
-activates it with rsync. It prints the backup path and matching rollback
-command:
+activates it with rsync. On the first run it seeds `/var/www/banksia.io` from the
+old `/var/www/hive.ausbit.dev` build if the new path is empty, so the domain switch
+is zero-downtime. It prints the backup path and matching rollback command:
 
 ```bash
-./scripts/rollback.sh ~/hive-backups/hive.ausbit.dev-<timestamp>.tar.gz
+./scripts/rollback.sh ~/banksia-backups/banksia.io-<timestamp>.tar.gz
 ```
 
 Rollback first snapshots the current deployment, so a rollback is reversible.
@@ -420,6 +425,33 @@ The build stamps a unique id into `sw.js` and `version.json`
 (`scripts/stamp-build.mjs`), which is what makes the existing "Update
 available" prompt fire for normal deploys rather than only when `sw.js` is
 edited.
+
+### banksia.io cutover
+
+1. Point `banksia.io` and `www.banksia.io` at Cloudflare and add the zone.
+2. Install the vhost, enable it and disable the old symlink so only one server
+   block owns the names:
+   ```bash
+   scp deploy/nginx/banksia.io.conf hurgenburgen:/tmp/
+   ssh hurgenburgen 'sudo cp /tmp/banksia.io.conf /etc/nginx/sites-available/banksia.io'
+   ssh hurgenburgen 'sudo ln -sf /etc/nginx/sites-available/banksia.io /etc/nginx/sites-enabled/banksia.io'
+   ssh hurgenburgen 'sudo rm -f /etc/nginx/sites-enabled/hive.ausbit.dev'
+   ssh hurgenburgen 'sudo nginx -t && sudo systemctl reload nginx'
+   ```
+3. Issue or expand the certificate so the same vhost covers all three names:
+   ```bash
+   ssh hurgenburgen 'sudo certbot --nginx -d banksia.io -d www.banksia.io -d hive.ausbit.dev'
+   ```
+   Keep the certbot-managed `ssl_certificate` lines it writes.
+4. Deploy the SPA with `./scripts/deploy.sh`. The first run seeds
+   `/var/www/banksia.io` from the old build and verifies both hosts.
+5. Deploy the metadata Worker with `npx wrangler@4 deploy`, verify the new routes,
+   then delete the old `hive-metadata` Worker.
+6. Confirm `https://banksia.io` and `https://hive.ausbit.dev` both return the app;
+   canonical, Open Graph and JSON-LD URLs should always be `banksia.io`.
+7. Ask v4v.app to add `https://banksia.io` to its CORS allowlist and to register
+   the `banksia` app name. The legacy `hive.ausbit.dev` origin remains allowlisted,
+   so Lightning keeps working there during the transition.
 
 The origin also trusts Cloudflare's `CF-Connecting-IP` header so access logs
 record real visitor IPs instead of edge IPs. The trusted ranges live in
@@ -468,7 +500,9 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 
 The 2026 revamp modernized the abandoned Quasar 1 / Vue 2 / webpack codebase.
 It was merged to `master` on 2026-11-17; the pre-revamp state is preserved as the
-`archive/pre-revamp-2026-11-17` tag.
+`archive/pre-revamp-2026-11-17` tag. The app was renamed from `hive.ausbit.dev`
+to **Banksia** at `banksia.io` on 2026-11-26; the old subdomain remains a legacy
+host that serves the same build.
 
 ## Contributing
 

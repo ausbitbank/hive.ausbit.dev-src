@@ -65,7 +65,7 @@ export default defineBoot(({ app }) => {
     Dialog.create({
       dark: true,
       title: 'Update available',
-      message: 'A new version of hive.ausbit.dev is ready. Reload now to use it, or keep this version open and update later.',
+      message: 'A new version of Banksia is ready. Reload now to use it, or keep this version open and update later.',
       persistent: true,
       ok: { label: 'Reload now', color: 'primary', unelevated: true, noCaps: true },
       cancel: { label: 'Later', color: 'grey', flat: true, noCaps: true }

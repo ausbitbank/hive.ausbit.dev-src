@@ -268,7 +268,7 @@ export const SHOT_RECIPES = {
     waitForText: 'Produced by',
     viewport: { width: 1440, height: 1100 },
     crop: '1280x820+80+50',
-    alt: 'The hive.ausbit.dev dashboard, with live block, coin prices, top witnesses and community feeds',
+    alt: 'The banksia.io dashboard, with live block, coin prices, top witnesses and community feeds',
     caption: 'The new home dashboard: live chain data and community feeds in one arranged view.'
   },
   'home-content-browser': {

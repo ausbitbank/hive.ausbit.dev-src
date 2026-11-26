@@ -1,16 +1,22 @@
 // Reading and writing the namespaced profile theme in Hive account metadata.
 //
-// The canonical location is a top-level `"hive.ausbit.dev"` key inside
+// The canonical location is a top-level `"banksia.io"` key inside
 // `posting_json_metadata`. It is deliberately not under `profile` or
 // `extensions`: apps that only understand the standard profile fields are more
 // likely to preserve an unknown top-level key than to preserve unknown nested
 // keys. Every write is a read-merge-write of the whole object and every
 // untouched account field is sent back unchanged.
+//
+// Themes published before the Banksia rename used the `"hive.ausbit.dev"` key.
+// Those are still read; a write migrates the value to the new key so accounts
+// do not carry two copies of the same skin.
 
 import { safeJsonParse } from '../utils/safeHtml'
+import { THEME_NAMESPACE, LEGACY_THEME_NAMESPACE } from '../config/brand'
 import { validateTheme, THEME_SCHEMA } from './schema'
 
-export const THEME_NAMESPACE = 'hive.ausbit.dev'
+export { THEME_NAMESPACE }
+const THEME_NAMESPACES = [THEME_NAMESPACE, LEGACY_THEME_NAMESPACE]
 // Account metadata can already be a few kilobytes. The theme itself is capped
 // at MAX_THEME_BYTES; leave room for the profile without rejecting every
 // account that has a long bio or a few social links.
@@ -24,11 +30,19 @@ export function parsePostingMetadata (raw) {
   return { ok: true, value: parsed, error: '' }
 }
 
+function readThemeNamespace (metadata) {
+  for (const namespace of THEME_NAMESPACES) {
+    const value = metadata[namespace]
+    if (value && typeof value === 'object') return value
+  }
+  return null
+}
+
 export function themeFromPostingMetadata (raw) {
   const parsed = parsePostingMetadata(raw)
   if (!parsed.ok) return { theme: null, error: parsed.error, raw: parsed.value }
-  const namespace = parsed.value[THEME_NAMESPACE]
-  const candidate = namespace && typeof namespace === 'object' ? namespace.theme : null
+  const namespace = readThemeNamespace(parsed.value)
+  const candidate = namespace ? namespace.theme : null
   if (!candidate) return { theme: null, error: '', raw: parsed.value }
   const result = validateTheme(candidate, { requireProfile: true })
   return {
@@ -64,13 +78,13 @@ export function mergeThemeMetadata (raw, theme) {
   }
 
   const value = cloneJson(parsed.value)
-  const previous = value[THEME_NAMESPACE] && typeof value[THEME_NAMESPACE] === 'object'
-    ? cloneJson(value[THEME_NAMESPACE])
-    : null
+  const current = readThemeNamespace(value)
+  const previous = current ? cloneJson(current) : null
   value[THEME_NAMESPACE] = {
     ...(previous || {}),
     theme: cloneJson(theme)
   }
+  delete value[LEGACY_THEME_NAMESPACE]
   const text = JSON.stringify(value)
   if (text.length > MAX_POSTING_METADATA_BYTES) {
     return { ok: false, text: '', value: null, previous, error: 'The merged profile metadata is too large' }
@@ -84,9 +98,11 @@ export function removeThemeMetadata (raw) {
     return { ok: false, text: '', value: null, error: parsed.error }
   }
   const value = cloneJson(parsed.value)
-  if (value[THEME_NAMESPACE] && typeof value[THEME_NAMESPACE] === 'object') {
-    delete value[THEME_NAMESPACE].theme
-    if (Object.keys(value[THEME_NAMESPACE]).length === 0) delete value[THEME_NAMESPACE]
+  for (const namespace of THEME_NAMESPACES) {
+    if (value[namespace] && typeof value[namespace] === 'object') {
+      delete value[namespace].theme
+      if (Object.keys(value[namespace]).length === 0) delete value[namespace]
+    }
   }
   return { ok: true, text: JSON.stringify(value), value, error: '' }
 }

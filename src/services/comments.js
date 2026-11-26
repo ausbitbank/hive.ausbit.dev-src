@@ -124,7 +124,7 @@ export function commentQueueItem ({
   if (mode === 'edit') {
     const metadata = {
       ...(previousMetadata && typeof previousMetadata === 'object' ? previousMetadata : {}),
-      app: 'hive.ausbit.dev',
+      app: 'banksia.io',
       format: 'markdown'
     }
     return [
@@ -182,7 +182,7 @@ function createCommentQueueItem ({
       permlink,
       title: '',
       body,
-      json_metadata: JSON.stringify({ app: 'hive.ausbit.dev', format: 'markdown' }),
+      json_metadata: JSON.stringify({ app: 'banksia.io', format: 'markdown' }),
       comment_options: commentOptions
     }]
   ]

@@ -138,7 +138,7 @@ export function writeSnippets (storage, owner, snippets, now = Date.now()) {
 
 export function serializeSnippetExport (snippets, { now = Date.now() } = {}) {
   return JSON.stringify({
-    app: 'hive.ausbit.dev',
+    app: 'banksia.io',
     type: 'hive-snippets',
     version: SNIPPET_VERSION,
     exportedAt: new Date(now).toISOString(),

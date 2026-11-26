@@ -48,6 +48,17 @@ function spotifyEmbed (url) {
   }
 }
 
+// Twitch requires the embedding hostname in the `parent` parameter. The app is
+// served on both banksia.io and the legacy hive.ausbit.dev host, so use the
+// current host when it is a real domain and fall back to the canonical one.
+function twitchParent () {
+  try {
+    const host = typeof window !== 'undefined' && window.location ? window.location.hostname : ''
+    if (host && host !== 'localhost' && !host.startsWith('127.')) return host
+  } catch {}
+  return 'banksia.io'
+}
+
 // Channel pages are profile links, not something the player can show unless
 // the channel happens to be live. Only embed a specific VOD or clip.
 function twitchEmbed (url) {
@@ -55,7 +66,7 @@ function twitchEmbed (url) {
     const parsed = new URL(url)
     const host = parsed.hostname.toLowerCase().replace(/^www\./, '')
     const parts = parsed.pathname.split('/').filter(Boolean)
-    const parent = '&parent=hive.ausbit.dev'
+    const parent = '&parent=' + encodeURIComponent(twitchParent())
     if (host === 'clips.twitch.tv') {
       const slug = parts[0]
       if (!slug) return ''

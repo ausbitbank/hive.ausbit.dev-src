@@ -264,7 +264,7 @@ function postCacheKey (method, params) {
 
 export function fetchRankedPosts (params, { force = false } = {}) {
   // Hivemind asserts on invalid tag strings, so a legacy tag such as
-  // `hive.ausbit.dev` must not reach `bridge.get_ranked_posts`.
+  // `banksia.io` must not reach `bridge.get_ranked_posts`.
   if (params && params.tag && !isValidTag(params.tag)) return Promise.resolve([])
   return loadCached(postCacheKey('bridge.get_ranked_posts', params), () => bridgeRequest('get_ranked_posts', params), {
     ttl: CACHE_TTL.posts,

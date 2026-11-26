@@ -215,7 +215,7 @@ export const MODERATION_EXPORT_TYPE = 'hive-moderation-policy'
 export function serializeModerationExport (policy, { subscriptions = null } = {}) {
   const normalized = normalizeModerationPolicy(policy)
   const exported = {
-    app: 'hive.ausbit.dev',
+    app: 'banksia.io',
     type: MODERATION_EXPORT_TYPE,
     version: MODERATION_VERSION,
     exportedAt: new Date().toISOString(),
@@ -247,7 +247,7 @@ export function parseModerationExport (input) {
     return { policy: null, error: 'That file does not contain a moderation policy.' }
   }
   if (value.type && value.type !== MODERATION_EXPORT_TYPE) {
-    return { policy: null, error: 'That file is not a hive.ausbit.dev moderation policy.' }
+    return { policy: null, error: 'That file is not a banksia.io moderation policy.' }
   }
   const version = Number(value.version)
   if (Number.isFinite(version) && version > MODERATION_VERSION) {

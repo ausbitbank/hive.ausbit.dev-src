@@ -26,7 +26,7 @@
 
     <div class="keepsats__body">
       <p class="keepsats__note">
-        A sats balance kept by v4v.app, not by hive.ausbit.dev. Reading it uses
+        A sats balance kept by v4v.app, not by banksia.io. Reading it uses
         your <strong>posting key</strong> to sign a short-lived v4v.app session.
         No active key, no Hive transaction, no transfers.
       </p>

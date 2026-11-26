@@ -110,7 +110,7 @@
             <p class="lightning-card__note">
               Lightning invoices reveal the amount and destination to v4v.app, and Hive transfer
               memos are public. Do not put personal information in a memo. Keepsats are held by
-              v4v.app, not by hive.ausbit.dev.
+              v4v.app, not by banksia.io.
             </p>
           </section>
         </aside>

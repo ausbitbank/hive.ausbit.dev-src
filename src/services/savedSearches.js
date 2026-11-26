@@ -3,6 +3,8 @@
 // Records are content-only (label, shareable URL and a description) and live in
 // localStorage. Import accepts the app envelope, a bare array or one record.
 
+import { BRAND } from '../config/brand'
+
 export const SAVED_SEARCH_STORAGE_KEY = 'savedSearches'
 export const SAVED_SEARCH_EXPORT_TYPE = 'hive-saved-searches'
 export const SAVED_SEARCH_VERSION = 1
@@ -21,7 +23,7 @@ export function normalizeSearchPath (value) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(text) || text.startsWith('//')) {
     try {
       const url = new URL(text)
-      if (url.origin !== 'https://hive.ausbit.dev') return ''
+      if (![BRAND.url, BRAND.legacyUrl].includes(url.origin)) return ''
       path = url.pathname + (url.search || '')
     } catch {
       return ''
@@ -29,7 +31,7 @@ export function normalizeSearchPath (value) {
   }
   if (!path.startsWith('/search')) return ''
   try {
-    const url = new URL(path, 'https://hive.ausbit.dev')
+    const url = new URL(path, BRAND.url)
     if (url.pathname !== '/search') return ''
     return '/search' + (url.search || '')
   } catch {
@@ -129,7 +131,7 @@ export function writeSavedSearches (storage, list) {
 
 export function serializeSavedSearches (list) {
   return JSON.stringify({
-    app: 'hive.ausbit.dev',
+    app: BRAND.appId,
     type: SAVED_SEARCH_EXPORT_TYPE,
     version: SAVED_SEARCH_VERSION,
     exportedAt: new Date().toISOString(),

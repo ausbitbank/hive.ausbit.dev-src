@@ -28,7 +28,7 @@ export default {
   mounted () {
     setPageMeta({
       title: 'Recent votes by @' + this.account + ' — Hive',
-      description: 'Recent Hive votes and curation activity by @' + this.account + ' on hive.ausbit.dev.',
+      description: 'Recent Hive votes and curation activity by @' + this.account + ' on banksia.io.',
       url: this.$route.path
     })
   }

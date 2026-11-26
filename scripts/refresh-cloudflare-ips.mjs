@@ -34,7 +34,7 @@ const conf = `# Cloudflare edge ranges.
 #
 # Trust CF-Connecting-IP only when the connection itself comes from one of
 # these addresses, so a client hitting the origin directly cannot spoof its
-# IP. Included by deploy/nginx/hive.ausbit.dev.conf.
+# IP. Included by deploy/nginx/banksia.io.conf.
 #
 # Source: https://www.cloudflare.com/ips-v4 and /ips-v6
 # Regenerate with: node scripts/refresh-cloudflare-ips.mjs

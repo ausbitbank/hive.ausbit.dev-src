@@ -191,7 +191,7 @@ export function readCrossPostMetadata (metadata) {
 export function buildPostMetadata (draft) {
   const source = draft && typeof draft === 'object' ? draft : {}
   const metadata = {
-    app: 'hive.ausbit.dev',
+    app: 'banksia.io',
     format: 'markdown',
     tags: resolvedTags(source)
   }
@@ -298,7 +298,7 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
   const metadata = isComment
     ? {
         ...previous,
-        app: 'hive.ausbit.dev',
+        app: 'banksia.io',
         format: 'markdown'
       }
     : {

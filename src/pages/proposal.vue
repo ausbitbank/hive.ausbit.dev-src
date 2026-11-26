@@ -573,14 +573,14 @@ export default {
       setPageMeta({
         title: this.proposal.subject + ' — Hive proposal #' + this.proposal.id,
         description: this.proposal.subject + ' — ' + this.formatHbd(this.dailyPay) + ' HBD daily, ' +
-          this.formatHp(this.voteHp) + ' HP support, ' + status + '. Decentralized Hive Fund proposal on hive.ausbit.dev.',
+          this.formatHp(this.voteHp) + ' HP support, ' + status + '. Decentralized Hive Fund proposal on banksia.io.',
         url: '/proposals/' + this.proposal.id
       })
     },
     setNotFoundMeta () {
       setPageMeta({
         title: 'Proposal not found — Hive proposals',
-        description: 'The requested Decentralized Hive Fund proposal does not exist. Browse current and past DHF proposals on hive.ausbit.dev.',
+        description: 'The requested Decentralized Hive Fund proposal does not exist. Browse current and past DHF proposals on banksia.io.',
         url: '/proposals/' + (this.$route?.params?.proposalId || '')
       })
     },
