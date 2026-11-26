@@ -16,6 +16,7 @@ const BASE_URL = 'http://127.0.0.1:' + APP_PORT
 
 const CHROMIUM_ONLY = [
   '**/a11y.spec.js',
+  '**/peek-layout.spec.js',
   '**/wallet-csv.spec.js',
   '**/lightning-states.spec.js',
   '**/perf.spec.js',
