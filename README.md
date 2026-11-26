@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://banksia.io">
-    <img src="public/statics/app-logo-128x128.png" width="88" height="88" alt="Banksia logo">
+    <img src="public/statics/app-logo-banksia-128x128.png" width="88" height="88" alt="Banksia logo">
   </a>
 </p>
 
