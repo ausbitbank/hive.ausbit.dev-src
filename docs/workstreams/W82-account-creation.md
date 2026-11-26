@@ -99,11 +99,13 @@
   `src/components/onboarding/AccountWelcome.vue`
   - Native create/claim/batch transactions now put `onboarding.sponsor` and
     `via` in the creation `json_metadata` (small, valid JSON; no profile fields).
-  - A new-account dialog prompts the owner to complete `posting_json_metadata`
-    profile fields and links to `/@user?edit=posting`, which opens the posting
-    metadata editor directly (the legacy `json` and `posting` aliases are also
-    supported).
-  - If the account has an onboarding sponsor, the dialog offers an explicit
+  - A new-account, non-blocking banner prompts the owner to complete
+    `posting_json_metadata` profile fields and links to
+    `/@user?edit=posting`, which opens the posting metadata editor directly
+    (the legacy `json` and `posting` aliases are also supported). The banner
+    deliberately does not use a modal backdrop, so it cannot block the profile
+    editor or deep-linked actions.
+  - If the account has an onboarding sponsor, the banner offers an explicit
     opt-in 5% default beneficiary for Banksia posts. It is not applied silently,
     and it does not affect other Hive apps.
   - The prompt is per-user, dismissible, and only targets recent accounts or

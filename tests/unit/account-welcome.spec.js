@@ -46,6 +46,9 @@ describe('AccountWelcome', () => {
     expect(wrapper.vm.open).toBe(true)
     expect(wrapper.vm.needsProfile).toBe(true)
     expect(wrapper.vm.needsSponsor).toBe(true)
+    expect(wrapper.find('.q-dialog').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Complete your profile')
+    expect(wrapper.text()).toContain('Support @sponsor')
   })
 
   it('only adds the sponsor beneficiary after explicit opt-in', async () => {

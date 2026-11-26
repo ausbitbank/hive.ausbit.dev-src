@@ -1,18 +1,19 @@
 <template>
-  <q-dialog v-model="open" @hide="onHide">
-    <q-card class="welcome-card">
-      <q-card-section class="welcome-head">
-        <div class="welcome-eyebrow">Welcome to Hive</div>
-        <h2 class="welcome-title">@{{ loggedInUser }}</h2>
-        <p class="welcome-copy">
-          Your account is live. These setup steps are optional — your account already works
-          without them.
-        </p>
-      </q-card-section>
+  <q-banner v-if="open" class="account-welcome" rounded role="status" aria-live="polite" aria-label="Account onboarding">
+    <div class="welcome-inner">
+      <div class="welcome-head">
+        <div>
+          <div class="welcome-eyebrow">Welcome to Hive</div>
+          <h2 class="welcome-title">@{{ loggedInUser }}</h2>
+          <p class="welcome-copy">
+            Your account is live. These setup steps are optional — your account already works
+            without them.
+          </p>
+        </div>
+        <q-btn flat dense no-caps color="primary" label="Not now" @click="close()" />
+      </div>
 
-      <q-separator />
-
-      <q-card-section class="welcome-steps">
+      <div class="welcome-steps">
         <div v-if="needsProfile" class="welcome-step">
           <div class="welcome-step__icon"><q-icon name="person" size="22px" aria-hidden="true" /></div>
           <div class="welcome-step__body">
@@ -52,16 +53,13 @@
             </div>
           </div>
         </div>
-      </q-card-section>
+      </div>
 
-      <q-separator />
-
-      <q-card-actions class="welcome-actions">
-        <q-btn flat no-caps color="primary" label="Not now" @click="close()" />
+      <div class="welcome-actions">
         <q-btn flat no-caps color="primary" label="Done" @click="close()" />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+      </div>
+    </div>
+  </q-banner>
 </template>
 
 <script>
@@ -125,9 +123,6 @@ export default {
     markSeen () {
       if (!this.loggedInUser) return
       this.$q.localStorage.set(this.seenKey(), true)
-    },
-    onHide () {
-      this.markSeen()
     },
     close () {
       this.markSeen()
@@ -212,12 +207,25 @@ export default {
 </script>
 
 <style scoped>
-.welcome-card {
-  width: min(560px, 92vw);
-  background: var(--c-dialog);
+.account-welcome {
+  margin: 0;
+  border-bottom: 1px solid var(--c-border-subtle);
+  border-radius: 0;
+  background: var(--c-surface-2);
+  color: var(--c-text);
+}
+
+.welcome-inner {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
 }
 
 .welcome-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
   padding-bottom: var(--space-3);
 }
 
@@ -288,8 +296,9 @@ export default {
 }
 
 .welcome-actions {
+  display: flex;
   justify-content: flex-end;
-  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 @media (max-width: 599px) {

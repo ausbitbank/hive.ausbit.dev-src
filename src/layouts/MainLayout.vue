@@ -125,6 +125,7 @@
       </div>
     </q-drawer>
     <q-page-container id="main-content" tabindex="-1">
+      <account-welcome v-if="loggedInUser !== null" />
       <error-boundary :key="$route.path">
         <router-view />
       </error-boundary>
@@ -144,7 +145,6 @@
         </div>
       </footer>
     </q-page-container>
-    <account-welcome v-if="loggedInUser !== null" />
     <command-palette ref="commandPalette" />
     <post-peek />
     <perf-panel v-if="showPerfPanel" @close="closePerfPanel" />
