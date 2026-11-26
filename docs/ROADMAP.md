@@ -10,13 +10,14 @@ principles that constrain it. Delivered work and its verification records live i
 
 - The 2026 revamp is deployed at <https://hive.ausbit.dev>.
 - The latest shipped slice covers local-first moderation (W71–W78), the
-  user-selectable image proxy (W79), CSP reporting, vhost hardening, dependency
-  updates and the repaired E2E suite.
+  user-selectable image proxy (W79), post quick look and feed position
+  restoration (W80), CSP reporting, vhost hardening, dependency updates and the
+  repaired E2E suite.
 - Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,503 tests across 174 files.
+  with 1,518 tests across 176 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W80**.
+- The next free workstream number is **W81**.
 
 ## Vision
 

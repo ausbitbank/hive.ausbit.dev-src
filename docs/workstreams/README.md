@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W80**.
+The next free workstream number is **W81**.
 
 ## Index
 
@@ -136,3 +136,4 @@ The next free workstream number is **W80**.
 | [W77-safety-floor](W77-safety-floor.md) | Default-on phishing safety floor |
 | [W78-community-moderation-context](W78-community-moderation-context.md) | Community moderation context |
 | [W79-image-proxy](W79-image-proxy.md) | User-selectable image proxy |
+| [W80-post-quick-look](W80-post-quick-look.md) | Post quick look and feed position restoration |
