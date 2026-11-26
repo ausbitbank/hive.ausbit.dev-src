@@ -175,7 +175,7 @@
               </q-card-section>
             </q-card>
 
-            <q-card flat bordered class="account-card" v-if="account.posting_json_metadata || canEditAccount">
+            <q-card id="posting-metadata" flat bordered class="account-card" v-if="account.posting_json_metadata || canEditAccount">
               <q-card-section>
                 <div class="account-card__head">
                   <h2 class="account-card__title account-card__title--small">Posting metadata</h2>
@@ -189,7 +189,7 @@
               </q-card-section>
             </q-card>
 
-            <q-card flat bordered class="account-card" v-if="account.json_metadata || canEditAccount">
+            <q-card id="json-metadata" flat bordered class="account-card" v-if="account.json_metadata || canEditAccount">
               <q-card-section>
                 <div class="account-card__head">
                   <h2 class="account-card__title account-card__title--small">JSON metadata</h2>
@@ -690,6 +690,7 @@ import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
+import { metadataEditMode } from 'src/services/accountOnboarding'
 import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
 import ShareMenu from 'components/ui/ShareMenu.vue'
@@ -1194,6 +1195,23 @@ export default {
     returnLink (author, permlink) { return '/@' + author + '/' + permlink },
     returnBlockLink (blockNum, txId) { return '/b/' + blockNum + '#' + txId },
     refreshAccount () { this.$hiveStore.getAccount(this.username, { force: true }) },
+    applyEditQuery () {
+      if (!this.canEditAccount) return
+      const mode = metadataEditMode(this.$route.query)
+      if (mode === 'posting') {
+        this.editPostingJson = true
+        this.$nextTick(() => this.scrollToMetadata('posting-metadata'))
+      } else if (mode === 'legacy') {
+        this.editJsonMeta = true
+        this.$nextTick(() => this.scrollToMetadata('json-metadata'))
+      }
+    },
+    scrollToMetadata (id) {
+      if (typeof document === 'undefined') return
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    },
     async init () {
       this.error = false
       this.errorMessage = ''
@@ -1208,6 +1226,7 @@ export default {
       this.updatePageMeta()
       await this.loadAccount()
       if (!this.error) this.getAccountHistoryMarker()
+      this.applyEditQuery()
       if (this.autorefresh === true) { setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000) }
     }
   },

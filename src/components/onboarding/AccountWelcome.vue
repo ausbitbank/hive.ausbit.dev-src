@@ -205,7 +205,7 @@ export default {
       const user = this.loggedInUser
       if (!user) return
       this.close()
-      this.$router.push('/@' + user).catch(() => {})
+      this.$router.push({ path: '/@' + user, query: { edit: 'posting' } }).catch(() => {})
     }
   }
 }

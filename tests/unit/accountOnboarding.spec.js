@@ -3,6 +3,7 @@ import {
   buildAccountCreationMetadata,
   hasProfileMetadata,
   isNewAccount,
+  metadataEditMode,
   onboardingSponsor,
   parseMetadataObject,
   profileFromMetadata
@@ -45,6 +46,14 @@ describe('account onboarding metadata', () => {
     expect(hasProfileMetadata('')).toBe(false)
     expect(hasProfileMetadata('{bad json')).toBe(false)
     expect(parseMetadataObject('null')).toEqual({})
+  })
+
+  it('maps profile deep links to the correct metadata editor', () => {
+    expect(metadataEditMode({ edit: 'posting' })).toBe('posting')
+    expect(metadataEditMode({ edit: 'PROFILE' })).toBe('posting')
+    expect(metadataEditMode({ edit: 'json' })).toBe('legacy')
+    expect(metadataEditMode({ edit: 'unknown' })).toBe('')
+    expect(metadataEditMode({})).toBe('')
   })
 
   it('only treats recent accounts as new', () => {

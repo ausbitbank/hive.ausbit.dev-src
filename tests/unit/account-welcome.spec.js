@@ -81,4 +81,14 @@ describe('AccountWelcome', () => {
     await wrapper.vm.$nextTick()
     expect(wrapper.vm.open).toBe(false)
   })
+
+  it('deep-links the profile editor to the posting metadata panel', async () => {
+    const { wrapper, routerPush } = makeWrapper({ account: newAccount })
+    await wrapper.vm.$nextTick()
+    wrapper.vm.openProfile()
+    expect(routerPush).toHaveBeenCalledWith({
+      path: '/@newuser',
+      query: { edit: 'posting' }
+    })
+  })
 })

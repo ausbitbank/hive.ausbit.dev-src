@@ -56,6 +56,14 @@ export function onboardingSponsor (jsonMetadata, postingJsonMetadata) {
   return ''
 }
 
+/** Map a profile deep-link query to the metadata editor that should open. */
+export function metadataEditMode (query) {
+  const edit = String(query?.edit || '').trim().toLowerCase()
+  if (['posting', 'profile', 'posting-metadata'].includes(edit)) return 'posting'
+  if (['legacy', 'json', 'json-metadata'].includes(edit)) return 'legacy'
+  return ''
+}
+
 export function profileFromMetadata (raw) {
   const metadata = parseMetadataObject(raw)
   return metadata?.profile && typeof metadata.profile === 'object' && !Array.isArray(metadata.profile)
