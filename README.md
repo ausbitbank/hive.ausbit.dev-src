@@ -121,7 +121,11 @@ searches live in your browser.
 | `/proposals`, `/dao`, `/proposals/:id` | DHF proposals, funding status, votes, funding outlook, creator/receiver/topic mix and voter overlap |
 | `/health`, `/nodes` | Network health and node latency/failover for Hive L1, Hive-Engine and Magi, including beacon reliability, feature coverage and Magi consensus/witness data |
 | `/magi` | Read-only Magi contract viewer: metadata, timelocked updates, recent outputs, state keys and call simulation |
-| `/create` | Hive account creation helpers |
+| `/join` | Verified Hive signup providers and the public-key-only claim-link flow |
+| `/join/keys` | Generate a master password and owner/active/posting/memo keys locally, then copy a claim link for a sponsor |
+| `/create` | Existing-user account gifting: create with an account token or HIVE, with Keychain/SmartLock import |
+| `/create/claim` | Sponsor path for a claim link: review public keys and create the account with a token or HIVE |
+| `/create/batch` | Advanced Keychain batch signing: create several claimed accounts from public-key-only links in one transaction |
 
 ### Appearance and trust
 

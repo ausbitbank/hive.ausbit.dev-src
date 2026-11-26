@@ -680,18 +680,24 @@ export default {
           to: '/health'
         },
         {
-          title: 'Create an account',
-          caption: 'join Hive',
+          title: 'Join Hive',
+          caption: 'create a new account',
           icon: 'person_add',
+          to: '/join'
+        },
+        {
+          title: 'Create for someone',
+          caption: 'gift an account',
+          icon: 'group_add',
           to: '/create'
         }
       ],
       externalLinks: [
         {
-          title: 'Hive onboarding',
-          caption: 'hiveonboard.com',
+          title: 'Hive signup directory',
+          caption: 'signup.hive.io',
           icon: 'person_add',
-          link: 'https://hiveonboard.com?ref=ausbitbank'
+          link: 'https://signup.hive.io/'
         },
         {
           title: 'Developer Docs',

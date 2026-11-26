@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W81**.
+The next free workstream number is **W83**.
 
 ## Index
 
@@ -138,3 +138,4 @@ The next free workstream number is **W81**.
 | [W79-image-proxy](W79-image-proxy.md) | User-selectable image proxy |
 | [W80-post-quick-look](W80-post-quick-look.md) | Post quick look and feed position restoration |
 | [W81-banksia-rebrand](W81-banksia-rebrand.md) | Banksia rebrand and banksia.io cutover |
+| [W82-account-creation](W82-account-creation.md) | Account signup, public-key claim links and static batch signing |

@@ -356,7 +356,9 @@ const COMMANDS = [  { label: 'Home', description: 'Live network dashboard', icon
   { label: 'Search Hive', description: 'Accounts, posts, tags, communities and chain data', icon: 'search', path: '/search', keywords: 'search find lookup explore discovery' },
   { label: 'Network health', description: 'Chain status and global properties', icon: 'monitor_heart', path: '/health', keywords: 'status chain' },
   { label: 'Write a post', description: 'Drafts, preview and publishing', icon: 'edit_note', path: '/compose', keywords: 'compose create publish draft blog' },
-  { label: 'Create account', description: 'Join Hive', icon: 'person_add', path: '/create', keywords: 'signup register' }
+  { label: 'Join Hive', description: 'Create a new Hive account', icon: 'person_add', path: '/join', keywords: 'signup sign up register account create' },
+  { label: 'Create for someone', description: 'Gift a Hive account', icon: 'group_add', path: '/create', keywords: 'account token gift invite' },
+  { label: 'Batch claim links', description: 'Create several claimed accounts in one Keychain batch', icon: 'fact_check', path: '/create/batch', keywords: 'batch claim account token sponsor' }
 ]
 
 export default {

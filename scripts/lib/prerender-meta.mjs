@@ -23,7 +23,11 @@ export const PRERENDER_ROUTES = [
   '/health',
   '/nodes',
   '/magi',
+  '/join',
+  '/join/keys',
   '/create',
+  '/create/claim',
+  '/create/batch',
   '/hbdstabilizer',
   '/compose',
   '/search',
@@ -138,7 +142,8 @@ const SEO_LINKS = [
   ['/markets', 'Markets'],
   ['/health', 'Network health'],
   ['/nodes', 'API nodes'],
-  ['/magi', 'Magi contracts']
+  ['/magi', 'Magi contracts'],
+  ['/join', 'Join Hive']
 ]
 
 /**

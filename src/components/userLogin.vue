@@ -902,6 +902,10 @@ export default {
     }
   },
   methods: {
+    openLoginMenu () {
+      if (this.loggedInUser) return
+      this.$refs.menu?.show?.()
+    },
     async onMenuOpen () {
       await this.loadSmartlockUsers()
       this.refreshSmartlockStatus()
@@ -1306,8 +1310,10 @@ export default {
       this.restoreHiveAuthSession()
     }
     this.inspectInterruptedHiveAuth().catch(() => {})
+    window.addEventListener('banksia:open-login', this.openLoginMenu)
   },
   beforeUnmount () {
+    window.removeEventListener('banksia:open-login', this.openLoginMenu)
     this.stopHiveAuthClock()
     this.hiveauthController?.abort()
     this.hiveauthController = null

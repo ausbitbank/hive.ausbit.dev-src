@@ -15,10 +15,10 @@ principles that constrain it. Delivered work and its verification records live i
   restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
   reporting, vhost hardening, dependency updates and the repaired E2E suite.
 - Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,524 tests across 177 files.
+  with 1,534 tests across 178 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W82**.
+- The next free workstream number is **W83**.
 
 ## Vision
 
@@ -144,6 +144,24 @@ modes are understood.
   market hosts; either stub those hosts in CI or treat live-latency budgets as
   advisory while keeping bundle-size budgets blocking.
 - Verify the deployed site after a deploy with `bun run verify:deploy`.
+
+### 7. Account creation follow-ups — W82
+
+The static signup and claim-link phase is implemented: `/join`, `/join/keys`,
+`/create`, `/create/claim` and `/create/batch`, with public-key-only links and
+no stored active authority. Remaining work:
+
+- Test the multi-operation `create_claimed_account` batch signing against Hive
+  testnet before using it with live account tokens.
+- Add opt-in `delegate_rc` / `delegate_vesting_shares` after account creation.
+- Embed Hivedex paid signup (the next phase in the plan).
+- Keyless Worker queue deferred by the operator; the static batch page is the
+  current substitute.
+- Later experiments: Butter Auth Google/GitHub/Discord signup and v4vapp
+  Lightning onboarding.
+- Publish a recovery-account policy before advertising the free pool.
+
+Record: [`W82`](workstreams/W82-account-creation.md).
 
 ## Deferred and non-goals
 
