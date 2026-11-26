@@ -2302,6 +2302,7 @@
     "warning"
   ],
   "included": [
+    "360",
     "access_time",
     "account_balance",
     "account_balance_wallet",
@@ -2498,7 +2499,6 @@
     "list_alt",
     "local_cafe",
     "local_fire_department",
-    "local_florist",
     "location_on",
     "lock",
     "lock_clock",

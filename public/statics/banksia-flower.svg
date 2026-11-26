@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <defs>
+    <clipPath id="banksia-flower-clip">
+      <path d="M 320 70 C 380 70 400 120 400 185 C 400 250 382 292 320 292 C 258 292 240 250 240 185 C 240 120 260 70 320 70 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- soft glow -->
+  <ellipse cx="320" cy="190" rx="125" ry="115" fill="#e31337" opacity=".07"/>
+
+  <!-- leaves -->
+  <path d="M 310 306 C 228 292 174 244 150 172 C 208 194 264 236 310 288 Z" fill="#7c8f6b"/>
+  <path d="M 304 292 C 252 262 208 224 174 182" fill="none" stroke="#5f7352" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+  <path d="M 330 306 C 412 292 466 244 490 172 C 432 194 376 236 330 288 Z" fill="#6f8460"/>
+  <path d="M 336 292 C 388 262 432 224 466 182" fill="none" stroke="#536547" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+  <path d="M 320 318 C 292 314 270 298 258 276 C 282 282 304 294 320 308 Z" fill="#8b9d79"/>
+
+  <!-- stem -->
+  <path d="M 320 318 L 320 350" stroke="#7c8f6b" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- woody cone -->
+  <path d="M 272 278 Q 320 334 368 278 Q 358 320 320 332 Q 282 320 272 278 Z" fill="#5a0f1b"/>
+  <path d="M 284 286 L 356 286 M 290 300 L 350 300 M 302 314 L 338 314" stroke="#e31337" stroke-width="4" stroke-linecap="round" opacity=".35"/>
+  <circle cx="306" cy="294" r="4" fill="#f2a93b" opacity=".7"/>
+  <circle cx="334" cy="294" r="4" fill="#f2a93b" opacity=".7"/>
+
+  <!-- flower spike -->
+  <path d="M 320 70 C 380 70 400 120 400 185 C 400 250 382 292 320 292 C 258 292 240 250 240 185 C 240 120 260 70 320 70 Z" fill="#e31337"/>
+
+  <g clip-path="url(#banksia-flower-clip)">
+    <g fill="#ffcf6b">
+      <circle cx="286" cy="96" r="5"/><circle cx="306" cy="92" r="5"/><circle cx="326" cy="92" r="5"/><circle cx="346" cy="96" r="5"/>
+      <circle cx="274" cy="112" r="5"/><circle cx="294" cy="108" r="5"/><circle cx="314" cy="106" r="5"/><circle cx="334" cy="106" r="5"/><circle cx="354" cy="108" r="5"/><circle cx="374" cy="112" r="5"/>
+      <circle cx="264" cy="130" r="5"/><circle cx="284" cy="126" r="5"/><circle cx="304" cy="124" r="5"/><circle cx="324" cy="124" r="5"/><circle cx="344" cy="126" r="5"/><circle cx="364" cy="130" r="5"/><circle cx="384" cy="134" r="5"/>
+      <circle cx="256" cy="150" r="5"/><circle cx="276" cy="146" r="5"/><circle cx="296" cy="144" r="5"/><circle cx="316" cy="144" r="5"/><circle cx="336" cy="144" r="5"/><circle cx="356" cy="146" r="5"/><circle cx="376" cy="150" r="5"/><circle cx="392" cy="154" r="5"/>
+      <circle cx="252" cy="170" r="5"/><circle cx="272" cy="166" r="5"/><circle cx="292" cy="164" r="5"/><circle cx="312" cy="164" r="5"/><circle cx="332" cy="164" r="5"/><circle cx="352" cy="166" r="5"/><circle cx="372" cy="170" r="5"/><circle cx="392" cy="174" r="5"/>
+      <circle cx="256" cy="190" r="5"/><circle cx="276" cy="186" r="5"/><circle cx="296" cy="184" r="5"/><circle cx="316" cy="184" r="5"/><circle cx="336" cy="184" r="5"/><circle cx="356" cy="186" r="5"/><circle cx="376" cy="190" r="5"/><circle cx="392" cy="194" r="5"/>
+      <circle cx="262" cy="210" r="5"/><circle cx="282" cy="206" r="5"/><circle cx="302" cy="204" r="5"/><circle cx="322" cy="204" r="5"/><circle cx="342" cy="204" r="5"/><circle cx="362" cy="206" r="5"/><circle cx="382" cy="210" r="5"/>
+      <circle cx="272" cy="230" r="5"/><circle cx="292" cy="226" r="5"/><circle cx="312" cy="224" r="5"/><circle cx="332" cy="224" r="5"/><circle cx="352" cy="226" r="5"/><circle cx="372" cy="230" r="5"/>
+      <circle cx="284" cy="250" r="5"/><circle cx="304" cy="246" r="5"/><circle cx="324" cy="246" r="5"/><circle cx="344" cy="248" r="5"/><circle cx="362" cy="252" r="5"/>
+    </g>
+    <g fill="#f6f1e7" opacity=".8">
+      <circle cx="296" cy="100" r="3"/><circle cx="336" cy="100" r="3"/>
+      <circle cx="284" cy="118" r="3"/><circle cx="324" cy="114" r="3"/><circle cx="364" cy="120" r="3"/>
+      <circle cx="274" cy="138" r="3"/><circle cx="314" cy="134" r="3"/><circle cx="354" cy="138" r="3"/><circle cx="384" cy="142" r="3"/>
+      <circle cx="266" cy="158" r="3"/><circle cx="306" cy="154" r="3"/><circle cx="346" cy="154" r="3"/><circle cx="382" cy="160" r="3"/>
+      <circle cx="264" cy="178" r="3"/><circle cx="304" cy="174" r="3"/><circle cx="344" cy="174" r="3"/><circle cx="382" cy="182" r="3"/>
+      <circle cx="270" cy="198" r="3"/><circle cx="310" cy="194" r="3"/><circle cx="350" cy="194" r="3"/><circle cx="386" cy="202" r="3"/>
+      <circle cx="282" cy="218" r="3"/><circle cx="322" cy="214" r="3"/><circle cx="362" cy="216" r="3"/>
+      <circle cx="294" cy="238" r="3"/><circle cx="334" cy="236" r="3"/><circle cx="368" cy="242" r="3"/>
+    </g>
+    <path d="M 380 100 C 396 142 396 222 370 276" fill="none" stroke="#f2a93b" stroke-width="8" stroke-linecap="round" opacity=".22"/>
+    <path d="M 260 100 C 244 142 244 222 270 276" fill="none" stroke="#5a0f1b" stroke-width="10" stroke-linecap="round" opacity=".18"/>
+  </g>
+
+  <!-- hooked style -->
+  <path d="M 320 74 C 320 44 350 26 386 18" fill="none" stroke="#e31337" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="388" cy="17" r="10" fill="#ffcf6b"/>
+
+  <!-- pollen -->
+  <circle cx="232" cy="110" r="4" fill="#f2a93b" opacity=".7"/>
+  <circle cx="414" cy="132" r="3" fill="#f2a93b" opacity=".6"/>
+  <circle cx="222" cy="196" r="3" fill="#f2a93b" opacity=".5"/>
+</svg>

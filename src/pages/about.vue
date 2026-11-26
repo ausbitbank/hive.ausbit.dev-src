@@ -85,8 +85,17 @@
         <h2 id="about-name" class="about-title">The name and the mark</h2>
         <div class="about-grid">
           <q-card flat bordered class="about-card">
+            <div class="about-card__media">
+              <img
+                class="about-card__illustration"
+                src="/statics/banksia-flower.svg"
+                alt="A banksia flower spike with serrated leaves"
+                width="640"
+                height="360"
+                loading="lazy"
+              />
+            </div>
             <q-card-section>
-              <q-icon name="local_florist" size="26px" class="about-card__icon" aria-hidden="true" />
               <h3 class="about-card__title">A banksia</h3>
               <p class="about-card__copy">
                 Banksia is a genus of roughly 170 Australian wildflowers, named for Joseph Banks,
@@ -97,8 +106,17 @@
           </q-card>
 
           <q-card flat bordered class="about-card">
+            <div class="about-card__media">
+              <img
+                class="about-card__mark"
+                src="/statics/app-logo-128x128.png"
+                alt=""
+                width="76"
+                height="76"
+                aria-hidden="true"
+              />
+            </div>
             <q-card-section>
-              <q-icon name="palette" size="26px" class="about-card__icon" aria-hidden="true" />
               <h3 class="about-card__title">The mark</h3>
               <p class="about-card__copy">
                 A banksia flower spike built from honeycomb cells, inside a comb cell. The spike is
@@ -110,8 +128,10 @@
           </q-card>
 
           <q-card flat bordered class="about-card">
+            <div class="about-card__media about-card__media--tagline" aria-hidden="true">
+              <span>Rooted in Hive.</span>
+            </div>
             <q-card-section>
-              <q-icon name="explore" size="26px" class="about-card__icon" aria-hidden="true" />
               <h3 class="about-card__title">Rooted in Hive</h3>
               <p class="about-card__copy">
                 The tagline is both literal and local: the banksia is rooted in Australian soil, and
@@ -361,6 +381,51 @@ export default {
 
 .about-card {
   height: 100%;
+  overflow: hidden;
+}
+
+.about-card__media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 132px;
+  overflow: hidden;
+  background: var(--c-bg-deep);
+}
+
+.about-card__illustration {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+.about-card__mark {
+  display: block;
+  width: 96px;
+  height: 96px;
+}
+
+.about-card__media--tagline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('/statics/banksia-pattern.svg');
+  background-size: 78px;
+  opacity: 0.2;
+}
+
+.about-card__media--tagline span {
+  position: relative;
+  z-index: 1;
+  color: var(--c-secondary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+  padding: 0 var(--space-3);
 }
 
 .about-card__icon {
