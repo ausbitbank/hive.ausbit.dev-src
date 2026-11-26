@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ausbitbank/hive.ausbit.dev-src/security/advisories/new
+    about: Report security issues privately. Do not open a public issue.
+  - name: Questions and general discussion
+    url: https://github.com/ausbitbank/hive.ausbit.dev-src/discussions
+    about: Ask questions, share feedback or discuss ideas with the community.
+  - name: Live site
+    url: https://hive.ausbit.dev
+    about: Use the live explorer, wallet and tools.

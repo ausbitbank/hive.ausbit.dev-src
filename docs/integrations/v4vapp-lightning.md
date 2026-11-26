@@ -1,8 +1,10 @@
 # v4vapp / Lightning integration study
 
-Status: research + options, not a delivery commitment. Verified against the live
-v4vapp API on 2026-11-20 (API `6.6.0`); CORS and the public contract
-re-verified on 2026-11-21 (API `6.6.1`, see §3).
+Status: research + phased delivery. Phases 0–5 are largely implemented in
+W52–W58 (receive, pay, keepsats, POS/zaps, search and tax legibility); the
+roadmap tracks the remaining operator smokes. Verified against the live v4vapp
+API on 2026-11-20 (API `6.6.0`); CORS and the public contract re-verified on
+2026-11-21 (API `6.6.1`, see §3).
 
 Scope: how hive.ausbit.dev could use the v4vapp Hive ↔ Bitcoin Lightning bridge
 across the site (profiles, posts, tips, search, health, markets) and the wallet
@@ -447,7 +449,8 @@ without a separate processor. It reuses the receive-invoice flow.
 **Implemented (W55):** public `/@account/pos` with a keypad, currency and
 receive-asset choice, a public note, one fresh invoice per sale, visibility-aware
 status polling, a paid state and local session totals. No login or keys. The
-live nginx metadata line for `pos` still needs a root-managed install.
+checked-in vhost includes `pos` in the account subpage metadata route; confirm
+the host has that vhost applied.
 
 **UX:**
 
@@ -724,7 +727,7 @@ effective rate, and show the observed fixed fee warning for small amounts.
 | **0. Contract** | ~~Confirm CORS allowlist~~, ~~posting-scope auth~~, rate limits, terms, support contact | CORS verified live 2026-11-21 (§3); posting-scope auth verified live 2026-11-21 (§2.2); `scripts/v4vapp-contract-check.mjs` runs daily in CI | **Contract done.** Terms/support still worth asking about before custody features |
 | **1. Receive + identity** | Address derivation, profile/tip cards, receive dialog, status polling, wallet history classification (read-only) | `services/v4vapp.js`, `services/lightning.js`, `LightningAddressCard`, `LightningInvoiceCard`, `LightningReceiveDialog`, tip integration, `/lightning` hub | Unit tests (math, status, memo), E2E with mocked API, axe 1440/390, live smoke with 1 HBD invoice |
 | **2. Pay with Hive/HBD** | Decode, quote, fee display, queue transfer to `@v4vapp`, pending/refund tracking | `LightningPayDialog`, queue label/sidecar, wallet/tax classification | E2E queue + mocked settlement/refund; manual live payment of a 100-sat invoice; no auto-broadcast |
-| **3. Keepsats (opt-in)** | ~~Read-only balance/history (mode C)~~ **done W53**; ~~deposit/convert/pay via on-chain mode B~~ **done W54**; remaining: transfer to another user, on-chain balance-request UI, optional mode C writes | `KeepsatsPanel`, `KeepsatsActions`, `v4vappAuth`, `v4vapp_transfer` builders, notification parsing, custody disclosure | Read-only: explicit opt-in, posting key only, memory token, axe, no token leakage. Actions: explicit consent, `manualOnly` queue, live operator smoke |
+| **3. Keepsats (opt-in)** | ~~Read-only balance/history (mode C)~~ **done W53**; ~~deposit/convert/pay via on-chain mode B~~ **done W54**; ~~transfer to another user~~ **done W58**; remaining: on-chain balance-request UI, optional mode C writes | `KeepsatsPanel`, `KeepsatsActions`, `v4vappAuth`, `v4vapp_transfer` builders, notification parsing, custody disclosure | Read-only: explicit opt-in, posting key only, memory token, axe, no token leakage. Actions: explicit consent, `manualOnly` queue, live operator smoke |
 | **4. POS + zaps + analytics** | ~~Merchant page and post zaps~~ **done W55**; creator weekly sats and dashboard widget remain | `pages/pos.vue`, `SatsZapButton`, later `CreatorSatsCard` | Paid/expired/error states, receipt, mobile smoke; analytics need a decision on indexing |
 | **5. Advanced** | Magi BTC, account creation, paywalls, LNURL-auth, alternative bridges | Research notes + spikes | Only after 1–4 are stable |
 

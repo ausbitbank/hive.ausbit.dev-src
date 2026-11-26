@@ -1,2 +1,18 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Binary assets
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+# Generated files
+bun.lock linguist-generated
+docs/performance/latest.json linguist-generated
+docs/performance/history.jsonl linguist-generated

@@ -1,9 +1,12 @@
 <!-- rp1:start -->
-## rp1 Knowledge Base
+## Repository guidance
 
-KB files in `.rp1/context/`: `index.md` (load first), `architecture.md`, `modules.md`, `patterns.md`, `concept_map.md`
+No generated rp1 knowledge base is committed to this repository. Start with
+`README.md`, `docs/ROADMAP.md`, `docs/workstreams/README.md` and
+`docs/SECURITY.md`. If a local `.rp1/context/index.md` exists, read it first and
+then load `architecture.md`, `modules.md`, `patterns.md` or `concept_map.md` as
+the task requires.
 
-**Loading**: Read index.md first. Then based on task: code review → patterns.md, bugs → architecture.md + modules.md, features → modules.md + patterns.md, strategic → ALL files.
-
-**Important**: Do NOT use `/knowledge-load` in subagents (causes early exit). Use Read tool directly.
+Do not use `/knowledge-load` in subagents (it can cause an early exit). Use the
+Read tool directly.
 <!-- rp1:end -->

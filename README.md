@@ -1,127 +1,230 @@
-# hive.ausbit.dev
+<p align="center">
+  <a href="https://hive.ausbit.dev">
+    <img src="public/statics/app-logo-128x128.png" width="88" height="88" alt="hive.ausbit.dev logo">
+  </a>
+</p>
 
-[![CI](https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml/badge.svg)](https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml)
+<h1 align="center">hive.ausbit.dev</h1>
 
-An open-source block explorer, wallet and toolkit for the [Hive](https://hive.io) blockchain.
+<p align="center">
+  <strong>Explore, trade and create on Hive — from one fast, local-first app.</strong><br>
+  Blocks, accounts, posts, governance, markets, wallets and layer-2 data, read directly from public Hive APIs.
+</p>
 
-hive.ausbit.dev reads directly from public Hive APIs and lets you explore blocks,
-transactions, accounts, posts, short posts, governance, witnesses, markets and
-layer-2 data from Hive-Engine and Magi (formerly VSC). It also includes a
-customisable dashboard, a local-first composer and moderation layer, Lightning
-tips and a public point-of-sale page. Signing is handled by Hive Keychain,
-HiveAuth through a mobile wallet, or the built-in encrypted SmartLock.
+<p align="center">
+  <a href="https://hive.ausbit.dev"><img alt="Live site" src="https://img.shields.io/badge/live-hive.ausbit.dev-E31349?style=flat-square"></a>
+  <a href="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml/badge.svg?branch=master"></a>
+  <a href="LICENSE"><img alt="License: Unlicense" src="https://img.shields.io/badge/license-Unlicense-blue?style=flat-square"></a>
+  <a href="https://hive.io"><img alt="Hive" src="https://img.shields.io/badge/chain-Hive-E31349?style=flat-square"></a>
+  <a href="https://vuejs.org"><img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square"></a>
+  <a href="https://quasar.dev"><img alt="Quasar 2" src="https://img.shields.io/badge/Quasar-2-1976D2?style=flat-square"></a>
+</p>
+
+<p align="center">
+  <a href="https://hive.ausbit.dev"><img src="docs/screenshots/readme/home.webp" alt="hive.ausbit.dev home dashboard showing a live block, prices, witnesses and community posts" width="1200"></a>
+</p>
+
+**hive.ausbit.dev** is an open-source block explorer, wallet and creator toolkit
+for the [Hive](https://hive.io) blockchain. It reads from public Hive APIs, so
+most of the app works without an account. When you do sign in, keys stay under
+your control through Hive Keychain, HiveAuth on a mobile wallet, or the built-in
+encrypted SmartLock.
+
+There is no site-wide ban list, no site-controlled feed ranking and no account
+required to explore. Your dashboard, drafts, theme, moderation choices and saved
+searches live in your browser.
+
+<p align="center">
+  <a href="#feature-tour">Features</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#stack">Stack</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#local-setup">Quick start</a> ·
+  <a href="#testing">Testing</a> ·
+  <a href="#deployment">Deployment</a> ·
+  <a href="#documentation">Docs</a>
+</p>
+
+## What is inside
+
+| | |
+| --- | --- |
+| **Explore the chain**<br>Blocks, transactions, accounts, authorities, delegations, followers, downvote transparency and a unified search across nine categories, from accounts to Lightning invoices. | **Own your wallet**<br>HIVE, HBD, Hive Power, savings, Hive-Engine tokens, Magi balances, transfers and a tax-friendly CSV export. |
+| **Create and publish**<br>A local-first composer with drafts, history, media uploads, embeds, snippets, templates, checklists and cross-posting. | **Find your people**<br>Public community discovery, per-account community feeds, short-form readers, curation trails and Lightning tips. |
+| **Trade and earn**<br>The internal Hive market, external charts, HBD peg tools, witness and proposal governance, and sats quotes. | **Sign your way**<br>Keychain, HiveAuth or SmartLock. Posting and active actions stay separated, reviewed and queued. |
+| **Make it yours**<br>Ten built-in themes, draggable dashboard layouts, profile skins, badges and a theme wall. | **Moderate locally**<br>Open, Balanced, Strict, Follow-only or custom moderation policy with explainable decisions, overrides and portable JSON. |
 
 ## Screenshots
 
-Home dashboard:
+| Wallet | Markets |
+| --- | --- |
+| ![Wallet portfolio showing HIVE, Hive Power, HBD and savings](docs/screenshots/readme/wallet.webp) | ![Hive markets with TradingView chart, HBD peg and sats quote](docs/screenshots/readme/markets.webp) |
 
-![Home dashboard](docs/screenshots/home.webp)
+| Composer | Communities |
+| --- | --- |
+| ![Post composer with markdown editor and publish checklist](docs/screenshots/readme/composer.webp) | ![Public Hive community directory with search and shelves](docs/screenshots/readme/communities.webp) |
 
-Markets and HBD tools:
+| Lightning | DHF proposals |
+| --- | --- |
+| ![Lightning page with a v4v.app address and QR code](docs/screenshots/readme/lightning.webp) | ![Decentralized Hive Fund proposal browser](docs/screenshots/readme/proposals.webp) |
 
-![Markets](docs/screenshots/markets.webp)
-
-Wallet:
-
-![Wallet](docs/screenshots/wallet.webp)
+| Witnesses | Account |
+| --- | --- |
+| ![Witness directory with health warnings and vote controls](docs/screenshots/readme/witnesses.webp) | ![Account overview with balances, activity and profile links](docs/screenshots/readme/account.webp) |
 
 ## Feature tour
 
+### Explore and search
+
 | Route | What it does |
 | --- | --- |
-| `/` | Customisable dashboard with draggable widgets, built-in presets, named layouts, rows/masonry tiling and layout import/export; the default shows live blocks, prices, witnesses, trending posts and community feeds |
+| `/` | Customisable dashboard with draggable widgets, built-in presets, named layouts, rows/masonry tiling and layout import/export; the default shows live blocks, prices, witnesses, trending posts, an account blog and the HiveDevs community feed |
 | `/blocks`, `/b/:blockNum`, `/tx/:txId` | Latest blocks, block detail with grouped operations, transaction detail and raw JSON |
 | `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
-| `/@:username/wallet` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens, Magi balances/tokens, transfers, optional keepsats and a local sats-received summary |
+| `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
+| `/@:username/downvotes` | Received/given downvote transparency: voter, weight, target, time, relationship, conservative pattern evidence and per-voter local exclusion |
+| `/@:username/trail` | Recent votes and curation activity carousel |
+| `/@:username/followers`, `/@:username/following` | Follower and following lists with live counts |
+| `/@:username/posts`, `/@:username/blog`, `/@:username/feed`, `/@:username/replies`, `/@:username/comments` | Account-scoped post, blog, feed, reply and comment views |
+| `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals, witnesses and Lightning invoices/addresses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
+
+### Read, write and discover
+
+| Route | What it does |
+| --- | --- |
+| `/@:author/:permlink` | Content-first post page, comments, replies and a native markdown composer |
+| `/shorts`, `/shorts/:format`, `/shorts/:format/@:author/:permlink` | Snaps, Waves, Threads, D.Buzz and Moments: per-format readers, composer, reactions, replies, reblogs and sats zaps |
+| `/compose` | Local-first creator workflow: autosaved drafts with history and archive, markdown/split preview, image uploads, media embeds, snippets and templates, community/tags, cross-post attribution, beneficiaries, checklists, reminders, cross-tab sync and JSON backup |
+| `/communities` (`/c`) | Public community browser: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest shelves; hide NSFW communities |
+| `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
+| `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
+| `/browse`, `/trending`, `/created`, `/hot`, `/payout`, `/payout_comments`, `/muted` | Post discovery with cards/list/table layouts and filters; `/created` is the canonical new-posts surface and `/browse` redirects to it |
+
+### Wallet, markets and Lightning
+
+| Route | What it does |
+| --- | --- |
+| `/@:username/wallet`, `/@:username/transfers` | Portfolio, liquid/saved/staked balances, pending actions, history, Hive-Engine tokens, Magi balances/tokens, transfers, a tax-friendly CSV export, optional keepsats and a local sats-received summary |
 | `/@:username/wallet/:token`, `/token/:token` | Hive-Engine token detail: metadata, price, volume, balances, order book and buy/sell/cancel orders |
 | `/@:username/pos` | Public Lightning point-of-sale keypad that creates a fresh invoice per sale and keeps local session totals; no login or keys required |
 | `/@:username/tip` | Hive and Lightning tip page with Lightning address, QR code and receive dialog |
-| `/@:username/trail` | Recent votes and curation activity carousel |
-| `/@:username/followers`, `/@:username/following` | Follower and following lists with live counts |
-| `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
-| `/@:username/downvotes` | Received/given downvote transparency: voter, weight, target, time, relationship, conservative pattern evidence and per-voter local exclusion |
-| `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
-| `/communities` (`/c`) | Public community browser for everyone: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest community shelves; and hide NSFW communities |
-| `/@:author/:permlink` | Content-first post page, comments, replies and native markdown composer |
-| `/shorts`, `/shorts/:format`, `/shorts/:format/@:author/:permlink` | Snaps, Waves, Threads, D.Buzz and Moments: per-format readers, composer, reactions, replies, reblogs and sats zaps |
-| `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast, profile-skin visibility, calm effects, status/extras visibility and adopted palettes |
-| `/themes` | Theme wall with built-in themes and published profile skins from followed accounts, filters for mode/tag/credential and recent/featured views, remixing and local palette adoption |
-| `/settings/skin` | Skin Studio: palette, light/dark variants, status line, Hive Circle, badges, atmosphere, visual language, latest/pinned post, theme codes and publishing with posting authority |
-| `/settings/moderation` | Local-first moderation policy: Open/Balanced/Strict/Follow-only/Custom presets, per-surface rules, distinct mute/blacklist layers, a curated list directory with explicit subscriptions and owner-only export references, overrides and versioned JSON export/import |
-| `/compose` | Local-first creator workflow: autosaved drafts with history and archive, markdown/split preview, image uploads, media embeds, snippets and templates, community/tags, cross-post attribution, beneficiaries, checklists, reminders, cross-tab sync and JSON backup |
-| `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals, witnesses and Lightning invoices/addresses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |
-| `/browse`, `/trending`, `/created`, `/hot`, `/payout`, `/payout_comments`, `/muted` | Post discovery with cards/list/table layouts and filters; `/created` is the canonical new-posts surface and `/browse` redirects to it |
-| `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
+| `/market` | Hive internal market: order book, trades, open orders, balances, fees and limit orders |
+| `/markets` | External charts, HBD peg/premium, savings APR, HIVE/HBD conversion calculator and a live sats quote |
+| `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |
+| `/lightning`, `/@:account/lightning` | Lightning addresses, receive invoices, payment links and Hive/HBD → Lightning payments bridged by v4v.app; the wallet adds the opt-in keepsats panel and zap buttons appear on posts |
+
+### Governance, network and tools
+
+| Route | What it does |
+| --- | --- |
 | `/witnesses`, `/witness` | Witness directory, health warnings, vote concentration, feed freshness, version drift, missed-block trends, voting, proxies, vote-weight calculator and witness settings |
 | `/proposals`, `/dao`, `/proposals/:id` | DHF proposals, funding status, votes, funding outlook, creator/receiver/topic mix and voter overlap |
 | `/health`, `/nodes` | Network health and node latency/failover for Hive L1, Hive-Engine and Magi, including beacon reliability, feature coverage and Magi consensus/witness data |
 | `/magi` | Read-only Magi contract viewer: metadata, timelocked updates, recent outputs, state keys and call simulation |
-| `/market` | Hive internal market: order book, trades, open orders, balances, fees and limit orders |
-| `/markets` | External charts, HBD peg/premium, savings APR, HIVE/HBD conversion calculator and a live sats quote |
-| `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |
-| `/tax` | Wallet history analysis and CSV export for accounting, including sats and fee columns |
-| `/lightning`, `/@:account/lightning` | Lightning addresses, receive invoices, payment links and Hive/HBD → Lightning payments bridged by v4v.app; the wallet adds the opt-in keepsats panel and zap buttons appear on posts |
 | `/create` | Hive account creation helpers |
 
-Additional UX:
+### Appearance and trust
 
-- The home dashboard is local-first: add, remove, resize and reorder widgets,
-  switch built-in presets, auto-optimise, save named layouts and import/export a
-  layout code. The default layout works without signing in.
-- The whole site uses a semantic theme token layer. Themes never rearrange
-  content, and profile skins are scoped to the author's profile, blog and post
-  pages with a visible “Skin by” badge and a one-click “Hide skins” action.
-  Skins from muted or negative-reputation authors are withheld unless the
-  viewer explicitly opts in.
-- Moderation is local-first: the base policy, per-item overrides and per-voter
-  exclusions are stored in the browser and exportable as versioned JSON, while
-  list subscriptions are explicit posting-key follows. There is no hidden global
-  ban list.
-- Profile skins can carry a static status, a six-account Hive Circle, curated
-  PeakD/HiveBuzz badges, a cover/collage atmosphere and a latest/pinned post.
-  Badges are cached, fail open and are only marked verified when they match the
-  issuer allowlist. The Profile Shelf never loads on post pages or feeds.
-- Theme codes, remixing and “Use this palette” are local-first. Importing a code
-  always previews before applying; adopting a palette never changes the
-  author's on-chain skin.
-- `Ctrl K` or `/` opens search and jump.
-- `f` opens the full search page; the search page supports arrow-key navigation
-  and saved searches.
+| Route | What it does |
+| --- | --- |
+| `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast, profile-skin visibility, calm effects, status/extras visibility and adopted palettes |
+| `/themes` | Theme wall with built-in themes and published profile skins from followed accounts, filters for mode/tag/credential and recent/featured views, remixing and local palette adoption |
+| `/settings/skin` | Skin Studio: palette, light/dark variants, status line, Hive Circle, badges, atmosphere, visual language, latest/pinned post, theme codes and publishing with posting authority |
+| `/settings/moderation` | Local-first moderation policy: Open/Balanced/Strict/Follow-only/Custom presets, per-surface rules, distinct mute/blacklist layers, a curated list directory with explicit subscriptions and owner-only export references, overrides and versioned JSON export/import |
+
+### Keyboard and workflow
+
+- `Ctrl K` or `/` opens search and jump; `f` opens the full search page, which
+  supports arrow-key navigation and saved searches.
 - `?` opens the keyboard shortcut list.
-- `g` then `h/b/w/m/p/n/s/c/l` jumps to the main sections (including the composer and Lightning).
+- `g` then `h/b/w/m/p/n/s/c/l` jumps to the main sections, including the
+  composer and Lightning.
 - In the composer, `Ctrl/⌘ S` saves, `Ctrl/⌘ Enter` queues the post, and
   `Ctrl/⌘ B/I/K` formats text, italicises or inserts a link.
-- Back-to-top appears on long pages.
-- Blocks, transactions, accounts and proposals have copy/share menus.
-- The 404 page accepts direct account, tag, block, transaction and proposal searches.
+- Back-to-top appears on long pages; blocks, transactions, accounts and
+  proposals have copy/share menus.
+- The 404 page accepts direct account, tag, block, transaction and proposal
+  searches.
 - The production app registers an offline shell, manifest and RSS feed.
+
+## Design principles
+
+- **Local-first.** Dashboard layouts, drafts, appearance, saved searches and
+  moderation policy persist in the browser. Explicit list subscriptions are
+  normal posting-key follows; there is no hidden global ban list.
+- **Keys stay yours.** SmartLock keeps encrypted keys in local storage, unlocks
+  only the posting key in memory, auto-locks after idle and asks for the password
+  before any active-key action. The active key is never kept in memory.
+- **Explainable moderation.** Every decision names its source and offers an
+  override where the app is allowed to. Reputation-gated features can be
+  reviewed instead of silently hidden.
+- **Scoped skins.** Profile skins never rearrange content, are bounded to the
+  author's profile, blog and post pages, carry a visible “Skin by” badge, and
+  can be hidden at any time.
+- **Resilient by default.** Every network path has a timeout, a fallback and a
+  stale/error state. A dead API node must not become a dead page.
+- **Accessible.** One page-level `h1`, semantic controls, visible focus,
+  reduced-motion support and no horizontal overflow at 390px.
 
 ## Stack
 
-- Vue 3 (Options API) and Quasar 2 / Quasar CLI (Vite)
-- Pinia and Vue Router
-- `hive-tx` for signing, keys, memos and legacy chain calls
-- `@hiveio/keychain` for Keychain signing
-- `@ecency/render-helper` + `dompurify` for sanitized post/community HTML
-- `sjcl` + `bs58` for SmartLock encrypted local key storage
-- `@noble/hashes` + Web Crypto for the HiveAuth client-side AES envelope
-- `dayjs`, `linkify-it`, `uqr` and `vue-json-pretty` for dates, link detection, QR codes and raw JSON
-- Hive-Engine RPC, Magi GraphQL/API and CoinGecko for tokens, layer-2 data and market data
-- Vitest for unit tests
-- Playwright + axe-core for end-to-end and accessibility checks, with Obscura for the fast functional loop and Chromium for the full release gate
+| Layer | Technology |
+| --- | --- |
+| UI | Vue 3 (Options API), Quasar 2 and Quasar CLI (Vite) |
+| State and routing | Pinia and Vue Router |
+| Chain and signing | `hive-tx`, `@hiveio/keychain`, `@noble/hashes`, Web Crypto |
+| Content | `@ecency/render-helper` and `dompurify` for sanitized post/community HTML |
+| Local security | `sjcl` and `bs58` for SmartLock encrypted local key storage |
+| Utilities | `dayjs`, `linkify-it`, `uqr` and `vue-json-pretty` for dates, links, QR codes and raw JSON |
+| Data | Hive JSON-RPC, Hive bridge/Hivemind, Hive-Engine RPC, Magi GraphQL/API, CoinGecko and v4v.app |
+| Tests | Vitest for unit tests; Playwright + axe-core for E2E and accessibility; Obscura for the fast functional loop and Chromium for the release gate |
 
 ## Architecture
 
+```mermaid
+flowchart TB
+  subgraph Browser["Browser (local-first)"]
+    UI["Vue 3 + Quasar<br/>pages · components · layouts"]
+    State["Pinia stores<br/>hive · appearance · moderation"]
+    Data["Data layer<br/>api.js · cache.js · chainData.js"]
+    Sign["Signing<br/>Keychain · HiveAuth · SmartLock"]
+  end
+
+  Chain["Hive L1<br/>JSON-RPC · bridge/Hivemind"]
+  Engine["Hive-Engine<br/>RPC · history"]
+  Magi["Magi<br/>GraphQL · token indexer"]
+  Market["CoinGecko · TradingView"]
+  Bridge["v4v.app<br/>Lightning bridge"]
+
+  UI --> State
+  State --> Data
+  Data --> Chain
+  Data --> Engine
+  Data --> Magi
+  Data --> Market
+  Sign --> Chain
+  UI --> Bridge
+```
+
+<details>
+<summary><strong>Source layout</strong></summary>
+
 ```
 src/
+  assets/        Small local SVGs used by empty and error states
   boot/          App startup: Hive node selection, store, SmartLock, prefetch, theme and PWA
-  components/    Feature components, including account, wallet, witness, market, dashboard, moderation, shortForm, lightning and ui/
+  components/    Feature components, including account, wallet, witness, market,
+                 dashboard, moderation, shortForm, lightning and ui/
+  composables/   Reusable composition helpers such as the account widget loader
   css/           Global design tokens and card/typography patterns
+  data/          Static curated data such as badge credential allowlists
   layouts/       Main application layout
   mixins/        Visibility-aware timers and moderation helpers
   pages/         Route-level pages
   router/        Routes and history-mode scroll behaviour
-  services/      Chain reads, caches, API client, search, moderation, dashboard, Lightning, short-form, publishing and market/wallet helpers
+  services/      Chain reads, caches, API client, search, moderation, dashboard,
+                 Lightning, short-form, publishing and market/wallet helpers
+  shims/         Browser compatibility shims
   stores/hive/   Pinia state, queue persistence, account/global-props actions and dashboard layout
   stores/        Appearance and moderation stores
   themes/        Theme manifests, strict profile-skin schema, tokens and metadata helpers
@@ -146,12 +249,42 @@ src/
   payment paths; writes become normal queued active-key actions.
 - `src/mixins/timers.js` and `src/services/polling.js` pause polling while the tab
   is hidden.
-- Signing/broadcast actions use hive-tx, Keychain, SmartLock or HiveAuth.
+- Signing and broadcast actions use hive-tx, Keychain, SmartLock or HiveAuth.
+
+</details>
+
+## Signing and authority
+
+| Method | Where the keys live | Best for |
+| --- | --- | --- |
+| **Hive Keychain** | Browser extension; approval per action | Desktop users who already use Keychain |
+| **HiveAuth** | Mobile wallet (Keychain Mobile or HiveAuth Mobile); keys never enter this origin | Phone approval and QR/deep-link login |
+| **SmartLock** | Encrypted in this browser with SJCL (AES-CCM, PBKDF2, 310,000 iterations) | Users who want a built-in local signer |
+
+- **Posting key**: votes, comments, follows, reblogs, notification markers and
+  profile-skin publishing. It cannot move funds.
+- **Active key**: transfers, savings, power up/down, market orders, witness
+  votes, proposal votes and authority changes.
+- HiveAuth shows a QR code or deep link and approves each action on the phone.
+  The queue sends HiveAuth actions one at a time and waits for that approval.
+- SmartLock keeps only the unlocked posting key in memory, auto-locks after an
+  idle timeout, and asks for the password each time an active key is needed.
+- Lightning payments are normal active-key transfers to `@v4vapp`, queued for
+  individual review and never auto-broadcast. Receiving, tips and POS invoices
+  need no key.
+- The signing queue stores operations, not private keys, and expires after 24
+  hours.
+- External links use `noopener noreferrer`; post and community HTML is sanitized.
+
+See [`docs/SECURITY.md`](docs/SECURITY.md) for the full key model, CSP and header
+policy, and [`SECURITY.md`](SECURITY.md) for the private reporting process.
 
 ## Requirements
 
-- [Bun](https://bun.sh) 1.2+ (the repository ships `bun.lock`)
-- Node.js 20 or newer
+- [Bun](https://bun.sh) 1.2 or newer (the repository ships `bun.lock`; the
+  current lockfile was generated with Bun 1.4.4)
+- Node.js 24.15+ (LTS), Node 22.22.2+ or Node 26+ (required by the test and
+  build toolchain; `.nvmrc` selects Node 24)
 
 ## Local setup
 
@@ -167,7 +300,7 @@ The dev server opens at <http://localhost:8080>.
 | Command | Description |
 | --- | --- |
 | `bun run dev` | Start the Quasar dev server |
-| `bun run build` | Build the SPA into `dist/spa`, mark the entry script for Cloudflare Rocket Loader, and generate `feed.xml` and the home snapshot |
+| `bun run build` | Build the SPA into `dist/spa`, apply the Cloudflare compatibility shim, stamp `sw.js`/`version.json`, and generate `feed.xml` and the home snapshot |
 | `bun run lint` | Run ESLint and the theme-token scanner |
 | `bun run lint:fix` | Run ESLint with fixes |
 | `bun run test` | Run Vitest unit tests |
@@ -182,10 +315,47 @@ The dev server opens at <http://localhost:8080>.
 | `bun run perf:check` | Run the measured performance budgets |
 | `bun run prerender` | Write metadata-only crawler snapshots into `dist/spa` |
 | `bun run serve:dist` | Serve the built SPA with history fallback and compression |
+| `bun run verify:deploy` | Verify the deployed site's routes, headers and metadata |
 | `bun run nginx:ips` | Refresh the trusted Cloudflare real-IP ranges |
 | `bun run v4vapp:contract` | Run the read-only v4v.app bridge contract check |
 | `bun run icons:subset` | Regenerate the subsetted Material Icons font |
 | `bun run devlog` | Collect, screenshot, draft and validate a development blog post |
+
+## Testing
+
+Unit tests live in `tests/unit/`; the Playwright suite lives in `e2e/` and runs
+against a built production bundle served by `scripts/serve-dist.mjs`. The repo
+currently has more than 1,500 unit tests and over 100 functional E2E checks.
+
+```bash
+bun run test
+bun run e2e:install     # once per machine
+bun run test:e2e        # fast functional suite
+bun run test:e2e:full   # full Chromium suite
+```
+
+The **fast suite** connects Playwright to [Obscura](https://github.com/h4ckf0r0day/obscura),
+a lightweight Rust/V8 headless browser with a CDP server. It runs the functional
+tests with four workers: login simulation, queueing, the composer and drafts,
+unified search, transfers, browse filters, infinite scroll, navigation, keyboard
+shortcuts, share actions, governance and community surfaces, moderation and
+downvotes, themes and skins, dashboard layouts, connections, badges, keepsats,
+Lightning search and payments, POS and market sats quotes.
+
+The **full Chromium suite** remains the release gate: it runs the complete spec
+set, adding axe WCAG A/AA at desktop and mobile widths, visual/layout assertions,
+LCP/CLS performance, PWA install/offline/update flows, wallet CSV export,
+Lightning state coverage, and resilience/offline signing. Chromium is required
+because Obscura has an independent layout engine, no Performance API LCP/CLS
+entries, and no service-worker/offline emulation.
+
+```bash
+bunx playwright install chromium
+```
+
+CI runs `bun run test:e2e:full` and `bun run perf:check`. A separate daily
+workflow runs the read-only v4v.app contract check outside the PR gate. See
+[`docs/e2e.md`](docs/e2e.md) for the suite split and troubleshooting.
 
 ## Performance
 
@@ -201,44 +371,6 @@ description, canonical, Open Graph/Twitter and JSON-LD, but never a snapshot of
 the live chain body. A hard reload therefore cannot flash stale data before Vue
 mounts.
 
-## Testing
-
-Unit tests live in `tests/unit/`. The Playwright suite lives in `e2e/` and runs
-against a built production bundle served by `scripts/serve-dist.mjs`.
-
-```bash
-bun run test
-bun run e2e:install     # once per machine
-bun run test:e2e        # fast functional suite
-bun run test:e2e:full   # full Chromium suite
-```
-
-The **fast suite** connects Playwright to [Obscura](https://github.com/h4ckf0r0day/obscura),
-a lightweight Rust/V8 headless browser with a CDP server. It runs more than 100
-functional tests with four workers: login simulation, queueing, the composer and
-drafts, unified search, transfers, browse filters, infinite scroll, navigation,
-keyboard shortcuts, share actions, governance and community surfaces, moderation
-and downvotes, themes and skins, dashboard layouts, connections, badges,
-keepsats, Lightning search and payments, POS and market sats quotes.
-
-The **full Chromium suite** remains the release gate: it runs the complete spec
-set, adding axe WCAG A/AA at desktop and mobile widths, visual/layout assertions,
-LCP/CLS performance, PWA install/offline/update flows, wallet CSV export,
-Lightning state coverage, and resilience/offline signing.
-Chromium is required because Obscura has an independent layout engine, no
-Performance API LCP/CLS entries, and no service-worker/offline emulation.
-
-Playwright requires a Chromium browser once per machine for the full suite:
-
-```bash
-bunx playwright install chromium
-```
-
-CI runs `bun run test:e2e:full` and `bun run perf:check`; a separate daily
-workflow runs the read-only v4v.app contract check outside the PR gate. Use
-`bun run test:e2e` for the fast local loop.
-See [`docs/e2e.md`](docs/e2e.md) for the suite split and troubleshooting.
-
 ## Deployment
 
 The production site is served by nginx from `/var/www/hive.ausbit.dev` on
@@ -251,8 +383,9 @@ routes. Keep the certbot-managed SSL lines when installing it.
 Cloudflare sits in front of the origin. A metadata Worker
 ([`deploy/cloudflare/metadata-worker.mjs`](deploy/cloudflare/metadata-worker.mjs),
 bound in [`wrangler.jsonc`](wrangler.jsonc)) rewrites link-preview metadata for
-account and post URLs and serves the appearance, themes and settings shells at
-the edge. Deploy it separately with `npx wrangler deploy`; the SPA deploy script
+account and post URLs, serves the appearance, themes, settings and Lightning
+shells at the edge, and accepts CSP violation reports on `/csp-report`. Deploy
+it separately with `npx wrangler@4 deploy`; the SPA deploy script
 does not touch it. Edge traffic-rule plans and the traffic analysis behind them
 live in [`deploy/cloudflare/RULES.md`](deploy/cloudflare/RULES.md) and
 [`docs/analytics-review.md`](docs/analytics-review.md).
@@ -317,39 +450,10 @@ that prompted it.
 The app caches chain reads locally and falls back across configured API nodes.
 Prices and third-party charts can be delayed or temporarily unavailable.
 
-## Key authorities and security
-
-- **Posting key**: votes, comments, follows, reblogs and notification markers.
-  It cannot move funds.
-- **Active key**: transfers, savings, power up/down, market orders, witness votes,
-  proposal votes and authority changes.
-- **Hive Keychain** keeps keys in the browser extension and asks for approval per
-  action.
-- **HiveAuth** shows a QR code or deep link; the user approves in a mobile wallet
-  (Hive Keychain Mobile or HiveAuth Mobile) and keys never enter this origin.
-  Each action needs phone approval; the queue sends HiveAuth actions one at a
-  time and waits for that approval. The HAS relay sees the account, app name and
-  timing, never keys or plaintext operations.
-- **SmartLock** stores keys encrypted in local storage, keeps only the unlocked
-  posting key in memory, auto-locks after an idle timeout, and asks for the
-  password each time an active key is needed. The active key is never kept in
-  memory.
-- **Lightning payments** are normal active-key transfers to `@v4vapp`, queued
-  for individual review and never auto-broadcast. Receiving, tips and POS
-  invoices need no key. Keepsats are custodial at v4v.app; the wallet's opt-in
-  panel keeps the session token in memory only, and deposits, conversions and
-  payments are queued active-key actions. No key material is sent to the bridge.
-- **Moderation is local-first.** The site ships no global ban list. Curated list
-  subscriptions are explicit posting-key follows, and policy, overrides and
-  per-voter exclusions stay in the browser.
-- The signing queue stores operations, not private keys, and expires after 24
-  hours.
-- External links use `noopener noreferrer`; post and community HTML is sanitized.
-
 ## Documentation
 
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — current state and next priorities
-- [`docs/workstreams/`](docs/workstreams/) — implementation records for W1–W73
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — current open work and next priorities
+- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W79 implementation record
 - [`docs/SECURITY.md`](docs/SECURITY.md) — response headers and the client-side key model
 - [`docs/e2e.md`](docs/e2e.md) — Obscura/Chromium suite split and troubleshooting
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
@@ -357,6 +461,8 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 - [`deploy/cloudflare/`](deploy/cloudflare/) — metadata Worker, edge-rule plans and verification
 - [`docs/DEVLOG.md`](docs/DEVLOG.md) — development-blog pipeline, editorial rules and screenshot recipes
 - [`docs/MODERNIZATION.md`](docs/MODERNIZATION.md) — 2026 migration notes
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup, checks and review expectations
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) — community standards
 
 ## History
 
@@ -367,7 +473,11 @@ It was merged to `master` on 2026-11-17; the pre-revamp state is preserved as th
 ## Contributing
 
 Pull requests, feedback and issues are welcome. Please run `bun run lint`,
-`bun run test` and `bun run build` before opening a PR.
+`bun run test` and `bun run build` before opening a PR, and read
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the full checklist and commit style.
+
+Security issues should go through the private process in [`SECURITY.md`](SECURITY.md),
+not a public issue.
 
 ## License
 

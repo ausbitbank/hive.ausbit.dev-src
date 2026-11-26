@@ -1,8 +1,8 @@
 # W72 — HiveAuth background resume and device hardening
 
 Date: 2026-11-24
-Status: implemented locally; automated tests green. Physical-device matrix and
-live operator smokes remain open.
+Status: deployed 2026-11-24 (client resume, reconnect and mocked tests); the
+physical-device matrix and operator smokes remain open.
 
 Roadmap: [`docs/ROADMAP.md`](../ROADMAP.md) W72. Builds on
 [`W62-hiveauth.md`](W62-hiveauth.md).

@@ -1,15 +1,23 @@
 # Dashboard widget research — what to build next
 
 **Date:** 2026-11-23
-**Status:** research + proposal. No code changes.
+**Status:** historical research + proposal (2026-11-23). Superseded by W65 for the widget catalogue and lazy mounting.
 **Scope:** new widgets for the customisable home dashboard
 (`src/components/dashboard/`, `src/services/dashboardLayout.js`).
+
+> **Historical note (2026-11-26):** all six proposed widgets shipped in W65
+> (issue #92): Account vitals, Wallet actions, Creator stats, Governance watch,
+> HBD peg & yield and Community pulse. The registry now has 33 widget types and
+> the grid mounts heavy widget bodies through a deferred viewport, so the
+> “current catalogue” and mounting notes below describe the 2026-11-23 baseline,
+> not today's code. Use this document for the reasoning and prioritisation.
+
 
 ---
 
 ## TL;DR
 
-Six widgets are worth building next:
+Six widgets were proposed as the next step:
 
 1. **Account vitals** — voting power, resource credits, vote value, effective HP.
 2. **Wallet actions** — power-down, savings withdrawals, conversions, open orders,
@@ -29,10 +37,9 @@ Two platform changes make all of them more valuable:
   ready-made dashboards (Creator, Witness, Trader, Community, Governance,
   Developer). This is the cheapest way to make a growing widget catalogue
   discoverable.
-- **Lazy, visibility-aware widget mounting.** The registry has a `live` flag
-  that nothing reads, and the grid mounts every widget body immediately. As the
-  catalogue grows, a six-widget home will otherwise pay for six or more
-  first-paint reads.
+- **Lazy, visibility-aware widget mounting.** At the time, the registry had a
+  `live` flag that nothing read and the grid mounted every widget body
+  immediately. This was implemented later with `DashboardWidgetViewport`.
 
 The short version of the reasoning: the site's real audience is Hive power
 users, and the most-used routes are witnesses, proposals, accounts, wallets and
@@ -51,7 +58,7 @@ stored per account (or guest) in `localStorage`; `HIVE-DASH-1.*` strings support
 sharing between browsers. The editor supports drag/keyboard reorder, width
 steps, auto-optimise, rows/masonry and import/export.
 
-Current catalogue (`WIDGET_REGISTRY`):
+Catalogue at the time of this research (10 of the current 33 types):
 
 | Type | Category | What it answers | Account? |
 | --- | --- | --- | --- |

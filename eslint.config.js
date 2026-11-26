@@ -4,7 +4,20 @@ import globals from 'globals'
 
 export default [
   {
-    ignores: ['dist/**', '.quasar/**', 'node_modules/**', 'public/**', 'src/statics/**', 'coverage/**']
+    ignores: [
+      'dist/**',
+      '.quasar/**',
+      'node_modules/**',
+      'public/**',
+      'src/statics/**',
+      'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
+      'blob-report/**',
+      '.devlog/**',
+      '.tools/**',
+      '.rp1/**'
+    ]
   },
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],

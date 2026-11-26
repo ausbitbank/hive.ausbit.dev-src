@@ -6,16 +6,17 @@ links showed the permlink slug and the app icon before this Worker.
 
 The Worker:
 
-- only touches `GET` requests that accept `text/html`;
-- matches `/@account`, `/@account/permlink`, `/appearance`, `/themes`,
-  `/settings/skin` and `/settings/moderation`;
-- serves the prerendered `appearance.html`, `themes.html`,
-  `settings/skin.html` or `settings/moderation.html` shell with a real 200 for
-  the four settings/theme routes;
+- handles `GET` HTML requests and `POST /csp-report` (or `/csp-report/*`);
+- matches `/@account`, `/@account/permlink`, `/@account/lightning`, `/lightning`,
+  `/appearance`, `/themes`, `/settings/skin` and `/settings/moderation`;
+- serves the prerendered `lightning.html`, `appearance.html`, `themes.html`,
+  `settings/skin.html` or `settings/moderation.html` shell with a real 200;
 - calls `bridge.get_post` or `bridge.get_profile` on `api.hive.blog` for
   account and post routes;
 - rewrites the title, description, canonical, Open Graph, Twitter and JSON-LD
   tags, plus the static crawler `<h1>`/summary;
+- accepts CSP violation reports, caps the body at 8 KB and logs one compact
+  JSON line per report;
 - caches successful HTML for five minutes;
 - returns the untouched origin response on any failure.
 
@@ -24,7 +25,7 @@ The Worker:
 The repository root contains `wrangler.jsonc`, so a deploy is one command:
 
 ```bash
-npx wrangler deploy
+npx wrangler@4 deploy
 ```
 
 The Worker is bound to `hive.ausbit.dev/@*`, the theme/settings routes and their

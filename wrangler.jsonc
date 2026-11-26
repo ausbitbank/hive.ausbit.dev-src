@@ -6,6 +6,7 @@
     "hive.ausbit.dev/@*",
     "hive.ausbit.dev/appearance*",
     "hive.ausbit.dev/themes*",
+    "hive.ausbit.dev/lightning*",
     "hive.ausbit.dev/settings/skin*",
     "hive.ausbit.dev/settings/moderation*",
     "hive.ausbit.dev/csp-report*"

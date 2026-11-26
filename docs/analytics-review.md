@@ -238,12 +238,19 @@ These are worth fixing regardless of what the report says, because they will kee
 
 1. **Zone uniques are not your users.** `ausbit.dev` uniques run 50k–99k/day — but `rpc.ausbit.dev` alone did **245M requests in 7 days** (15× the site). The zone's "unique visitors" are mostly RPC traffic. Never quote them as site audience.
 2. **`httpRequests1dGroups.uniques` cannot be summed.** It's a per-day distinct count; adding 30 days overcounts massively. Report daily averages and peaks only.
-3. **nginx logs record Cloudflare edge IPs.** `deploy/nginx/hive.ausbit.dev.conf` has no `real_ip_header CF-Connecting-IP` and no `set_real_ip_from`. So your own access logs cannot identify visitors, sessions, or geography. Three lines fix this permanently.
+3. **nginx logs used to record Cloudflare edge IPs.** At the time of this
+   review, `deploy/nginx/hive.ausbit.dev.conf` had no `real_ip_header
+   CF-Connecting-IP` and no `set_real_ip_from`, so access logs could not identify
+   visitors, sessions or geography. Fixed on 2026-11-23 with
+   `deploy/nginx/cloudflare-realip.conf`; see §8.
 4. **SPA navigation is invisible.** RUM shows 1.05 page loads per visit. Either almost every visit is a single page (implausible for `/witnesses` → `/proposals` workflows), or in-app route changes aren't being counted. For an SPA this is the difference between "I know landing pages" and "I know what people use."
 
 ---
 
 ## 7. What to do next, in order
+
+> **Status (2026-11-26):** item 1 was applied on 2026-11-23; see §8. The rest
+> are candidates from the review, not all completed.
 
 | # | Action | Effort | Expected effect |
 |---|---|---|---|

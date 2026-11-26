@@ -1,0 +1,70 @@
+name: Feature request
+description: Suggest a feature, a workflow improvement or a new data source.
+title: 'feat: '
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the user problem first. Features that touch signing,
+        moderation or deployment need more design detail, so include the
+        authority and privacy impact if they apply.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who is affected, and what do they do today instead?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behaviour, not only the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Explorer (blocks, transactions, accounts)
+        - Posts and short posts
+        - Composer and drafts
+        - Wallet, market or Lightning
+        - Governance and witnesses
+        - Search and communities
+        - Themes, skins and dashboard
+        - Moderation and downvotes
+        - Settings or appearance
+        - Accessibility or mobile layout
+        - Deployment or PWA
+        - Documentation
+  - type: dropdown
+    id: authority
+    attributes:
+      label: Signing impact
+      options:
+        - None (read-only or local)
+        - Posting key
+        - Active key
+        - New signing flow or authority change
+  - type: textarea
+    id: data
+    attributes:
+      label: Data sources or APIs
+      description: Link the Hive API, Hive-Engine, Magi or bridge endpoint you expect to use.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the roadmap.
+          required: true
+        - label: This request respects the local-first moderation model and does not add a hidden global ban list.
+          required: true

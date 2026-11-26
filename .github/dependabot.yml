@@ -7,6 +7,17 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: deps
+    groups:
+      production-minor:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      development-minor:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
@@ -14,3 +25,7 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: ci
+    groups:
+      actions:
+        patterns:
+          - "*"

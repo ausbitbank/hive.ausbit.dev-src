@@ -125,7 +125,8 @@ rule set.
   invalid `q-card-header`, fixed `q-tabs` + `q-route-tab` active state.
 - Replaced the abandoned `vue-timers` with `src/mixins/timers.js`.
 - Replaced `vue-sparklines` with `src/components/Sparkline.vue`.
-- Replaced `vue-simplemde` with `src/components/MarkdownEditor.vue` (EasyMDE).
+- Replaced `vue-simplemde` with `src/components/MarkdownToolbar.vue` and
+  `src/utils/markdownEditor.js` (the composer's markdown editor).
 - Replaced `vue-trading-view` with `src/components/TradingViewWidget.vue`.
 - Upgraded `vue-json-pretty` to v2; rewrote `jsonViewer.vue` around
   `renderNodeValue`, with `h()` rendering and URL-scheme checks.
@@ -147,7 +148,9 @@ rule set.
 
 - `/exchange`, `/changelly`, `/hiveworld`, `/twittergiveaway`, `/tribes`,
   `/owners`, `/submit`, `/downvoter`.
-- HAS and HiveSigner login paths (Keychain and SmartLock remain).
+- HAS and HiveSigner login paths (Keychain and SmartLock remained at revamp).
+  HiveAuth was re-added as a first-class signer in W62; see
+  [`docs/workstreams/W62-hiveauth.md`](workstreams/W62-hiveauth.md).
 - The `@FullNodeUpdate` nodes report; the nodes page now probes nodes live from
   the browser and lets you switch the active node.
 - Stale exchange links (Bittrex), stale Hive-Engine RC cost API, SCOT API.
@@ -173,7 +176,7 @@ rule set.
 - Browser smoke test (headless Chromium) across 30 routes: home, account,
   wallet, blog, posts, followers, following, communities, trail, tip, token,
   block, tx, proposals, witnesses, market(s), HBD, health, nodes, browse,
-  trending, community, tax, HBD stabilizer, create and 404
+  trending, community, wallet tax export, HBD stabilizer, create and 404
 - Interaction checks: Hive-Engine wallet tab, settings popup, login popup,
   deep-linked post rendering
 - No `[object Promise]`, `[object Object]`, `NaN` or `undefined` markers in the
@@ -185,11 +188,17 @@ rule set.
    Done in #88: signing/keys/memos use lazy-loaded `hive-tx`, reads use
    `src/services/api.js`, and `@hiveio/hive-js` is removed.
 2. Host a small server-side proxy for Hive-Engine / CoinGecko if public rate
-   limits remain a problem in production.
-3. Replace `moment` with `dayjs` (30 files) and remove the remaining large
-   legacy helpers.
-4. Add Vitest unit tests for the services/store and Playwright smoke tests to
-   CI. The current browser smoke script is local-only.
-5. Consider Pinia `setup` stores and `<script setup>` for new components.
-6. Add an offline-capable PWA if that target is wanted again (it was removed
-   because the app is deployed as a plain SPA).
+   limits remain a problem in production. Not needed so far; the read layer
+   already fails over between nodes.
+3. ~~Replace `moment` with `dayjs` (30 files) and remove the remaining large
+   legacy helpers.~~ Done: `src/utils/time.js` is a dayjs-backed compatibility
+   shim and the `moment` dependency is gone.
+4. ~~Add Vitest unit tests for the services/store and Playwright smoke tests to
+   CI. The current browser smoke script is local-only.~~ Done: Vitest covers the
+   services and stores, the Playwright suite runs in CI, and Obscura provides the
+   fast local loop.
+5. Consider Pinia `setup` stores and `<script setup>` for new components. Still
+   optional; existing stores use the Options API consistently.
+6. ~~Add an offline-capable PWA if that target is wanted again (it was removed
+   because the app is deployed as a plain SPA).~~ Done: `src/boot/pwa.js`,
+   the offline shell and the update prompt are part of the production build.

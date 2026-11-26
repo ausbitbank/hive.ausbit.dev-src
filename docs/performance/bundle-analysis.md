@@ -250,9 +250,10 @@ makes the first frame independent of the slowest read:
 
 - **Pre-warmed home snapshot.** `scripts/generate-home-snapshot.mjs` publishes a
   compact block/witness/market/feed snapshot at build time and injects it into
-  the home shell (`~9.9 KB Brotli`). Home widgets paint it synchronously, then
-  refresh live. Non-home shells use `/home-snapshot.json` for client-side
-  visits, and nginx caches that file for five minutes.
+  the home shell (`~10–11 KB Brotli`, depending on feed content). Home widgets
+  paint it synchronously, then refresh live. Non-home shells use
+  `/home-snapshot.json` for client-side visits, and nginx caches that file for
+  five minutes.
 - **Snapshot-first widgets.** The block, market, witness, post, network and
   browse cards restore their last saved snapshot before the first network read;
   the block card no longer waits for virtual operations before painting.
@@ -282,7 +283,8 @@ to catch a regression back to the old API-bound numbers.
 4. **CLS on wallet and post.** Post is now ~0 because body image dimensions are
    reserved before paint; wallet is ~0.03 and still worth watching as balances
    land. The dashboard measures both per route.
-5. **HTTP/2 request count.** The app still makes ~100 requests on first load
+5. **HTTP/2 request count.** The app still makes about 100 script requests on
+   first load (roughly 150–175 total including images and third parties)
    because Quasar/Rolldown emits many small shared chunks. A Rolldown
    `codeSplitting` experiment did not change the emitted chunk graph, so this
    needs a deliberate vendor-group audit rather than a blanket inline rule.

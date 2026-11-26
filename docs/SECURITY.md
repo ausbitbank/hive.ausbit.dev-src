@@ -37,7 +37,7 @@ Notes:
   drop `'unsafe-inline'` from `script-src` to make the policy fully strict.
 - Violations are posted to `/csp-report` on the `hive-metadata` Worker. It caps
   bodies at 8 KB and logs one compact JSON line per report; read them with
-  `npx wrangler tail hive-metadata`. `Report-To` and `Reporting-Endpoints` are
+  `npx wrangler@4 tail hive-metadata`. `Report-To` and `Reporting-Endpoints` are
   both sent for browser coverage, with `report-uri` kept for older Safari.
 - The vhost sets `server_tokens off;` and denies dotfiles (except
   `/.well-known`).
@@ -49,7 +49,7 @@ Notes:
 - `connect-src https:` covers the Hive API nodes, Hive-Engine RPC fallbacks and
   price APIs. Narrow it to the specific hosts if they are stable.
 - `frame-src` mirrors the embed allowlist in `src/components/render.vue` and
-  `src/utils/safeHtml.js`.
+  `src/utils/embedHosts.js`.
 - The origin currently sends HSTS with `preload`. Only keep it once every
   `ausbit.dev` subdomain is HTTPS-only; otherwise drop `preload` there first.
 - `worker-src 'self' blob:` is required by the production service worker and
@@ -199,7 +199,7 @@ Implementation: `src/services/moderationPolicy.js` (pure gate),
 
 - Never pass chain metadata (profiles, community descriptions, token metadata)
   straight into `v-html` or `href`. Use `sanitizeRichHtml()` from
-  `src/utils/safeHtml.js` and `safeExternalUrl()`/`safeHrefAttrs()` from
+  `src/utils/safeRichHtml.js` and `safeExternalUrl()`/`safeHrefAttrs()` from
   `src/utils/safeUrl.js`.
 - Every external link that opens a new tab must use
   `target="_blank" rel="noopener noreferrer"`.

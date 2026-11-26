@@ -23,7 +23,7 @@ This downloads the latest Linux/macOS release into `.tools/obscura/obscura`
 
 ```bash
 bun run test:e2e
-bun run test:e2e:build      # build first
+bun run test:e2e:fast:build   # build first
 ```
 
 `scripts/e2e-fast.mjs` starts Obscura on port 9222 with
@@ -35,7 +35,7 @@ The fast suite covers:
 
 - login/session simulation, HiveAuth login and queue actions
 - comment, proposal and transfer flows
-- compose autosave/restore, queueing, cover/checklist warnings, uploads and post metadata
+- compose autosave/restore, queueing, cover/checklist warnings, supported upload flows and post metadata
 - unified search, Lightning search, shared URLs, saved searches and the palette deep link
 - browse filters, layout controls and infinite scroll
 - 404 search, keyboard shortcuts, back-to-top and share actions
@@ -67,8 +67,10 @@ which rules it out for the axe, polish and performance checks. Obscura supports
 rendering, screenshots and CDP, so it is the better fit for functional tests,
 but the Chromium-only list above still applies.
 
-The fast suite skips the network-heavy voter-sample click and the 390px overflow
-assertion when `OBSCURA_CDP` is set; both remain covered by the full suite.
+Beyond the seven `CHROMIUM_ONLY` specs in `playwright.obscura.config.js`, some
+individual tests skip themselves when `OBSCURA_CDP` is set because they need
+file inputs, clipboard permissions, mocked API responses or Chromium layout
+measurement. Those checks remain in the full suite.
 
 ## Troubleshooting
 

@@ -39,8 +39,8 @@ updates the head in place:
 | page title | `document.title` |
 | description | `meta[name="description"]` |
 | canonical | `link[rel="canonical"]` |
-| Open Graph | `meta[property="og:site_name|og:type|og:title|og:description|og:image|og:url"]` |
-| Twitter | `meta[name="twitter:card|title|description|image"]` |
+| Open Graph | `meta[property="og:site_name"]`, `og:type`, `og:title`, `og:description`, `og:image`, `og:url` |
+| Twitter | `meta[name="twitter:card"]`, `twitter:title`, `twitter:description`, `twitter:image` |
 
 - Every tag is upserted by selector, so repeated navigation replaces instead of
   appending duplicates. `index.html` seeds the same default tags so the very

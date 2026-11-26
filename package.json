@@ -1,10 +1,28 @@
 {
   "name": "hive.ausbit.dev",
   "version": "1.0.0",
-  "description": "A block explorer and toolkit for the Hive blockchain",
+  "description": "An open-source Hive block explorer, wallet and creator toolkit",
   "productName": "hive.ausbit.dev",
   "author": "ausbitbank <ausbitbank@gmail.com>",
+  "license": "Unlicense",
+  "homepage": "https://hive.ausbit.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ausbitbank/hive.ausbit.dev-src.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ausbitbank/hive.ausbit.dev-src/issues"
+  },
+  "keywords": [
+    "hive",
+    "blockchain",
+    "explorer",
+    "wallet",
+    "vue",
+    "quasar"
+  ],
   "private": true,
+  "packageManager": "bun@1.4.4",
   "type": "module",
   "scripts": {
     "dev": "quasar dev",
@@ -62,8 +80,7 @@
     "vitest": "^5.1.1"
   },
   "engines": {
-    "node": ">= 20",
-    "npm": ">= 10"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "browserslist": [
     "defaults and fully supports es6-module"

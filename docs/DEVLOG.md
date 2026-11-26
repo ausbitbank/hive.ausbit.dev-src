@@ -29,7 +29,7 @@ The voice is first person, plain English, dry humour, no hype. “We” is fine 
 the project; “I” is fine for decisions. Do not claim something is live unless it
 was deployed or explicitly verified. Do not promise dates.
 
-## One post in seven commands
+## One post, end to end
 
 ```sh
 # 1. Collect the evidence for the range
@@ -324,7 +324,9 @@ scripts/lib/devlog/collect.mjs      git/GitHub/docs collection + brief
 scripts/lib/devlog/shots.mjs        Playwright capture, crop, manifest
 scripts/lib/devlog/draft.mjs        markdown scaffold
 scripts/lib/devlog/check.mjs        Hive limits and link checks
+scripts/lib/devlog/history.mjs      published-post history and previous links
 scripts/lib/devlog/package.mjs      screenshot commit/tag/push
+scripts/lib/devlog/util.mjs         shared formatting and shell helpers
 ```
 
 ## Copy-paste prompt for the next agent

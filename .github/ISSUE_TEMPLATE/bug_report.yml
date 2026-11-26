@@ -1,0 +1,88 @@
+name: Bug report
+description: Report something that is broken or behaving unexpectedly.
+title: 'bug: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please remove account names, keys and other
+        private data from screenshots and logs. Security issues belong in the
+        private process described in [SECURITY.md](https://github.com/ausbitbank/hive.ausbit.dev-src/blob/master/SECURITY.md), not here.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: input
+    id: route
+    attributes:
+      label: Affected route or URL
+      placeholder: https://hive.ausbit.dev/@ausbitbank/wallet
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Explorer (blocks, transactions, accounts)
+        - Posts and short posts
+        - Composer and drafts
+        - Wallet, market or Lightning
+        - Governance and witnesses
+        - Search and communities
+        - Themes, skins and dashboard
+        - Moderation and downvotes
+        - Settings or appearance
+        - Accessibility or mobile layout
+        - Deployment or PWA
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Firefox 145 on Linux, mobile Safari on iOS 19
+    validations:
+      required: true
+  - type: dropdown
+    id: signing
+    attributes:
+      label: Signing method
+      options:
+        - Not signed in / read-only
+        - Hive Keychain
+        - HiveAuth
+        - SmartLock
+        - Other
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, console errors or transaction IDs
+      description: Paste errors and links. Do not include private keys or seed phrases.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a duplicate.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

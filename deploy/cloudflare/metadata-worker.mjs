@@ -7,7 +7,7 @@
 // HTML is returned.
 //
 // Deploy (example):
-//   wrangler deploy deploy/cloudflare/metadata-worker.mjs \
+//   npx wrangler@4 deploy deploy/cloudflare/metadata-worker.mjs \
 //     --name hive-metadata --route "hive.ausbit.dev/@*"
 //
 // It is intentionally dependency-free and fails open: any timeout, missing

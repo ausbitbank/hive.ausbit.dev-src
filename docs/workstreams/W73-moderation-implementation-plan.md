@@ -9,10 +9,12 @@ See [`W73-moderation-policy.md`](W73-moderation-policy.md),
 Covers: roadmap **W71** (skin safety), issue **#94** / roadmap **W73**
 Phases 1–3, and the small data spikes the issue asks for.
 
-> This is a planning record, not a delivery record. When code ships, replace it
-> with `docs/workstreams/W71-theme-safety.md` and
-> `docs/workstreams/W73-moderation-policy.md` (and Phase 2/3 records as they
-> land). The roadmap's definition of done applies to each release separately.
+> This is the planning record and implementation brief. The corresponding
+> delivery records are `docs/workstreams/W71-theme-safety.md`,
+> `docs/workstreams/W73-moderation-policy.md`,
+> `docs/workstreams/W73-downvote-transparency.md` and
+> `docs/workstreams/W73-lists-community.md`. Unchecked items below are only
+> current if they also appear in `docs/ROADMAP.md`.
 
 ## 1. Scope and non-goals
 

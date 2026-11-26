@@ -16,6 +16,14 @@ coverage
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+.eslintcache
+.cache/
+*.tsbuildinfo
+.nyc_output/
+
+# rp1 agent state and knowledge base
+.rp1/
 
 # Local environment
 .env

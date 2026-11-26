@@ -1,6 +1,6 @@
 # Performance dashboard
 
-Generated 2026-11-24T02:26:39.675Z from commit `2b07101` (local).
+Generated 2026-11-26T02:19:06.723Z from commit `326ad27` (local).
 
 This dashboard measures the built SPA served by `scripts/serve-dist.mjs` with
 Brotli/gzip compression and a cold browser cache. It records Core Web Vitals
@@ -16,14 +16,14 @@ measurement window.
 
 | Route | FCP | LCP | CLS | Initial JS | Route JS | CSS | Total transfer | Requests |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Home | 140 ms | 140 ms | 0.002 | 128.500 KB | 165.800 KB | 52.100 KB | 411.900 KB | 174 |
-| Browse | 56 ms | 3248 ms | 0 | 128.500 KB | 136 KB | 49.300 KB | 379.300 KB | 155 |
-| Block 1 | 44 ms | 44 ms | 0 | 128.500 KB | 121.800 KB | 45.300 KB | 361.100 KB | 111 |
-| Post | 52 ms | 2124 ms | 0 | 128.500 KB | 295 KB | 51.200 KB | 541 KB | 148 |
-| Wallet | 56 ms | 1740 ms | 0.029 | 128.500 KB | 157.900 KB | 50 KB | 409.900 KB | 153 |
-| Internal market | 48 ms | 324 ms | 0.023 | 128.500 KB | 114.400 KB | 45.700 KB | 354.900 KB | 103 |
-| Compose | 64 ms | 64 ms | 0.007 | 128.500 KB | 160.100 KB | 48.800 KB | 402.800 KB | 110 |
-| Search | 64 ms | 300 ms | 0.001 | 128.500 KB | 118.300 KB | 45.800 KB | 358 KB | 113 |
+| Home | 136 ms | 1128 ms | 0.005 | 132.600 KB | 183.600 KB | 52.600 KB | 434.400 KB | 192 |
+| Browse | 52 ms | 2980 ms | 0 | 132.600 KB | 152.100 KB | 49.500 KB | 399.800 KB | 171 |
+| Block 1 | 40 ms | 1228 ms | 0 | 132.600 KB | 128.200 KB | 45.400 KB | 371.800 KB | 120 |
+| Post | 48 ms | 2916 ms | 0 | 132.600 KB | 312.300 KB | 51.700 KB | 563 KB | 164 |
+| Wallet | 56 ms | 1812 ms | 0.036 | 132.600 KB | 165 KB | 50.100 KB | 421.300 KB | 163 |
+| Internal market | 52 ms | 324 ms | 0.023 | 132.600 KB | 120.800 KB | 45.700 KB | 365.600 KB | 112 |
+| Compose | 40 ms | 380 ms | 0.007 | 132.600 KB | 167.300 KB | 48.800 KB | 414.300 KB | 119 |
+| Search | 60 ms | 316 ms | 0 | 132.600 KB | 132 KB | 45.900 KB | 376.100 KB | 125 |
 
 ## LCP element
 
@@ -32,20 +32,20 @@ post image, not the JS shell. This table names the element that actually won.
 
 | Route | LCP | Element |
 | --- | ---: | --- |
-| Home | 140 ms | `P` |
-| Browse | 3248 ms | `IMG q-img__image q-img__image--with-transition q-img__image--loaded https://images.hive.blog/480x0/https://files.peakd.c` |
-| Block 1 | 44 ms | `P` |
-| Post | 2124 ms | `IMG https://i.ecency.com/p/23KQwnti57stuXpnvnU2ByoTTe7rtyo8v5uYk1kPymfyjguJmftL7537KDU3LSmGFFxDipLuZBrmJzt1NMLvKJPXjjbbV` |
-| Wallet | 1740 ms | `DIV col-12 text-center full-width account-header` |
+| Home | 1128 ms | `IMG q-img__image q-img__image--with-transition q-img__image--loaded https://images.hive.blog/480x0/https://images.hive.b` |
+| Browse | 2980 ms | `IMG q-img__image q-img__image--with-transition q-img__image--loaded https://images.hive.blog/480x0/https://files.peakd.c` |
+| Block 1 | 1228 ms | `SPAN block-metric__value block-metric__mono` |
+| Post | 2916 ms | `IMG https://images.hive.blog/p/23KQwnti57stuXpnvnU2ByoTTe7rtyo8v5uYk1kPymfyjguJmftL7537KDU3LSmGFFxDipLuZBrmJzt1NMLvKJPXj` |
+| Wallet | 1812 ms | `DIV col-12 text-center full-width account-header` |
 | Internal market | 324 ms | `P market-intro` |
-| Compose | 64 ms | `P` |
-| Search | 300 ms | `P page-intro` |
+| Compose | 380 ms | `P compose-hint` |
+| Search | 316 ms | `P page-intro` |
 
-Initial bundle snapshot: **174.100 KB gzip**
-/ **150.100 KB Brotli** (entry shell and
+Initial bundle snapshot: **178.400 KB gzip**
+/ **153.900 KB Brotli** (entry shell and
 modulepreloads).
 
-The home shell also carries the pre-warmed snapshot: **8.9 KB Brotli** (35.2 KB JSON). It is HTML transfer, not JS.
+The home shell also carries the pre-warmed snapshot: **11 KB Brotli** (40.5 KB JSON). It is HTML transfer, not JS.
 
 ## Budgets
 
@@ -70,7 +70,7 @@ because the floor protects guests on any content surface; the route JS and Home
 total budgets were raised accordingly. Initial JS, CSS, LCP and CLS budgets are
 unchanged.
 
-The 2026-11-25 W78 image-proxy preference is imported by the shared render,
+The 2026-11-25 W79 image-proxy preference is imported by the shared render,
 short-form media and post-preview paths, so it adds roughly 1–2 KB to every
 route's JS. Route JS (and the affected total-JS) budgets were raised by 2–4 KB
 with 1 KB headroom. Initial JS, CSS, LCP and CLS budgets are unchanged.
@@ -92,16 +92,16 @@ with 1 KB headroom. Initial JS, CSS, LCP and CLS budgets are unchanged.
 | --- | ---: | ---: | ---: |
 | `browser-BhLO-hLA.js` | 361.700 KB | 139 KB | 116.900 KB |
 | `index-0E6BhVPq.css` | 250.900 KB | 43.100 KB | 34.300 KB |
-| `index-XV6Trtpz.js` | 216.500 KB | 70.800 KB | 61.400 KB |
-| `Index-BPO3IcIo.js` | 149.300 KB | 40.400 KB | 34.300 KB |
-| `compose-8Oyne5h5.js` | 143.700 KB | 37.500 KB | 32.600 KB |
+| `index-Dn3fQA7B.js` | 221.500 KB | 72.600 KB | 62.800 KB |
+| `Index-zhMJ1Zfq.js` | 156.500 KB | 42.400 KB | 35.900 KB |
+| `compose-kBYF116A.js` | 148.200 KB | 38.400 KB | 33.300 KB |
 | `dist-Lbnn-ipf.js` | 94.400 KB | 33.400 KB | 29.200 KB |
-| `wallet-CTiLW24_.js` | 87 KB | 23 KB | 20 KB |
-| `MainLayout-L4k0cYbi.js` | 80.600 KB | 24 KB | 20.900 KB |
-| `runtime-core.esm-bundler-CqJwwLne.js` | 69.600 KB | 26.900 KB | 24.400 KB |
-| `account-F9YulLWv.js` | 60.800 KB | 17.200 KB | 15.200 KB |
-| `witnesses-DHzk3sXY.js` | 53.500 KB | 15.800 KB | 14 KB |
-| `skinStudio-Di_ibzUZ.js` | 43.100 KB | 12.300 KB | 10.800 KB |
+| `wallet-BoXjL1iH.js` | 87.200 KB | 22.900 KB | 20 KB |
+| `MainLayout-zeT8gtIA.js` | 85.100 KB | 25 KB | 21.800 KB |
+| `account-DcskA2Wx.js` | 62.100 KB | 17.700 KB | 15.600 KB |
+| `witnesses-BTw1-rIK.js` | 53.700 KB | 15.900 KB | 14.100 KB |
+| `runtime-core.esm-bundler-B7XIQ4CZ.js` | 48.900 KB | 19.800 KB | 18 KB |
+| `skinStudio-BOXQOHfu.js` | 43.200 KB | 12.300 KB | 10.800 KB |
 
 See [bundle analysis](bundle-analysis.md) for the dependency notes and the W22
 changes.
@@ -110,7 +110,7 @@ changes.
 
 | Run | Commit | Generated | Routes |
 | --- | --- | --- | --- |
-| local | 2b07101 | 2026-11-24 02:26 | Home LCP 140ms / total 411.9KB<br>Browse LCP 3248ms / total 379.3KB<br>Block 1 LCP 44ms / total 361.1KB<br>Post LCP 2124ms / total 541KB<br>Wallet LCP 1740ms / total 409.9KB<br>Internal market LCP 324ms / total 354.9KB<br>Compose LCP 64ms / total 402.8KB<br>Search LCP 300ms / total 358KB |
+| local | 326ad27 | 2026-11-26 02:19 | Home LCP 1128ms / total 434.4KB<br>Browse LCP 2980ms / total 399.8KB<br>Block 1 LCP 1228ms / total 371.8KB<br>Post LCP 2916ms / total 563KB<br>Wallet LCP 1812ms / total 421.3KB<br>Internal market LCP 324ms / total 365.6KB<br>Compose LCP 380ms / total 414.3KB<br>Search LCP 316ms / total 376.1KB |
 | snapshot-first | 3c0ec1c | 2026-11-22 08:08 | Home LCP 1188ms / total 384.4KB<br>Browse LCP 2300ms / total 386.3KB<br>Block 1 LCP 1480ms / total 339.8KB<br>Post LCP 2168ms / total 508KB<br>Wallet LCP 2084ms / total 388.1KB<br>Internal market LCP 312ms / total 333.7KB<br>Compose LCP 360ms / total 376.2KB<br>Search LCP 288ms / total 336.8KB |
 | snapshot-first | 3c0ec1c | 2026-11-22 08:07 | Home LCP 1140ms / total 384.4KB<br>Browse LCP 2288ms / total 386.3KB<br>Block 1 LCP 1616ms / total 339.8KB<br>Post LCP 2712ms / total 508KB<br>Wallet LCP 2028ms / total 388.1KB<br>Internal market LCP 304ms / total 333.7KB<br>Compose LCP 344ms / total 376.2KB<br>Search LCP 288ms / total 336.8KB |
 | slow-api-300ms | 3c0ec1c | 2026-11-22 07:52 | Home LCP 1720ms / total 385.1KB<br>Browse LCP 3700ms / total 400.9KB<br>Block 1 LCP 1540ms / total 340.5KB<br>Post LCP 2660ms / total 509.6KB<br>Wallet LCP 2300ms / total 389.6KB<br>Internal market LCP 332ms / total 334.5KB<br>Compose LCP 368ms / total 376.9KB<br>Search LCP 308ms / total 337.6KB |
