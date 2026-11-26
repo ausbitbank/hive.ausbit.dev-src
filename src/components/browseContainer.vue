@@ -378,6 +378,7 @@ import { postPayoutValue, postUserVoteDirection } from 'src/services/posts'
 import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { trimPostsForSnapshot } from 'src/services/postSnapshot'
+import { loadFeedState, saveFeedState } from 'src/services/feedState'
 import { isValidTag } from 'src/utils/hiveTag'
 import DataNotice from 'components/ui/DataNotice.vue'
 
@@ -434,6 +435,7 @@ export default {
       error: null,
       cachedAt: null,
       hasMore: true,
+      restoredFeed: false,
       limit: Number(this.$route.query.limit) || this.responseLimit || 20,
       styleType: normalizeStyle(this.$route.query.style),
       styleOptions: [
@@ -451,6 +453,16 @@ export default {
   computed: {
     loggedInUser () {
       return this.$hiveStore.user.username || null
+    },
+    feedKey () {
+      return [
+        this.loggedInUser || '',
+        this.method,
+        this.sort,
+        this.account || '',
+        this.tag || '',
+        this.limit
+      ].join(':')
     },
     activeFilterCount () {
       const defaults = DEFAULT_FILTERS()
@@ -506,20 +518,24 @@ export default {
   },
   watch: {
     callMethod (value) {
+      const previousKey = this.feedKey
       this.method = value || 'bridge.get_ranked_posts'
-      this.switchFeed()
+      this.switchFeed(previousKey)
     },
     sortMethod (value) {
+      const previousKey = this.feedKey
       this.sort = value || 'created'
-      this.switchFeed()
+      this.switchFeed(previousKey)
     },
     showAccount (value) {
+      const previousKey = this.feedKey
       this.account = value || null
-      this.switchFeed()
+      this.switchFeed(previousKey)
     },
     showTag (value) {
+      const previousKey = this.feedKey
       this.tag = value || null
-      this.switchFeed()
+      this.switchFeed(previousKey)
     },
     '$route.query.style' (value) {
       const style = normalizeStyle(value)
@@ -530,15 +546,40 @@ export default {
     }
   },
   created () {
-    this.restoreSnapshot()
+    // A remount after Back should restore every loaded page, not just the
+    // first snapshot page. The in-memory cache only lives for this session.
+    if (!this.restoreFeedState()) this.restoreSnapshot()
   },
   mounted () {
-    this.getPosts(false)
+    // Cached feeds are already painted at the previous scroll height. Refresh
+    // stays explicit so a returning reader does not lose the loaded tail.
+    if (!this.restoredFeed) this.getPosts(false)
+  },
+  beforeUnmount () {
+    this.rememberFeed()
   },
   methods: {
     snapshotKey () {
       return 'browse:' + this.method + ':' + this.sort + ':' +
         (this.account || '') + ':' + (this.tag || '') + ':' + this.limit
+    },
+    rememberFeed (key = this.feedKey) {
+      if (!key) return false
+      return saveFeedState(key, {
+        posts: this.posts,
+        hasMore: this.hasMore,
+        cachedAt: this.cachedAt
+      })
+    },
+    restoreFeedState () {
+      const cached = loadFeedState(this.feedKey)
+      if (!cached) return false
+      this.posts = cached.posts
+      this.cachedAt = cached.cachedAt
+      this.hasMore = cached.hasMore
+      this.loading = false
+      this.restoredFeed = true
+      return true
     },
     restoreSnapshot () {
       const snapshot = loadSnapshot(this.snapshotKey())
@@ -554,10 +595,13 @@ export default {
       const posts = trimPostsForSnapshot(this.posts, { limit: this.limit, bodyLimit: 800 })
       if (posts.length) saveSnapshot(this.snapshotKey(), { posts })
     },
-    switchFeed () {
+    switchFeed (previousKey = null) {
+      if (previousKey) this.rememberFeed(previousKey)
+      this.restoredFeed = false
       this.posts = []
       this.cachedAt = null
       this.hasMore = true
+      if (this.restoreFeedState()) return
       this.restoreSnapshot()
       this.getPosts(false)
     },

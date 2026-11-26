@@ -8,9 +8,24 @@ export default defineRouter(function () {
     : createWebHistory
 
   return createRouter({
-    scrollBehavior: (to) => to.hash
-      ? { el: to.hash, top: 84, behavior: 'smooth' }
-      : { left: 0, top: 0 },
+    scrollBehavior (to, from, savedPosition) {
+      if (to.hash) return { el: to.hash, top: 84, behavior: 'smooth' }
+      // A query-only change (for example opening the quick-look peek) must
+      // leave the feed exactly where it was.
+      if (to.path === from.path) return false
+      if (savedPosition) {
+        // Browse feeds restore their loaded pages synchronously, but let Vue
+        // commit the restored cards before the browser measures the document.
+        return new Promise(resolve => {
+          if (typeof requestAnimationFrame !== 'function') {
+            resolve(savedPosition)
+            return
+          }
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve(savedPosition)))
+        })
+      }
+      return { left: 0, top: 0 }
+    },
     routes,
     history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE)
   })
