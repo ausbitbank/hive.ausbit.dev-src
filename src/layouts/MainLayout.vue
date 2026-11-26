@@ -106,6 +106,13 @@
             :key="link.title"
             v-bind="link"
           />
+          <q-item clickable to="/about">
+            <q-item-section avatar><q-icon name="help_outline" aria-hidden="true" /></q-item-section>
+            <q-item-section>
+              <q-item-label>About Banksia</q-item-label>
+              <q-item-label caption>Name, mark and source</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </div>
       <div class="site-nav__footer">
@@ -128,6 +135,7 @@
           <router-link to="/blocks">Blocks</router-link>
           <router-link to="/proposals">Proposals</router-link>
           <router-link to="/nodes">Nodes</router-link>
+          <router-link to="/about">About</router-link>
         </nav>
         <div class="site-footer__meta">
           <a href="https://hive.io" target="_blank" rel="noopener noreferrer">Powered by Hive</a>

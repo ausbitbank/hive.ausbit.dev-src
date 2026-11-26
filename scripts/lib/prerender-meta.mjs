@@ -30,6 +30,7 @@ export const PRERENDER_ROUTES = [
   '/lightning',
   '/appearance',
   '/themes',
+  '/about',
   '/settings/skin',
   '/settings/moderation',
   '/404',

@@ -70,6 +70,7 @@ const routes = [
       { path: 'settings/skin', name: 'skin-studio', component: () => import('pages/skinStudio.vue') },
       { path: 'settings/moderation', name: 'moderation', component: () => import('pages/moderation.vue') },
       { path: 'themes', name: 'theme-wall', component: () => import('pages/themeWall.vue') },
+      { path: 'about', name: 'about', component: () => import('pages/about.vue') },
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
       { path: 'communities', name: 'communities', component: () => import('pages/communityIndex.vue') },
       { path: 'c', redirect: '/communities' },
