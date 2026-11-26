@@ -411,9 +411,18 @@ old `/var/www/hive.ausbit.dev` build if the new path is empty, so the domain swi
 is zero-downtime. Before activation it runs
 [`scripts/check-nginx-host.sh`](scripts/check-nginx-host.sh), which aborts if the one
 shared vhost stops serving both `banksia.io` and `hive.ausbit.dev`, if the docroot
-moves, if the `/about` route is missing, or if a second enabled vhost claims either
-host. SPA deploys never write nginx config. It prints the backup path and matching
-rollback command:
+moves, if the `/about` route is missing, if a second enabled vhost claims either
+host, or if a docroot directory named like a route (for example `join/`) would
+redirect `/join` to `/join/` and back. SPA deploys never write nginx config, so
+sync the vhost whenever a prerendered route creates a directory:
+
+```bash
+bash scripts/apply-nginx-vhost-remote.sh hurgenburgen apply
+```
+
+The post-deploy gate (`scripts/verify-deploy.mjs`) also requests every
+prerendered route and fails on a redirect loop or a 404. The deploy script
+prints the backup path and matching rollback command:
 
 ```bash
 ./scripts/rollback.sh ~/banksia-backups/banksia.io-<timestamp>.tar.gz

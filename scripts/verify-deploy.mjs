@@ -11,6 +11,7 @@
 import { pathToFileURL } from 'node:url'
 
 import { BRAND } from '../src/config/brand.js'
+import { PRERENDER_ROUTES } from './lib/prerender-meta.mjs'
 
 const DEFAULT_URL = BRAND.url + '/'
 const REQUIRED = [
@@ -48,6 +49,51 @@ async function edgeHeaders (url) {
     csp: response.headers.get('content-security-policy'),
     challenge: response.headers.get('cf-mitigated')
   }
+}
+
+/**
+ * Every prerendered route must resolve without a redirect loop. A docroot
+ * directory whose name matches a route (join/, create/, …) makes nginx answer
+ * /path with 301 /path/, which the no-trailing-slash rule sends straight back;
+ * the browser then shows "page isn't redirecting properly". The nginx vhost
+ * needs an explicit location for each of those directories, and a stale vhost
+ * is otherwise invisible to the rest of this check.
+ */
+async function routeCheck (baseUrl) {
+  const problems = []
+  for (const route of PRERENDER_ROUTES) {
+    if (route === '/404') continue
+    const target = new URL(route, baseUrl).toString()
+    try {
+      const response = await fetch(target, {
+        redirect: 'follow',
+        headers: {
+          accept: 'text/html',
+          'user-agent': 'Mozilla/5.0 (compatible; hive-ausbit-deploy-check)'
+        },
+        signal: AbortSignal.timeout(15000)
+      })
+      await response.body?.cancel()
+      if (response.status === 403 || response.status === 503) {
+        if (response.headers.get('cf-mitigated')) {
+          warn('edge challenged the route check; skipping remaining routes')
+          return problems
+        }
+      }
+      if (response.status >= 400) {
+        problems.push(route + ' returned HTTP ' + response.status)
+      }
+    } catch (error) {
+      const message = String(error?.message || error)
+      const cause = String(error?.cause?.message || '')
+      if (/redirect/i.test(message + ' ' + cause)) {
+        problems.push(route + ' is a redirect loop (check the nginx vhost)')
+      } else {
+        problems.push(route + ': ' + message)
+      }
+    }
+  }
+  return problems
 }
 
 async function browserCheck ({ url, originIp }) {
@@ -150,6 +196,12 @@ async function main () {
     }
   } catch (error) {
     warn('edge fetch failed: ' + error.message)
+  }
+
+  try {
+    for (const problem of await routeCheck(url)) failures.push(problem)
+  } catch (error) {
+    warn('route check failed: ' + error.message)
   }
 
   let result

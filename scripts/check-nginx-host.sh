@@ -40,5 +40,32 @@ for f in /etc/nginx/sites-enabled/*; do
     exit 1
   fi
 done
+
+DOCROOT=/var/www/banksia.io
+[ -d "$DOCROOT" ] || { echo "error: docroot $DOCROOT is missing" >&2; exit 1; }
+
+# A directory in the docroot named like a route (/join/, /create/, /shorts/)
+# makes nginx answer /join with 301 /join/, while the vhost's no-trailing-slash
+# rule answers /join/ with 301 /join: the browser reports "page isn't
+# redirecting properly". Probe the origin locally and fail before a deploy when
+# a directory shadows its route. The edge route check in verify-deploy.mjs
+# covers directories that only appear in the new build.
+for dir in "$DOCROOT"/*/; do
+  [ -d "$dir" ] || continue
+  name="$(basename "$dir")"
+  case "$name" in assets|statics) continue ;; esac
+  headers="$(curl -ksS -m 10 --noproxy '*' -D - -o /dev/null --resolve "banksia.io:443:127.0.0.1" \
+    "https://banksia.io/$name" 2>/dev/null || true)"
+  status="$(printf '%s\n' "$headers" | awk '/^HTTP\//{ s=$2 } END { print s }')"
+  # No local answer (nginx not reachable from this shell): the post-deploy edge
+  # route check still covers it.
+  [ -n "$status" ] || continue
+  if { [ "$status" = 301 ] || [ "$status" = 308 ]; } && \
+     printf '%s\n' "$headers" | grep -qiE "^location:[[:space:]]*https?://[^/]+/$name/[?[:space:]]*$"; then
+    echo "error: docroot directory /$name shadows its route: /$name redirects to /$name/ and back (redirect loop); add an explicit location for /$name to $CONF" >&2
+    exit 1
+  fi
+done
+
 echo "nginx host config: shared banksia.io + hive.ausbit.dev vhost OK"
 REMOTE
