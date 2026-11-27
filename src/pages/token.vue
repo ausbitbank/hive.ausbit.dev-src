@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex">
+    <h1 class="sr-only">{{ token }} on Hive-Engine — price, order book and trades</h1>
     <div class="fit row wrap justify-center items-start content-start">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" v-if="globalProps !== null && account !== null"/>
       <q-card dense flat bordered class="q-ma-sm q-pa-sm text-center bg-red" v-if="error">
@@ -345,20 +346,15 @@ export default {
     }
   },
   watch: {
-    account: function () { this.init() },
-    '$route.params.username': {
-      handler: function () { this.init() },
-      deep: true,
-      immediate: true
-    },
-    '$route.params.token': {
-      handler: function () { this.init() },
-      deep: true,
-      immediate: true
-    },
-    username: function () { this.init() }
+    // The layout remounts this page when the route path changes, so the page
+    // only needs to refresh account-scoped reads when the profile arrives.
+    account: function () { this.refreshAccountScoped() }
   },
   methods: {
+    refreshAccountScoped () {
+      this.getHiveEngineBalanceInfo()
+      this.getMyHiveEngineOrders()
+    },
     getHiveEngineTokenInfo () {
       var tokens = [this.token]
       if (tokens.length > 0) {
@@ -417,8 +413,14 @@ export default {
     getAccountLink (account) { return '/@' + account },
     getTxLink (txid) { return '/tx/' + txid },
     async getPricesCoingecko () {
-      const prices = await getHivePrices()
-      this.hivePriceUsd = prices.hive.usd
+      try {
+        const prices = await getHivePrices()
+        this.hivePriceUsd = prices?.hive?.usd ?? 0
+      } catch {
+        // A blocked price provider must not turn a token page into an
+        // unhandled rejection; the USD column simply stays at zero.
+        this.hivePriceUsd = 0
+      }
     },
     timeDelta (timestamp) {
       var now = moment.utc()
@@ -448,6 +450,7 @@ export default {
     },
     tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     init () {
+      if (!this.username && this.loggedInUser) { this.username = this.loggedInUser }
       this.getHiveEngineMarketInfo()
       this.getHiveEngineTokenInfo()
       this.getHiveEngineBalanceInfo()
@@ -456,7 +459,6 @@ export default {
       this.getHiveEngineOrderBookBuy()
       this.getHiveEngineOrderBookSell()
       this.getMyHiveEngineOrders()
-      if (!this.username && this.loggedInUser) { this.username = this.loggedInUser }
       if (this.username && this.account === undefined) { this.$hiveStore.getAccount(this.username) }
     }
   },
