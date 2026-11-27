@@ -36,7 +36,13 @@ describe('blog settings defaults', () => {
       theme: 'auto',
       mode: 'auto',
       directory: false,
-      ogImage: ''
+      ogImage: '',
+      layout: 'grid',
+      width: 'comfortable',
+      typography: 'theme',
+      hero: 'cover',
+      showTags: true,
+      showReadingTime: true
     })
   })
 
@@ -56,6 +62,12 @@ describe('normalizeBlogSettings', () => {
       theme: 'terminal',
       mode: 'dark',
       accent: '#39ff88',
+      layout: 'magazine',
+      width: 'narrow',
+      typography: 'serif',
+      hero: 'minimal',
+      showTags: false,
+      showReadingTime: false,
       nav: [{ label: 'Start here', href: '/start' }],
       pinned: ['a-post'],
       authors: ['alice', 'bob'],
@@ -75,6 +87,12 @@ describe('normalizeBlogSettings', () => {
       title: 'Alice writes',
       theme: 'terminal',
       accent: '#39ff88',
+      layout: 'magazine',
+      width: 'narrow',
+      typography: 'serif',
+      hero: 'minimal',
+      showTags: false,
+      showReadingTime: false,
       pinned: ['a-post'],
       authors: ['alice', 'bob'],
       community: 'hive-123456',
@@ -143,6 +161,23 @@ describe('normalizeBlogSettings', () => {
     const result = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', directory: 'yes' })
     expect(result.ok).toBe(false)
     expect(result.errors.join(' ')).toContain('directory must be a boolean')
+  })
+
+  it('rejects unknown layout, width, typography or hero values', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      layout: 'carousel',
+      width: 'huge',
+      typography: 'comic',
+      hero: 'none'
+    })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('layout must be one of')
+    expect(result.errors.join(' ')).toContain('width must be one of')
+    expect(result.errors.join(' ')).toContain('typography must be one of')
+    expect(result.errors.join(' ')).toContain('hero must be one of')
   })
 
   it('requires an https social card URL', () => {

@@ -6,6 +6,7 @@
 // posting-key `account_update2` operations for the existing signing stack.
 
 import { defineStore } from 'pinia'
+import { LocalStorage } from 'quasar'
 import { BLOG_APEX_URL } from 'src/config/blog'
 import { fetchAccount, fetchAccountPosts, fetchPostContent, fetchRankedPosts } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
@@ -14,10 +15,27 @@ import { apexAccountUrl, blogBaseUrl, blogSettingsUrl, encodeBlogLabel, resolveB
 import { isBlogPost, sortBlogPosts } from 'src/services/blogPosts'
 import { readAccountTheme } from 'src/themes/account'
 import { resolveBlogTheme } from 'src/themes/blogThemes'
-import { themeStyleObject } from 'src/themes/tokens'
+import { quasarVarsFor, shapeVarsFor, themeModeOf, tokensFor } from 'src/themes/tokens'
+import { useAppearanceStore } from 'src/stores/appearance'
 import { useHiveStore } from 'src/stores/hive'
 
 const PAGE_SIZE = 20
+const BLOG_MODE_KEY = 'banksia:blog-mode'
+
+const TYPOGRAPHY_STACKS = {
+  serif: 'Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif',
+  sans: 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
+  mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace'
+}
+
+function readModePreference () {
+  try {
+    const value = LocalStorage.getItem(BLOG_MODE_KEY)
+    return value === 'light' || value === 'dark' ? value : 'auto'
+  } catch {
+    return 'auto'
+  }
+}
 
 function profileFromAccount (account) {
   if (!account) return {}
@@ -56,6 +74,7 @@ export const useBlogStore = defineStore('blog', {
     postsError: '',
     hasMore: false,
     cursor: null,
+    modePreference: readModePreference(),
     pending: false,
     pendingText: ''
   }),
@@ -122,11 +141,61 @@ export const useBlogStore = defineStore('blog', {
     theme (state) {
       return resolveBlogTheme(state.settings || {}, this.accountTheme)
     },
+    viewerMode () {
+      if (this.modePreference === 'light' || this.modePreference === 'dark') return this.modePreference
+      const authorMode = this.settings && this.settings.mode
+      if (authorMode === 'light' || authorMode === 'dark') return authorMode
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      return this.theme && this.theme.mode === 'dark' ? 'dark' : 'light'
+    },
     themeStyle () {
-      return themeStyleObject(this.theme)
+      const appearance = useAppearanceStore()
+      const mode = this.viewerMode
+      const style = {
+        ...tokensFor(this.theme, { highContrast: appearance.highContrast, mode }),
+        ...quasarVarsFor(this.theme, { mode }),
+        ...shapeVarsFor(this.theme)
+      }
+      const typography = this.typography
+      if (TYPOGRAPHY_STACKS[typography]) {
+        style['--font-body'] = TYPOGRAPHY_STACKS[typography]
+        style['--font-display'] = TYPOGRAPHY_STACKS[typography]
+      }
+      return style
     },
     mode () {
-      return this.theme && this.theme.mode === 'light' ? 'light' : 'dark'
+      return themeModeOf(this.theme, this.viewerMode)
+    },
+    modeSwitchable () {
+      return Boolean(this.theme && this.theme.variants &&
+        (this.theme.variants.light || this.theme.variants.dark))
+    },
+    motion () {
+      const appearance = useAppearanceStore()
+      return appearance.motion === 'reduced' || appearance.skinEffects === 'calm' ? 'reduced' : 'full'
+    },
+    layout () {
+      return (this.settings && this.settings.layout) || 'grid'
+    },
+    width () {
+      return (this.settings && this.settings.width) || 'comfortable'
+    },
+    typography () {
+      return (this.settings && this.settings.typography) || 'theme'
+    },
+    hero () {
+      return (this.settings && this.settings.hero) || 'cover'
+    },
+    showTags () {
+      return !this.settings || this.settings.showTags !== false
+    },
+    showReadingTime () {
+      return !this.settings || this.settings.showReadingTime !== false
+    },
+    navLinks () {
+      return Array.isArray(this.settings && this.settings.nav) ? this.settings.nav : []
     },
     canEdit () {
       const hive = useHiveStore()
@@ -149,6 +218,17 @@ export const useBlogStore = defineStore('blog', {
   },
 
   actions: {
+    setModePreference (value) {
+      const next = value === 'light' || value === 'dark' ? value : 'auto'
+      this.modePreference = next
+      try {
+        if (next === 'auto') LocalStorage.remove(BLOG_MODE_KEY)
+        else LocalStorage.set(BLOG_MODE_KEY, next)
+      } catch {
+        // Private mode or blocked storage; the in-memory preference still works.
+      }
+    },
+
     init (hostname) {
       const resolved = resolveBlogHost(hostname)
       if (resolved.mode !== 'blog' || !resolved.account) {

@@ -1,5 +1,5 @@
 <template>
-  <article class="blog-card" :class="{ 'blog-card--feature': feature }">
+  <article class="blog-card" :class="{ 'blog-card--feature': feature, 'blog-card--list': list }">
     <router-link v-if="image" :to="path" class="blog-card__media" tabindex="-1" aria-hidden="true">
       <img :src="image" alt="" loading="lazy" decoding="async" />
     </router-link>
@@ -7,8 +7,8 @@
     <div class="blog-card__body">
       <div class="blog-card__meta">
         <time v-if="dateLabel" :datetime="post.created">{{ dateLabel }}</time>
-        <span v-if="readingMinutes" class="blog-card__dot" aria-hidden="true">·</span>
-        <span v-if="readingMinutes">{{ readingMinutes }} min read</span>
+        <span v-if="readingMinutes && showReadingTime" class="blog-card__dot" aria-hidden="true">·</span>
+        <span v-if="readingMinutes && showReadingTime">{{ readingMinutes }} min read</span>
         <span v-if="pinned" class="blog-card__pin">Pinned</span>
       </div>
 
@@ -18,7 +18,7 @@
 
       <p v-if="excerpt" class="blog-card__excerpt">{{ excerpt }}</p>
 
-      <ul v-if="tags.length" class="blog-card__tags" aria-label="Tags">
+      <ul v-if="showTags && tags.length" class="blog-card__tags" aria-label="Tags">
         <li v-for="tag in tags" :key="tag">#{{ tag }}</li>
       </ul>
     </div>
@@ -145,12 +145,39 @@
   font-size: 0.98rem;
 }
 
+.blog-card--list {
+  flex-direction: row;
+}
+
+.blog-card--list .blog-card__media {
+  width: 280px;
+  aspect-ratio: 4 / 3;
+  flex: none;
+}
+
+.blog-card--list .blog-card__title {
+  font-size: 1.35rem;
+}
+
+.blog-card--list .blog-card__body {
+  padding: 1.1rem 1.25rem;
+}
+
 @media (max-width: 640px) {
   .blog-card--feature .blog-card__title {
     font-size: 1.35rem;
   }
 
   .blog-card--feature .blog-card__media {
+    aspect-ratio: 16 / 9;
+  }
+
+  .blog-card--list {
+    flex-direction: column;
+  }
+
+  .blog-card--list .blog-card__media {
+    width: 100%;
     aspect-ratio: 16 / 9;
   }
 }
@@ -165,7 +192,10 @@ export default {
   props: {
     post: { type: Object, required: true },
     pinned: { type: Boolean, default: false },
-    feature: { type: Boolean, default: false }
+    feature: { type: Boolean, default: false },
+    list: { type: Boolean, default: false },
+    showTags: { type: Boolean, default: true },
+    showReadingTime: { type: Boolean, default: true }
   },
   computed: {
     blog () {

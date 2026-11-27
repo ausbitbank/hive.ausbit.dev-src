@@ -30,9 +30,15 @@ const NAV_HREF_RE = /^(?:\/(?!\/)[^\s]*|https:\/\/[^\s]+)$/i
 
 const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
+  'layout', 'width', 'typography', 'hero', 'showTags', 'showReadingTime',
   'nav', 'pinned', 'authors', 'community', 'showPayout', 'showComments',
   'directory', 'ogImage', 'customDomain', 'updatedAt'
 ]
+
+const LAYOUTS = ['grid', 'list', 'magazine']
+const WIDTHS = ['narrow', 'comfortable', 'wide']
+const TYPOGRAPHY = ['theme', 'serif', 'sans', 'mono']
+const HEROES = ['cover', 'minimal']
 
 function isPlainObject (value) {
   return Boolean(value) &&
@@ -169,6 +175,12 @@ export function defaultBlogSettings (account) {
     theme: 'auto',
     mode: 'auto',
     accent: '',
+    layout: 'grid',
+    width: 'comfortable',
+    typography: 'theme',
+    hero: 'cover',
+    showTags: true,
+    showReadingTime: true,
     nav: [],
     pinned: [],
     authors: [],
@@ -220,6 +232,15 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const accent = input.accent === undefined || input.accent === '' ? '' : String(input.accent || '').toLowerCase()
   if (accent && !isHexColor(accent)) errors.push('accent must be a #rgb or #rrggbb colour')
 
+  const layout = enumValue(input.layout, LAYOUTS, 'layout', errors, 'grid')
+  const width = enumValue(input.width, WIDTHS, 'width', errors, 'comfortable')
+  const typography = enumValue(input.typography, TYPOGRAPHY, 'typography', errors, 'theme')
+  const hero = enumValue(input.hero, HEROES, 'hero', errors, 'cover')
+  const showTags = input.showTags !== false
+  if (input.showTags !== undefined && typeof input.showTags !== 'boolean') errors.push('showTags must be a boolean')
+  const showReadingTime = input.showReadingTime !== false
+  if (input.showReadingTime !== undefined && typeof input.showReadingTime !== 'boolean') errors.push('showReadingTime must be a boolean')
+
   const nav = normalizeNav(input.nav, errors)
   const pinned = normalizePermlinks(input.pinned, errors, { max: BLOG_MAX_PINNED, path: 'pinned' })
   const authors = normalizeAuthors(input.authors, errors)
@@ -251,6 +272,12 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     theme,
     mode,
     accent,
+    layout,
+    width,
+    typography,
+    hero,
+    showTags,
+    showReadingTime,
     nav,
     pinned,
     authors,

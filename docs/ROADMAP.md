@@ -21,11 +21,15 @@ principles that constrain it. Delivered work and its verification records live i
   opt-in directory API, themed OG fallbacks and generated social cards, and the
   new SPA is live. A real claim has been tested and works, and the blog axe
   suite passes; premium entitlements and custom domains remain.
+- W85 adds blog customisation parity and expansion: reader Light/Dark/System,
+  five themes with opposite-mode variants, grid/list/magazine layouts, page
+  width, typography, hero style, custom navigation, tags/reading-time toggles
+  and accessibility preference support.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,674 tests across 193 files.
+  with 1,677 tests across 193 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W85**.
+- The next free workstream number is **W86**.
 
 ## Vision
 
@@ -188,6 +192,19 @@ previews, and the claim flow is verified. Remaining work:
   first abuse report.
 
 Record: [`W84`](workstreams/W84-blog-hosting.md).
+
+### 9. Optional blog customisation follow-ups — W85
+
+W85 shipped reader mode, layouts, width, typography, hero style, custom nav,
+tags/reading time and two more themes. Explicitly deferred:
+
+- Side navigation and a per-post layout override.
+- Portfolio/gallery pages and a products/shop page.
+- Localization of interface strings; posts stay in their own language.
+- A full axe pass for every theme and both variants (token contrast is already
+  validated for all variants; the E2E covers Paper light/dark).
+
+Record: [`W85`](workstreams/W85-blog-customisation.md).
 
 ## Deferred and non-goals
 

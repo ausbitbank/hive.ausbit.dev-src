@@ -1,7 +1,7 @@
 <template>
   <div class="blog-home">
-    <section class="blog-hero" :class="{ 'blog-hero--cover': Boolean(cover) }">
-      <img v-if="cover" :src="cover" alt="" class="blog-hero__cover" aria-hidden="true" />
+    <section class="blog-hero" :class="{ 'blog-hero--cover': Boolean(cover) && showHero, 'blog-hero--minimal': !showHero }">
+      <img v-if="showHero && cover" :src="cover" alt="" class="blog-hero__cover" aria-hidden="true" />
       <div class="blog-hero__inner">
         <img :src="avatar" alt="" class="blog-hero__avatar" width="88" height="88" />
         <div class="blog-hero__copy">
@@ -44,6 +44,8 @@
           :post="post"
           pinned
           feature
+          :show-tags="blog.showTags"
+          :show-reading-time="blog.showReadingTime"
         />
       </div>
     </section>
@@ -66,9 +68,26 @@
         No posts yet. When @{{ accountName }} publishes on Hive, it will appear here.
       </p>
 
-      <div v-else class="blog-grid">
-        <blog-post-card v-for="post in archivePosts" :key="post.permlink" :post="post" />
-      </div>
+      <template v-else>
+        <div v-if="featurePost" class="blog-grid">
+          <blog-post-card
+            :post="featurePost"
+            feature
+            :show-tags="blog.showTags"
+            :show-reading-time="blog.showReadingTime"
+          />
+        </div>
+        <div class="blog-grid" :class="{ 'blog-grid--list': isList }">
+          <blog-post-card
+            v-for="post in restPosts"
+            :key="post.permlink"
+            :post="post"
+            :list="isList"
+            :show-tags="blog.showTags"
+            :show-reading-time="blog.showReadingTime"
+          />
+        </div>
+      </template>
 
       <div v-if="blog.hasMore" class="blog-more">
         <button type="button" class="blog-more__button" :disabled="blog.postsLoading" @click="loadMore">
@@ -110,6 +129,14 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, color-mix(in srgb, var(--c-bg) 20%, transparent), var(--c-surface) 92%);
+}
+
+.blog-hero--minimal {
+  background: var(--c-surface);
+}
+
+.blog-grid--list {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .blog-hero__inner {
@@ -393,6 +420,18 @@ export default {
     },
     archivePosts () {
       return this.blog.archivePosts
+    },
+    showHero () {
+      return this.blog.hero !== 'minimal'
+    },
+    isList () {
+      return this.blog.layout === 'list'
+    },
+    featurePost () {
+      return this.blog.layout === 'magazine' ? (this.archivePosts[0] || null) : null
+    },
+    restPosts () {
+      return this.blog.layout === 'magazine' ? this.archivePosts.slice(1) : this.archivePosts
     }
   },
   watch: {

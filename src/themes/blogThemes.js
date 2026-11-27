@@ -1,9 +1,10 @@
 // Built-in reading themes for account blogs.
 //
-// Blog themes are deliberately few and editorial: a warm paper column, a
-// neutral studio, and a terminal. An author can also use their published
-// profile skin (`theme: "auto"`), which makes the blog and the profile feel
-// like the same place without a second design system.
+// Blog themes are deliberately editorial rather than a second site builder:
+// a warm paper column, a neutral studio, a terminal, a quiet journal and an
+// image-first gallery. Each theme carries the opposite mode as a variant so the
+// reader's Light/Dark/System choice works without turning the author's design
+// into a different site.
 
 import { isHexColor } from './color'
 
@@ -19,6 +20,86 @@ function manifest (data) {
     effects: { texture: 'none', motion: 'none', ambient: 'none' },
     ...data
   }
+}
+
+const PAPER_DARK = {
+  bg: '#171412',
+  surface: '#201b18',
+  surfaceAlt: '#2a231f',
+  text: '#f2ece2',
+  muted: '#b8ada0',
+  border: '#3a322b',
+  primary: '#e0a06a',
+  secondary: '#8fb3a3',
+  accent: '#c79ae0',
+  positive: '#8fd19e',
+  negative: '#f08a8a',
+  warning: '#e0b45a',
+  info: '#8fc7e0'
+}
+
+const STUDIO_LIGHT = {
+  bg: '#f6f8fa',
+  surface: '#ffffff',
+  surfaceAlt: '#eef2f5',
+  text: '#1f2328',
+  muted: '#59636e',
+  border: '#d0d7de',
+  primary: '#9a6700',
+  secondary: '#0969da',
+  accent: '#8250df',
+  positive: '#1a7f37',
+  negative: '#cf222e',
+  warning: '#9a6700',
+  info: '#0969da'
+}
+
+const TERMINAL_LIGHT = {
+  bg: '#f2fbf4',
+  surface: '#ffffff',
+  surfaceAlt: '#e6f5e9',
+  text: '#10281a',
+  muted: '#4f6b58',
+  border: '#c8dccd',
+  primary: '#137a3a',
+  secondary: '#0b6f8a',
+  accent: '#8a5a00',
+  positive: '#137a3a',
+  negative: '#a32a2a',
+  warning: '#8a5a00',
+  info: '#0b6f8a'
+}
+
+const JOURNAL_DARK = {
+  bg: '#181512',
+  surface: '#221d18',
+  surfaceAlt: '#2b241e',
+  text: '#f3ede2',
+  muted: '#b9ad9b',
+  border: '#3d342b',
+  primary: '#d9a36d',
+  secondary: '#9dbfae',
+  accent: '#c9a0e0',
+  positive: '#9bd3a8',
+  negative: '#ec9a9a',
+  warning: '#dfb45f',
+  info: '#9ac9df'
+}
+
+const GALLERY_LIGHT = {
+  bg: '#f8f9fa',
+  surface: '#ffffff',
+  surfaceAlt: '#eef0f3',
+  text: '#1a1d21',
+  muted: '#5c6470',
+  border: '#d7dce2',
+  primary: '#d6336c',
+  secondary: '#1c7ed6',
+  accent: '#6741d9',
+  positive: '#2f9e44',
+  negative: '#c92a2a',
+  warning: '#a97400',
+  info: '#1c7ed6'
 }
 
 export const BLOG_THEMES = [
@@ -44,7 +125,8 @@ export const BLOG_THEMES = [
       negative: '#a32a2a',
       warning: '#8a5a00',
       info: '#1f5f7a'
-    }
+    },
+    variants: { dark: { tokens: PAPER_DARK } }
   }),
   manifest({
     id: 'studio',
@@ -69,7 +151,8 @@ export const BLOG_THEMES = [
       negative: '#f85149',
       warning: '#d29922',
       info: '#58a6ff'
-    }
+    },
+    variants: { light: { tokens: STUDIO_LIGHT } }
   }),
   manifest({
     id: 'terminal',
@@ -94,7 +177,60 @@ export const BLOG_THEMES = [
       negative: '#ff6b6b',
       warning: '#ffd166',
       info: '#6ee7ff'
-    }
+    },
+    variants: { light: { tokens: TERMINAL_LIGHT } }
+  }),
+  manifest({
+    id: 'journal',
+    name: 'Journal',
+    mood: 'Quiet, narrow, long-form notes',
+    tags: ['light', 'serif', 'calm'],
+    mode: 'light',
+    description: 'A warm off-white column with a muted brown accent.',
+    type: { body: 'serif', display: 'serif', mono: 'mono' },
+    shape: { radius: 'soft', border: 'hairline', shadow: 'soft' },
+    tokens: {
+      bg: '#f7f4ee',
+      surface: '#fffdf8',
+      surfaceAlt: '#f0ebe1',
+      text: '#26221d',
+      muted: '#625a50',
+      border: '#ddd3c4',
+      primary: '#6b4f2a',
+      secondary: '#3f6654',
+      accent: '#7a3d8f',
+      positive: '#2f6b3a',
+      negative: '#a32a2a',
+      warning: '#8a5a00',
+      info: '#1f5f7a'
+    },
+    variants: { dark: { tokens: JOURNAL_DARK } }
+  }),
+  manifest({
+    id: 'gallery',
+    name: 'Gallery',
+    mood: 'Image-first, dark and visual',
+    tags: ['dark', 'sans', 'visual'],
+    mode: 'dark',
+    description: 'Deep charcoal, crisp type and a vivid rose accent.',
+    type: { body: 'sans', display: 'sans', mono: 'mono' },
+    shape: { radius: 'round', border: 'none', shadow: 'crisp' },
+    tokens: {
+      bg: '#0b0c0f',
+      surface: '#14161b',
+      surfaceAlt: '#1c2027',
+      text: '#f1f3f5',
+      muted: '#a0a8b3',
+      border: '#2a2f37',
+      primary: '#ff6b6b',
+      secondary: '#4dabf7',
+      accent: '#d0bfff',
+      positive: '#51cf66',
+      negative: '#ff6b6b',
+      warning: '#fcc419',
+      info: '#4dabf7'
+    },
+    variants: { light: { tokens: GALLERY_LIGHT } }
   })
 ]
 
@@ -103,7 +239,9 @@ export const DEFAULT_BLOG_THEME_ID = 'paper'
 const OG_IMAGES = {
   paper: '/statics/og-blog-paper.png',
   studio: '/statics/og-blog-studio.png',
-  terminal: '/statics/og-blog-terminal.png'
+  terminal: '/statics/og-blog-terminal.png',
+  journal: '/statics/og-blog-journal.png',
+  gallery: '/statics/og-blog-gallery.png'
 }
 
 /** A deterministic 1200×630 social card for a blog without a cover image. */
@@ -122,15 +260,27 @@ export function blogThemeOptions () {
   return BLOG_THEMES.map(theme => ({ label: theme.name, value: theme.id, caption: theme.mood }))
 }
 
-/** Apply an author-chosen accent without accepting arbitrary CSS. */
+/** Apply an author-chosen accent to every variant without accepting CSS. */
 export function withBlogAccent (theme, accent) {
   if (!theme || !isHexColor(accent)) return theme
+  const primary = String(accent).toLowerCase()
+  const variants = {}
+  for (const [mode, variant] of Object.entries(theme.variants || {})) {
+    variants[mode] = {
+      ...variant,
+      tokens: {
+        ...variant.tokens,
+        primary
+      }
+    }
+  }
   return {
     ...theme,
     tokens: {
       ...theme.tokens,
-      primary: String(accent).toLowerCase()
-    }
+      primary
+    },
+    ...(Object.keys(variants).length ? { variants } : {})
   }
 }
 

@@ -1,8 +1,9 @@
 <template>
   <div
     class="blog-shell"
-    :class="mode === 'light' ? 'blog-shell--light' : 'blog-shell--dark'"
+    :class="['blog-shell--' + mode, 'blog-shell--' + blog.width]"
     :style="themeStyle"
+    :data-blog-motion="blog.motion"
   >
     <a class="blog-skip" href="#blog-main">Skip to content</a>
 
@@ -20,17 +21,33 @@
           <router-link to="/" exact-active-class="is-active">Blog</router-link>
           <router-link to="/about" active-class="is-active">About</router-link>
           <router-link to="/contact" active-class="is-active">Contact</router-link>
+          <template v-for="link in blog.navLinks" :key="link.href">
+            <router-link v-if="!isExternal(link.href)" :to="link.href">{{ link.label }}</router-link>
+            <a v-else :href="link.href" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
+          </template>
           <a :href="rssUrl" type="application/rss+xml">RSS</a>
         </nav>
 
         <div class="blog-header__actions">
+          <label v-if="blog.modeSwitchable" class="blog-mode">
+            <span class="blog-mode__label">Reading mode</span>
+            <select
+              class="blog-mode__select"
+              :value="blog.modePreference"
+              @change="blog.setModePreference($event.target.value)"
+            >
+              <option value="auto">Auto</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
           <a v-if="canEdit" :href="settingsUrl" class="blog-action">Settings</a>
           <a :href="apexUrl" class="blog-action blog-action--quiet">Banksia</a>
         </div>
       </div>
     </header>
 
-    <main id="blog-main" class="blog-main">
+    <main id="blog-main" class="blog-main" :class="'blog-main--' + blog.width">
       <div v-if="blog.error" class="blog-state" role="alert">
         <h1 class="blog-state__title">Blog not available</h1>
         <p>{{ blog.error }}</p>
@@ -87,6 +104,17 @@ html[data-blog] body {
 
 .blog-shell--light { color-scheme: light; }
 .blog-shell--dark { color-scheme: dark; }
+.blog-shell--narrow { --blog-width: 720px; }
+.blog-shell--comfortable { --blog-width: 1080px; }
+.blog-shell--wide { --blog-width: 1320px; }
+
+.blog-shell[data-blog-motion="reduced"] *,
+.blog-shell[data-blog-motion="reduced"] *::before,
+.blog-shell[data-blog-motion="reduced"] *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
 
 .blog-skip {
   position: absolute;
@@ -114,7 +142,7 @@ html[data-blog] body {
 }
 
 .blog-header__inner {
-  max-width: 1080px;
+  max-width: var(--blog-width, 1080px);
   margin: 0 auto;
   padding: 0.8rem 1.25rem;
   display: flex;
@@ -192,15 +220,37 @@ html[data-blog] body {
   gap: 0.75rem;
 }
 
+.blog-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--c-text-muted);
+  font-size: 0.74rem;
+}
+
+.blog-mode__select {
+  padding: 0.16rem 0.3rem;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  font: inherit;
+  cursor: pointer;
+}
+
 .blog-action--quiet {
   color: var(--c-text-muted);
 }
 
 .blog-main {
-  max-width: 1080px;
+  max-width: var(--blog-width, 1080px);
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
 }
+
+.blog-main--narrow { max-width: 720px; }
+.blog-main--comfortable { max-width: 1080px; }
+.blog-main--wide { max-width: 1320px; }
 
 .blog-state {
   max-width: 640px;
@@ -245,7 +295,7 @@ html[data-blog] body {
 }
 
 .blog-footer__inner {
-  max-width: 1080px;
+  max-width: var(--blog-width, 1080px);
   margin: 0 auto;
   padding: 1.5rem 1.25rem;
   display: flex;
@@ -346,6 +396,11 @@ export default {
         document.documentElement.dataset.blog = 'true'
         document.documentElement.style.setProperty('color-scheme', value === 'light' ? 'light' : 'dark')
       }
+    }
+  },
+  methods: {
+    isExternal (href) {
+      return /^https?:\/\//i.test(String(href || ''))
     }
   },
   created () {

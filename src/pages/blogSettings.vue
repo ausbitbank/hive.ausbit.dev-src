@@ -147,6 +147,19 @@
                   :disable="!canEdit"
                 />
               </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.mode"
+                  :options="modeOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Default reading mode"
+                  :disable="!canEdit"
+                  hint="Readers can switch Light or Dark on their device."
+                />
+              </div>
               <div class="blog-settings__field blog-settings__accent">
                 <label class="blog-settings__label" for="blog-accent">Accent</label>
                 <input
@@ -166,6 +179,76 @@
                   class="blog-settings__accent-input"
                 />
                 <q-btn v-if="form.accent" flat dense no-caps label="Clear" @click="form.accent = ''" />
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
+              <h2 class="blog-settings__section-title">Layout</h2>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.layout"
+                  :options="layoutOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Archive layout"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.width"
+                  :options="widthOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Page width"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.typography"
+                  :options="typographyOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Typography"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.hero"
+                  :options="heroOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Hero"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-input
+                  v-model="form.navText"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  label="Navigation links"
+                  :disable="!canEdit"
+                  hint="One per line: Label | /path or https://… (up to 6)."
+                />
+              </div>
+              <div class="blog-settings__toggles">
+                <q-toggle v-model="form.showTags" label="Show tags on cards" :disable="!canEdit" />
+                <q-toggle v-model="form.showReadingTime" label="Show reading time" :disable="!canEdit" />
               </div>
             </q-card-section>
           </q-card>
@@ -573,6 +656,16 @@ function splitList (value) {
     .filter(Boolean)
 }
 
+function parseNavLinks (value) {
+  return String(value || '')
+    .split('\n')
+    .map(line => {
+      const [label, ...rest] = line.split('|')
+      return { label: String(label || '').trim(), href: rest.join('|').trim() }
+    })
+    .filter(item => item.label && item.href)
+}
+
 export default {
   name: 'BlogSettings',
   components: { ImageUploadButton },
@@ -598,6 +691,14 @@ export default {
         description: '',
         theme: 'auto',
         accent: '',
+        mode: 'auto',
+        layout: 'grid',
+        width: 'comfortable',
+        typography: 'theme',
+        hero: 'cover',
+        showTags: true,
+        showReadingTime: true,
+        navText: '',
         pinnedText: '',
         authorsText: '',
         community: '',
@@ -643,6 +744,41 @@ export default {
       return [
         { label: 'Match my profile skin', value: 'auto', caption: 'Use the theme published to your profile' },
         ...blogThemeOptions()
+      ]
+    },
+    modeOptions () {
+      return [
+        { label: 'Follow the reader’s system', value: 'auto' },
+        { label: 'Light', value: 'light' },
+        { label: 'Dark', value: 'dark' }
+      ]
+    },
+    layoutOptions () {
+      return [
+        { label: 'Grid cards', value: 'grid' },
+        { label: 'List', value: 'list' },
+        { label: 'Magazine', value: 'magazine' }
+      ]
+    },
+    widthOptions () {
+      return [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Comfortable', value: 'comfortable' },
+        { label: 'Wide', value: 'wide' }
+      ]
+    },
+    typographyOptions () {
+      return [
+        { label: 'Match the theme', value: 'theme' },
+        { label: 'Serif', value: 'serif' },
+        { label: 'Sans', value: 'sans' },
+        { label: 'Monospace', value: 'mono' }
+      ]
+    },
+    heroOptions () {
+      return [
+        { label: 'Cover image', value: 'cover' },
+        { label: 'Minimal', value: 'minimal' }
       ]
     },
     metadataBytes () {
@@ -715,6 +851,14 @@ export default {
         description: settings.description || '',
         theme: settings.theme || 'auto',
         accent: settings.accent || '',
+        mode: settings.mode || 'auto',
+        layout: settings.layout || 'grid',
+        width: settings.width || 'comfortable',
+        typography: settings.typography || 'theme',
+        hero: settings.hero || 'cover',
+        showTags: settings.showTags !== false,
+        showReadingTime: settings.showReadingTime !== false,
+        navText: (settings.nav || []).map(link => link.label + ' | ' + link.href).join('\n'),
         pinnedText: (settings.pinned || []).join(', '),
         authorsText: (settings.authors || []).join(', '),
         community: settings.community || '',
@@ -732,6 +876,14 @@ export default {
         description: this.form.description,
         theme: this.form.theme,
         accent: this.form.accent,
+        mode: this.form.mode,
+        layout: this.form.layout,
+        width: this.form.width,
+        typography: this.form.typography,
+        hero: this.form.hero,
+        showTags: this.form.showTags,
+        showReadingTime: this.form.showReadingTime,
+        nav: parseNavLinks(this.form.navText),
         pinned: splitList(this.form.pinnedText),
         authors: splitList(this.form.authorsText),
         community: this.form.community,

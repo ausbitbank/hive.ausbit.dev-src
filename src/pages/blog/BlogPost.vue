@@ -1,5 +1,5 @@
 <template>
-  <article v-if="post" class="blog-post">
+  <article v-if="post" class="blog-post" :class="'blog-post--' + blog.width">
     <header class="blog-post__head">
       <p class="blog-post__kicker">
         <router-link to="/">← {{ blogTitle }}</router-link>
@@ -13,8 +13,10 @@
           <a :href="apexAuthorUrl" class="blog-post__author">@{{ post.author }}</a>
           <span class="blog-post__meta">
             <time :datetime="post.created">{{ dateLabel }}</time>
-            <span aria-hidden="true"> · </span>
-            {{ readingMinutes }} min read
+            <template v-if="showReadingTime">
+              <span aria-hidden="true"> · </span>
+              {{ readingMinutes }} min read
+            </template>
           </span>
         </div>
       </div>
@@ -25,7 +27,7 @@
     <render :input="post.body" class="postbody blog-post__body" />
 
     <footer class="blog-post__foot">
-      <ul v-if="tags.length" class="blog-post__tags" aria-label="Tags">
+      <ul v-if="showTags && tags.length" class="blog-post__tags" aria-label="Tags">
         <li v-for="tag in tags" :key="tag">#{{ tag }}</li>
       </ul>
 
@@ -57,6 +59,10 @@
   max-width: 780px;
   margin: 0 auto;
 }
+
+.blog-post--narrow { max-width: 680px; }
+.blog-post--comfortable { max-width: 780px; }
+.blog-post--wide { max-width: 920px; }
 
 .blog-post__head {
   margin-bottom: 1.75rem;
@@ -367,6 +373,12 @@ export default {
     },
     showPayout () {
       return Boolean(this.blog.settings && this.blog.settings.showPayout)
+    },
+    showTags () {
+      return this.blog.showTags
+    },
+    showReadingTime () {
+      return this.blog.showReadingTime
     },
     authorAvatar () {
       return this.post ? 'https://images.hive.blog/u/' + this.post.author + '/avatar' : ''

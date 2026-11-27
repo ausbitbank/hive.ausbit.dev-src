@@ -27,6 +27,11 @@ describe('blog social card model', () => {
     expect(model.title).toBe('@alice')
   })
 
+  it('supports the journal and gallery themes', () => {
+    expect(buildBlogSocialCardModel({ theme: 'journal' }).fonts.title).toContain('Georgia')
+    expect(buildBlogSocialCardModel({ theme: 'gallery' }).fonts.title).toContain('Roboto')
+  })
+
   it('applies a valid accent and ignores arbitrary CSS', () => {
     expect(buildBlogSocialCardModel({ accent: '#123abc' }).accent).toBe('#123abc')
     expect(buildBlogSocialCardModel({ accent: 'red' }).accent).toBe('#8a3b12')

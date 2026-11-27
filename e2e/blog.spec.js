@@ -29,6 +29,29 @@ const ACCOUNT = {
   })
 }
 
+function accountWithBlog (blog) {
+  return {
+    ...ACCOUNT,
+    posting_json_metadata: JSON.stringify({
+      profile: {
+        name: 'Alice',
+        about: 'Writer and photographer.',
+        profile_image: 'https://images.hive.blog/u/alice/avatar'
+      },
+      'banksia.io': {
+        blog: {
+          version: 1,
+          claimed: true,
+          title: 'Alice writes',
+          description: 'Notes from the garden.',
+          theme: 'paper',
+          ...blog
+        }
+      }
+    })
+  }
+}
+
 const PROFILE = {
   name: 'alice',
   metadata: {
@@ -73,7 +96,7 @@ const GLOBAL_PROPS = {
   hbd_interest_rate: 0
 }
 
-async function mockHive (page) {
+async function mockHive (page, { account = ACCOUNT, profile = PROFILE } = {}) {
   await page.route('https://api.hive.blog/**', async route => {
     const request = route.request()
     if (request.method() !== 'POST') return route.continue()
@@ -86,10 +109,10 @@ async function mockHive (page) {
     let result
     switch (body.method) {
       case 'condenser_api.get_accounts':
-        result = [ACCOUNT]
+        result = [account]
         break
       case 'bridge.get_profile':
-        result = PROFILE
+        result = profile
         break
       case 'bridge.get_account_posts':
         result = POSTS
@@ -124,7 +147,7 @@ async function axeAtBothWidths (page, label) {
 test('/blogs landing is accessible', async ({ page }) => {
   await page.goto('/blogs', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.blogs-title')).toBeVisible()
-  await expect(page.locator('.blogs-theme')).toHaveCount(3)
+  await expect(page.locator('.blogs-theme')).toHaveCount(5)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('A blog that is already yours.')
   await axeAtBothWidths(page, '/blogs')
 })
@@ -164,4 +187,32 @@ test('blog host renders a clean, accessible reading page', async ({ page }) => {
   await expect(page.locator('.site-footer')).toHaveCount(0)
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Alice writes')
   await axeAtBothWidths(page, 'blog host')
+})
+
+test('blog host honours layout, width, nav and reader mode', async ({ page }) => {
+  const account = accountWithBlog({
+    mode: 'dark',
+    layout: 'magazine',
+    width: 'narrow',
+    typography: 'serif',
+    hero: 'minimal',
+    showTags: false,
+    showReadingTime: false,
+    nav: [{ label: 'Start here', href: '/about' }]
+  })
+  await mockHive(page, { account })
+  await page.goto('http://alice.localhost:4173/', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.blog-hero__title')).toHaveText('Alice writes')
+  await expect(page.locator('.blog-shell--narrow')).toHaveCount(1)
+  await expect(page.locator('.blog-shell--dark')).toHaveCount(1)
+  await expect(page.locator('.blog-hero__cover')).toHaveCount(0)
+  await expect(page.locator('.blog-card--feature')).toHaveCount(1)
+  await expect(page.locator('.blog-card__tags')).toHaveCount(0)
+  await expect(page.getByText(/min read/)).toHaveCount(0)
+  await expect(page.locator('.blog-nav').getByText('Start here')).toBeVisible()
+
+  // A reader override changes the variant without changing the author's theme.
+  await page.locator('.blog-mode__select').selectOption('light')
+  await expect(page.locator('.blog-shell--light')).toHaveCount(1)
+  await axeAtBothWidths(page, 'customised blog host')
 })

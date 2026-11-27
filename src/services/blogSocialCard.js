@@ -28,6 +28,18 @@ const FONTS = {
     title: '700 66px ui-monospace, SFMono-Regular, Menlo, monospace',
     body: '28px ui-monospace, SFMono-Regular, Menlo, monospace',
     footer: '24px ui-monospace, SFMono-Regular, Menlo, monospace'
+  },
+  journal: {
+    label: '700 24px "Helvetica Neue", Arial, sans-serif',
+    title: '700 88px Georgia, "Times New Roman", serif',
+    body: '30px Georgia, "Times New Roman", serif',
+    footer: '24px ui-monospace, SFMono-Regular, Menlo, monospace'
+  },
+  gallery: {
+    label: '700 24px Roboto, "Helvetica Neue", Arial, sans-serif',
+    title: '700 88px Roboto, "Helvetica Neue", Arial, sans-serif',
+    body: '30px Roboto, "Helvetica Neue", Arial, sans-serif',
+    footer: '24px ui-monospace, SFMono-Regular, Menlo, monospace'
   }
 }
 
