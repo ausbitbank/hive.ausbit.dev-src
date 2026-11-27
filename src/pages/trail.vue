@@ -4,10 +4,10 @@
     <recent-voted-posts-carousel :account="account" />
   </q-page>
 </template>
-<style>
-a:link { color: var(--c-link); font-weight: bold; text-decoration: none; }
-a:visited { color: var(--c-accent); }
-:target { background-color: color-mix(in srgb, var(--c-warning) 24%, transparent); }
+<style scoped>
+:deep(a:link) { color: var(--c-link); font-weight: bold; text-decoration: none; }
+:deep(a:visited) { color: var(--c-accent); }
+:deep(:target) { background-color: color-mix(in srgb, var(--c-warning) 24%, transparent); }
 </style>
 <script>
 import recentVotedPostsCarousel from 'components/recentVotedPostsCarousel.vue'
