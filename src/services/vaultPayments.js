@@ -34,7 +34,7 @@ const EXPIRING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 export const VAULT_CANCEL_MATCHING = Object.freeze({
   rule: 'hf28',
   tested: false,
-  note: 'Test the exact HF28 matching rule on Hive testnet before shipping the cancel button: with multiple recurrent transfers to the same recipient, matching by recipient, amount, memo and recurrence must be confirmed.'
+  note: 'The UI only offers a cancel when find_recurrent_transfers returns an open plan and carries its pair_id into extensions. Multi-pair cancellation still needs a testnet confirmation before promising it.'
 })
 
 function isPlainObject (value) {
@@ -245,7 +245,8 @@ export function buildCancelOperation ({
   amount = '0.000 HBD',
   recurrence = VAULT_DEFAULT_RECURRENCE,
   executions = 2,
-  memo
+  memo,
+  pairId = 0
 } = {}) {
   const parties = transferParties(from, to)
   if (!parties) return null
@@ -255,6 +256,12 @@ export function buildCancelOperation ({
   const count = cleanExecutions(executions)
   if (hours === null || count === null) return null
   if (!validMemo(memo)) return null
+  // HF28 matches a cancel by (from, to, pair_id). A non-zero pair_id must be
+  // carried back or the chain treats the zero amount as a failed create.
+  const pair = Math.trunc(Number(pairId))
+  const extensions = Number.isInteger(pair) && pair > 0 && pair <= 255
+    ? [{ type: 1, value: { pair_id: pair } }]
+    : []
   const operation = ['recurrent_transfer', {
     from: parties.sender,
     to: parties.recipient,
@@ -262,7 +269,7 @@ export function buildCancelOperation ({
     memo,
     recurrence: hours,
     executions: count,
-    extensions: []
+    extensions
   }]
   Object.defineProperty(operation, 'matching', {
     value: { ...VAULT_CANCEL_MATCHING },

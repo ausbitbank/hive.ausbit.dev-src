@@ -190,6 +190,16 @@ describe('operation builders', () => {
     expect(VAULT_CANCEL_MATCHING.note).toContain('testnet')
   })
 
+  it('carries a non-zero pair_id so HF28 finds the open plan', () => {
+    const operation = buildCancelOperation({
+      from: 'bob',
+      to: 'alice',
+      memo: MEMO,
+      pairId: 77
+    })
+    expect(operation[1].extensions).toEqual([{ type: 1, value: { pair_id: 77 } }])
+  })
+
   it('rejects a non-zero cancel and an invalid recurrence', () => {
     expect(buildCancelOperation({ from: 'bob', to: 'alice', amount: '5.000 HBD', memo: MEMO })).toBeNull()
     expect(buildCancelOperation({ from: 'bob', to: 'alice', memo: MEMO, recurrence: 12 })).toBeNull()

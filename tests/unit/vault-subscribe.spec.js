@@ -5,6 +5,7 @@ import {
   parseSubscribeQuery,
   subscribePlanFromPost
 } from '../../src/pages/subscribe.vue'
+import { readerPlans } from '../../src/pages/subscriptions.vue'
 import { generateReaderKeyPair } from '../../src/services/vaultCrypto'
 import {
   buildCancelOperation,
@@ -206,6 +207,45 @@ describe('subscribe payment operations', () => {
     expect(operation.matching.tested).toBe(false)
     expect(operation.matching.note).toMatch(/testnet/i)
     expect(VAULT_CANCEL_MATCHING.tested).toBe(false)
+  })
+
+  it('only marks a plan cancellable when find_recurrent_transfers has an open row', async () => {
+    const reader = await generateReaderKeyPair()
+    const memo = buildVaultMemo({
+      product: 'alice/membership',
+      plan: 'member',
+      readerKey: reader.publicKeyB64,
+      sub: SUB
+    })
+    const history = [[1, {
+      trx_id: 'pay-fill',
+      timestamp: '2026-11-24T10:00:00',
+      op: ['fill_recurrent_transfer', {
+        from: 'bob',
+        to: 'alice',
+        amount: '5.000 HBD',
+        memo,
+        remaining_executions: 11
+      }]
+    }]]
+    const now = Date.parse('2026-11-27T10:00:00Z')
+
+    const noOpen = readerPlans(history, [], 'bob', now)
+    expect(noOpen[0]).toMatchObject({ status: 'active', hasOpenTransfer: false, pairId: 0 })
+
+    const open = [{
+      id: 501,
+      trigger_date: '2026-12-24T10:00:00',
+      from: 'bob',
+      to: 'alice',
+      amount: '5.000 HBD',
+      memo,
+      recurrence: 730,
+      remaining_executions: 11,
+      pair_id: 77
+    }]
+    const withOpen = readerPlans(history, open, 'bob', now)
+    expect(withOpen[0]).toMatchObject({ status: 'active', hasOpenTransfer: true, pairId: 77 })
   })
 
   it('builds the reader registry operation for a second device', async () => {

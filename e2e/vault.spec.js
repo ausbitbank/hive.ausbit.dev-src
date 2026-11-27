@@ -579,7 +579,7 @@ test('creator dashboard derives subscribers, revenue and masked keys', async ({ 
   await axeAtBothWidths(page, 'vault dashboard')
 })
 
-test('reader subscriptions show the plan, next payment and the HF28 cancel caveat', async ({ page }) => {
+test('reader subscriptions show the plan, next payment and an open-transfer cancel', async ({ page }) => {
   const fixture = await makeVaultFixture()
   const state = makeState(fixture)
   const reader = await readerKeyWithThumbprint()
@@ -617,11 +617,35 @@ test('reader subscriptions show the plan, next payment and the HF28 cancel cavea
   await axeAtBothWidths(page, 'subscriptions')
 
   await page.getByRole('button', { name: 'Cancel' }).click()
-  const dialog = page.getByRole('dialog').filter({ hasText: 'HF28' })
+  const dialog = page.getByRole('dialog').filter({ hasText: 'zero-amount' })
   await expect(dialog).toBeVisible()
-  await expect(dialog).toContainText('must be verified on Hive testnet')
+  await expect(dialog).toContainText('Access continues')
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(dialog).toBeHidden()
+})
+
+test('a plan with access but no open transfer hides the cancel button', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  const reader = await readerKeyWithThumbprint()
+  const row = vaultHistoryRow({
+    index: 1,
+    trxId: 'pay-fill',
+    readerKey: reader.readerKey,
+    sub: 'fillreader0000001',
+    timestamp: '2026-11-24T10:00:00'
+  })
+  state.histories.bob = [row]
+  state.recurrent.bob = []
+  loginAs(page, 'bob', 'keychain')
+  await mockHive(page, state)
+
+  await page.goto('/subscriptions', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.subs-item-title')).toContainText(/membership/i)
+  await expect(page.locator('.subs-pill')).toHaveText('Active')
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0)
+  await expect(page.locator('.subs-item')).toContainText('No active recurring transfer to cancel')
+  await axeAtBothWidths(page, 'subscriptions without open transfer')
 })
 
 test('composer exposes the membership marker, lock controls and size meter', async ({ page }) => {

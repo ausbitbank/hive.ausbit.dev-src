@@ -92,13 +92,17 @@
 
                   <div class="subs-actions">
                     <q-btn
-                      v-if="plan.status === 'active' && !readonly"
+                      v-if="plan.status === 'active' && plan.hasOpenTransfer && !readonly"
                       outline
                       no-caps
                       color="warning"
                       label="Cancel"
                       @click="confirmCancel(plan)"
                     />
+                    <p v-if="plan.status === 'active' && !plan.hasOpenTransfer" class="subs-muted">
+                      No active recurring transfer to cancel. Access continues until
+                      {{ plan.accessUntil ? shortDate(plan.accessUntil) : 'the paid period ends' }}.
+                    </p>
                     <q-btn flat no-caps color="primary" label="Restore access" :to="'/@' + plan.author + '/' + plan.permlink" />
                   </div>
                 </q-card-section>
@@ -573,7 +577,9 @@ export function readerPlans (history, openTransfers, account, now = Date.now()) 
       lastPaymentMs: 0,
       lastTxid: '',
       canceledAt: 0,
-      oneTime: false
+      oneTime: false,
+      pairId: 0,
+      hasOpenTransfer: false
     }
     if (name === 'recurrent_transfer') {
       current.memo = body.memo
@@ -604,6 +610,8 @@ export function readerPlans (history, openTransfers, account, now = Date.now()) 
       plan.recurrence = Number(openRow.recurrence) || plan.recurrence
       plan.memo = openRow.memo || plan.memo
       plan.amount = openRow.amount || plan.amount
+      plan.pairId = Number.isInteger(Number(openRow.pair_id)) ? Number(openRow.pair_id) : 0
+      plan.hasOpenTransfer = true
     }
     const recurrence = plan.recurrence || 730
     const next = openRow && typeof openRow.trigger_date === 'string' && openRow.trigger_date
@@ -756,9 +764,9 @@ export default {
       if (this.readonly) return
       this.$q.dialog({
         title: 'Cancel @' + plan.author + ' membership?',
-        message: 'This queues a zero-amount recurrent_transfer that cancels the matching plan. ' +
-          'The exact HF28 matching rule must be verified on Hive testnet before this ships. ' +
-          'Access continues until the current grant expires on ' +
+        message: 'This queues a zero-amount recurrent_transfer for the open plan' +
+          (plan.pairId ? ' (pair ' + plan.pairId + ')' : '') +
+          '. Access continues until the current grant expires on ' +
           (plan.accessUntil ? this.shortDate(plan.accessUntil) : 'the end of the paid period') + '.',
         cancel: true,
         persistent: true,
@@ -767,13 +775,18 @@ export default {
     },
     queueCancel (plan) {
       this.actionError = ''
+      if (!plan || !plan.hasOpenTransfer) {
+        this.actionError = 'There is no open recurring transfer to cancel. Access ends when the paid period expires.'
+        return
+      }
       const operation = buildCancelOperation({
         from: this.subject,
         to: plan.author,
         amount: '0.000 HBD',
         recurrence: plan.recurrence || 730,
         executions: 2,
-        memo: plan.memo
+        memo: plan.memo,
+        pairId: plan.pairId
       })
       if (!operation) {
         this.actionError = 'The cancel operation could not be built. Check the original payment memo.'
