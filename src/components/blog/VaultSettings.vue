@@ -279,7 +279,7 @@
 
 .vault-settings__error {
   margin: 0.5rem 0 0;
-  color: var(--c-negative, #b00020);
+  color: var(--c-warning);
   font-size: 0.84rem;
 }
 
@@ -305,9 +305,9 @@ import {
 } from 'src/services/vaultKeys'
 import {
   buildVaultContainerOperation,
-  buildVaultProductOperation,
-  vaultProductPath
+  buildVaultProductOperation
 } from 'src/services/vaultProduct'
+import { setCreatorVaultSession } from 'src/services/vaultSession'
 
 export default {
   name: 'VaultSettings',
@@ -378,6 +378,7 @@ export default {
           passphrase: this.passphrase
         })
         await saveCreatorVault(this.accountName, vault, this.passphrase)
+        setCreatorVaultSession(this.accountName, vault)
         this.message = 'Vault generated and encrypted on this device. Export a backup now.'
         this.patch({ enabled: true })
         this.$emit('save')
@@ -430,6 +431,7 @@ export default {
         const text = await file.text()
         const vault = await importCreatorVault(text, this.passphrase)
         await saveCreatorVault(this.accountName, vault, this.passphrase)
+        setCreatorVaultSession(this.accountName, vault)
         this.message = 'Vault imported and re-encrypted on this device.'
       } catch (err) {
         this.error = err?.message || 'That vault file could not be imported.'
@@ -449,10 +451,11 @@ export default {
           settings,
           permlink: 'membership'
         })
+        if (!operation) throw new Error('Set a valid price before publishing the product.')
         this.$emit('queue', operation)
         this.patch({
           enabled: true,
-          product: vaultProductPath(this.accountName, 'membership')
+          product: this.accountName + '/membership'
         })
         this.message = 'Membership product queued. Sign it, then save the Vault settings.'
       } catch (err) {
@@ -470,6 +473,7 @@ export default {
           account: this.accountName,
           container: this.modelValue.container
         })
+        if (!operation) throw new Error('The container permlink is not valid.')
         this.$emit('queue', operation)
         this.message = 'Grant container queued. Sign it, then save the Vault settings.'
       } catch (err) {
