@@ -228,7 +228,7 @@ Consequences for the UI:
 | A | Lightning address + tip jar | profile, `/@user/tip`, tip dialog | High | Low | Low | 1 |
 | B | Receive-sats dialog (invoice, QR, status) | wallet, tip, POS | High | Low–Med | Low | 1 |
 | C | Zap button on posts/shorts | post footer, short form | High | Med | Low–Med | 1–2 |
-| D | Pay invoice with Hive/HBD | wallet, `/lightning/pay` | High | Med | Low | 2 |
+| D | Pay invoice with Hive/HBD | wallet, `/lightning?pay=…` | High | Med | Low | 2 |
 | E | Keepsats balance + actions | wallet | Med–High | High | High (custody) | 3 |
 | F | POS / merchant page | `/@user/pos`, `/tools/pos` | Med–High | Med | Low–Med | 3–4 |
 | G | Wallet activity + tax classification | wallet, `/tax` | High | Low | Low | 1–2 |

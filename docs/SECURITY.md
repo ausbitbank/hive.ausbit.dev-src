@@ -119,10 +119,11 @@ Notes:
   says so.
 - `/orders` reads purchases, sales and active subscriptions from public Hive
   account history. Cancelling a subscription queues the matching
-  `recurrent_transfer` with amount 0 for the same `from`/`to` and `executions:
-  2`; it is reviewed in the wallet like any other active-key operation. No
-  order, cart or subscription data is copied to a Banksia server, and the blog
-  host still never holds keys or broadcasts.
+  `recurrent_transfer` with amount 0 for the same `from`/`to`, the plan's
+  non-zero `pair_id` extension when one is available, and `executions: 2`; it
+  is reviewed in the wallet like any other active-key operation. No order, cart
+  or subscription data is copied to a Banksia server, and the blog host still
+  never holds keys or broadcasts.
 - Product titles, descriptions, tags and seller names are rendered as text.
   Product/Offer JSON-LD uses the honest Hive ticker for `priceCurrency`; HBD is
   not ISO 4217 and is not mislabelled as USD.
@@ -227,8 +228,10 @@ Reader-side order is fixed:
    `vault-<period>-<seq>`), cached in memory for five minutes.
 4. Verify the bulletin signature (canonical JSON, posting key) and recompute the
    `keyringHash` from the received keyring. An inbound `keyringHash` is never
-   trusted. The self-signed signer must equal the blog account; a delegated
-   bulletin is rejected until certificate verification ships.
+   trusted. The self-signed signer must equal the blog account. The base path
+   rejects a delegated bulletin; a caller that opts into delegation accepts one
+   only when the creator's posted relay certificate verifies and the delegation
+   matches its delegate account, delegate key and certificate hash.
 5. Check `blog`, `period`, `rkt` and `expires` **before** any decryption.
 6. Find the entry whose `rkt` matches the reader's thumbprint, unwrap `K_ring`
    with P-256 ECDH + HKDF-SHA256 + AES-GCM, open the sealed keyring, select
@@ -246,10 +249,12 @@ the one-time window. The dashboard derives one subscriber row per reader key
 from the newest valid payment and skips the creator's own payments.
 
 **Signer binding.** `verifyBulletin` requires the self-signed `signer` to equal
-`bulletin.blog`, rejects a non-null `delegation`, and the reply fallback only
-accepts comments authored by the blog account. A third party cannot shadow the
-creator's bulletin with a higher sequence. Delegated signing is reserved for a
-later schema and needs a verified certificate, not a self-asserted `signer`.
+`bulletin.blog` and rejects a non-null `delegation` unless delegation is
+enabled. The delegated path verifies the creator's relay certificate, the
+delegate account and key, the certificate hash and the signature before trusting
+the bulletin. The reply fallback only accepts comments authored by the blog
+account, so a third party cannot shadow the creator's bulletin with a higher
+sequence.
 
 ### Content binding
 
@@ -301,15 +306,20 @@ later schema and needs a verified certificate, not a self-asserted `signer`.
   passphrase-wrapped recovery file or asks the creator to re-issue.
 - **Self-sovereign gap:** the creator must be online to issue a grant. A reader
   can pay while the creator is offline and will wait; the subscribe dialog says
-  so, the page polls for two minutes, and cancellation is available. There is no
-  relay, delegated signer or automatic issuance in W89.
-- Grant issuance and the reader manager read at most the most recent 1,000
-  account-history rows. Older subscribers are not discovered until pagination
-  or an index is added.
+  so, the page polls for two minutes, and cancellation is available. The base
+  W89 flow has no relay or automatic issuance; the optional W90 relay companion
+  in [`integrations/vault-relay.md`](integrations/vault-relay.md) adds
+  certificate-gated delegated signing, but it is not required for the base
+  paywall.
+- Grant issuance and the reader manager page backwards through account history
+  in 1,000-row pages up to 10 pages over a rolling window; the payment collector
+  caps at the most recent 3,000 rows. Older subscribers are not discovered until
+  an index is added.
 - Cancellation queues a zero-amount `recurrent_transfer` with the matching
-  recipient, recurrence and memo. This was verified live on 2026-11-27: the plan
-  was removed (`remaining 0`, tx `54f54837…`). The UI still warns because a
-  mismatched memo or recurrence will not cancel the plan; access continues to
+  recipient, recurrence, memo and the plan's non-zero `pair_id` extension when
+  one is available. This was verified live on 2026-11-27: the plan was removed
+  (`remaining 0`, tx `54f54837…`). HF28 matches on `(from, to, pair_id)`; a
+  mismatched memo or recurrence will not cancel a plan, and access continues to
   the grant expiry.
 
 ### CSP and network

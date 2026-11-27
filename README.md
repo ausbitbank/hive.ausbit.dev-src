@@ -342,7 +342,7 @@ The dev server opens at <http://localhost:8080>.
 
 Unit tests live in `tests/unit/`; the Playwright suite lives in `e2e/` and runs
 against a built production bundle served by `scripts/serve-dist.mjs`. The repo
-currently has more than 1,500 unit tests and over 100 functional E2E checks.
+currently has more than 2,100 unit tests and over 100 functional E2E checks.
 
 ```bash
 bun run test
@@ -517,7 +517,7 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current open work and next priorities
 - [`docs/HIVE_OPEN_MARKET.md`](docs/HIVE_OPEN_MARKET.md) — HOM protocol reference, honest limitations, non-goal justifications and the shop roadmap
-- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W93 implementation record
+- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W94 implementation record
 - [`docs/SECURITY.md`](docs/SECURITY.md) — response headers and the client-side key model
 - [`docs/e2e.md`](docs/e2e.md) — Obscura/Chromium suite split and troubleshooting
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis

@@ -10,7 +10,7 @@ principles that constrain it. Delivered work and its verification records live i
 
 - The 2026 revamp is deployed at <https://banksia.io>; the legacy
   <https://hive.ausbit.dev> host serves the same build.
-- The latest shipped slice covers local-first moderation (W71–W78), the
+- The latest shipped slice covers local-first moderation (W73–W78), the
   user-selectable image proxy (W79), post quick look and feed position
   restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
   reporting, vhost hardening, dependency updates, the repaired E2E suite, the
@@ -73,7 +73,7 @@ principles that constrain it. Delivered work and its verification records live i
   signs anything. See
   [`docs/workstreams/W94-vault-pending-badge.md`](workstreams/W94-vault-pending-badge.md).
 - Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
-  `bun run test` green with **2,131 tests across 223 files**, and
+  `bun run test` green with **2,193 tests across 227 files**, and
   `bun run build` succeeded. The four Playwright failures listed in the
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree; the targeted specs pass 8/8. The full
@@ -155,7 +155,7 @@ server-side key custody, which conflicts with the local-first signing model.
 
 ### 3. Optional moderation work — issue #94
 
-W71 and W73–W78 shipped the policy engine, downvote transparency, list
+W73–W78 shipped the policy engine, downvote transparency, list
 subscriptions, the phishing safety floor, community context and the local
 overrides. The following remain explicitly optional:
 
@@ -186,12 +186,13 @@ Records: [`W54`](workstreams/W54-keepsats-onchain-actions.md),
 
 ### 5. Research: the KE accountability ratio — issue #86
 
-Investigate whether the KE accountability ratio — `(author + curation rewards) /
-staked HP` — adds useful signal without becoming another opaque score. The
-research already notes that it ignores witness, proposal and staking income,
-beneficiary splits and legitimate reasons rewards leave the account. This is
-research only: no UI or API commitment until the data source and its failure
-modes are understood.
+W65 shipped an opt-in contextual accountability widget built on the KE ratio —
+`(author + curation rewards) / staked HP`. The open work is narrower than the
+original research question: validate the data source, the history-window
+truncation behaviour and the failure modes before treating the numbers as
+authoritative. The widget already states that the ratio ignores witness,
+proposal and staking income, beneficiary splits and legitimate reasons rewards
+leave the account, and it is explicitly not a score, badge or ranking.
 
 ### 6. CI and delivery hygiene
 
@@ -248,7 +249,6 @@ W85 shipped reader mode, layouts, width, typography, hero style, custom nav,
 tags/reading time and two more themes. Explicitly deferred:
 
 - Side navigation and a per-post layout override.
-- Portfolio/gallery pages and a products/shop page.
 - Localization of interface strings; posts stay in their own language.
 - A full axe pass for every theme and both variants (token contrast is already
   validated for all variants; the E2E covers Paper light/dark).
@@ -260,7 +260,6 @@ Record: [`W85`](workstreams/W85-blog-customisation.md).
 W86 shipped page sections, custom CSS and branding. Explicitly deferred:
 
 - Side navigation and a per-post layout override.
-- Portfolio/gallery and products/shop pages.
 - Custom domains (W84). Premium entitlements are tracked in W89.
 - A full axe matrix for every theme and both variants.
 - Custom JavaScript is a non-goal: the blog stays read-only and signing stays on
