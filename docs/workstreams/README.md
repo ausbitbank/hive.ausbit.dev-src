@@ -38,7 +38,8 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W89**.
+The next free workstream number is **W92**. **W90** remains reserved for the
+optional Vault relay prompt in `docs/prompts/`.
 
 ## Index
 
@@ -145,3 +146,5 @@ The next free workstream number is **W89**.
 | [W86-blog-owner-control](W86-blog-owner-control.md) | Blog sections, custom CSS and branding |
 | [W87-blog-portfolio-shop](W87-blog-portfolio-shop.md) | Blog portfolio and Hive Open Market shop |
 | [W88-shop-refinements](W88-shop-refinements.md) | Shop catalog, product authoring, cart, checkout and orders |
+| [W89-premium-memberships](W89-premium-memberships.md) | Banksia Vault premium memberships |
+| [W91-shop-vault-integration](W91-shop-vault-integration.md) | Shop routing and guards for Vault membership products |

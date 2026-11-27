@@ -260,7 +260,25 @@ buyer clicks Buy / Add to cart
                           └─ wallet review, no auto-broadcast
 ```
 
-### 3.3 Authority and privacy
+### 3.3 Vault membership products in the shop
+
+Banksia Vault memberships are HOM subscription products with an extra public
+reader-key block in the purchase memo. The shop therefore treats them
+differently from ordinary products:
+
+| Surface | Membership behaviour |
+| --- | --- |
+| `/shop` | “Membership” badge; CTA goes to `/subscribe?blog=…&product=…` |
+| Product detail | Benefits, reader-key explanation, no quantity or Add to cart |
+| `/pay` | Generic queue disabled; link to the membership page |
+| `/cart`, `/checkout` | Membership lines are rejected with a reader-key reason |
+| `/orders` | Labeled “Vault membership”; management goes to `/subscriptions` |
+
+The shop only routes. `src/pages/subscribe.vue` owns reader-key generation and
+`buildVaultMemo`; the creator’s signed bulletin remains the entitlement source.
+No Vault crypto, key or grant code is duplicated in the shop.
+
+### 3.4 Authority and privacy
 
 - Blog settings are posting-key `account_update2` metadata.
 - Purchases, subscriptions and cancellations are active-key operations queued
@@ -290,6 +308,7 @@ buyer clicks Buy / Add to cart
 | No versioned HOM RFC | Semantics can drift | Defensive parsing; unknown keys warn | Cross-client incompatibility |
 | Three-decimal money | Cannot express <0.001 HBD | Exact 3-decimal formatting | Micro-payments below the unit |
 | No auto-renewal reminders | Subscription may run longer than intended | `/orders` shows remaining executions; cancel queued | Buyer must act |
+| Vault memo mismatch | A plain transfer cannot unlock members-only content | Shop routes memberships to `/subscribe`; cart/pay guards refuse them | Other clients must implement the same check |
 | Order history bound | Older orders not walked | 3,000 recent rows | Long-tail history |
 | Blog read-only | No one-click buy on the blog host | Apex checkout link with cart items | Extra navigation step |
 
@@ -307,6 +326,7 @@ buyer clicks Buy / Add to cart
 | Subscription overrun | Recurring payments continue longer than intended | Remaining executions and cancel action | Local reminders, clearer pre-purchase cadence |
 | Index poisoning | Spam products flood discovery | Status/tag filters, client moderation | Seller allowlists and opt-in directories |
 | Wallet fatigue | Many prompts cause careless approval | One operation per line, exact preview | Batch signing in one transaction |
+| Membership paid without access | A generic memo pays the creator but cannot be granted | Shop membership routing and checkout guards (W91) | Keep the guard in every new payment surface |
 
 ### 4.2 Things that are not bugs
 

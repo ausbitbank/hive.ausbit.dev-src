@@ -53,6 +53,11 @@ principles that constrain it. Delivered work and its verification records live i
   second reader key, and a real HF28 cancel were all verified on `ausbit.vsc` /
   `ausbitclank`. See
   [`docs/workstreams/W89-premium-memberships.md`](workstreams/W89-premium-memberships.md).
+- W91 makes the shop Vault-aware: membership products are labelled and routed
+  to `/subscribe` so the reader key is attached, `/pay` and cart checkout refuse
+  a generic membership transfer, and `/orders` links membership management to
+  `/subscriptions`. No Vault crypto, metadata or grant code changed. See
+  [`docs/workstreams/W91-shop-vault-integration.md`](workstreams/W91-shop-vault-integration.md).
 - Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
   `bun run test` green with **2,093 tests across 218 files**, `bun run build`
   succeeded, and `bun run perf:check` passed after a documented re-baseline.
@@ -68,7 +73,8 @@ principles that constrain it. Delivered work and its verification records live i
   expose intercepted POST bodies and has pre-existing timeouts in this
   environment, so the network-mocked HOM and Vault E2E run under the full
   Chromium config.
-- The next free workstream number is **W90**.
+- The next free workstream number is **W92**. **W90** remains reserved for the
+  optional self-hosted Vault relay prompt in `docs/prompts/`.
 
 ## Vision
 
