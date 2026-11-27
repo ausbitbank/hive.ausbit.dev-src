@@ -693,7 +693,7 @@ export default {
     async verifyViaUnlockModule (bulletin) {
       const module = await loadOptionalModule(UNLOCK_MODULES, '../services/vaultUnlock.js')
       if (!module || typeof module.verifyBulletin !== 'function') return false
-      const result = await module.verifyBulletin({ bulletin })
+      const result = await module.verifyBulletin({ bulletin, allowDelegation: true })
       return Boolean(result && result.ok)
     },
     async resolveViaUnlockModule () {
@@ -703,7 +703,8 @@ export default {
         const resolved = await module.resolveBulletin({
           blog: this.plan.author,
           settings: { container: this.plan.container },
-          force: true
+          force: true,
+          allowRelay: true
         })
         return resolved && resolved.bulletin ? resolved.bulletin : null
       } catch {

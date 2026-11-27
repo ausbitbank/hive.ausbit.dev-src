@@ -29,11 +29,19 @@ const PRICE_RE = /^\d+\.\d{3} HBD$/
 const BULLETIN_RE = /^vault-\d{4}-(?:0[1-9]|1[0-2])-\d+$/
 const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/
 const VAULT_KEYS = [
-  'v', 'enabled', 'product', 'container', 'bulletin', 'price', 'period',
+  'v', 'enabled', 'product', 'container', 'bulletin', 'relay', 'price', 'period',
   'recurrence', 'executions', 'archive', 'watermark',
   'productTitle', 'productDescription', 'benefits', 'updatedAt'
 ]
 const BULLETIN_KEYS = ['author', 'permlink']
+const RELAY_KEYS = [
+  'v', 'id', 'blog', 'delegate_account', 'delegate', 'scope',
+  'notBefore', 'notAfter', 'nonce', 'sig'
+]
+const RELAY_SCOPE = ['grant', 'bulletin']
+const SIGNATURE_RE = /^[0-9a-fA-F]{130}$/
+const NONCE_RE = /^[A-Za-z0-9_-]{16,128}$/
+const DELEGATE_KEY_RE = /^STM[1-9A-HJ-NP-Za-km-z]{40,60}$/
 
 // A vault object must never carry signing or encryption material. Unknown
 // fields are already rejected, but key-shaped fields and WIF values get their
@@ -216,6 +224,61 @@ function integerField (value, path, { min, max, fallback }, errors) {
   return value
 }
 
+function normalizeRelay (value, errors) {
+  if (value === undefined || value === null) return null
+  if (!isPlainObject(value)) {
+    errors.push('vault.relay must be a delegation certificate object')
+    return null
+  }
+  for (const key of Object.keys(value)) {
+    if (!RELAY_KEYS.includes(key)) errors.push('vault.relay.' + key + ' is not a recognised field')
+  }
+  if (value.v !== 1) errors.push('vault.relay.v must be 1')
+  if (value.id !== 'banksia.vault.delegate') errors.push('vault.relay.id must be banksia.vault.delegate')
+  const blog = typeof value.blog === 'string' ? value.blog.trim().toLowerCase() : ''
+  if (!isValidHiveAccountName(blog)) errors.push('vault.relay.blog must be a valid Hive account')
+  const delegateAccount = typeof value.delegate_account === 'string' ? value.delegate_account.trim().toLowerCase() : ''
+  if (!isValidHiveAccountName(delegateAccount)) errors.push('vault.relay.delegate_account must be a valid Hive account')
+  const delegate = typeof value.delegate === 'string' ? value.delegate.trim() : ''
+  if (!DELEGATE_KEY_RE.test(delegate)) errors.push('vault.relay.delegate must be a Hive posting public key')
+  const scope = Array.isArray(value.scope) ? value.scope.filter(item => typeof item === 'string') : []
+  if (!RELAY_SCOPE.every(item => scope.includes(item))) {
+    errors.push('vault.relay.scope must include grant and bulletin')
+  }
+  let notBefore = ''
+  let notAfter = ''
+  for (const [key, target] of [['notBefore', 'notBefore'], ['notAfter', 'notAfter']]) {
+    const text = typeof value[key] === 'string' ? value[key].trim() : ''
+    if (!ISO_RE.test(text) || !Number.isFinite(Date.parse(text))) {
+      errors.push('vault.relay.' + key + ' must be an ISO timestamp')
+    } else if (target === 'notBefore') {
+      notBefore = new Date(text).toISOString()
+    } else {
+      notAfter = new Date(text).toISOString()
+    }
+  }
+  if (notBefore && notAfter && Date.parse(notAfter) <= Date.parse(notBefore)) {
+    errors.push('vault.relay.notAfter must be after notBefore')
+  }
+  const nonce = typeof value.nonce === 'string' ? value.nonce.trim() : ''
+  if (!NONCE_RE.test(nonce)) errors.push('vault.relay.nonce must be 16-128 URL-safe characters')
+  const sig = typeof value.sig === 'string' ? value.sig.trim() : ''
+  if (!SIGNATURE_RE.test(sig)) errors.push('vault.relay.sig must be a 130-character posting signature')
+  if (errors.length) return null
+  return {
+    v: 1,
+    id: 'banksia.vault.delegate',
+    blog,
+    delegate_account: delegateAccount,
+    delegate,
+    scope: [...new Set(scope)],
+    notBefore,
+    notAfter,
+    nonce,
+    sig
+  }
+}
+
 function normalizeBulletin (value, errors) {
   if (value === undefined || value === null) return { author: '', permlink: '' }
   if (!isPlainObject(value)) {
@@ -330,6 +393,7 @@ export function normalizeVaultSettings (input, options = {}) {
   }
 
   const bulletin = normalizeBulletin(input.bulletin, errors)
+  const relay = normalizeRelay(input.relay, errors)
 
   let price = VAULT_DEFAULT_PRICE
   if (input.price !== undefined && input.price !== null) {
@@ -411,6 +475,7 @@ export function normalizeVaultSettings (input, options = {}) {
     product,
     container,
     bulletin,
+    ...(relay ? { relay } : {}),
     price,
     period,
     recurrence,
