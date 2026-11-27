@@ -120,9 +120,19 @@ describe('getPendingGrantCount', () => {
 
     state.ref = { author: 'alice', permlink: 'membership' }
     state.product = null
-    expect(await getPendingGrantCount('alice', { now: NOW })).toBe(0)
+    expect(await getPendingGrantCount('alice', { now: NOW, force: true })).toBe(0)
     expect(parseProductRef).toHaveBeenCalled()
     expect(parseVaultProduct).toHaveBeenCalled()
+  })
+
+  it('caches a zero result for a blog without Vault', async () => {
+    const { getPendingGrantCount } = await load()
+    const { fetchAccount } = await import('../../src/services/chainData')
+    state.vault = { enabled: false }
+
+    expect(await getPendingGrantCount('alice', { now: NOW })).toBe(0)
+    expect(await getPendingGrantCount('alice', { now: NOW + 30 * 1000 })).toBe(0)
+    expect(fetchAccount).toHaveBeenCalledTimes(1)
   })
 
   it('returns 0 when the product is not active or belongs to another author', async () => {

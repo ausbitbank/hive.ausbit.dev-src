@@ -22,6 +22,11 @@ function normalizeAccount (value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase()
 }
 
+function remember (name, count, now) {
+  cache.set(name, { at: now, count })
+  return count
+}
+
 /**
  * Count active subscribers whose current grant is missing or expires within a
  * day. Returns 0 for blogs without Vault or on any read failure; a notification
@@ -34,14 +39,14 @@ export async function getPendingGrantCount (account, { force = false, now = Date
   if (!force && cached && now - cached.at < CACHE_MS) return cached.count
   try {
     const full = await fetchAccount(name, { force: true })
-    if (!full) return 0
+    if (!full) return remember(name, 0, now)
     const vault = readVaultSettings(full)
-    if (!vaultIsConfigured(vault.settings)) return 0
+    if (!vaultIsConfigured(vault.settings)) return remember(name, 0, now)
     const ref = parseProductRef(vault.settings.product)
-    if (!ref) return 0
+    if (!ref) return remember(name, 0, now)
     const productPost = await fetchPostContent(ref.author, ref.permlink, { force: true })
     const product = parseVaultProduct(productPost)
-    if (!product || product.status !== 1 || product.author !== name) return 0
+    if (!product || product.status !== 1 || product.author !== name) return remember(name, 0, now)
     const plan = deriveVaultPlan(productPost, {
       fallback: {
         executions: vault.settings.executions,
@@ -49,7 +54,7 @@ export async function getPendingGrantCount (account, { force = false, now = Date
         archive: vault.settings.archive
       }
     })
-    if (!plan) return 0
+    if (!plan) return remember(name, 0, now)
 
     const history = await collectAccountHistory({
       account: name,

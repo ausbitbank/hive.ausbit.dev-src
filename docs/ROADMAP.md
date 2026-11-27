@@ -73,7 +73,7 @@ principles that constrain it. Delivered work and its verification records live i
   signs anything. See
   [`docs/workstreams/W94-vault-pending-badge.md`](workstreams/W94-vault-pending-badge.md).
 - Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
-  `bun run test` green with **2,131 tests across 222 files**, and
+  `bun run test` green with **2,131 tests across 223 files**, and
   `bun run build` succeeded. The four Playwright failures listed in the
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree; the targeted specs pass 8/8. The full

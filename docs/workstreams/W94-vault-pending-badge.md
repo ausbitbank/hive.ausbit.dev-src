@@ -21,9 +21,11 @@ Shipped:
   number.
 - Any read failure resolves to zero. A badge must never break the account menu
   or imply work that does not exist.
-- Results are cached per account for 60 seconds, so reopening the menu does not
-  hammer Hive. The export `clearPendingGrantCache(account)` is available to
-  callers that grant a bulletin.
+- Results are cached per account for 60 seconds, including zero results for a
+  blog without Vault, so reopening the menu does not hammer Hive. Failures are
+  not cached, so a recovered node is picked up on the next open. The export
+  `clearPendingGrantCache(account)` is available to callers that grant a
+  bulletin.
 - The Vault dashboard auto-issue timer now polls less often while the tab is
   hidden (2× the foreground interval) and restarts with the current interval
   when visibility changes. The copy explains that background tabs may still be
@@ -68,12 +70,12 @@ and only reads public chain data plus the public bulletin.
 ## Verification
 
 - `bun run lint` — clean (theme token check included).
-- `bunx vitest run tests/unit/vault-pending.spec.js` — **11 passed**, covering
+- `bunx vitest run tests/unit/vault-pending.spec.js` — **12 passed**, covering
   empty names, unconfigured Vault, missing product/ref, invalid ownership,
   no rows, unresolved/unverified/broken bulletins, missing and soon-to-expire
   grants, inactive and unthumbprintable readers, the 60-second cache, `force`,
-  name normalisation and read failures.
-- `bun run test` — **222 files / 2,131 tests** passing in the worktree.
+  name normalisation, zero-result caching and read failures.
+- `bun run test` — **223 files / 2,131 tests** passing in the worktree.
 - `bun run build` — succeeded.
 - Targeted Playwright `e2e/badges.spec.js`, `e2e/polish.spec.js` and
   `e2e/themes.spec.js` — **8/8 passed**; the four failures listed in the
