@@ -25,6 +25,9 @@ always sent `extensions: []`.
 
 - `readerPlans` now records `hasOpenTransfer` and `pairId` from
   `find_recurrent_transfers`.
+- “Next payment” is blank when there is no open transfer. Remaining access is
+  shown separately as “Access until”; the page no longer implies a renewal that
+  is not scheduled.
 - The Cancel button only appears when the plan has an open recurring transfer.
   A plan that still has access but no open transfer now says “No active
   recurring transfer to cancel” and shows the access end date.
@@ -46,14 +49,22 @@ always sent `extensions: []`.
 
 ## Verification
 
+- Clean worktree at `90a0630`: `bun run lint` clean, `bun run test` **221
+  files / 2,118 tests** passing.
 - Targeted Vault tests: 36 passed.
-- Full unit suite excluding one unrelated untracked WIP `cart-page.spec.js`:
-  **221 files, 2,118 tests** passed.
 - `bun run build` — succeeded.
 - `bunx playwright test e2e/vault.spec.js --config=playwright.config.js` —
   **9/9 passed**, including:
   - an open transfer shows Cancel and queues the dialog;
   - a plan with access but no open transfer hides Cancel and explains why.
+- Deployed from the clean worktree; live stamp
+  `20261127T182718Z-90a06308695e`. Deploy verification passed. No Worker change.
+- Live `/subscriptions?account=ausbitclank`:
+  - five historical plans render;
+  - zero Cancel buttons;
+  - the `@ausbit.vsc` plan shows “Next payment —”, “Access until Dec 28,
+    2026” and “No active recurring transfer to cancel”;
+  - no console or page errors.
 
 ## Remaining
 
