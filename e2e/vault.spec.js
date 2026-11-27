@@ -319,7 +319,8 @@ async function seedReaderKey (page) {
       publicKeyB64,
       privateKey: pair.privateKey,
       rkt,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      account: 'bob'
     }
     const database = await new Promise((resolve, reject) => {
       const request = indexedDB.open('banksia-vault', 1)
@@ -433,6 +434,18 @@ test('a valid grant unlocks once, persists across reloads and leaks nothing to s
   await expect(page.getByText(PREMIUM_TOKEN)).toBeVisible()
   await expect(page.locator('.banksia-unlocked__badge')).toHaveText('Member')
   expect(await storageLeak(page, PREMIUM_TOKEN)).toBe(false)
+
+  // Logging out must not leave the decrypted post open on a shared browser.
+  // `loginAs` seeds sessionStorage on every navigation, so add a later init
+  // script that clears it after the login seed has run.
+  await page.addInitScript(() => {
+    sessionStorage.removeItem('loggedInUser')
+    sessionStorage.removeItem('loginType')
+  })
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await waitForApp(page)
+  await expect(page.getByText(PREMIUM_TOKEN)).toHaveCount(0)
+  await expect(page.locator('.banksia-locked')).toBeVisible()
 })
 
 test('an expired grant keeps the paywall and explains the membership ended', async ({ page }) => {

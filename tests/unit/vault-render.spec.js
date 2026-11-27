@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import {
   clearVaultBulletinCache,
   findGrantEntry,
+  mayAutoUnlock,
   resolveBulletin,
   unlockWithGrant,
   verifyBulletin
@@ -417,6 +418,27 @@ describe('reader key lifecycle', () => {
 
     await forgetReaderKey(blog)
     expect(await getReaderKey(blog)).toBeNull()
+  })
+
+  it('records the subscribing account and rebinds the origin key', async () => {
+    const blog = 'readerkeyaccount'
+    const first = await ensureReaderKey(blog, { account: 'bob' })
+    expect(first.account).toBe('bob')
+    expect((await getReaderKey(blog)).account).toBe('bob')
+
+    const rebound = await ensureReaderKey(blog, { account: 'carol' })
+    expect(rebound.publicKeyB64).toBe(first.publicKeyB64)
+    expect(rebound.account).toBe('carol')
+    expect((await getReaderKey(blog)).account).toBe('carol')
+  })
+})
+
+describe('auto-unlock policy', () => {
+  it('requires a signed-in reader and a matching key owner', () => {
+    expect(mayAutoUnlock({ readerAccount: '', keyAccount: 'bob' })).toBe(false)
+    expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: 'bob' })).toBe(true)
+    expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: 'carol' })).toBe(false)
+    expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: '' })).toBe(true)
   })
 })
 

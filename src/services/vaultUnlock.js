@@ -413,8 +413,7 @@ export async function unlockWithGrant ({
   }
 }
 
-/** Visible watermark for unlocked content: `Licensed to @reader · YYYY-MM`. */
-export function watermarkLabel (account, period) {
+/** Visible watermark for unlocked content: `Licensed to @reader · YYYY-MM`. */export function watermarkLabel (account, period) {
   const name = normalizeAccount(account)
   const label = name ? 'Licensed to @' + name : 'Licensed to member'
   return period ? label + ' · ' + String(period) : label
@@ -487,5 +486,22 @@ export function requiresApex (blogHost = null) {
   if (host === BLOG_DOMAIN || host === 'www.' + BLOG_DOMAIN) return false
   if (host === 'hive.ausbit.dev' || host === 'www.hive.ausbit.dev') return false
   if (host.endsWith('.' + BLOG_DOMAIN)) return false
+  return true
+}
+
+/**
+ * Whether a stored reader key may auto-unlock a post for this visitor.
+ *
+ * The key lives per origin, not per Hive account. On a shared browser that
+ * would keep a member's content open after they log out. Auto-unlock therefore
+ * requires a signed-in reader account, and if the key records its owner the
+ * accounts must match. A logged-out reader can still use the explicit
+ * "Restore access" action, which is a deliberate local request.
+ */
+export function mayAutoUnlock ({ readerAccount = '', keyAccount = '' } = {}) {
+  const reader = normalizeAccount(readerAccount)
+  if (!reader) return false
+  const owner = normalizeAccount(keyAccount)
+  if (owner && owner !== reader) return false
   return true
 }

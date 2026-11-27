@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T141958Z-e5de06fbfb4c`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T145011Z-cdf7b7486501`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T142006Z.tar.gz`
-  (sha256 `4d6b4f8c017a1960fa8851d379883da07a4d314a243851cca7c5fb56dc559ad3`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T142006Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T145021Z.tar.gz`
+  (sha256 `558dc11d4c6334ae90bf75781366138f7cc4209b9a1edcf8243fb64b54df26e4`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T145021Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -419,6 +419,11 @@ Deployed on 2026-11-27 from `master`:
   options now go through `requestBroadcast` with the exact operation.
 - Verified live with a stubbed Keychain: the product action called
   `requestBroadcast` with a single `comment` operation and the queue sent it.
+- Auto-unlock now requires a signed-in reader whose Hive account matches the
+  key's recorded owner. Logging out locks the post immediately and a reload
+  logged out does not auto-unlock; the explicit **Restore access** action is
+  still available. The reader key stays on the device so the member does not
+  need a recovery import after logging back in.
 - The grant container is now published as a **reply under the product** rather
   than a second root post. Product → container is immediate (reply interval is
   seconds, not the 5-minute root interval). Only the premium post itself still

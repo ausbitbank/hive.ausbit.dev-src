@@ -195,8 +195,19 @@ export async function getReaderKey (blog) {
  */
 export async function ensureReaderKey (blog, { now = Date.now(), account = '' } = {}) {
   const name = normalizeBlog(blog)
+  const readerAccount = String(account || '').trim().replace(/^@/, '').toLowerCase()
   const existing = await getReaderKey(name)
-  if (existing) return existing
+  if (existing) {
+    // One reader key per origin/blog. When a different Hive account subscribes
+    // on this device, bind the key to that account so its grants auto-unlock;
+    // the previous account keeps access only through an explicit restore.
+    if (readerAccount && existing.account !== readerAccount) {
+      const updated = { ...existing, account: readerAccount }
+      await idbPut(updated)
+      return remember(updated)
+    }
+    return existing
+  }
 
   const pair = await generateReaderKeyPair({ extractable: true })
   const rkt = await readerKeyThumbprint(pair.publicKeyB64)
@@ -209,7 +220,6 @@ export async function ensureReaderKey (blog, { now = Date.now(), account = '' } 
     rkt,
     createdAt
   }
-  const readerAccount = String(account || '').trim().replace(/^@/, '').toLowerCase()
   if (readerAccount) record.account = readerAccount
 
   if (!(await idbPut(record))) {

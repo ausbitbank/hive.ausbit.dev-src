@@ -1158,6 +1158,12 @@ export default {
   watch: {
     '$route.path' () {
       this.init()
+    },
+    readerAccount (value, previous) {
+      if (previous && value !== previous && this.vaultStoreRef) {
+        this.vaultStoreRef.lockAll()
+        this.vaultStateData = { status: 'locked', message: '' }
+      }
     }
   },
   computed: {
@@ -1482,7 +1488,7 @@ export default {
         { parseVaultMetadata, splitVaultBody },
         { readVaultSettings },
         { deriveVaultPlan },
-        { requiresApex },
+        { requiresApex, mayAutoUnlock },
         { useVaultStore }
       ] = await Promise.all([
         import('src/services/vaultPayload'),
@@ -1537,6 +1543,7 @@ export default {
       this.vaultStoreRef = store
       const existing = await store.readerKey(post.author)
       if (!existing) return
+      if (!mayAutoUnlock({ readerAccount: this.readerAccount, keyAccount: existing.account })) return
 
       this.vaultStateData = store.postState(post.author, post.permlink)
       await store.unlockPost({
