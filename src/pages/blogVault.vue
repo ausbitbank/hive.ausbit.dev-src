@@ -51,6 +51,35 @@
           You are viewing @{{ accountName }} read-only. Sign in as that account to unlock the vault or issue grants.
         </q-banner>
 
+        <q-card v-if="isOwner" flat bordered class="vault-card vault-auto">
+          <q-card-section>
+            <div class="vault-auto__head">
+              <div>
+                <h2 class="vault-section-title vault-section-title--flush">Auto-issue grants</h2>
+                <p class="vault-muted">
+                  While this dashboard tab is open and visible, check the public
+                  payment history every 30 seconds and queue a bulletin when a
+                  subscriber needs a grant. Your vault must stay unlocked.
+                </p>
+              </div>
+              <q-toggle
+                v-model="autoIssue"
+                color="primary"
+                label="Auto-issue while this tab is open"
+              />
+            </div>
+            <p v-if="!vault" class="vault-muted vault-muted--small">
+              Unlock the vault below to start auto-issuing.
+            </p>
+            <p v-else-if="autoIssue" class="vault-muted vault-muted--small">
+              Watching for new payments. Keychain may still ask you to approve each
+              bulletin; SmartLock can sign without a prompt while unlocked.
+            </p>
+            <p v-if="autoIssueNotice" class="vault-muted vault-auto__ok" role="status">{{ autoIssueNotice }}</p>
+            <p v-if="autoIssueError" class="vault-error" role="alert">{{ autoIssueError }}</p>
+          </q-card-section>
+        </q-card>
+
         <q-banner v-if="actionNotice" rounded class="vault-banner vault-banner--ok" aria-live="polite">
           <template #avatar><q-icon name="check_circle" /></template>
           {{ actionNotice }}
@@ -502,6 +531,26 @@
   border-color: var(--c-primary);
 }
 
+.vault-auto {
+  margin-bottom: 1rem;
+}
+
+.vault-auto__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.vault-section-title--flush {
+  margin-top: 0;
+}
+
+.vault-auto__ok {
+  color: var(--c-positive);
+}
+
 .vault-section-title {
   margin: 1.6rem 0 0.6rem;
   font-size: 1.1rem;
@@ -732,6 +781,13 @@ import { formatOrderDate, parseProductRef } from 'src/services/shopOrders'
 import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
 import { collectVaultPayments, periodFor, summarizeSubscribers, vaultRecurrencePhrase } from 'src/services/vaultPayments'
 import {
+  AUTO_ISSUE_INTERVAL_MS,
+  hasQueuedVaultBulletin,
+  readAutoIssuePreference,
+  shouldAutoIssue,
+  writeAutoIssuePreference
+} from 'src/services/vaultAutoIssue'
+import {
   buildBulletinEntries,
   buildVaultBulletin,
   buildVaultBulletinOperation,
@@ -806,7 +862,12 @@ export default {
       selected: [],
       busy: '',
       actionNotice: '',
-      actionError: ''
+      actionError: '',
+      autoIssue: true,
+      autoIssueTimer: null,
+      autoIssueLastAt: 0,
+      autoIssueNotice: '',
+      autoIssueError: ''
     }
   },
   computed: {
@@ -873,12 +934,40 @@ export default {
   },
   created () {
     this.accountName = this.resolveAccount()
+    this.autoIssue = readAutoIssuePreference(this.accountName)
     this.updateMeta()
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.onVaultVisibility)
     if (!this.loggedInUser) {
       this.loading = false
       return
     }
     this.load()
+  },
+  beforeUnmount () {
+    this.stopAutoIssue()
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.onVaultVisibility)
+  },
+  watch: {
+    autoIssue (value) {
+      writeAutoIssuePreference(this.accountName, value)
+      if (value) this.startAutoIssue()
+      else {
+        this.stopAutoIssue()
+        this.autoIssueNotice = ''
+      }
+    },
+    vault () {
+      this.startAutoIssue()
+    },
+    isOwner () {
+      this.startAutoIssue()
+    },
+    plan () {
+      this.startAutoIssue()
+    },
+    pendingCount (value) {
+      if (value > 0) this.autoIssueTick()
+    }
   },
   methods: {
     resolveAccount () {
@@ -914,6 +1003,7 @@ export default {
         this.error = error && error.message ? error.message : 'The dashboard could not be loaded.'
       } finally {
         this.loading = false
+        this.startAutoIssue()
       }
     },
     async loadPlan () {
@@ -1043,15 +1133,56 @@ export default {
         this.vault = await unlockCreatorVault(this.accountName, this.passphrase)
         this.passphrase = ''
         this.actionNotice = 'Vault unlocked for this session.'
+        this.startAutoIssue()
       } catch (error) {
         this.unlockError = error && error.message ? error.message : 'The vault could not be unlocked.'
       } finally {
         this.busy = ''
       }
     },
-    async issuePending () {
+    onVaultVisibility () {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') this.autoIssueTick()
+    },
+    startAutoIssue () {
+      this.stopAutoIssue()
+      if (!this.autoIssue || !this.isOwner || !this.vault || !this.plan) return
+      this.autoIssueTick()
+      if (typeof window !== 'undefined') {
+        this.autoIssueTimer = window.setInterval(() => this.autoIssueTick(), AUTO_ISSUE_INTERVAL_MS)
+      }
+    },
+    stopAutoIssue () {
+      if (this.autoIssueTimer && typeof window !== 'undefined') window.clearInterval(this.autoIssueTimer)
+      this.autoIssueTimer = null
+    },
+    async autoIssueTick () {
+      const visible = typeof document === 'undefined' || document.visibilityState !== 'hidden'
+      const queuedBulletin = hasQueuedVaultBulletin(
+        this.$hiveStore.queue,
+        this.$hiveStore.queueMeta,
+        this.accountName
+      )
+      if (!shouldAutoIssue({
+        enabled: this.autoIssue,
+        visible,
+        hasVault: Boolean(this.vault),
+        isOwner: this.isOwner,
+        hasPlan: Boolean(this.plan),
+        busy: Boolean(this.busy),
+        pendingCount: this.pendingCount,
+        queuedBulletin,
+        lastAttemptAt: this.autoIssueLastAt
+      })) return
+      this.autoIssueLastAt = Date.now()
+      this.autoIssueError = ''
+      const count = this.pendingCount
+      const ok = await this.issuePending({ auto: true })
+      if (ok) this.autoIssueNotice = 'Queued grants for ' + count + ' pending reader' + (count === 1 ? '' : 's') + '.'
+      else this.autoIssueError = this.actionError || 'Auto-issue could not queue the grants.'
+    },
+    async issuePending (options = {}) {
       this.selected = this.rows.filter(row => row.pending).map(row => row.readerKey)
-      await this.issueGrants()
+      return this.issueGrants(options)
     },
     selectForReissue (row) {
       if (!this.selected.includes(row.readerKey)) this.selected.push(row.readerKey)
@@ -1069,20 +1200,20 @@ export default {
         this.actionNotice = 'Copy failed; select the value and copy it manually.'
       }
     },
-    async issueGrants () {
+    async issueGrants ({ auto = false } = {}) {
       this.actionError = ''
       this.actionNotice = ''
       if (!this.vault) {
         this.actionError = 'Unlock the vault before issuing grants.'
-        return
+        return false
       }
       if (!this.isOwner) {
         this.actionError = 'Sign in as @' + this.accountName + ' to issue grants.'
-        return
+        return false
       }
       if (!this.plan) {
         this.actionError = this.planError || 'The product plan is not available.'
-        return
+        return false
       }
       const selected = new Set(this.selected)
       const targets = selected.size
@@ -1090,7 +1221,7 @@ export default {
         : this.rows.filter(row => row.active)
       if (!targets.length) {
         this.actionError = 'No active subscribers or selected readers to grant.'
-        return
+        return false
       }
 
       this.busy = 'issue'
@@ -1164,8 +1295,11 @@ export default {
         this.rows = await this.enrichRows(this.rows, Date.now())
         this.actionNotice = 'Bulletin ' + permlink + ' queued with ' + entries.length + ' grant' +
           (entries.length === 1 ? '' : 's') + '. Approve both posting operations in your signing queue.'
+        return true
       } catch (error) {
         this.actionError = error && error.message ? error.message : 'The grants could not be issued.'
+        if (!auto) this.autoIssueError = ''
+        return false
       } finally {
         this.busy = ''
       }
