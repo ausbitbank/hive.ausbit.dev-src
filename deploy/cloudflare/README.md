@@ -121,8 +121,9 @@ curl -sS -D - -o /dev/null \
 An unclaimed account returns `x-hive-meta: blog`, a shell with `noindex` and no
 canonical. A claimed blog returns a canonical `https://alice.banksia.io/a-post`
 URL and the real post image. `https://alice.banksia.io/rss.xml` returns the
-account feed. Reserved labels (`www`, `api`, `files`, `mail`, …) never resolve
-to a blog.
+account feed, `sitemap.xml` lists the blog pages and latest posts, and
+`robots.txt` disallows an unclaimed preview. Reserved labels (`www`, `api`,
+`files`, `mail`, …) never resolve to a blog.
 
 ## Traffic and WAF rules
 

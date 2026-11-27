@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <img v-if="cover" :src="cover" alt="" class="blog-post__cover" />
+      <img v-if="showCover" :src="cover" alt="" class="blog-post__cover" />
     </header>
 
     <render :input="post.body" class="postbody blog-post__body" />
@@ -312,6 +312,7 @@ import { setPageMeta } from 'src/utils/pageMeta'
 import { useBlogStore } from 'src/stores/blog'
 import {
   blogPostExcerpt,
+  blogPostHasBodyImage,
   blogPostImage,
   blogPostPayout,
   blogPostPathFor,
@@ -348,6 +349,9 @@ export default {
     },
     cover () {
       return this.post ? blogPostImage(this.post) : ''
+    },
+    showCover () {
+      return Boolean(this.cover && !blogPostHasBodyImage(this.post))
     },
     tags () {
       return this.post ? blogPostTags(this.post, 5) : []

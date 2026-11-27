@@ -17,7 +17,7 @@
 
 import { resolveBlogHost, blogPostPathFor } from '../../src/services/blogHost.js'
 import { readBlogSettings } from '../../src/services/blogSettings.js'
-import { buildBlogRss } from '../../src/services/blogFeed.js'
+import { buildBlogRss, blogFeedPosts, escapeXml } from '../../src/services/blogFeed.js'
 
 const HIVE_RPCS = [
   'https://api.hive.blog',
@@ -173,7 +173,7 @@ function proxiedImage (url, width = 800) {
   return 'https://images.hive.blog/' + width + 'x0/' + clean
 }
 
-async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', post = null } = {}) {
+async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', rss = '', post = null } = {}) {
   const row = post || await rpc('bridge.get_post', { author, permlink, observer: '' })
   if (!row || !row.author) return null
   let metadata
@@ -195,6 +195,7 @@ async function postMetadata (author, permlink, { origin = 'https://banksia.io', 
     path: canonicalPath,
     origin,
     siteName,
+    rss,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Article',
@@ -365,6 +366,7 @@ async function blogMetadata (url, tenant) {
       path: '/',
       origin,
       siteName: title,
+      rss: origin + '/rss.xml',
       noindex: !claimed,
       jsonLd: blogJsonLd
     }
@@ -380,6 +382,7 @@ async function blogMetadata (url, tenant) {
       path,
       origin,
       siteName: title,
+      rss: origin + '/rss.xml',
       noindex: !claimed,
       jsonLd: {
         ...blogJsonLd,
@@ -405,8 +408,26 @@ async function blogMetadata (url, tenant) {
     origin,
     path: canonicalPath,
     siteName: title,
+    rss: origin + '/rss.xml',
     post
   })
+}
+
+async function blogPostRows (tenant, settings, limit = 20) {
+  const accounts = [tenant.account, ...(Array.isArray(settings.authors) ? settings.authors : [])]
+  const unique = [...new Set(accounts.filter(Boolean))]
+  const perAccount = Math.max(1, Math.min(20, Number(limit) || 20))
+  const batches = await Promise.allSettled(unique.map(name => rpc('bridge.get_account_posts', {
+    sort: 'posts',
+    account: name,
+    observer: null,
+    limit: perAccount,
+    start_author: null,
+    start_permlink: null
+  })))
+  return batches
+    .filter(batch => batch.status === 'fulfilled' && Array.isArray(batch.value))
+    .flatMap(batch => batch.value)
 }
 
 async function blogRss (url, tenant) {
@@ -417,19 +438,7 @@ async function blogRss (url, tenant) {
   const read = readBlogSettings(account || { name: tenant.account })
   const settings = read.settings
   const profileMeta = blogProfileMeta(profile, tenant.account)
-  const accounts = [tenant.account, ...(Array.isArray(settings.authors) ? settings.authors : [])]
-  const unique = [...new Set(accounts.filter(Boolean))]
-  const batches = await Promise.allSettled(unique.map(name => rpc('bridge.get_account_posts', {
-    sort: 'posts',
-    account: name,
-    observer: null,
-    limit: 20,
-    start_author: null,
-    start_permlink: null
-  })))
-  const posts = batches
-    .filter(batch => batch.status === 'fulfilled' && Array.isArray(batch.value))
-    .flatMap(batch => batch.value)
+  const posts = await blogPostRows(tenant, settings)
   const xml = buildBlogRss({
     account: tenant.account,
     title: settings.title || profileMeta.display,
@@ -448,11 +457,64 @@ async function blogRss (url, tenant) {
   })
 }
 
+async function blogSitemap (url, tenant) {
+  const account = await getAccount(tenant.account)
+  const read = readBlogSettings(account || { name: tenant.account })
+  const posts = blogFeedPosts(await blogPostRows(tenant, read.settings, 20), 20)
+  const origin = 'https://' + url.hostname
+  const entries = [
+    '  <url><loc>' + escapeXml(origin + '/') + '</loc><changefreq>daily</changefreq><priority>1.0</priority></url>',
+    '  <url><loc>' + escapeXml(origin + '/about') + '</loc><changefreq>monthly</changefreq></url>',
+    '  <url><loc>' + escapeXml(origin + '/contact') + '</loc><changefreq>monthly</changefreq></url>'
+  ]
+  for (const post of posts) {
+    const loc = origin + blogPostPathFor(post.permlink, post.author, tenant.account)
+    const lastmod = String(post.created || post.last_update || '').slice(0, 10)
+    entries.push('  <url><loc>' + escapeXml(loc) + '</loc>' +
+      (lastmod ? '<lastmod>' + escapeXml(lastmod) + '</lastmod>' : '') +
+      '<changefreq>monthly</changefreq></url>')
+  }
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    entries.join('\n') + '\n</urlset>\n'
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'content-type': 'application/xml; charset=utf-8',
+      'cache-control': 'public, max-age=' + CACHE_SECONDS,
+      'x-hive-meta': 'blog-sitemap'
+    }
+  })
+}
+
+async function blogRobots (url, tenant) {
+  const account = await getAccount(tenant.account)
+  const read = readBlogSettings(account || { name: tenant.account })
+  const origin = 'https://' + url.hostname
+  const lines = read.claimed
+    ? ['User-agent: *', 'Allow: /', 'Sitemap: ' + origin + '/sitemap.xml', '']
+    : ['User-agent: *', 'Disallow: /', '']
+  return new Response(lines.join('\n'), {
+    status: 200,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      'cache-control': 'public, max-age=' + CACHE_SECONDS,
+      'x-hive-meta': 'blog-robots'
+    }
+  })
+}
+
 async function handleBlog (request, tenant) {
   const url = new URL(request.url)
   if (request.method !== 'GET' && request.method !== 'HEAD') return fetchApexAsset(request, url)
   if (url.pathname === '/rss.xml' || url.pathname === '/rss') {
     return blogRss(url, tenant).catch(() => fetchApexAsset(request, url))
+  }
+  if (url.pathname === '/sitemap.xml') {
+    return blogSitemap(url, tenant).catch(() => fetchApexAsset(request, url))
+  }
+  if (url.pathname === '/robots.txt') {
+    return blogRobots(url, tenant).catch(() => fetchApexAsset(request, url))
   }
   // Assets are shared with the main app and never need metadata.
   if (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname)) {
@@ -515,6 +577,10 @@ export function rewriteHead (html, meta) {
   setMeta('name', 'twitter:title', meta.title)
   setMeta('name', 'twitter:description', meta.description)
   setMeta('name', 'twitter:image', meta.image)
+  if (meta.rss) {
+    next = next.replace(/<link\b[^>]*type=["']?application\/rss\+xml["']?[^>]*>/gi, '')
+    next = next.replace('</head>', '<link rel="alternate" type="application/rss+xml" title="' + escapeHtml((meta.siteName || 'Blog') + ' RSS') + '" href="' + escapeHtml(meta.rss) + '">\n  </head>')
+  }
   if (meta.noindex) {
     setMeta('name', 'robots', 'noindex, follow')
     next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '')

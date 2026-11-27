@@ -76,6 +76,20 @@ export function blogPostReadingMinutes (post) {
   return Math.max(1, Math.round(words / 220))
 }
 
+/**
+ * True when the body already carries a visual. The post header uses this to
+ * avoid repeating the lead image: Hive posts commonly put the same image in the
+ * body that `json_metadata.image` promotes to a cover.
+ */
+export function blogPostHasBodyImage (post) {
+  const body = String((post && post.body) || '')
+  if (!body) return false
+  if (/!\[[^\]]*\]\([^)]*\)/.test(body)) return true
+  if (/<img\b[^>]*src=/i.test(body)) return true
+  if (/https?:\/\/[^\s"'<>]+\.(?:png|jpe?g|gif|webp|avif)(?:\?[^\s"'<>]*)?/i.test(body)) return true
+  return false
+}
+
 export function blogPostTags (post, limit = 3) {
   return postTags(post, limit)
 }

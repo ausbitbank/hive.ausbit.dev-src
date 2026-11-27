@@ -108,6 +108,8 @@ describe('blog host metadata', () => {
     expect(html).toContain('<link rel="canonical" href="https://alice.banksia.io/">')
     expect(html).toContain('property="og:url" content="https://alice.banksia.io/"')
     expect(html).toContain('property="og:site_name" content="Alice writes"')
+    expect(html).toContain('rel="alternate" type="application/rss+xml"')
+    expect(html).toContain('href="https://alice.banksia.io/rss.xml"')
     expect(methods).toContain('condenser_api.get_accounts')
     expect(methods).toContain('bridge.get_profile')
   })
@@ -158,6 +160,37 @@ describe('blog host metadata', () => {
     expect(xml).toContain('<title>Alice writes</title>')
     expect(xml).toContain('<link>https://alice.banksia.io/a-post</link>')
     expect(xml).toContain('<category>notes</category>')
+  })
+
+  it('serves a sitemap for the blog', async () => {
+    stubNetwork()
+    const response = await worker.fetch(blogRequest('/sitemap.xml'))
+    const xml = await response.text()
+
+    expect(response.headers.get('content-type')).toContain('application/xml')
+    expect(response.headers.get('x-hive-meta')).toBe('blog-sitemap')
+    expect(xml).toContain('<loc>https://alice.banksia.io/</loc>')
+    expect(xml).toContain('<loc>https://alice.banksia.io/about</loc>')
+    expect(xml).toContain('<loc>https://alice.banksia.io/a-post</loc>')
+  })
+
+  it('allows crawlers and points to the sitemap for a claimed blog', async () => {
+    stubNetwork()
+    const response = await worker.fetch(blogRequest('/robots.txt'))
+    const text = await response.text()
+
+    expect(response.headers.get('x-hive-meta')).toBe('blog-robots')
+    expect(text).toContain('Allow: /')
+    expect(text).toContain('Sitemap: https://alice.banksia.io/sitemap.xml')
+  })
+
+  it('disallows crawlers on an unclaimed preview', async () => {
+    stubNetwork({ account: UNCLAIMED_ACCOUNT })
+    const response = await worker.fetch(blogRequest('/robots.txt'))
+    const text = await response.text()
+
+    expect(text).toContain('Disallow: /')
+    expect(text).not.toContain('Sitemap:')
   })
 
   it('marks an unclaimed preview noindex and drops its canonical', async () => {

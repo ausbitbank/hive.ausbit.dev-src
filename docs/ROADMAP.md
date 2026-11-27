@@ -21,7 +21,7 @@ principles that constrain it. Delivered work and its verification records live i
   RSS, and the new SPA is live. A real posting-key claim smoke, premium
   entitlements and custom domains remain.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,648 tests across 190 files.
+  with 1,652 tests across 190 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W85**.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   blogPostExcerpt,
+  blogPostHasBodyImage,
   blogPostImage,
   blogPostPathFor,
   formatBlogDate,
@@ -44,6 +45,14 @@ describe('blog post helpers', () => {
   it('falls back to the first inline body image', () => {
     expect(blogPostImage(post({ body: 'Intro\n\n![cover](https://cdn.example/a.png)\n' }))).toBe('https://cdn.example/a.png')
     expect(blogPostImage(post({ body: '<p><img src="https://cdn.example/b.png" alt="b"></p>' }))).toBe('https://cdn.example/b.png')
+  })
+
+  it('detects whether the body already has a visual', () => {
+    expect(blogPostHasBodyImage(post({ body: 'Intro ![a](https://cdn.example/a.png)' }))).toBe(true)
+    expect(blogPostHasBodyImage(post({ body: '<p><img src="https://cdn.example/a.png"></p>' }))).toBe(true)
+    expect(blogPostHasBodyImage(post({ body: 'See https://cdn.example/a.jpg for the photo.' }))).toBe(true)
+    expect(blogPostHasBodyImage(post({ body: 'Text only, no images.' }))).toBe(false)
+    expect(blogPostHasBodyImage(null)).toBe(false)
   })
 
   it('keeps the owner at the root and puts contributors on an author path', () => {

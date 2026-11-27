@@ -123,8 +123,14 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   - The shell is stripped of the ~39 KB inline dashboard snapshot before it is
     returned.
 - RSS reuses `src/services/blogFeed.js`, so the edge and the tests share one
-  escaping/ordering implementation.
+  escaping/ordering implementation. Blog HTML also carries an RSS discovery
+  `<link rel="alternate">`.
+- `/sitemap.xml` lists the blog root, About, Contact and the latest 20 posts.
+  `/robots.txt` disallows unclaimed previews and points claimed blogs at the
+  sitemap.
 - Unclaimed blogs get `robots: noindex, follow` and no canonical.
+- The post header no longer repeats a lead image that is already inside the
+  body; the body remains the visual source of truth.
 - Reserved labels (`www`, `api`, `files`, `mail`, …) pass through to their own
   hosts. `files.banksia.io` keeps its separate vhost.
 - The nginx vhost still documents an optional `*.banksia.io` block,
@@ -138,7 +144,7 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 190 files, 1,648 tests passing. New suites:
+- `bun run test` — 190 files, 1,652 tests passing. New suites:
   `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`,
   `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
 - `bun run build` — succeeded.
@@ -169,6 +175,11 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   - a live post returns the real title, canonical
     `https://asgarth.banksia.io/<permlink>` and the proxied cover image;
   - `/rss.xml` returns the account feed with absolute blog links;
+  - `/sitemap.xml` lists the root, About, Contact and the latest 20 posts;
+  - `/robots.txt` disallows unclaimed previews; claimed blogs allow crawlers
+    and point at the sitemap;
+  - the post header cover is suppressed when the body already has images, so
+    the lead image appears once;
   - `/settings/blog?account=asgarth` returns `x-hive-meta: theme-shell` and
     renders the settings page;
   - headless Chromium on the live host rendered 20 cards, a 1,634-character
@@ -208,7 +219,6 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
   UI. Keep custom-domain blogs read-only for signing.
 - A public, opt-in directory of claimed blogs.
-- `sitemap.xml` and `robots.txt` for blog hosts.
 - A per-blog OG image generator, or a deterministic cover fallback.
 - Canonical policy for the duplicate: the apex
   `banksia.io/@author/permlink` page still canonicalizes to itself, so a
