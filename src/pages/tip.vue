@@ -1,5 +1,20 @@
 <template>
-    <q-page v-if="account !== undefined">
+    <q-page class="tip-page">
+      <div v-if="loading" class="tip-state" aria-live="polite">
+        <q-spinner-puff size="2.2em" color="primary" />
+        <p>Loading @{{ username || 'account' }}…</p>
+      </div>
+
+      <div v-else-if="notFound" class="tip-state">
+        <h1 class="tip-state__title">Account not found</h1>
+        <p>
+          @{{ username || 'that account' }} could not be read from Hive. Check the spelling or
+          <router-link to="/">head back home</router-link>.
+        </p>
+      </div>
+
+      <template v-else-if="account">
+        <h1 class="sr-only">Tip @{{ account.name }} with Hive or Lightning</h1>
         <account-header :globalProps="globalProps" :account="account" :showNavBar="false" :showBalances="false" />
         <q-card class="text-center q-ma-md q-pa-md" padding rounded>
           <div class="text-center">
@@ -34,6 +49,7 @@
           :default-amount="5"
           default-note="Lightning tip from banksia.io"
         />
+      </template>
     </q-page>
 </template>
 <script>
@@ -62,20 +78,60 @@ export default {
   },
   data () {
     return {
-      username: this.$route.params.username || this.$route.params.account,
-      lightningOpen: false
+      username: this.normalizeAccount(this.$route.params.username || this.$route.params.account),
+      lightningOpen: false,
+      loading: true,
+      notFound: false
     }
   },
   mounted () {
-    if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
-    if (this.account === undefined) {
-      this.$hiveStore.getAccount(this.username)
+    this.loadAccount()
+  },
+  methods: {
+    normalizeAccount (value) {
+      return String(value || '').trim().replace(/^@/, '').toLowerCase()
+    },
+    async loadAccount () {
+      this.loading = true
+      this.notFound = false
+      try {
+        if (this.globalProps.empty) { this.$hiveStore.getGlobalProps() }
+        if (!this.username) {
+          this.notFound = true
+          return
+        }
+        if (this.account === undefined) {
+          await this.$hiveStore.getAccount(this.username)
+        }
+        this.notFound = this.account === undefined
+      } finally {
+        this.loading = false
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+.tip-state {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 4rem 1rem;
+  color: var(--c-text-subtle);
+  text-align: center;
+}
+
+.tip-state__title {
+  margin: 0;
+  color: var(--c-text);
+  font-size: 1.4rem;
+}
+
+.tip-state a {
+  color: var(--c-link);
+}
+
 .lightning-eyebrow {
   color: var(--c-warning);
   font-size: 0.62rem;
