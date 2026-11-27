@@ -1,7 +1,7 @@
 # W91 — Shop and Banksia Vault integration
 
 Date: 2026-11-28
-Status: implemented and verified locally
+Status: implemented, verified locally, deployed and live-smoked
 
 ## Scope
 
@@ -84,6 +84,19 @@ Local, 2026-11-28:
   creator dashboard, reader subscriptions, composer).
 - The existing normal-product `/pay` and checkout E2E checks still queue the
   exact expected operations.
+- Deployed from a clean worktree at app commit `8fc408b`; live stamp
+  `20261127T172544Z-8fc408bc5e08`. Deploy verification passed. The Worker was
+  unchanged by W91.
+- Live smoke against `ausbit.vsc`:
+  - `ausbit--vsc.banksia.io/shop` shows one “Membership” card whose Subscribe
+    link is `https://banksia.io/subscribe?blog=ausbit.vsc&product=ausbit.vsc%2Fmembership`;
+  - the membership detail page shows the reader-key explanation and has no Add
+    to cart button;
+  - `/pay?product=ausbit.vsc/membership` shows the Vault warning, has no queue
+    button and links to `/subscribe`;
+  - `/checkout?items=ausbit.vsc%2Fmembership:1` shows the reader-key error,
+    renders zero checkout lines and disables queueing;
+  - no console or page errors.
 
 ## Remaining
 
