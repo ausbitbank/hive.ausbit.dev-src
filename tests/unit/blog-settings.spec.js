@@ -44,7 +44,17 @@ describe('blog settings defaults', () => {
       showTags: true,
       showReadingTime: true,
       portfolio: { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] },
-      shop: { enabled: false, title: 'Shop', description: '' }
+      shop: {
+        enabled: false,
+        title: 'Shop',
+        description: '',
+        source: 'account',
+        tag: '',
+        featured: [],
+        layout: 'grid',
+        showSoldOut: true,
+        sort: 'newest'
+      }
     })
   })
 
@@ -102,10 +112,29 @@ describe('normalizeBlogSettings', () => {
     })
   })
 
-  it('rejects unknown fields rather than silently accepting them', () => {
+  it('warns about unknown fields without rejecting the blog', () => {
     const result = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', surprise: true })
-    expect(result.ok).toBe(false)
-    expect(result.errors.join(' ')).toContain('surprise is not a recognised blog field')
+    expect(result.ok).toBe(true)
+    expect(result.errors).toEqual([])
+    expect(result.warnings.join(' ')).toContain('surprise is not a recognised blog field')
+  })
+
+  it('keeps a blog claimed when a newer client writes an unknown key', () => {
+    const account = accountWith({
+      'banksia.io': {
+        blog: {
+          version: 1,
+          claimed: true,
+          title: 'Alice writes',
+          futureField: { anything: true },
+          shop: { enabled: true, featured: ['alice/managed-hosting'] }
+        }
+      }
+    })
+    const read = readBlogSettings(account)
+    expect(read.claimed).toBe(true)
+    expect(read.settings.shop.featured).toEqual(['alice/managed-hosting'])
+    expect(read.warnings.join(' ')).toContain('futureField is not a recognised blog field')
   })
 
   it('rejects HTML and invalid themes/colours', () => {
@@ -271,7 +300,13 @@ describe('normalizeBlogSettings', () => {
       shop: {
         enabled: true,
         title: 'Shop',
-        description: 'Buy directly from Hive.'
+        description: 'Buy directly from Hive.',
+        source: 'tag',
+        tag: 'Hosting',
+        featured: ['alice/managed-hosting', 'Alice/managed-hosting', 'bob/art'],
+        layout: 'list',
+        showSoldOut: false,
+        sort: 'price-asc'
       }
     })
     expect(result.ok).toBe(true)
@@ -281,7 +316,56 @@ describe('normalizeBlogSettings', () => {
       layout: 'masonry',
       items: ['a-post', 'b-post']
     })
-    expect(result.settings.shop).toMatchObject({ enabled: true, title: 'Shop' })
+    expect(result.settings.shop).toEqual({
+      enabled: true,
+      title: 'Shop',
+      description: 'Buy directly from Hive.',
+      source: 'tag',
+      tag: 'hosting',
+      featured: ['alice/managed-hosting', 'bob/art'],
+      layout: 'list',
+      showSoldOut: false,
+      sort: 'price-asc'
+    })
+  })
+
+  it('rejects invalid shop enums, tags and product references', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      shop: {
+        source: 'everywhere',
+        tag: 'Not a tag!',
+        featured: ['alice', '../escape', 'alice/managed-hosting'],
+        layout: 'carousel',
+        showSoldOut: 'no',
+        sort: 'oldest'
+      }
+    })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('shop.source must be one of')
+    expect(result.errors.join(' ')).toContain('shop.tag must be a Hive tag')
+    expect(result.errors.join(' ')).toContain('shop.featured contains an invalid product reference')
+    expect(result.errors.join(' ')).toContain('shop.layout must be one of')
+    expect(result.errors.join(' ')).toContain('shop.showSoldOut must be a boolean')
+    expect(result.errors.join(' ')).toContain('shop.sort must be one of')
+  })
+
+  it('caps featured shop products and warns about unknown nested fields', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      shop: {
+        featured: Array.from({ length: 13 }, (_, index) => 'alice/product-' + index),
+        futureLayout: true
+      }
+    })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('shop.featured supports at most 12 products')
+    expect(result.warnings.join(' ')).toContain('shop.futureLayout is not a recognised field')
+    expect(result.settings.shop.featured).toHaveLength(12)
   })
 
   it('rejects an invalid portfolio layout and too many items', () => {

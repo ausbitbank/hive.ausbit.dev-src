@@ -20,6 +20,13 @@ export const BLOG_MAX_NAV = 6
 export const BLOG_MAX_PINNED = 5
 export const BLOG_MAX_AUTHORS = 20
 
+// Shop bounds. These are shared by the on-chain settings validator, the
+// storefront and the cart so a settings blob cannot ask the UI to render an
+// unbounded list.
+export const BLOG_MAX_SHOP_FEATURED = 12
+export const BLOG_MAX_SHOP_TAGS = 6
+export const BLOG_MAX_CART_ITEMS = 20
+
 // Labels that must never resolve to an account blog. Some are first-level
 // service hosts (`files`, `www`), some are routes the blog itself uses, and
 // some are names an impersonation attempt would reach for first.

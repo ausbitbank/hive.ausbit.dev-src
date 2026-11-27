@@ -8,7 +8,16 @@
 // Every write is a read-merge-write of the whole metadata object. A blog write
 // therefore preserves the profile, the theme and any other app's keys.
 
-import { BLOG_MAX_AUTHORS, BLOG_MAX_BLOCKS, BLOG_MAX_BYTES, BLOG_MAX_CSS, BLOG_MAX_NAV, BLOG_MAX_PINNED, BLOG_SCHEMA_VERSION } from '../config/blog'
+import {
+  BLOG_MAX_AUTHORS,
+  BLOG_MAX_BLOCKS,
+  BLOG_MAX_BYTES,
+  BLOG_MAX_CSS,
+  BLOG_MAX_NAV,
+  BLOG_MAX_PINNED,
+  BLOG_MAX_SHOP_FEATURED,
+  BLOG_SCHEMA_VERSION
+} from '../config/blog'
 import { LEGACY_THEME_NAMESPACE, THEME_NAMESPACE } from '../config/brand'
 import { isHexColor } from '../themes/color'
 import {
@@ -27,6 +36,10 @@ const THEME_ID_RE = /^[a-z0-9][a-z0-9-]{0,39}$/
 const PERMLINK_RE = /^[a-z0-9][a-z0-9._-]{0,255}$/
 const COMMUNITY_RE = /^hive-\d{1,10}$/
 const NAV_HREF_RE = /^(?:\/(?!\/)[^\s]*|https:\/\/[^\s]+)$/i
+const SHOP_TAG_RE = /^[a-z0-9][a-z0-9-]{0,23}$/
+const SHOP_SOURCES = ['account', 'tag']
+const SHOP_LAYOUTS = ['grid', 'list']
+const SHOP_SORTS = ['newest', 'price-asc', 'price-desc']
 
 const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
@@ -97,7 +110,7 @@ function enumValue (value, allowed, path, errors, fallback) {
   return value
 }
 
-function normalizeNav (value, errors) {
+function normalizeNav (value, errors, warnings) {
   if (value === undefined || value === null) return []
   if (!Array.isArray(value)) {
     errors.push('nav must be an array')
@@ -111,7 +124,7 @@ function normalizeNav (value, errors) {
       continue
     }
     for (const key of Object.keys(item)) {
-      if (key !== 'label' && key !== 'href') errors.push('nav[].' + key + ' is not a recognised field')
+      if (key !== 'label' && key !== 'href') warnings.push('nav[].' + key + ' is not a recognised field')
     }
     const label = readableText(item.label, { max: 40, min: 1, noMarkup: true }, 'nav[].label', errors)
     const href = readableText(item.href, { max: 300, min: 1 }, 'nav[].href', errors)
@@ -186,7 +199,7 @@ function normalizeHttpsUrl (value, path, errors) {
   return text
 }
 
-function normalizeBlocks (value, errors) {
+function normalizeBlocks (value, errors, warnings) {
   if (value === undefined || value === null) return defaultBlogBlocks()
   if (!Array.isArray(value)) {
     errors.push('blocks must be an array')
@@ -204,7 +217,7 @@ function normalizeBlocks (value, errors) {
     }
     for (const key of Object.keys(item)) {
       if (!['type', 'visible', 'title', 'body', 'layout'].includes(key)) {
-        errors.push('blocks[].' + key + ' is not a recognised field')
+        warnings.push('blocks[].' + key + ' is not a recognised field')
       }
     }
     const type = enumValue(item.type, BLOCK_TYPES, 'blocks[].type', errors, '')
@@ -230,7 +243,7 @@ function normalizeBlocks (value, errors) {
   return blocks
 }
 
-function normalizePortfolio (value, errors) {
+function normalizePortfolio (value, errors, warnings) {
   const input = value === undefined || value === null ? {} : value
   if (!isPlainObject(input)) {
     errors.push('portfolio must be an object')
@@ -238,7 +251,7 @@ function normalizePortfolio (value, errors) {
   }
   for (const key of Object.keys(input)) {
     if (!['enabled', 'title', 'description', 'layout', 'items'].includes(key)) {
-      errors.push('portfolio.' + key + ' is not a recognised field')
+      warnings.push('portfolio.' + key + ' is not a recognised field')
     }
   }
   const enabled = input.enabled === true
@@ -256,15 +269,56 @@ function normalizePortfolio (value, errors) {
   return { enabled, title, description, layout, items }
 }
 
-function normalizeShop (value, errors) {
+function defaultShopSettings () {
+  return {
+    enabled: false,
+    title: 'Shop',
+    description: '',
+    source: 'account',
+    tag: '',
+    featured: [],
+    layout: 'grid',
+    showSoldOut: true,
+    sort: 'newest'
+  }
+}
+
+function normalizeShopFeatured (value, errors) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) {
+    errors.push('shop.featured must be an array')
+    return []
+  }
+  if (value.length > BLOG_MAX_SHOP_FEATURED) {
+    errors.push('shop.featured supports at most ' + BLOG_MAX_SHOP_FEATURED + ' products')
+  }
+  const out = []
+  for (const item of value.slice(0, BLOG_MAX_SHOP_FEATURED)) {
+    if (typeof item !== 'string') {
+      errors.push('shop.featured contains an invalid product reference')
+      continue
+    }
+    const [author, ...rest] = item.trim().toLowerCase().split('/')
+    const permlink = rest.join('/')
+    if (!isValidHiveAccountName(author) || !PERMLINK_RE.test(permlink)) {
+      errors.push('shop.featured contains an invalid product reference')
+      continue
+    }
+    const key = author + '/' + permlink
+    if (!out.includes(key)) out.push(key)
+  }
+  return out
+}
+
+function normalizeShop (value, errors, warnings) {
   const input = value === undefined || value === null ? {} : value
   if (!isPlainObject(input)) {
     errors.push('shop must be an object')
-    return { enabled: false, title: 'Shop', description: '' }
+    return defaultShopSettings()
   }
   for (const key of Object.keys(input)) {
-    if (!['enabled', 'title', 'description'].includes(key)) {
-      errors.push('shop.' + key + ' is not a recognised field')
+    if (!['enabled', 'title', 'description', 'source', 'tag', 'featured', 'layout', 'showSoldOut', 'sort'].includes(key)) {
+      warnings.push('shop.' + key + ' is not a recognised field')
     }
   }
   const enabled = input.enabled === true
@@ -277,7 +331,27 @@ function normalizeShop (value, errors) {
   const description = input.description === undefined
     ? ''
     : readableText(input.description, { max: 240 }, 'shop.description', errors)
-  return { enabled, title, description }
+  const source = enumValue(input.source, SHOP_SOURCES, 'shop.source', errors, 'account')
+  let tag = ''
+  if (input.tag !== undefined && input.tag !== null && input.tag !== '') {
+    if (typeof input.tag !== 'string') {
+      errors.push('shop.tag must be a string')
+    } else {
+      tag = input.tag.trim().toLowerCase().replace(/^#+/, '')
+      if (!SHOP_TAG_RE.test(tag)) errors.push('shop.tag must be a Hive tag such as hosting')
+    }
+  }
+  if (source === 'tag' && !tag) {
+    warnings.push('shop.source is "tag" but shop.tag is empty; the storefront will fall back to your account.')
+  }
+  const featured = normalizeShopFeatured(input.featured, errors)
+  const layout = enumValue(input.layout, SHOP_LAYOUTS, 'shop.layout', errors, 'grid')
+  const showSoldOut = input.showSoldOut !== false
+  if (input.showSoldOut !== undefined && typeof input.showSoldOut !== 'boolean') {
+    errors.push('shop.showSoldOut must be a boolean')
+  }
+  const sort = enumValue(input.sort, SHOP_SORTS, 'shop.sort', errors, 'newest')
+  return { enabled, title, description, source, tag, featured, layout, showSoldOut, sort }
 }
 
 /**
@@ -329,7 +403,7 @@ export function defaultBlogSettings (account) {
     heroImage: '',
     favicon: '',
     portfolio: { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] },
-    shop: { enabled: false, title: 'Shop', description: '' },
+    shop: defaultShopSettings(),
     pinned: [],
     authors: [],
     community: '',
@@ -356,7 +430,7 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     return { ok: false, settings: defaults, errors: ['Blog settings must be a JSON object'], warnings }
   }
   for (const key of Object.keys(input)) {
-    if (!BLOG_KEYS.includes(key)) errors.push(key + ' is not a recognised blog field')
+    if (!BLOG_KEYS.includes(key)) warnings.push(key + ' is not a recognised blog field')
   }
 
   const version = input.version === undefined ? BLOG_SCHEMA_VERSION : input.version
@@ -389,7 +463,7 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const showReadingTime = input.showReadingTime !== false
   if (input.showReadingTime !== undefined && typeof input.showReadingTime !== 'boolean') errors.push('showReadingTime must be a boolean')
 
-  const blocks = normalizeBlocks(input.blocks, errors)
+  const blocks = normalizeBlocks(input.blocks, errors, warnings)
   const rawCss = input.css === undefined || input.css === null
     ? ''
     : readableText(input.css, { max: BLOG_MAX_CSS + 100 }, 'css', errors)
@@ -400,10 +474,10 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const logo = normalizeHttpsUrl(input.logo, 'logo', errors)
   const heroImage = normalizeHttpsUrl(input.heroImage, 'heroImage', errors)
   const favicon = normalizeHttpsUrl(input.favicon, 'favicon', errors)
-  const portfolio = normalizePortfolio(input.portfolio, errors)
-  const shop = normalizeShop(input.shop, errors)
+  const portfolio = normalizePortfolio(input.portfolio, errors, warnings)
+  const shop = normalizeShop(input.shop, errors, warnings)
 
-  const nav = normalizeNav(input.nav, errors)
+  const nav = normalizeNav(input.nav, errors, warnings)
   const pinned = normalizePermlinks(input.pinned, errors, { max: BLOG_MAX_PINNED, path: 'pinned' })
   const authors = normalizeAuthors(input.authors, errors)
   const community = input.community === undefined || input.community === '' ? '' : String(input.community || '').toLowerCase()

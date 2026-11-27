@@ -4,6 +4,7 @@ import {
   isPurchasable,
   isSupportedProduct,
   parseProductMetadata,
+  productJsonLd,
   productTotalLabel,
   purchaseMemo
 } from '../../src/services/blogShop'
@@ -23,6 +24,7 @@ function productPost (metadata = {}) {
       subscription: 0,
       status: 1,
       tags: ['hosting', 'linux'],
+      image: ['https://images.hive.blog/hosting.png'],
       ...metadata
     })
   }
@@ -73,5 +75,35 @@ describe('Hive Open Market products', () => {
     expect(productTotalLabel(product, 2)).toBe('50.000 HBD')
     expect(purchaseMemo('Alice', 'managed-hosting', 2))
       .toBe('{"product":"alice/managed-hosting","quantity":2}')
+  })
+
+  it('keeps the body and image gallery in the product contract', () => {
+    const product = parseProductMetadata(productPost({
+      image: ['https://images.hive.blog/hosting.png', 'https://images.hive.blog/rack.png', 'http://insecure.example/x.png']
+    }))
+    expect(product.body).toBe('Hosting.')
+    expect(product.images).toEqual([
+      'https://images.hive.blog/hosting.png',
+      'https://images.hive.blog/rack.png'
+    ])
+    expect(product.image).toBe('https://images.hive.blog/hosting.png')
+  })
+
+  it('emits Product/Offer JSON-LD without faking an ISO currency', () => {
+    const product = parseProductMetadata(productPost({ price: 0.001, status: 3 }))
+    const jsonLd = productJsonLd(product, 'https://alice.banksia.io/shop/managed-hosting')
+    expect(jsonLd).toMatchObject({
+      '@type': 'Product',
+      name: 'Managed Hive hosting',
+      sku: 'alice/managed-hosting',
+      url: 'https://alice.banksia.io/shop/managed-hosting',
+      offers: {
+        '@type': 'Offer',
+        price: '0.001',
+        priceCurrency: 'HBD',
+        availability: 'https://schema.org/OutOfStock',
+        seller: { '@type': 'Person', name: '@alice', url: 'https://banksia.io/@alice' }
+      }
+    })
   })
 })

@@ -15,6 +15,10 @@ const blogRoutes = [
       { path: 'contact', name: 'blog-contact', component: () => import('pages/blog/BlogContact.vue') },
       { path: 'portfolio', name: 'blog-portfolio', component: () => import('pages/blog/BlogPortfolio.vue') },
       { path: 'shop', name: 'blog-shop', component: () => import('pages/blog/BlogShop.vue') },
+      // Product detail. The owner keeps the clean /shop/<permlink> URL; a
+      // contributor or third-party seller is always explicit in the path.
+      { path: 'shop/@:author/:permlink', name: 'blog-shop-product-author', component: () => import('pages/blog/BlogProduct.vue') },
+      { path: 'shop/:permlink', name: 'blog-shop-product', component: () => import('pages/blog/BlogProduct.vue') },
       { path: 'p/:permlink', name: 'blog-post-fallback', component: () => import('pages/blog/BlogPost.vue') },
       { path: '@:author/:permlink', name: 'blog-post-author', component: () => import('pages/blog/BlogPost.vue') },
       { path: ':permlink', name: 'blog-post', component: () => import('pages/blog/BlogPost.vue') },

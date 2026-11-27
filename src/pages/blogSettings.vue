@@ -454,11 +454,75 @@
                   :disable="!canEdit"
                 />
               </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.shopSource"
+                  :options="shopSourceOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Product source"
+                  :disable="!canEdit"
+                  hint="Your own products, or every product posted with one tag."
+                />
+              </div>
+              <div v-if="form.shopSource === 'tag'" class="blog-settings__field">
+                <q-input
+                  v-model="form.shopTag"
+                  outlined
+                  dense
+                  label="Hive tag"
+                  placeholder="hosting"
+                  maxlength="24"
+                  :disable="!canEdit"
+                  hint="Lowercase letters, digits and hyphens. Empty falls back to your own products."
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-input
+                  v-model="form.shopFeaturedText"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  label="Featured products"
+                  :disable="!canEdit"
+                  hint="One author/permlink per line, up to 12. Featured products appear first."
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.shopLayout"
+                  :options="shopLayoutOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Shop layout"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.shopSort"
+                  :options="shopSortOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Default sort"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__toggles">
+                <q-toggle v-model="form.shopShowSoldOut" label="Show sold-out and inactive products" :disable="!canEdit" />
+              </div>
               <p class="blog-settings__hint">
                 Products are normal Hive posts with Hive Open Market metadata:
                 <code>content_type: "product"</code>, <code>currency: "HIVE:HBD"</code>
                 or <code>"HIVE:HIVE"</code>, <code>price</code> and <code>status</code>.
-                The shop lists this account's products; checkout opens on banksia.io.
+                Checkout opens on banksia.io; there is no escrow or buyer protection.
               </p>
             </q-card-section>
           </q-card>
@@ -945,6 +1009,19 @@ function parsePortfolioItems (value) {
   return items
 }
 
+function parseFeaturedItems (value) {
+  const seen = new Set()
+  const items = []
+  for (const raw of String(value || '').split(/[\n,]+/)) {
+    const item = raw.trim().toLowerCase().replace(/^@/, '')
+    if (!/^[a-z][a-z0-9.-]{2,15}\/[a-z0-9][a-z0-9._-]{0,255}$/.test(item) || seen.has(item)) continue
+    seen.add(item)
+    items.push(item)
+    if (items.length >= 12) break
+  }
+  return items
+}
+
 export default {
   name: 'BlogSettings',
   components: { ImageUploadButton },
@@ -991,6 +1068,12 @@ export default {
         shopEnabled: false,
         shopTitle: 'Shop',
         shopDescription: '',
+        shopSource: 'account',
+        shopTag: '',
+        shopFeaturedText: '',
+        shopLayout: 'grid',
+        shopSort: 'newest',
+        shopShowSoldOut: true,
         pinnedText: '',
         authorsText: '',
         community: '',
@@ -1087,8 +1170,27 @@ export default {
         { label: 'Masonry', value: 'masonry' }
       ]
     },
+    shopSourceOptions () {
+      return [
+        { label: 'My products', value: 'account' },
+        { label: 'Products with a Hive tag', value: 'tag' }
+      ]
+    },
+    shopLayoutOptions () {
+      return [
+        { label: 'Grid', value: 'grid' },
+        { label: 'List', value: 'list' }
+      ]
+    },
+    shopSortOptions () {
+      return [
+        { label: 'Newest first', value: 'newest' },
+        { label: 'Price: low to high', value: 'price-asc' },
+        { label: 'Price: high to low', value: 'price-desc' }
+      ]
+    },
     metadataBytes () {
-      return this.settings ? blogSettingsSize(this.settings) : 0
+      return this.settings ? blogSettingsSize(this.formSettings()) : 0
     },
     maxBlogBytes () {
       return BLOG_MAX_BYTES
@@ -1181,6 +1283,12 @@ export default {
         shopEnabled: settings.shop?.enabled === true,
         shopTitle: settings.shop?.title || 'Shop',
         shopDescription: settings.shop?.description || '',
+        shopSource: settings.shop?.source || 'account',
+        shopTag: settings.shop?.tag || '',
+        shopFeaturedText: (settings.shop?.featured || []).join('\n'),
+        shopLayout: settings.shop?.layout || 'grid',
+        shopSort: settings.shop?.sort || 'newest',
+        shopShowSoldOut: settings.shop?.showSoldOut !== false,
         pinnedText: (settings.pinned || []).join(', '),
         authorsText: (settings.authors || []).join(', '),
         community: settings.community || '',
@@ -1221,7 +1329,13 @@ export default {
         shop: {
           enabled: this.form.shopEnabled,
           title: this.form.shopTitle,
-          description: this.form.shopDescription
+          description: this.form.shopDescription,
+          source: this.form.shopSource,
+          tag: this.form.shopTag,
+          featured: parseFeaturedItems(this.form.shopFeaturedText),
+          layout: this.form.shopLayout,
+          showSoldOut: this.form.shopShowSoldOut,
+          sort: this.form.shopSort
         },
         pinned: splitList(this.form.pinnedText),
         authors: splitList(this.form.authorsText),

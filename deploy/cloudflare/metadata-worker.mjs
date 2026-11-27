@@ -17,6 +17,7 @@
 
 import { resolveBlogHost, blogPostPathFor, isValidHiveAccountName } from '../../src/services/blogHost.js'
 import { readBlogSettings } from '../../src/services/blogSettings.js'
+import { parseProductMetadata, productJsonLd } from '../../src/services/blogShop.js'
 import { buildBlogRss, blogFeedPosts, escapeXml } from '../../src/services/blogFeed.js'
 import { blogOgImagePath } from '../../src/themes/blogThemes.js'
 
@@ -44,7 +45,10 @@ const THEME_SHELLS = new Map([
   ['/settings/blog', '/index.html'],
   ['/blogs', '/index.html'],
   ['/blogs/directory', '/index.html'],
-  ['/pay', '/index.html']
+  ['/pay', '/index.html'],
+  ['/cart', '/index.html'],
+  ['/checkout', '/index.html'],
+  ['/orders', '/index.html']
 ])
 const THEME_META = new Map([
   ['/settings/blog', {
@@ -108,6 +112,54 @@ const THEME_META = new Map([
       '@type': 'WebPage',
       name: 'Pay for a Hive product',
       url: 'https://banksia.io/pay'
+    }
+  }],
+  ['/cart', {
+    title: 'Cart — banksia.io',
+    description: 'Review Hive Open Market products before checkout.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/cart',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Cart',
+      url: 'https://banksia.io/cart'
+    }
+  }],
+  ['/checkout', {
+    title: 'Checkout — banksia.io',
+    description: 'Review Hive Open Market products and queue direct Hive payments.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/checkout',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Checkout',
+      url: 'https://banksia.io/checkout'
+    }
+  }],
+  ['/orders', {
+    title: 'Orders — banksia.io',
+    description: 'Hive Open Market purchases and sales from public account history.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/orders',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Orders',
+      url: 'https://banksia.io/orders'
     }
   }]
 ])
@@ -484,6 +536,38 @@ async function blogMetadata (url, tenant) {
         description: sectionDescription,
         url: origin + path
       }
+    }
+  }
+
+  // Product detail: /shop/<permlink> for the owner and
+  // /shop/@author/<permlink> for a third-party seller. The product post is
+  // re-read at the edge so price, status and images always match chain data.
+  const productAuthorPath = path.match(/^\/shop\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)$/i)
+  const ownerProductPath = path.match(/^\/shop\/([a-z0-9][a-z0-9._-]*)$/i)
+  if (productAuthorPath || ownerProductPath) {
+    const author = productAuthorPath ? productAuthorPath[1].toLowerCase() : tenant.account
+    const permlink = productAuthorPath ? productAuthorPath[2] : ownerProductPath[1]
+    const post = await rpc('bridge.get_post', { author, permlink, observer: '' })
+    const product = parseProductMetadata(post)
+    if (!product) return null
+    const canonicalPath = '/shop/' + (product.author === tenant.account
+      ? product.permlink
+      : '@' + product.author + '/' + product.permlink)
+    const productDescription = stripMarkdown(product.body, 180) ||
+      ('A Hive Open Market product from @' + product.author + '.')
+    const productImage = proxiedImage(product.image) ||
+      ('https://images.hive.blog/u/' + product.author + '/avatar')
+    return {
+      title: product.title + ' — ' + (settings.shop?.title || 'Shop') + ' — ' + title,
+      description: productDescription,
+      image: productImage,
+      type: 'product',
+      path: canonicalPath,
+      origin,
+      siteName: title,
+      rss: origin + '/rss.xml',
+      noindex: !claimed,
+      jsonLd: productJsonLd(product, origin + canonicalPath)
     }
   }
 

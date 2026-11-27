@@ -27,6 +27,22 @@ export function formatProductAmount (value, ticker) {
   return amount.toFixed(3) + ' ' + String(ticker || '').toUpperCase()
 }
 
+/** Every safe https image advertised by a post, in order, deduplicated. */
+export function productImages (post) {
+  const meta = postMetadata(post)
+  const values = Array.isArray(meta.image) ? meta.image : [meta.image]
+  const seen = new Set()
+  const images = []
+  for (const value of values) {
+    if (typeof value !== 'string' || !/^https:\/\//i.test(value.trim())) continue
+    const url = value.trim()
+    if (seen.has(url)) continue
+    seen.add(url)
+    images.push(url)
+  }
+  return images
+}
+
 /** Parse a Hive post into a product, or return null when it is not one. */
 export function parseProductMetadata (post) {
   if (!post || !post.author || !post.permlink) return null
@@ -43,21 +59,24 @@ export function parseProductMetadata (post) {
   const tags = Array.isArray(meta.tags)
     ? meta.tags.filter(tag => typeof tag === 'string' && tag.trim()).slice(0, 6)
     : []
+  const images = productImages(post)
   return {
     author: String(post.author).toLowerCase(),
     permlink: String(post.permlink),
     title: String(post.title || post.permlink),
+    body: String(post.body || ''),
+    created: post.created || '',
+    image: blogPostImage(post) || images[0] || '',
+    images,
     currency,
     ticker,
     price,
     priceLabel: formatProductAmount(price, ticker),
-    subscription,
-    recurrenceHours,
     status,
     statusLabel: STATUS_LABELS[status],
+    subscription,
+    recurrenceHours,
     tags,
-    image: blogPostImage(post),
-    created: post.created || '',
     post
   }
 }
@@ -80,6 +99,58 @@ export function isSupportedProduct (product) {
 
 export function isPurchasable (product) {
   return Boolean(product && isSupportedProduct(product) && product.status === 1)
+}
+
+const SCHEMA_AVAILABILITY = {
+  1: 'https://schema.org/InStock',
+  2: 'https://schema.org/Discontinued',
+  3: 'https://schema.org/OutOfStock'
+}
+
+/**
+ * schema.org Product/Offer for a Hive Open Market product.
+ *
+ * `priceCurrency` is the Hive ticker (`HBD` or `HIVE`). HBD is not an ISO 4217
+ * currency, so there is no honest ISO code to substitute: schema.org accepts a
+ * text currency, and we document the mapping instead of faking `USD`. Google's
+ * rich-result validator may therefore decline the offer; the JSON-LD still
+ * describes the product correctly for other consumers.
+ */
+export function productJsonLd (product, url) {
+  if (!product) return null
+  const productUrl = String(url || '')
+  const images = product.images && product.images.length
+    ? product.images
+    : (product.image ? [product.image] : [])
+  const description = String(product.body || '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[#*_>`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300)
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description,
+    sku: product.author + '/' + product.permlink,
+    url: productUrl || undefined,
+    image: images.length ? images : undefined,
+    offers: {
+      '@type': 'Offer',
+      url: productUrl || undefined,
+      price: Number(product.price).toFixed(3),
+      priceCurrency: product.ticker,
+      availability: SCHEMA_AVAILABILITY[product.status] || 'https://schema.org/InStock',
+      seller: {
+        '@type': 'Person',
+        name: '@' + product.author,
+        url: 'https://banksia.io/@' + product.author
+      }
+    }
+  }
 }
 
 /**
