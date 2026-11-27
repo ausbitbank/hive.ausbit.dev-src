@@ -57,9 +57,10 @@
               <div>
                 <h2 class="vault-section-title vault-section-title--flush">Auto-issue grants</h2>
                 <p class="vault-muted">
-                  While this dashboard tab is open and visible, check the public
-                  payment history every 30 seconds and queue a bulletin when a
+                  While this dashboard tab is open, check the public payment
+                  history every 30–60 seconds and queue a bulletin when a
                   subscriber needs a grant. Your vault must stay unlocked.
+                  Background tabs may be throttled by the browser.
                 </p>
               </div>
               <q-toggle
@@ -1261,7 +1262,15 @@ export default {
         this.busy = ''
       }
     },
+    autoIssueInterval () {
+      // Background tabs are usually throttled by the browser; poll less often
+      // but keep issuing while the tab is left open.
+      return typeof document !== 'undefined' && document.visibilityState === 'hidden'
+        ? AUTO_ISSUE_INTERVAL_MS * 2
+        : AUTO_ISSUE_INTERVAL_MS
+    },
     onVaultVisibility () {
+      this.startAutoIssue()
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') this.autoIssueTick()
     },
     startAutoIssue () {
@@ -1269,7 +1278,7 @@ export default {
       if (!this.autoIssue || !this.isOwner || !this.vault || !this.plan) return
       this.autoIssueTick()
       if (typeof window !== 'undefined') {
-        this.autoIssueTimer = window.setInterval(() => this.autoIssueTick(), AUTO_ISSUE_INTERVAL_MS)
+        this.autoIssueTimer = window.setInterval(() => this.autoIssueTick(), this.autoIssueInterval())
       }
     },
     stopAutoIssue () {
@@ -1277,7 +1286,6 @@ export default {
       this.autoIssueTimer = null
     },
     async autoIssueTick () {
-      const visible = typeof document === 'undefined' || document.visibilityState !== 'hidden'
       const queuedBulletin = hasQueuedVaultBulletin(
         this.$hiveStore.queue,
         this.$hiveStore.queueMeta,
@@ -1285,7 +1293,7 @@ export default {
       )
       if (!shouldAutoIssue({
         enabled: this.autoIssue,
-        visible,
+        visible: true,
         hasVault: Boolean(this.vault),
         isOwner: this.isOwner,
         hasPlan: Boolean(this.plan),

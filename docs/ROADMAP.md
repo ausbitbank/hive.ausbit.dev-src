@@ -1,6 +1,6 @@
 # Banksia roadmap
 
-Last updated: 2026-11-27
+Last updated: 2026-11-28
 
 This is the active roadmap. It lists the work that is still open and the
 principles that constrain it. Delivered work and its verification records live in
@@ -67,22 +67,18 @@ principles that constrain it. Delivered work and its verification records live i
   recurring transfer no longer offers Cancel, and the cancel operation now
   carries a non-zero `pair_id` so HF28 can find the right plan. See
   [`docs/workstreams/W93-subscription-cancel-safety.md`](workstreams/W93-subscription-cancel-safety.md).
-- Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
-  `bun run test` green with **2,093 tests across 218 files**, `bun run build`
-  succeeded, and `bun run perf:check` passed after a documented re-baseline.
-  `e2e/vault.spec.js` passed **8/8** in Chromium with axe clean at 1440×900 and
-  390×844 for the locked post, `/subscribe`, `/settings/blog/vault` and
-  `/subscriptions`. The full Chromium suite ran **197 passed / 4 failed**; the
-  four failures (badges shelf, login-key guide, header lockup, profile-skin
-  scope) reproduce identically on pre-W89 `master` 8351c92 and are not Vault
-  regressions. The Vault spec is excluded from the fast Obscura suite because
-  it needs real IndexedDB/WebCrypto keys and axe.
-- The full Chromium suite and the performance budgets are the CI release gate.
-  The fast Obscura suite is the local loop; its current CDP build does not
-  expose intercepted POST bodies and has pre-existing timeouts in this
-  environment, so the network-mocked HOM and Vault E2E run under the full
-  Chromium config.
-- The next free workstream number is **W94**. **W90** remains reserved for the
+- W94 adds a read-only Vault pending-grant badge to the account menu and makes
+  the dashboard auto-issue interval visibility-aware. The badge is counted from
+  public history and the verified bulletin, is cached for 60 seconds, and never
+  signs anything. See
+  [`docs/workstreams/W94-vault-pending-badge.md`](workstreams/W94-vault-pending-badge.md).
+- Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
+  `bun run test` green with **2,131 tests across 222 files**, and
+  `bun run build` succeeded. The four Playwright failures listed in the
+  pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
+  scope) do not reproduce on this tree; the targeted specs pass 8/8. The full
+  Chromium suite remains the release gate.
+- The next free workstream number is **W95**. **W90** remains reserved for the
   optional self-hosted Vault relay prompt in `docs/prompts/`.
 
 ## Vision
@@ -298,11 +294,10 @@ W89 shipped the self-sovereign membership beta: single tier, text-only,
 keyring/full archive, locked section and whole post, HOM product plus hidden
 container, AES-256-GCM/P-256/HKDF, 0% fee. Remaining work:
 
-- Fix the current build blocker: `src/pages/compose.vue` imports
-  `hasVaultMarker`/`vaultMarkerIndex` from `vaultPayload.js` instead of
-  `vaultCompose.js`. Then deploy, `bun run verify:deploy`, record the backup
-  path, and complete the live smoke (enable, publish, pay, unlock, reload,
-  expire, cancel, restore).
+- The earlier `compose.vue` import blocker (`hasVaultMarker` /
+  `vaultMarkerIndex` from `vaultPayload.js`) is fixed: the page imports them
+  from `vaultCompose.js` and `bun run build` succeeds. Keep the deployed smoke
+  checklist current when Vault code changes.
 - Bind bulletin signers to the blog (or implement delegation verification)
   before public launch; see the open risks in the W89 record.
 - Relay and delegated signing so a reader can be granted while the creator is

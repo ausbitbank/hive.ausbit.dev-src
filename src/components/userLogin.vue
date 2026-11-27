@@ -85,6 +85,14 @@
               <q-item v-for="link in menuLinks" :key="link.title" clickable :to="link.to" class="account-menu__tile" @click="closeMenu">
                 <q-item-section avatar><q-icon :name="link.icon" aria-hidden="true" /></q-item-section>
                 <q-item-section>{{ link.title }}</q-item-section>
+                <q-item-section v-if="link.badge" side>
+                  <q-badge
+                    color="orange"
+                    :label="link.badge"
+                    :aria-label="link.badgeLabel || undefined"
+                    :title="link.badgeLabel || undefined"
+                  />
+                </q-item-section>
               </q-item>
               <q-item v-if="account !== undefined && account.witness_votes && account.witness_votes.includes(loggedInUser)" clickable to="/witness" class="account-menu__tile account-menu__tile--wide" @click="closeMenu">
                 <q-item-section avatar><q-icon name="admin_panel_settings" aria-hidden="true" /></q-item-section>
@@ -777,6 +785,13 @@ function loadHiveAuth () {
   return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
 }
 
+// Vault pending checks pull in the reader crypto/chain stack. Load them only
+// when the account menu actually opens, never in the initial shell.
+let vaultPendingPromise = null
+function loadVaultPending () {
+  return (vaultPendingPromise ||= import('src/services/vaultPending'))
+}
+
 export default {
   name: 'userLogin',
   props: [],
@@ -808,7 +823,8 @@ export default {
       hiveauthTimer: null,
       hiveauthController: null,
       hiveauthStatus: null,
-      hiveauthResuming: false
+      hiveauthResuming: false,
+      vaultPending: 0
     }
   },
   computed: {
@@ -892,11 +908,15 @@ export default {
     menuLinks () {
       const user = this.loggedInUser
       if (!user) return []
+      const pending = Number(this.vaultPending) || 0
+      const pendingLabel = pending
+        ? pending + (pending === 1 ? ' subscriber needs a grant' : ' subscribers need a grant')
+        : ''
       return [
         { title: 'Feed', icon: 'rss_feed', to: this.linkFeed(user) },
         { title: 'Blog', icon: 'menu_book', to: this.linkBlog(user) },
         { title: 'Blog settings', icon: 'web', to: '/settings/blog?account=' + user },
-        { title: 'Vault dashboard', icon: 'lock', to: '/settings/blog/vault?account=' + user },
+        { title: 'Vault dashboard', icon: 'lock', to: '/settings/blog/vault?account=' + user, badge: pending || '', badgeLabel: pendingLabel },
         { title: 'Posts', icon: 'library_books', to: this.linkPosts(user) },
         { title: 'Communities', icon: 'forum', to: this.linkCommunities(user) },
         { title: 'Replies', icon: 'comment', to: this.linkReplies(user) },
@@ -921,6 +941,19 @@ export default {
       await this.loadSmartlockUsers()
       this.refreshSmartlockStatus()
       this.refreshVotingStats()
+      this.refreshVaultPending()
+    },
+    async refreshVaultPending () {
+      if (!this.loggedInUser) {
+        this.vaultPending = 0
+        return
+      }
+      try {
+        const module = await loadVaultPending()
+        this.vaultPending = await module.getPendingGrantCount(this.loggedInUser)
+      } catch {
+        this.vaultPending = 0
+      }
     },
     async loadSmartlockUsers () {
       try {

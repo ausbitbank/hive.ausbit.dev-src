@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T163409Z-ebc880a47ed9`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T183832Z-507aecc57bf8`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T163446Z.tar.gz`
-  (sha256 `3b2e8d7fbeb78f370f5e093a3514f9f46c50a1f0d3e38b2083aeb6b48062a452`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T163446Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T183816Z.tar.gz`
+  (sha256 `68d08d611df84ac8aa458b8c1256a118457c0d96c56a12bf1aeba3f4e92c1a2a`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T183816Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -426,9 +426,12 @@ Deployed on 2026-11-27 from `master`:
   cryptographic constructions, exact signature payloads, reproducible test
   vectors, an independent security-audit checklist and a frontend
   implementation checklist.
-- **Auto-issue grants:** while the creator dashboard tab is open, visible and
-  the vault is unlocked, it polls verified payments every 30 seconds and queues
-  a bulletin for pending readers automatically. The toggle is persisted per
+- **Pending-grant badge:** the account menu lazily checks for pending grants
+  when opened and shows a badge on the Vault dashboard link, without pulling the
+  reader/crypto stack into the initial bundle.
+- **Auto-issue grants:** while the creator dashboard tab is open and the vault
+  is unlocked, it polls verified payments every 30 seconds (60 when the tab is
+  backgrounded) and queues a bulletin for pending readers automatically. The toggle is persisted per
   account, a queued unsent bulletin suppresses duplicates, and Keychain may
   still ask for approval (SmartLock can sign silently while unlocked). Manual
   **Select pending & issue** remains available.
