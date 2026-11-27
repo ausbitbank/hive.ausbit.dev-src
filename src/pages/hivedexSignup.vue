@@ -363,6 +363,7 @@
 import { copyToClipboard, exportFile } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { validateAccountName } from 'src/services/hiveNames'
+import { pollWhileVisible } from 'src/services/polling'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
 import { importKeysToKeychain } from 'src/services/keychainAccounts'
 import { buildClaimPayload, claimFingerprint, publicKeysFromAuthorities } from 'src/services/accountClaim'
@@ -426,9 +427,9 @@ export default {
       keysMatch: null,
       checkingAccount: false,
       savedOrder: null,
-      statusTimer: null,
+      statusPoller: null,
       statusCount: 0,
-      accountTimer: null,
+      accountPoller: null,
       accountCount: 0
     }
   },
@@ -647,17 +648,19 @@ export default {
     startStatusPolling () {
       this.stopStatusPolling()
       this.statusCount = 0
-      this.statusTimer = setInterval(async () => {
+      this.statusPoller = pollWhileVisible(async () => {
+        if (this.checkingStatus) return
         this.statusCount += 1
         await this.checkStatus()
         if (this.status === HIVEDEX_STATUS.PAID || this.status === HIVEDEX_STATUS.EXPIRED || this.statusCount >= STATUS_POLL_ATTEMPTS) {
           this.stopStatusPolling()
         }
-      }, STATUS_POLL_MS)
+      }, STATUS_POLL_MS, { immediate: false })
+      this.statusPoller.start()
     },
     stopStatusPolling () {
-      if (this.statusTimer) clearInterval(this.statusTimer)
-      this.statusTimer = null
+      this.statusPoller?.stop()
+      this.statusPoller = null
     },
     async checkStatus () {
       if (!this.invoice?.trackId) return
@@ -683,17 +686,19 @@ export default {
       this.stopAccountPolling()
       this.accountCount = 0
       this.checkAccount()
-      this.accountTimer = setInterval(async () => {
+      this.accountPoller = pollWhileVisible(async () => {
+        if (this.checkingAccount) return
         this.accountCount += 1
         await this.checkAccount()
         if (this.accountExists || this.accountCount >= ACCOUNT_POLL_ATTEMPTS) {
           this.stopAccountPolling()
         }
-      }, ACCOUNT_POLL_MS)
+      }, ACCOUNT_POLL_MS, { immediate: false })
+      this.accountPoller.start()
     },
     stopAccountPolling () {
-      if (this.accountTimer) clearInterval(this.accountTimer)
-      this.accountTimer = null
+      this.accountPoller?.stop()
+      this.accountPoller = null
     },
     async checkAccount () {
       if (!this.username) return

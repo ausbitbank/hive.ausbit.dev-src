@@ -217,6 +217,7 @@ import {
   claimFromLink
 } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
 
 const MAX_BATCH = 10
@@ -236,8 +237,9 @@ export default {
       txId: '',
       keysDialog: false,
       keysClaim: null,
-      pollTimer: null,
+      poller: null,
       pollCount: 0,
+      polling: false,
       chainProperties: null,
       maxBatch: MAX_BATCH
     }
@@ -525,18 +527,25 @@ export default {
     startPolling () {
       this.stopPolling()
       this.pollCount = 0
-      this.pollTimer = setInterval(async () => {
-        this.pollCount += 1
-        await this.checkClaimAccounts()
-        this.initAccount()
-        if (this.completedCount + this.blockedCount === this.claims.length || this.pollCount >= POLL_ATTEMPTS) {
-          this.stopPolling()
+      this.poller = pollWhileVisible(async () => {
+        if (this.polling) return
+        this.polling = true
+        try {
+          this.pollCount += 1
+          await this.checkClaimAccounts()
+          this.initAccount()
+          if (this.completedCount + this.blockedCount === this.claims.length || this.pollCount >= POLL_ATTEMPTS) {
+            this.stopPolling()
+          }
+        } finally {
+          this.polling = false
         }
-      }, POLL_INTERVAL_MS)
+      }, POLL_INTERVAL_MS, { immediate: false })
+      this.poller.start()
     },
     stopPolling () {
-      if (this.pollTimer) clearInterval(this.pollTimer)
-      this.pollTimer = null
+      this.poller?.stop()
+      this.poller = null
     },
     openLogin () {
       window.dispatchEvent(new CustomEvent('banksia:open-login'))

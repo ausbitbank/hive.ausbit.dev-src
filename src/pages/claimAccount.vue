@@ -215,6 +215,7 @@ import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { claimAgeDays, claimFingerprint, claimFromLink, buildClaimLink, authoritiesFromPayload } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
 
 const POLL_INTERVAL_MS = 5000
@@ -237,8 +238,9 @@ export default {
       queued: false,
       tokenQueued: false,
       created: false,
-      pollTimer: null,
-      pollCount: 0
+      poller: null,
+      pollCount: 0,
+      polling: false
     }
   },
   computed: {
@@ -465,52 +467,59 @@ export default {
     startPolling () {
       this.stopPolling()
       this.pollCount = 0
-      this.pollTimer = setInterval(async () => {
-        this.pollCount += 1
-        await this.checkExistingAccount()
-        this.initAccount()
-        if (this.tokenQueued && this.pendingClaimed > 0) {
-          this.tokenQueued = false
-          this.$q.notify({
-            message: 'Account token ready. You can create the account now.',
-            color: 'green',
-            icon: 'check_circle',
-            position: 'top',
-            timeout: 4000
-          })
-        }
-        if (this.created) {
-          this.stopPolling()
-          return
-        }
-        if (this.pollCount >= POLL_ATTEMPTS) {
-          this.stopPolling()
-          if (this.queued) {
-            this.queued = false
-            this.$q.notify({
-              message: 'No account confirmation yet. Check the action queue and retry if it failed.',
-              color: 'orange',
-              icon: 'schedule',
-              position: 'top',
-              timeout: 6000
-            })
-          }
-          if (this.tokenQueued) {
+      this.poller = pollWhileVisible(async () => {
+        if (this.polling) return
+        this.polling = true
+        try {
+          this.pollCount += 1
+          await this.checkExistingAccount()
+          this.initAccount()
+          if (this.tokenQueued && this.pendingClaimed > 0) {
             this.tokenQueued = false
             this.$q.notify({
-              message: 'No token confirmation yet. Check the action queue and retry if it failed.',
-              color: 'orange',
-              icon: 'schedule',
+              message: 'Account token ready. You can create the account now.',
+              color: 'green',
+              icon: 'check_circle',
               position: 'top',
-              timeout: 6000
+              timeout: 4000
             })
           }
+          if (this.created) {
+            this.stopPolling()
+            return
+          }
+          if (this.pollCount >= POLL_ATTEMPTS) {
+            this.stopPolling()
+            if (this.queued) {
+              this.queued = false
+              this.$q.notify({
+                message: 'No account confirmation yet. Check the action queue and retry if it failed.',
+                color: 'orange',
+                icon: 'schedule',
+                position: 'top',
+                timeout: 6000
+              })
+            }
+            if (this.tokenQueued) {
+              this.tokenQueued = false
+              this.$q.notify({
+                message: 'No token confirmation yet. Check the action queue and retry if it failed.',
+                color: 'orange',
+                icon: 'schedule',
+                position: 'top',
+                timeout: 6000
+              })
+            }
+          }
+        } finally {
+          this.polling = false
         }
-      }, POLL_INTERVAL_MS)
+      }, POLL_INTERVAL_MS, { immediate: false })
+      this.poller.start()
     },
     stopPolling () {
-      if (this.pollTimer) clearInterval(this.pollTimer)
-      this.pollTimer = null
+      this.poller?.stop()
+      this.poller = null
     },
     openLogin () {
       window.dispatchEvent(new CustomEvent('banksia:open-login'))
