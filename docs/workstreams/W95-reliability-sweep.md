@@ -73,11 +73,15 @@ unthrottled account-creation pollers, and three legacy pages without a page-leve
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **227 files / 2,195 tests** passing.
+- `bun run test` — **228 files / 2,217 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright: **4/4 passed** — axe clean on `/@ausbitbank/downvotes`,
   `/@ausbitbank/wallet` and `/@ausbitbank/tip` at 1440×900 and 390×844, plus
   the downvotes evidence flow.
+- Full Chromium suite: **203 passed / 2 failed**. The two failures
+  (`/settings/skin` axe and command-palette navigation) were caused by a
+  concurrent Playwright run sharing `test-results`; both pass on an isolated
+  rerun. Do not run two Playwright suites against the same worktree.
 
 ## Remaining
 

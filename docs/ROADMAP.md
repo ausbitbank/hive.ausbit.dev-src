@@ -79,7 +79,7 @@ principles that constrain it. Delivered work and its verification records live i
   tabs, and three legacy pages have a page-level `h1`. See
   [`docs/workstreams/W95-reliability-sweep.md`](workstreams/W95-reliability-sweep.md).
 - Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
-  `bun run test` green with **2,195 tests across 227 files**, and
+  `bun run test` green with **2,217 tests across 228 files**, and
   `bun run build` succeeded. The four Playwright failures listed in the
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree; the targeted specs pass 8/8. The full
