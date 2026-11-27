@@ -23,7 +23,8 @@ const HOSTNAME_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a
 
 // A permlink that is also a fixed blog route needs the /p/ fallback.
 const BLOG_ROUTE_SLUGS = new Set([
-  'about', 'contact', 'p', 'settings', 'rss.xml', 'sitemap.xml', 'robots.txt',
+  'about', 'contact', 'p', 'settings', 'shop', 'portfolio',
+  'rss.xml', 'sitemap.xml', 'robots.txt',
   'manifest.webmanifest', 'sw.js', 'assets', 'statics'
 ])
 

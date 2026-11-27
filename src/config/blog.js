@@ -53,9 +53,9 @@ export const VAULT_ALLOWED_ARCHIVE = ['all', 'current']
 // bare quoted word in `src` as a possible Material icon name, and several of
 // these reserved labels collide with icon names.
 const RESERVED_LABELS = 'about abuse admin api app assets auth billing blog ' +
-  'cdn contact dashboard demo dev docs download downloads edge feed files ftp ' +
+  'cart cdn checkout contact dashboard demo dev docs download downloads edge feed files ftp ' +
   'git go help imap img images internal legal link links mail media metrics ' +
-  'ns1 ns2 origin pay payments pop privacy proxy redirect repo robots rss ' +
-  'security sitemap smtp staging static status support terms test www'
+  'ns1 ns2 orders origin p pay payments pop portfolio privacy proxy redirect repo robots rss ' +
+  'security settings shop sitemap smtp staging static status subscribe subscriptions support terms test wallet www'
 
 export const RESERVED_BLOG_LABELS = Object.freeze(RESERVED_LABELS.split(' '))

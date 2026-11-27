@@ -55,6 +55,9 @@ function decodeEntities (value) {
 
 export function escapeXml (value) {
   return String(value ?? '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')

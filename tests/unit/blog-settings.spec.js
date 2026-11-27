@@ -163,6 +163,19 @@ describe('normalizeBlogSettings', () => {
     expect(result.errors.join(' ')).toContain('nav[].href must be')
   })
 
+  it('rejects protocol-relative and backslash navigation links', () => {
+    for (const href of ['//evil.example', '/\\evil.example', '\\\\evil.example']) {
+      const result = normalizeBlogSettings({
+        version: 1,
+        claimed: true,
+        title: 'x',
+        nav: [{ label: 'Bad', href }]
+      })
+      expect(result.ok, href).toBe(false)
+      expect(result.errors.join(' ')).toContain('nav[].href must be')
+    }
+  })
+
   it('deduplicates pinned posts and contributors', () => {
     const result = normalizeBlogSettings({
       version: 1,

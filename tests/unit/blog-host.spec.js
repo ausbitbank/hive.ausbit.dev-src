@@ -105,8 +105,16 @@ describe('blog URLs', () => {
     expect(blogPostPathFor('my-post', 'alice', 'alice')).toBe('/my-post')
     expect(blogPostPathFor('my-post', 'bob', 'alice')).toBe('/@bob/my-post')
     expect(blogPostPathFor('about', 'alice', 'alice')).toBe('/p/about')
+    expect(blogPostPathFor('shop', 'alice', 'alice')).toBe('/p/shop')
+    expect(blogPostPathFor('portfolio', 'alice', 'alice')).toBe('/p/portfolio')
     expect(blogPostFallbackPath('about')).toBe('/p/about')
     expect(blogPostUrl('alice', 'my-post')).toBe('https://alice.banksia.io/my-post')
+  })
+
+  it('reserves service and blog route labels', () => {
+    for (const label of ['settings', 'shop', 'portfolio', 'checkout', 'cart', 'orders', 'subscribe', 'subscriptions', 'wallet']) {
+      expect(resolveBlogHost(label + '.banksia.io').mode, label).not.toBe('blog')
+    }
   })
 
   it('builds the apex settings URL', () => {

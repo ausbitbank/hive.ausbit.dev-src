@@ -39,6 +39,10 @@ describe('RSS helpers', () => {
     expect(escapeXml('a & b < c > d "e" \'f\'')).toBe('a &amp; b &lt; c &gt; d &quot;e&quot; &apos;f&apos;')
   })
 
+  it('strips XML-invalid control characters and bidi overrides', () => {
+    expect(escapeXml('a\u0001b\u001fc\u202ed')).toBe('abcd')
+  })
+
   it('strips markup without a DOM', () => {
     expect(feedText('<p>One</p><p>Two</p>')).toBe('One Two')
     expect(feedText('x'.repeat(20), 10)).toBe('xxxxxxxxxx…')
