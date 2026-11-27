@@ -86,13 +86,20 @@ principles that constrain it. Delivered work and its verification records live i
   real buttons, removes the nested “Remember me” checkbox and makes the
   recently-voted carousel respect reduced motion with capped retries. See
   [`docs/workstreams/W97-component-a11y.md`](workstreams/W97-component-a11y.md).
+- W98 makes the action queue verify the chain-required authority and the
+  signed-in owner, stops active actions from auto-sending or auto-retrying, and
+  binds self-reblogs, deletes and Vault companions to that owner. See
+  [`docs/workstreams/W98-queue-authority.md`](workstreams/W98-queue-authority.md).
+- W99 hardens the metadata Worker, blog CSS/navigation/routes, RSS escaping and
+  Hive Open Market price/quantity handling. See
+  [`docs/workstreams/W99-blog-shop-hardening.md`](workstreams/W99-blog-shop-hardening.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,234 tests across 231 files**, `bun run build`
+  `bun run test` green with **2,252 tests across 232 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **206/206**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
   reproduce on this tree. The full Chromium suite remains the release gate.
-- The next free workstream number is **W98**. **W90** remains the separate
+- The next free workstream number is **W100**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

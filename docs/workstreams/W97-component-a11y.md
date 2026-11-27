@@ -43,7 +43,8 @@ fixes the deterministic cases:
 | Short-form preview | `src/components/shortForm/ShortFormCard.vue` |
 | Login menu | `src/components/userLogin.vue` |
 | Carousel | `src/components/recentVotedPostsCarousel.vue` |
-| Tests | `tests/unit/recent-voted-carousel.spec.js`, `e2e/browse.spec.js`, `e2e/a11y.spec.js` |
+| PWA dialog | `src/css/app.scss`, `src/boot/pwa.js`, `src/boot/chunkRecovery.js` |
+| Tests | `tests/unit/recent-voted-carousel.spec.js`, `e2e/browse.spec.js`, `e2e/a11y.spec.js`, `e2e/pwa.spec.js` |
 
 ## Authority and privacy
 
@@ -54,10 +55,11 @@ fixes the deterministic cases:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **231 files / 2,234 tests** passing.
+- `bun run test` — **232 files / 2,252 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright: browse filter switch by accessible name; a11y routes at
-  1440×900 and 390×844 for the pages that changed.
+  1440×900 and 390×844 for the pages that changed; the PWA update dialog is
+  axe-clean before the reload is confirmed.
 
 ## Remaining
 
