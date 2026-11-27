@@ -96,7 +96,7 @@ principles that constrain it. Delivered work and its verification records live i
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,255 tests across 232 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
-  **206/206**. The four Playwright failures listed in the pre-W89 snapshot
+  **207/207**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
   reproduce on this tree. The full Chromium suite remains the release gate.
 - The next free workstream number is **W100**. **W90** remains the separate
