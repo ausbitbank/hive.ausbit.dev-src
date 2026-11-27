@@ -72,6 +72,12 @@ principles that constrain it. Delivered work and its verification records live i
   public history and the verified bulletin, is cached for 60 seconds, and never
   signs anything. See
   [`docs/workstreams/W94-vault-pending-badge.md`](workstreams/W94-vault-pending-badge.md).
+- W95 is a reliability sweep: post-detail caches now invalidate after a write,
+  account-history filters rebuild instead of growing, malformed filter names no
+  longer throw, empty filtered pages stop spinning, `/tip` and `/token` have
+  loading/not-found/heading states, account-creation pollers pause on hidden
+  tabs, and three legacy pages have a page-level `h1`. See
+  [`docs/workstreams/W95-reliability-sweep.md`](workstreams/W95-reliability-sweep.md).
 - W96 removes duplicated read work on the account, delegation, price, search,
   trail and wallet paths, and guards post navigation against stale responses.
   See
@@ -80,18 +86,12 @@ principles that constrain it. Delivered work and its verification records live i
   real buttons, removes the nested “Remember me” checkbox and makes the
   recently-voted carousel respect reduced motion with capped retries. See
   [`docs/workstreams/W97-component-a11y.md`](workstreams/W97-component-a11y.md).
-- W95 is a reliability sweep: post-detail caches now invalidate after a write,
-  account-history filters rebuild instead of growing, malformed filter names no
-  longer throw, empty filtered pages stop spinning, `/tip` and `/token` have
-  loading/not-found/heading states, account-creation pollers pause on hidden
-  tabs, and three legacy pages have a page-level `h1`. See
-  [`docs/workstreams/W95-reliability-sweep.md`](workstreams/W95-reliability-sweep.md).
-- Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
-  `bun run test` green with **2,229 tests across 231 files**, and
-  `bun run build` succeeded. The four Playwright failures listed in the
-  pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
-  scope) do not reproduce on this tree; the targeted specs pass 8/8. The full
-  Chromium suite remains the release gate.
+- Local verification on 2026-11-28: `bun run lint` clean,
+  `bun run test` green with **2,229 tests across 231 files**, `bun run build`
+  and `bun run perf:check` succeeded, and the full Chromium suite passed
+  **206/206**. The four Playwright failures listed in the pre-W89 snapshot
+  (badges shelf, login-key guide, header lockup, profile-skin scope) do not
+  reproduce on this tree. The full Chromium suite remains the release gate.
 - The next free workstream number is **W98**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
