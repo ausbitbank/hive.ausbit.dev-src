@@ -85,10 +85,10 @@ unthrottled account-creation pollers, and three legacy pages without a page-leve
 - Targeted Playwright: **4/4 passed** — axe clean on `/@ausbitbank/downvotes`,
   `/@ausbitbank/wallet` and `/@ausbitbank/tip` at 1440×900 and 390×844, plus
   the downvotes evidence flow.
-- Full Chromium suite: **203 passed / 2 failed**. The two failures
-  (`/settings/skin` axe and command-palette navigation) were caused by a
-  concurrent Playwright run sharing `test-results`; both pass on an isolated
-  rerun. Do not run two Playwright suites against the same worktree.
+- Full Chromium suite on the W95 build: **206 passed** (15.0m). An earlier
+  run showed two failures caused by a concurrent Playwright run sharing
+  `test-results`; both passed on an isolated rerun. Do not run two Playwright
+  suites against the same worktree.
 
 ## Remaining
 
