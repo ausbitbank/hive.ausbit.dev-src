@@ -364,11 +364,16 @@ function normalizeShop (value, errors, warnings) {
 export function sanitizeBlogCss (value) {
   if (typeof value !== 'string' || !value) return ''
   let css = value
+  // CSS escapes can spell `@import`, `expression` or a scheme without matching
+  // the literal regexes below. Drop the escape character instead of trying to
+  // decode arbitrary CSS identifiers.
+  css = css.replace(/\\/g, '')
   css = css.replace(/<\/?style/gi, '')
   css = css.replace(/@import\b[^;]*;?/gi, '')
   css = css.replace(/expression\s*\(/gi, '')
   css = css.replace(/javascript\s*:/gi, '')
   css = css.replace(/vbscript\s*:/gi, '')
+  css = css.replace(/data\s*:/gi, '')
   css = css.replace(/behavior\s*:/gi, '')
   css = css.replace(/-moz-binding\s*:/gi, '')
   css = css.replace(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi, (match, doubleQuoted, singleQuoted, bare) => {

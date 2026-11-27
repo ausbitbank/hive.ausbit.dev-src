@@ -520,6 +520,18 @@ describe('sanitizeBlogCss', () => {
     expect(css).not.toContain('</style>')
   })
 
+  it('defeats CSS-escape and data-URL spellings', () => {
+    const css = sanitizeBlogCss([
+      '@\\69mport url(https://evil.example/x.css);',
+      'a { background: image-set("data:image/svg+xml,<svg/>"); }',
+      'b { width: expr\\65 ssion(alert(1)); }'
+    ].join('\n'))
+    expect(css).not.toMatch(/@\s*import/i)
+    expect(css).not.toContain('data:')
+    expect(css).not.toMatch(/expression\s*\(/i)
+    expect(css).not.toContain('\\')
+  })
+
   it('allows https and root-relative urls, upgrades http and blocks the rest', () => {
     expect(sanitizeBlogCss('a { background: url(https://cdn.example/a.png) }'))
       .toContain('url("https://cdn.example/a.png")')
