@@ -86,7 +86,11 @@
             </div>
 
             <label class="subscribe-terms">
-              <q-checkbox v-model="accepted" color="primary" />
+              <q-checkbox
+                v-model="accepted"
+                color="primary"
+                aria-label="I understand this is a recurring direct payment"
+              />
               <span>
                 I understand this is a recurring direct payment to @{{ plan.author }}
                 and that I can cancel it from my wallet or from

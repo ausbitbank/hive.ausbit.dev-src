@@ -109,9 +109,9 @@ export async function verifyVaultPayload ({ payload, signature, publicKey } = {}
   const key = String(publicKey || '').trim()
   if (!sig || !key) return false
   try {
-    const [{ Signature }, { sha256 }] = await Promise.all([loadHiveTx(), loadSha256()])
-    const digest = sha256(new TextEncoder().encode(payload))
-    const recovered = Signature.from(sig).getPublicKey(digest).toString()
+    const [hiveModule, shaFn] = await Promise.all([loadHiveTx(), loadSha256()])
+    const digest = shaFn(new TextEncoder().encode(payload))
+    const recovered = hiveModule.Signature.from(sig).getPublicKey(digest).toString()
     return recovered === key
   } catch {
     return false

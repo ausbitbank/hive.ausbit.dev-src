@@ -611,12 +611,16 @@ export function summarizeSubscribers (subscribers, { now = Date.now() } = {}) {
   for (const subscriber of list) {
     if (!isPlainObject(subscriber)) continue
     const next = timestampMs(subscriber.nextPayment)
-    if (!next || next <= nowMs) {
+    const accessUntil = timestampMs(subscriber.expires || subscriber.accessUntil)
+    const entitled = subscriber.active === true || accessUntil > nowMs || next > nowMs
+    if (!entitled) {
       expired++
       continue
     }
     active++
-    if (next - nowMs <= EXPIRING_WINDOW_MS) expiring++
+    if ((next && next - nowMs <= EXPIRING_WINDOW_MS) || (!next && accessUntil && accessUntil - nowMs <= EXPIRING_WINDOW_MS)) {
+      expiring++
+    }
     const amount = parseVaultAmount(subscriber.amount)
     if (amount) {
       currencies.add(amount.currency)

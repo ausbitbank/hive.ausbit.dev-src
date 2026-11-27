@@ -285,6 +285,16 @@ export function buildPostMetadata (draft, { vaultMetadata } = {}) {
   return metadata
 }
 
+/** Drop hidden Vault payload text before a body reaches the chain. */
+function vaultPublicBodyForPublish (body, vaultMetadata) {
+  if (!vaultMetadata || typeof vaultMetadata !== 'object' || Array.isArray(vaultMetadata)) return body
+  const source = String(body || '')
+  const marker = '<!--banksia:vault-->'
+  const index = source.indexOf(marker)
+  if (index !== -1) return source.slice(0, index + marker.length)
+  return vaultMetadata.mode === 'post' ? '' : source
+}
+
 /** Drop the keys this composer owns before merging in a fresh set. */
 export function stripManagedMetadata (metadata) {
   const source = metadata && typeof metadata === 'object' ? metadata : {}
@@ -371,7 +381,7 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
     author,
     permlink: postPermlink,
     title: isComment ? '' : String(draft && draft.title || '').trim(),
-    body: String(draft && draft.body || ''),
+    body: isComment ? String(draft && draft.body || '') : vaultPublicBodyForPublish(draft && draft.body, vaultMetadata),
     json_metadata: JSON.stringify(metadata)
   }
 

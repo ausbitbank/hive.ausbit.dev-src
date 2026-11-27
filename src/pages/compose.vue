@@ -5179,7 +5179,7 @@ export default {
       if (!template || !this.draft) return
       const apply = () => {
         this.draft = applyTemplateToDraft(template, this.draft)
-        this.previewBody = this.draft.body
+        this.previewBody = this.vaultPublicPreviewBody(this.draft.body)
         this.mode = 'write'
         this.templatesOpen = false
         this.$q.notify({ type: 'positive', message: 'Template applied', caption: template.name })
@@ -5318,7 +5318,7 @@ export default {
         persistent: true
       }).onOk(() => {
         this.draft = restoreDraftSnapshot(snapshot, this.draft)
-        this.previewBody = this.draft.body
+        this.previewBody = this.vaultPublicPreviewBody(this.draft.body)
         this.mode = 'write'
         this.historyOpen = false
         this.$q.notify({ type: 'positive', message: 'Version restored' })
@@ -5437,13 +5437,17 @@ export default {
         this.refreshPreview()
       }, 320)
     },
+    vaultPublicPreviewBody (body) {
+      if (!this.vaultDraft || !this.vaultDraft.enabled) return body
+      return vaultDraftSplit({ body, mode: this.vaultDraft.mode }).publicBody
+    },
     refreshPreview () {
       if (!this.draft) return
       if (this.previewTimer) {
         clearTimeout(this.previewTimer)
         this.previewTimer = null
       }
-      this.previewBody = this.draft.body
+      this.previewBody = this.vaultPublicPreviewBody(this.draft.body)
     },
     copyDraft () {
       if (!this.draft || !this.draft.body) {
@@ -5976,7 +5980,7 @@ export default {
       this.uploadRunCancelled = false
       this.uploadError = ''
       this.mode = 'write'
-      this.previewBody = this.draft.body
+      this.previewBody = this.vaultPublicPreviewBody(this.draft.body)
       if (this.previewTimer) {
         clearTimeout(this.previewTimer)
         this.previewTimer = null

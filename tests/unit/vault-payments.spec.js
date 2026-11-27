@@ -416,4 +416,22 @@ describe('date and subscriber helpers', () => {
       currency: 'HBD'
     })
   })
+
+  it('counts an active one-time transfer from its expiry, not nextPayment', () => {
+    const summary = summarizeSubscribers([
+      {
+        amount: '5.000 HBD',
+        nextPayment: '',
+        expires: '2026-12-27T00:00:00.000Z',
+        active: true
+      }
+    ], { now: NOW })
+    expect(summary).toEqual({
+      active: 1,
+      expiring: 0,
+      expired: 0,
+      mrr: 5,
+      currency: 'HBD'
+    })
+  })
 })

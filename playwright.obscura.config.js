@@ -22,7 +22,10 @@ const CHROMIUM_ONLY = [
   '**/perf.spec.js',
   '**/polish.spec.js',
   '**/pwa.spec.js',
-  '**/resilience.spec.js'
+  '**/resilience.spec.js',
+  // Vault needs axe, real IndexedDB CryptoKey storage and deterministic
+  // network mocking; the Obscura CDP build is not a release surface for it.
+  '**/vault.spec.js'
 ]
 
 export default defineConfig({

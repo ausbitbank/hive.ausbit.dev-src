@@ -533,6 +533,31 @@ describe('publish metadata integration', () => {
     expect(metadataOf(operation).banksia_vault).toEqual(vaultMetadata)
   })
 
+  it('strips members-only plaintext from the published body', () => {
+    const premiumDraft = {
+      ...draft,
+      body: 'Public teaser\n\n<!--banksia:vault-->\nThe members-only secret.'
+    }
+    const operation = buildPostOperation({
+      username: ACCOUNT,
+      draft: premiumDraft,
+      permlink: 'publish-one',
+      vaultMetadata
+    })
+    expect(operation[1].body).toBe('Public teaser\n\n<!--banksia:vault-->')
+    expect(operation[1].body).not.toContain('members-only secret')
+  })
+
+  it('publishes no body for a whole-post payload without a marker', () => {
+    const operation = buildPostOperation({
+      username: ACCOUNT,
+      draft: { ...draft, body: 'The whole essay is locked.' },
+      permlink: 'publish-one',
+      vaultMetadata: { ...vaultMetadata, mode: 'post' }
+    })
+    expect(operation[1].body).toBe('')
+  })
+
   it('preserves a previous banksia_vault when no decision is supplied', () => {
     const previousMetadata = {
       banksia_vault: { v: 1, mode: 'section', kid: '2026-11', iv: 'old', ct: 'old' },
