@@ -362,8 +362,8 @@ function normalizeShop (value, errors, warnings) {
  * the CSS through a `<style>` element's textContent.
  */
 export function sanitizeBlogCss (value) {
-  let css = String(value || '')
-  if (!css) return ''
+  if (typeof value !== 'string' || !value) return ''
+  let css = value
   css = css.replace(/<\/?style/gi, '')
   css = css.replace(/@import\b[^;]*;?/gi, '')
   css = css.replace(/expression\s*\(/gi, '')
@@ -371,10 +371,10 @@ export function sanitizeBlogCss (value) {
   css = css.replace(/vbscript\s*:/gi, '')
   css = css.replace(/behavior\s*:/gi, '')
   css = css.replace(/-moz-binding\s*:/gi, '')
-  css = css.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/gi, (match, quote, url) => {
-    const value = String(url || '').trim().replace(/["\\]/g, '')
-    if (/^https:\/\//i.test(value) || /^\/(?!\/)/.test(value)) return 'url("' + value + '")'
-    if (/^http:\/\//i.test(value)) return 'url("' + value.replace(/^http:/i, 'https:') + '")'
+  css = css.replace(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)]*))\s*\)/gi, (match, doubleQuoted, singleQuoted, bare) => {
+    const url = String(doubleQuoted ?? singleQuoted ?? bare ?? '').trim().replace(/["\\]/g, '')
+    if (/^https:\/\//i.test(url) || /^\/(?!\/)/.test(url)) return 'url("' + url + '")'
+    if (/^http:\/\//i.test(url)) return 'url("' + url.replace(/^http:/i, 'https:') + '")'
     return 'url("about:blank")'
   })
   return css.slice(0, BLOG_MAX_CSS)

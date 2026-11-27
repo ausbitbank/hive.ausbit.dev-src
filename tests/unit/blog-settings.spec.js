@@ -7,6 +7,7 @@ import {
   normalizeBlogSettings,
   readBlogSettings,
   removeBlogMetadata,
+  sanitizeBlogCss,
   updateBlog
 } from '../../src/services/blogSettings'
 
@@ -490,5 +491,52 @@ describe('writing blog settings', () => {
   it('reports the blog object size', () => {
     expect(blogSettingsSize({ title: 'x' })).toBe(JSON.stringify({ title: 'x' }).length)
     expect(blogSettingsSize(null)).toBe(4)
+  })
+})
+
+describe('sanitizeBlogCss', () => {
+  it('returns empty for non-strings and blank input', () => {
+    expect(sanitizeBlogCss(null)).toBe('')
+    expect(sanitizeBlogCss(12)).toBe('')
+    expect(sanitizeBlogCss('')).toBe('')
+  })
+
+  it('strips style tags, imports and script-era CSS', () => {
+    const css = sanitizeBlogCss([
+      '</style><script>alert(1)</script>',
+      '@import url("https://evil.example/a.css");',
+      'a { width: expression(alert(1)); background: url(javascript:alert(1)); }',
+      'b { behavior: url(x.htc); -moz-binding: url(x.xml); }'
+    ].join('\n'))
+    expect(css).not.toMatch(/<\/?style/i)
+    expect(css).not.toMatch(/@import/i)
+    expect(css).not.toMatch(/expression\s*\(/i)
+    expect(css).not.toMatch(/javascript\s*:/i)
+    expect(css).not.toMatch(/vbscript\s*:/i)
+    expect(css).not.toMatch(/behavior\s*:/i)
+    expect(css).not.toMatch(/-moz-binding/i)
+    // Raw script tags are left as text but the style tag that could break out
+    // of the `<style>` element is gone.
+    expect(css).not.toContain('</style>')
+  })
+
+  it('allows https and root-relative urls, upgrades http and blocks the rest', () => {
+    expect(sanitizeBlogCss('a { background: url(https://cdn.example/a.png) }'))
+      .toContain('url("https://cdn.example/a.png")')
+    expect(sanitizeBlogCss('a { background: url(/images/a.png) }'))
+      .toContain('url("/images/a.png")')
+    expect(sanitizeBlogCss('a { background: url(http://cdn.example/a.png) }'))
+      .toContain('url("https://cdn.example/a.png")')
+    expect(sanitizeBlogCss('a { background: url(//cdn.example/a.png) }'))
+      .toContain('url("about:blank")')
+    expect(sanitizeBlogCss('a { background: url(data:image/png;base64,aaaa) }'))
+      .toContain('url("about:blank")')
+    expect(sanitizeBlogCss("a { background: url('javascript:alert(1)') }"))
+      .toContain('url("about:blank")')
+  })
+
+  it('caps the stylesheet length', () => {
+    const css = sanitizeBlogCss('a{color:red}'.repeat(2000))
+    expect(css.length).toBe(8000)
   })
 })
