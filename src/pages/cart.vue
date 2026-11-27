@@ -25,12 +25,6 @@
         </q-card>
       </div>
 
-      <div v-else-if="error" class="cart-state" role="alert">
-        <h2>Cart unavailable</h2>
-        <p>{{ error }}</p>
-        <q-btn outline no-caps color="primary" label="Try again" @click="load" />
-      </div>
-
       <div v-else-if="!items.length" class="cart-state">
         <h2>Your cart is empty</h2>
         <p>Browse a blog shop and add a Hive Open Market product to get started.</p>
@@ -38,7 +32,15 @@
       </div>
 
       <template v-else>
-        <q-banner v-if="productErrorsVisible" rounded class="cart-banner cart-banner--warning">
+        <q-banner v-if="error" rounded class="cart-banner cart-banner--warning" role="alert">
+          <template #avatar><q-icon name="warning" /></template>
+          {{ error }} Remove the products below to clear your cart, or retry.
+          <template #action>
+            <q-btn flat no-caps label="Retry" @click="load" />
+          </template>
+        </q-banner>
+
+        <q-banner v-if="productErrorsVisible && !error" rounded class="cart-banner cart-banner--warning">
           <template #avatar><q-icon name="warning" /></template>
           Some products could not be loaded from Hive. Remove them or retry.
           <template #action>
@@ -179,7 +181,7 @@
               color="primary"
               label="Checkout"
               :to="checkoutLink"
-              :disable="hasMembership"
+              :disable="hasMembership || Boolean(error)"
             />
             <q-btn flat no-caps label="Continue shopping" to="/blogs" />
             <q-btn flat no-caps color="negative" label="Clear cart" @click="confirmClear" />
