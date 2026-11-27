@@ -26,6 +26,18 @@
           <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Open the full Hive search page" title="Search Hive" @click="openSearch" />
           <q-btn class="site-toolbar__icon site-toolbar__cta" flat dense no-caps icon="edit_note" aria-label="Write a post" title="Write a post" @click="openCompose"><span class="site-toolbar__cta-label gt-xs">Write</span></q-btn>
           <queue v-if="loggedInUser !== null && queue.length > 0" />
+          <q-btn
+            v-if="cartCount"
+            class="site-toolbar__icon"
+            flat
+            dense
+            no-caps
+            :to="{ name: 'cart' }"
+            :aria-label="'Cart, ' + cartCount + (cartCount === 1 ? ' item' : ' items')"
+            title="Cart"
+          >
+            <span class="site-toolbar__cart-count">{{ cartCount }}</span>
+          </q-btn>
           <notifications v-if="loggedInUser !== null" />
           <user-login />
           <q-btn class="site-toolbar__icon" dense flat round icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy anchor="bottom right" self="top right" :offset="[0, 8]"><settings /></q-popup-proxy></q-btn>
@@ -105,6 +117,13 @@
             <q-item-section>
               <q-item-label>My blog</q-item-label>
               <q-item-label caption>settings and customisation</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="loggedInUser" clickable to="/orders">
+            <q-item-section avatar><q-icon name="history" aria-hidden="true" /></q-item-section>
+            <q-item-section>
+              <q-item-label>Orders</q-item-label>
+              <q-item-label caption>purchases, sales and subscriptions</q-item-label>
             </q-item-section>
           </q-item>
           <q-item-label header class="site-nav__heading">Community &amp; links</q-item-label>
@@ -234,6 +253,18 @@
 .site-toolbar__icon:hover {
   background: var(--c-overlay);
   color: var(--c-text-strong);
+}
+
+.site-toolbar__cart-count {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .site-toolbar__cta {
@@ -488,6 +519,7 @@ import CommandPalette from 'components/CommandPalette.vue'
 import BackToTop from 'components/ui/BackToTop.vue'
 import ErrorBoundary from 'components/ui/ErrorBoundary.vue'
 import KeyboardShortcuts from 'components/ui/KeyboardShortcuts.vue'
+import { useCartStore } from 'src/stores/cart'
 
 const Notifications = defineAsyncComponent(() => import('components/notifications.vue'))
 const Queue = defineAsyncComponent(() => import('components/queue.vue'))
@@ -568,6 +600,9 @@ export default {
     },
     queue: {
       get () { return this.$hiveStore.queue }
+    },
+    cartCount () {
+      return useCartStore().count
     },
     showPerfPanel () {
       return this.$route.query.perf === '1' || this.$route.query.debug === 'perf'
