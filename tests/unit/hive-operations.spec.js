@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { makeBitMaskFilter, operations } from '../../src/services/hiveOperations'
+import { makeBitMaskFilter, operations, resolveOperationFilter } from '../../src/services/hiveOperations'
 
 describe('hive operations', () => {
   it('keeps the consensus operation ids used by the queue and history filters', () => {
@@ -43,5 +43,23 @@ describe('hive operations', () => {
       operations.proposal_pay,
       operations.convert
     ])).toEqual(['181269885001662772', '4'])
+  })
+
+  it('ignores malformed ids instead of throwing a BigInt error', () => {
+    expect(makeBitMaskFilter([undefined, null, NaN, 'nope', -1, 1.5])).toEqual([null, null])
+    expect(makeBitMaskFilter([operations.vote, undefined, operations.comment])).toEqual(['3', null])
+    expect(makeBitMaskFilter(null)).toEqual([null, null])
+  })
+})
+
+describe('resolveOperationFilter', () => {
+  it('maps names to unique ids and drops blanks or unknowns', () => {
+    expect(resolveOperationFilter('vote,transfer')).toEqual([0, 2])
+    expect(resolveOperationFilter(' vote , VOTE , transfer, ')).toEqual([0, 2])
+    expect(resolveOperationFilter(['comment'])).toEqual([1])
+    expect(resolveOperationFilter('votes,transfer')).toEqual([2])
+    expect(resolveOperationFilter('votes,')).toBeNull()
+    expect(resolveOperationFilter('')).toBeNull()
+    expect(resolveOperationFilter(null)).toBeNull()
   })
 })

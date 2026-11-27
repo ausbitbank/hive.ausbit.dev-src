@@ -128,8 +128,8 @@
                         <div class="account-filter-card__title">Filter operations</div>
                         <q-input v-model="filter" label="Operations separated by commas" dense outlined placeholder="vote, transfer, comment" />
                         <div class="account-filter-card__actions">
-                          <q-btn flat dense no-caps color="grey" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
-                          <q-btn unelevated dense no-caps label="Apply filter" color="primary" icon="filter_alt" @click="$router.push({ query: { filter: filter } }); getAccountHistoryMarker()" />
+                          <q-btn flat dense no-caps color="grey" label="Clear" @click="clearOperationFilter" />
+                          <q-btn unelevated dense no-caps label="Apply filter" color="primary" icon="filter_alt" @click="applyOperationFilter" />
                         </div>
                       </q-card>
                     </q-popup-proxy>
@@ -139,18 +139,19 @@
 
               <div v-if="$route.query.filter" class="account-filter-note">
                 Only showing: <q-badge v-for="i in $route.query.filter.split(',')" :key="i" color="blue-grey-9">{{ i }}</q-badge>
-                <q-btn flat dense no-caps color="primary" icon="close" label="Clear" @click="filter = null; $router.push({ query: {} }); getAccountHistoryMarker()" />
+                <q-btn flat dense no-caps color="primary" icon="close" label="Clear" @click="clearOperationFilter" />
               </div>
 
               <q-card-section class="account-activity__body">
-                <account-operations :accountOperations="accountOperations" />
+                <p v-if="filteredEmpty" class="account-activity__empty">No operations match this filter.</p>
+                <account-operations v-else :accountOperations="accountOperations" />
               </q-card-section>
 
               <q-card-section class="account-activity__pager">
                 <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2" />
                 <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1" />
                 <span class="account-activity__page">Page {{ page }}</span>
-                <q-spinner-puff size="1.6em" color="primary" v-if="accountOperations.length < 1" />
+                <q-spinner-puff size="1.6em" color="primary" v-if="accountOperations.length < 1 && !filteredEmpty" />
                 <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
                 <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
               </q-card-section>
@@ -500,6 +501,13 @@
   padding: 0.25rem 0;
 }
 
+.account-activity__empty {
+  margin: 0;
+  padding: 1.25rem 0.75rem;
+  color: var(--c-text-subtle);
+  text-align: center;
+}
+
 .account-activity__pager {
   display: flex;
   align-items: center;
@@ -686,7 +694,7 @@ import accountAuthorities from 'components/accountAuthorities.vue'
 import AuthorityRiskCard from 'components/account/AuthorityRiskCard.vue'
 import MagiAccountSummary from 'components/account/MagiAccountSummary.vue'
 import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
-import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
+import { makeBitMaskFilter, resolveOperationFilter } from 'src/services/hiveOperations'
 import rc from 'components/rc.vue'
 import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
@@ -744,6 +752,7 @@ export default {
       accountHistoryPointer: -1,
       accountHistoryLimit: 1000,
       filteredOperationsArray: [],
+      filteredEmpty: false,
       filter: this.$route.query.filter || null,
       failCount: 0,
       failCountMax: 10,
@@ -1054,6 +1063,7 @@ export default {
     },
     async getAccountHistoryFiltered () {
       this.accountOperations = []
+      this.filteredEmpty = false
       if (this.operationsBitmask === null) {
         await this.getAccountHistory()
       } else {
@@ -1068,9 +1078,15 @@ export default {
         // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask]])
         await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, pageReq, this.accountOperationsLimit, ...this.operationsBitmask])
           .then(res => {
-            this.accountHistoryPointer = parseInt(res[0][0]) - 1
-            if (this.accountOperations.length === 0) { this.accountOperations = res.reverse() } else { this.accountOperations = this.accountOperations.concat(res.reverse()) }
             this.loading = false
+            const rows = Array.isArray(res) ? res : []
+            if (!rows.length) {
+              this.accountOperations = []
+              this.filteredEmpty = true
+              return
+            }
+            this.accountHistoryPointer = parseInt(rows[0][0]) - 1
+            if (this.accountOperations.length === 0) { this.accountOperations = rows.reverse() } else { this.accountOperations = this.accountOperations.concat(rows.reverse()) }
           })
           .catch(err => {
             this.loading = false
@@ -1103,22 +1119,59 @@ export default {
       }
     },
     async getAccountHistoryMarker () {
-      var prev = this.accountOperationsMarker
+      const prev = this.accountOperationsMarker
       if (prev !== null) { console.log('previous marker:' + prev) }
-      if (this.$route.query.filter) {
-        var filter = this.$route.query.filter.split(',')
-        filter.forEach(element => this.filteredOperationsArray.push(op[element]))
-        this.operationsBitmask = makeBitMaskFilter(this.filteredOperationsArray)
-        // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
-        await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1000, ...this.operationsBitmask])
-          .then(res => { this.accountOperationsMarker = res[0][0]; if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
-          .catch(err => { console.error(err) })
-      } else {
-        // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1]])
-        await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1])
-          .then(res => { if (res.length === 0) { this.errorMessage = 'Account ' + this.username + ' not found'; this.error = true } else { this.error = false; this.errorMessage = ''; this.accountOperationsMarker = res[0][0] } if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() } })
-          .catch(err => { console.error(err) })
+      // Rebuild from the URL every time: the filter can be changed or cleared.
+      const ids = resolveOperationFilter(this.$route.query.filter)
+      this.filteredOperationsArray = ids || []
+      this.operationsBitmask = ids ? makeBitMaskFilter(ids) : null
+      this.filteredEmpty = false
+      try {
+        if (ids) {
+          // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
+          const res = await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1000, ...this.operationsBitmask])
+          const rows = Array.isArray(res) ? res : []
+          if (!rows.length) {
+            this.accountOperations = []
+            this.filteredEmpty = true
+            this.loading = false
+            return
+          }
+          this.accountOperationsMarker = rows[0][0]
+          if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() }
+        } else {
+          // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1]])
+          const res = await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1])
+          const rows = Array.isArray(res) ? res : []
+          if (!rows.length) {
+            this.errorMessage = 'Account ' + this.username + ' not found'
+            this.error = true
+          } else {
+            this.error = false
+            this.errorMessage = ''
+            this.accountOperationsMarker = rows[0][0]
+          }
+          if (this.accountOperationsMarker !== prev || this.filter !== null) { this.getAccountHistoryFiltered() }
+        }
+      } catch (err) {
+        console.error(err)
       }
+    },
+    applyOperationFilter () {
+      const value = String(this.filter || '')
+        .split(',')
+        .map(name => name.trim().toLowerCase())
+        .filter(Boolean)
+        .join(',')
+      // The `$route` watcher re-runs init(), which rebuilds the bitmask from
+      // the new query. Do not call the marker here: the route has not changed
+      // yet, so it would apply the previous filter twice.
+      this.$router.push({ query: value ? { filter: value } : {} })
+    },
+    clearOperationFilter () {
+      this.filter = null
+      this.filteredEmpty = false
+      this.$router.push({ query: {} })
     },
     accountLink (username) {
       return '/@' + username

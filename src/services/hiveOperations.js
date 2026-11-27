@@ -102,7 +102,10 @@ export const operations = {
 
 /** Build the `operation_filter_low`/`operation_filter_high` arguments for `get_account_history`. */
 export function makeBitMaskFilter (allowedOperations) {
-  return allowedOperations
+  return (Array.isArray(allowedOperations) ? allowedOperations : [])
+    .filter(value => value !== null && value !== undefined && value !== '' && typeof value !== 'boolean')
+    .map(value => Number(value))
+    .filter(value => Number.isInteger(value) && value >= 0)
     .reduce(([low, high], allowedOperation) => {
       if (allowedOperation < 64) {
         return [low | (1n << BigInt(allowedOperation)), high]
@@ -110,4 +113,16 @@ export function makeBitMaskFilter (allowedOperations) {
       return [low, high | (1n << BigInt(allowedOperation - 64))]
     }, [0n, 0n])
     .map(value => value === 0n ? null : value.toString())
+}
+
+/**
+ * Resolve comma-separated operation names from a URL filter into unique ids.
+ * Unknown and blank names are dropped; an empty result means "no filter".
+ */
+export function resolveOperationFilter (names) {
+  const list = Array.isArray(names) ? names : String(names || '').split(',')
+  const ids = [...new Set(list
+    .map(name => operations[String(name || '').trim().toLowerCase()])
+    .filter(value => Number.isInteger(value)))]
+  return ids.length ? ids : null
 }
