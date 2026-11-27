@@ -1150,6 +1150,7 @@ export default {
       vaultSettings: null,
       publicBody: '',
       vaultRequestId: 0,
+      postToken: 0,
       vaultStateData: { status: 'locked', message: '' },
       vaultStoreRef: null,
       vaultApexRequired: false
@@ -1360,12 +1361,15 @@ export default {
         .then(list => { this.rebloggers = Array.isArray(list) ? list : [] })
         .catch(() => { this.rebloggers = [] })
     },
-    getPost (author, permlink) {
-      this.$hive.api.getContentAsync(author, permlink)        .then(post => {
+    getPost (author, permlink, token = this.postToken) {
+      fetchPostContent(author, permlink)
+        .then(post => {
+          if (token !== this.postToken) return
           this.error = null
           this.setPost(post)
         })
         .catch(error => {
+          if (token !== this.postToken) return
           this.error = error
           this.setNotFoundMeta()
           console.error(error)
@@ -1700,9 +1704,10 @@ export default {
       this.rebloggers = []
       this.author = this.$route.params.author
       this.permlink = this.$route.params.permlink
+      const token = ++this.postToken
       this.updatePageMeta(null)
       if (this.author) this.$hiveStore.getAccount(this.author)
-      this.getPost(this.author, this.permlink)
+      this.getPost(this.author, this.permlink, token)
     },
     findDeletedPost (data) {
       const author = data.split(' ')[1].split('/')[0]
