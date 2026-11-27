@@ -26,6 +26,7 @@ import {
   parseAccountMetadata
 } from './accountMetadata'
 import { isHostname, isValidHiveAccountName, normalizeHostname } from './blogHost'
+import { defaultVaultSettings, normalizeVaultSettings } from './vaultSettings'
 
 export { THEME_NAMESPACE as BLOG_NAMESPACE }
 
@@ -46,6 +47,7 @@ const BLOG_KEYS = [
   'layout', 'width', 'typography', 'hero', 'showTags', 'showReadingTime',
   'nav', 'blocks', 'css', 'logo', 'heroImage', 'favicon',
   'portfolio', 'shop',
+  'vault',
   'pinned', 'authors', 'community', 'showPayout', 'showComments',
   'directory', 'ogImage', 'customDomain', 'updatedAt'
 ]
@@ -404,6 +406,7 @@ export function defaultBlogSettings (account) {
     favicon: '',
     portfolio: { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] },
     shop: defaultShopSettings(),
+    vault: defaultVaultSettings(account),
     pinned: [],
     authors: [],
     community: '',
@@ -476,6 +479,13 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const favicon = normalizeHttpsUrl(input.favicon, 'favicon', errors)
   const portfolio = normalizePortfolio(input.portfolio, errors, warnings)
   const shop = normalizeShop(input.shop, errors, warnings)
+  const vaultResult = normalizeVaultSettings(
+    input.vault === undefined ? defaultVaultSettings(account) : input.vault,
+    { account }
+  )
+  errors.push(...vaultResult.errors)
+  warnings.push(...vaultResult.warnings)
+  const vault = vaultResult.settings
 
   const nav = normalizeNav(input.nav, errors, warnings)
   const pinned = normalizePermlinks(input.pinned, errors, { max: BLOG_MAX_PINNED, path: 'pinned' })
@@ -522,6 +532,7 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     favicon,
     portfolio,
     shop,
+    vault,
     pinned,
     authors,
     community,

@@ -1,0 +1,483 @@
+<template>
+  <q-card flat bordered class="blog-settings__card vault-settings">
+    <q-card-section>
+      <div class="vault-settings__head">
+        <div>
+          <h2 class="blog-settings__section-title">Membership (Banksia Vault)</h2>
+          <p class="blog-settings__hint">
+            Sell members-only sections or whole posts for HBD. Content is encrypted
+            in your browser; Banksia never holds your keys or plaintext. Payments go
+            directly to @{{ accountName }}.
+          </p>
+        </div>
+        <q-badge :color="modelValue.enabled ? 'positive' : 'grey-7'" class="vault-settings__badge">
+          {{ modelValue.enabled ? 'Enabled' : 'Off' }}
+        </q-badge>
+      </div>
+
+      <q-banner v-if="!modelValue.enabled" rounded class="vault-settings__banner">
+        <template #avatar><q-icon name="lock" /></template>
+        Enabling Vault publishes a Hive Open Market membership product and a hidden
+        grant container. Both are signed with your posting key and can be removed
+        later by disabling Vault.
+      </q-banner>
+
+      <div class="vault-settings__grid">
+        <q-toggle
+          :model-value="modelValue.enabled"
+          label="Enable members-only content"
+          :disable="!canEdit || busy"
+          @update:model-value="patch({ enabled: $event })"
+        />
+        <q-toggle
+          :model-value="modelValue.watermark"
+          label="Show a reader watermark"
+          :disable="!canEdit || busy"
+          @update:model-value="patch({ watermark: $event })"
+        />
+      </div>
+
+      <div class="vault-settings__grid">
+        <q-input
+          :model-value="modelValue.price"
+          outlined
+          dense
+          label="Price per month"
+          suffix="HBD"
+          :disable="!canEdit || busy"
+          :rules="[priceRule]"
+          @update:model-value="patch({ price: normalizePriceInput($event) })"
+        />
+        <q-input
+          :model-value="modelValue.recurrence"
+          type="number"
+          outlined
+          dense
+          label="Renewal (hours)"
+          min="24"
+          max="8760"
+          :disable="!canEdit || busy"
+          @update:model-value="patch({ recurrence: Number($event) || 730 })"
+        />
+        <q-input
+          :model-value="modelValue.executions"
+          type="number"
+          outlined
+          dense
+          label="Payments"
+          min="2"
+          max="120"
+          :disable="!canEdit || busy"
+          @update:model-value="patch({ executions: Number($event) || 12 })"
+        />
+        <q-select
+          :model-value="modelValue.archive"
+          :options="archiveOptions"
+          outlined
+          dense
+          label="Archive access"
+          emit-value
+          map-options
+          :disable="!canEdit || busy"
+          @update:model-value="patch({ archive: $event })"
+        />
+      </div>
+
+      <p class="blog-settings__hint">
+        The Hive Open Market product is the payment source of truth. The price here
+        is a display hint; editing it does not change an existing product post.
+      </p>
+
+      <div v-if="modelValue.product" class="vault-settings__refs">
+        <p><strong>Product</strong> <code>{{ modelValue.product }}</code></p>
+        <p><strong>Container</strong> <code>{{ modelValue.container }}</code></p>
+        <p v-if="modelValue.bulletin.permlink">
+          <strong>Latest bulletin</strong>
+          <code>{{ modelValue.bulletin.author }}/{{ modelValue.bulletin.permlink }}</code>
+        </p>
+      </div>
+
+      <q-separator class="q-my-md" />
+
+      <h3 class="vault-settings__subtitle">Creator vault</h3>
+      <p class="blog-settings__hint">
+        The vault holds your content keys and ring key, encrypted with a passphrase
+        you choose. There is no recovery if you lose both the passphrase and your
+        export. Never reuse a Hive key as the passphrase.
+      </p>
+
+      <div class="vault-settings__grid">
+        <q-input
+          v-model="passphrase"
+          type="password"
+          outlined
+          dense
+          label="Vault passphrase"
+          autocomplete="new-password"
+          :disable="!canEdit || busy"
+        />
+        <q-input
+          v-model="passphraseConfirm"
+          type="password"
+          outlined
+          dense
+          label="Confirm passphrase"
+          autocomplete="new-password"
+          :disable="!canEdit || busy"
+        />
+      </div>
+
+      <div class="vault-settings__actions">
+        <q-btn
+          unelevated
+          no-caps
+          color="primary"
+          icon="enhanced_encryption"
+          label="Generate vault"
+          :loading="busy === 'generate'"
+          :disable="!canEdit || busy || !passphraseValid"
+          @click="generateVault"
+        />
+        <q-btn
+          outline
+          no-caps
+          icon="download"
+          label="Export vault"
+          :loading="busy === 'export'"
+          :disable="!canEdit || busy || !passphrase"
+          @click="exportVault"
+        />
+        <q-btn
+          outline
+          no-caps
+          icon="upload"
+          label="Import vault"
+          :disable="!canEdit || busy || !passphrase"
+          @click="$refs.vaultFile && $refs.vaultFile.click()"
+        />
+        <input
+          ref="vaultFile"
+          type="file"
+          accept="application/json,.json"
+          class="vault-settings__file"
+          @change="importVault"
+        />
+      </div>
+
+      <q-separator class="q-my-md" />
+
+      <h3 class="vault-settings__subtitle">On-chain setup</h3>
+      <p class="blog-settings__hint">
+        Publish the product, then the hidden container. Both are ordinary Hive
+        comments signed with your posting key; the queue shows every operation
+        before it is broadcast.
+      </p>
+      <div class="vault-settings__actions">
+        <q-btn
+          outline
+          no-caps
+          icon="storefront"
+          label="Publish membership product"
+          :loading="busy === 'product'"
+          :disable="!canEdit || busy"
+          @click="publishProduct"
+        />
+        <q-btn
+          outline
+          no-caps
+          icon="inventory_2"
+          label="Publish grant container"
+          :loading="busy === 'container'"
+          :disable="!canEdit || busy"
+          @click="publishContainer"
+        />
+        <q-btn
+          flat
+          no-caps
+          icon="dashboard"
+          label="Open dashboard"
+          :to="dashboardPath"
+        />
+      </div>
+
+      <p v-if="message" class="blog-settings__hint q-mt-sm" role="status">{{ message }}</p>
+      <p v-if="error" class="vault-settings__error" role="alert">{{ error }}</p>
+
+      <div class="vault-settings__save">
+        <q-btn
+          unelevated
+          no-caps
+          color="primary"
+          label="Save Vault settings"
+          :disable="!canEdit || busy"
+          @click="$emit('save')"
+        />
+        <span class="blog-settings__size">Vault object: {{ size }} bytes</span>
+      </div>
+    </q-card-section>
+  </q-card>
+</template>
+
+<style scoped>
+.vault-settings__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.vault-settings__badge {
+  flex: none;
+  margin-top: 0.2rem;
+}
+
+.vault-settings__banner {
+  margin: 0.75rem 0 1rem;
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  font-size: 0.84rem;
+}
+
+.vault-settings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.vault-settings__refs {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: var(--c-surface-2);
+  font-size: 0.82rem;
+}
+
+.vault-settings__refs p {
+  margin: 0.2rem 0;
+  overflow-wrap: anywhere;
+}
+
+.vault-settings__subtitle {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.vault-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.vault-settings__file {
+  display: none;
+}
+
+.vault-settings__error {
+  margin: 0.5rem 0 0;
+  color: var(--c-negative, #b00020);
+  font-size: 0.84rem;
+}
+
+.vault-settings__save {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+</style>
+
+<script>
+import { BLOG_MAX_BYTES, VAULT_MAX_BYTES } from 'src/config/blog'
+import { defaultVaultSettings, normalizeVaultSettings, formatVaultPrice } from 'src/services/vaultSettings'
+import {
+  createCreatorVault,
+  saveCreatorVault,
+  loadCreatorVault,
+  hasCreatorVault,
+  exportCreatorVault,
+  importCreatorVault
+} from 'src/services/vaultKeys'
+import {
+  buildVaultContainerOperation,
+  buildVaultProductOperation,
+  vaultProductPath
+} from 'src/services/vaultProduct'
+
+export default {
+  name: 'VaultSettings',
+  props: {
+    account: { type: Object, default: null },
+    modelValue: { type: Object, default: () => defaultVaultSettings() },
+    canEdit: { type: Boolean, default: false }
+  },
+  emits: ['update:modelValue', 'save', 'queue'],
+  data () {
+    return {
+      passphrase: '',
+      passphraseConfirm: '',
+      busy: '',
+      message: '',
+      error: '',
+      archiveOptions: [
+        { label: 'Full archive', value: 'all' },
+        { label: 'Current period only', value: 'current' }
+      ]
+    }
+  },
+  computed: {
+    accountName () {
+      return (this.account && this.account.name) || ''
+    },
+    dashboardPath () {
+      return '/settings/blog/vault'
+    },
+    passphraseValid () {
+      return this.passphrase.length >= 10 && this.passphrase === this.passphraseConfirm
+    },
+    size () {
+      try {
+        return new TextEncoder().encode(JSON.stringify(this.modelValue)).length
+      } catch {
+        return 0
+      }
+    },
+    maxBytes () {
+      return Math.min(VAULT_MAX_BYTES, BLOG_MAX_BYTES)
+    }
+  },
+  methods: {
+    patch (changes) {
+      const next = normalizeVaultSettings({ ...this.modelValue, ...changes }, { account: this.account })
+      this.$emit('update:modelValue', next.settings)
+      if (!next.ok) this.error = next.errors[0] || 'The Vault settings are not valid.'
+      else this.error = ''
+    },
+    normalizePriceInput (value) {
+      return formatVaultPrice(value) || String(value || '')
+    },
+    priceRule (value) {
+      return Boolean(formatVaultPrice(value)) || 'Use a price like 5.000 HBD'
+    },
+    async generateVault () {
+      this.error = ''
+      this.message = ''
+      if (!this.passphraseValid) {
+        this.error = 'Use a passphrase of at least 10 characters and confirm it.'
+        return
+      }
+      this.busy = 'generate'
+      try {
+        const vault = await createCreatorVault({
+          account: this.accountName,
+          passphrase: this.passphrase
+        })
+        await saveCreatorVault(this.accountName, vault, this.passphrase)
+        this.message = 'Vault generated and encrypted on this device. Export a backup now.'
+        this.patch({ enabled: true })
+        this.$emit('save')
+      } catch (err) {
+        this.error = err?.message || 'The vault could not be generated.'
+      } finally {
+        this.busy = ''
+      }
+    },
+    async exportVault () {
+      this.error = ''
+      this.message = ''
+      this.busy = 'export'
+      try {
+        if (!hasCreatorVault(this.accountName)) {
+          this.error = 'No vault is stored on this device for @' + this.accountName + '.'
+          return
+        }
+        const vault = await loadCreatorVault(this.accountName, this.passphrase)
+        if (!vault) {
+          this.error = 'No vault is stored on this device.'
+          return
+        }
+        const envelope = await exportCreatorVault(vault, this.passphrase)
+        const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'banksia-vault-' + this.accountName + '.json'
+        link.click()
+        URL.revokeObjectURL(url)
+        this.message = 'Encrypted vault exported. Store it somewhere safe.'
+      } catch (err) {
+        this.error = err?.message || 'The vault could not be exported. Check the passphrase.'
+      } finally {
+        this.busy = ''
+      }
+    },
+    async importVault (event) {
+      this.error = ''
+      this.message = ''
+      const file = event?.target?.files?.[0]
+      if (!file) return
+      this.busy = 'import'
+      try {
+        if (!this.passphrase) {
+          this.error = 'Enter the passphrase that protects the vault file first.'
+          return
+        }
+        const text = await file.text()
+        const vault = await importCreatorVault(text, this.passphrase)
+        await saveCreatorVault(this.accountName, vault, this.passphrase)
+        this.message = 'Vault imported and re-encrypted on this device.'
+      } catch (err) {
+        this.error = err?.message || 'That vault file could not be imported.'
+      } finally {
+        if (event?.target) event.target.value = ''
+        this.busy = ''
+      }
+    },
+    publishProduct () {
+      this.error = ''
+      this.message = ''
+      this.busy = 'product'
+      try {
+        const settings = normalizeVaultSettings(this.modelValue, { account: this.account }).settings
+        const operation = buildVaultProductOperation({
+          account: this.accountName,
+          settings,
+          permlink: 'membership'
+        })
+        this.$emit('queue', operation)
+        this.patch({
+          enabled: true,
+          product: vaultProductPath(this.accountName, 'membership')
+        })
+        this.message = 'Membership product queued. Sign it, then save the Vault settings.'
+      } catch (err) {
+        this.error = err?.message || 'The membership product could not be built.'
+      } finally {
+        this.busy = ''
+      }
+    },
+    publishContainer () {
+      this.error = ''
+      this.message = ''
+      this.busy = 'container'
+      try {
+        const operation = buildVaultContainerOperation({
+          account: this.accountName,
+          container: this.modelValue.container
+        })
+        this.$emit('queue', operation)
+        this.message = 'Grant container queued. Sign it, then save the Vault settings.'
+      } catch (err) {
+        this.error = err?.message || 'The grant container could not be built.'
+      } finally {
+        this.busy = ''
+      }
+    }
+  }
+}
+</script>

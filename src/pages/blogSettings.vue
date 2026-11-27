@@ -632,6 +632,15 @@
             </q-card-section>
           </q-card>
 
+          <vault-settings
+            v-if="account"
+            v-model="form.vault"
+            :account="account"
+            :can-edit="canEdit"
+            @save="submit"
+            @queue="queueVaultOperation"
+          />
+
           <div class="blog-settings__actions">
             <q-btn
               unelevated
@@ -974,10 +983,12 @@ import { BLOG_MAX_BLOCKS, BLOG_MAX_BYTES } from 'src/config/blog'
 import { fetchAccount } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
 import { claimBlog, defaultBlogBlocks, readBlogSettings, updateBlog, blogSettingsSize } from 'src/services/blogSettings'
+import { defaultVaultSettings } from 'src/services/vaultSettings'
 import { blogBaseUrl, encodeBlogLabel } from 'src/services/blogHost'
 import { createBlogSocialCardFile } from 'src/services/blogSocialCard'
 import { blogThemeOptions, blogOgImagePath } from 'src/themes/blogThemes'
 import ImageUploadButton from 'components/ImageUploadButton.vue'
+import VaultSettings from 'components/blog/VaultSettings.vue'
 
 function splitList (value) {
   return String(value || '')
@@ -1024,7 +1035,7 @@ function parseFeaturedItems (value) {
 
 export default {
   name: 'BlogSettings',
-  components: { ImageUploadButton },
+  components: { ImageUploadButton, VaultSettings },
   data () {
     return {
       lookup: '',
@@ -1074,6 +1085,7 @@ export default {
         shopLayout: 'grid',
         shopSort: 'newest',
         shopShowSoldOut: true,
+        vault: defaultVaultSettings(null),
         pinnedText: '',
         authorsText: '',
         community: '',
@@ -1289,6 +1301,7 @@ export default {
         shopLayout: settings.shop?.layout || 'grid',
         shopSort: settings.shop?.sort || 'newest',
         shopShowSoldOut: settings.shop?.showSoldOut !== false,
+        vault: settings.vault ? { ...settings.vault, bulletin: { ...settings.vault.bulletin } } : defaultVaultSettings(this.account),
         pinnedText: (settings.pinned || []).join(', '),
         authorsText: (settings.authors || []).join(', '),
         community: settings.community || '',
@@ -1344,12 +1357,18 @@ export default {
         showComments: this.form.showComments,
         directory: this.form.directory,
         ogImage: this.form.ogImage,
-        customDomain: this.form.customDomain
+        customDomain: this.form.customDomain,
+        vault: this.form.vault
       }
     },
+    queueVaultOperation (operation) {
+      if (!this.canEdit || !this.account || !operation) return
+      this.queued = true
+      this.queuedMessage = 'Vault operation queued with your posting key.'
+      this.$hiveStore.addToQueue([this.accountName, 'posting', operation])
+    },
     submit () {
-      if (!this.canEdit || !this.account) return
-      this.errors = []
+      if (!this.canEdit || !this.account) return      this.errors = []
       this.queued = false
       this.saving = true
       try {

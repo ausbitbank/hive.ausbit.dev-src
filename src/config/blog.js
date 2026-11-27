@@ -27,6 +27,24 @@ export const BLOG_MAX_SHOP_FEATURED = 12
 export const BLOG_MAX_SHOP_TAGS = 6
 export const BLOG_MAX_CART_ITEMS = 20
 
+// Vault (members-only content) bounds and defaults.
+//
+// `blog.vault` is public advertising metadata: it names the HOM product and the
+// hidden grant container. It is small on purpose, because the blog object
+// shares the 12 KB budget, and it never carries entitlement or key material.
+export const VAULT_SCHEMA_VERSION = 1
+export const VAULT_DEFAULT_PRICE = '5.000 HBD'
+export const VAULT_DEFAULT_RECURRENCE = 730
+export const VAULT_DEFAULT_EXECUTIONS = 12
+export const VAULT_DEFAULT_PERIOD = 'month'
+export const VAULT_DEFAULT_PRODUCT_PERMLINK = 'membership'
+export const VAULT_DEFAULT_CONTAINER = 'banksia-vault'
+export const VAULT_MAX_BYTES = 1200
+export const VAULT_MAX_BULLETIN_ENTRIES = 300
+export const VAULT_MAX_INLINE_CT = 40000
+export const VAULT_MAX_PLAINTEXT_INLINE = 30000
+export const VAULT_ALLOWED_ARCHIVE = ['all', 'current']
+
 // Labels that must never resolve to an account blog. Some are first-level
 // service hosts (`files`, `www`), some are routes the blog itself uses, and
 // some are names an impersonation attempt would reach for first.
