@@ -3,6 +3,9 @@ import * as contentModule from '../../src/services/moderationContent'
 import {
   decideSkin,
   displayedReputation,
+  includesName,
+  listHits,
+  normalizeList,
   normalizeName,
   normalizeViewerContext,
   SKIN_DECISION
@@ -687,5 +690,39 @@ describe('decideContent', () => {
     const viewerValue = contentViewer({ muted: ['alice'], following: ['bob'] })
     decide({ viewer: viewerValue })
     expect(viewerValue).toEqual(contentViewer({ muted: ['alice'], following: ['bob'] }))
+  })
+})
+
+describe('moderation list primitives', () => {
+  it('matches arrays, sets and object entries after normalisation', () => {
+    expect(includesName(['@Alice', 'bob'], '@ALICE')).toBe(true)
+    expect(includesName(new Set(['alice']), 'Alice')).toBe(true)
+    expect(includesName(new Set([{ name: '@Alice' }]), 'alice')).toBe(true)
+    expect(includesName(new Set(['bob']), 'alice')).toBe(false)
+    expect(includesName(['alice'], '')).toBe(false)
+    expect(includesName(null, 'alice')).toBe(false)
+    expect(includesName('alice', 'alice')).toBe(false)
+  })
+
+  it('normalises sets, maps, objects and duplicates', () => {
+    expect(normalizeList(new Set(['@Alice', 'alice', 'bob']))).toEqual(['alice', 'bob'])
+    expect(normalizeList(new Map([['a', '@Alice'], ['b', 'bob']]))).toEqual(['alice', 'bob'])
+    expect(normalizeList([{ name: 'Alice' }, { name: '  ' }, null, 'BOB', 'bob'])).toEqual(['alice', 'bob'])
+    expect(normalizeList('alice')).toEqual([])
+    expect(normalizeList(null)).toEqual([])
+  })
+
+  it('reports unique list owners and ignores malformed lists', () => {
+    const lists = [
+      { owner: '@Alice', members: ['@Bob'] },
+      { owner: 'alice', members: new Set(['bob']) },
+      { owner: 'carol', members: ['dave'] },
+      { owner: '', members: ['bob'] },
+      null,
+      { owner: 'erin', members: 'bob' }
+    ]
+    expect(listHits(lists, 'BOB')).toEqual(['alice'])
+    expect(listHits(lists, 'nobody')).toEqual([])
+    expect(listHits(null, 'bob')).toEqual([])
   })
 })

@@ -67,9 +67,16 @@ export function displayedReputation (value) {
 }
 
 export function includesName (list, name) {
-  if (!list || !name) return false
-  if (typeof list.has === 'function') return list.has(name)
-  if (Array.isArray(list)) return list.some(item => normalizeName(item) === name)
+  const needle = normalizeName(name)
+  if (!list || !needle) return false
+  if (typeof list.has === 'function') {
+    if (list.has(needle)) return true
+    for (const item of list) {
+      if (normalizeName(item && typeof item === 'object' ? item.name : item) === needle) return true
+    }
+    return false
+  }
+  if (Array.isArray(list)) return list.some(item => normalizeName(item && typeof item === 'object' ? item.name : item) === needle)
   return false
 }
 
