@@ -279,10 +279,9 @@ import { blogBaseUrl, isValidHiveAccountName } from 'src/services/blogHost'
 import {
   isPurchasable,
   isSupportedProduct,
-  parseProductMetadata,
-  productTotalLabel,
-  purchaseMemo
+  parseProductMetadata
 } from 'src/services/blogShop'
+import { buildPaymentOperation } from 'src/services/shopCart'
 
 export default {
   name: 'PayPage',
@@ -300,10 +299,14 @@ export default {
       return this.$hiveStore.user.username || ''
     },
     totalLabel () {
-      return productTotalLabel(this.product, this.quantity)
+      return this.operation ? this.operation[1].amount : ''
     },
     memo () {
-      return this.product ? purchaseMemo(this.product.author, this.product.permlink, this.quantity) : ''
+      return this.operation ? this.operation[1].memo : ''
+    },
+    operation () {
+      if (!this.product) return null
+      return buildPaymentOperation(this.product, this.quantity, this.loggedInUser, { executions: 12 })
     },
     canPurchase () {
       return Boolean(
@@ -362,22 +365,8 @@ export default {
     pay () {
       if (!this.canPurchase) return
       const user = this.loggedInUser
-      const operation = this.product.subscription && this.product.recurrenceHours > 0
-        ? ['recurrent_transfer', {
-            to: this.product.author,
-            from: user,
-            amount: this.totalLabel,
-            memo: this.memo,
-            recurrence: this.product.recurrenceHours,
-            executions: 12,
-            extensions: []
-          }]
-        : ['transfer', {
-            to: this.product.author,
-            from: user,
-            amount: this.totalLabel,
-            memo: this.memo
-          }]
+      const operation = buildPaymentOperation(this.product, this.quantity, user, { executions: 12 })
+      if (!operation) return
       this.$hiveStore.addToQueue([user, 'active', operation])
       this.queued = true
     },
