@@ -411,7 +411,7 @@ export default {
       setPageMeta({
         title: this.title,
         description,
-        image: this.cover || this.avatar,
+        image: this.blog.ogImage || this.cover || this.avatar,
         url: '/',
         type: 'website',
         baseUrl: origin,

@@ -227,7 +227,7 @@ export default {
       setPageMeta({
         title: 'About — ' + this.blogTitle,
         description: this.about || ('About @' + this.accountName + ' on Hive.'),
-        image: this.avatar,
+        image: this.blog.ogImage || this.avatar,
         url: '/about',
         type: 'website',
         baseUrl: origin,
@@ -242,7 +242,7 @@ export default {
             '@type': 'Person',
             name: '@' + this.accountName,
             description: this.about,
-            image: this.avatar,
+            image: this.blog.ogImage || this.avatar,
             url: 'https://banksia.io/@' + this.accountName
           }
         }

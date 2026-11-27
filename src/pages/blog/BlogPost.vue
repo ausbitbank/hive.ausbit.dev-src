@@ -416,7 +416,7 @@ export default {
       setPageMeta({
         title: this.title + ' — ' + this.blogTitle,
         description,
-        image: this.cover || this.authorAvatar,
+        image: this.cover || this.blog.ogImage || this.authorAvatar,
         url: path,
         type: 'article',
         baseUrl: origin,
@@ -427,7 +427,7 @@ export default {
           '@type': 'Article',
           headline: this.title,
           description,
-          image: [this.cover || this.authorAvatar],
+          image: [this.cover || this.blog.ogImage || this.authorAvatar],
           datePublished: this.post.created || undefined,
           dateModified: this.post.last_update || this.post.created || undefined,
           author: {

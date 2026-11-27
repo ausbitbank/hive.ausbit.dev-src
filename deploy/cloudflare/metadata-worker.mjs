@@ -381,9 +381,10 @@ async function blogMetadata (url, tenant) {
   const origin = 'https://' + url.hostname
   const title = settings.title || profileMeta.display
   const description = settings.description || profileMeta.about || ('Posts by @' + tenant.account + ' on Hive.')
+  const customOg = settings.ogImage || ''
   const fallbackImage = APEX_ORIGIN + blogOgImagePath(settings.theme)
-  const image = profileMeta.cover || fallbackImage
-  const fallbackUsed = !profileMeta.cover
+  const image = customOg || profileMeta.cover || fallbackImage
+  const cardUsed = Boolean(customOg || !profileMeta.cover)
   const claimed = read.claimed
   const path = url.pathname.replace(/\/+$/, '') || '/'
   const blogJsonLd = {
@@ -404,9 +405,9 @@ async function blogMetadata (url, tenant) {
       title: title + ' — Hive blog',
       description,
       image,
-      imageWidth: fallbackUsed ? 1200 : undefined,
-      imageHeight: fallbackUsed ? 630 : undefined,
-      imageType: fallbackUsed ? 'image/png' : undefined,
+      imageWidth: cardUsed ? 1200 : undefined,
+      imageHeight: cardUsed ? 630 : undefined,
+      imageType: cardUsed ? 'image/png' : undefined,
       type: 'website',
       path: '/',
       origin,
@@ -423,9 +424,9 @@ async function blogMetadata (url, tenant) {
       title: label + ' — ' + title,
       description,
       image,
-      imageWidth: fallbackUsed ? 1200 : undefined,
-      imageHeight: fallbackUsed ? 630 : undefined,
-      imageType: fallbackUsed ? 'image/png' : undefined,
+      imageWidth: cardUsed ? 1200 : undefined,
+      imageHeight: cardUsed ? 630 : undefined,
+      imageType: cardUsed ? 'image/png' : undefined,
       type: 'website',
       path,
       origin,
@@ -457,7 +458,7 @@ async function blogMetadata (url, tenant) {
     path: canonicalPath,
     siteName: title,
     rss: origin + '/rss.xml',
-    fallbackImage,
+    fallbackImage: customOg || fallbackImage,
     post
   })
 }

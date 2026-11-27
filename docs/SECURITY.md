@@ -99,6 +99,9 @@ Notes:
   and every directory read re-verify the on-chain `claimed && directory` flags.
   Opting out deletes the entry. The directory page also re-verifies before
   rendering, so a stale KV entry cannot reveal a blog that has opted out.
+- A generated social card is uploaded through the existing images.hive.blog
+  posting-key challenge. Only the returned https URL is stored in blog
+  metadata; no image bytes or keys are sent to a Banksia server.
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 

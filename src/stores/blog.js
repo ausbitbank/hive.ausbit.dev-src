@@ -95,6 +95,10 @@ export const useBlogStore = defineStore('blog', {
       const image = typeof profile.cover_image === 'string' ? profile.cover_image.trim() : ''
       return /^https:\/\//i.test(image) ? image : ''
     },
+    ogImage (state) {
+      const value = state.settings && state.settings.ogImage
+      return typeof value === 'string' && /^https:\/\//i.test(value) ? value : ''
+    },
     website (state) {
       const profile = profileFromAccount(state.account)
       const value = typeof profile.website === 'string' ? profile.website.trim() : ''

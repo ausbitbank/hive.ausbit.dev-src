@@ -154,7 +154,7 @@ export default {
       setPageMeta({
         title: 'Contact — ' + this.blogTitle,
         description: 'Contact @' + this.accountName + ' on Hive.',
-        image: this.blog.avatar,
+        image: this.blog.ogImage || this.blog.avatar,
         url: '/contact',
         type: 'website',
         baseUrl: origin,

@@ -31,7 +31,7 @@ const NAV_HREF_RE = /^(?:\/(?!\/)[^\s]*|https:\/\/[^\s]+)$/i
 const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
   'nav', 'pinned', 'authors', 'community', 'showPayout', 'showComments',
-  'directory', 'customDomain', 'updatedAt'
+  'directory', 'ogImage', 'customDomain', 'updatedAt'
 ]
 
 function isPlainObject (value) {
@@ -176,6 +176,7 @@ export function defaultBlogSettings (account) {
     showPayout: false,
     showComments: true,
     directory: false,
+    ogImage: '',
     customDomain: '',
     updatedAt: ''
   }
@@ -232,6 +233,11 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const directory = input.directory === true
   if (input.directory !== undefined && typeof input.directory !== 'boolean') errors.push('directory must be a boolean')
 
+  const ogImage = input.ogImage === undefined || input.ogImage === null || input.ogImage === ''
+    ? ''
+    : readableText(input.ogImage, { max: 500 }, 'ogImage', errors)
+  if (ogImage && !/^https:\/\/[^\s]+$/i.test(ogImage)) errors.push('ogImage must be an https URL')
+
   const customDomain = normalizeCustomDomain(input.customDomain, errors)
   const updatedAt = input.updatedAt === undefined
     ? ''
@@ -252,6 +258,7 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     showPayout,
     showComments,
     directory,
+    ogImage,
     customDomain,
     updatedAt
   }

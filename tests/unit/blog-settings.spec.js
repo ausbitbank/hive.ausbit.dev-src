@@ -35,7 +35,8 @@ describe('blog settings defaults', () => {
       description: 'Writer and photographer.',
       theme: 'auto',
       mode: 'auto',
-      directory: false
+      directory: false,
+      ogImage: ''
     })
   })
 
@@ -63,6 +64,7 @@ describe('normalizeBlogSettings', () => {
       showComments: true,
       customDomain: 'blog.alice.example',
       directory: true,
+      ogImage: 'https://images.hive.blog/og.png',
       updatedAt: '2026-11-27T00:00:00.000Z'
     }, { account: ACCOUNT })
 
@@ -141,6 +143,15 @@ describe('normalizeBlogSettings', () => {
     const result = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', directory: 'yes' })
     expect(result.ok).toBe(false)
     expect(result.errors.join(' ')).toContain('directory must be a boolean')
+  })
+
+  it('requires an https social card URL', () => {
+    const ok = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', ogImage: 'https://images.hive.blog/og.png' })
+    expect(ok.ok).toBe(true)
+    expect(ok.settings.ogImage).toBe('https://images.hive.blog/og.png')
+    const bad = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', ogImage: 'http://images.hive.blog/og.png' })
+    expect(bad.ok).toBe(false)
+    expect(bad.errors.join(' ')).toContain('ogImage must be an https URL')
   })
 
   it('caps the total blog object size', () => {

@@ -18,11 +18,11 @@ principles that constrain it. Delivered work and its verification records live i
   `*.banksia.io` (W84).
 - W84 is deployed: `*.banksia.io` resolves, the `banksia-metadata` Worker
   proxies the apex shell and serves blog metadata, RSS, sitemap, robots, the
-  opt-in directory API and themed OG fallbacks, and the new SPA is live. A real
-  claim has been tested and works, and the blog axe suite passes; premium
-  entitlements and custom domains remain.
+  opt-in directory API, themed OG fallbacks and generated social cards, and the
+  new SPA is live. A real claim has been tested and works, and the blog axe
+  suite passes; premium entitlements and custom domains remain.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,665 tests across 192 files.
+  with 1,674 tests across 193 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W85**.
@@ -180,8 +180,6 @@ previews, and the claim flow is verified. Remaining work:
   never from the user-writable blog object.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
   UI. Keep custom-domain blogs read-only for signing.
-- A per-blog text OG generator; the current fallback is themed, not
-  personalised with the blog title/avatar.
 - Canonical policy for the duplicate: the apex
   `banksia.io/@author/permlink` page still canonicalizes to itself, so a
   claimed blog post exists at two URLs. Decide whether the apex post should

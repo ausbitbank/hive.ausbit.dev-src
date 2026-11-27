@@ -172,6 +172,46 @@
 
           <q-card flat bordered class="blog-settings__card">
             <q-card-section>
+              <h2 class="blog-settings__section-title">Social card</h2>
+              <p class="blog-settings__hint">
+                The 1200×630 image used when the blog is shared. Generate one from
+                the current title and theme, or upload your own.
+              </p>
+              <img :src="ogPreview" alt="Social card preview" class="blog-settings__og" />
+              <div class="blog-settings__og-actions">
+                <q-btn
+                  unelevated
+                  no-caps
+                  color="primary"
+                  label="Generate social card"
+                  :loading="ogGenerating"
+                  :disable="!canEdit || ogGenerating"
+                  @click="generateOgImage"
+                />
+                <image-upload-button
+                  ref="ogUpload"
+                  :username="accountName"
+                  :max-files="1"
+                  label="Upload custom"
+                  success-message="Social card uploaded"
+                  success-caption="Save the blog settings to publish it."
+                  :disabled="!canEdit"
+                  @insert="onOgUploaded"
+                />
+                <q-btn
+                  v-if="form.ogImage"
+                  flat
+                  no-caps
+                  label="Use theme fallback"
+                  @click="form.ogImage = ''"
+                />
+              </div>
+              <p v-if="ogMessage" class="blog-settings__hint q-mt-sm">{{ ogMessage }}</p>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
               <h2 class="blog-settings__section-title">Content</h2>
               <div class="blog-settings__field">
                 <q-input
@@ -469,6 +509,25 @@
   margin-top: 0.35rem;
 }
 
+.blog-settings__og {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  margin: 0.75rem 0;
+  background: var(--c-surface-2);
+}
+
+.blog-settings__og-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .blog-settings__actions {
   display: flex;
   align-items: center;
@@ -503,7 +562,9 @@ import { fetchAccount } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
 import { claimBlog, readBlogSettings, updateBlog, blogSettingsSize } from 'src/services/blogSettings'
 import { blogBaseUrl, encodeBlogLabel } from 'src/services/blogHost'
-import { blogThemeOptions } from 'src/themes/blogThemes'
+import { createBlogSocialCardFile } from 'src/services/blogSocialCard'
+import { blogThemeOptions, blogOgImagePath } from 'src/themes/blogThemes'
+import ImageUploadButton from 'components/ImageUploadButton.vue'
 
 function splitList (value) {
   return String(value || '')
@@ -514,6 +575,7 @@ function splitList (value) {
 
 export default {
   name: 'BlogSettings',
+  components: { ImageUploadButton },
   data () {
     return {
       lookup: '',
@@ -525,6 +587,8 @@ export default {
       saving: false,
       directorySyncing: false,
       directoryMessage: '',
+      ogGenerating: false,
+      ogMessage: '',
       error: '',
       errors: [],
       queued: false,
@@ -540,6 +604,7 @@ export default {
         showPayout: false,
         showComments: true,
         directory: false,
+        ogImage: '',
         customDomain: ''
       }
     }
@@ -582,6 +647,10 @@ export default {
     },
     metadataBytes () {
       return this.settings ? blogSettingsSize(this.settings) : 0
+    },
+    ogPreview () {
+      if (this.form.ogImage) return this.form.ogImage
+      return 'https://banksia.io' + blogOgImagePath(this.form.theme)
     }
   },
   watch: {
@@ -652,6 +721,7 @@ export default {
         showPayout: settings.showPayout === true,
         showComments: settings.showComments !== false,
         directory: settings.directory === true,
+        ogImage: settings.ogImage || '',
         customDomain: settings.customDomain || ''
       }
     },
@@ -668,6 +738,7 @@ export default {
         showPayout: this.form.showPayout,
         showComments: this.form.showComments,
         directory: this.form.directory,
+        ogImage: this.form.ogImage,
         customDomain: this.form.customDomain
       }
     },
@@ -718,6 +789,34 @@ export default {
       } finally {
         this.directorySyncing = false
       }
+    },
+    async generateOgImage () {
+      if (!this.canEdit || !this.account) return
+      this.ogGenerating = true
+      this.ogMessage = ''
+      try {
+        const file = await createBlogSocialCardFile({
+          title: this.form.title || this.account.name,
+          account: this.account.name,
+          description: this.form.description,
+          theme: this.form.theme,
+          accent: this.form.accent
+        })
+        const uploader = this.$refs.ogUpload
+        if (!uploader) throw new Error('The image uploader is not ready.')
+        const count = await uploader.uploadFiles([file])
+        if (!count) this.ogMessage = 'The social card was not uploaded. Sign in and try again.'
+      } catch (error) {
+        this.ogMessage = error && error.message ? error.message : 'The social card could not be generated.'
+      } finally {
+        this.ogGenerating = false
+      }
+    },
+    onOgUploaded (items) {
+      const url = Array.isArray(items) && items[0] ? items[0].url : ''
+      if (!url) return
+      this.form.ogImage = url
+      this.ogMessage = 'Social card uploaded. Save the blog settings to publish it.'
     },
     updateMeta () {
       setPageMeta({

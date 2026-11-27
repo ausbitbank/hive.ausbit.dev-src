@@ -117,6 +117,41 @@ describe('blog host metadata', () => {
     expect(methods).toContain('bridge.get_profile')
   })
 
+  it('prefers the generated social card over the profile cover', async () => {
+    const account = {
+      ...ACCOUNT,
+      posting_json_metadata: JSON.stringify({
+        profile: { name: 'Alice' },
+        'banksia.io': {
+          blog: {
+            version: 1,
+            claimed: true,
+            title: 'Alice writes',
+            ogImage: 'https://images.hive.blog/social-card.png'
+          }
+        }
+      })
+    }
+    stubNetwork({
+      account,
+      profile: {
+        ...PROFILE,
+        metadata: {
+          profile: {
+            ...PROFILE.metadata.profile,
+            cover_image: 'https://images.hive.blog/cover.png'
+          }
+        }
+      }
+    })
+    const response = await worker.fetch(blogRequest('/'))
+    const html = await response.text()
+
+    expect(html).toContain('property="og:image" content="https://images.hive.blog/social-card.png"')
+    expect(html).toContain('property="og:image:width" content="1200"')
+    expect(html).not.toContain('content="https://images.hive.blog/cover.png"')
+  })
+
   it('gives a post its own canonical blog URL', async () => {
     const methods = stubNetwork()
     const response = await worker.fetch(blogRequest('/a-post'))

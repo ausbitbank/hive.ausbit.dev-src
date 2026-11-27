@@ -20,6 +20,10 @@ claim and customise it from the apex site.
   payout/comment toggles.
 - A public `/blogs` landing page with a username preview, the three theme
   cards, the free/paid story and a claim call to action.
+- A client-side 1200×630 social-card generator in `/settings/blog`. It draws
+  the current title, description, account and theme on a canvas, uploads the
+  PNG through the existing `images.hive.blog` posting-key flow, and stores the
+  URL in `blog.ogImage`.
 - An opt-in public directory at `/blogs/directory`. A KV index stores only
   account names; every read and write is re-verified against the on-chain
   `claimed` and `directory` flags.
@@ -90,6 +94,7 @@ with a blog route name).
       "showPayout": false,
       "showComments": true,
       "directory": true,
+      "ogImage": "https://images.hive.blog/...social-card.png",
       "customDomain": "",
       "updatedAt": "2026-11-27T00:00:00.000Z"
     }
@@ -151,7 +156,8 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   `waitUntil`. The directory page re-verifies each account before rendering.
 - When a blog has no cover, the root/About/Contact metadata and posts without
   their own image use a themed 1200×630 OG card and emit
-  `og:image:width/height/type`. A profile cover still wins.
+  `og:image:width/height/type`. A generated `blog.ogImage` wins over the
+  profile cover, and the profile cover wins over the themed fallback.
 - Unclaimed blogs get `robots: noindex, follow` and no canonical.
 - The post header no longer repeats a lead image that is already inside the
   body; the body remains the visual source of truth.
@@ -168,10 +174,10 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 192 files, 1,665 tests passing. New suites:
+- `bun run test` — 193 files, 1,674 tests passing. New suites:
   `blog-host`, `blog-settings`, `blog-posts`, `blog-themes`, `blog-feed`,
-  `blog-worker`, `blog-directory-worker`, `cloudflare-dns`; `nginx-routes` and
-  `page-meta` extended.
+  `blog-social-card`, `blog-worker`, `blog-directory-worker`,
+  `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
 - `bun run build` — succeeded.
 - Headless Chromium smoke against a real account (`asgarth.localhost`):
   - home rendered 20 post cards and the unclaimed-preview banner;
@@ -207,6 +213,10 @@ whole metadata object, so the profile, theme and other apps' keys survive.
     the lead image appears once;
   - `/settings/blog?account=asgarth` returns `x-hive-meta: theme-shell` and
     renders the settings page;
+  - the live `/settings/blog?account=ausbitbank` shows the Social card section,
+    the themed preview and a disabled Generate button when signed out;
+  - the schema rejects a non-https `ogImage`, and the Worker prefers
+    `blog.ogImage` over the profile cover and themed fallback (unit-tested);
   - headless Chromium on the live host rendered 20 cards, a 1,634-character
     post body and the About page with no console errors;
   - apex `banksia.io/@…` previews still return `x-hive-meta: hit` and
@@ -261,8 +271,6 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   never from the user-writable blog object.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
   UI. Keep custom-domain blogs read-only for signing.
-- A per-blog text OG generator (the current fallback is themed, not
-  personalised with the blog title/avatar).
 - Canonical policy for the duplicate: the apex
   `banksia.io/@author/permlink` page still canonicalizes to itself, so a
   claimed blog post exists at two URLs. Decide whether the apex post should

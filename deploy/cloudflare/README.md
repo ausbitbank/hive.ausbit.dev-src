@@ -139,8 +139,12 @@ account feed, `sitemap.xml` lists the blog pages and latest posts, and
   data are copied.
 - Blogs without a cover use one of three themed 1200×630 cards in
   `public/statics/og-blog-*.png` and emit `og:image:width/height/type`.
-- `e2e/blog.spec.js` covers `/blogs`, the directory and a blog host with axe at
-  desktop and mobile widths.
+- `/settings/blog` can generate a per-blog 1200×630 card from the title,
+  description, account and theme. It uploads the PNG through the existing
+  images.hive.blog posting-key flow and stores the returned URL in
+  `blog.ogImage`; the Worker prefers it over the cover and themed fallback.
+- `e2e/blog.spec.js` covers `/blogs`, the settings page, the directory and a
+  blog host with axe at desktop and mobile widths.
 
 ## Traffic and WAF rules
 
