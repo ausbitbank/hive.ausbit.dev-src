@@ -58,6 +58,7 @@
 import moment from 'src/utils/time'
 import { operations as op, makeBitMaskFilter } from 'src/services/hiveOperations'
 import { hiveAvatarUrl } from 'src/utils/avatar'
+import { fetchPostContent } from 'src/services/chainData'
 const voteBitmask = makeBitMaskFilter([
   op.vote
 ])
@@ -101,16 +102,6 @@ export default {
     }
   },
   methods: {
-    getPost (author, permlink) {
-      this.$hive.api.getContentAsync(author, permlink)
-        .then(res => {
-          if (this.destroyed || !res) return
-          if (res.title !== '' && res.author !== this.account) {
-            this.posts.push(res)
-          }
-        })
-        .catch(() => {})
-    },
     async getRecentVotes (username) {
       if (this.destroyed) return
       this.loading = true
@@ -166,9 +157,27 @@ export default {
       }
     },
     votesToPosts (votes) {
-      votes.filter(this.filterOwnPosts).slice(0, 20).forEach(function (tx) {
-        this.getPost(tx[1].op[1].author, tx[1].op[1].permlink)
-      }.bind(this))
+      const seen = new Set(this.posts.map(post => post.author + '/' + post.permlink))
+      const candidates = votes
+        .filter(this.filterOwnPosts)
+        .map(tx => ({ author: tx[1].op[1].author, permlink: tx[1].op[1].permlink }))
+        .filter(post => post.author && post.permlink)
+        .filter(post => {
+          const key = post.author + '/' + post.permlink
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+        .slice(0, 10)
+      return Promise.all(candidates.map(candidate => fetchPostContent(candidate.author, candidate.permlink).catch(() => null)))
+        .then(posts => {
+          if (this.destroyed) return
+          for (const post of posts) {
+            if (!post || post.title === '' || post.author === this.account) continue
+            if (this.posts.some(existing => existing.author === post.author && existing.permlink === post.permlink)) continue
+            this.posts.push(post)
+          }
+        })
     },
     returnPostImage (post) {
       if (!post || !post.json_metadata) return null
