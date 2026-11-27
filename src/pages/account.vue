@@ -148,12 +148,12 @@
               </q-card-section>
 
               <q-card-section class="account-activity__pager">
-                <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="page = 1; accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 2" />
-                <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="page = (parseInt(page) - 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); page = getAccountHistoryFiltered()" v-if="page > 1" />
+                <q-btn icon="keyboard_backspace" aria-label="First page" title="First page" color="primary" dense push @click="goToPage(1)" v-if="Number(page) > 2" />
+                <q-btn icon="keyboard_arrow_left" aria-label="Previous page" title="Previous page" color="primary" dense push @click="goToPage(Number(page) - 1)" v-if="Number(page) > 1" />
                 <span class="account-activity__page">Page {{ page }}</span>
                 <q-spinner-puff size="1.6em" color="primary" v-if="accountOperations.length < 1 && !filteredEmpty" />
-                <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="page = (parseInt(page) + 1); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
-                <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="page = ((accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0); accountOperations = []; $router.push({ path: ('@' + username), query: { page: page, filter: $route.query.filter }}); getAccountHistoryFiltered()" v-if="page !== (( accountOperationsMarker / accountOperationsLimit) + 1).toFixed(0)" />
+                <q-btn icon="keyboard_arrow_right" aria-label="Next page" title="Next page" color="primary" dense push @click="goToPage(Number(page) + 1)" v-if="Number(page) < lastPageNumber" />
+                <q-btn icon="keyboard_tab" aria-label="Last page" title="Last page" color="primary" dense push @click="goToPage(lastPageNumber)" v-if="Number(page) < lastPageNumber" />
               </q-card-section>
             </q-card>
           </section>
@@ -765,18 +765,36 @@ export default {
     }
   },
   watch: {
-    username: function () {
+    // Route changes reload the account; query changes only reload activity.
+    // The old username + $route pair ran init() twice for every account switch.
+    '$route.params.username': function (value, previous) {
+      if (value === previous) return
       this.accountOperationsMarker = null
-    this.init()
-    },
-    $route: function () {
       this.init()
+    },
+    '$route.query': function (value, previous) {
+      const next = value || {}
+      const prev = previous || {}
+      this.filter = next.filter || null
+      this.page = next.page || 1
+      if (next.filter !== prev.filter) {
+        this.accountOperationsMarker = null
+        this.getAccountHistoryMarker()
+        return
+      }
+      if (next.page !== prev.page) this.getAccountHistoryFiltered()
     },
     account: function () {
       this.updatePageMeta()
     }
   },
   computed: {
+    lastPageNumber () {
+      const marker = Number(this.accountOperationsMarker)
+      const limit = Math.max(1, Number(this.accountOperationsLimit) || 50)
+      if (!Number.isFinite(marker) || marker < 0) return 1
+      return Math.max(1, Math.floor(marker / limit) + 1)
+    },
     profileModeration () {
       if (!this.account) return { display: 'show', primary: null, reasons: [], overrides: [] }
       return this.moderationDecision({
@@ -1128,8 +1146,9 @@ export default {
       this.filteredEmpty = false
       try {
         if (ids) {
-          // await this.$hive.api.callAsync('call', ['condenser_api', 'get_account_history', [this.username, -1, 1000, ...this.operationsBitmask]])
-          const res = await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1000, ...this.operationsBitmask])
+          // One row is enough to learn the newest matching index. Fetching
+          // 1,000 rows here doubled every account switch's history payload.
+          const res = await this.$hive.api.callAsync('condenser_api.get_account_history', [this.username, -1, 1, ...this.operationsBitmask])
           const rows = Array.isArray(res) ? res : []
           if (!rows.length) {
             this.accountOperations = []
@@ -1173,6 +1192,15 @@ export default {
       this.filteredEmpty = false
       this.$router.push({ query: {} })
     },
+    goToPage (value) {
+      const next = Math.max(1, Math.floor(Number(value) || 1))
+      if (next === Number(this.page)) return
+      this.accountOperations = []
+      this.filteredEmpty = false
+      const query = { ...this.$route.query, page: String(next) }
+      if (!query.filter) delete query.filter
+      this.$router.push({ query })
+    },
     accountLink (username) {
       return '/@' + username
     },
@@ -1199,7 +1227,7 @@ export default {
     },
     async loadAccount () {
       try {
-        const account = await fetchAccount(this.username, { force: true })
+        const account = await fetchAccount(this.username)
         if (!account || !account.name) {
           this.error = true
           this.errorMessage = 'Account @' + this.username + ' was not found.'
