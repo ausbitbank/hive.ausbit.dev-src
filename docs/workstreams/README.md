@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W93**. **W90** remains reserved for the
+The next free workstream number is **W94**. **W90** remains reserved for the
 optional Vault relay prompt in `docs/prompts/`.
 
 ## Index
@@ -149,3 +149,4 @@ optional Vault relay prompt in `docs/prompts/`.
 | [W89-premium-memberships](W89-premium-memberships.md) | Banksia Vault premium memberships |
 | [W91-shop-vault-integration](W91-shop-vault-integration.md) | Shop routing and guards for Vault membership products |
 | [W92-shop-seller-trust](W92-shop-seller-trust.md) | Public seller signals and product edit visibility |
+| [W93-subscription-cancel-safety](W93-subscription-cancel-safety.md) | Only cancel open Vault subscriptions; match pair_id |

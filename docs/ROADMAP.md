@@ -63,6 +63,10 @@ principles that constrain it. Delivered work and its verification records live i
   product” note from the chain `last_update`. It is explicitly contextual, not a
   buyer-protection score. See
   [`docs/workstreams/W92-shop-seller-trust.md`](workstreams/W92-shop-seller-trust.md).
+- W93 fixes Vault subscription cancellation: a plan with access but no open
+  recurring transfer no longer offers Cancel, and the cancel operation now
+  carries a non-zero `pair_id` so HF28 can find the right plan. See
+  [`docs/workstreams/W93-subscription-cancel-safety.md`](workstreams/W93-subscription-cancel-safety.md).
 - Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
   `bun run test` green with **2,093 tests across 218 files**, `bun run build`
   succeeded, and `bun run perf:check` passed after a documented re-baseline.
@@ -78,7 +82,7 @@ principles that constrain it. Delivered work and its verification records live i
   expose intercepted POST bodies and has pre-existing timeouts in this
   environment, so the network-mocked HOM and Vault E2E run under the full
   Chromium config.
-- The next free workstream number is **W93**. **W90** remains reserved for the
+- The next free workstream number is **W94**. **W90** remains reserved for the
   optional self-hosted Vault relay prompt in `docs/prompts/`.
 
 ## Vision
