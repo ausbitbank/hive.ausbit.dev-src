@@ -54,6 +54,7 @@ export function safeJsonParse (value, fallback = {}) {
  */
 export function simpleMarkdownToHtml (value) {
   if (value === null || value === undefined || typeof value !== 'string') return ''
+  if (!value.trim()) return ''
   const escaped = value
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
