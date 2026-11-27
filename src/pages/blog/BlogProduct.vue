@@ -87,6 +87,10 @@
           <a v-else :href="sellerUrl" target="_blank" rel="noopener noreferrer">@{{ product.author }}</a>
         </p>
 
+        <p v-if="seller && seller.edited" class="product-edited">
+          Seller edited this product on {{ seller.lastUpdateLabel }}.
+        </p>
+
         <p v-if="purchased" class="product-badge">You bought this</p>
 
         <ul v-if="product.tags && product.tags.length" class="product-tags" aria-label="Product tags">
@@ -133,6 +137,33 @@
           {{ unavailableReason }}
         </p>
       </div>
+
+      <aside v-if="seller" class="product-seller-card" aria-labelledby="product-seller-title">
+        <div class="product-seller-card__head">
+          <img :src="sellerAvatar" alt="" class="product-seller-card__avatar" width="40" height="40" loading="lazy" />
+          <div>
+            <h2 id="product-seller-title" class="product-seller-card__title">About @{{ product.author }}</h2>
+            <p class="product-seller-card__note">Public Hive account signals, not a buyer-protection rating.</p>
+          </div>
+        </div>
+        <dl class="product-seller-card__facts">
+          <div v-if="seller.joinedLabel">
+            <dt>On Hive</dt>
+            <dd>{{ seller.joinedLabel }}<template v-if="seller.ageLabel"> · {{ seller.ageLabel }}</template></dd>
+          </div>
+          <div v-if="seller.reputationLabel">
+            <dt>Reputation</dt>
+            <dd>{{ seller.reputationLabel }}</dd>
+          </div>
+          <div v-if="seller.postCount !== null">
+            <dt>Posts</dt>
+            <dd>{{ seller.postCount }}</dd>
+          </div>
+        </dl>
+        <a :href="sellerProfileUrl" class="product-seller-card__link" target="_blank" rel="noopener noreferrer">
+          View @{{ product.author }} on Banksia
+        </a>
+      </aside>
 
       <section v-if="membership" class="product-membership" aria-label="Membership details">
         <h2 class="product-description__title">Membership</h2>
@@ -412,6 +443,75 @@
   line-height: 1.5;
 }
 
+.product-edited {
+  margin: 0.35rem 0 0;
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+}
+
+.product-seller-card {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--skin-radius-card, 12px);
+  background: var(--c-surface);
+}
+
+.product-seller-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.product-seller-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+  flex: none;
+}
+
+.product-seller-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.product-seller-card__note {
+  margin: 0.2rem 0 0;
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+}
+
+.product-seller-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  margin: 0.85rem 0 0;
+}
+
+.product-seller-card__facts dt {
+  color: var(--c-text-faint);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.product-seller-card__facts dd {
+  margin: 0.1rem 0 0;
+  color: var(--c-text);
+  font-size: 0.86rem;
+}
+
+.product-seller-card__link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: var(--c-link);
+  font-size: 0.82rem;
+}
+
 .product-membership {
   margin: 1.5rem 0 0;
   padding: 1rem 1.1rem;
@@ -543,13 +643,14 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchPostContent } from 'src/services/chainData'
+import { fetchAccount, fetchPostContent } from 'src/services/chainData'
 import { isPurchasable, isSupportedProduct } from 'src/services/blogShop'
 import { normalizeProduct, productJsonLd } from 'src/services/hiveMarket'
 import { blogProductPath, parseProductRoute } from 'src/services/blogProductPath'
 import { blogPostExcerpt, formatBlogDate } from 'src/services/blogPosts'
 import { PURCHASES_STORAGE_KEY, serializeCheckoutItems } from 'src/services/shopCart'
 import { membershipFromProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
+import { buildSellerTrust } from 'src/services/shopSeller'
 import { useBlogStore } from 'src/stores/blog'
 import { useCartStore } from 'src/stores/cart'
 
@@ -596,6 +697,7 @@ export default {
   data () {
     return {
       product: null,
+      seller: null,
       loading: true,
       error: '',
       notFound: false,
@@ -631,6 +733,14 @@ export default {
     },
     sellerUrl () {
       return this.product ? 'https://banksia.io/@' + this.product.author : 'https://banksia.io'
+    },
+    sellerProfileUrl () {
+      return this.sellerUrl
+    },
+    sellerAvatar () {
+      return this.product
+        ? 'https://images.hive.blog/u/' + encodeURIComponent(this.product.author) + '/avatar'
+        : ''
     },
     membership () {
       return membershipFromProduct(this.product)
@@ -711,6 +821,7 @@ export default {
       this.error = ''
       this.notFound = false
       this.product = null
+      this.seller = null
       this.activeImage = 0
       this.quantity = 1
       this.cartMessage = ''
@@ -743,12 +854,24 @@ export default {
         this.product = product
         this.loadPurchases()
         this.updateMeta()
+        this.loadSeller(requestId)
       } catch (error) {
         if (requestId !== this.requestId) return
         this.error = error && error.message ? error.message : 'This product could not be loaded.'
         this.updateErrorMeta()
       } finally {
         if (requestId === this.requestId) this.loading = false
+      }
+    },
+    async loadSeller (requestId = this.requestId) {
+      const author = this.product && this.product.author
+      if (!author) return
+      try {
+        const account = await fetchAccount(author)
+        if (requestId !== this.requestId) return
+        this.seller = buildSellerTrust(account, { product: this.product })
+      } catch {
+        if (requestId === this.requestId) this.seller = null
       }
     },
     loadPurchases () {

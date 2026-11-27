@@ -9,6 +9,8 @@ test.use({ serviceWorkers: 'block' })
 const ACCOUNT = {
   name: 'alice',
   created: '2025-01-01T00:00:00',
+  reputation: '1234567890',
+  post_count: 42,
   json_metadata: '',
   posting_json_metadata: JSON.stringify({
     profile: {
@@ -93,6 +95,7 @@ const PRODUCTS = [
     title: 'Managed Hive hosting',
     body: 'Managed hosting for a Hive project.',
     created: '2026-11-18T10:00:00',
+    last_update: '2026-11-19T10:00:00',
     depth: 0,
     json_metadata: JSON.stringify({
       content_type: 'product',
@@ -398,6 +401,10 @@ test('product detail renders price, gallery and Product JSON-LD', async ({ page 
   await expect(page.locator('.product-title')).toHaveText('Managed Hive hosting')
   await expect(page.locator('.product-price')).toHaveText('25.000 HBD')
   await expect(page.locator('.product-seller')).toContainText('@alice')
+  await expect(page.locator('.product-seller-card')).toContainText('On Hive')
+  await expect(page.locator('.product-seller-card')).toContainText('25.8')
+  await expect(page.locator('.product-seller-card')).toContainText('42')
+  await expect(page.locator('.product-edited')).toContainText('Seller edited this product')
   await expect(page.locator('.product-body')).toContainText('Managed hosting for a Hive project.')
   await expect(page.getByRole('link', { name: 'Buy on Banksia' }))
     .toHaveAttribute('href', /\/pay\?product=alice%2Fmanaged-hosting/)
