@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T154455Z-c6441a1618c5`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T160330Z-284e928908bc`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T154503Z.tar.gz`
-  (sha256 `4bb3319271f8ef29e133af3074dc04cd1c4a991113efd31a72a24366570a8aa1`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T154503Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T160339Z.tar.gz`
+  (sha256 `22a8578c3eee85616a4e6e16a1cc5a5dd89129d9fa03ba42c329b7be1fa0a15f`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T160339Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -417,7 +417,10 @@ Deployed on 2026-11-27 from `master`:
   **Select pending & issue**.
 - The price field keeps a local draft and commits on blur/Enter, so it no longer
   snaps back while typing.
-- **Protocol specification:** `docs/integrations/vault-protocol.md` is now a
+- **Protocol specification:** `docs/integrations/vault-protocol.md` now includes
+  an “Explain like I'm 5” on-ramp, a corrections section from independent
+  review, the normative schemas/vectors and the audit/implementation
+  checklists. It is a
   normative v1 spec with conformance classes, complete JSON Schemas,
   cryptographic constructions, exact signature payloads, reproducible test
   vectors, an independent security-audit checklist and a frontend

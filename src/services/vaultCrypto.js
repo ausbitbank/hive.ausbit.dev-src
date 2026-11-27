@@ -17,6 +17,7 @@ export const CONTENT_AAD_PREFIX = 'banksia.vault.content.v1'
 export const KEYRING_AAD_PREFIX = 'banksia.vault.keyring.v1'
 export const BULLETIN_SIG_PREFIX = 'banksia.vault.bulletin.v1'
 export const GRANT_SIG_PREFIX = 'banksia.vault.grant.v1'
+export const DELEGATION_SIG_PREFIX = 'banksia.vault.delegation.v1'
 
 const P256_UNCOMPRESSED_BYTES = 65
 const P256_COORDINATE_BYTES = 32

@@ -15,6 +15,7 @@ import {
   nextBulletinSequence,
   parseBulletin,
   signGrant,
+  signDelegation,
   verifyDelegation,
   verifyGrant
 } from '../../src/services/vaultGrant'
@@ -293,12 +294,12 @@ describe('delegation certificates', () => {
   }
 
   it('verifies a valid certificate against any posting key', async () => {
-    const signed = await signGrant(certificate, fakeSigner())
+    const signed = await signDelegation(certificate, fakeSigner())
     expect(await verifyDelegation(signed, ['STM111', 'STM222'], fakeVerifier())).toBe(true)
   })
 
   it('rejects expired, not-yet-valid, wrong-scope and wrong-signature certificates', async () => {
-    const signed = await signGrant(certificate, fakeSigner())
+    const signed = await signDelegation(certificate, fakeSigner())
 
     expect(await verifyDelegation(
       { ...signed, notAfter: new Date(now - 1).toISOString() },

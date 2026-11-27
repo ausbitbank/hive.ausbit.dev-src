@@ -15,6 +15,7 @@
 
 import {
   BULLETIN_SIG_PREFIX,
+  DELEGATION_SIG_PREFIX,
   GRANT_SIG_PREFIX,
   VaultCryptoError,
   canonicalJson,
@@ -136,6 +137,22 @@ export function buildGrantSigningPayload (grant) {
   return `${GRANT_SIG_PREFIX}|${canonicalJson(withoutSig(grant))}`
 }
 
+/** Dedicated prefix for a relay delegation certificate (reserved in v1). */
+export function buildDelegationSigningPayload (cert) {
+  if (!isPlainObject(cert)) throw new VaultCryptoError('VAULT_BAD_INPUT', 'The delegation certificate must be an object.')
+  return `${DELEGATION_SIG_PREFIX}|${canonicalJson(withoutSig(cert))}`
+}
+
+/** Sign a delegation certificate with a posting-key adapter. */
+export async function signDelegation (cert, signerAdapter) {
+  if (!signerAdapter || typeof signerAdapter.sign !== 'function') {
+    throw new VaultCryptoError('VAULT_BAD_INPUT', 'A signer adapter with sign(text) is required.')
+  }
+  const signature = await signerAdapter.sign(buildDelegationSigningPayload(cert))
+  if (!signature) throw new VaultCryptoError('VAULT_BAD_INPUT', 'The signer returned an empty signature.')
+  return { ...cert, sig: signature }
+}
+
 function isBulletinShape (grant) {
   return isPlainObject(grant) &&
     (Object.prototype.hasOwnProperty.call(grant, 'keyring') ||
@@ -214,7 +231,7 @@ export async function verifyDelegation (cert, creatorPostingKeys, verifierAdapte
       .filter(key => typeof key === 'string' && key)
     if (!keys.length) return false
 
-    const payload = buildGrantSigningPayload(cert)
+    const payload = buildDelegationSigningPayload(cert)
     for (const key of keys) {
       if (await verifierAdapter.verify(payload, cert.sig, key)) return true
     }

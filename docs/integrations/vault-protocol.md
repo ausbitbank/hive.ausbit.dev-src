@@ -43,6 +43,36 @@ Hive RPC reads and WebCrypto.
 
 ---
 
+## 0.1 Explain like I'm 5
+
+Imagine you write a secret diary and want friends to read it for 5 HBD a month,
+without hiring a security guard or building a clubhouse.
+
+1. **The locked box.** You put the members-only text in a strong digital safe
+   (AES-256-GCM) and leave a free teaser outside. Everyone can see the teaser and
+   the locked box; only key holders can open it.
+2. **The keychain.** Each month you make a fresh content key for that month's
+   posts. You keep the monthly keys together in a keyring, and seal that keyring
+   with a separate monthly ring key.
+3. **The ticket.** A reader's browser makes a personal padlock-and-key pair
+   (P-256). They pay you in HBD and put their **open padlock** (public key) in the
+   payment memo.
+4. **Handing over the key.** You verify the payment, seal the keyring once, and
+   make a copy of the ring key that only opens with that reader's padlock. You
+   publish the sealed keyring plus all the wrapped ring keys in a **bulletin**,
+   signed with your Hive posting key.
+5. **Reading the diary.** The reader's browser verifies your signature, uses
+   their private key to open their copy of the ring key, decrypts the keyring,
+   picks the content key for the post, and decrypts the text locally.
+
+There is no Banksia server in the middle and no platform balance. The chain
+stores the locked box, the wrapped keys and your signature. The trade-off is
+that someone must issue the bulletin: in v1 that is your open dashboard (or an
+auto-issuing tab), with a relay reserved for later. It is not DRM: a subscriber
+can screenshot or re-share text, and media URLs are not encrypted.
+
+---
+
 ## 1. Scope
 
 Vault has three jobs:
@@ -427,7 +457,7 @@ Validation:
 
 - `v === 1`.
 - `blog` is a valid Hive account name.
-- `period` matches `/^\d{4}-\d{2}$/` (format; see open questions).
+- `period` matches `/^\d{4}-(?:0[1-9]|1[0-2])$/`.
 - `seq` is an integer `>= 1`.
 - `keyring` is an object with `iv` and `ct` strings; `alg` defaults to `A256GCM`.
 - `entries` is an array. Malformed entries are dropped; `rkt` is 16 lowercase hex
@@ -510,7 +540,7 @@ Verification:
 2. Current time is within `notBefore`/`notAfter`.
 3. Signature verifies against one of the creator's posting keys.
 4. Signature payload:
-   `banksia.vault.grant.v1|<canonicalJson(cert without sig)>`.
+   `banksia.vault.delegation.v1|<canonicalJson(cert without sig)>`.
 
 A new blog-metadata write without `relay` revokes the delegation.
 
@@ -677,7 +707,7 @@ entry           = { alg: "P256-HKDF-SHA256-A256GCM", epk, iv, ct,
                     tier, expires }
 ```
 
-The grant header has exactly six keys: `blog`, `rkt`, `period`, `tier`,
+The grant header has exactly five keys: `blog`, `rkt`, `period`, `tier`,
 `expires`. The same object is both the HKDF `info` and the AES-GCM AAD, so a
 reader cannot move a wrapped key to another blog, period, tier or expiry.
 
@@ -768,8 +798,9 @@ Banksia implementation keeps signing behind an adapter:
 Signature payloads:
 
 ```text
-bulletin: banksia.vault.bulletin.v1|canonicalJson(bulletin with keyringHash, no sig)
-grant:    banksia.vault.grant.v1|canonicalJson(grant, no sig)
+bulletin:   banksia.vault.bulletin.v1|canonicalJson(bulletin with keyringHash, no sig)
+grant:      banksia.vault.grant.v1|canonicalJson(grant, no sig)
+delegation: banksia.vault.delegation.v1|canonicalJson(cert, no sig)
 ```
 
 `signGrant` auto-detects a bulletin by the presence of `keyring` or `entries`;
@@ -1124,9 +1155,10 @@ keyring or any entry invalidates the bulletin signature.
    multi-part bulletin.
 11. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
-12. **Delegation payload prefix.** Delegation certificates reuse
-   `banksia.vault.grant.v1` because no dedicated prefix exists. A future revision
-   may add `banksia.vault.delegation.v1`.
+12. **Delegation payload prefix.** Delegation certificates use the dedicated
+   `banksia.vault.delegation.v1` prefix in this specification. The v1 reader
+   rejects delegated bulletins before verification, so the path is reserved and
+   not a v1 trust surface.
 13. **History window.** Grant issuance and the reader manager read at most the
     most recent 1,000 account-history rows. Older payments and subscribers are
     not discovered; paginate or use a HAF index before scaling past that window.
@@ -1291,7 +1323,12 @@ remains normative for payment.
       }
     },
     "claims": { "type": "array" },
-    "signer": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "signer": {
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+        { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" }
+      ]
+    },
     "delegation": { "type": ["object", "null"] },
     "sig": { "type": "string", "minLength": 1 }
   }
@@ -1488,3 +1525,35 @@ document and the on-chain objects.
 | Duplicate txid | no second grant |
 | Missing/extra part | fail closed |
 | Product republished | new price/copy used for new payments; existing plans keep their amount |
+
+---
+
+## 19. Corrections from independent review
+
+An external review of the first final draft raised three spec defects and several
+limitations. All three defects are fixed in this revision:
+
+1. **Bulletin `signer` schema.** §7.4 allows a future relay's `p256:` public key,
+   but §16.4 only accepted a Hive username. The schema now accepts exactly one of
+   a Hive account name or a `p256:` uncompressed point. v1 readers still require
+   `signer === blog` and reject delegated bulletins.
+2. **Grant-header count.** §9.2 said “exactly six keys” and listed five. The
+   header is five keys: `blog`, `rkt`, `period`, `tier`, `expires`.
+3. **Delegation prefix.** Delegation certificates now use the dedicated
+   `banksia.vault.delegation.v1` prefix instead of reusing the grant prefix. v1
+   rejects delegated bulletins before verification, so this path remains
+   reserved.
+
+The review's practical limitations are accurate and remain explicit in §17.5:
+
+- the creator must be online or have the dashboard/auto-issue tab open (no relay
+  in v1);
+- one bulletin is capped at 300 entries (about 300 active readers per period);
+- history scans are bounded (1,000 rows in the Banksia beta);
+- extractable reader keys are an XSS trade-off for recovery export;
+- text-only encryption does not protect image/video URLs;
+- losing the creator passphrase and export, or clearing a reader's browser
+  without a recovery file, loses access.
+
+The “Explain like I'm 5” section at §0.1 is a deliberately non-normative
+on-ramp; the normative requirements remain in §1–§18.
