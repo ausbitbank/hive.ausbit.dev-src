@@ -26,7 +26,9 @@ ones that can be verified without changing signing or server behaviour:
 4. **Every dashboard widget asked CoinGecko for prices.** `getHivePrices()` had
    a post-response cache but no in-flight dedupe, so widgets mounting together
    produced several identical requests and shared the public rate limit. The
-   promise is now shared, with `resetHivePricesCache()` for tests.
+   promise is now shared, and the portfolio-trend chart does the same per
+   window. `resetHivePricesCache()` and `resetPriceHistoryCache()` remain for
+   tests.
 5. **`/trail` hydrated each vote with an uncached full post read.** It now uses
    the shared `fetchPostContent` cache, caps hydration at ten posts, skips
    duplicates already shown and guards unmount.
@@ -64,7 +66,7 @@ ones that can be verified without changing signing or server behaviour:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **231 files / 2,228 tests** passing.
+- `bun run test` — **231 files / 2,229 tests** passing.
 - `bun run build` — succeeded.
 - Targeted unit suites: delegation cursor, prices in-flight, carousel retry and
   the existing search/proposal suites.

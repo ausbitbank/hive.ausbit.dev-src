@@ -49,7 +49,7 @@ fixes the deterministic cases:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **231 files / 2,228 tests** passing.
+- `bun run test` — **231 files / 2,229 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright: browse filter switch by accessible name; a11y routes at
   1440×900 and 390×844 for the pages that changed.
