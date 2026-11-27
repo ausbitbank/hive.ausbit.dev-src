@@ -29,6 +29,9 @@ fixes the deterministic cases:
    skipped while the tab is hidden.
 7. **Shorts, trail and witnesses had no page-level heading.** Each now exposes
    exactly one `h1`; the existing section headings stay `h2`.
+8. **PWA update dialog used white text on the light primary blue.** Primary
+   dialog actions now use the same dark ink token as other brand buttons, and
+   the service-worker update test runs axe before confirming the reload.
 
 ## Components
 
@@ -51,7 +54,7 @@ fixes the deterministic cases:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **231 files / 2,229 tests** passing.
+- `bun run test` — **231 files / 2,234 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright: browse filter switch by accessible name; a11y routes at
   1440×900 and 390×844 for the pages that changed.

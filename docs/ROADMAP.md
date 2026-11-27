@@ -87,7 +87,7 @@ principles that constrain it. Delivered work and its verification records live i
   recently-voted carousel respect reduced motion with capped retries. See
   [`docs/workstreams/W97-component-a11y.md`](workstreams/W97-component-a11y.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,229 tests across 231 files**, `bun run build`
+  `bun run test` green with **2,234 tests across 231 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **206/206**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
