@@ -231,7 +231,12 @@ describe('subscribe payment operations', () => {
     const now = Date.parse('2026-11-27T10:00:00Z')
 
     const noOpen = readerPlans(history, [], 'bob', now)
-    expect(noOpen[0]).toMatchObject({ status: 'active', hasOpenTransfer: false, pairId: 0 })
+    expect(noOpen[0]).toMatchObject({
+      status: 'active',
+      hasOpenTransfer: false,
+      pairId: 0,
+      nextPayment: ''
+    })
 
     const open = [{
       id: 501,
@@ -245,7 +250,12 @@ describe('subscribe payment operations', () => {
       pair_id: 77
     }]
     const withOpen = readerPlans(history, open, 'bob', now)
-    expect(withOpen[0]).toMatchObject({ status: 'active', hasOpenTransfer: true, pairId: 77 })
+    expect(withOpen[0]).toMatchObject({
+      status: 'active',
+      hasOpenTransfer: true,
+      pairId: 77,
+      nextPayment: '2026-12-24T10:00:00'
+    })
   })
 
   it('builds the reader registry operation for a second device', async () => {

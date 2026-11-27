@@ -614,9 +614,13 @@ export function readerPlans (history, openTransfers, account, now = Date.now()) 
       plan.hasOpenTransfer = true
     }
     const recurrence = plan.recurrence || 730
-    const next = openRow && typeof openRow.trigger_date === 'string' && openRow.trigger_date
-      ? openRow.trigger_date
-      : (plan.lastPaymentMs ? nextPaymentDate(plan.lastPayment, recurrence) : '')
+    // A next payment only exists while a recurring transfer is open. A plan
+    // with remaining access but no open transfer must not imply a renewal.
+    const next = openRow
+      ? (typeof openRow.trigger_date === 'string' && openRow.trigger_date
+          ? openRow.trigger_date
+          : (plan.lastPaymentMs ? nextPaymentDate(plan.lastPayment, recurrence) : ''))
+      : ''
     const accessMs = plan.lastPaymentMs
       ? plan.lastPaymentMs + (plan.oneTime ? ONE_TIME_WINDOW_MS : recurrence * 60 * 60 * 1000)
       : 0
@@ -627,7 +631,7 @@ export function readerPlans (history, openTransfers, account, now = Date.now()) 
       ...plan,
       recurrence,
       recurrenceLabel: formatRecurrence(recurrence),
-      nextPayment: status === 'active' ? next : '',
+      nextPayment: status === 'active' && openRow ? next : '',
       accessUntil: accessMs ? new Date(accessMs).toISOString() : '',
       remainingExecutions: openRow && Number.isFinite(Number(openRow.remaining_executions))
         ? Math.max(0, Math.trunc(Number(openRow.remaining_executions)))
