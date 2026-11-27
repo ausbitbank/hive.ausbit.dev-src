@@ -1,5 +1,6 @@
 <template>
   <q-page class="wallet-page">
+    <h1 class="sr-only">@{{ username }} wallet — balances, history and transfers</h1>
     <template v-if="account && globalProps">
       <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
 

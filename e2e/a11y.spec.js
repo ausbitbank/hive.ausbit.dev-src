@@ -24,6 +24,7 @@ const ROUTES = [
   '/@ausbitbank',
   '/@ausbitbank/wallet',
   '/@ausbitbank/pos',
+  '/@ausbitbank/tip',
   '/@ausbitbank/delegations',
   '/@ausbitbank/downvotes',
   '/c/hive-174578',

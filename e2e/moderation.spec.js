@@ -566,7 +566,7 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
 
   await page.goto('/@ausbitbank/downvotes')
   await waitForApp(page)
-  await expect(page.getByRole('heading', { level: 2, name: '@ausbitbank downvotes' })).toBeVisible({ timeout: 20000 })
+  await expect(page.getByRole('heading', { level: 1, name: '@ausbitbank downvotes' })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('.dv-summary')).toContainText('9')
   await expect(page.locator('.dv-evidence')).toContainText('Possible coordinated downvotes')
   await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)

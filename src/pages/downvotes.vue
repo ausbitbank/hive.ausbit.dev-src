@@ -11,7 +11,7 @@
       <header class="dv-head">
         <div>
           <div class="dv-eyebrow">Downvote transparency</div>
-          <h2 class="dv-title">@{{ username }} downvotes</h2>
+          <h1 class="dv-title">@{{ username }} downvotes</h1>
           <p class="dv-intro">
             Public chain activity, grouped for review. A downvote is a signal,
             not a verdict; a local ignored voter changes the view, not the chain.
