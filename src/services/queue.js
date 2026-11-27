@@ -131,7 +131,7 @@ export function reblogOperation ({ account, author, permlink, remove = false } =
  * in the same transaction guarantees Hivemind sees the post first; a second
  * queue item could be reblogged before the post is indexed.
  */
-export function expandQueueOperation (operation) {
+export function expandQueueOperation (operation, owner = '') {
   if (!Array.isArray(operation) || typeof operation[0] !== 'string' || !operation[1] || typeof operation[1] !== 'object') {
     throw new Error('Invalid operation for broadcast.')
   }
@@ -153,9 +153,14 @@ export function expandQueueOperation (operation) {
     }])
   }
   if (wantsReblog) {
+    const account = String(owner || body.author || '').trim().toLowerCase()
+    const author = String(body.author || '').trim().toLowerCase()
+    if (account !== author) {
+      throw new Error('A self-reblog must use the post author as the queue owner.')
+    }
     operations.push(reblogOperation({
-      account: body.author,
-      author: body.author,
+      account,
+      author,
       permlink: body.permlink
     }))
   }

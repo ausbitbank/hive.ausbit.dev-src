@@ -159,6 +159,21 @@ describe('queue helpers', () => {
     expect(action[1].comment_options).toBe(options)
   })
 
+  it('refuses a self-reblog when the queue owner is not the author', () => {
+    const action = ['comment', {
+      parent_author: '',
+      parent_permlink: 'hive-174578',
+      author: 'alice',
+      permlink: 'hello',
+      title: 'Hello',
+      body: 'World',
+      json_metadata: '{}',
+      _reblog: true
+    }]
+    expect(() => expandQueueOperation(action, 'bob')).toThrow(/self-reblog/)
+    expect(expandQueueOperation(action, 'alice')).toHaveLength(2)
+  })
+
   it('builds a follow reblog and its undo payload', () => {
     const reblog = reblogOperation({ account: 'Alice', author: 'Bob', permlink: 'post' })
     expect(reblog[0]).toBe('custom_json')

@@ -45,7 +45,7 @@ const signBufferWithPublicKey = async (username, data) => {
 const broadcastAsync = async (username, operations, role = 'posting', password) => {
   // Strip queue-only markers, split comment options and append an optional
   // self-reblog so the chain receives plain operations in the right order.
-  const chainOperations = operations.flatMap(operation => expandQueueOperation(operation))
+  const chainOperations = operations.flatMap(operation => expandQueueOperation(operation, username))
   if (chainOperations[0][0] === 'transfer' && password) {
     var memo = chainOperations[0][1].memo
     if (memo && memo.length > 0 && memo[0] === '#') {
