@@ -31,6 +31,11 @@ export default defineConfig({
     setupFiles: ['tests/setup.js'],
     globals: true,
     include: ['tests/unit/**/*.spec.js'],
+    // SmartLock's PBKDF2 (310k iterations) legitimately takes seconds under
+    // v8 coverage instrumentation. The default 5s timeout makes
+    // `bun run test:coverage` fail on tests that pass in the normal run.
+    testTimeout: 15000,
+    hookTimeout: 15000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
