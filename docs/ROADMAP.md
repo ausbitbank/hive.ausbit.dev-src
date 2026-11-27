@@ -211,8 +211,9 @@ leave the account, and it is explicitly not a score, badge or ranking.
   branches out of duplicate push runs.
 - Make the build and performance checks deterministic enough for a PR gate.
   The home snapshot, feed and route measurements currently read live Hive and
-  market hosts; either stub those hosts in CI or treat live-latency budgets as
-  advisory while keeping bundle-size budgets blocking.
+  market hosts; W95 made LCP/CLS advisory while keeping bundle-size budgets
+  blocking. The remaining options are stubbing those hosts in CI or replacing
+  the live snapshot with a recorded fixture.
 - Verify the deployed site after a deploy with `bun run verify:deploy`.
 
 ### 7. Account creation follow-ups — W82

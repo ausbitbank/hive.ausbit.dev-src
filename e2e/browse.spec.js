@@ -8,6 +8,7 @@ test('browse filters and layout controls work', async ({ page }) => {
   await expect(page.locator('.browse-grid, .browse-state').first()).toBeVisible({ timeout: 25000 })
 
   await page.getByRole('button', { name: 'Filter posts' }).click()
+  await expect(page.getByRole('switch', { name: 'Hide reblogs' })).toBeVisible()
   const reblogs = page.locator('.browse-filter-list .q-item', { hasText: 'Hide reblogs' })
   await reblogs.locator('.q-toggle').click()
   await expect(page.getByRole('button', { name: 'Filter posts' }).locator('.q-badge')).toBeVisible()

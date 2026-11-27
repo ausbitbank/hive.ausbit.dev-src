@@ -48,6 +48,10 @@ unthrottled account-creation pollers, and three legacy pages without a page-leve
 8. **Page-level headings (low).** Added one `h1` to `/token/:token`,
    `/@account/wallet` and `/@account/downvotes` so the page title is announced
    and axe's heading rules have a root.
+9. **Deterministic performance gate (low).** `perf:check` now blocks on the
+   deterministic bundle-size, CSS and app-transfer budgets while reporting LCP
+   and CLS overruns as advisory notes. Live nodes and remote images can no
+   longer turn a slow API response into a bundle regression.
 
 ## Components
 
@@ -60,7 +64,8 @@ unthrottled account-creation pollers, and three legacy pages without a page-leve
 | Token page | `src/pages/token.vue` |
 | Wallet / downvotes headings | `src/pages/wallet.vue`, `src/pages/downvotes.vue` |
 | Account-creation pollers | `src/pages/hivedexSignup.vue`, `src/pages/claimAccount.vue`, `src/pages/batchCreate.vue` |
-| Tests | `tests/unit/cache-invalidation.spec.js`, `tests/unit/hive-operations.spec.js`, `e2e/a11y.spec.js`, `e2e/moderation.spec.js` |
+| Performance gate | `scripts/perf-budgets.mjs`, `scripts/perf-baseline.mjs` |
+| Tests | `tests/unit/cache-invalidation.spec.js`, `tests/unit/hive-operations.spec.js`, `tests/unit/perf-budgets.spec.js`, `e2e/browse.spec.js`, `e2e/a11y.spec.js`, `e2e/moderation.spec.js` |
 
 ## Authority and privacy
 
@@ -75,6 +80,8 @@ unthrottled account-creation pollers, and three legacy pages without a page-leve
 - `bun run lint` — clean.
 - `bun run test` — **228 files / 2,217 tests** passing.
 - `bun run build` — succeeded.
+- `bun run perf:check` — passed with the new policy; LCP/CLS remain advisory.
+- `bunx vitest run tests/unit/perf-budgets.spec.js` — **5 passed**.
 - Targeted Playwright: **4/4 passed** — axe clean on `/@ausbitbank/downvotes`,
   `/@ausbitbank/wallet` and `/@ausbitbank/tip` at 1440×900 and 390×844, plus
   the downvotes evidence flow.
