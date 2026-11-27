@@ -158,6 +158,8 @@ test('/settings/blog social card layout is accessible', async ({ page }) => {
   await expect(page.locator('.blog-settings__title')).toBeVisible()
   await expect(page.locator('.blog-settings__og')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Generate social card' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Page sections' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Custom CSS' })).toBeVisible()
   await axeAtBothWidths(page, '/settings/blog')
 })
 
@@ -215,4 +217,29 @@ test('blog host honours layout, width, nav and reader mode', async ({ page }) =>
   await page.locator('.blog-mode__select').selectOption('light')
   await expect(page.locator('.blog-shell--light')).toHaveCount(1)
   await axeAtBothWidths(page, 'customised blog host')
+})
+
+test('blog host renders owner sections, custom CSS and branding', async ({ page }) => {
+  const account = accountWithBlog({
+    blocks: [
+      { type: 'text', visible: true, title: 'Welcome', body: 'Hello **world**.' },
+      { type: 'archive', visible: true, layout: 'list' }
+    ],
+    css: '.blog-shell .blog-custom-section__text { color: rgb(1, 2, 3); }',
+    logo: 'https://images.hive.blog/brand-logo.png',
+    favicon: 'https://images.hive.blog/brand-favicon.png'
+  })
+  await mockHive(page, { account })
+  await page.goto('http://alice.localhost:4173/', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.blog-hero')).toHaveCount(0)
+  await expect(page.locator('.blog-custom-section__text')).toContainText('Hello world.')
+  await expect(page.locator('.blog-grid--list')).toHaveCount(1)
+  await expect(page.locator('.blog-brand__avatar')).toHaveAttribute('src', /brand-logo\.png/)
+  await expect.poll(async () => {
+    return page.locator('.blog-custom-section__text').evaluate(el => getComputedStyle(el).color)
+  }).toBe('rgb(1, 2, 3)')
+  await expect.poll(async () => {
+    return page.locator('link[rel~="icon"]').first().getAttribute('href')
+  }).toContain('brand-favicon.png')
+  await axeAtBothWidths(page, 'owner-customised blog host')
 })

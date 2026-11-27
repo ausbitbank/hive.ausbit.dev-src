@@ -2378,6 +2378,7 @@
     "content_copy",
     "content_paste",
     "create",
+    "css",
     "currency_bitcoin",
     "currency_exchange",
     "dark_mode",

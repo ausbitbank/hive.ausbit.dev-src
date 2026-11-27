@@ -10,7 +10,7 @@ import { LocalStorage } from 'quasar'
 import { BLOG_APEX_URL } from 'src/config/blog'
 import { fetchAccount, fetchAccountPosts, fetchPostContent, fetchRankedPosts } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
-import { claimBlog, readBlogSettings, updateBlog } from 'src/services/blogSettings'
+import { claimBlog, defaultBlogBlocks, readBlogSettings, updateBlog } from 'src/services/blogSettings'
 import { apexAccountUrl, blogBaseUrl, blogSettingsUrl, encodeBlogLabel, resolveBlogHost } from 'src/services/blogHost'
 import { isBlogPost, sortBlogPosts } from 'src/services/blogPosts'
 import { readAccountTheme } from 'src/themes/account'
@@ -196,6 +196,27 @@ export const useBlogStore = defineStore('blog', {
     },
     navLinks () {
       return Array.isArray(this.settings && this.settings.nav) ? this.settings.nav : []
+    },
+    blocks () {
+      const blocks = this.settings && this.settings.blocks
+      return Array.isArray(blocks) ? blocks : defaultBlogBlocks()
+    },
+    customCss () {
+      return (this.settings && this.settings.css) || ''
+    },
+    logo () {
+      const custom = this.settings && this.settings.logo
+      if (typeof custom === 'string' && /^https:\/\//i.test(custom)) return custom
+      return this.avatar
+    },
+    heroImage () {
+      const custom = this.settings && this.settings.heroImage
+      if (typeof custom === 'string' && /^https:\/\//i.test(custom)) return custom
+      return this.cover
+    },
+    favicon () {
+      const value = this.settings && this.settings.favicon
+      return typeof value === 'string' && /^https:\/\//i.test(value) ? value : ''
     },
     canEdit () {
       const hive = useHiveStore()

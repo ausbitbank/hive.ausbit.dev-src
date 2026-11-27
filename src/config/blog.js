@@ -11,8 +11,11 @@ export const BLOG_SETTINGS_PATH = '/settings/blog'
 export const BLOG_SCHEMA_VERSION = 1
 
 // The blog object shares the 16 KB posting-metadata budget with the profile and
-// theme. Keep the blog itself small enough that a long profile still fits.
-export const BLOG_MAX_BYTES = 4000
+// theme. Blocks and custom CSS make the blog the owner's own site, so it gets a
+// larger share than the original bounded theme object.
+export const BLOG_MAX_BYTES = 12000
+export const BLOG_MAX_BLOCKS = 10
+export const BLOG_MAX_CSS = 8000
 export const BLOG_MAX_NAV = 6
 export const BLOG_MAX_PINNED = 5
 export const BLOG_MAX_AUTHORS = 20

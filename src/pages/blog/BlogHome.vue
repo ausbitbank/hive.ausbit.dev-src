@@ -1,27 +1,5 @@
 <template>
   <div class="blog-home">
-    <section class="blog-hero" :class="{ 'blog-hero--cover': Boolean(cover) && showHero, 'blog-hero--minimal': !showHero }">
-      <img v-if="showHero && cover" :src="cover" alt="" class="blog-hero__cover" aria-hidden="true" />
-      <div class="blog-hero__inner">
-        <img :src="avatar" alt="" class="blog-hero__avatar" width="88" height="88" />
-        <div class="blog-hero__copy">
-          <h1 class="blog-hero__title">{{ title }}</h1>
-          <p class="blog-hero__handle">
-            <a :href="apexAccountUrl">@{{ accountName }}</a>
-            <span aria-hidden="true"> · </span>
-            Hive blog
-          </p>
-          <p v-if="description" class="blog-hero__description">{{ description }}</p>
-          <div class="blog-hero__links">
-            <router-link to="/about">About</router-link>
-            <router-link to="/contact">Contact</router-link>
-            <a :href="rssUrl">RSS</a>
-            <a v-if="website" :href="website" target="_blank" rel="noopener noreferrer">Website</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section v-if="!blog.claimed" class="blog-claim" aria-label="Claim this blog">
       <div>
         <h2 class="blog-claim__title">This blog is a preview</h2>
@@ -33,69 +11,125 @@
       <a class="blog-claim__button" :href="settingsUrl">Claim this blog</a>
     </section>
 
-    <section v-if="pinnedPosts.length" class="blog-section">
-      <div class="blog-section__head">
-        <h2>Start here</h2>
-      </div>
-      <div class="blog-grid">
-        <blog-post-card
-          v-for="post in pinnedPosts"
-          :key="'pin-' + post.permlink"
-          :post="post"
-          pinned
-          feature
-          :show-tags="blog.showTags"
-          :show-reading-time="blog.showReadingTime"
-        />
-      </div>
-    </section>
-
-    <section class="blog-section">
-      <div class="blog-section__head">
-        <h2>{{ pinnedPosts.length ? 'Archive' : 'Latest posts' }}</h2>
-        <span v-if="blog.postCount" class="blog-section__count">{{ blog.postCount }} loaded</span>
-      </div>
-
-      <div v-if="blog.postsLoading && !blog.posts.length" class="blog-grid" aria-busy="true" aria-label="Loading posts">
-        <div v-for="n in 4" :key="n" class="blog-card-skeleton">
-          <div class="blog-card-skeleton__media"></div>
-          <div class="blog-card-skeleton__line"></div>
-          <div class="blog-card-skeleton__line blog-card-skeleton__line--short"></div>
+    <template v-for="(block, index) in visibleBlocks" :key="blockKey(block, index)">
+      <section
+        v-if="block.type === 'hero'"
+        class="blog-hero"
+        :class="{ 'blog-hero--cover': Boolean(cover) && showHero, 'blog-hero--minimal': !showHero }"
+      >
+        <img v-if="showHero && cover" :src="cover" alt="" class="blog-hero__cover" aria-hidden="true" />
+        <div class="blog-hero__inner">
+          <img :src="avatar" alt="" class="blog-hero__avatar" width="88" height="88" />
+          <div class="blog-hero__copy">
+            <h1 class="blog-hero__title">{{ title }}</h1>
+            <p class="blog-hero__handle">
+              <a :href="apexAccountUrl">@{{ accountName }}</a>
+              <span aria-hidden="true"> · </span>
+              Hive blog
+            </p>
+            <p v-if="description" class="blog-hero__description">{{ description }}</p>
+            <div class="blog-hero__links">
+              <router-link to="/about">About</router-link>
+              <router-link to="/contact">Contact</router-link>
+              <a :href="rssUrl">RSS</a>
+              <a v-if="website" :href="website" target="_blank" rel="noopener noreferrer">Website</a>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <p v-else-if="!blog.posts.length" class="blog-empty">
-        No posts yet. When @{{ accountName }} publishes on Hive, it will appear here.
-      </p>
-
-      <template v-else>
-        <div v-if="featurePost" class="blog-grid">
-          <blog-post-card
-            :post="featurePost"
-            feature
-            :show-tags="blog.showTags"
-            :show-reading-time="blog.showReadingTime"
-          />
+      <section v-else-if="block.type === 'pinned' && pinnedPosts.length" class="blog-section">
+        <div class="blog-section__head">
+          <h2>{{ block.title || 'Start here' }}</h2>
         </div>
-        <div class="blog-grid" :class="{ 'blog-grid--list': isList }">
+        <div class="blog-grid" :class="{ 'blog-grid--list': block.layout === 'list' }">
           <blog-post-card
-            v-for="post in restPosts"
-            :key="post.permlink"
+            v-for="post in pinnedPosts"
+            :key="'pin-' + post.permlink"
             :post="post"
-            :list="isList"
+            pinned
+            :feature="block.layout !== 'list'"
+            :list="block.layout === 'list'"
             :show-tags="blog.showTags"
             :show-reading-time="blog.showReadingTime"
           />
         </div>
-      </template>
+      </section>
 
-      <div v-if="blog.hasMore" class="blog-more">
-        <button type="button" class="blog-more__button" :disabled="blog.postsLoading" @click="loadMore">
-          {{ blog.postsLoading ? 'Loading…' : 'Load more posts' }}
-        </button>
-      </div>
-      <p v-if="blog.postsError" class="blog-error" role="alert">{{ blog.postsError }}</p>
-    </section>
+      <section v-else-if="block.type === 'archive'" class="blog-section">
+        <div class="blog-section__head">
+          <h2>{{ block.title || (hasPinnedBlock ? 'Archive' : 'Latest posts') }}</h2>
+          <span v-if="blog.postCount" class="blog-section__count">{{ blog.postCount }} loaded</span>
+        </div>
+
+        <div v-if="blog.postsLoading && !blog.posts.length" class="blog-grid" aria-busy="true" aria-label="Loading posts">
+          <div v-for="n in 4" :key="n" class="blog-card-skeleton">
+            <div class="blog-card-skeleton__media"></div>
+            <div class="blog-card-skeleton__line"></div>
+            <div class="blog-card-skeleton__line blog-card-skeleton__line--short"></div>
+          </div>
+        </div>
+
+        <p v-else-if="!blog.posts.length" class="blog-empty">
+          No posts yet. When @{{ accountName }} publishes on Hive, it will appear here.
+        </p>
+
+        <template v-else>
+          <div v-if="blockFeaturePost(block)" class="blog-grid">
+            <blog-post-card
+              :post="blockFeaturePost(block)"
+              feature
+              :show-tags="blog.showTags"
+              :show-reading-time="blog.showReadingTime"
+            />
+          </div>
+          <div class="blog-grid" :class="{ 'blog-grid--list': blockIsList(block) }">
+            <blog-post-card
+              v-for="post in blockRestPosts(block)"
+              :key="post.permlink"
+              :post="post"
+              :list="blockIsList(block)"
+              :show-tags="blog.showTags"
+              :show-reading-time="blog.showReadingTime"
+            />
+          </div>
+        </template>
+
+        <div v-if="blog.hasMore" class="blog-more">
+          <button type="button" class="blog-more__button" :disabled="blog.postsLoading" @click="loadMore">
+            {{ blog.postsLoading ? 'Loading…' : 'Load more posts' }}
+          </button>
+        </div>
+        <p v-if="blog.postsError" class="blog-error" role="alert">{{ blog.postsError }}</p>
+      </section>
+
+      <section v-else-if="block.type === 'about'" class="blog-section blog-custom-section">
+        <div class="blog-section__head">
+          <h2>{{ block.title || 'About' }}</h2>
+        </div>
+        <p class="blog-custom-section__text">
+          {{ about || ('@' + accountName + ' has not written a profile description yet.') }}
+        </p>
+        <router-link to="/about" class="blog-custom-section__link">Read the full about page</router-link>
+      </section>
+
+      <section v-else-if="block.type === 'contact'" class="blog-section blog-custom-section">
+        <div class="blog-section__head">
+          <h2>{{ block.title || 'Contact' }}</h2>
+        </div>
+        <p class="blog-custom-section__text">
+          Find @{{ accountName }} on Hive, or open the contact page for profile and tipping links.
+        </p>
+        <router-link to="/contact" class="blog-custom-section__link">Open contact</router-link>
+      </section>
+
+      <section v-else-if="block.type === 'text'" class="blog-section blog-custom-section">
+        <div v-if="block.title" class="blog-section__head">
+          <h2>{{ block.title }}</h2>
+        </div>
+        <div class="blog-custom-section__text" v-html="renderTextBlock(block.body)"></div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -279,6 +313,18 @@
   color: var(--c-text-muted);
 }
 
+.blog-custom-section__text {
+  margin: 0;
+  color: var(--c-text-soft);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.blog-custom-section__link {
+  color: var(--c-link);
+  font-size: 0.9rem;
+}
+
 .blog-section__count {
   color: var(--c-text-faint);
   font-size: 0.78rem;
@@ -378,6 +424,7 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
+import { simpleMarkdownToHtml } from 'src/utils/safeHtml'
 import { useBlogStore } from 'src/stores/blog'
 import BlogPostCard from 'src/components/blog/BlogPostCard.vue'
 
@@ -395,10 +442,10 @@ export default {
       return this.blog.accountName
     },
     avatar () {
-      return this.blog.avatar
+      return this.blog.logo
     },
     cover () {
-      return this.blog.cover
+      return this.blog.heroImage
     },
     description () {
       return this.blog.description
@@ -424,14 +471,11 @@ export default {
     showHero () {
       return this.blog.hero !== 'minimal'
     },
-    isList () {
-      return this.blog.layout === 'list'
+    visibleBlocks () {
+      return this.blog.blocks.filter(block => block.visible !== false)
     },
-    featurePost () {
-      return this.blog.layout === 'magazine' ? (this.archivePosts[0] || null) : null
-    },
-    restPosts () {
-      return this.blog.layout === 'magazine' ? this.archivePosts.slice(1) : this.archivePosts
+    hasPinnedBlock () {
+      return this.visibleBlocks.some(block => block.type === 'pinned') && this.pinnedPosts.length > 0
     }
   },
   watch: {
@@ -472,6 +516,24 @@ export default {
     },
     loadMore () {
       this.blog.loadMore()
+    },
+    blockKey (block, index) {
+      return block.type === 'text' ? 'text-' + index : block.type
+    },
+    blockLayout (block) {
+      return block.layout || this.blog.layout
+    },
+    blockIsList (block) {
+      return this.blockLayout(block) === 'list'
+    },
+    blockFeaturePost (block) {
+      return this.blockLayout(block) === 'magazine' ? (this.archivePosts[0] || null) : null
+    },
+    blockRestPosts (block) {
+      return this.blockLayout(block) === 'magazine' ? this.archivePosts.slice(1) : this.archivePosts
+    },
+    renderTextBlock (value) {
+      return simpleMarkdownToHtml(value)
     }
   }
 }

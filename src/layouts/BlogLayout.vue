@@ -10,7 +10,7 @@
     <header class="blog-header">
       <div class="blog-header__inner">
         <router-link to="/" class="blog-brand" :aria-label="title + ' home'">
-          <img v-if="avatar" :src="avatar" alt="" class="blog-brand__avatar" width="38" height="38" />
+          <img v-if="logo" :src="logo" alt="" class="blog-brand__avatar" width="38" height="38" />
           <span class="blog-brand__text">
             <strong>{{ title }}</strong>
             <small>@{{ accountName }}</small>
@@ -350,7 +350,8 @@ export default {
   name: 'BlogLayout',
   data () {
     return {
-      themeWatcher: null
+      customCssEl: null,
+      faviconLinks: []
     }
   },
   computed: {
@@ -366,7 +367,9 @@ export default {
     avatar () {
       return this.blog.avatar
     },
-    rssUrl () {
+    logo () {
+      return this.blog.logo
+    },    rssUrl () {
       return this.blog.rssUrl
     },
     apexUrl () {
@@ -396,11 +399,31 @@ export default {
         document.documentElement.dataset.blog = 'true'
         document.documentElement.style.setProperty('color-scheme', value === 'light' ? 'light' : 'dark')
       }
+    },
+    'blog.customCss' (value) {
+      this.applyCustomCss(value)
+    },
+    'blog.favicon' (value) {
+      this.applyFavicon(value)
     }
   },
   methods: {
     isExternal (href) {
       return /^https?:\/\//i.test(String(href || ''))
+    },
+    applyCustomCss (value) {
+      if (this.customCssEl) this.customCssEl.textContent = value || ''
+    },
+    applyFavicon (value) {
+      if (typeof document === 'undefined') return
+      if (!this.faviconLinks.length) {
+        this.faviconLinks = [...document.querySelectorAll('link[rel~="icon"]')]
+          .map(el => ({ el, href: el.getAttribute('href') }))
+      }
+      for (const item of this.faviconLinks) {
+        if (value) item.el.setAttribute('href', value)
+        else if (item.href) item.el.setAttribute('href', item.href)
+      }
     }
   },
   created () {
@@ -408,8 +431,23 @@ export default {
       this.blog.init(window.location.hostname)
     }
   },
+  mounted () {
+    if (typeof document === 'undefined') return
+    this.customCssEl = document.createElement('style')
+    this.customCssEl.setAttribute('data-blog-custom-css', '')
+    document.head.appendChild(this.customCssEl)
+    this.applyCustomCss(this.blog.customCss)
+    this.applyFavicon(this.blog.favicon)
+  },
   beforeUnmount () {
     if (typeof document === 'undefined') return
+    if (this.customCssEl) {
+      this.customCssEl.remove()
+      this.customCssEl = null
+    }
+    for (const item of this.faviconLinks) {
+      if (item.href) item.el.setAttribute('href', item.href)
+    }
     delete document.documentElement.dataset.blog
     document.documentElement.style.removeProperty('color-scheme')
   }

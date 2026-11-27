@@ -25,11 +25,14 @@ principles that constrain it. Delivered work and its verification records live i
   five themes with opposite-mode variants, grid/list/magazine layouts, page
   width, typography, hero style, custom navigation, tags/reading-time toggles
   and accessibility preference support.
+- W86 gives blog owners final control over the subdomain presentation: a
+  block-based section builder (hero, pinned, archive, about, contact, text),
+  sanitised custom CSS, custom logo/hero/favicon, and a 12 KB blog object.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,677 tests across 193 files.
+  with 1,681 tests across 193 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W86**.
+- The next free workstream number is **W87**.
 
 ## Vision
 
@@ -205,6 +208,19 @@ tags/reading time and two more themes. Explicitly deferred:
   validated for all variants; the E2E covers Paper light/dark).
 
 Record: [`W85`](workstreams/W85-blog-customisation.md).
+
+### 10. Optional blog owner-control follow-ups — W86
+
+W86 shipped page sections, custom CSS and branding. Explicitly deferred:
+
+- Side navigation and a per-post layout override.
+- Portfolio/gallery and products/shop pages.
+- Custom domains and premium entitlements (W84).
+- A full axe matrix for every theme and both variants.
+- Custom JavaScript is a non-goal: the blog stays read-only and signing stays on
+  `banksia.io`.
+
+Record: [`W86`](workstreams/W86-blog-owner-control.md).
 
 ## Deferred and non-goals
 

@@ -102,6 +102,13 @@ Notes:
 - A generated social card is uploaded through the existing images.hive.blog
   posting-key challenge. Only the returned https URL is stored in blog
   metadata; no image bytes or keys are sent to a Banksia server.
+- The blog owner can add custom CSS. It is applied only on the blog origin,
+  injected through a `<style>` element's `textContent`, and sanitised to remove
+  `@import`, `data:` URLs, `javascript:`, `expression()`, `behavior` and
+  `-moz-binding`. There is no custom JavaScript. The blog remains read-only, so
+  signing and key handling stay on `banksia.io`. Custom CSS can restyle or hide
+  blog UI (including the footer), which is an accepted owner-control trade-off
+  covered by the normal abuse-reporting path.
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 

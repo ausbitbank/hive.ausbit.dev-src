@@ -189,18 +189,87 @@ describe('normalizeBlogSettings', () => {
     expect(bad.errors.join(' ')).toContain('ogImage must be an https URL')
   })
 
+  it('defaults to hero, pinned and archive sections', () => {
+    const settings = defaultBlogSettings(ACCOUNT)
+    expect(settings.blocks).toEqual([
+      { type: 'hero', visible: true },
+      { type: 'pinned', visible: true },
+      { type: 'archive', visible: true }
+    ])
+    expect(settings.css).toBe('')
+    expect(settings.logo).toBe('')
+    expect(settings.heroImage).toBe('')
+    expect(settings.favicon).toBe('')
+  })
+
+  it('accepts custom sections and branding URLs', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      blocks: [
+        { type: 'text', visible: true, title: 'Welcome', body: 'Hello **world**.' },
+        { type: 'archive', visible: true, layout: 'list' }
+      ],
+      logo: 'https://images.hive.blog/logo.png',
+      heroImage: 'https://images.hive.blog/hero.png',
+      favicon: 'https://images.hive.blog/favicon.png'
+    })
+    expect(result.ok).toBe(true)
+    expect(result.settings.blocks).toHaveLength(2)
+    expect(result.settings.blocks[0]).toMatchObject({ type: 'text', title: 'Welcome' })
+    expect(result.settings.logo).toBe('https://images.hive.blog/logo.png')
+    expect(result.settings.heroImage).toBe('https://images.hive.blog/hero.png')
+    expect(result.settings.favicon).toBe('https://images.hive.blog/favicon.png')
+  })
+
+  it('sanitizes custom CSS', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      css: '@import url(https://evil.example/x.css); a{background:url(data:image/png;base64,xx)} b{background:url(http://x.example/y.png)} c{background:url(https://ok.example/z.png)}'
+    })
+    expect(result.ok).toBe(true)
+    expect(result.settings.css).not.toContain('@import')
+    expect(result.settings.css).not.toContain('data:')
+    expect(result.settings.css).toContain('url("https://x.example/y.png")')
+    expect(result.settings.css).toContain('url("https://ok.example/z.png")')
+    expect(result.settings.css).toContain('url("about:blank")')
+  })
+
+  it('rejects duplicate fixed sections and unknown section types', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      blocks: [
+        { type: 'hero' },
+        { type: 'hero' },
+        { type: 'carousel' }
+      ]
+    })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('more than one hero section')
+    expect(result.errors.join(' ')).toContain('blocks[].type must be one of')
+  })
+
   it('caps the total blog object size', () => {
     const result = normalizeBlogSettings({
       version: 1,
       claimed: true,
       title: 'x'.repeat(80),
       description: 'y'.repeat(240),
-      nav: Array.from({ length: 6 }, () => ({ label: 'n'.repeat(40), href: 'https://example.com/' + 'a'.repeat(290) })),
-      pinned: Array.from({ length: 5 }, (_, index) => 'p' + index + '-' + 'a'.repeat(250)),
-      authors: Array.from({ length: 20 }, (_, index) => 'user' + String(index).padStart(2, '0'))
+      css: 'x'.repeat(8000),
+      blocks: Array.from({ length: 10 }, (_, index) => ({
+        type: 'text',
+        visible: true,
+        title: 'Section ' + index,
+        body: 'b'.repeat(1200)
+      }))
     })
     expect(result.ok).toBe(false)
-    expect(result.errors.join(' ')).toContain('4000 bytes or fewer')
+    expect(result.errors.join(' ')).toContain('12000 bytes or fewer')
   })
 })
 

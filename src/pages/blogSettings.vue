@@ -185,6 +185,28 @@
 
           <q-card flat bordered class="blog-settings__card">
             <q-card-section>
+              <h2 class="blog-settings__section-title">Branding</h2>
+              <p class="blog-settings__hint">
+                Use https image URLs. The profile avatar, cover and favicon are the defaults.
+              </p>
+              <div class="blog-settings__field">
+                <q-input v-model="form.logo" outlined dense label="Logo / avatar URL" :disable="!canEdit" />
+              </div>
+              <div class="blog-settings__field">
+                <q-input v-model="form.heroImage" outlined dense label="Hero image URL" :disable="!canEdit" />
+              </div>
+              <div class="blog-settings__field">
+                <q-input v-model="form.favicon" outlined dense label="Favicon URL" :disable="!canEdit" />
+              </div>
+              <div v-if="form.logo || form.heroImage" class="blog-settings__brand-preview">
+                <img v-if="form.logo" :src="form.logo" alt="Logo preview" class="blog-settings__logo-preview" />
+                <img v-if="form.heroImage" :src="form.heroImage" alt="Hero preview" class="blog-settings__hero-preview" />
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
               <h2 class="blog-settings__section-title">Layout</h2>
               <div class="blog-settings__field">
                 <q-select
@@ -250,6 +272,118 @@
                 <q-toggle v-model="form.showTags" label="Show tags on cards" :disable="!canEdit" />
                 <q-toggle v-model="form.showReadingTime" label="Show reading time" :disable="!canEdit" />
               </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
+              <h2 class="blog-settings__section-title">Page sections</h2>
+              <p class="blog-settings__hint">
+                Reorder or hide sections. Text sections let you add your own copy.
+              </p>
+              <div v-for="(block, index) in form.blocks" :key="index" class="blog-settings__block">
+                <div class="blog-settings__block-head">
+                  <strong>{{ blockLabel(block.type) }}</strong>
+                  <div class="blog-settings__block-actions">
+                    <q-btn
+                      flat dense round icon="arrow_upward"
+                      :aria-label="'Move ' + blockLabel(block.type) + ' up'"
+                      :disable="!canEdit || index === 0"
+                      @click="moveBlock(index, -1)"
+                    />
+                    <q-btn
+                      flat dense round icon="arrow_downward"
+                      :aria-label="'Move ' + blockLabel(block.type) + ' down'"
+                      :disable="!canEdit || index === form.blocks.length - 1"
+                      @click="moveBlock(index, 1)"
+                    />
+                    <q-toggle
+                      :model-value="block.visible !== false"
+                      :aria-label="'Show ' + blockLabel(block.type)"
+                      :disable="!canEdit"
+                      @update:model-value="block.visible = $event"
+                    />
+                    <q-btn
+                      v-if="block.type === 'text'"
+                      flat dense round icon="delete"
+                      :aria-label="'Remove ' + blockLabel(block.type)"
+                      :disable="!canEdit"
+                      @click="removeBlock(index)"
+                    />
+                  </div>
+                </div>
+                <q-input
+                  v-if="['text', 'about', 'contact'].includes(block.type)"
+                  v-model="block.title"
+                  outlined
+                  dense
+                  label="Section title"
+                  :disable="!canEdit"
+                  class="blog-settings__block-field"
+                />
+                <q-input
+                  v-if="block.type === 'text'"
+                  v-model="block.body"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  maxlength="1200"
+                  counter
+                  label="Text (Markdown)"
+                  :disable="!canEdit"
+                  class="blog-settings__block-field"
+                />
+                <q-select
+                  v-if="['archive', 'pinned'].includes(block.type)"
+                  v-model="block.layout"
+                  :options="blockLayoutOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Section layout"
+                  :disable="!canEdit"
+                  class="blog-settings__block-field"
+                />
+              </div>
+              <div class="blog-settings__block-actions q-mt-sm">
+                <q-btn
+                  outline
+                  no-caps
+                  label="Add text section"
+                  :disable="!canEdit || form.blocks.length >= 10"
+                  @click="addTextBlock"
+                />
+                <q-btn flat no-caps label="Reset sections" :disable="!canEdit" @click="resetBlocks" />
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
+              <h2 class="blog-settings__section-title">Custom CSS</h2>
+              <q-banner rounded class="blog-settings__banner">
+                <template #avatar><q-icon name="code" /></template>
+                Only affects this blog subdomain. No JavaScript. Signing always happens on
+                banksia.io. Imports, data: URLs and script-era expressions are removed.
+              </q-banner>
+              <q-input
+                v-model="form.css"
+                outlined
+                dense
+                type="textarea"
+                autogrow
+                maxlength="8000"
+                counter
+                label="Custom CSS"
+                :disable="!canEdit"
+                class="blog-settings__css"
+              />
+              <p class="blog-settings__hint">
+                Keep the “Powered by Banksia” footer visible. Use https or /-relative image URLs.
+                Prefix selectors with <code>.blog-shell</code> to override the built-in styles.
+              </p>
             </q-card-section>
           </q-card>
 
@@ -383,7 +517,7 @@
               :disable="!canEdit || !claimed || directorySyncing"
               @click="syncDirectory"
             />
-            <span class="blog-settings__size">{{ metadataBytes }} / 4000 bytes of blog settings</span>
+            <span class="blog-settings__size">{{ metadataBytes }} / {{ maxBlogBytes }} bytes of blog settings</span>
           </div>
 
           <p v-if="directoryMessage" class="blog-settings__hint q-mt-sm">{{ directoryMessage }}</p>
@@ -611,6 +745,61 @@
   flex-wrap: wrap;
 }
 
+.blog-settings__brand-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.blog-settings__logo-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+}
+
+.blog-settings__hero-preview {
+  width: 180px;
+  height: 95px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+}
+
+.blog-settings__block {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: var(--c-surface);
+}
+
+.blog-settings__block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.blog-settings__block-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+}
+
+.blog-settings__block-field {
+  margin-top: 0.6rem;
+}
+
+.blog-settings__css :deep(textarea) {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
 .blog-settings__actions {
   display: flex;
   align-items: center;
@@ -641,9 +830,10 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
+import { BLOG_MAX_BLOCKS, BLOG_MAX_BYTES } from 'src/config/blog'
 import { fetchAccount } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
-import { claimBlog, readBlogSettings, updateBlog, blogSettingsSize } from 'src/services/blogSettings'
+import { claimBlog, defaultBlogBlocks, readBlogSettings, updateBlog, blogSettingsSize } from 'src/services/blogSettings'
 import { blogBaseUrl, encodeBlogLabel } from 'src/services/blogHost'
 import { createBlogSocialCardFile } from 'src/services/blogSocialCard'
 import { blogThemeOptions, blogOgImagePath } from 'src/themes/blogThemes'
@@ -699,6 +889,11 @@ export default {
         showTags: true,
         showReadingTime: true,
         navText: '',
+        blocks: defaultBlogBlocks(),
+        css: '',
+        logo: '',
+        heroImage: '',
+        favicon: '',
         pinnedText: '',
         authorsText: '',
         community: '',
@@ -781,8 +976,19 @@ export default {
         { label: 'Minimal', value: 'minimal' }
       ]
     },
+    blockLayoutOptions () {
+      return [
+        { label: 'Use the page layout', value: '' },
+        { label: 'Grid cards', value: 'grid' },
+        { label: 'List', value: 'list' },
+        { label: 'Magazine', value: 'magazine' }
+      ]
+    },
     metadataBytes () {
       return this.settings ? blogSettingsSize(this.settings) : 0
+    },
+    maxBlogBytes () {
+      return BLOG_MAX_BYTES
     },
     ogPreview () {
       if (this.form.ogImage) return this.form.ogImage
@@ -859,6 +1065,11 @@ export default {
         showTags: settings.showTags !== false,
         showReadingTime: settings.showReadingTime !== false,
         navText: (settings.nav || []).map(link => link.label + ' | ' + link.href).join('\n'),
+        blocks: (settings.blocks || defaultBlogBlocks()).map(block => ({ ...block })),
+        css: settings.css || '',
+        logo: settings.logo || '',
+        heroImage: settings.heroImage || '',
+        favicon: settings.favicon || '',
         pinnedText: (settings.pinned || []).join(', '),
         authorsText: (settings.authors || []).join(', '),
         community: settings.community || '',
@@ -884,6 +1095,11 @@ export default {
         showTags: this.form.showTags,
         showReadingTime: this.form.showReadingTime,
         nav: parseNavLinks(this.form.navText),
+        blocks: this.form.blocks,
+        css: this.form.css,
+        logo: this.form.logo,
+        heroImage: this.form.heroImage,
+        favicon: this.form.favicon,
         pinned: splitList(this.form.pinnedText),
         authors: splitList(this.form.authorsText),
         community: this.form.community,
@@ -913,6 +1129,10 @@ export default {
           ? 'Blog update queued with your posting key.'
           : 'Blog claim queued with your posting key.'
         this.settings = result.settings
+        if (result.settings) {
+          this.form.css = result.settings.css || ''
+          this.form.blocks = (result.settings.blocks || []).map(block => ({ ...block }))
+        }
         if (!this.claimed) this.claimed = true
       } finally {
         this.saving = false
@@ -969,6 +1189,35 @@ export default {
       if (!url) return
       this.form.ogImage = url
       this.ogMessage = 'Social card uploaded. Save the blog settings to publish it.'
+    },
+    blockLabel (type) {
+      return {
+        hero: 'Hero',
+        pinned: 'Pinned posts',
+        archive: 'Post archive',
+        about: 'About section',
+        contact: 'Contact section',
+        text: 'Text section'
+      }[type] || type
+    },
+    moveBlock (index, delta) {
+      const next = index + delta
+      if (next < 0 || next >= this.form.blocks.length) return
+      const blocks = [...this.form.blocks]
+      const [item] = blocks.splice(index, 1)
+      blocks.splice(next, 0, item)
+      this.form.blocks = blocks
+    },
+    removeBlock (index) {
+      if (!this.form.blocks[index] || this.form.blocks[index].type !== 'text') return
+      this.form.blocks.splice(index, 1)
+    },
+    addTextBlock () {
+      if (this.form.blocks.length >= BLOG_MAX_BLOCKS) return
+      this.form.blocks.push({ type: 'text', visible: true, title: '', body: '', layout: '' })
+    },
+    resetBlocks () {
+      this.form.blocks = defaultBlogBlocks()
     },
     updateMeta () {
       setPageMeta({

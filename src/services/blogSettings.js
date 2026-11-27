@@ -8,7 +8,7 @@
 // Every write is a read-merge-write of the whole metadata object. A blog write
 // therefore preserves the profile, the theme and any other app's keys.
 
-import { BLOG_MAX_AUTHORS, BLOG_MAX_BYTES, BLOG_MAX_NAV, BLOG_MAX_PINNED, BLOG_SCHEMA_VERSION } from '../config/blog'
+import { BLOG_MAX_AUTHORS, BLOG_MAX_BLOCKS, BLOG_MAX_BYTES, BLOG_MAX_CSS, BLOG_MAX_NAV, BLOG_MAX_PINNED, BLOG_SCHEMA_VERSION } from '../config/blog'
 import { LEGACY_THEME_NAMESPACE, THEME_NAMESPACE } from '../config/brand'
 import { isHexColor } from '../themes/color'
 import {
@@ -31,7 +31,8 @@ const NAV_HREF_RE = /^(?:\/(?!\/)[^\s]*|https:\/\/[^\s]+)$/i
 const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
   'layout', 'width', 'typography', 'hero', 'showTags', 'showReadingTime',
-  'nav', 'pinned', 'authors', 'community', 'showPayout', 'showComments',
+  'nav', 'blocks', 'css', 'logo', 'heroImage', 'favicon',
+  'pinned', 'authors', 'community', 'showPayout', 'showComments',
   'directory', 'ogImage', 'customDomain', 'updatedAt'
 ]
 
@@ -39,6 +40,17 @@ const LAYOUTS = ['grid', 'list', 'magazine']
 const WIDTHS = ['narrow', 'comfortable', 'wide']
 const TYPOGRAPHY = ['theme', 'serif', 'sans', 'mono']
 const HEROES = ['cover', 'minimal']
+const BLOCK_TYPES = ['hero', 'pinned', 'archive', 'about', 'contact', 'text']
+const BLOCK_LAYOUTS = ['grid', 'list', 'magazine']
+const FIXED_BLOCKS = new Set(['hero', 'pinned', 'archive', 'about', 'contact'])
+
+export function defaultBlogBlocks () {
+  return [
+    { type: 'hero', visible: true },
+    { type: 'pinned', visible: true },
+    { type: 'archive', visible: true }
+  ]
+}
 
 function isPlainObject (value) {
   return Boolean(value) &&
@@ -163,6 +175,84 @@ function normalizeCustomDomain (value, errors) {
   return domain
 }
 
+function normalizeHttpsUrl (value, path, errors) {
+  if (value === undefined || value === null || value === '') return ''
+  const text = readableText(value, { max: 500 }, path, errors)
+  if (text && !/^https:\/\/[^\s]+$/i.test(text)) {
+    errors.push(path + ' must be an https URL')
+    return ''
+  }
+  return text
+}
+
+function normalizeBlocks (value, errors) {
+  if (value === undefined || value === null) return defaultBlogBlocks()
+  if (!Array.isArray(value)) {
+    errors.push('blocks must be an array')
+    return defaultBlogBlocks()
+  }
+  if (value.length > BLOG_MAX_BLOCKS) {
+    errors.push('blocks supports at most ' + BLOG_MAX_BLOCKS + ' sections')
+  }
+  const blocks = []
+  const seen = new Set()
+  for (const item of value.slice(0, BLOG_MAX_BLOCKS)) {
+    if (!isPlainObject(item)) {
+      errors.push('blocks[] must be an object')
+      continue
+    }
+    for (const key of Object.keys(item)) {
+      if (!['type', 'visible', 'title', 'body', 'layout'].includes(key)) {
+        errors.push('blocks[].' + key + ' is not a recognised field')
+      }
+    }
+    const type = enumValue(item.type, BLOCK_TYPES, 'blocks[].type', errors, '')
+    if (!type) continue
+    if (FIXED_BLOCKS.has(type)) {
+      if (seen.has(type)) {
+        errors.push('blocks contains more than one ' + type + ' section')
+        continue
+      }
+      seen.add(type)
+    }
+    const visible = item.visible !== false
+    if (item.visible !== undefined && typeof item.visible !== 'boolean') {
+      errors.push('blocks[].visible must be a boolean')
+    }
+    const title = item.title === undefined ? '' : readableText(item.title, { max: 80 }, 'blocks[].title', errors)
+    const body = item.body === undefined ? '' : readableText(item.body, { max: 1200 }, 'blocks[].body', errors)
+    const layout = item.layout === undefined || item.layout === ''
+      ? ''
+      : enumValue(item.layout, BLOCK_LAYOUTS, 'blocks[].layout', errors, '')
+    blocks.push({ type, visible, title, body, layout })
+  }
+  return blocks
+}
+
+/**
+ * Custom CSS is owner-controlled, but it must not import remote styles or
+ * execute script-era CSS. HTML injection is impossible because the layout sets
+ * the CSS through a `<style>` element's textContent.
+ */
+export function sanitizeBlogCss (value) {
+  let css = String(value || '')
+  if (!css) return ''
+  css = css.replace(/<\/?style/gi, '')
+  css = css.replace(/@import\b[^;]*;?/gi, '')
+  css = css.replace(/expression\s*\(/gi, '')
+  css = css.replace(/javascript\s*:/gi, '')
+  css = css.replace(/vbscript\s*:/gi, '')
+  css = css.replace(/behavior\s*:/gi, '')
+  css = css.replace(/-moz-binding\s*:/gi, '')
+  css = css.replace(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/gi, (match, quote, url) => {
+    const value = String(url || '').trim().replace(/["\\]/g, '')
+    if (/^https:\/\//i.test(value) || /^\/(?!\/)/.test(value)) return 'url("' + value + '")'
+    if (/^http:\/\//i.test(value)) return 'url("' + value.replace(/^http:/i, 'https:') + '")'
+    return 'url("about:blank")'
+  })
+  return css.slice(0, BLOG_MAX_CSS)
+}
+
 /** Defaults derived from the Hive profile. Never throws on partial accounts. */
 export function defaultBlogSettings (account) {
   const profile = profileFromAccount(account)
@@ -182,6 +272,11 @@ export function defaultBlogSettings (account) {
     showTags: true,
     showReadingTime: true,
     nav: [],
+    blocks: defaultBlogBlocks(),
+    css: '',
+    logo: '',
+    heroImage: '',
+    favicon: '',
     pinned: [],
     authors: [],
     community: '',
@@ -241,6 +336,18 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const showReadingTime = input.showReadingTime !== false
   if (input.showReadingTime !== undefined && typeof input.showReadingTime !== 'boolean') errors.push('showReadingTime must be a boolean')
 
+  const blocks = normalizeBlocks(input.blocks, errors)
+  const rawCss = input.css === undefined || input.css === null
+    ? ''
+    : readableText(input.css, { max: BLOG_MAX_CSS + 100 }, 'css', errors)
+  const css = sanitizeBlogCss(rawCss)
+  if (rawCss && css !== rawCss) {
+    warnings.push('Some custom CSS rules were removed for safety (imports, non-https URLs or script-era expressions).')
+  }
+  const logo = normalizeHttpsUrl(input.logo, 'logo', errors)
+  const heroImage = normalizeHttpsUrl(input.heroImage, 'heroImage', errors)
+  const favicon = normalizeHttpsUrl(input.favicon, 'favicon', errors)
+
   const nav = normalizeNav(input.nav, errors)
   const pinned = normalizePermlinks(input.pinned, errors, { max: BLOG_MAX_PINNED, path: 'pinned' })
   const authors = normalizeAuthors(input.authors, errors)
@@ -279,6 +386,11 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     showTags,
     showReadingTime,
     nav,
+    blocks,
+    css,
+    logo,
+    heroImage,
+    favicon,
     pinned,
     authors,
     community,
