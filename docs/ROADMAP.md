@@ -53,7 +53,8 @@ principles that constrain it. Delivered work and its verification records live i
   smoke still needs the operator's wallet and HBD. See
   [`docs/workstreams/W89-premium-memberships.md`](workstreams/W89-premium-memberships.md).
 - Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
-  `bun run test` green with **2,053 tests across 214 files**, `bun run build`
+  `bun run test` green with **2,062 tests across 214 files** (2,053 were W89-only
+  before the separate W65 KE commit), `bun run build`
   succeeded, and `bun run perf:check` passed after a documented re-baseline.
   `e2e/vault.spec.js` passed **8/8** in Chromium with axe clean at 1440×900 and
   390×844 for the locked post, `/subscribe`, `/settings/blog/vault` and

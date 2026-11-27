@@ -276,7 +276,8 @@ when the user has enabled auto-send.
 Local, 2026-11-27:
 
 - `bun run lint` — clean (ESLint + theme-token check).
-- `bun run test` — **214 files, 2,053 tests passing**.
+- `bun run test` — **214 files, 2,062 tests passing** at the deployed HEAD
+  (2,053 were W89-only before the separate W65 KE commit).
 - Dedicated Vault suites: **14 files / 268 tests** (`tests/unit/vault-*.spec.js`),
   plus the adjacent blog-settings, blog-posts, drafts, publish and route suites
   touched by the slice.
