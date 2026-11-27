@@ -73,17 +73,20 @@ export function parseRelayCertificate (value) {
   if (!notBefore || !notAfter || Date.parse(notAfter) <= Date.parse(notBefore)) return null
   if (typeof value.nonce !== 'string' || !NONCE_RE.test(value.nonce)) return null
   if (typeof value.sig !== 'string' || !SIG_RE.test(value.sig)) return null
+  // Keep the signed fields exactly as published. Converting a timestamp to
+  // `.000Z` or lowercasing a field would break the creator signature even
+  // though the semantic value is unchanged.
   return {
     v: 1,
     id: RELAY_CERT_ID,
-    blog,
-    delegate_account: delegateAccount,
-    delegate: value.delegate.trim(),
-    scope: [...new Set(value.scope.filter(item => typeof item === 'string'))],
-    notBefore,
-    notAfter,
-    nonce: value.nonce,
-    sig: value.sig
+    blog: String(value.blog),
+    delegate_account: String(value.delegate_account),
+    delegate: String(value.delegate),
+    scope: [...value.scope],
+    notBefore: String(value.notBefore),
+    notAfter: String(value.notAfter),
+    nonce: String(value.nonce),
+    sig: String(value.sig)
   }
 }
 

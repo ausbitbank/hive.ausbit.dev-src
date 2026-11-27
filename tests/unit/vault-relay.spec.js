@@ -144,6 +144,27 @@ describe('relay certificate', () => {
     expect((await verifyRelayCertificate({ ...base, cert: tampered })).reason).toBe('bad-creator-signature')
   })
 
+  it('verifies a certificate that uses second-precision Z timestamps', async () => {
+    const data = await fixture()
+    const now = Date.now()
+    const unsigned = {
+      ...data.cert,
+      notBefore: new Date(now - 60000).toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      notAfter: new Date(now + 90 * 86400000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+    }
+    delete unsigned.sig
+    const signed = await signRelayCertificate(unsigned, { sign: payload => signWif(data.creatorWif, payload) })
+    const result = await verifyRelayCertificate({
+      cert: signed,
+      blog: BLOG,
+      relayAccount: RELAY,
+      relayPublicKey: data.relayPublicKey,
+      creatorAccount: account(BLOG, data.creatorPublicKey, signed),
+      verify: args => verifyVaultPayloadForAccount(args)
+    })
+    expect(result.ok).toBe(true)
+  })
+
   it('reports none/expired/valid status without throwing', async () => {
     expect(relayCertificateStatus(null).state).toBe('none')
     const data = await fixture({ days: 1 })
