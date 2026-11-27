@@ -37,8 +37,8 @@ spike built from honeycomb cells, in Hive red, inside a comb cell. The legacy
 
 ## Other explored directions
 
-- [`jarrah/`](jarrah/) — parked. A quick pivot concept; not the chosen name.
-- [`comb/`](comb/) — rejected. `hivecomb.net` is an active Hive discovery and
+- `jarrah/` (removed from the tree) — parked. A quick pivot concept; not the chosen name.
+- `comb/` (removed from the tree) — rejected. `hivecomb.net` is an active Hive discovery and
   publishing frontend.
 
 ## App integration checklist
