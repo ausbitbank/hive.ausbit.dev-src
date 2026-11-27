@@ -193,6 +193,10 @@ function createCommentQueueItem ({
  * delete, and blocks deleting anything that still has replies.
  */
 export function deleteCommentQueueItem ({ username, author, permlink }) {
-  const owner = String(author || username || '').trim().toLowerCase()
+  const owner = String(username || '').trim().replace(/^@/, '').toLowerCase()
+  const target = String(author || owner).trim().replace(/^@/, '').toLowerCase()
+  if (!owner || !target || target !== owner) {
+    throw new Error('Only the signed-in author can queue a delete for this post.')
+  }
   return [owner, 'posting', ['delete_comment', { author: owner, permlink: String(permlink || '').trim() }]]
 }

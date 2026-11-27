@@ -180,4 +180,11 @@ describe('comment queue item', () => {
     const item = deleteCommentQueueItem({ username: 'alice', author: 'alice', permlink: 're-old' })
     expect(item).toEqual(['alice', 'posting', ['delete_comment', { author: 'alice', permlink: 're-old' }]])
   })
+
+  it('refuses to queue a delete under another author', () => {
+    expect(() => deleteCommentQueueItem({ username: 'alice', author: 'bob', permlink: 're-old' }))
+      .toThrow(/signed-in author/)
+    expect(() => deleteCommentQueueItem({ username: '', author: '', permlink: 're-old' }))
+      .toThrow(/signed-in author/)
+  })
 })
