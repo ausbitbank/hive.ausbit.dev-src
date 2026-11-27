@@ -1,7 +1,7 @@
 # W92 — Shop seller trust signals
 
 Date: 2026-11-28
-Status: implemented and verified locally
+Status: implemented, verified locally, deployed and live-smoked
 
 ## Scope
 
@@ -70,6 +70,15 @@ Local, 2026-11-28:
   and 390×844.
 - `bunx playwright test e2e/vault.spec.js --config=playwright.config.js` — all 8
   Vault checks still pass.
+- Deployed from `master` at app commit `4677ccf`; live stamp
+  `20261127T180956Z-4677ccf6e265`. Deploy verification passed. No Worker change.
+- Live smoke on
+  `https://bzlatanov--dev.banksia.io/shop/test-subscription`:
+  - seller card showed `On Hive Mar 18, 2025 · 1.7 years`, reputation `25.0`,
+    `Posts 3`;
+  - the edit note showed “Seller edited this product on May 29, 2025.”;
+  - the profile link resolved to `https://banksia.io/@bzlatanov.dev`;
+  - no console or page errors.
 
 ## Remaining
 
