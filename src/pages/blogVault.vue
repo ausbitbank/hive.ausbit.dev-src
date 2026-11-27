@@ -297,6 +297,73 @@
           </q-card>
         </section>
 
+        <section aria-labelledby="vault-relay-title">
+          <h2 id="vault-relay-title" class="vault-section-title">Relay (optional)</h2>
+          <q-card flat bordered class="vault-card">
+            <q-card-section>
+              <p class="vault-muted">
+                A relay posts signed grants from its own Hive account while this
+                dashboard is offline. It never receives your posting or active key
+                and cannot move funds. Readers still work without it, and revoking
+                it leaves the normal paywall.
+              </p>
+              <dl class="vault-facts">
+                <div><dt>Status</dt><dd>{{ relayCertStatus.state }}</dd></div>
+                <div><dt>Relay account</dt><dd>{{ relayAccount ? '@' + relayAccount : 'not configured' }}</dd></div>
+                <div><dt>Posting key</dt><dd><code>{{ relayPublicKey || '—' }}</code></dd></div>
+                <div><dt>Expires</dt><dd>{{ relayCertStatus.expiresAt ? shortDate(relayCertStatus.expiresAt) : '—' }}</dd></div>
+                <div><dt>Latest delegated bulletin</dt><dd>{{ relayLatestLabel }}</dd></div>
+              </dl>
+              <p v-if="relayCertStatus.reason" class="vault-muted vault-muted--small">
+                Certificate state: {{ relayCertStatus.reason }}. Delegated bulletins are ignored in this state.
+              </p>
+
+              <div v-if="!relaySettings" class="vault-subsection">
+                <h3 class="vault-subtitle">Authorise a relay</h3>
+                <form class="vault-inline-form" @submit.prevent="generateRelayCertificate">
+                  <q-input
+                    v-model="relayAccount"
+                    outlined
+                    dense
+                    label="Dedicated relay Hive account"
+                    hint="The relay's posting key is read from its on-chain authority; never enter a private key here."
+                    class="vault-input"
+                  />
+                  <q-btn type="submit" unelevated no-caps color="primary" label="Create certificate" :disable="!isOwner" :loading="busy === 'relay'" />
+                </form>
+              </div>
+
+              <div v-else class="vault-subsection">
+                <h3 class="vault-subtitle">Relay bundle</h3>
+                <p class="vault-muted">
+                  Export one encrypted file containing this period's keyring and ring key.
+                  The operator imports it with the passphrase below. Anyone with both can
+                  read the archive and issue free grants, so treat the file and passphrase
+                  as creator-level secrets.
+                </p>
+                <form class="vault-inline-form" @submit.prevent="exportRelayBundle">
+                  <q-input
+                    v-model="relayPassphrase"
+                    type="password"
+                    outlined
+                    dense
+                    label="Relay-bundle passphrase (12+ characters)"
+                    autocomplete="new-password"
+                    class="vault-input"
+                  />
+                  <q-btn type="submit" outline no-caps color="primary" label="Export relay bundle" :disable="!vault || !isOwner" :loading="busy === 'relay'" />
+                </form>
+                <div class="vault-actions">
+                  <q-btn flat no-caps label="Re-issue certificate" :disable="!isOwner || busy === 'relay'" @click="generateRelayCertificate" />
+                  <q-btn flat no-caps color="negative" label="Revoke relay" :disable="!isOwner || busy === 'relay'" @click="revokeRelayCertificate" />
+                </div>
+              </div>
+              <p v-if="relayNotice" class="vault-muted vault-auto__ok" role="status">{{ relayNotice }}</p>
+              <p v-if="relayError" class="vault-error" role="alert">{{ relayError }}</p>
+            </q-card-section>
+          </q-card>
+        </section>
+
         <section aria-labelledby="vault-keys-title">
           <h2 id="vault-keys-title" class="vault-section-title">Keys</h2>
           <q-card flat bordered class="vault-card">
@@ -805,10 +872,19 @@ import {
 } from 'src/services/vaultBulletin'
 import { buildBulletinSigningPayload, bulletinPermlink, parseBulletin } from 'src/services/vaultGrant'
 import { readerKeyThumbprint } from 'src/services/vaultCrypto'
-import { signVaultPayload, verifyVaultPayloadForAccount } from 'src/services/vaultSigning'
+import { postingPublicKeys, signVaultPayload, verifyVaultPayloadForAccount } from 'src/services/vaultSigning'
 import { getCreatorVault, setCreatorVaultSession, unlockCreatorVault } from 'src/services/vaultSession'
 import { exportCreatorVault, importCreatorVault, rotatePeriod, saveCreatorVault } from 'src/services/vaultKeys'
 import { parseVaultMetadata } from 'src/services/vaultPayload'
+import {
+  buildRelayCertificate,
+  createRelayBundle,
+  latestDelegatedBulletin,
+  relayCertificateFromAccount,
+  relayCertificateStatus,
+  signRelayCertificate,
+  verifyRelayCertificate
+} from 'src/services/vaultRelay'
 
 const PENDING_WINDOW_MS = 24 * 60 * 60 * 1000
 
@@ -876,7 +952,14 @@ export default {
       autoIssueTimer: null,
       autoIssueLastAt: 0,
       autoIssueNotice: '',
-      autoIssueError: ''
+      autoIssueError: '',
+      relayAccount: '',
+      relayPublicKey: '',
+      relayPassphrase: '',
+      relayCertificate: null,
+      relayLatest: null,
+      relayNotice: '',
+      relayError: ''
     }
   },
   computed: {
@@ -940,6 +1023,18 @@ export default {
         return this.vaultSettings.bulletin.permlink
       }
       return 'none yet'
+    },
+    relaySettings () {
+      return this.vaultSettings && this.vaultSettings.relay ? this.vaultSettings.relay : null
+    },
+    relayCertStatus () {
+      if (!this.relaySettings) return { state: 'none', valid: false, expiresAt: '', reason: 'not-configured' }
+      return relayCertificateStatus(this.relaySettings, { now: Date.now(), relayAccount: this.relayAccount })
+    },
+    relayLatestLabel () {
+      const bulletin = this.relayLatest
+      if (!bulletin) return 'none seen'
+      return 'vault-' + bulletin.period + '-' + bulletin.seq
     }
   },
   created () {
@@ -1064,6 +1159,14 @@ export default {
         this.currentBulletin = parsed
           .filter(bulletin => bulletin.period === this.period)
           .sort((a, b) => b.seq - a.seq)[0] || null
+        const certificate = relayCertificateFromAccount(this.account)
+        this.relayCertificate = certificate
+        this.relayAccount = certificate ? certificate.delegate_account : (this.vaultSettings.relay ? this.vaultSettings.relay.delegate_account : '')
+        this.relayPublicKey = certificate ? certificate.delegate : ''
+        this.relayLatest = latestDelegatedBulletin(list, {
+          blog: this.accountName,
+          relayAccount: this.relayAccount
+        })
       } catch {
         this.bulletinError = 'The bulletin container could not be loaded. Grants cannot be issued until it is available.'
       }
@@ -1345,6 +1448,122 @@ export default {
           persistent: true
         }).onOk(value => resolve(value)).onCancel(() => reject(new Error('Signing was cancelled.')))
       })
+    },
+    async generateRelayCertificate () {
+      this.relayError = ''
+      this.relayNotice = ''
+      if (!this.isOwner || !this.account) {
+        this.relayError = 'Sign in as @' + this.accountName + ' to manage the relay certificate.'
+        return
+      }
+      const relay = normalizeAccount(this.relayAccount)
+      if (!isValidHiveAccountName(relay) || relay === this.accountName) {
+        this.relayError = 'Enter a dedicated relay account, separate from the blog.'
+        return
+      }
+      this.busy = 'relay'
+      try {
+        const relayAccount = await fetchAccount(relay, { force: true })
+        if (!relayAccount) throw new Error('@' + relay + ' could not be loaded.')
+        const keys = postingPublicKeys(relayAccount)
+        if (!keys.length) throw new Error('The relay account has no posting key authority.')
+        const unsigned = buildRelayCertificate({
+          blog: this.accountName,
+          delegateAccount: relay,
+          delegatePublicKey: keys[0],
+          days: 90
+        })
+        const signed = await signRelayCertificate(unsigned, {
+          sign: payload => signVaultPayload({
+            username: this.accountName,
+            loginType: this.$hiveStore.user.loginType,
+            payload,
+            smartlockSessionMs: this.$hiveStore.user.settings && this.$hiveStore.user.settings.smartlockSessionMinutes
+              ? this.$hiveStore.user.settings.smartlockSessionMinutes * 60 * 1000
+              : undefined,
+            promptPassword: this.promptSmartlockPassword
+          })
+        })
+        const checked = await verifyRelayCertificate({
+          cert: signed,
+          blog: this.accountName,
+          relayAccount: relay,
+          relayPublicKey: keys[0],
+          creatorAccount: this.account,
+          relayAccountObject: relayAccount,
+          verify: args => verifyVaultPayloadForAccount(args)
+        })
+        if (!checked.ok) throw new Error('The certificate could not be verified locally (' + checked.reason + ').')
+        const update = updateBlog(this.account, {
+          ...this.blogSettings,
+          vault: { ...this.vaultSettings, relay: signed }
+        })
+        if (!update.ok || !update.operation) throw new Error(update.error || 'The certificate write could not be prepared.')
+        this.$hiveStore.addToQueue([this.accountName, 'posting', update.operation])
+        this.vaultSettings = { ...this.vaultSettings, relay: signed }
+        this.relayCertificate = signed
+        this.relayPublicKey = signed.delegate
+        this.relayAccount = signed.delegate_account
+        this.relayNotice = 'Certificate queued. Approve the posting update; the relay can start after it confirms.'
+      } catch (error) {
+        this.relayError = error && error.message ? error.message : 'The relay certificate could not be created.'
+      } finally {
+        this.busy = ''
+      }
+    },
+    revokeRelayCertificate () {
+      this.relayError = ''
+      this.relayNotice = ''
+      if (!this.isOwner || !this.account) {
+        this.relayError = 'Sign in as @' + this.accountName + ' to revoke the relay certificate.'
+        return
+      }
+      const { relay: _relay, ...vault } = this.vaultSettings
+      const update = updateBlog(this.account, { ...this.blogSettings, vault })
+      if (!update.ok || !update.operation) {
+        this.relayError = update.error || 'The revocation write could not be prepared.'
+        return
+      }
+      this.$hiveStore.addToQueue([this.accountName, 'posting', update.operation])
+      this.vaultSettings = vault
+      this.relayCertificate = null
+      this.relayLatest = null
+      this.relayNotice = 'Revocation queued. The relay stops at its next certificate check; readers hide delegated bulletins.'
+    },
+    async exportRelayBundle () {
+      this.relayError = ''
+      this.relayNotice = ''
+      if (!this.vault) {
+        this.relayError = 'Unlock the vault before exporting a relay bundle.'
+        return
+      }
+      if (!this.relaySettings) {
+        this.relayError = 'Create a relay certificate before exporting a bundle.'
+        return
+      }
+      if (!this.relayPassphrase || this.relayPassphrase.length < 12) {
+        this.relayError = 'Use a relay-bundle passphrase of at least 12 characters.'
+        return
+      }
+      this.busy = 'relay'
+      try {
+        const bundle = await createRelayBundle({
+          blog: this.accountName,
+          relayAccount: this.relaySettings.delegate_account,
+          keyring: this.vault.keyring,
+          ringKid: this.vault.ringKid,
+          ringKey: this.vault.ringKey,
+          period: this.vault.ringKid,
+          passphrase: this.relayPassphrase
+        })
+        download('banksia-relay-' + this.accountName + '-' + this.vault.ringKid + '.json', JSON.stringify(bundle, null, 2))
+        this.relayPassphrase = ''
+        this.relayNotice = 'Encrypted relay bundle downloaded. Hand it and its passphrase to the operator over a secure channel.'
+      } catch (error) {
+        this.relayError = error && error.message ? error.message : 'The relay bundle could not be exported.'
+      } finally {
+        this.busy = ''
+      }
     },
     async rotate () {
       this.keyError = ''

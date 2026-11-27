@@ -1,10 +1,12 @@
 # Banksia Vault protocol (`banksia.vault@1`)
 
 **Status: final v1 specification, 2026-11-28.** The protocol is implemented,
-unit-tested, browser-tested and live-smoked in this repository. Relay/delegation,
-encrypted media, multi-tier and claim codes are reserved but not implemented; see
-§15. A security-audit checklist is in §17 and a frontend implementation
-checklist is in §18.
+unit-tested, browser-tested and live-smoked in this repository. Relay/delegation
+is an optional companion extension (`banksia.vault.relay@1`, see
+[`vault-relay.md`](vault-relay.md)) and is not required by the base reader.
+Encrypted media, multi-tier and claim codes remain reserved; see §15. A
+security-audit checklist is in §17 and a frontend implementation checklist is in
+§18.
 
 This document specifies the wire format and cryptographic constructions for
 Banksia Vault, the members-only content protocol for Banksia blogs. It is the
@@ -134,7 +136,7 @@ server-side key custody.
 | Publish the hidden grant container | Creator | **Posting** | `comment` as a reply under the product |
 | Publish a premium post | Creator | **Posting** | `comment` with `json_metadata.banksia_vault` |
 | Publish or replace a bulletin (self-sovereign) | Creator | **Posting** | `comment` under the container |
-| Publish a bulletin (relay) | Relay account | **Posting** (relay's own key) | `comment` + delegation certificate — **reserved, not implemented** |
+| Publish a bulletin (relay) | Relay account | **Posting** (relay's own key) | `comment` + delegation certificate — optional `banksia.vault.relay@1` |
 | Subscribe (recurring) | Reader | **Active** | `recurrent_transfer` |
 | Subscribe (one month / gift) | Reader | **Active** | `transfer` |
 | Cancel | Reader | **Active** | `recurrent_transfer` with amount `0.000 HBD` for the matching plan |
@@ -1164,10 +1166,12 @@ keyring or any entry invalidates the bulletin signature.
    (`remaining 0`, tx `54f54837…`). The reader cancel button still warns that a
    mismatched memo will not cancel the plan.
 6. **Signer binding in the reader.** The normative rule is `signer === blog`
-   unless a valid delegation certificate names another signer. The implementation
-   enforces that rule, rejects non-null `delegation`, and the reply fallback only
-   accepts comments authored by the blog account. A third party cannot publish a
-   signed, higher-sequence bulletin to shadow the creator's grants.
+   unless a valid delegation certificate names another signer. The base reader
+   enforces that rule and the reply fallback only accepts comments authored by
+   the blog account. The optional relay companion verifies
+   `banksia.vault.relay@1` and then accepts a bulletin authored and signed by the
+   certified relay account. A third party cannot publish a signed,
+   higher-sequence bulletin to shadow the creator's grants.
 7. **Account-bound auto-unlock (client policy).** Banksia records the Hive
    account that created a reader key and only auto-unlocks when that account is
    signed in. The wire format does not carry this binding; another frontend MAY
@@ -1187,9 +1191,10 @@ keyring or any entry invalidates the bulletin signature.
 11. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
 12. **Delegation payload prefix.** Delegation certificates use the dedicated
-   `banksia.vault.delegation.v1` prefix in this specification. The v1 reader
-   rejects delegated bulletins before verification, so the path is reserved and
-   not a v1 trust surface.
+   `banksia.vault.delegation.v1` prefix in this specification. The base reader
+   rejects delegated bulletins before verification. The optional relay companion
+   (`docs/integrations/vault-relay.md`) adds certificate-gated relay support
+   without changing the base path.
 13. **History window.** Grant issuance and the reader manager request only the
     Vault operation bitmask (transfer, recurrent_transfer,
     fill_recurrent_transfer, failed_recurrent_transfer), walk up to 10 pages of
@@ -1441,8 +1446,10 @@ remains normative for payment.
 
 The registry schema in §7.5 is normative for the reserved `custom_json`
 `banksia.vault.reader_key`: `v=1`, `blog`, `keys[{key,label,created}]`, `revoked`.
-The delegation schema in §7.6 is reserved for the relay; v1 readers reject a
-non-null bulletin `delegation`.
+The delegation schema in §7.6 is the base sketch. W90's relay extension
+restricts `delegate` to the relay account's Hive posting public key and adds
+`delegate_account`; see [`vault-relay.md`](vault-relay.md). Base v1 readers
+reject a non-null bulletin `delegation`.
 
 ---
 

@@ -213,7 +213,7 @@ export const useVaultStore = defineStore('vault', {
           }
           this.readerKeys[name] = record
 
-          const resolved = await resolveBulletin({ blog: name, settings, force })
+          const resolved = await resolveBulletin({ blog: name, settings, force, allowRelay: true })
           if (!resolved || !resolved.bulletin) {
             if (offline()) {
               const state = this.setPostState(key, {
@@ -235,7 +235,7 @@ export const useVaultStore = defineStore('vault', {
             return { ok: false, ...state }
           }
 
-          const verified = await verifyBulletin({ bulletin: resolved.bulletin })
+          const verified = await verifyBulletin({ bulletin: resolved.bulletin, allowDelegation: true })
           if (!verified.ok) {
             const code = offline()
               ? 'offline'

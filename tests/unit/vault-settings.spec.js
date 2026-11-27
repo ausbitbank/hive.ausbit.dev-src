@@ -333,15 +333,39 @@ describe('blog settings integration', () => {
     expect(result.errors.join(' ')).toContain('vault.product is required when vault.enabled is true')
   })
 
-  it('rejects unknown vault fields through the blog validator', () => {
+  it('ignores a malformed relay certificate without disabling Vault', () => {
     const result = normalizeBlogSettings({
       version: 1,
       claimed: true,
       title: 'x',
       vault: { ...VALID_VAULT, relay: { delegate: 'p256:abc' } }
     })
-    expect(result.ok).toBe(false)
-    expect(result.errors.join(' ')).toContain('vault.relay is not a recognised field')
+    expect(result.ok).toBe(true)
+    expect(result.settings.vault.relay).toBeUndefined()
+    expect(result.warnings.join(' ')).toContain('relay certificate ignored')
+  })
+
+  it('accepts a structurally valid relay certificate', () => {
+    const relay = {
+      v: 1,
+      id: 'banksia.vault.delegate',
+      blog: 'alice',
+      delegate_account: 'alice-relay',
+      delegate: 'STM1111111111111111111111111111111111111111',
+      scope: ['grant', 'bulletin'],
+      notBefore: '2026-11-28T00:00:00.000Z',
+      notAfter: '2027-02-28T00:00:00.000Z',
+      nonce: 'abcdefghijklmnopqrstuvwx',
+      sig: 'a'.repeat(130)
+    }
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      vault: { ...VALID_VAULT, relay }
+    })
+    expect(result.ok).toBe(true)
+    expect(result.settings.vault.relay).toEqual(relay)
   })
 
   it('reads vault settings through readBlogSettings', () => {

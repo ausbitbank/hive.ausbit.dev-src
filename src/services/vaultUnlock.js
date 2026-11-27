@@ -29,6 +29,7 @@ import {
 import { decryptVaultParts } from './vaultPayload'
 import { hive } from './hive'
 import { postingPublicKeys, verifyVaultPayloadForAccount } from './vaultSigning'
+import { relayCertificateFromAccount, verifyDelegatedBulletin } from './vaultRelay'
 
 export const DEFAULT_VAULT_CONTAINER = 'banksia-vault'
 export const BULLETIN_CACHE_MS = 5 * 60 * 1000
@@ -69,21 +70,34 @@ async function defaultReplies (blog, container) {
   return Array.isArray(replies) ? replies : []
 }
 
-function parsePostBulletin (post, blog, pointer) {
+function parsePostBulletin (post, blog, pointer, { allowRelay = false } = {}) {
   if (!post || typeof post !== 'object') return null
   if (!post.author || !post.permlink) return null
-  // A bulletin is only valid under the blog account it claims to serve. The
-  // reply fallback must not accept a third party's comment, or an attacker
-  // could publish a higher-sequence bulletin and shadow the creator's grants.
-  if (normalizeAccount(post.author) !== blog) return null
+  const author = normalizeAccount(post.author)
   if (pointer && normalizeAccount(pointer.author) !== blog) return null
   const bulletin = parseBulletin(post.json_metadata)
   if (!bulletin) return null
   if (normalizeBlog(bulletin.blog) !== blog) return null
-  if (normalizeAccount(bulletin.signer) !== blog) return null
+  if (author === blog) {
+    if (normalizeAccount(bulletin.signer) !== blog) return null
+    return {
+      bulletin,
+      pointer: pointer || { author: post.author, permlink: post.permlink },
+      delegated: false
+    }
+  }
+  // A relay-authored comment is accepted only when it is self-consistent and
+  // carries a delegation block. The certificate is verified later, before the
+  // bulletin is used. Without explicit relay support the old v1 rule applies:
+  // only the blog account may author a bulletin.
+  if (!allowRelay) return null
+  if (!HIVE_ACCOUNT_RE.test(author)) return null
+  if (normalizeAccount(bulletin.signer) !== author) return null
+  if (!isPlainObject(bulletin.delegation)) return null
   return {
     bulletin,
-    pointer: pointer || { author: post.author, permlink: post.permlink }
+    pointer: { author: post.author, permlink: post.permlink },
+    delegated: true
   }
 }
 
@@ -134,6 +148,9 @@ export async function resolveBulletin ({
   settings = {},
   fetchPost = fetchPostContent,
   fetchReplies = defaultReplies,
+  fetchAccount = defaultFetchAccount,
+  verify = verifyVaultPayloadForAccount,
+  allowRelay = false,
   force = false
 } = {}) {
   const name = normalizeBlog(blog)
@@ -149,7 +166,7 @@ export async function resolveBulletin ({
   if (pointer && pointer.author && pointer.permlink) {
     try {
       const post = await fetchPost(pointer.author, pointer.permlink)
-      resolved = parsePostBulletin(post, name, { author: pointer.author, permlink: pointer.permlink })
+      resolved = parsePostBulletin(post, name, { author: pointer.author, permlink: pointer.permlink }, { allowRelay })
     } catch {
       resolved = null
     }
@@ -164,10 +181,32 @@ export async function resolveBulletin ({
     }
     const candidates = []
     for (const reply of Array.isArray(replies) ? replies : []) {
-      const candidate = parsePostBulletin(reply, name)
+      const candidate = parsePostBulletin(reply, name, null, { allowRelay })
       if (candidate) candidates.push(candidate)
     }
-    resolved = newestBulletin(candidates)
+    if (allowRelay) {
+      // Choose the newest candidate whose signature/certificate actually
+      // verifies. An invalid higher-sequence relay comment cannot shadow a
+      // valid creator or delegated bulletin.
+      const ordered = candidates.slice().sort((a, b) => {
+        if (a.bulletin.period !== b.bulletin.period) return a.bulletin.period > b.bulletin.period ? -1 : 1
+        return Number(b.bulletin.seq) - Number(a.bulletin.seq)
+      })
+      for (const candidate of ordered) {
+        const checked = await verifyBulletin({
+          bulletin: candidate.bulletin,
+          fetchAccount,
+          verify,
+          allowDelegation: true
+        })
+        if (checked.ok) {
+          resolved = candidate
+          break
+        }
+      }
+    } else {
+      resolved = newestBulletin(candidates)
+    }
   }
 
   writeCache(name, resolved)
@@ -186,7 +225,9 @@ export async function resolveBulletin ({
 export async function verifyBulletin ({
   bulletin,
   fetchAccount = defaultFetchAccount,
-  verify = verifyVaultPayloadForAccount
+  verify = verifyVaultPayloadForAccount,
+  allowDelegation = false,
+  now = Date.now()
 } = {}) {
   if (!isPlainObject(bulletin)) return { ok: false, reason: 'bulletin' }
   const blog = normalizeBlog(bulletin.blog)
@@ -200,18 +241,42 @@ export async function verifyBulletin ({
   if (typeof bulletin.sig !== 'string' || !bulletin.sig.trim()) {
     return { ok: false, reason: 'missing-sig' }
   }
-  if (bulletin.delegation !== null && bulletin.delegation !== undefined) {
+  const delegated = bulletin.delegation !== null && bulletin.delegation !== undefined
+  if (delegated && !allowDelegation) {
     return { ok: false, reason: 'delegation-unsupported' }
   }
 
   const signer = normalizeAccount(bulletin.signer || blog)
   if (!HIVE_ACCOUNT_RE.test(signer)) return { ok: false, reason: 'bulletin' }
-  // Self-sovereign beta: the bulletin must be authored and signed by the blog
-  // account itself. A delegated signer is a later schema and needs a verified
-  // certificate, not just a self-asserted `signer` field.
-  if (signer !== blog) return { ok: false, reason: 'signer' }
 
   let account
+  let creatorAccount
+  if (delegated) {
+    if (!isPlainObject(bulletin.delegation)) return { ok: false, reason: 'delegation' }
+    try {
+      [creatorAccount, account] = await Promise.all([fetchAccount(blog), fetchAccount(signer)])
+    } catch {
+      creatorAccount = null
+      account = null
+    }
+    if (!creatorAccount || !account) return { ok: false, reason: 'account' }
+    const certificate = relayCertificateFromAccount(creatorAccount)
+    if (!certificate) return { ok: false, reason: 'delegation' }
+    const result = await verifyDelegatedBulletin({
+      bulletin,
+      certificate,
+      certHash: bulletin.delegation.certHash,
+      creatorAccount,
+      relayAccount: account,
+      now,
+      verify
+    })
+    return result.ok ? { ok: true, reason: '' } : { ok: false, reason: result.reason || 'signature' }
+  }
+
+  // Self-sovereign v1: the bulletin must be authored and signed by the blog
+  // account itself. A non-null delegation is a separate, certificate-gated path.
+  if (signer !== blog) return { ok: false, reason: 'signer' }
   try {
     account = await fetchAccount(signer)
   } catch {
