@@ -1,5 +1,6 @@
 <template>
   <q-page class="net-page">
+    <h1 class="sr-only">Hive witnesses — ranks, votes and health</h1>
     <div class="net-shell">
       <witness-header
         :logged-in="Boolean(loggedInUser)"

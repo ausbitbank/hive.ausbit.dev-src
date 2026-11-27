@@ -7,6 +7,8 @@
         </router-link>
       </nav>
 
+      <h1 class="sr-only">{{ post ? (post.title || ('@' + post.author + ' on ' + (format ? format.label : 'Hive'))) : 'Short post' }}</h1>
+
       <data-notice
         v-if="error"
         variant="error"

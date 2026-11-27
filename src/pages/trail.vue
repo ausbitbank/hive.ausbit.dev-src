@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-md flex-center">
+    <h1 class="sr-only">Recent votes by @{{ account }}</h1>
     <recent-voted-posts-carousel :account="account" />
   </q-page>
 </template>
