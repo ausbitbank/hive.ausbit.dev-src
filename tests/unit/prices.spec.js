@@ -108,4 +108,22 @@ describe('getHivePrices', () => {
     expect(second).toBe(first)
     expect(second).toEqual(coinGeckoData)
   })
+
+  it('shares one request between concurrent callers', async () => {
+    const coinGeckoData = {
+      hive: { usd: 0.42, btc: null, usd_24h_change: null },
+      hive_dollar: { usd: 1.01, btc: null, usd_24h_change: null }
+    }
+    let resolveFetch
+    globalThis.fetch.mockReturnValue(new Promise(resolve => { resolveFetch = resolve }))
+
+    const { getHivePrices, resetHivePricesCache } = await import('../../src/services/prices')
+    resetHivePricesCache()
+    const calls = [getHivePrices(), getHivePrices(), getHivePrices()]
+    resolveFetch(coinGeckoResponse(coinGeckoData))
+
+    const results = await Promise.all(calls)
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+    expect(results.every(value => value === results[0])).toBe(true)
+  })
 })

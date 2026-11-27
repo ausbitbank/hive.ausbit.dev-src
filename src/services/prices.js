@@ -2,6 +2,7 @@ import { hive } from './hive'
 
 const CACHE_TTL = 60 * 1000
 let cache = null
+let inflight = null
 
 async function fromCoinGecko () {
   const controller = new AbortController()
@@ -32,19 +33,30 @@ async function fromHiveMedian () {
 
 export async function getHivePrices ({ maxAge = CACHE_TTL } = {}) {
   if (cache && Date.now() - cache.at < maxAge) return cache.value
-
-  let value
-  let source
-  try {
-    value = await fromCoinGecko()
-    source = 'coingecko'
-  } catch {
-    value = await fromHiveMedian()
-    source = 'hive-median'
+  // Dashboard widgets mount together and each asks for prices. Share one
+  // request instead of hitting CoinGecko (and its per-IP rate limit) N times.
+  if (!inflight) {
+    inflight = (async () => {
+      let value
+      let source
+      try {
+        value = await fromCoinGecko()
+        source = 'coingecko'
+      } catch {
+        value = await fromHiveMedian()
+        source = 'hive-median'
+      }
+      cache = { at: Date.now(), value, source }
+      return value
+    })().finally(() => { inflight = null })
   }
+  return inflight
+}
 
-  cache = { at: Date.now(), value, source }
-  return value
+/** Test helper: drop the memoised price cache. */
+export function resetHivePricesCache () {
+  cache = null
+  inflight = null
 }
 
 const CHART_TTL = 10 * 60 * 1000
