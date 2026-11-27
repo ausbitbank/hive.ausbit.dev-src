@@ -1,7 +1,7 @@
 # W88 — Shop refinements
 
 Date: 2026-11-27
-Status: in progress
+Status: complete — implemented, tested, deployed and live-smoked
 
 ## Scope
 
@@ -246,7 +246,23 @@ Local, 2026-11-27:
 - The fast Obscura run was attempted; its current CDP build does not expose
   intercepted POST bodies, so the network-mocked HOM tests are run with the
   full Chromium config. This is a harness limitation, not an app failure.
-- Live smoke and deploy verification are recorded in the delivery report.
+- Deploy: `./scripts/deploy.sh` passed its edge verification and backed up the
+  previous docroot; `wrangler deploy` produced Worker version
+  `9f24e117-40bc-48d6-8b4b-e4ad0bd85b18`.
+- Live stamp: `20261127T074457Z-c62116a183c3` (app commit `c62116a`).
+- Live smoke:
+  - `/checkout?items=jokes-on-you%2Fjokes-on-you-send-hbd-get-a-joke:1`
+    rendered the real product (`0.001 HBD`), showed the chain re-read note and
+    disabled queueing while signed out.
+  - A signed-in (local session) checkout queued exactly
+    `["ausbitbank","active",["transfer",{"to":"jokes-on-you","from":"ausbitbank","amount":"0.001 HBD","memo":"{\"product\":\"jokes-on-you/jokes-on-you-send-hbd-get-a-joke\",\"quantity\":1}"}]]`
+    with no broadcast.
+  - `/pay` for the same product was disabled while signed out.
+  - `https://bzlatanov--dev.banksia.io/shop/test-subscription` rendered the real
+    product at `1.000 HBD`; the edge returned `x-hive-meta: blog` with a
+    `Product`/`Offer` JSON-LD block and the canonical product title.
+  - `/version.json` reported the stamp above; the Worker serves checkout,
+    cart and orders shells with `noindex` metadata.
 
 ## Remaining
 
