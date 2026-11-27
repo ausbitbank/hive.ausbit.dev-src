@@ -1,19 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import {
   DISABLED_SIGNING_KEY,
+  accountEffectiveVests,
   accountVoteWeight,
+  ageHours,
   aggregateWitnessHealth,
+  buildWitnessProps,
   buildWitnessUpdate,
   cliWalletCommand,
   filterWitnesses,
   formFromWitness,
   formatHp,
   relativeTime,
+  searchWitnesses,
   sortWitnesses,
+  topTwentyCutoffHp,
   validateProxy,
+  validateSigningKey,
   validateWitnessForm,
   versionMatches,
+  versionParts,
   voteImpact,
+  vestsToHp,
   witnessHealth,
   witnessProxyQueueItem,
   witnessStatus,
@@ -281,6 +289,83 @@ describe('witness forms and queue items', () => {
       hbdInterestPercent: 10,
       maximumBlockSize: 65536,
       accountCreationFee: '3.000 HIVE'
+    })
+  })
+})
+
+describe('witness numeric and lookup helpers', () => {
+  it('converts VESTS and effective balances without NaN', () => {
+    expect(vestsToHp('1000000000.000000 VESTS', GLOBAL_PROPS)).toBe(1_000_000)
+    expect(vestsToHp('0', GLOBAL_PROPS)).toBe(0)
+    expect(vestsToHp('1000000000.000000 VESTS', {})).toBe(0)
+    expect(vestsToHp('nope', GLOBAL_PROPS)).toBe(0)
+
+    expect(accountEffectiveVests({
+      vesting_shares: '1000.000000 VESTS',
+      received_vesting_shares: '200.000000 VESTS',
+      delegated_vesting_shares: '100.000000 VESTS',
+      vesting_withdraw_rate: '50.000000 VESTS'
+    })).toBe(1050)
+    expect(accountEffectiveVests({ vesting_shares: '10.000000 VESTS', delegated_vesting_shares: '20.000000 VESTS' })).toBe(0)
+    expect(accountEffectiveVests(null)).toBe(0)
+  })
+
+  it('measures age and parses versions', () => {
+    const now = Date.parse('2026-11-18T12:00:00Z')
+    expect(ageHours('2026-11-18T10:00:00Z', now)).toBe(2)
+    expect(ageHours('2026-11-18T14:00:00Z', now)).toBe(0)
+    expect(ageHours('', now)).toBe(Infinity)
+    expect(ageHours('not a date', now)).toBe(Infinity)
+
+    expect(versionParts('v1.28.8')).toEqual([1, 28, 8])
+    expect(versionParts('1.28')).toEqual([1, 28])
+    expect(versionParts('v1.x.3')).toEqual([1, 3])
+    expect(versionParts('')).toEqual([])
+  })
+
+  it('searches owner, URL, version and props and ignores blanks', () => {
+    const rows = [
+      { owner: 'alice', url: 'https://alice.example', running_version: '1.28.8' },
+      { owner: 'bob', url: 'https://bob.example', running_version: '1.27.0', props: { account_creation_fee: '3.000 HIVE' } }
+    ]
+    expect(searchWitnesses(rows, 'alice')).toEqual([rows[0]])
+    expect(searchWitnesses(rows, 'bob.example')).toEqual([rows[1]])
+    expect(searchWitnesses(rows, '1.28')).toEqual([rows[0]])
+    expect(searchWitnesses(rows, '3.000')).toEqual([rows[1]])
+    expect(searchWitnesses(rows, 'missing')).toEqual([])
+    expect(searchWitnesses(rows, '   ')).toBe(rows)
+    expect(searchWitnesses(null, 'alice')).toEqual([])
+  })
+
+  it('finds the top-20 cutoff and validates signing keys', () => {
+    const rows = Array.from({ length: 21 }, (_, index) => ({
+      owner: 'w' + index,
+      votes: String((100 - index) * 1e12)
+    }))
+    expect(topTwentyCutoffHp(rows, GLOBAL_PROPS)).toBe(81_000)
+    expect(topTwentyCutoffHp([], GLOBAL_PROPS)).toBe(0)
+    expect(topTwentyCutoffHp(null, GLOBAL_PROPS)).toBe(0)
+
+    expect(validateSigningKey('STM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4')).toBe(true)
+    expect(validateSigningKey(' STM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4 ')).toBe(true)
+    expect(validateSigningKey('STM123')).toBe(false)
+    expect(validateSigningKey('')).toBe(false)
+    expect(validateSigningKey(null)).toBe(false)
+  })
+
+  it('builds witness props with a whole-basis-point interest rate', () => {
+    expect(buildWitnessProps({
+      accountCreationFee: ' 3.000 HIVE ',
+      maximumBlockSize: '65536',
+      hbdInterestPercent: 12.5,
+      subsidyBudget: '100',
+      subsidyDecay: '200'
+    })).toEqual({
+      account_creation_fee: '3.000 HIVE',
+      maximum_block_size: 65536,
+      hbd_interest_rate: 1250,
+      account_subsidy_budget: 100,
+      account_subsidy_decay: 200
     })
   })
 })
