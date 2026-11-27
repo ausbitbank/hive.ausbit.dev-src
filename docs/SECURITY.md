@@ -207,6 +207,10 @@ Rules:
   posting key. `account_update2` always sends `json_metadata: ""`; Hive would
   escalate the operation to active authority if the legacy field were echoed
   back.
+- Every queue item is checked against the chain-required role and the signed-in
+  owner before insertion and again before signing. A mismatch fails closed
+  instead of prompting for the wrong key. Active-key actions are skipped by
+  auto-send, and Send all only resets failed posting actions for retry.
 - Subscription, one-time payment and cancellation queue an active-key
   `recurrent_transfer` / `transfer` exactly like a Hive Open Market purchase.
   Active-key actions are never auto-broadcast; the queue requires explicit
