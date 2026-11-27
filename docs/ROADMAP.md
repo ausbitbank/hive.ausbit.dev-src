@@ -28,11 +28,15 @@ principles that constrain it. Delivered work and its verification records live i
 - W86 gives blog owners final control over the subdomain presentation: a
   block-based section builder (hero, pinned, archive, about, contact, text),
   sanitised custom CSS, custom logo/hero/favicon, and a 12 KB blog object.
+- W87 adds the blog portfolio and Hive Open Market shop: a curated image
+  gallery with a full-screen viewer, a product catalog from `content_type:
+  "product"` posts, and a `/pay` handoff that derives the amount and purchase
+  memo from chain data and queues an approved transfer on the apex.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,681 tests across 193 files.
+  with 1,694 tests across 195 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W87**.
+- The next free workstream number is **W88**.
 
 ## Vision
 
@@ -221,6 +225,20 @@ W86 shipped page sections, custom CSS and branding. Explicitly deferred:
   `banksia.io`.
 
 Record: [`W86`](workstreams/W86-blog-owner-control.md).
+
+### 11. Optional portfolio/shop follow-ups — W87
+
+W87 shipped the curated portfolio, the Hive Open Market catalog and the apex
+payment handoff. Explicitly deferred:
+
+- Cart, shipping, escrow, reviews and buyer protection. The open-market MVP has
+  none of these; the page warns and relies on direct transfers.
+- Product creation/editing inside Banksia; use the composer with HOM metadata.
+- Automatic portfolio inclusion via a post flag and topic filters.
+- Subscription management beyond the initial 12-payment queue.
+- Full axe matrix for every theme and both variants.
+
+Record: [`W87`](workstreams/W87-blog-portfolio-shop.md).
 
 ## Deferred and non-goals
 

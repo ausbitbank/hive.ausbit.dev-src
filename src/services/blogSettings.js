@@ -32,6 +32,7 @@ const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
   'layout', 'width', 'typography', 'hero', 'showTags', 'showReadingTime',
   'nav', 'blocks', 'css', 'logo', 'heroImage', 'favicon',
+  'portfolio', 'shop',
   'pinned', 'authors', 'community', 'showPayout', 'showComments',
   'directory', 'ogImage', 'customDomain', 'updatedAt'
 ]
@@ -229,6 +230,56 @@ function normalizeBlocks (value, errors) {
   return blocks
 }
 
+function normalizePortfolio (value, errors) {
+  const input = value === undefined || value === null ? {} : value
+  if (!isPlainObject(input)) {
+    errors.push('portfolio must be an object')
+    return { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] }
+  }
+  for (const key of Object.keys(input)) {
+    if (!['enabled', 'title', 'description', 'layout', 'items'].includes(key)) {
+      errors.push('portfolio.' + key + ' is not a recognised field')
+    }
+  }
+  const enabled = input.enabled === true
+  if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
+    errors.push('portfolio.enabled must be a boolean')
+  }
+  const title = input.title === undefined
+    ? 'Portfolio'
+    : readableText(input.title, { max: 80 }, 'portfolio.title', errors)
+  const description = input.description === undefined
+    ? ''
+    : readableText(input.description, { max: 240 }, 'portfolio.description', errors)
+  const layout = enumValue(input.layout, ['grid', 'masonry'], 'portfolio.layout', errors, 'grid')
+  const items = normalizePermlinks(input.items, errors, { max: 12, path: 'portfolio.items' })
+  return { enabled, title, description, layout, items }
+}
+
+function normalizeShop (value, errors) {
+  const input = value === undefined || value === null ? {} : value
+  if (!isPlainObject(input)) {
+    errors.push('shop must be an object')
+    return { enabled: false, title: 'Shop', description: '' }
+  }
+  for (const key of Object.keys(input)) {
+    if (!['enabled', 'title', 'description'].includes(key)) {
+      errors.push('shop.' + key + ' is not a recognised field')
+    }
+  }
+  const enabled = input.enabled === true
+  if (input.enabled !== undefined && typeof input.enabled !== 'boolean') {
+    errors.push('shop.enabled must be a boolean')
+  }
+  const title = input.title === undefined
+    ? 'Shop'
+    : readableText(input.title, { max: 80 }, 'shop.title', errors)
+  const description = input.description === undefined
+    ? ''
+    : readableText(input.description, { max: 240 }, 'shop.description', errors)
+  return { enabled, title, description }
+}
+
 /**
  * Custom CSS is owner-controlled, but it must not import remote styles or
  * execute script-era CSS. HTML injection is impossible because the layout sets
@@ -277,6 +328,8 @@ export function defaultBlogSettings (account) {
     logo: '',
     heroImage: '',
     favicon: '',
+    portfolio: { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] },
+    shop: { enabled: false, title: 'Shop', description: '' },
     pinned: [],
     authors: [],
     community: '',
@@ -347,6 +400,8 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   const logo = normalizeHttpsUrl(input.logo, 'logo', errors)
   const heroImage = normalizeHttpsUrl(input.heroImage, 'heroImage', errors)
   const favicon = normalizeHttpsUrl(input.favicon, 'favicon', errors)
+  const portfolio = normalizePortfolio(input.portfolio, errors)
+  const shop = normalizeShop(input.shop, errors)
 
   const nav = normalizeNav(input.nav, errors)
   const pinned = normalizePermlinks(input.pinned, errors, { max: BLOG_MAX_PINNED, path: 'pinned' })
@@ -391,6 +446,8 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     logo,
     heroImage,
     favicon,
+    portfolio,
+    shop,
     pinned,
     authors,
     community,

@@ -19,6 +19,7 @@ const routes = [
       { path: '@:username/wallet/:token', name: 'wallet-token', component: () => import('pages/token.vue') },
       { path: '@:username/wallet', name: 'wallet', component: () => import('pages/wallet.vue') },
       { path: 'lightning', name: 'lightning', component: () => import('pages/lightning.vue') },
+      { path: 'pay', name: 'pay', component: () => import('pages/pay.vue') },
       { path: '@:account/lightning', name: 'account-lightning', component: () => import('pages/lightning.vue') },
       { path: '@:account/pos', name: 'account-pos', component: () => import('pages/pos.vue') },
       { path: '@:username/delegations', name: 'account-delegations', component: () => import('pages/delegations.vue') },

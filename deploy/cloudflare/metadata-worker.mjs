@@ -43,7 +43,8 @@ const THEME_SHELLS = new Map([
   // the app shell so it works before the vhost gains an explicit location.
   ['/settings/blog', '/index.html'],
   ['/blogs', '/index.html'],
-  ['/blogs/directory', '/index.html']
+  ['/blogs/directory', '/index.html'],
+  ['/pay', '/index.html']
 ])
 const THEME_META = new Map([
   ['/settings/blog', {
@@ -91,6 +92,22 @@ const THEME_META = new Map([
       name: 'Hive blogs on Banksia',
       description: 'Opt-in Hive blogs at username.banksia.io.',
       url: 'https://banksia.io/blogs/directory'
+    }
+  }],
+  ['/pay', {
+    title: 'Pay for a Hive product — banksia.io',
+    description: 'Review a Hive Open Market product and queue a direct Hive payment.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/pay',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Pay for a Hive product',
+      url: 'https://banksia.io/pay'
     }
   }]
 ])
@@ -437,6 +454,34 @@ async function blogMetadata (url, tenant) {
         ...blogJsonLd,
         '@type': path === '/about' ? 'AboutPage' : 'ContactPage',
         name: label + ' ' + title,
+        url: origin + path
+      }
+    }
+  }
+
+  if (path === '/portfolio' || path === '/shop') {
+    const isPortfolio = path === '/portfolio'
+    const label = isPortfolio ? 'Portfolio' : 'Shop'
+    const section = isPortfolio ? settings.portfolio : settings.shop
+    const sectionDescription = (section && section.description) || description
+    return {
+      title: label + ' — ' + title,
+      description: sectionDescription,
+      image,
+      imageWidth: cardUsed ? 1200 : undefined,
+      imageHeight: cardUsed ? 630 : undefined,
+      imageType: cardUsed ? 'image/png' : undefined,
+      type: 'website',
+      path,
+      origin,
+      siteName: title,
+      rss: origin + '/rss.xml',
+      noindex: !claimed,
+      jsonLd: {
+        ...blogJsonLd,
+        '@type': 'CollectionPage',
+        name: label + ' ' + title,
+        description: sectionDescription,
         url: origin + path
       }
     }

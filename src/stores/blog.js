@@ -218,6 +218,24 @@ export const useBlogStore = defineStore('blog', {
       const value = this.settings && this.settings.favicon
       return typeof value === 'string' && /^https:\/\//i.test(value) ? value : ''
     },
+    portfolio () {
+      const value = this.settings && this.settings.portfolio
+      return value && typeof value === 'object'
+        ? value
+        : { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] }
+    },
+    shop () {
+      const value = this.settings && this.settings.shop
+      return value && typeof value === 'object'
+        ? value
+        : { enabled: false, title: 'Shop', description: '' }
+    },
+    portfolioEnabled () {
+      return Boolean(this.portfolio.enabled)
+    },
+    shopEnabled () {
+      return Boolean(this.shop.enabled)
+    },
     canEdit () {
       const hive = useHiveStore()
       return Boolean(this.accountName && hive.user.username === this.accountName)

@@ -143,3 +143,4 @@ The next free workstream number is **W84**.
 | [W84-blog-hosting](W84-blog-hosting.md) | Account blogs on `*.banksia.io` |
 | [W85-blog-customisation](W85-blog-customisation.md) | Blog customisation parity and expansion |
 | [W86-blog-owner-control](W86-blog-owner-control.md) | Blog sections, custom CSS and branding |
+| [W87-blog-portfolio-shop](W87-blog-portfolio-shop.md) | Blog portfolio and Hive Open Market shop |

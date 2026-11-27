@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { loginAs, runAxe } from './helpers'
+import { loginAs, readQueue, runAxe } from './helpers'
 
 // The production build registers a service worker on loopback. Its navigation
 // fallback can answer the same-origin /api/blogs request before Playwright's
@@ -71,7 +71,7 @@ const POSTS = [
     body: 'Hello from the garden.',
     created: '2026-11-20T10:00:00',
     depth: 0,
-    json_metadata: JSON.stringify({ image: ['https://images.hive.blog/a.png'] }),
+    json_metadata: JSON.stringify({ image: ['https://images.hive.blog/garden.png'] }),
     stats: { total_votes: 3 }
   },
   {
@@ -81,7 +81,48 @@ const POSTS = [
     body: 'More notes from the garden.',
     created: '2026-11-19T10:00:00',
     depth: 0,
-    json_metadata: '{}',
+    json_metadata: JSON.stringify({ image: ['https://images.hive.blog/notes.png'] }),
+    stats: { total_votes: 1 }
+  }
+]
+
+const PRODUCTS = [
+  {
+    author: 'alice',
+    permlink: 'managed-hosting',
+    title: 'Managed Hive hosting',
+    body: 'Managed hosting for a Hive project.',
+    created: '2026-11-18T10:00:00',
+    depth: 0,
+    json_metadata: JSON.stringify({
+      content_type: 'product',
+      version: 0.1,
+      currency: 'HIVE:HBD',
+      price: 25,
+      subscription: 0,
+      status: 1,
+      tags: ['hosting', 'linux'],
+      image: ['https://images.hive.blog/hosting.png']
+    }),
+    stats: { total_votes: 2 }
+  },
+  {
+    author: 'alice',
+    permlink: 'consulting',
+    title: 'Consulting call',
+    body: 'A monthly consulting call.',
+    created: '2026-11-17T10:00:00',
+    depth: 0,
+    json_metadata: JSON.stringify({
+      content_type: 'product',
+      version: 0.1,
+      currency: 'HIVE:HBD',
+      price: 50,
+      subscription: 1,
+      subscription_recurrence: 730,
+      status: 1,
+      tags: ['consulting']
+    }),
     stats: { total_votes: 1 }
   }
 ]
@@ -96,7 +137,7 @@ const GLOBAL_PROPS = {
   hbd_interest_rate: 0
 }
 
-async function mockHive (page, { account = ACCOUNT, profile = PROFILE } = {}) {
+async function mockHive (page, { account = ACCOUNT, profile = PROFILE, posts = POSTS } = {}) {
   await page.route('https://api.hive.blog/**', async route => {
     const request = route.request()
     if (request.method() !== 'POST') return route.continue()
@@ -115,12 +156,18 @@ async function mockHive (page, { account = ACCOUNT, profile = PROFILE } = {}) {
         result = profile
         break
       case 'bridge.get_account_posts':
-        result = POSTS
+        result = posts
         break
-      case 'bridge.get_post':
-      case 'condenser_api.get_content':
-        result = POSTS[0]
+      case 'bridge.get_post': {
+        const permlink = body.params && body.params.permlink
+        result = posts.find(post => post.permlink === permlink) || posts[0] || null
         break
+      }
+      case 'condenser_api.get_content': {
+        const permlink = Array.isArray(body.params) ? body.params[1] : ''
+        result = posts.find(post => post.permlink === permlink) || posts[0] || null
+        break
+      }
       case 'condenser_api.get_dynamic_global_properties':
         result = GLOBAL_PROPS
         break
@@ -250,4 +297,61 @@ test('blog host renders owner sections, custom CSS and branding', async ({ page 
     return page.locator('link[rel~="icon"]').first().getAttribute('href')
   }).toContain('brand-favicon.png')
   await axeAtBothWidths(page, 'owner-customised blog host')
+})
+
+test('portfolio renders curated images and a full-screen viewer', async ({ page }) => {
+  const account = accountWithBlog({
+    portfolio: {
+      enabled: true,
+      title: 'Selected work',
+      description: 'A small gallery from the blog.',
+      layout: 'grid',
+      items: ['a-post', 'another-post']
+    }
+  })
+  await mockHive(page, { account })
+  await page.goto('http://alice.localhost:4173/portfolio', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.portfolio-title')).toHaveText('Selected work')
+  await expect(page.locator('.portfolio-item')).toHaveCount(2)
+  await page.locator('.portfolio-item__image').first().click()
+  await expect(page.locator('.portfolio-lightbox')).toBeVisible()
+  await page.getByRole('button', { name: 'Close image viewer' }).click()
+  await expect(page.locator('.portfolio-lightbox')).not.toBeVisible()
+  await axeAtBothWidths(page, 'portfolio')
+})
+
+test('shop lists Hive Open Market products', async ({ page }) => {
+  const account = accountWithBlog({
+    shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
+  })
+  await mockHive(page, { account, posts: PRODUCTS })
+  await page.goto('http://alice.localhost:4173/shop', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.shop-title')).toHaveText('Shop')
+  await expect(page.locator('.shop-item')).toHaveCount(2)
+  await expect(page.locator('.shop-item__price').first()).toContainText('25.000 HBD')
+  await expect(page.getByRole('link', { name: 'Buy on Banksia' }).first())
+    .toHaveAttribute('href', /\/pay\?product=alice%2Fmanaged-hosting/)
+  await axeAtBothWidths(page, 'shop')
+})
+
+test('pay page reviews a product and queues a direct transfer', async ({ page }) => {
+  await loginAs(page, 'ausbitbank')
+  await mockHive(page, { posts: PRODUCTS })
+  await page.goto('/pay?product=alice/managed-hosting&quantity=1', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.pay-title')).toHaveText('Managed Hive hosting')
+  await expect(page.locator('.pay-price')).toContainText('25.000 HBD')
+  await axeAtBothWidths(page, 'pay')
+  await page.getByRole('button', { name: 'Queue payment' }).click()
+  await expect(page.locator('.pay-banner--ok')).toBeVisible()
+  const queue = await readQueue(page)
+  expect(queue.items[0]).toEqual([
+    'ausbitbank',
+    'active',
+    ['transfer', {
+      to: 'alice',
+      from: 'ausbitbank',
+      amount: '25.000 HBD',
+      memo: '{"product":"alice/managed-hosting","quantity":1}'
+    }]
+  ])
 })

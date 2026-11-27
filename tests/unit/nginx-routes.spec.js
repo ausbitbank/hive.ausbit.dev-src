@@ -79,4 +79,9 @@ describe('nginx blog hosts', () => {
     expect(CONFIG).toContain('location = /blogs/directory {')
     expect(CONFIG).toContain('set $page_path "/blogs/directory";')
   })
+
+  it('has a metadata shell for the product payment page', () => {
+    expect(CONFIG).toContain('location = /pay {')
+    expect(CONFIG).toContain('set $page_path "/pay";')
+  })
 })

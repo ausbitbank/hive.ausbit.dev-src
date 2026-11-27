@@ -109,6 +109,11 @@ Notes:
   signing and key handling stay on `banksia.io`. Custom CSS can restyle or hide
   blog UI (including the footer), which is an accepted owner-control trade-off
   covered by the normal abuse-reporting path.
+- The `/pay` page derives the seller, amount and purchase memo from the fetched
+  Hive Open Market product post. URL parameters only select the product and
+  quantity; a crafted link cannot change the price. It queues an active-key
+  transfer for explicit wallet review and never auto-broadcasts. The open-market
+  MVP has no escrow or buyer protection, and the page says so.
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 

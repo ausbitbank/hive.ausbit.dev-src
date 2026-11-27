@@ -117,8 +117,37 @@ describe('blog host metadata', () => {
     expect(methods).toContain('bridge.get_profile')
   })
 
-  it('prefers the generated social card over the profile cover', async () => {
+  it('describes the portfolio and shop pages', async () => {
     const account = {
+      ...ACCOUNT,
+      posting_json_metadata: JSON.stringify({
+        profile: { name: 'Alice' },
+        'banksia.io': {
+          blog: {
+            version: 1,
+            claimed: true,
+            title: 'Alice writes',
+            description: 'Notes.',
+            portfolio: { enabled: true, title: 'Work', description: 'Selected work.' },
+            shop: { enabled: true, title: 'Shop', description: 'Buy things.' }
+          }
+        }
+      })
+    }
+    stubNetwork({ account })
+
+    const portfolio = await worker.fetch(blogRequest('/portfolio'))
+    const portfolioHtml = await portfolio.text()
+    expect(portfolioHtml).toContain('<title>Portfolio — Alice writes</title>')
+    expect(portfolioHtml).toContain('<link rel="canonical" href="https://alice.banksia.io/portfolio">')
+
+    const shop = await worker.fetch(blogRequest('/shop'))
+    const shopHtml = await shop.text()
+    expect(shopHtml).toContain('<title>Shop — Alice writes</title>')
+    expect(shopHtml).toContain('<link rel="canonical" href="https://alice.banksia.io/shop">')
+  })
+
+  it('prefers the generated social card over the profile cover', async () => {    const account = {
       ...ACCOUNT,
       posting_json_metadata: JSON.stringify({
         profile: { name: 'Alice' },

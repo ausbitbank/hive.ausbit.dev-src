@@ -389,6 +389,82 @@
 
           <q-card flat bordered class="blog-settings__card">
             <q-card-section>
+              <h2 class="blog-settings__section-title">Portfolio</h2>
+              <q-toggle
+                v-model="form.portfolioEnabled"
+                label="Enable the portfolio page"
+                :disable="!canEdit"
+              />
+              <div class="blog-settings__field">
+                <q-input v-model="form.portfolioTitle" outlined dense label="Portfolio title" :disable="!canEdit" />
+              </div>
+              <div class="blog-settings__field">
+                <q-input
+                  v-model="form.portfolioDescription"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  label="Portfolio description"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-select
+                  v-model="form.portfolioLayout"
+                  :options="portfolioLayoutOptions"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  label="Gallery layout"
+                  :disable="!canEdit"
+                />
+              </div>
+              <div class="blog-settings__field">
+                <q-input
+                  v-model="form.portfolioItemsText"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  label="Portfolio post permlinks"
+                  hint="One permlink per line, up to 12. Only posts with images appear."
+                  :disable="!canEdit"
+                />
+              </div>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
+              <h2 class="blog-settings__section-title">Shop</h2>
+              <q-toggle v-model="form.shopEnabled" label="Enable the shop page" :disable="!canEdit" />
+              <div class="blog-settings__field">
+                <q-input v-model="form.shopTitle" outlined dense label="Shop title" :disable="!canEdit" />
+              </div>
+              <div class="blog-settings__field">
+                <q-input
+                  v-model="form.shopDescription"
+                  outlined
+                  dense
+                  type="textarea"
+                  autogrow
+                  label="Shop description"
+                  :disable="!canEdit"
+                />
+              </div>
+              <p class="blog-settings__hint">
+                Products are normal Hive posts with Hive Open Market metadata:
+                <code>content_type: "product"</code>, <code>currency: "HIVE:HBD"</code>
+                or <code>"HIVE:HIVE"</code>, <code>price</code> and <code>status</code>.
+                The shop lists this account's products; checkout opens on banksia.io.
+              </p>
+            </q-card-section>
+          </q-card>
+
+          <q-card flat bordered class="blog-settings__card">
+            <q-card-section>
               <h2 class="blog-settings__section-title">Social card</h2>
               <p class="blog-settings__hint">
                 The 1200×630 image used when the blog is shared. Generate one from
@@ -856,6 +932,19 @@ function parseNavLinks (value) {
     .filter(item => item.label && item.href)
 }
 
+function parsePortfolioItems (value) {
+  const seen = new Set()
+  const items = []
+  for (const raw of String(value || '').split(/[\n,]+/)) {
+    const item = raw.trim().toLowerCase()
+    if (!/^[a-z0-9][a-z0-9._-]{0,255}$/.test(item) || seen.has(item)) continue
+    seen.add(item)
+    items.push(item)
+    if (items.length >= 12) break
+  }
+  return items
+}
+
 export default {
   name: 'BlogSettings',
   components: { ImageUploadButton },
@@ -894,6 +983,14 @@ export default {
         logo: '',
         heroImage: '',
         favicon: '',
+        portfolioEnabled: false,
+        portfolioTitle: 'Portfolio',
+        portfolioDescription: '',
+        portfolioLayout: 'grid',
+        portfolioItemsText: '',
+        shopEnabled: false,
+        shopTitle: 'Shop',
+        shopDescription: '',
         pinnedText: '',
         authorsText: '',
         community: '',
@@ -984,6 +1081,12 @@ export default {
         { label: 'Magazine', value: 'magazine' }
       ]
     },
+    portfolioLayoutOptions () {
+      return [
+        { label: 'Grid', value: 'grid' },
+        { label: 'Masonry', value: 'masonry' }
+      ]
+    },
     metadataBytes () {
       return this.settings ? blogSettingsSize(this.settings) : 0
     },
@@ -1070,6 +1173,14 @@ export default {
         logo: settings.logo || '',
         heroImage: settings.heroImage || '',
         favicon: settings.favicon || '',
+        portfolioEnabled: settings.portfolio?.enabled === true,
+        portfolioTitle: settings.portfolio?.title || 'Portfolio',
+        portfolioDescription: settings.portfolio?.description || '',
+        portfolioLayout: settings.portfolio?.layout || 'grid',
+        portfolioItemsText: (settings.portfolio?.items || []).join('\n'),
+        shopEnabled: settings.shop?.enabled === true,
+        shopTitle: settings.shop?.title || 'Shop',
+        shopDescription: settings.shop?.description || '',
         pinnedText: (settings.pinned || []).join(', '),
         authorsText: (settings.authors || []).join(', '),
         community: settings.community || '',
@@ -1100,6 +1211,18 @@ export default {
         logo: this.form.logo,
         heroImage: this.form.heroImage,
         favicon: this.form.favicon,
+        portfolio: {
+          enabled: this.form.portfolioEnabled,
+          title: this.form.portfolioTitle,
+          description: this.form.portfolioDescription,
+          layout: this.form.portfolioLayout,
+          items: parsePortfolioItems(this.form.portfolioItemsText)
+        },
+        shop: {
+          enabled: this.form.shopEnabled,
+          title: this.form.shopTitle,
+          description: this.form.shopDescription
+        },
         pinned: splitList(this.form.pinnedText),
         authors: splitList(this.form.authorsText),
         community: this.form.community,

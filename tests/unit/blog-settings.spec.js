@@ -42,7 +42,9 @@ describe('blog settings defaults', () => {
       typography: 'theme',
       hero: 'cover',
       showTags: true,
-      showReadingTime: true
+      showReadingTime: true,
+      portfolio: { enabled: false, title: 'Portfolio', description: '', layout: 'grid', items: [] },
+      shop: { enabled: false, title: 'Shop', description: '' }
     })
   })
 
@@ -252,6 +254,49 @@ describe('normalizeBlogSettings', () => {
     expect(result.ok).toBe(false)
     expect(result.errors.join(' ')).toContain('more than one hero section')
     expect(result.errors.join(' ')).toContain('blocks[].type must be one of')
+  })
+
+  it('accepts portfolio and shop settings', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      portfolio: {
+        enabled: true,
+        title: 'Selected work',
+        description: 'A small gallery.',
+        layout: 'masonry',
+        items: ['a-post', 'a-post', 'b-post']
+      },
+      shop: {
+        enabled: true,
+        title: 'Shop',
+        description: 'Buy directly from Hive.'
+      }
+    })
+    expect(result.ok).toBe(true)
+    expect(result.settings.portfolio).toMatchObject({
+      enabled: true,
+      title: 'Selected work',
+      layout: 'masonry',
+      items: ['a-post', 'b-post']
+    })
+    expect(result.settings.shop).toMatchObject({ enabled: true, title: 'Shop' })
+  })
+
+  it('rejects an invalid portfolio layout and too many items', () => {
+    const result = normalizeBlogSettings({
+      version: 1,
+      claimed: true,
+      title: 'x',
+      portfolio: {
+        layout: 'carousel',
+        items: Array.from({ length: 13 }, (_, index) => 'post-' + index)
+      }
+    })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('portfolio.layout must be one of')
+    expect(result.errors.join(' ')).toContain('portfolio.items supports at most 12 entries')
   })
 
   it('caps the total blog object size', () => {

@@ -23,6 +23,8 @@
     "hive.ausbit.dev/settings/blog*",
     "banksia.io/blogs*",
     "hive.ausbit.dev/blogs*",
+    "banksia.io/pay*",
+    "hive.ausbit.dev/pay*",
     "banksia.io/api/blogs*",
     "hive.ausbit.dev/api/blogs*",
     "banksia.io/settings/moderation*",

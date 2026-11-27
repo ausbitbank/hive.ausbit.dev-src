@@ -21,6 +21,8 @@
           <router-link to="/" exact-active-class="is-active">Blog</router-link>
           <router-link to="/about" active-class="is-active">About</router-link>
           <router-link to="/contact" active-class="is-active">Contact</router-link>
+          <router-link v-if="blog.portfolioEnabled" to="/portfolio" active-class="is-active">Portfolio</router-link>
+          <router-link v-if="blog.shopEnabled" to="/shop" active-class="is-active">Shop</router-link>
           <template v-for="link in blog.navLinks" :key="link.href">
             <router-link v-if="!isExternal(link.href)" :to="link.href">{{ link.label }}</router-link>
             <a v-else :href="link.href" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
