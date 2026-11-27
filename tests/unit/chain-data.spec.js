@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   apiGetAccounts,
+  apiGetAccountHistoryFiltered,
   apiGetGlobalProps,
   apiGetWitnessesByVote,
   apiGetFollowers,
   apiGetFollowing
 } = vi.hoisted(() => ({
   apiGetAccounts: vi.fn(),
+  apiGetAccountHistoryFiltered: vi.fn(),
   apiGetGlobalProps: vi.fn(),
   apiGetWitnessesByVote: vi.fn(),
   apiGetFollowers: vi.fn(),
@@ -16,6 +18,8 @@ const {
 
 vi.mock('../../src/services/api', () => ({
   apiGetAccounts,
+  apiGetAccountHistory: vi.fn(),
+  apiGetAccountHistoryFiltered,
   apiGetGlobalProps,
   apiGetWitnessesByVote,
   apiGetWitnessByAccount: vi.fn(),
@@ -36,6 +40,7 @@ describe('chain data cache', () => {
   beforeEach(() => {
     vi.resetModules()
     apiGetAccounts.mockReset()
+    apiGetAccountHistoryFiltered.mockReset()
     apiGetGlobalProps.mockReset()
     apiGetWitnessesByVote.mockReset()
     apiGetFollowers.mockReset()
@@ -159,5 +164,117 @@ describe('chain data cache', () => {
     await data.fetchGlobalProps()
     expect(apiGetAccounts).toHaveBeenCalledTimes(2)
     expect(apiGetGlobalProps).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('reward history window', () => {
+  const NOW = Date.UTC(2026, 0, 1)
+  const DAY_MS = 24 * 60 * 60 * 1000
+
+  function rewardRow (index, at) {
+    return [index, {
+      op: ['producer_reward', { producer: 'alice', vesting_shares: '1000.000000 VESTS' }],
+      timestamp: new Date(at).toISOString().replace('T', ' ').replace('Z', '')
+    }]
+  }
+
+  function page (startIndex, count, at) {
+    return Array.from({ length: count }, (_, offset) => rewardRow(startIndex + offset, at))
+  }
+
+  beforeEach(() => {
+    vi.resetModules()
+    apiGetAccountHistoryFiltered.mockReset()
+  })
+
+  it('pages backwards until the window start and filters to reward operations', async () => {
+    const recent = page(5000, 1000, NOW - 60 * 60 * 1000)
+    const boundary = page(4000, 5, NOW - 40 * DAY_MS)
+    apiGetAccountHistoryFiltered
+      .mockResolvedValueOnce(recent)
+      .mockResolvedValueOnce(boundary)
+    const data = await chainData()
+
+    const result = await data.fetchAccountRewardHistory('alice', {
+      windowDays: 30,
+      now: NOW
+    })
+
+    expect(result.rows).toHaveLength(1005)
+    expect(result.pages).toBe(2)
+    expect(result.truncated).toBe(false)
+    expect(result.complete).toBe(true)
+    expect(apiGetAccountHistoryFiltered).toHaveBeenNthCalledWith(
+      1, 'alice', -1, 1000, expect.any(String), expect.any(String), { signal: null }
+    )
+    expect(apiGetAccountHistoryFiltered).toHaveBeenNthCalledWith(
+      2, 'alice', 4999, 1000, expect.any(String), expect.any(String), { signal: null }
+    )
+  })
+
+  it('stops at the page budget and reports a truncated sample', async () => {
+    apiGetAccountHistoryFiltered
+      .mockResolvedValueOnce(page(5000, 1000, NOW - 60 * 60 * 1000))
+      .mockResolvedValueOnce(page(4000, 1000, NOW - 60 * 60 * 1000))
+    const data = await chainData()
+
+    const result = await data.fetchAccountRewardHistory('alice', {
+      windowDays: 365,
+      maxPages: 2,
+      now: NOW
+    })
+
+    expect(result.rows).toHaveLength(2000)
+    expect(result.pages).toBe(2)
+    expect(result.truncated).toBe(true)
+    expect(result.complete).toBe(false)
+    expect(apiGetAccountHistoryFiltered).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports an exhausted account as complete rather than truncated', async () => {
+    apiGetAccountHistoryFiltered.mockResolvedValueOnce(page(1, 5, NOW - 2 * DAY_MS))
+    const data = await chainData()
+
+    const result = await data.fetchAccountRewardHistory('alice', {
+      windowDays: 30,
+      now: NOW
+    })
+
+    expect(result.rows).toHaveLength(5)
+    expect(result.truncated).toBe(false)
+    expect(result.complete).toBe(true)
+  })
+
+  it('keeps the pages that loaded when a later page fails', async () => {
+    apiGetAccountHistoryFiltered
+      .mockResolvedValueOnce(page(5000, 1000, NOW - 60 * 60 * 1000))
+      .mockRejectedValueOnce(new Error('node fell over'))
+    const data = await chainData()
+
+    const result = await data.fetchAccountRewardHistory('alice', {
+      windowDays: 365,
+      now: NOW
+    })
+
+    expect(result.rows).toHaveLength(1000)
+    expect(result.truncated).toBe(true)
+    expect(result.failed).toBe('node fell over')
+  })
+
+  it('resumes from the sequence reported by a history gap', async () => {
+    const gap = Object.assign(new Error('gap'), {
+      data: { stack: [{ data: { sequence: 42 } }] }
+    })
+    apiGetAccountHistoryFiltered
+      .mockRejectedValueOnce(gap)
+      .mockResolvedValueOnce(page(1, 5, NOW - 2 * DAY_MS))
+    const data = await chainData()
+
+    const result = await data.fetchAccountRewardHistory('alice', { windowDays: 30, now: NOW })
+
+    expect(result.rows).toHaveLength(5)
+    expect(apiGetAccountHistoryFiltered).toHaveBeenNthCalledWith(
+      2, 'alice', 42, 1000, expect.any(String), expect.any(String), { signal: null }
+    )
   })
 })

@@ -34,9 +34,17 @@
         <span>{{ historyError }}</span>
       </p>
 
+      <p v-if="summary.estimated" class="dw-ke__notice" role="status">
+        <q-icon name="timeline" size="16px" aria-hidden="true" />
+        <span>Estimated from the last {{ sampledLabel }} of reward history, scaled to {{ summary.windowDays }} days.</span>
+      </p>
+
       <q-card-section class="dw-ke__hero">
         <div class="dw-ke__hero-main">
-          <span class="dw-ke__hero-label">Kept-reward ratio</span>
+          <span class="dw-ke__hero-label">
+            Kept-reward ratio
+            <span v-if="summary.estimated" class="dw-ke__estimate-badge">estimated</span>
+          </span>
           <strong class="dw-ke__hero-value">{{ summary.ratioLabel }}</strong>
           <span class="dw-ke__hero-sub">{{ summary.formula }}</span>
         </div>
@@ -53,14 +61,18 @@
             <dt>Window</dt>
             <dd>{{ summary.windowDays }} days</dd>
           </div>
+          <div v-if="summary.estimated || summary.coverageDays < summary.windowDays">
+            <dt>Covered</dt>
+            <dd>{{ sampledLabel }}</dd>
+          </div>
         </dl>
       </q-card-section>
 
       <div v-if="!summary.hasRewards" class="dw-ke__empty">
         <q-icon name="receipt_long" size="22px" aria-hidden="true" />
         <div>
-          <strong>No reward income in this window.</strong>
-          <span>The ratio needs at least one counted reward. Try a longer window.</span>
+          <strong>No reward income {{ summary.estimated ? 'in the sampled history' : 'in this window' }}.</strong>
+          <span>The ratio needs at least one counted reward. Try a longer window or refresh.</span>
         </div>
       </div>
 
@@ -83,7 +95,9 @@
 
       <p v-if="summary.annualised !== null" class="dw-ke__annual">
         {{ summary.annualisedLabel }} — shown only to make the window comparable, not as a target or a forecast.
-        <template v-if="summary.truncated">History is capped at the newest 1,000 operations.</template>
+        <template v-if="summary.estimated">
+          This rate is calculated from the {{ sampledLabel }} actually covered, not from the requested window.
+        </template>
       </p>
 
       <q-card-section class="home-panel__footer dw-ke__footer">
@@ -134,10 +148,23 @@
 }
 
 .dw-ke__hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   color: var(--c-text-subtle);
   font-size: 0.62rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.dw-ke__estimate-badge {
+  padding: 0 0.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--c-warning-soft);
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .dw-ke__hero-value {
@@ -305,13 +332,12 @@
 </style>
 
 <script>
+import { markRaw } from 'vue'
 import DashboardWidgetState from 'components/dashboard/DashboardWidgetState.vue'
 import { accountWidgetMixin } from 'components/dashboard/accountWidgetMixin'
-import { fetchAccountHistory } from 'src/services/chainData'
+import { fetchAccountRewardHistory } from 'src/services/chainData'
 import { keRatioSummary } from 'src/services/keRatio'
 import { formatUsd, tidyNumber } from 'src/services/wallet'
-
-const HISTORY_LIMIT = 1000
 
 export default {
   name: 'WidgetKeRatio',
@@ -325,9 +351,10 @@ export default {
   data () {
     return {
       history: [],
+      historyMeta: {},
+      historyAccount: '',
       historyLoading: false,
       historyError: '',
-      historyTruncated: false,
       requestToken: 0,
       forceNext: false
     }
@@ -335,6 +362,9 @@ export default {
   computed: {
     accountLabel () {
       return this.summary.accountName || this.accountName
+    },
+    historyTruncated () {
+      return Boolean(this.historyMeta.truncated)
     },
     summary () {
       return keRatioSummary({
@@ -346,13 +376,19 @@ export default {
         historyTruncated: this.historyTruncated
       })
     },
+    sampledLabel () {
+      const days = Number(this.summary.coverageDays)
+      if (!Number.isFinite(days) || days <= 0) return '0 days'
+      if (days < 1) return Math.max(1, Math.round(days * 24)) + ' hours'
+      return days.toFixed(days < 10 ? 1 : 0) + ' days'
+    },
     rewardsLabel () {
       if (this.summary.totalHiveValue <= 0) return '—'
       const hiveUsd = Number(this.prices?.hive?.usd)
-      if (Number.isFinite(hiveUsd) && hiveUsd > 0) {
-        return formatUsd(this.summary.totalHiveValue * hiveUsd)
-      }
-      return tidyNumber(this.summary.totalHiveValue) + ' HIVE'
+      const label = Number.isFinite(hiveUsd) && hiveUsd > 0
+        ? formatUsd(this.summary.totalHiveValue * hiveUsd)
+        : tidyNumber(this.summary.totalHiveValue) + ' HIVE'
+      return this.summary.estimated ? '≈ ' + label : label
     },
     state () {
       if (!this.targetAccount) return 'guest'
@@ -368,6 +404,14 @@ export default {
       return this.loadError || this.historyError
     }
   },
+  watch: {
+    windowDays () {
+      if (!this.targetAccount) return
+      // Rows from the old window cannot be combined with the new one.
+      this.resetHistory(this.historyAccount || this.targetAccount)
+      this.loadHistory(this.targetAccount)
+    }
+  },
   methods: {
     hpLabel (value) {
       return tidyNumber(value) + ' HP'
@@ -376,7 +420,8 @@ export default {
       const parts = []
       if (source.hive > 0) parts.push(tidyNumber(source.hive) + ' HIVE')
       if (source.hbd > 0) parts.push(tidyNumber(source.hbd) + ' HBD')
-      return parts.length ? parts.join(' + ') : '—'
+      if (!parts.length) return '—'
+      return (this.summary.estimated ? '≈ ' : '') + parts.join(' + ')
     },
     refresh () {
       if (!this.targetAccount) return
@@ -388,27 +433,62 @@ export default {
       this.forceNext = false
       this.loadHistory(result.accountName || this.targetAccount, { force })
     },
+    resetHistory (name) {
+      this.historyAccount = name
+      this.history = []
+      this.historyMeta = {}
+    },
     async loadHistory (name, { force = false } = {}) {
       if (!name) {
-        this.history = []
+        this.resetHistory('')
+        this.historyError = ''
         return
       }
+      if (this.historyAccount && this.historyAccount !== name) this.resetHistory(name)
+      else this.historyAccount = name
+
       const token = ++this.requestToken
+      const requestKey = name + ':' + this.windowDays
+      // Abort only when the request itself changed. A manual refresh of the same
+      // key joins the in-flight read; aborting it would reject the joined call.
+      if (this._historyController && this._historyRequestKey !== requestKey) {
+        this._historyController.abort()
+      }
+      if (!this._historyController || this._historyRequestKey !== requestKey) {
+        this._historyController = new AbortController()
+        this._historyRequestKey = requestKey
+      }
+      const controller = this._historyController
       this.historyLoading = true
       this.historyError = ''
-      this.historyTruncated = false
       try {
-        const list = await fetchAccountHistory(name, { limit: HISTORY_LIMIT, force })
+        const result = await fetchAccountRewardHistory(name, {
+          windowDays: this.windowDays,
+          force,
+          signal: controller.signal
+        })
         if (token !== this.requestToken) return
-        this.history = list
-        this.historyTruncated = list.length >= HISTORY_LIMIT
+        const { rows, ...meta } = result
+        // History rows are immutable here; skipping Vue's deep proxy matters
+        // because a capped witness read can hold 10,000 entries.
+        this.history = markRaw(Array.isArray(rows) ? rows : [])
+        this.historyMeta = meta
+        if (result.failed) {
+          this.historyError = 'Reward history is incomplete: ' + result.failed +
+            ' Showing the pages that loaded.'
+        }
       } catch (error) {
-        if (token !== this.requestToken) return
+        if (token !== this.requestToken || error?.name === 'AbortError') return
         console.error('Failed to load accountability history', error)
-        this.history = []
-        this.historyError = 'Reward history is unavailable, so this view cannot be computed.'
+        // Keep the last good rows so a flaky node does not blank the card.
+        this.historyError = this.history.length
+          ? 'Could not refresh reward history. Showing the last loaded values.'
+          : 'Reward history is unavailable, so this view cannot be computed.'
       } finally {
-        if (token === this.requestToken) this.historyLoading = false
+        if (token === this.requestToken) {
+          this.historyLoading = false
+          if (this._historyController === controller) this._historyController = null
+        }
       }
     }
   }

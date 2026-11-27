@@ -124,9 +124,14 @@ Final wave:
   source with its owner and as-of date, treats a failed list as "not checked"
   rather than "clear", and never hides, downvotes or blocks.
 - **Accountability (KE ratio, #86)** — opt-in contextual view. It counts author,
-  curation, comment, beneficiary, witness, interest and proposal income, shows
-  the reward-source breakdown and always prints the limitations. It is not a
-  badge, score or ranking.
+  curation, beneficiary, witness, interest and proposal income, shows the
+  reward-source breakdown and always prints the limitations. It is not a badge,
+  score or ranking. Reward history is paged backwards with the operation filter
+  until the selected window is covered or a page budget is spent. A high-frequency
+  account such as a top-20 witness fills 1,000 reward rows in under a day, so a
+  capped read is labelled as a sample and its totals are scaled from the covered
+  span; `comment_reward` is excluded because it summarises payouts that the
+  author, curation and benefactor operations already itemise.
 - **Hive news digest** — a merge of up to five curated ecosystem accounts'
   blog feeds, deduplicated and bounded, explicitly labelled curated rather than
   editorial.

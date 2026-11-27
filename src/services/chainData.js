@@ -4,6 +4,7 @@ import { apiCache, clearCache, invalidateCache, loadCached } from './cache'
 import {
   apiBlockHeader,
   apiGetAccountHistory,
+  apiGetAccountHistoryFiltered,
   apiGetAccounts,
   apiGetContent,
   apiGetFollowCount,
@@ -23,6 +24,7 @@ import {
 } from './api'
 import { searchReadKey } from './unifiedSearch'
 import { fetchSimilarPosts, resolveHiveSenseHosts, searchHiveSenseAuthors, searchHiveSensePosts } from './hiveSense'
+import { makeBitMaskFilter, operations as operationIds } from './hiveOperations'
 import { isValidTag } from '../utils/hiveTag'
 
 export const CACHE_TTL = {
@@ -300,6 +302,167 @@ export function fetchAccountHistory (account, {
     () => apiGetAccountHistory(name, from, count),
     { ttl: CACHE_TTL.accountHistory, force }
   ).then(rows => (Array.isArray(rows) ? rows : []))
+}
+
+export const KE_REWARD_HISTORY_PAGE_SIZE = 1000
+export const KE_REWARD_HISTORY_MAX_PAGES = 10
+export const KE_REWARD_HISTORY_TTL_MS = 2 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// The reward streams the accountability view counts. `comment_reward` is
+// deliberately absent: it is the post's total payout summary, so adding it
+// alongside `author_reward`, `curation_reward` and `comment_benefactor_reward`
+// would count the same payout two or three times.
+const KE_REWARD_OPERATION_IDS = [
+  operationIds.author_reward,
+  operationIds.curation_reward,
+  operationIds.comment_benefactor_reward,
+  operationIds.interest,
+  operationIds.producer_reward,
+  operationIds.proposal_pay
+]
+const KE_REWARD_HISTORY_FILTER = makeBitMaskFilter(KE_REWARD_OPERATION_IDS)
+
+function historyTimestamp (value) {
+  const text = String(value || '').trim()
+  if (!text) return 0
+  const parsed = Date.parse(/[zZ]|[+-]\d{2}:?\d{2}$/.test(text) ? text : text + 'Z')
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function historyEntryTimestamp (entry) {
+  const transaction = Array.isArray(entry) ? entry[1] : entry
+  return historyTimestamp(transaction?.timestamp)
+}
+
+function gapSequence (error) {
+  const sequence = error?.data?.stack?.[0]?.data?.sequence
+  const number = Number(sequence)
+  return Number.isFinite(number) && number >= 0 ? number : null
+}
+
+async function readRewardHistoryPage (account, cursor, limit, signal) {
+  const [low, high] = KE_REWARD_HISTORY_FILTER
+  try {
+    return await apiGetAccountHistoryFiltered(account, cursor, limit, low, high, { signal })
+  } catch (error) {
+    const sequence = gapSequence(error)
+    if (sequence === null) throw error
+    // A filtered query can land on a gap in very old history. Resume from the
+    // sequence the node reports instead of failing the whole card.
+    return apiGetAccountHistoryFiltered(account, sequence, limit, low, high, { signal })
+  }
+}
+
+/**
+ * Reward operations inside a window, paged backwards with the history bitmask.
+ *
+ * A single 1,000-row page is not a window: a top-20 witness earns a
+ * `producer_reward` every minute, so one page is under a day and a 365-day
+ * request would silently report minutes as a year. Pages are therefore walked
+ * until the window start is reached or the page budget is spent. When the
+ * budget is spent, `truncated` is true and the caller must present the result
+ * as a sample rather than as the whole window.
+ *
+ * A failure after at least one successful page keeps the rows already read and
+ * sets `failed`, so a flaky node degrades to a labelled partial result instead
+ * of throwing away usable reward history.
+ */
+export function fetchAccountRewardHistory (account, {
+  windowDays = 90,
+  maxPages = KE_REWARD_HISTORY_MAX_PAGES,
+  force = false,
+  signal = null,
+  now = Date.now()
+} = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  const requestedDays = Number(windowDays)
+  const days = Number.isFinite(requestedDays) && requestedDays > 0 ? requestedDays : 90
+  const pageCount = Math.max(1, Math.min(KE_REWARD_HISTORY_MAX_PAGES, Number(maxPages) || KE_REWARD_HISTORY_MAX_PAGES))
+  if (!name) {
+    return Promise.resolve({ rows: [], pages: 0, truncated: false, complete: true, failed: '', windowDays: days })
+  }
+
+  const key = 'history:rewards:' + name + ':' + days + ':' + pageCount
+  return loadCached(key, async () => {
+    const cutoff = (Number.isFinite(Number(now)) ? Number(now) : Date.now()) - days * DAY_MS
+    const rows = []
+    const seen = new Set()
+    let cursor = -1
+    let pages = 0
+    let reachedCutoff = false
+    let exhausted = false
+    let failed = ''
+
+    while (pages < pageCount) {
+      let response
+      try {
+        response = await readRewardHistoryPage(name, cursor, KE_REWARD_HISTORY_PAGE_SIZE, signal)
+        pages += 1
+      } catch (error) {
+        if (signal?.aborted || error?.name === 'AbortError') throw error
+        if (rows.length === 0) throw error
+        // Keep what we have. The widget labels it as partial and offers a retry.
+        failed = error?.message || 'Could not read the rest of the reward history.'
+        break
+      }
+
+      if (!Array.isArray(response)) {
+        if (rows.length === 0) throw new Error('Unexpected reward history response')
+        failed = 'Unexpected reward history response.'
+        break
+      }
+      if (response.length === 0) {
+        exhausted = true
+        break
+      }
+
+      let oldestInPage = Infinity
+      for (const entry of response) {
+        const index = Array.isArray(entry) ? Number(entry[0]) : NaN
+        if (Number.isFinite(index)) {
+          const rowKey = 'i:' + index
+          if (seen.has(rowKey)) continue
+          seen.add(rowKey)
+        }
+        rows.push(entry)
+        const stamp = historyEntryTimestamp(entry)
+        if (stamp > 0 && stamp < oldestInPage) oldestInPage = stamp
+      }
+
+      if (oldestInPage <= cutoff) {
+        reachedCutoff = true
+        break
+      }
+
+      const firstIndex = Number(Array.isArray(response[0]) ? response[0][0] : NaN)
+      if (!Number.isFinite(firstIndex) || firstIndex <= 0) {
+        exhausted = true
+        break
+      }
+      cursor = firstIndex - 1
+      if (response.length < KE_REWARD_HISTORY_PAGE_SIZE) {
+        exhausted = true
+        break
+      }
+    }
+
+    // `exhausted` means the account has no older reward operations, so this is
+    // every reward row the window can contain, not a truncated sample.
+    const truncated = !reachedCutoff && !exhausted
+    return {
+      rows,
+      pages,
+      truncated,
+      complete: reachedCutoff || exhausted,
+      failed,
+      windowDays: days,
+      fetchedAt: Date.now()
+    }
+  }, {
+    ttl: KE_REWARD_HISTORY_TTL_MS,
+    force
+  })
 }
 
 export function fetchCommunity (name, observer = null, { force = false } = {}) {
