@@ -129,6 +129,219 @@ Notes:
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 
+## Banksia Vault key model
+
+Banksia Vault is the members-only content feature (W89): a creator encrypts a
+section or a whole post, and a reader decrypts it in the browser after a
+creator-signed grant. The chain stores ciphertext, the sealed keyring and
+wrapped ring keys. Banksia operates no decryption service and holds no
+plaintext, Hive key or platform balance.
+
+### Key hierarchy
+
+| Key | Type | Lifetime | Storage | Purpose |
+| --- | --- | --- | --- | --- |
+| Content key `K_kid` | AES-256-GCM, 32 bytes | One `YYYY-MM` period | Inside the passphrase-encrypted creator vault; after sealing, only inside the reader's decrypted keyring | Encrypt post payloads |
+| Keyring | JSON `{kid: K_kid}` | Grows with the archive | Creator vault; sealed once per bulletin with `K_ring` | Let a member read current and past posts |
+| Ring key `K_ring` | AES-256-GCM, 32 bytes | One period; rotated manually in the beta | Creator vault; wrapped per reader | Seal the keyring blob |
+| Reader key | P-256 ECDH | Per device/origin | Reader browser (IndexedDB `CryptoKey`, memory fallback); public half on chain in the payment memo | Receive a wrapped `K_ring` |
+| Vault passphrase | User secret | Long-lived | Creator's password manager / memory | Encrypt the creator vault at rest |
+| Grant signing key | Hive posting key (secp256k1) | Account lifetime | Existing Keychain/HiveAuth/SmartLock signer | Authenticate bulletins |
+
+Rules:
+
+- None of these keys is derived from a Hive posting, active or memo key. A
+  content-key compromise cannot move funds or change account authority; a Hive
+  key compromise cannot retroactively decrypt the archive.
+- The posting key signs bulletins only. It is never used as an encryption key
+  and never leaves the local signer. The creator never needs an active key to
+  publish or to receive money.
+- Reader keys are separate P-256 keys. They are not Hive account keys and do not
+  authenticate anything on chain. A reader may pay from any Hive account.
+- Every period has a fresh `K_kid` and `K_ring`. Older keyring entries are kept
+  so the archive remains readable.
+
+### Storage and plaintext rules
+
+- **Creator vault at rest:** the only vault use of `localStorage` is the
+  encrypted envelope under `banksia_vault_creator_<account>`. It is encrypted
+  with PBKDF2-SHA256 (310,000 iterations, 16-byte salt) and AES-256-GCM
+  (12-byte IV), with AAD `banksia.vault.store.v1|<account>`. Copying the envelope
+  to another account fails closed. The plaintext vault lives in a module-level
+  session object only while the creator has unlocked it; a reload or explicit
+  lock clears it. The passphrase is not retained.
+- **Reader private key:** stored as a `CryptoKey` in IndexedDB
+  (`banksia-vault` / `reader-keys`), with a module-level memory fallback when
+  IndexedDB is unavailable. It is **generated extractable** so the reader can
+  export a passphrase-wrapped recovery file. There is no plaintext key,
+  passphrase or private JWK in `localStorage`, `sessionStorage`, the service
+  worker, logs or analytics. The recovery file is as sensitive as the private
+  key and is protected only by the reader's passphrase (PBKDF2 310k +
+  AES-256-GCM).
+- **Plaintext content:** decrypted text lives in the Pinia store / component
+  memory for the life of the page. It is dropped on `lockPost`, `lockAll`,
+  route change and unmount. It is never written to storage, the service worker,
+  analytics or logs. The service worker caches only the app shell and static
+  assets; chain reads have their own cache and no decrypted response is a
+  cacheable request.
+- **XSS residual risk:** because the reader key must be exportable, any script
+  executing on the Banksia origin can export the private key and decrypt content
+  for that reader. A non-extractable key would remove the recovery path for
+  anonymous readers, so the beta chooses recovery. This makes the CSP and the
+  sanitised-rendering rules part of the Vault threat model. The creator vault,
+  by contrast, is never exportable without the passphrase and remains exposed to
+  an offline password attack if the encrypted envelope is stolen.
+- No new storage keys are introduced for entitlement. `blog.vault` is public
+  advertising metadata and never grants access.
+
+### Signing and authority
+
+- Bulletins are signed through the existing `signVaultPayload` bridge using the
+  creator's **posting** authority: Keychain `requestSignBuffer` with
+  `keyType: "Posting"`, HiveAuth `signChallenge` with `keyType: "posting"`, or
+  SmartLock's in-memory posting key. No active key is requested for any Vault
+  action, and no Banksia server signs or holds a key.
+- Settings, the membership product, the hidden container, premium posts,
+  bulletins and the bulletin pointer use `account_update2`/`comment` with the
+  posting key. `account_update2` always sends `json_metadata: ""`; Hive would
+  escalate the operation to active authority if the legacy field were echoed
+  back.
+- Subscription, one-time payment and cancellation queue an active-key
+  `recurrent_transfer` / `transfer` exactly like a Hive Open Market purchase.
+  Active-key actions are never auto-broadcast; the queue requires explicit
+  confirmation and the reader reviews the operation in the wallet. Posting-key
+  bulletins use the normal queue and can auto-send only when the user has
+  enabled auto-send.
+- Payments go directly to the creator. There is no escrow, platform balance,
+  fee address or refund custody. 0% platform fee at launch.
+
+### Grant verification
+
+Reader-side order is fixed:
+
+1. Parse `json_metadata.banksia_vault`; reject unknown `v`/`alg` and malformed
+   ciphertext/`parts`.
+2. Load the reader key for this blog and origin. A visitor without a key sees
+   the paywall; the unlock path never generates a key.
+3. Fetch the newest bulletin (blog pointer first, then replies matching
+   `vault-<period>-<seq>`), cached in memory for five minutes.
+4. Verify the bulletin signature (canonical JSON, posting key) and recompute the
+   `keyringHash` from the received keyring. An inbound `keyringHash` is never
+   trusted. The self-signed signer must equal the blog account; a delegated
+   bulletin is rejected until certificate verification ships.
+5. Check `blog`, `period`, `rkt` and `expires` **before** any decryption.
+6. Find the entry whose `rkt` matches the reader's thumbprint, unwrap `K_ring`
+   with P-256 ECDH + HKDF-SHA256 + AES-GCM, open the sealed keyring, select
+   `K_kid`.
+7. Decrypt the payload (or companions) with AES-256-GCM and the bound AAD;
+   verify the SHA-256 plaintext hash.
+8. Render only through `Render`/DOMPurify. No raw `v-html` is used for decrypted
+   content.
+
+Creator-side grant issuance verifies the payment against the HOM product post
+before wrapping: recipient is the blog account, amount and currency match the
+product, the memo is a valid Banksia memo, the product reference matches, the
+txid has not already been used, and the payment is not future-dated or outside
+the one-time window. The dashboard derives one subscriber row per reader key
+from the newest valid payment and skips the creator's own payments.
+
+**Signer binding.** `verifyBulletin` requires the self-signed `signer` to equal
+`bulletin.blog`, rejects a non-null `delegation`, and the reply fallback only
+accepts comments authored by the blog account. A third party cannot shadow the
+creator's bulletin with a higher sequence. Delegated signing is reserved for a
+later schema and needs a verified certificate, not a self-asserted `signer`.
+
+### Content binding
+
+- Content AAD: `banksia.vault.content.v1|blog|permlink|kid|mode`. The AAD and the
+  `sha256:<hex>` plaintext hash make a ciphertext unusable on another post,
+  period or mode, and detect a wrong key or a tampered/corrupted payload.
+- Keyring AAD: `banksia.vault.keyring.v1|blog|period`.
+- Ring-key wrap: ECDH between an ephemeral P-256 key and the reader key; HKDF
+  salt `epk || readerPublicKey || "banksia.vault.wrap.v1"`; HKDF info and
+  AES-GCM AAD are the canonical grant header `{blog, rkt, period, tier,
+  expires}`. A wrapped key cannot be moved to another reader, blog, period,
+  tier or expiry.
+- AES-GCM tag failure and plaintext hash mismatch throw typed errors. No partial
+  plaintext is returned or rendered; a multi-part payload either reconstructs
+  completely or stays locked.
+- Companion parts are encrypted with the same `K_kid` and the same content AAD,
+  are namespaced `<post-permlink>-vault-N`, and are fetched as
+  `json_metadata.banksia_vault_payload` replies. A missing or malformed part
+  keeps the post locked.
+
+### Blog hosts, custom domains and phishing
+
+- Blog hosts (`*.banksia.io`) and custom domains stay read-only. They never
+  load the signing queue, wallet or key UI. Custom domains do not read or store
+  a reader key: `requiresApex()` makes the paywall deep-link premium reads to
+  the apex. The same rule applies to `hive.ausbit.dev`.
+- The subscribe flow derives the recipient, amount, currency, recurrence and
+  product from a freshly fetched HOM product post. Query parameters select only
+  `blog` and `product`, and the product must belong to the blog account. Neither
+  `blog.vault.price` nor a URL price is used to build a payment. The review
+  screen shows `@account`, the amount, the recurrence and the total.
+- A crafted blog/subscribe link cannot redirect the payment to another account:
+  the product author is the recipient and must equal the requested blog.
+
+### Revocation and limits
+
+- Revocation is **forward-only**. Rotating `K_ring`/`K_kid` and omitting a
+  reader from the next bulletin protects future content. Old ciphertext remains
+  decryptable by anyone who already holds the old key; there is no instant
+  revocation of past posts and no on-chain delete.
+- The beta has no re-encrypt/migrate tool. A serious leak requires a manual
+  archive re-encryption (post-MVP).
+- Text only. An image/video URL inside a premium payload is hidden until
+  decryption but is public once known; the composer warns and the product does
+  not promise encrypted media.
+- Multi-device is recovery-only. Each origin has its own reader key; the Hive
+  reader-key registry schema exists in the code but the registry UI and
+  creator-side multi-key wrapping are post-MVP. A second device imports the
+  passphrase-wrapped recovery file or asks the creator to re-issue.
+- **Self-sovereign gap:** the creator must be online to issue a grant. A reader
+  can pay while the creator is offline and will wait; the subscribe dialog says
+  so, the page polls for two minutes, and cancellation is available. There is no
+  relay, delegated signer or automatic issuance in W89.
+- Grant issuance and the reader manager read at most the most recent 1,000
+  account-history rows. Older subscribers are not discovered until pagination
+  or an index is added.
+- Cancellation queues a zero-amount `recurrent_transfer`. The exact HF28 matching
+  rule for multiple transfers to one recipient is **not yet verified on
+  testnet**; the UI warns and access continues to the grant expiry.
+
+### CSP and network
+
+The Vault feature adds no origin, host, script, worker or dependency. CSP is
+unchanged: `connect-src https:` already covers Hive API nodes, and
+`worker-src 'self' blob:` already covers the existing service worker. WebCrypto
+is a platform API, and the existing `@noble/hashes`/`hive-tx` packages provide
+signature recovery; no new crypto library is used. `img-src https:` already
+covers avatar and post images, but it is not a confidentiality boundary for
+premium media.
+
+### Threat table
+
+| Threat | Impact | Mitigation | Residual risk |
+| --- | --- | --- | --- |
+| Reader shares the key or plaintext | Content leak for that reader | Monthly rotation, watermark `Licensed to @reader · period`, revoke by omission from the next bulletin, re-encrypt for a serious leak | Cannot prevent screenshots or a determined subscriber; old ciphertext stays readable |
+| Reader key stolen by XSS or malware | Content leak for that reader and blog | CSP, DOMPurify, no raw `v-html`, extractable key kept in IndexedDB/memory only, forget/rotate on the device | Extractable for recovery, so same-origin script can export it while the page is open. CSP is the main control |
+| Creator vault stolen | Full archive leak | PBKDF2-SHA256 310k + AES-256-GCM, account-bound AAD, passphrase not stored, encrypted export only | Offline passphrase guessing; weak passphrases are the weak point |
+| Forged grant | Free access or a lockout | Posting-key signature, canonical JSON, keyring hash, AAD-bound wrap, expiry check; `signer === blog` enforced and delegated bulletins rejected | Delegation is post-MVP |
+| Replayed payment | Duplicate grant | Recipient/amount/memo/product checks, txid uniqueness, one subscriber row per reader key, newest-payment wins | No persistent replay ledger beyond the 1,000-row history scan |
+| Tampered ciphertext or keyring | Wrong plaintext or a crash | AES-GCM tag, SHA-256 plaintext hash, keyring AAD, no partial plaintext | None known; failure is a locked state |
+| Wrong key or wrong period | No decrypt | `kid` selection, `rkt` match, typed `VAULT_TAG`/`VAULT_BAD_KEY` errors | User must use the subscribing device or restore |
+| Malicious API node | Fake metadata, bulletin or payment history | Verify the bulletin signature locally, re-fetch the product post for money, multi-node read fallback, chain consensus for history | A node can withhold data or serve stale data; the reader fails closed |
+| Phishing blog or crafted link | Payment to the wrong account | Recipient/amount derived from the HOM product post; product must belong to the blog; `@account` shown in review and dialog | A look-alike domain remains a user-education problem |
+| Content injection in decrypted HTML | XSS | `Render` + DOMPurify, sanitised URLs, no raw `v-html`, CSP `script-src-attr 'none'` | Trusted-renderer or sanitiser bugs |
+| Service worker or cache leak | Plaintext after logout | No plaintext in storage; service worker caches shell/assets only; memory dropped on lock/unmount | Browser memory/DOM inspection by a local attacker |
+| Analytics or log leak | Privacy | Vault modules do not log or emit analytics; no plaintext/keys in error copy | Host-level telemetry outside the app |
+| Billing / auto-renewal complaint | Legal and reputational | Product post and dialog disclose amount, 12 payments, cancel path and that access ends with the grant; queue is reviewed | Jurisdiction-specific consumer rules are the creator's responsibility |
+| HBD depeg | Revenue loss | Price in HBD, product post is the source of truth, USD estimate is display-only | HBD peg risk |
+| Huge payload or spam bulletins | Chain limits or spam | 30 KB inline / 90 KB companion transport, 300-entry bulletin cap, RC cost, creator-only signing | Comment/transaction limits and RC exhaustion |
+| Illegal premium content | Abuse | Report path, blog disablement, creator responsibility; ciphertext remains on chain | Encryption limits moderation; Banksia cannot delete chain data |
+
+
 ## nginx / nginx2root (CVE-2026-123007 and friends)
 
 The origin runs Debian's nginx 1.22.1 package. Keep every vhost TLS

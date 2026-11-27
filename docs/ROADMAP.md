@@ -20,7 +20,7 @@ principles that constrain it. Delivered work and its verification records live i
   proxies the apex shell and serves blog metadata, RSS, sitemap, robots, the
   opt-in directory API, themed OG fallbacks and generated social cards, and the
   new SPA is live. A real claim has been tested and works, and the blog axe
-  suite passes; premium entitlements and custom domains remain.
+  suite passes; custom domains remain.
 - W85 adds blog customisation parity and expansion: reader Light/Dark/System,
   five themes with opposite-mode variants, grid/list/magazine layouts, page
   width, typography, hero style, custom navigation, tags/reading-time toggles
@@ -41,14 +41,33 @@ principles that constrain it. Delivered work and its verification records live i
   limitations, non-goal justifications and the plan for escrow, reviews,
   shipping, fiat on-ramps and independent indexing live in
   [`docs/HIVE_OPEN_MARKET.md`](HIVE_OPEN_MARKET.md).
-- Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,785 tests across 200 files, build succeeded, and the full Chromium
-  blog/shop suite passed 15 checks with axe at 1440×1100 and 390×844.
+- W89 adds Banksia Vault: a single-tier, text-only, self-sovereign beta for
+  members-only blog content. A creator can lock a section or a whole post,
+  publish a Hive Open Market membership product and a hidden grant container,
+  and issue posting-key-signed bulletins that wrap a per-period ring key to each
+  reader. Content is AES-256-GCM with P-256 ECDH + HKDF-SHA256 via WebCrypto;
+  payments are direct HBD recurrent transfers with a 0% platform fee. The blog
+  stays read-only and custom domains deep-link premium reads to the apex. W89
+  is **implemented, unit-tested, built and browser-tested on `w89-vault` but
+  not deployed or live-smoked**. Release is pending the operator's live smoke
+  and approval. See
+  [`docs/workstreams/W89-premium-memberships.md`](workstreams/W89-premium-memberships.md).
+- Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
+  `bun run test` green with **2,053 tests across 214 files**, `bun run build`
+  succeeded, and `bun run perf:check` passed after a documented re-baseline.
+  `e2e/vault.spec.js` passed **8/8** in Chromium with axe clean at 1440×900 and
+  390×844 for the locked post, `/subscribe`, `/settings/blog/vault` and
+  `/subscriptions`. The full Chromium suite ran **197 passed / 4 failed**; the
+  four failures (badges shelf, login-key guide, header lockup, profile-skin
+  scope) reproduce identically on pre-W89 `master` 8351c92 and are not Vault
+  regressions. The Vault spec is excluded from the fast Obscura suite because
+  it needs real IndexedDB/WebCrypto keys and axe.
 - The full Chromium suite and the performance budgets are the CI release gate.
-  The fast Obscura suite (126 functional checks) is the local loop; its current
-  CDP build does not expose intercepted POST bodies, so the network-mocked HOM
-  E2E runs under the full Chromium config.
-- The next free workstream number is **W89**.
+  The fast Obscura suite is the local loop; its current CDP build does not
+  expose intercepted POST bodies and has pre-existing timeouts in this
+  environment, so the network-mocked HOM and Vault E2E run under the full
+  Chromium config.
+- The next free workstream number is **W90**.
 
 ## Vision
 
@@ -199,10 +218,9 @@ Record: [`W82`](workstreams/W82-account-creation.md).
 The free account blog at `<account>.banksia.io` is deployed for public
 previews, and the claim flow is verified. Remaining work:
 
-- Premium entitlements and premium themes. Verify entitlement from chain state,
-  never from the user-writable blog object.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
-  UI. Keep custom-domain blogs read-only for signing.
+  UI. Keep custom-domain blogs read-only for signing and premium reads on the
+  apex.
 - Canonical policy for the duplicate: the apex
   `banksia.io/@author/permlink` page still canonicalizes to itself, so a
   claimed blog post exists at two URLs. Decide whether the apex post should
@@ -231,7 +249,7 @@ W86 shipped page sections, custom CSS and branding. Explicitly deferred:
 
 - Side navigation and a per-post layout override.
 - Portfolio/gallery and products/shop pages.
-- Custom domains and premium entitlements (W84).
+- Custom domains (W84). Premium entitlements are tracked in W89.
 - A full axe matrix for every theme and both variants.
 - Custom JavaScript is a non-goal: the blog stays read-only and signing stays on
   `banksia.io`.
@@ -257,6 +275,33 @@ checkout and orders). Explicitly deferred or out of scope:
 
 Records: [`W87`](workstreams/W87-blog-portfolio-shop.md),
 [`W88`](workstreams/W88-shop-refinements.md).
+
+### 12. Banksia Vault follow-ups — W89
+
+W89 shipped the self-sovereign membership beta: single tier, text-only,
+keyring/full archive, locked section and whole post, HOM product plus hidden
+container, AES-256-GCM/P-256/HKDF, 0% fee. Remaining work:
+
+- Fix the current build blocker: `src/pages/compose.vue` imports
+  `hasVaultMarker`/`vaultMarkerIndex` from `vaultPayload.js` instead of
+  `vaultCompose.js`. Then deploy, `bun run verify:deploy`, record the backup
+  path, and complete the live smoke (enable, publish, pay, unlock, reload,
+  expire, cancel, restore).
+- Bind bulletin signers to the blog (or implement delegation verification)
+  before public launch; see the open risks in the W89 record.
+- Relay and delegated signing so a reader can be granted while the creator is
+  offline.
+- Encrypted media (encrypted blobs or signed URLs); v1 is text-only and media
+  URLs leak.
+- Multi-tier, trials, gifts/claim codes, annual and lifetime plans.
+- Bulletin splitting for large subscriber lists (schema reserved, not shipped).
+- Reader-key registry and multi-device wrapping (schema exists, UI post-MVP).
+- Verify the HF28 zero-amount cancel matching rule on Hive testnet before
+  treating the cancel button as shipped.
+- Run Agent F's E2E/axe suite and record the results.
+
+Record: [`W89`](workstreams/W89-premium-memberships.md). Protocol:
+[`docs/integrations/vault-protocol.md`](integrations/vault-protocol.md).
 
 ## Deferred and non-goals
 

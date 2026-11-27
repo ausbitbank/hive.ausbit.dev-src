@@ -1,6 +1,8 @@
 # Banksia Vault protocol (`banksia.vault@1`)
 
-**Status: Draft — Agent G finalises.**
+**Status: final for the W89 self-sovereign beta (2026-11-27).** The protocol is
+implemented and unit-tested in this repository. Relay/delegation, encrypted
+media, multi-tier and claim codes are reserved but not implemented; see §15.
 
 This document specifies the wire format and cryptographic constructions for
 Banksia Vault, the members-only content protocol for Banksia blogs. It is the
@@ -40,16 +42,34 @@ server-side key custody.
 
 ---
 
-## 2. Versioning
+## 2. Versioning and compatibility
 
 - Protocol identifier: `banksia.vault@1`.
-- Every on-chain object that carries a version uses `"v": 1`.
-- Readers MUST ignore unknown fields they do not need, but MUST reject an object
-  whose `v` is not `1`.
-- `alg` values are exact strings. A reader MUST reject an unknown algorithm
-  rather than guessing.
-- Additive, backwards-compatible changes keep `v: 1`; a breaking change takes a
-  new `v` and a new identifier (`banksia.vault@2`).
+- Every on-chain object that carries a version uses `"v": 1`: blog `vault`,
+  post `banksia_vault`, the payment memo's `banksia` object, the bulletin,
+  the reader registry and the delegation certificate.
+- Readers MUST ignore unknown **sibling** fields they do not need, but MUST
+  reject an object whose `v` is not `1`. Unknown fields never grant access.
+- `alg` values are exact, case-sensitive strings:
+  - `A256GCM` — AES-256-GCM for payloads and the sealed keyring.
+  - `P256-HKDF-SHA256-A256GCM` — the complete P-256 ECDH + HKDF-SHA256 +
+    AES-256-GCM ring-key wrap. `A256GCM` is accepted on unwrap for leniency;
+    new writers use the full construction name.
+  - The creator/recovery envelope uses `PBKDF2-SHA256-A256GCM`.
+  A reader MUST reject an unknown algorithm rather than guessing.
+- Additive, backwards-compatible changes keep `v: 1`. Examples: a new optional
+  display hint, a new optional bulletin field a reader may ignore, or a new
+  `alg` that old readers reject while continuing to read old objects.
+- A change that alters the meaning of a signed field, the AAD/HKDF input, the
+  canonical-JSON rules, or the signature payload takes a new `v` **and** a new
+  identifier (`banksia.vault@2`). Mixed-version readers must fail closed on the
+  object they cannot verify.
+- Writers MUST preserve `banksia_vault` and `banksia_vault_product` metadata
+  they do not own when editing a post, unless the premium payload is
+  deliberately re-encrypted or Vault is deliberately switched off.
+- Unknown keys are rejected by the Banksia validators for creator-owned objects
+  (`blog.vault`) so a newer client cannot silently lose configuration on the
+  next write. Read paths are more lenient as described above.
 
 ---
 
@@ -62,7 +82,7 @@ server-side key custody.
 | Publish the hidden grant container | Creator | **Posting** | `comment` |
 | Publish a premium post | Creator | **Posting** | `comment` with `json_metadata.banksia_vault` |
 | Publish or replace a bulletin (self-sovereign) | Creator | **Posting** | `comment` under the container |
-| Publish a bulletin (relay) | Relay account | **Posting** (relay's own key) | `comment` + delegation certificate |
+| Publish a bulletin (relay) | Relay account | **Posting** (relay's own key) | `comment` + delegation certificate — **reserved, not implemented** |
 | Subscribe (recurring) | Reader | **Active** | `recurrent_transfer` |
 | Subscribe (one month / gift) | Reader | **Active** | `transfer` |
 | Cancel | Reader | **Active** | `recurrent_transfer` with amount `0.000 HBD` for the matching plan |
@@ -184,8 +204,8 @@ grants access and never contains keys.
 }
 ```
 
-- Shares the 12 KB blog-object budget with CSS and blocks; keep it around 500
-  bytes.
+- Shares the 12 KB blog-object budget with CSS and blocks; the encoded vault
+  object is capped at 1,200 bytes and should stay around 500.
 - `price` is a **display hint only**. The HOM product post is the payment source
   of truth; never charge from this field.
 - `product` is `author/permlink`; `container` is a permlink on the creator's
@@ -244,6 +264,31 @@ or follows it.
 
 Explicit marker: `<!--banksia:vault-->` (ASCII, no attributes).
 
+For a companion-comment payload, `parts` lists permlinks on the **post author's**
+account. Part `N` is named `<post-permlink>-vault-N` (for example
+`field-notes-vault-1`). The post permlink prefix namespaces the parts per post,
+because a Hive permlink is unique per author and a bare `vault-payload-1` would
+collide across posts. Each companion is a reply to the premium post and carries:
+
+```json
+{
+  "banksia_vault_payload": {
+    "alg": "A256GCM",
+    "iv": "base64url-12-bytes",
+    "ct": "base64url-ciphertext",
+    "bytes": 28000,
+    "hash": "sha256:...",
+    "part": 1,
+    "parts": 2
+  }
+}
+```
+
+Every part uses the same `K_kid` and the **same** content AAD as the whole post
+(§9.4). Readers MUST decrypt every listed part, verify every part hash, order by
+`part`, concatenate, and verify the post-level `hash` and `bytes`. The beta's
+post-level check is hex-only; see §9.5 and the W89 record.
+
 Metadata size is measured as the UTF-8 byte length of the JSON object.
 
 ### 7.3 Payment memo
@@ -271,9 +316,19 @@ Standard HOM memo plus a namespaced extension:
 - One-time: a normal `transfer` with the same memo.
 - Cancel: `recurrent_transfer` with `amount: "0.000 HBD"` for the matching
   plan. The exact HF28 matching rule must be confirmed on testnet before the
-  cancel UI ships.
+  cancel UI is treated as shipped; the beta warns in the confirmation dialog.
 - The recipient, amount and recurrence are derived from the on-chain product and
   blog account, never from URL parameters.
+- `gift_for` is part of the v1 memo schema but gift issuance is not implemented
+  in the beta; the creator dashboard excludes gift payments from subscriber
+  rows.
+- Grant issuance MUST reject a transaction id that has already been used for a
+  grant (`duplicate`). The beta scans the creator's account history, keeps a
+  `Set` of txids and builds one subscriber row per reader key from the newest
+  payment; it has no separate server-side replay ledger.
+- One-time `transfer` payments must be within the 40-day acceptance window, and
+  a `fill_recurrent_transfer` must carry a non-negative
+  `remaining_executions`.
 
 ### 7.4 Bulletin comment — `json_metadata.banksia_vault_bulletin`
 
@@ -325,6 +380,13 @@ Validation:
 - `signer` is the creator account or the relay's `p256:` public key.
 - `delegation` is the delegation certificate hash/object when the signer is a
   relay, otherwise `null`.
+- **Signer binding.** For a self-signed bulletin, `signer` MUST equal `blog`
+  (case-insensitively) and the signature MUST verify against that account's
+  posting authority. A bulletin whose `signer` is a different Hive account is
+  valid only with a delegation certificate that verifies against the blog's
+  posting keys and names the signer. The v1 beta rejects delegated bulletins
+  (`delegation !== null`) and must not accept an arbitrary third-party signer;
+  see §15.6.
 
 `keyring.ct` is the sealed keyring blob, stored **once per bulletin**, not once
 per reader. `entries[].ct` is the wrapped `K_ring` (≈200 bytes), not the keyring.
@@ -338,12 +400,16 @@ banksia.vault.bulletin.v1|<canonicalJson(bulletinPayloadObject)>
 `bulletinPayloadObject` is the bulletin **without `sig`**, with
 `keyringHash = "sha256:" + hex(SHA-256(canonicalJson(keyring)))` inserted when a
 keyring is present. `entries` are included verbatim. Verifiers MUST recompute
-`keyringHash`; an inbound `keyringHash` is never trusted. Because the keyring and
-entries are covered directly, swapping either invalidates the signature.
+`keyringHash` from the received keyring and MUST ignore any inbound
+`keyringHash`; an attacker-controlled hash is never trusted. Because the
+keyring and entries are covered directly, swapping either invalidates the
+signature.
 
 A new subscriber creates a new `seq` with the full entry list (idempotent, easy
 to audit). Above roughly 150–300 entries or ~60 KB, split the bulletin into
-parts and publish `vault-<period>-<seq>-1`, `-2`, ….
+parts and publish `vault-<period>-<seq>-1`, `-2`, …. Bulletin splitting is
+reserved but **not implemented** in v1; the dashboard hard-caps a single
+bulletin at 300 entries and warns above 250.
 
 ### 7.5 Reader key registry — `custom_json` id `banksia.vault.reader_key`
 
@@ -514,6 +580,12 @@ non-extractable private key the caller MUST pass the public key (or a
 non-extractable key. The Banksia API accepts the public key as an optional fourth
 argument to `unwrapRingKey`.
 
+**Extractable keys.** The W89 reader stores an **extractable** P-256 private
+`CryptoKey` in IndexedDB so the reader can export a passphrase-wrapped recovery
+file. The key is therefore readable by any script running on the same origin
+while the page is open. The recovery export is the deliberate trade-off; see
+`docs/SECURITY.md`.
+
 ### 9.3 Keyring seal
 
 ```text
@@ -547,7 +619,7 @@ Decryption MUST:
 4. Decode UTF-8 strictly.
 5. Recompute SHA-256 and compare with `hash`; mismatch is `VAULT_HASH`.
 
-### 9.5 Multi-part payloads
+### 9.5 Multi-part companion payloads
 
 For payloads above the inline budget, split the plaintext on **UTF-8 code-point
 boundaries** (never inside a multi-byte sequence or a surrogate pair) and encrypt
@@ -558,9 +630,19 @@ each part with the same `K_kid` and the **same base content AAD**. Each part add
   "hash": "sha256:...", "part": 1, "parts": 3 }
 ```
 
-The post metadata replaces `ct`/`iv` with `parts: ["vault-payload-1", ...]`.
-Readers decrypt each part, verify each part hash, and concatenate in `part`
-order. The post-level `bytes`/`hash` describe the whole plaintext.
+The post metadata replaces `ct`/`iv` with `parts: ["<post>-vault-1", ...]` (see
+§7.2). Each companion comment is a reply to the post and carries the part object
+under `json_metadata.banksia_vault_payload`; the comment body is empty. Readers
+MUST decrypt each part, verify each part hash, reject duplicate or out-of-range
+`part` values, concatenate in `part` order, and verify the post-level `bytes` and
+`hash` (both `sha256:<hex>` and base64url forms) against the complete plaintext.
+A missing, malformed or duplicate part keeps the reader locked; partial plaintext
+is never rendered. The W89 beta verifies per-part hashes and the post-level hash
+only when it is the hex form, and does not yet check `bytes`; see the W89 record.
+
+The composer selects companion transport above 30,000 plaintext bytes and
+chunks at 28,000 bytes of plaintext per part (well below the 40,000-character
+inline budget and the 65,535-byte comment body).
 
 ### 9.6 Signatures
 
@@ -597,25 +679,26 @@ posting public key for verification.
 | Inline ciphertext | 40,000 base64url chars | `INLINE_CIPHERTEXT_MAX` |
 | Inline plaintext | 30,000 bytes | `MAX_PLAINTEXT_INLINE` |
 | Companion-comment plaintext | 90,000 bytes | `chooseVaultTransport` |
-| Chunk size | 30,000 bytes default | `chunkVaultPayload` |
+| Chunk size | 30,000 bytes default (`chunkVaultPayload`); composer uses 28,000 | UTF-8 code-point boundaries |
 | Ciphertext estimate | `4 * ceil(bytes / 3)` | base64url overhead |
 | AES-GCM IV | 12 bytes | fresh per encryption |
 | AES-GCM tag | 16 bytes | appended to `ct` |
 | PBKDF2 salt | 16 bytes | per envelope |
 | PBKDF2 iterations | 310,000 | SHA-256 |
-| Blog vault object | ~500 bytes | shares the 12 KB blog budget |
+| Blog vault object | 1,200 bytes | `VAULT_MAX_BYTES`, inside the 12 KB blog budget |
 | Memo | < 2,048 bytes | Hive limit |
 | `custom_json` | 8,192 bytes | Hive limit |
 | Paywall title / body | 80 / 240 chars | display only |
 | Paywall benefits | ≤ 6, each ≤ 80 chars | display only |
-| Bulletin entries | ~150–300 practical | split into parts above this |
+| Bulletin entries | 300 hard cap, 250 warning | `BULLETIN_MAX_ENTRIES`; split is reserved |
+| Bulletin comment | ~60,000 bytes | `BULLETIN_MAX_BYTES` |
 
 `estimateCiphertextLength(30000)` is exactly `40000`; 30,001 plaintext bytes
 therefore choose the companion-comment transport.
 
 ---
 
-## 11. Error codes
+## 11. Error codes and UI-safe messages
 
 `VaultCryptoError` carries a stable `code` and a safe message. UI code should map
 the code to a friendly state and must never display partial plaintext.
@@ -631,6 +714,27 @@ the code to a friendly state and must never display partial plaintext.
 
 `parseBulletin`, `parseVaultMetadata`, `verifyGrant`, `verifyDelegation` and
 `isGrantValid` return `null`/`false` instead of throwing for untrusted input.
+
+The reader-facing state codes and the exact copy in
+`src/services/vaultUnlock.js` are:
+
+| State | Copy |
+| --- | --- |
+| `no-key` | Subscribe to read the rest of this post. |
+| `payment-pending` / `no-entry` | Payment received — unlocking… |
+| `expired` | Your membership ended. Renew to keep reading. |
+| `bulletin` | Could not verify your membership. Try again. |
+| `offline` | You appear to be offline. Reconnect and try again. |
+| `signature` | This grant could not be verified. |
+| `tampered` | This content could not be unlocked. |
+| `wrong-key` | This reader key cannot unlock this post. Use the device you subscribed with, or restore access. |
+| `unsupported` | This browser cannot unlock Vault. |
+| `no-plan` | The membership plan could not be loaded. Try again later. |
+| `unlocked` | Members-only content unlocked. |
+| `locked` (default) | This content is for members. |
+
+No state copy includes a key, ciphertext, plaintext, stack trace, reader
+account or server detail beyond what the reader already knows.
 
 ---
 
@@ -738,38 +842,66 @@ keyring or any entry invalidates the bulletin signature.
 
 ---
 
-## 14. Interop notes
+## 14. Interop guidance for other Hive frontends
 
-- **Other frontends.** A non-Vault frontend sees a normal Hive post with a teaser
-  and a marker comment. It can ignore `banksia_vault` and still render the
-  public body. Do not strip `banksia_vault` on edit; preserve it unless the
-  premium payload is re-encrypted.
+- **Teaser in the public body.** The post body is a normal Hive post. In
+  `section` mode it contains the public teaser plus the raw marker; in `post`
+  mode the body is the teaser. Render the teaser normally and never cloak.
 - **Marker detection.** Look for the raw `<!--banksia:vault-->` in the body
-  before Markdown/HTML rendering. Do not rely on it surviving a renderer.
+  before Markdown/HTML rendering. Do not rely on it surviving a renderer, and do
+  not display the marker text.
+- **Ciphertext location.** Read `json_metadata.banksia_vault` (or
+  `json_metadata.banksia_vault_payload` on companion comments). Ignore the
+  post body when looking for ciphertext.
+- **Filter Vault plumbing.** Exclude `content_type: "product"` posts and posts
+  with `banksia_vault_container: true` from archives, feeds, sitemaps and
+  search. The product is discoverable in the shop; the container exists only to
+  hold bulletin replies.
+- **Verify before decrypting.** Fetch the bulletin, verify its signature against
+  the blog's posting authority **and require `signer === blog`** (unless a
+  delegation certificate is implemented and valid), recompute `keyringHash`,
+  check `blog`, `period`, `rkt` and `expires`, and only then unwrap. Signature
+  and expiry checks happen before any AES-GCM work.
+- **Never trust metadata for money.** `banksia_vault.price`, `tier`, `product`
+  and `container` are display/interop hints. The HOM product post is the only
+  source of truth for recipient, amount, currency and recurrence. The recipient
+  is the product's author; show it as `@account` in the payment review.
+- **Preserve unknown metadata.** Do not strip `banksia_vault`,
+  `banksia_vault_product` or `banksia_vault_bulletin` on edit unless you are the
+  Vault client deliberately re-encrypting or disabling the feature.
 - **Hash validation.** Accept `sha256:<hex>` and base64url digests. Prefer the
   hex form when writing.
 - **Base64url.** No padding on output. Decoders should accept padding but reject
   invalid characters.
 - **AES-GCM.** The tag is WebCrypto's default 128-bit tag appended to the
   ciphertext. `ct` therefore includes the tag.
-- **Non-extractable reader keys.** Store the `CryptoKey` in IndexedDB where
-  possible. Unwrapping requires the reader's public key alongside a
-  non-extractable private key; keep both records.
+- **Reader key storage.** The Banksia beta stores an **extractable** P-256
+  private `CryptoKey` in IndexedDB so recovery export is possible. Unwrapping
+  requires the reader's public key alongside the private key. Any XSS on the
+  origin can export the key while the page is open; see `docs/SECURITY.md`.
 - **Cross-origin.** `alice.banksia.io`, `banksia.io` and a custom domain are
   separate origins. Custom-domain blogs stay read-only and deep-link premium
   reads to the apex. Never place the private key in a URL, fragment or referrer.
+  A reader key on one origin cannot be seen by another; recovery import is the
+  beta's only cross-origin path.
 - **Relay.** A relay posts from its own Hive account under the creator's
   container, with a certificate signed by the creator's posting key. It needs
-  neither the creator's posting key nor funds.
+  neither the creator's posting key nor funds. Relay/delegation is **not
+  implemented** in the W89 beta; readers reject a bulletin with a non-null
+  `delegation`.
 - **SEO.** The teaser is public and crawler-visible. Use
   `isAccessibleForFree: false` and a `hasPart` `WebPageElement` with
-  `cssSelector: ".banksia-locked"`. Do not cloak.
+  `cssSelector: ".banksia-locked"`. Do not include ciphertext or plaintext in
+  RSS, OG or JSON-LD.
 - **Revocation.** There is no on-chain delete. Rotating `K_ring` and `K_kid`
   forward is the revocation mechanism; old ciphertext remains readable by anyone
-  who already has the old key. Publish a new keyring blob and re-wrap to all
-  remaining members.
+  who already has the old key. Omitting a reader from the next bulletin stops
+  future keyrings but does not revoke an unexpired grant they already hold.
 - **Privacy.** `rkt` is pseudonymous but correlatable with the public key in the
   payment memo. Do not put personal data in memos beyond the Hive account name.
+- **Accessibility.** Render the paywall as a real region with a heading, price,
+  benefits, a primary Subscribe action and a secondary Restore action. Announce
+  unlock with `aria-live="polite"`; keep the locked plaintext out of the DOM.
 
 ---
 
@@ -791,14 +923,23 @@ keyring or any entry invalidates the bulletin signature.
 4. **Month range.** `period` is validated as `YYYY-MM` by format only; `2026-13`
    currently passes. Tighten to months `01`–`12` in a future revision.
 5. **Cancel matching.** The exact HF28 matching rule for
-   `recurrent_transfer` with amount `0` must be confirmed on testnet before the
-   cancel button ships.
-6. **Bulletin splitting.** Part permlinks and the manifest shape
+   `recurrent_transfer` with amount `0` has not been verified on testnet in this
+   repository. The reader cancel button ships with an explicit warning; treat
+   the cancellation as unverified until the testnet run is recorded.
+6. **Signer binding in the reader.** The normative rule is `signer === blog`
+   unless a valid delegation certificate names another signer. The implementation
+   enforces that rule, rejects non-null `delegation`, and the reply fallback only
+   accepts comments authored by the blog account. A third party cannot publish a
+   signed, higher-sequence bulletin to shadow the creator's grants.
+7. **Bulletin splitting.** Part permlinks and the manifest shape
    (`vault-<period>-<seq>-<part>`) are reserved, but the MVP assumes a single
    bulletin per sequence. Finalise the manifest schema before shipping a
    multi-part bulletin.
-7. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
+8. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
-8. **Delegation payload prefix.** Delegation certificates reuse
+9. **Delegation payload prefix.** Delegation certificates reuse
    `banksia.vault.grant.v1` because no dedicated prefix exists. A future revision
    may add `banksia.vault.delegation.v1`.
+10. **History window.** Grant issuance and the reader manager read at most the
+    most recent 1,000 account-history rows. Older payments and subscribers are
+    not discovered; paginate or use a HAF index before scaling past that window.
