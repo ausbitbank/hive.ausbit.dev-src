@@ -23,7 +23,7 @@
         <q-btn outline no-caps color="primary" label="Browse blogs" to="/blogs" />
       </div>
 
-      <div v-else-if="loading" class="subs-grid" aria-busy="true" aria-label="Loading subscriptions">
+      <div v-else-if="loading" class="subs-grid" role="status" aria-busy="true" aria-label="Loading subscriptions">
         <q-card v-for="n in 3" :key="n" flat bordered class="subs-card">
           <q-card-section>
             <q-skeleton type="rect" height="18px" width="45%" />
@@ -111,7 +111,7 @@
           <h2 id="subs-history-title" class="subs-section-title">Payment history</h2>
           <q-card flat bordered class="subs-card">
             <q-card-section>
-              <div class="subs-table-wrap">
+              <div class="subs-table-wrap" role="region" aria-label="Payment history" tabindex="0">
                 <table class="subs-table">
                   <caption class="subs-visually-hidden">Vault payment history for @{{ subject }}</caption>
                   <thead>
@@ -155,7 +155,7 @@
               </p>
               <p v-if="readerKeyError" class="subs-error" role="alert">{{ readerKeyError }}</p>
               <div v-else-if="!readerKeys.length" class="subs-muted">No reader keys on this device yet.</div>
-              <div v-else class="subs-table-wrap">
+              <div v-else class="subs-table-wrap" role="region" aria-label="Reader keys on this device" tabindex="0">
                 <table class="subs-table">
                   <caption class="subs-visually-hidden">Reader keys stored on this device</caption>
                   <thead>
