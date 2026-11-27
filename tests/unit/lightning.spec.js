@@ -5,8 +5,13 @@ import {
   feeSats,
   formatSats,
   invoiceStatus,
+  isV4vappAccount,
+  isV4vappTransfer,
+  isValidHiveAccount,
   lightningAddress,
+  lightningAddressDomain,
   lightningMemo,
+  normalizeAccount,
   normalizeFeePolicy,
   parseLightningTarget,
   parseV4vappMemo,
@@ -185,5 +190,34 @@ describe('v4vapp memos', () => {
   it('formats sats consistently', () => {
     expect(formatSats(1234.5, 1)).toBe('1,234.5 sats')
     expect(formatSats(null)).toBe('—')
+  })
+})
+
+describe('Lightning account routing helpers', () => {
+  it('normalises accounts and validates Hive names', () => {
+    expect(normalizeAccount('  @Alice ')).toBe('alice')
+    expect(normalizeAccount(null)).toBe('')
+    expect(isValidHiveAccount('@Alice')).toBe(true)
+    expect(isValidHiveAccount('ab')).toBe(false)
+    expect(isValidHiveAccount('not a name')).toBe(false)
+    expect(isValidHiveAccount(null)).toBe(false)
+  })
+
+  it('falls back to the hive domain for unknown currencies', () => {
+    expect(lightningAddressDomain('hive')).toBe('v4v.app')
+    expect(lightningAddressDomain('hbd')).toBe('hbd.v4v.app')
+    expect(lightningAddressDomain('unknown')).toBe('v4v.app')
+    expect(lightningAddress('alice', 'unknown')).toBe('alice@v4v.app')
+  })
+
+  it('matches only the v4vapp account family', () => {
+    expect(isV4vappAccount('v4vapp')).toBe(true)
+    expect(isV4vappAccount('@V4VAPP.hbd')).toBe(true)
+    expect(isV4vappAccount('v4vappx')).toBe(false)
+    expect(isV4vappAccount('alice')).toBe(false)
+    expect(isV4vappTransfer({ from: 'v4vapp', to: 'alice' })).toBe(true)
+    expect(isV4vappTransfer({ from: 'alice', to: 'v4vapp.hbd' })).toBe(true)
+    expect(isV4vappTransfer({ from: 'alice', to: 'bob' })).toBe(false)
+    expect(isV4vappTransfer()).toBe(false)
   })
 })
