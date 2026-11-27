@@ -86,6 +86,21 @@ describe('setPageMeta', () => {
     expect(metaContent('meta[name="twitter:image"]')).toBe(BASE_URL + '/images/post.png')
   })
 
+  it('uses a blog origin and site name when provided', () => {
+    const result = setPageMeta({
+      title: 'A post',
+      description: 'A blog post.',
+      url: '/a-post',
+      baseUrl: 'https://alice.banksia.io',
+      siteName: 'Alice writes'
+    })
+
+    expect(linkHref('link[rel="canonical"]')).toBe('https://alice.banksia.io/a-post')
+    expect(metaContent('meta[property="og:url"]')).toBe('https://alice.banksia.io/a-post')
+    expect(metaContent('meta[property="og:site_name"]')).toBe('Alice writes')
+    expect(result.url).toBe('https://alice.banksia.io/a-post')
+  })
+
   it('keeps absolute URLs from other origins', () => {
     setPageMeta({
       title: 'External',

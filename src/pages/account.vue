@@ -38,6 +38,8 @@
                   <router-link :to="'/@' + username + '/lightning'">Lightning</router-link>
                   <router-link :to="'/@' + username + '/delegations'">Delegations</router-link>
                   <router-link :to="linkBlog(username)">Blog</router-link>
+                  <router-link v-if="canEditAccount" :to="'/settings/blog?account=' + username">Blog site</router-link>
+                  <a v-else-if="blogSiteClaimed" :href="blogSiteUrl" target="_blank" rel="noopener noreferrer">Blog site</a>
                   <router-link :to="linkPosts(username)">Posts</router-link>
                   <router-link :to="linkComments(username)">Comments</router-link>
                   <router-link :to="'/@' + username + '/followers'">Followers</router-link>
@@ -690,6 +692,8 @@ import withdrawRoutes from 'components/withdrawRoutes.vue'
 import { setPageMeta, stripHtml, BASE_URL } from 'src/utils/pageMeta'
 import { fetchAccount, fetchWitnessByAccount } from 'src/services/chainData'
 import { parseAccountMetadata } from 'src/services/accountMetadata'
+import { readBlogSettings } from 'src/services/blogSettings'
+import { blogBaseUrl } from 'src/services/blogHost'
 import { metadataEditMode } from 'src/services/accountOnboarding'
 import { vestToHive } from 'src/services/wallet'
 import { formatReputation } from 'src/services/comments'
@@ -778,6 +782,15 @@ export default {
     },
     canEditAccount: {
       get () { return Boolean(this.account && this.loggedInUser && this.account.name === this.loggedInUser) }
+    },
+    blogSite () {
+      return readBlogSettings(this.account)
+    },
+    blogSiteClaimed () {
+      return this.blogSite.claimed
+    },
+    blogSiteUrl () {
+      return blogBaseUrl(this.account && this.account.name)
     },
     legacyJsonMeta: {
       get () { return this.visibleMetadata(this.account && this.account.json_metadata) }

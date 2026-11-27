@@ -140,3 +140,4 @@ The next free workstream number is **W84**.
 | [W81-banksia-rebrand](W81-banksia-rebrand.md) | Banksia rebrand and banksia.io cutover |
 | [W82-account-creation](W82-account-creation.md) | Account signup, public-key claim links and static batch signing |
 | [W83-profile-metadata-editor](W83-profile-metadata-editor.md) | Profile metadata editor and image uploads |
+| [W84-blog-hosting](W84-blog-hosting.md) | Account blogs on `*.banksia.io` |

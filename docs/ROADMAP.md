@@ -13,13 +13,16 @@ principles that constrain it. Delivered work and its verification records live i
 - The latest shipped slice covers local-first moderation (W71–W78), the
   user-selectable image proxy (W79), post quick look and feed position
   restoration (W80), the Banksia rebrand and banksia.io cutover (W81), CSP
-  reporting, vhost hardening, dependency updates, the repaired E2E suite, and
-  the profile metadata editor with image uploads (W83).
-- Local verification on 2026-11-26: `bun run lint` clean, `bun run test` green
-  with 1,574 tests across 184 files.
+  reporting, vhost hardening, dependency updates, the repaired E2E suite, the
+  profile metadata editor with image uploads (W83), and account blogs on
+  `*.banksia.io` (W84).
+- W84 is implemented and verified locally but not deployed: wildcard DNS/TLS,
+  the Worker deploy and a live claim smoke remain.
+- Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
+  with 1,642 tests across 189 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W84**.
+- The next free workstream number is **W85**.
 
 ## Vision
 
@@ -164,6 +167,27 @@ no stored active authority. Remaining work:
 - Publish a recovery-account policy before advertising the free pool.
 
 Record: [`W82`](workstreams/W82-account-creation.md).
+
+### 8. Blog hosting follow-ups — W84
+
+The free account blog at `<account>.banksia.io` is implemented and verified
+locally. Remaining work:
+
+- Deploy the slice: add a proxied `*.banksia.io` DNS record, install a wildcard
+  origin certificate, apply the vhost, deploy the metadata Worker, and smoke a
+  real claim.
+- Premium entitlements: recurring HBD (`recurrent_transfer`), HP delegation or
+  prepaid terms, plus premium themes. Verify entitlement from chain state;
+  never trust a `claimed` or tier field in user-writable metadata.
+- Custom domains via Cloudflare for SaaS custom hostnames, with a verification
+  UI. Keep custom-domain blogs read-only for signing.
+- A public, opt-in directory of claimed blogs, blog `sitemap.xml`/`robots.txt`
+  and an OG image fallback.
+- E2E and axe coverage for the blog routes at desktop and mobile widths.
+- Decide whether unclaimed previews stay public or become claim-only after the
+  first abuse report.
+
+Record: [`W84`](workstreams/W84-blog-hosting.md).
 
 ## Deferred and non-goals
 

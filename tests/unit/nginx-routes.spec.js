@@ -51,3 +51,22 @@ describe('nginx cache policy', () => {
     expect(CONFIG).not.toMatch(/^\s*expires\s/m)
   })
 })
+
+describe('nginx blog hosts', () => {
+  it('serves every first-level banksia.io subdomain from the same vhost', () => {
+    expect(CONFIG).toContain('server_name banksia.io www.banksia.io hive.ausbit.dev *.banksia.io;')
+    expect(CONFIG).toMatch(/map \$host \$hive_blog_host \{/)
+    expect(CONFIG).toContain('"~^(?!www\\.)[a-z0-9-]+\\.banksia\\.io$" 1;')
+  })
+
+  it('falls back to the SPA shell only on a blog host', () => {
+    expect(CONFIG).toMatch(/location @spa_fallback \{/)
+    expect(CONFIG).toContain('if ($hive_blog_host = 0) {')
+    expect(CONFIG).toContain('try_files /index.html =500;')
+  })
+
+  it('has a metadata shell for the apex blog settings page', () => {
+    expect(CONFIG).toContain('location = /settings/blog {')
+    expect(CONFIG).toContain('set $page_path "/settings/blog";')
+  })
+})

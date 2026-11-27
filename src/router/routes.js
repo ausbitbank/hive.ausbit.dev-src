@@ -72,6 +72,7 @@ const routes = [
       { path: 'create/batch', name: 'batch-create', component: () => import('pages/batchCreate.vue') },
       { path: 'create', name: 'create', component: () => import('pages/create.vue') },
       { path: 'appearance', name: 'appearance', component: () => import('pages/appearance.vue') },
+      { path: 'settings/blog', name: 'blog-settings', component: () => import('pages/blogSettings.vue') },
       { path: 'settings/skin', name: 'skin-studio', component: () => import('pages/skinStudio.vue') },
       { path: 'settings/moderation', name: 'moderation', component: () => import('pages/moderation.vue') },
       { path: 'themes', name: 'theme-wall', component: () => import('pages/themeWall.vue') },

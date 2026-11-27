@@ -16,6 +16,7 @@
     "banksia.io/settings/moderation*",
     "hive.ausbit.dev/settings/moderation*",
     "banksia.io/csp-report*",
-    "hive.ausbit.dev/csp-report*"
+    "hive.ausbit.dev/csp-report*",
+    "*.banksia.io/*"
   ]
 }

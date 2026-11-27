@@ -70,6 +70,28 @@ Notes:
   if Cloudflare terminates the connection and nginx headers are not preserved.
 - **Caching → Configuration**: keep HTML uncached or with a short TTL so new
   deployments are picked up. Hashed JS/CSS assets can be cached for a long time.
+- **Blog hosts**: add a proxied `*.banksia.io` DNS record. Universal SSL covers
+  first-level subdomains at the edge; the origin still needs a certificate valid
+  for `*.banksia.io` (Cloudflare Origin CA or a certbot DNS-01 certificate).
+
+## Blog hosts (`*.banksia.io`)
+
+- First-level subdomains are served by the same build and the same header
+  policy. HSTS already uses `includeSubDomains`, so a blog host cannot fall back
+  to HTTP.
+- A blog host is a **read-only** surface. It renders posts and deep-links
+  voting, comments and tips to the apex Banksia post. It does not expose the
+  signing queue, wallet, SmartLock or HiveAuth UI. This is deliberate: a future
+  custom domain is controlled by the blog owner, and users must not sign on an
+  origin the site does not control.
+- The metadata Worker validates the host label against the Hive account-name
+  shape and a reserved service list (`www`, `api`, `files`, `mail`, …).
+  `files.banksia.io` keeps its own vhost and is never a blog.
+- Blog settings are public on-chain metadata written with the posting key
+  through `account_update2`; no server stores them and no key leaves the
+  browser.
+- Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
+  normal posting-key metadata write, not an authority change.
 
 ## nginx / nginx2root (CVE-2026-123007 and friends)
 

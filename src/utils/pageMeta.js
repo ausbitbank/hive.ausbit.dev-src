@@ -12,9 +12,10 @@ export const DEFAULT_DESCRIPTION = BRAND.description
 const JSON_LD_ID = 'page-json-ld'
 const DEFAULT_MAX_LENGTH = 200
 
-function absoluteUrl (value, fallback) {
+function absoluteUrl (value, fallback, baseUrl = BASE_URL) {
+  const base = baseUrl || BASE_URL
   try {
-    return new URL(value || fallback, BASE_URL).href
+    return new URL(value || fallback, base).href
   } catch {
     return new URL(fallback, BASE_URL).href
   }
@@ -121,15 +122,26 @@ export function setJsonLd (jsonLd) {
 }
 
 // Apply page metadata. `url` and `image` may be site-relative; they are
-// normalised to absolute URLs against BASE_URL. Pass `noindex` for thin or
-// not-found pages: they get a robots noindex tag and no canonical.
-export function setPageMeta ({ title, description, image, url, type = 'website', jsonLd = null, noindex = false } = {}) {
+// normalised to absolute URLs against `baseUrl` (the current origin by
+// default). Pass `noindex` for thin or not-found pages: they get a robots
+// noindex tag and no canonical.
+export function setPageMeta ({
+  title,
+  description,
+  image,
+  url,
+  type = 'website',
+  jsonLd = null,
+  noindex = false,
+  baseUrl = BASE_URL,
+  siteName = SITE_NAME
+} = {}) {
   if (typeof document === 'undefined' || !document.head) return null
 
   const pageTitle = stripHtml(title, 120) || SITE_NAME
   const pageDescription = stripHtml(description, DEFAULT_MAX_LENGTH) || DEFAULT_DESCRIPTION
-  const canonical = absoluteUrl(url, '/')
-  const imageUrl = absoluteUrl(image, DEFAULT_IMAGE)
+  const canonical = absoluteUrl(url, '/', baseUrl)
+  const imageUrl = absoluteUrl(image, DEFAULT_IMAGE, baseUrl)
 
   document.title = pageTitle
 
@@ -138,7 +150,7 @@ export function setPageMeta ({ title, description, image, url, type = 'website',
   if (noindex) removeCanonical()
   else setCanonical(canonical)
 
-  setPropertyMeta('og:site_name', SITE_NAME)
+  setPropertyMeta('og:site_name', siteName || SITE_NAME)
   setPropertyMeta('og:type', type)
   setPropertyMeta('og:title', pageTitle)
   setPropertyMeta('og:description', pageDescription)

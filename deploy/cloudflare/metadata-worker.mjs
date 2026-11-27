@@ -15,6 +15,10 @@
 //
 // This file is not bundled into the SPA and is not deployed by scripts/deploy.sh.
 
+import { resolveBlogHost, blogPostPathFor } from '../../src/services/blogHost.js'
+import { readBlogSettings } from '../../src/services/blogSettings.js'
+import { buildBlogRss } from '../../src/services/blogFeed.js'
+
 const HIVE_RPCS = [
   'https://api.hive.blog',
   'https://api.openhive.network',
@@ -143,34 +147,38 @@ function proxiedImage (url, width = 800) {
   return 'https://images.hive.blog/' + width + 'x0/' + clean
 }
 
-async function postMetadata (author, permlink) {
-  const post = await rpc('bridge.get_post', { author, permlink, observer: '' })
-  if (!post || !post.author) return null
+async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', post = null } = {}) {
+  const row = post || await rpc('bridge.get_post', { author, permlink, observer: '' })
+  if (!row || !row.author) return null
   let metadata
   try {
-    metadata = typeof post.json_metadata === 'string' ? JSON.parse(post.json_metadata) : (post.json_metadata || {})
+    metadata = typeof row.json_metadata === 'string' ? JSON.parse(row.json_metadata) : (row.json_metadata || {})
   } catch {
     metadata = {}
   }
-  const title = stripMarkdown(post.title, 100) || permlink.replace(/-/g, ' ')
-  const description = stripMarkdown(post.body, 180) || ('A Hive post by @' + author + '.')
+  const title = stripMarkdown(row.title, 100) || permlink.replace(/-/g, ' ')
+  const description = stripMarkdown(row.body, 180) || ('A Hive post by @' + author + '.')
   const image = proxiedImage(firstImage(metadata)) || ('https://images.hive.blog/u/' + author + '/avatar')
+  const canonicalPath = path || '/@' + author + '/' + permlink
+  const suffix = siteName || ('@' + author + ' on Hive')
   return {
-    title: title + ' — @' + author + ' on Hive',
+    title: title + ' — ' + suffix,
     description,
     image,
     type: 'article',
-    path: '/@' + author + '/' + permlink,
+    path: canonicalPath,
+    origin,
+    siteName,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: title,
       description,
       image: [image],
-      datePublished: post.created || undefined,
-      dateModified: post.last_update || post.created || undefined,
+      datePublished: row.created || undefined,
+      dateModified: row.last_update || row.created || undefined,
       author: { '@type': 'Person', name: '@' + author, url: 'https://banksia.io/@' + author },
-      mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://banksia.io/@' + author + '/' + permlink }
+      mainEntityOfPage: { '@type': 'WebPage', '@id': origin + canonicalPath }
     }
   }
 }
@@ -231,8 +239,206 @@ function tagged (response, value) {
   return copy
 }
 
+function blogTenant (url) {
+  const resolved = resolveBlogHost(url.hostname)
+  return resolved.mode === 'blog' ? resolved : null
+}
+
+/**
+ * The apex home shell embeds a ~39 KB JSON snapshot of dashboard data. A blog
+ * page never uses it, so drop it before the shell reaches a reader.
+ */
+export function stripHomeSnapshot (html) {
+  return String(html || '').replace(
+    /<script\b[^>]*\bid=["']?home-snapshot["']?[^>]*>[\s\S]*?<\/script>/i,
+    ''
+  )
+}
+
+async function getAccount (name) {
+  const result = await rpc('condenser_api.get_accounts', [[name]])
+  return Array.isArray(result) ? result[0] || null : null
+}
+
+function blogProfileMeta (profile, name) {
+  const meta = profile?.metadata?.profile || profile?.profile || {}
+  return {
+    display: stripMarkdown(meta.name, 80) || name,
+    about: stripMarkdown(meta.about, 180) || '',
+    image: proxiedImage(meta.profile_image, 400) || ('https://images.hive.blog/u/' + name + '/avatar'),
+    cover: proxiedImage(meta.cover_image, 1200) || ''
+  }
+}
+
+async function blogMetadata (url, tenant) {
+  const [account, profile] = await Promise.all([
+    getAccount(tenant.account),
+    rpc('bridge.get_profile', { account: tenant.account })
+  ])
+  if (!account && !profile) return null
+
+  const read = readBlogSettings(account || { name: tenant.account })
+  const settings = read.settings
+  const profileMeta = blogProfileMeta(profile, tenant.account)
+  const origin = 'https://' + url.hostname
+  const title = settings.title || profileMeta.display
+  const description = settings.description || profileMeta.about || ('Posts by @' + tenant.account + ' on Hive.')
+  const image = profileMeta.cover || profileMeta.image
+  const claimed = read.claimed
+  const path = url.pathname.replace(/\/+$/, '') || '/'
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: title,
+    description,
+    url: origin + '/',
+    author: {
+      '@type': 'Person',
+      name: '@' + tenant.account,
+      url: 'https://banksia.io/@' + tenant.account
+    }
+  }
+
+  if (path === '/' || path === '') {
+    return {
+      title: title + ' — Hive blog',
+      description,
+      image,
+      type: 'website',
+      path: '/',
+      origin,
+      siteName: title,
+      noindex: !claimed,
+      jsonLd: blogJsonLd
+    }
+  }
+
+  if (path === '/about' || path === '/contact') {
+    const label = path === '/about' ? 'About' : 'Contact'
+    return {
+      title: label + ' — ' + title,
+      description,
+      image,
+      type: 'website',
+      path,
+      origin,
+      siteName: title,
+      noindex: !claimed,
+      jsonLd: {
+        ...blogJsonLd,
+        '@type': path === '/about' ? 'AboutPage' : 'ContactPage',
+        name: label + ' ' + title,
+        url: origin + path
+      }
+    }
+  }
+
+  // Post routes: /<permlink> for the owner, /@author/<permlink> for a
+  // contributor, and /p/<permlink> as a collision-proof fallback.
+  const ownerPost = path.match(/^\/(?:p\/)?([a-z0-9][a-z0-9._-]*)$/i)
+  const authorPost = path.match(/^\/@([a-z0-9.-]+)\/([a-z0-9][a-z0-9._-]*)$/i)
+  const author = ownerPost ? tenant.account : (authorPost ? authorPost[1] : '')
+  const permlink = ownerPost ? ownerPost[1] : (authorPost ? authorPost[2] : '')
+  if (!author || !permlink) return null
+
+  const post = await rpc('bridge.get_post', { author, permlink, observer: '' })
+  if (!post || !post.author) return null
+  const canonicalPath = blogPostPathFor(post.permlink, post.author, tenant.account)
+  return postMetadata(post.author, post.permlink, {
+    origin,
+    path: canonicalPath,
+    siteName: title,
+    post
+  })
+}
+
+async function blogRss (url, tenant) {
+  const [account, profile] = await Promise.all([
+    getAccount(tenant.account),
+    rpc('bridge.get_profile', { account: tenant.account })
+  ])
+  const read = readBlogSettings(account || { name: tenant.account })
+  const settings = read.settings
+  const profileMeta = blogProfileMeta(profile, tenant.account)
+  const accounts = [tenant.account, ...(Array.isArray(settings.authors) ? settings.authors : [])]
+  const unique = [...new Set(accounts.filter(Boolean))]
+  const batches = await Promise.allSettled(unique.map(name => rpc('bridge.get_account_posts', {
+    sort: 'posts',
+    account: name,
+    observer: null,
+    limit: 20,
+    start_author: null,
+    start_permlink: null
+  })))
+  const posts = batches
+    .filter(batch => batch.status === 'fulfilled' && Array.isArray(batch.value))
+    .flatMap(batch => batch.value)
+  const xml = buildBlogRss({
+    account: tenant.account,
+    title: settings.title || profileMeta.display,
+    description: settings.description || profileMeta.about,
+    posts,
+    baseUrl: 'https://' + url.hostname,
+    limit: 20
+  })
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      'content-type': 'application/rss+xml; charset=utf-8',
+      'cache-control': 'public, max-age=' + CACHE_SECONDS,
+      'x-hive-meta': 'blog-rss'
+    }
+  })
+}
+
+async function handleBlog (request, tenant) {
+  const url = new URL(request.url)
+  if (request.method !== 'GET') return fetch(request)
+  if (url.pathname === '/rss.xml' || url.pathname === '/rss') {
+    return blogRss(url, tenant).catch(() => fetch(request))
+  }
+  // Assets are shared with the main app and never need metadata.
+  if (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname)) {
+    return fetch(request)
+  }
+  if (!hasHtml(request)) return fetch(request)
+
+  const cache = typeof caches !== 'undefined' ? caches.default : null
+  const cacheKey = new Request(url.toString(), request)
+  if (cache) {
+    const cached = await cache.match(cacheKey)
+    if (cached) return cached
+  }
+
+  const originResponse = await fetch(request)
+  if (!originResponse.ok || !(originResponse.headers.get('content-type') || '').includes('text/html')) {
+    return originResponse
+  }
+  const fallback = originResponse.clone()
+
+  try {
+    const meta = await blogMetadata(url, tenant)
+    if (!meta) return tagged(fallback, 'blog-miss')
+    const html = rewriteHead(stripHomeSnapshot(await originResponse.text()), meta)
+    const headers = new Headers(originResponse.headers)
+    headers.delete('content-length')
+    headers.delete('content-encoding')
+    headers.delete('etag')
+    headers.delete('last-modified')
+    const out = new Response(html, { status: 200, headers })
+    out.headers.set('content-type', 'text/html; charset=utf-8')
+    out.headers.set('cache-control', 'public, max-age=' + CACHE_SECONDS)
+    out.headers.set('x-hive-meta', 'blog')
+    if (cache) await cache.put(cacheKey, out.clone())
+    return out
+  } catch {
+    return tagged(fallback, 'blog-error')
+  }
+}
+
 export function rewriteHead (html, meta) {
   let next = html
+  const origin = meta.origin || 'https://banksia.io'
   const title = escapeHtml(meta.title)
   next = next.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + title + '</title>')
   const setMeta = (attribute, key, value) => {
@@ -247,14 +453,22 @@ export function rewriteHead (html, meta) {
   setMeta('property', 'og:title', meta.title)
   setMeta('property', 'og:description', meta.description)
   setMeta('property', 'og:image', meta.image)
-  setMeta('property', 'og:url', 'https://banksia.io' + meta.path)
+  setMeta('property', 'og:url', origin + meta.path)
   setMeta('property', 'og:type', meta.type)
+  if (meta.siteName) setMeta('property', 'og:site_name', meta.siteName)
   setMeta('name', 'twitter:title', meta.title)
   setMeta('name', 'twitter:description', meta.description)
   setMeta('name', 'twitter:image', meta.image)
-  next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="https://banksia.io' + meta.path + '">')
+  if (meta.noindex) {
+    setMeta('name', 'robots', 'noindex, follow')
+    next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '')
+  } else {
+    next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="' + escapeHtml(origin + meta.path) + '">')
+  }
   next = next.replace(/<script\b[^>]*type=["']?application\/ld\+json["']?[^>]*>[\s\S]*?<\/script>/gi, '')
-  next = next.replace('</head>', '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
+  if (meta.jsonLd) {
+    next = next.replace('</head>', '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
+  }
   // Replace the static crawler shell heading and summary as well.
   next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<h1>)[\s\S]*?(<\/h1>)/i, '$1' + title + '$2')
   next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<\/h1><p>)[\s\S]*?(<\/p>)/i, '$1' + escapeHtml(meta.description) + '$2')
@@ -373,6 +587,12 @@ export default {
     if (url.pathname === '/csp-report' || url.pathname.startsWith('/csp-report/')) {
       return handleCspReport(request)
     }
+
+    // Account blogs are served from the same build on a first-level subdomain.
+    // This runs before the apex metadata rules so a blog host never falls
+    // through to the explorer's account/post shells.
+    const tenant = blogTenant(url)
+    if (tenant) return handleBlog(request, tenant)
 
     const theme = await themeShell(request).catch(() => null)
     if (theme) return theme
