@@ -666,6 +666,22 @@ describe('publish metadata integration', () => {
     expect(items[0][2][1].permlink).toBe('vault-payload-1')
     expect(items[0][2][1].parent_permlink).toBe('publish-one')
   })
+
+  it('forces a companion comment to the queued account', () => {
+    const companions = [
+      ['comment', {
+        parent_author: 'mallory',
+        parent_permlink: 'someone-else',
+        author: 'mallory',
+        permlink: 'vault-payload-1',
+        body: ''
+      }]
+    ]
+    const items = premiumCompanionQueueItems({ account: ACCOUNT, permlink: 'publish-one', companions })
+    expect(items[0][0]).toBe(ACCOUNT)
+    expect(items[0][2][1].author).toBe(ACCOUNT)
+    expect(items[0][2][1].parent_author).toBe(ACCOUNT)
+  })
 })
 
 describe('draft vault round-trip', () => {

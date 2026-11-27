@@ -437,7 +437,7 @@ export function premiumCompanionQueueItems ({ account, permlink, companions } = 
         ...operation,
         parent_author: author,
         parent_permlink: operation.parent_permlink || parent,
-        author: operation.author || author
+        author
       }]
     ])
   }
