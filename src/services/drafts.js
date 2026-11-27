@@ -7,6 +7,7 @@
 import { byteLength, readingMinutes, wordCount } from '../utils/markdownEditor'
 import { sanitizeTag } from '../utils/hiveTag'
 import { safeExternalUrl } from '../utils/safeUrl'
+import { normalizeProductFields } from './productDraft'
 
 export const DRAFT_STORAGE_KEY = 'composeDrafts'
 export const DRAFT_EXPORT_TYPE = 'hive-drafts'
@@ -220,6 +221,7 @@ export function normalizeDraft (raw, now = Date.now()) {
     countdown: normalizeCountdown(source.countdown),
     portfolio: source.portfolio === true,
     collection: source.collection === true,
+    product: normalizeProductFields(source.product),
     authorDisplay: normalizeAuthorDisplay(source.authorDisplay),
     scheduledAt: normalizeScheduledAt(source.scheduledAt),
     archivedAt: normalizeArchivedAt(source.archivedAt),

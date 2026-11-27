@@ -29,6 +29,7 @@ import {
 import { byteLength } from '../utils/markdownEditor'
 import { collectImageUrls, deriveDescription, extractMentionedUsers, normalizeImageUrl } from '../utils/media'
 import { coverIssueDetail } from './imageHealth'
+import { PRODUCT_CONTENT_TYPE, PRODUCT_METADATA_KEYS, buildProductMetadata } from './productDraft'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 
@@ -237,6 +238,23 @@ export function buildPostMetadata (draft) {
     metadata.original_author = crossPost.author
     metadata.original_permlink = crossPost.permlink
   }
+
+  // Product mode is a thin overlay: the normal title/body and cover still
+  // travel in the comment operation. Product tags replace the discovery tags
+  // only when the writer set them, and product images are a fallback when the
+  // post itself has no cover or body image.
+  const product = buildProductMetadata(source.product)
+  if (Object.keys(product).length) {
+    const productTags = product.tags
+    const productImages = product.image
+    delete product.tags
+    delete product.image
+    Object.assign(metadata, product)
+    if (Array.isArray(productTags) && productTags.length) metadata.tags = productTags
+    if (Array.isArray(productImages) && productImages.length && !metadata.image) {
+      metadata.image = productImages
+    }
+  }
   return metadata
 }
 
@@ -289,6 +307,12 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
   const previous = previousMetadata && typeof previousMetadata === 'object'
     ? stripManagedMetadata(previousMetadata)
     : {}
+  // Product fields survive a normal edit because they are rebuilt below, but
+  // turning product mode off on an existing product must remove the old keys.
+  const wasProduct = String(previousMetadata && previousMetadata.content_type || '').toLowerCase() === PRODUCT_CONTENT_TYPE
+  if (wasProduct && !(draft && draft.product && draft.product.enabled)) {
+    for (const key of PRODUCT_METADATA_KEYS) delete previous[key]
+  }
   const next = isComment ? null : buildPostMetadata(draft)
   // Keep an existing cover when the draft has no images of its own, unless the
   // editor loaded and cleared them.

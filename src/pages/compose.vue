@@ -253,6 +253,14 @@
           </div>
         </section>
 
+        <product-fields
+          v-if="!isEditingComment"
+          v-model="productFields"
+          :title="draft.title"
+          :description="draft.body"
+          :cover-image="coverImage"
+        />
+
         <section v-if="!isEditingComment" class="compose-panel home-card home-panel" aria-labelledby="compose-community-title">
           <div class="home-panel__head">
             <div>
@@ -3355,6 +3363,7 @@
 <script>
 import { LocalStorage, copyToClipboard, exportFile } from 'quasar'
 import { defineAsyncComponent } from 'vue'
+import ProductFields from 'src/components/ProductFields.vue'
 import moment from 'src/utils/time'
 import { signImageUploadChallenge } from 'src/services/imageSigning'
 import { applyMarkdownAction, continueMarkdownList, markdownHeadings, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
@@ -3465,6 +3474,15 @@ import {
   resolvedTags,
   stripManagedMetadata
 } from 'src/services/publish'
+import {
+  PRODUCT_CONTENT_TYPE,
+  PRODUCT_METADATA_KEYS,
+  defaultProductFields,
+  normalizeProductFields,
+  productPreview,
+  readProductFieldsFromMetadata,
+  validateProductFields
+} from 'src/services/productDraft'
 import { isOnline } from 'src/services/connectivity'
 import { setPageMeta } from 'src/utils/pageMeta'
 
@@ -3505,7 +3523,8 @@ export default {
   name: 'ComposePage',
   components: {
     render: defineAsyncComponent(() => import('components/render.vue')),
-    MarkdownToolbar: defineAsyncComponent(() => import('components/MarkdownToolbar.vue'))
+    MarkdownToolbar: defineAsyncComponent(() => import('components/MarkdownToolbar.vue')),
+    ProductFields
   },
   data () {
     return {
@@ -3705,6 +3724,21 @@ export default {
     collectionTag () {
       return COLLECTION_TAG
     },
+    productFields: {
+      get () {
+        return this.draft ? normalizeProductFields(this.draft.product) : defaultProductFields()
+      },
+      set (value) {
+        if (this.draft) this.draft.product = normalizeProductFields(value)
+      }
+    },
+    productValidation () {
+      if (!this.draft) return { ok: true, errors: [], warnings: [], value: defaultProductFields() }
+      return validateProductFields(this.draft.product, {
+        title: this.draft.title,
+        description: this.draft.body
+      })
+    },
     countdownLocal: {
       get () {
         return toLocalDateTimeInput(this.draft?.countdown)
@@ -3773,6 +3807,37 @@ export default {
         username: this.loggedInUser,
         imageHealth: this.imageHealth
       })
+      if (this.isProduct) {
+        const validation = this.productValidation
+        if (validation.errors.length) {
+          items.push({
+            id: 'product',
+            label: 'Product',
+            status: 'error',
+            detail: validation.errors[0]
+          })
+        } else {
+          const preview = productPreview({
+            ...this.draft.product,
+            title: this.draft.title
+          })
+          items.push({
+            id: 'product',
+            label: 'Product',
+            status: 'ok',
+            detail: preview.priceLabel + ' · ' + preview.statusLabel +
+              (preview.subscription ? ' · every ' + preview.recurrenceHours + ' hours' : ' · one-time')
+          })
+        }
+        if (validation.warnings.length) {
+          items.push({
+            id: 'productWarning',
+            label: 'Product details',
+            status: 'warn',
+            detail: validation.warnings[0]
+          })
+        }
+      }
       return items.filter(item => {
         if (!item.dismissKey || item.status !== 'warn') return true
         return !this.dismissedChecklistWarnings.includes(item.dismissKey)
@@ -3814,6 +3879,14 @@ export default {
       if (draft.countdown) rows.push({ label: 'Countdown', value: new Date(draft.countdown).toLocaleString() })
       if (draft.portfolio) rows.push({ label: 'Portfolio', value: 'Shown' })
       if (draft.collection) rows.push({ label: 'Collection', value: 'Flagged' })
+      if (this.isProduct) {
+        const preview = productPreview({ ...draft.product, title: draft.title })
+        rows.push({
+          label: 'Product',
+          value: preview.priceLabel + ' · ' + preview.statusLabel +
+            (preview.subscription ? ' · every ' + preview.recurrenceHours + ' hours' : ' · one-time')
+        })
+      }
       if (draft.authorDisplay) rows.push({ label: 'Display author', value: draft.authorDisplay })
       if (draft.crossPost) rows.push({ label: 'Cross-post', value: '@' + draft.crossPost.author + '/' + draft.crossPost.permlink })
       if (draft.alsoReblog && this.postingToCommunity && !this.isEditing) {
@@ -3829,6 +3902,11 @@ export default {
         ? editing.previousMetadata
         : null
       const previous = previousMetadata ? stripManagedMetadata(previousMetadata) : {}
+      // Turning product mode off removes the product keys an earlier edit wrote.
+      const wasProduct = String(previousMetadata && previousMetadata.content_type || '').toLowerCase() === PRODUCT_CONTENT_TYPE
+      if (wasProduct && !this.isProduct) {
+        for (const key of PRODUCT_METADATA_KEYS) delete previous[key]
+      }
       // Comment edits keep only the app/format marker over preserved keys.
       if (editing && editing.parentAuthor) {
         return JSON.stringify({ ...previous, app: 'banksia.io', format: 'markdown' }, null, 2)
@@ -3841,7 +3919,9 @@ export default {
       return JSON.stringify({ ...previous, ...next }, null, 2)
     },
     canPublish () {
-      return Boolean(this.draft) && canPublishDraft(this.draft, { username: this.loggedInUser })
+      if (!this.draft) return false
+      if (this.isProduct && !this.productValidation.ok) return false
+      return canPublishDraft(this.draft, { username: this.loggedInUser })
     },
     activeDraftTitle () {
       return this.draft ? draftDisplayTitle(this.draft) : 'New draft'
@@ -3855,6 +3935,15 @@ export default {
     /** Editing a reply: no title, no category, no reward settings. */
     isEditingComment () {
       return Boolean(this.draft && this.draft.editing && this.draft.editing.parentAuthor)
+    },
+    /** Product authoring is a top-level post mode; comment edits never use it. */
+    isProduct () {
+      return Boolean(
+        this.draft &&
+        this.draft.product &&
+        this.draft.product.enabled &&
+        !this.isEditingComment
+      )
     },
     /** Only real community destinations offer the companion blog reblog. */
     postingToCommunity () {
@@ -5283,6 +5372,7 @@ export default {
         countdown: '',
         portfolio: false,
         collection: false,
+        product: defaultProductFields(),
         authorDisplay: '',
         beneficiaries: normalizeBeneficiaries((this.$hiveStore.user.settings.beneficiary || []).map(item => ({
           account: item.account,
@@ -5341,6 +5431,7 @@ export default {
           portfolio: metadata.portfolio === true,
           collection: metadata.collection === true ||
             tags.map(tag => normalizeTag(tag)).includes(COLLECTION_TAG),
+          product: readProductFieldsFromMetadata(metadata),
           authorDisplay: metadata.author || '',
           beneficiaries: (post.beneficiaries || []).map(item => ({ account: item.account, weight: Number(item.weight) })),
           rewards: {
@@ -5414,6 +5505,7 @@ export default {
         countdown: draft.countdown,
         portfolio: draft.portfolio,
         collection: draft.collection,
+        product: draft.product,
         authorDisplay: draft.authorDisplay,
         scheduledAt: draft.scheduledAt
       })
