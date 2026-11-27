@@ -54,7 +54,7 @@ principles that constrain it. Delivered work and its verification records live i
   `ausbitclank`. See
   [`docs/workstreams/W89-premium-memberships.md`](workstreams/W89-premium-memberships.md).
 - Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
-  `bun run test` green with **2,064 tests across 215 files**, `bun run build`
+  `bun run test` green with **2,068 tests across 215 files**, `bun run build`
   succeeded, and `bun run perf:check` passed after a documented re-baseline.
   `e2e/vault.spec.js` passed **8/8** in Chromium with axe clean at 1440×900 and
   390×844 for the locked post, `/subscribe`, `/settings/blog/vault` and

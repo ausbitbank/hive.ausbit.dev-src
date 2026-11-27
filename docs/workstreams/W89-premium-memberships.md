@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T135528Z-c7185ec7ed7e`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T141031Z-ef65e910ca6e`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T135537Z.tar.gz`
-  (sha256 `cb067fcef4b1220bd91d5ed9d06846dabbfecd5887db4e556f3f51b811a50f12`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T135537Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T141039Z.tar.gz`
+  (sha256 `34d3aa5c4b8f82306b499a2c3ebf99c5c90fca1ec928312e14d37428629317d0`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T141039Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -411,6 +411,14 @@ Deployed on 2026-11-27 from `master`:
 - The four long-standing E2E failures were stale test fixtures: the skin specs
   still wrote the legacy `hive.ausbit.dev` namespace, the login selector matched
   a post title, and the mobile logo assertion assumed the old square mark.
+- The price field re-normalised on every keystroke, so it snapped back to
+  `5.000 HBD`. It now keeps a local draft and commits a canonical amount on
+  blur/Enter.
+- Product and container posts have no `comment_options`; Keychain's
+  `requestPost` returned `incomplete` for them. Top-level comments without
+  options now go through `requestBroadcast` with the exact operation.
+- Verified live with a stubbed Keychain: the product action called
+  `requestBroadcast` with a single `comment` operation and the queue sent it.
 
 ### Live write smoke (2026-11-27)
 

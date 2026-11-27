@@ -59,6 +59,13 @@ describe('Vault settings controls', () => {
     expect(button(wrapper, 'Save Vault settings').props('disable')).toBe(false)
     const toggle = wrapper.findAllComponents(QToggle).find(item => item.props('label') === 'Enable members-only content')
     expect(toggle.props('disable')).toBe(false)
+    const price = wrapper.findAllComponents(QInput).find(item => item.props('label') === 'Price per month')
+    expect(price.props('disable')).toBe(false)
+
+    wrapper.vm.priceInput = '0.500'
+    wrapper.vm.commitPrice()
+    const updates = wrapper.emitted('update:modelValue') || []
+    expect(updates.at(-1)[0].price).toBe('0.500 HBD')
   })
 
   it('keeps every action disabled for a read-only viewer', () => {

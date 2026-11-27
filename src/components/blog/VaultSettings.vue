@@ -46,14 +46,15 @@
 
       <div class="vault-settings__grid">
         <q-input
-          :model-value="modelValue.price"
+          v-model="priceInput"
           outlined
           dense
           label="Price per month"
           suffix="HBD"
           :disable="!canEdit || Boolean(busy)"
           :rules="[priceRule]"
-          @update:model-value="patch({ price: normalizePriceInput($event) })"
+          @blur="commitPrice"
+          @keyup.enter="commitPrice"
         />
         <q-input
           :model-value="modelValue.recurrence"
@@ -328,6 +329,7 @@ export default {
     return {
       passphrase: '',
       passphraseConfirm: '',
+      priceInput: '',
       busy: '',
       message: '',
       error: '',
@@ -340,8 +342,7 @@ export default {
   computed: {
     accountName () {
       return (this.account && this.account.name) || ''
-    },
-    dashboardPath () {
+    },    dashboardPath () {
       return '/settings/blog/vault' + (this.accountName ? '?account=' + encodeURIComponent(this.accountName) : '')
     },
     passphraseValid () {
@@ -358,6 +359,14 @@ export default {
       return Math.min(VAULT_MAX_BYTES, BLOG_MAX_BYTES)
     }
   },
+  watch: {
+    'modelValue.price' (value) {
+      this.priceInput = typeof value === 'string' ? value : ''
+    }
+  },
+  created () {
+    this.priceInput = this.modelValue.price || ''
+  },
   methods: {
     patch (changes) {
       const next = normalizeVaultSettings({ ...this.modelValue, ...changes }, { account: this.account })
@@ -365,8 +374,15 @@ export default {
       if (!next.ok) this.error = next.errors[0] || 'The Vault settings are not valid.'
       else this.error = ''
     },
-    normalizePriceInput (value) {
-      return formatVaultPrice(value) || String(value || '')
+    commitPrice () {
+      const formatted = formatVaultPrice(this.priceInput)
+      if (!formatted) {
+        this.error = 'Use a price like 5.000 HBD'
+        this.priceInput = this.modelValue.price || ''
+        return
+      }
+      this.priceInput = formatted
+      this.patch({ price: formatted })
     },
     priceRule (value) {
       return Boolean(formatVaultPrice(value)) || 'Use a price like 5.000 HBD'

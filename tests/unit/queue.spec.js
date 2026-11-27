@@ -3,6 +3,7 @@ import {
   QUEUE_STATUS,
   canBroadcast,
   canRemove,
+  commentBroadcastMode,
   createQueueMeta,
   expandQueueOperation,
   keyRequirement,
@@ -242,5 +243,27 @@ describe('queue helpers', () => {
     expect(canBroadcast(QUEUE_STATUS.SENT)).toBe(false)
     expect(canRemove(QUEUE_STATUS.BROADCASTING)).toBe(false)
     expect(canRemove(QUEUE_STATUS.SENT)).toBe(true)
+  })
+})
+
+describe('comment broadcast mode', () => {
+  const base = { author: 'alice', permlink: 'hello', title: 'Hello', body: 'Body', parent_author: '', parent_permlink: 'hive-1', json_metadata: '{}' }
+
+  it('uses requestBroadcast for top-level comments without comment options', () => {
+    expect(commentBroadcastMode(['comment', base])).toBe('raw')
+  })
+
+  it('uses requestPost for a normal top-level post with comment options', () => {
+    expect(commentBroadcastMode(['comment', { ...base, comment_options: { extensions: [] } }])).toBe('post')
+  })
+
+  it('uses requestBroadcast for replies, edits and reblogs', () => {
+    expect(commentBroadcastMode(['comment', { ...base, parent_author: 'bob' }])).toBe('raw')
+    expect(commentBroadcastMode(['comment', { ...base, _edit: true, comment_options: { extensions: [] } }])).toBe('raw')
+    expect(commentBroadcastMode(['comment', { ...base, _reblog: true, comment_options: { extensions: [] } }])).toBe('raw')
+  })
+
+  it('defaults non-comment operations to raw', () => {
+    expect(commentBroadcastMode(['transfer', { from: 'alice' }])).toBe('raw')
   })
 })

@@ -198,6 +198,7 @@ import {
   QUEUE_STATUS,
   canBroadcast,
   canRemove,
+  commentBroadcastMode,
   expandQueueOperation,
   keyRequirement,
   nextActionableIndex,
@@ -506,7 +507,7 @@ export default {
       if (operation[0] === 'vote') {
         result = await keychain(window, 'requestVote', user, operation[1].permlink, operation[1].author, operation[1].weight)
       } else if (operation[0] === 'comment') {
-        const isEdit = operation[1]._edit === true
+        const broadcastMode = commentBroadcastMode(operation)
         // A post can ask for a self-reblog in the same transaction. Build the
         // exact operations instead of requestPost, which only carries one.
         if (operation[1]._reblog === true) {
@@ -529,17 +530,10 @@ export default {
         delete operation[1]._edit
         delete operation[1]._reblog
 
-        if (isEdit) {
-          // Edits must be broadcast as a bare `comment` operation. requestPost
-          // always appends a `comment_options` operation with a default
-          // 100000 HBD payout cap, which the chain rejects on an edit with
-          // "A comment cannot accept a greater payout".
-          result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
-        } else if (operation[1].parent_author) {
-          // Replies and container comments (Snaps, Waves, Moments) are plain
-          // comments. Send the exact operation through requestBroadcast:
-          // requestPost adds post-only comment_options that a comment cannot
-          // carry, and some Keychain versions reject the whole request.
+        if (broadcastMode === 'raw') {
+          // Edits, replies and comments without comment options (Vault product
+          // and container) go through requestBroadcast. requestPost appends
+          // post-only defaults and returns "incomplete" when options are absent.
           result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
         } else {
           result = await keychain(

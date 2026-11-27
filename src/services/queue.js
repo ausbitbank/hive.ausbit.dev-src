@@ -162,6 +162,26 @@ export function expandQueueOperation (operation) {
   return operations
 }
 
+/**
+ * How a queued `comment` should be handed to Keychain.
+ *
+ * `requestPost` is convenient for normal top-level posts because it also adds
+ * comment options, but Keychain returns "incomplete" for a top-level comment
+ * with no `comment_options` (the Vault product and container). Replies and
+ * edits already require the exact raw operation. Send those through
+ * `requestBroadcast` instead of guessing at requestPost's defaults.
+ *
+ * @returns {'raw'|'post'}
+ */
+export function commentBroadcastMode (operation) {
+  if (!Array.isArray(operation) || operation[0] !== 'comment') return 'raw'
+  const data = operation[1] && typeof operation[1] === 'object' ? operation[1] : {}
+  if (data._edit === true || data._reblog === true) return 'raw'
+  if (data.parent_author) return 'raw'
+  if (!data.comment_options) return 'raw'
+  return 'post'
+}
+
 export function operationType (action) {
   const op = Array.isArray(action) ? action[2] : null
   return Array.isArray(op) ? op[0] : ''
