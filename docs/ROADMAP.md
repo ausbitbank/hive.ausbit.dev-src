@@ -72,6 +72,14 @@ principles that constrain it. Delivered work and its verification records live i
   public history and the verified bulletin, is cached for 60 seconds, and never
   signs anything. See
   [`docs/workstreams/W94-vault-pending-badge.md`](workstreams/W94-vault-pending-badge.md).
+- W96 removes duplicated read work on the account, delegation, price, search,
+  trail and wallet paths, and guards post navigation against stale responses.
+  See
+  [`docs/workstreams/W96-read-path-performance.md`](workstreams/W96-read-path-performance.md).
+- W97 names icon-only controls, replaces mouse-only amount/preview actions with
+  real buttons, removes the nested “Remember me” checkbox and makes the
+  recently-voted carousel respect reduced motion with capped retries. See
+  [`docs/workstreams/W97-component-a11y.md`](workstreams/W97-component-a11y.md).
 - W95 is a reliability sweep: post-detail caches now invalidate after a write,
   account-history filters rebuild instead of growing, malformed filter names no
   longer throw, empty filtered pages stop spinning, `/tip` and `/token` have
@@ -79,12 +87,12 @@ principles that constrain it. Delivered work and its verification records live i
   tabs, and three legacy pages have a page-level `h1`. See
   [`docs/workstreams/W95-reliability-sweep.md`](workstreams/W95-reliability-sweep.md).
 - Local verification on 2026-11-28 at the W94 gate: `bun run lint` clean,
-  `bun run test` green with **2,217 tests across 228 files**, and
+  `bun run test` green with **2,228 tests across 231 files**, and
   `bun run build` succeeded. The four Playwright failures listed in the
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree; the targeted specs pass 8/8. The full
   Chromium suite remains the release gate.
-- The next free workstream number is **W96**. **W90** remains the separate
+- The next free workstream number is **W98**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

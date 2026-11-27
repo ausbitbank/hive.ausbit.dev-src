@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W96**. **W90** remains the separate
+The next free workstream number is **W98**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -155,3 +155,5 @@ service.
 | [W93-subscription-cancel-safety](W93-subscription-cancel-safety.md) | Only cancel open Vault subscriptions; match pair_id |
 | [W94-vault-pending-badge](W94-vault-pending-badge.md) | Vault pending-grant badge and visibility-aware auto-issue |
 | [W95-reliability-sweep](W95-reliability-sweep.md) | Cache, account filters, polling and page states |
+| [W96-read-path-performance](W96-read-path-performance.md) | Account, delegation, price, search and trail reads |
+| [W97-component-a11y](W97-component-a11y.md) | Named controls, real buttons and carousel motion |
