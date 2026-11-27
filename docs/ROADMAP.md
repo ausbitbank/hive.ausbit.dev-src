@@ -1,6 +1,6 @@
 # Banksia roadmap
 
-Last updated: 2026-11-26
+Last updated: 2026-11-27
 
 This is the active roadmap. It lists the work that is still open and the
 principles that constrain it. Delivered work and its verification records live in
@@ -32,11 +32,20 @@ principles that constrain it. Delivered work and its verification records live i
   gallery with a full-screen viewer, a product catalog from `content_type:
   "product"` posts, and a `/pay` handoff that derives the amount and purchase
   memo from chain data and queues an approved transfer on the apex.
+- W88 makes the blog shop owner-usable: market-api discovery with chain
+  fallback, tag/featured/filter/sort/search storefront, product detail pages
+  with Product/Offer JSON-LD, a Product mode in the composer, a local cart,
+  per-product checkout, and `/orders` reads of purchases, sales and
+  subscriptions. The blog stays read-only; every payment and cancellation is
+  queued on the apex for wallet review.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,694 tests across 195 files.
+  with 1,785 tests across 200 files, build succeeded, and the full Chromium
+  blog/shop suite passed 15 checks with axe at 1440×1100 and 390×844.
 - The full Chromium suite and the performance budgets are the CI release gate.
-  The fast Obscura suite (126 functional checks) is the local loop.
-- The next free workstream number is **W88**.
+  The fast Obscura suite (126 functional checks) is the local loop; its current
+  CDP build does not expose intercepted POST bodies, so the network-mocked HOM
+  E2E runs under the full Chromium config.
+- The next free workstream number is **W89**.
 
 ## Vision
 
@@ -226,19 +235,25 @@ W86 shipped page sections, custom CSS and branding. Explicitly deferred:
 
 Record: [`W86`](workstreams/W86-blog-owner-control.md).
 
-### 11. Optional portfolio/shop follow-ups — W87
+### 11. Optional portfolio/shop follow-ups — W87/W88
 
-W87 shipped the curated portfolio, the Hive Open Market catalog and the apex
-payment handoff. Explicitly deferred:
+W87 shipped the curated portfolio and the first Hive Open Market catalog. W88
+shipped the owner-usable shop (catalog filters, product pages, authoring, cart,
+checkout and orders). Explicitly deferred or out of scope:
 
-- Cart, shipping, escrow, reviews and buyer protection. The open-market MVP has
-  none of these; the page warns and relies on direct transfers.
-- Product creation/editing inside Banksia; use the composer with HOM metadata.
+- Escrow, shipping calculation, fiat checkout, reviews and buyer protection.
+  The open-market MVP has none of these; every payment surface warns and relies
+  on direct transfers.
 - Automatic portfolio inclusion via a post flag and topic filters.
-- Subscription management beyond the initial 12-payment queue.
+- A background subscription scheduler or any server-side order database. The
+  cart is local and orders are re-read from public history.
+- Order history beyond the most recent 3,000 account-history rows.
 - Full axe matrix for every theme and both variants.
+- The canonical HOM spec still has no versioned RFC; re-check the reference
+  backend before changing metadata semantics.
 
-Record: [`W87`](workstreams/W87-blog-portfolio-shop.md).
+Records: [`W87`](workstreams/W87-blog-portfolio-shop.md),
+[`W88`](workstreams/W88-shop-refinements.md).
 
 ## Deferred and non-goals
 

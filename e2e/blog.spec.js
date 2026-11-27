@@ -137,8 +137,10 @@ const GLOBAL_PROPS = {
   hbd_interest_rate: 0
 }
 
-async function mockHive (page, { account = ACCOUNT, profile = PROFILE, posts = POSTS } = {}) {
-  await page.route('https://api.hive.blog/**', async route => {
+async function mockHive (page, { account = ACCOUNT, profile = PROFILE, posts = POSTS, history = [], recurrent = [] } = {}) {
+  // Obscura sends the bare host without a trailing slash; a `/**` glob does
+  // not match that, so use an explicit regex for both shapes.
+  await page.route(/^https:\/\/api\.hive\.blog(?:\/.*)?$/, async route => {
     const request = route.request()
     if (request.method() !== 'POST') return route.continue()
     let body
@@ -170,6 +172,12 @@ async function mockHive (page, { account = ACCOUNT, profile = PROFILE, posts = P
       }
       case 'condenser_api.get_dynamic_global_properties':
         result = GLOBAL_PROPS
+        break
+      case 'condenser_api.get_account_history':
+        result = history
+        break
+      case 'condenser_api.find_recurrent_transfers':
+        result = recurrent
         break
       default:
         result = null
@@ -332,6 +340,158 @@ test('shop lists Hive Open Market products', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Buy on Banksia' }).first())
     .toHaveAttribute('href', /\/pay\?product=alice%2Fmanaged-hosting/)
   await axeAtBothWidths(page, 'shop')
+})
+
+test('shop search and tag filters narrow the catalogue', async ({ page }) => {
+  const account = accountWithBlog({
+    shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
+  })
+  await mockHive(page, { account, posts: PRODUCTS })
+  await page.goto('http://alice.localhost:4173/shop', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.shop-item')).toHaveCount(2)
+
+  await page.locator('#shop-search').fill('consulting')
+  await expect(page.locator('.shop-item')).toHaveCount(1)
+  await expect(page.locator('.shop-item__title')).toContainText('Consulting call')
+
+  await page.locator('#shop-search').fill('')
+  await page.getByRole('button', { name: /#hosting/ }).click()
+  await expect(page.locator('.shop-item')).toHaveCount(1)
+  await expect(page.locator('.shop-item__title')).toContainText('Managed Hive hosting')
+  await axeAtBothWidths(page, 'shop filters')
+})
+
+test('product detail renders price, gallery and Product JSON-LD', async ({ page }) => {
+  const account = accountWithBlog({
+    shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
+  })
+  await mockHive(page, { account, posts: PRODUCTS })
+  await page.goto('http://alice.localhost:4173/shop/managed-hosting', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.product-title')).toHaveText('Managed Hive hosting')
+  await expect(page.locator('.product-price')).toHaveText('25.000 HBD')
+  await expect(page.locator('.product-seller')).toContainText('@alice')
+  await expect(page.locator('.product-body')).toContainText('Managed hosting for a Hive project.')
+  await expect(page.getByRole('link', { name: 'Buy on Banksia' }))
+    .toHaveAttribute('href', /\/pay\?product=alice%2Fmanaged-hosting/)
+  await expect(page.getByRole('button', { name: 'Add to cart' })).toBeVisible()
+
+  const jsonLd = await page.locator('#page-json-ld').textContent()
+  expect(JSON.parse(jsonLd)).toMatchObject({
+    '@type': 'Product',
+    name: 'Managed Hive hosting',
+    offers: {
+      '@type': 'Offer',
+      price: '25.000',
+      priceCurrency: 'HBD',
+      availability: 'https://schema.org/InStock'
+    }
+  })
+  await axeAtBothWidths(page, 'product detail')
+})
+
+test('cart imports a product link and groups it by seller', async ({ page }) => {
+  await mockHive(page, { posts: PRODUCTS })
+  await page.goto('/cart?items=alice%2Fmanaged-hosting:2', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.cart-title')).toHaveText('Cart')
+  await expect(page.locator('.cart-line__title')).toContainText('Managed Hive hosting')
+  await expect(page.locator('.cart-line__subtotal')).toContainText('50.000 HBD')
+  await expect(page.locator('.cart-seller')).toContainText('@alice')
+  await axeAtBothWidths(page, 'cart')
+})
+
+test('checkout re-fetches products and queues one transfer per line', async ({ page }) => {
+  await loginAs(page, 'ausbitbank')
+  await mockHive(page, { posts: PRODUCTS })
+  await page.goto('/checkout?items=alice%2Fmanaged-hosting:2', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.checkout-line__title')).toHaveText('Managed Hive hosting')
+  await expect(page.locator('.checkout-line')).toHaveCount(1)
+  const preview = JSON.parse(await page.locator('.checkout-op').textContent())
+  expect(preview[0]).toBe('transfer')
+  expect(preview[1].amount).toBe('50.000 HBD')
+  expect(preview[1].memo).toBe('{"product":"alice/managed-hosting","quantity":2}')
+  await axeAtBothWidths(page, 'checkout')
+  await page.getByRole('button', { name: 'Queue 1 payment' }).click()
+  await expect(page.locator('.checkout-banner--ok')).toBeVisible()
+  const queue = await readQueue(page)
+  expect(queue.items[0]).toEqual([
+    'ausbitbank',
+    'active',
+    ['transfer', {
+      to: 'alice',
+      from: 'ausbitbank',
+      amount: '50.000 HBD',
+      memo: '{"product":"alice/managed-hosting","quantity":2}'
+    }]
+  ])
+})
+
+test('orders lists purchases and queues a subscription cancellation', async ({ page }) => {
+  await loginAs(page, 'ausbitbank')
+  const history = [
+    [1, {
+      trx_id: 'buy-trx',
+      timestamp: '2026-11-26T10:00:00',
+      op: ['transfer', {
+        from: 'ausbitbank',
+        to: 'alice',
+        amount: '25.000 HBD',
+        memo: '{"product":"alice/managed-hosting","quantity":1}'
+      }]
+    }],
+    [2, {
+      trx_id: 'sale-trx',
+      timestamp: '2026-11-25T10:00:00',
+      op: ['transfer', {
+        from: 'bob',
+        to: 'ausbitbank',
+        amount: '5.000 HBD',
+        memo: '{"product":"ausbitbank/consulting","quantity":1}'
+      }]
+    }]
+  ]
+  const recurrent = [{
+    id: 501,
+    trigger_date: '2026-12-27T10:00:00',
+    from: 'ausbitbank',
+    to: 'alice',
+    amount: '50.000 HBD',
+    memo: '{"product":"alice/consulting","quantity":1}',
+    recurrence: 730,
+    remaining_executions: 11,
+    pair_id: 0
+  }]
+  await mockHive(page, { history, recurrent, posts: PRODUCTS })
+  await page.goto('/orders', { waitUntil: 'domcontentloaded' })
+
+  await expect(page.locator('.orders-title')).toHaveText('Orders')
+  await expect(page.locator('.orders-item')).toHaveCount(1)
+  await expect(page.locator('.orders-item__title')).toContainText('Managed Hive hosting')
+  await expect(page.locator('.orders-tab__count').first()).toHaveText('1')
+
+  await page.getByRole('tab', { name: /Sales/ }).click()
+  await expect(page.locator('.orders-item__title')).toContainText('Consulting call')
+
+  await page.getByRole('tab', { name: /Subscriptions/ }).click()
+  await expect(page.locator('.orders-item__title')).toContainText('Consulting call')
+  await expect(page.getByRole('button', { name: /Queue cancellation/ })).toBeVisible()
+  await axeAtBothWidths(page, 'orders')
+
+  await page.getByRole('button', { name: /Queue cancellation/ }).click()
+  await expect(page.locator('.orders-banner--ok')).toBeVisible()
+  const queue = await readQueue(page)
+  expect(queue.items[0]).toEqual([
+    'ausbitbank',
+    'active',
+    ['recurrent_transfer', {
+      to: 'alice',
+      from: 'ausbitbank',
+      amount: '0.000 HBD',
+      memo: '{"product":"alice/consulting","quantity":1}',
+      recurrence: 730,
+      executions: 2,
+      extensions: []
+    }]
+  ])
 })
 
 test('pay page reviews a product and queues a direct transfer', async ({ page }) => {

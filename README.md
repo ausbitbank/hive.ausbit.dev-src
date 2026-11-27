@@ -98,12 +98,12 @@ searches live in your browser.
 | Route | What it does |
 | --- | --- |
 | `/@:author/:permlink` | Content-first post page, comments, replies and a native markdown composer |
-| `username.banksia.io` | Account blog: a clean reading surface with five themes, reader light/dark, grid/list/magazine layouts, page width, typography, owner-defined sections (hero, pinned, archive, about, contact, text), custom CSS, custom logo/hero/favicon, a curated portfolio, a Hive Open Market shop, pinned posts, custom navigation, RSS, sitemap, robots and OG cards. It ships no explorer chrome and needs no account to read. |
+| `username.banksia.io` | Account blog: a clean reading surface with five themes, reader light/dark, grid/list/magazine layouts, page width, typography, owner-defined sections (hero, pinned, archive, about, contact, text), custom CSS, custom logo/hero/favicon, a curated portfolio, a Hive Open Market shop with catalogue filters, product pages and Product/Offer metadata, pinned posts, custom navigation, RSS, sitemap, robots and OG cards. It ships no explorer chrome and needs no account to read. |
 | `/blogs` | Free Hive blog landing page: preview any account's `username.banksia.io`, see the reading themes, read the free/paid story and open the claim flow. |
 | `/blogs/directory` | Opt-in directory of claimed blogs. Entries are verified against the on-chain `claimed` + `directory` flags and enriched with profile and blog settings. |
-| `/settings/blog` | Claim or edit an account blog. Writes `banksia.io.blog` to posting metadata with the posting key: title, theme, reader mode, layouts, typography, sections, custom CSS, branding, portfolio, shop, pinned posts, contributors, community, directory opt-in and a generated social card. |
+| `/settings/blog` | Claim or edit an account blog. Writes `banksia.io.blog` to posting metadata with the posting key: title, theme, reader mode, layouts, typography, sections, custom CSS, branding, portfolio, shop source/tag/featured products/layout/sort, pinned posts, contributors, community, directory opt-in and a generated social card. |
 | `/shorts`, `/shorts/:format`, `/shorts/:format/@:author/:permlink` | Snaps, Waves, Threads, D.Buzz and Moments: per-format readers, composer, reactions, replies, reblogs and sats zaps |
-| `/compose` | Local-first creator workflow: autosaved drafts with history and archive, markdown/split preview, image uploads, media embeds, snippets and templates, community/tags, cross-post attribution, beneficiaries, checklists, reminders, cross-tab sync and JSON backup |
+| `/compose` | Local-first creator workflow: autosaved drafts with history and archive, markdown/split preview, image uploads, media embeds, snippets and templates, community/tags, Hive Open Market product authoring and editing, cross-post attribution, beneficiaries, checklists, reminders, cross-tab sync and JSON backup |
 | `/communities` (`/c`) | Public community browser: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest shelves; hide NSFW communities |
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
@@ -121,7 +121,7 @@ searches live in your browser.
 | `/markets` | External charts, HBD peg/premium, savings APR, HIVE/HBD conversion calculator and a live sats quote |
 | `/hbd`, `/hbdstabilizer` | HBD debt ratio, haircut conditions and the HBD Stabilizer monitor |
 | `/lightning`, `/@:account/lightning` | Lightning addresses, receive invoices, payment links and Hive/HBD → Lightning payments bridged by v4v.app; the wallet adds the opt-in keepsats panel and zap buttons appear on posts |
-| `/pay` | Review a Hive Open Market product, derive the seller, amount and purchase memo from chain data, and queue a direct Hive transfer or subscription on the apex |
+| `/pay`, `/cart`, `/checkout`, `/orders` | Review a Hive Open Market product, derive the seller, amount and purchase memo from chain data, and queue a direct Hive transfer or subscription. `/cart` and `/checkout` handle multiple products with one re-fetched post and one queued operation per line; `/orders` reads purchases, sales and active subscriptions from public history and queues cancellations for wallet review |
 
 ### Governance, network and tools
 

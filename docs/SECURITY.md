@@ -109,11 +109,23 @@ Notes:
   signing and key handling stay on `banksia.io`. Custom CSS can restyle or hide
   blog UI (including the footer), which is an accepted owner-control trade-off
   covered by the normal abuse-reporting path.
-- The `/pay` page derives the seller, amount and purchase memo from the fetched
-  Hive Open Market product post. URL parameters only select the product and
-  quantity; a crafted link cannot change the price. It queues an active-key
-  transfer for explicit wallet review and never auto-broadcasts. The open-market
-  MVP has no escrow or buyer protection, and the page says so.
+- The `/pay`, `/cart` and `/checkout` surfaces derive the seller, amount and
+  purchase memo from a freshly fetched Hive Open Market product post. URL and
+  local-storage values only select `author/permlink` and quantity; a crafted
+  link or a tampered cart cannot change the price, seller or memo. Checkout
+  queues one active-key `transfer` (or `recurrent_transfer` for a subscription)
+  per line for explicit wallet review and never auto-broadcasts. The
+  open-market MVP has no escrow or buyer protection, and every payment surface
+  says so.
+- `/orders` reads purchases, sales and active subscriptions from public Hive
+  account history. Cancelling a subscription queues the matching
+  `recurrent_transfer` with amount 0 for the same `from`/`to` and `executions:
+  2`; it is reviewed in the wallet like any other active-key operation. No
+  order, cart or subscription data is copied to a Banksia server, and the blog
+  host still never holds keys or broadcasts.
+- Product titles, descriptions, tags and seller names are rendered as text.
+  Product/Offer JSON-LD uses the honest Hive ticker for `priceCurrency`; HBD is
+  not ISO 4217 and is not mislabelled as USD.
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 

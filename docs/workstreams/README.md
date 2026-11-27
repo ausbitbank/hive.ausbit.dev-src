@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W84**.
+The next free workstream number is **W89**.
 
 ## Index
 
@@ -144,3 +144,4 @@ The next free workstream number is **W84**.
 | [W85-blog-customisation](W85-blog-customisation.md) | Blog customisation parity and expansion |
 | [W86-blog-owner-control](W86-blog-owner-control.md) | Blog sections, custom CSS and branding |
 | [W87-blog-portfolio-shop](W87-blog-portfolio-shop.md) | Blog portfolio and Hive Open Market shop |
+| [W88-shop-refinements](W88-shop-refinements.md) | Shop catalog, product authoring, cart, checkout and orders |
