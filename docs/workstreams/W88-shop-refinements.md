@@ -264,6 +264,13 @@ Local, 2026-11-27:
   - `/version.json` reported the stamp above; the Worker serves checkout,
     cart and orders shells with `noindex` metadata.
 
+## Protocol and future plans
+
+The detailed protocol reference, honest limitation list, non-goal justifications
+and the phased plan for escrow, reviews, shipping, fiat on-ramps, privacy,
+batch signing and independent indexing live in
+[`docs/HIVE_OPEN_MARKET.md`](../HIVE_OPEN_MARKET.md).
+
 ## Remaining
 
 - Escrow, shipping, fiat checkout, reviews and buyer protection are non-goals.

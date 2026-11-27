@@ -37,7 +37,10 @@ principles that constrain it. Delivered work and its verification records live i
   with Product/Offer JSON-LD, a Product mode in the composer, a local cart,
   per-product checkout, and `/orders` reads of purchases, sales and
   subscriptions. The blog stays read-only; every payment and cancellation is
-  queued on the apex for wallet review.
+  queued on the apex for wallet review. The protocol reference, honest
+  limitations, non-goal justifications and the plan for escrow, reviews,
+  shipping, fiat on-ramps and independent indexing live in
+  [`docs/HIVE_OPEN_MARKET.md`](HIVE_OPEN_MARKET.md).
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
   with 1,785 tests across 200 files, build succeeded, and the full Chromium
   blog/shop suite passed 15 checks with axe at 1440×1100 and 390×844.

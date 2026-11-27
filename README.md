@@ -516,7 +516,8 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 ## Documentation
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current open work and next priorities
-- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W83 implementation record
+- [`docs/HIVE_OPEN_MARKET.md`](docs/HIVE_OPEN_MARKET.md) — HOM protocol reference, honest limitations, non-goal justifications and the shop roadmap
+- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W88 implementation record
 - [`docs/SECURITY.md`](docs/SECURITY.md) — response headers and the client-side key model
 - [`docs/e2e.md`](docs/e2e.md) — Obscura/Chromium suite split and troubleshooting
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
