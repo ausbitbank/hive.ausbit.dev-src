@@ -5,8 +5,13 @@ import {
   MAX_TAGS,
   appendDraftHistory,
   createDraft,
+  defaultAiTools,
+  defaultRewards,
   draftDisplayTitle,
+  draftExportFileName,
+  draftHasContent,
   draftLengthGuidance,
+  hasAiTools,
   mergeImportedDrafts,
   normalizeBeneficiaries,
   normalizeDraft,
@@ -21,6 +26,7 @@ import {
   removeDraftHistory,
   restoreDraftSnapshot,
   serializeDraftExport,
+  sortDrafts,
   togglePinnedDraftId,
   upsertDraft,
   writeDrafts,
@@ -345,5 +351,54 @@ describe('draft length guidance', () => {
       editing: { author: 'alice', permlink: 'legacy-post', parentPermlink: 'hive.ausbit.dev' }
     }, 1000)
     expect(legacy.editing.parentPermlink).toBe('hive.ausbit.dev')
+  })
+})
+
+describe('draft helper contracts', () => {
+  it('detects content only when a title or body has non-whitespace', () => {
+    expect(draftHasContent({ title: '', body: '   ' })).toBe(false)
+    expect(draftHasContent({ title: '  ', body: '\n\n' })).toBe(false)
+    expect(draftHasContent({ title: 'T', body: '' })).toBe(true)
+    expect(draftHasContent({ title: '', body: 'B' })).toBe(true)
+    expect(draftHasContent(null)).toBe(false)
+  })
+
+  it('sorts newest first without mutating the input', () => {
+    const rows = [
+      { id: 'old', updatedAt: 100 },
+      { id: 'new', updatedAt: 300 },
+      { id: 'mid', updatedAt: 200 }
+    ]
+    const sorted = sortDrafts(rows)
+    expect(sorted.map(row => row.id)).toEqual(['new', 'mid', 'old'])
+    expect(rows.map(row => row.id)).toEqual(['old', 'new', 'mid'])
+    expect(sortDrafts(null)).toEqual([])
+  })
+
+  it('builds safe export filenames', () => {
+    expect(draftExportFileName({ title: 'Hello, Hive!', body: '' })).toBe('hello-hive.hive-draft.json')
+    expect(draftExportFileName({ title: '', body: 'First line\nsecond' })).toBe('first-line.hive-draft.json')
+    expect(draftExportFileName({ title: '   ', body: '  ' })).toBe('untitled-draft.hive-draft.json')
+    expect(draftExportFileName({ title: 'Ünïcode ✓ title', body: '' })).toBe('n-code-title.hive-draft.json')
+    expect(draftExportFileName({ title: 'a'.repeat(80), body: '' })).toHaveLength('a'.repeat(60).length + '.hive-draft.json'.length)
+  })
+
+  it('returns fresh default reward and AI-tool objects', () => {
+    const rewards = defaultRewards()
+    expect(rewards).toMatchObject({ percentHbd: 10000, allowVotes: true, allowCurationRewards: true, decline: false })
+    rewards.allowVotes = false
+    expect(defaultRewards().allowVotes).toBe(true)
+
+    expect(defaultAiTools()).toEqual({
+      media_generation: false,
+      translation: false,
+      post_draft: false,
+      writing_edit: false,
+      research: false,
+      other: false
+    })
+    expect(hasAiTools(null)).toBe(false)
+    expect(hasAiTools({ translation: false })).toBe(false)
+    expect(hasAiTools({ translation: true })).toBe(true)
   })
 })

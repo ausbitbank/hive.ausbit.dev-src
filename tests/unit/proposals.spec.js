@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import {
+  assetAmount,
   dailyPayHbd,
   daysElapsed,
   daysRemaining,
   daysTotal,
   filterProposals,
+  formatHbd,
+  formatHp,
+  formatNumber,
   fundingSummary,
   isFunded,
   paidHbd,
   proposalPhase,
+  proposalStatus,
   proposalVoteQueueItem,
   sortProposals,
-  toPayHbd
+  toPayHbd,
+  voteValueHp
 } from '../../src/services/proposals'
 
 function proposal (overrides = {}) {
@@ -107,5 +113,47 @@ describe('proposal helpers', () => {
     expect(sortProposals([a, b], 'daily').map(p => p.id)).toEqual([2, 1])
     expect(sortProposals([a, b], 'newest').map(p => p.id)).toEqual([2, 1])
     expect(sortProposals([a, b, c], 'votes').map(p => p.id)).toEqual([1, 3, 2])
+  })
+})
+
+describe('proposal formatting and status helpers', () => {
+  it('reads typed and string assets without losing precision', () => {
+    expect(assetAmount(null)).toBe(0)
+    expect(assetAmount(12.5)).toBe(12.5)
+    expect(assetAmount('12.345 HBD')).toBe(12.345)
+    expect(assetAmount({ amount: '12345', precision: 3 })).toBe(12.345)
+    expect(assetAmount({ amount: 'nope', precision: 3 })).toBe(0)
+    expect(assetAmount({ amount: '12345' })).toBe(12.345)
+    expect(assetAmount({})).toBe(0)
+  })
+
+  it('converts micro-VESTS to HP only when global props are usable', () => {
+    const globalProps = {
+      total_vesting_shares: '1000000.000000 VESTS',
+      total_vesting_fund_hive: '1000000.000000 HIVE'
+    }
+    expect(voteValueHp({ total_votes: 1_000_000 }, globalProps)).toBe(1)
+    expect(voteValueHp({ total_votes: 0 }, globalProps)).toBe(0)
+    expect(voteValueHp({ total_votes: 1_000_000 }, null)).toBe(0)
+    expect(voteValueHp({ total_votes: 1_000_000 }, { total_vesting_shares: '0' })).toBe(0)
+  })
+
+  it('labels the return proposal, phases and funding state', () => {
+    const now = new Date('2026-01-05T00:00:00Z')
+    expect(proposalStatus({ id: 0 }, 100, now)).toEqual({ label: 'Return proposal', color: 'purple' })
+    expect(proposalStatus({ id: 1, status: 'expired' }, 100, now)).toEqual({ label: 'Expired', color: 'grey' })
+    expect(proposalStatus({ id: 1, start_date: '2026-02-01T00:00:00', end_date: '2026-03-01T00:00:00' }, 100, now)).toEqual({ label: 'Upcoming', color: 'blue' })
+    expect(proposalStatus({ id: 1, total_votes: '200', start_date: '2026-01-01T00:00:00', end_date: '2026-02-01T00:00:00' }, 100, now)).toEqual({ label: 'Funded', color: 'green' })
+    expect(proposalStatus({ id: 1, total_votes: '50', start_date: '2026-01-01T00:00:00', end_date: '2026-02-01T00:00:00' }, 100, now)).toEqual({ label: 'Active', color: 'orange' })
+  })
+
+  it('formats numbers, HBD and HP with honest fallbacks', () => {
+    expect(formatNumber(12.3456, 2)).toBe('12.35')
+    expect(formatNumber(12.3456, 0)).toBe('12')
+    expect(formatNumber('nope')).toBe('0')
+    expect(formatHbd(1234.5)).toBe('1,234.5')
+    expect(formatHp(99.9)).toBe('99.9')
+    expect(formatHp(1234.5)).toBe('1,235')
+    expect(formatHp('nope')).toBe('0')
   })
 })
