@@ -7,7 +7,7 @@
 
 export function validateAccountName (username) {
   let suffix = 'Account name should '
-  if (!username) {
+  if (!username || typeof username !== 'string') {
     return suffix + 'not be empty.'
   }
   const length = username.length
