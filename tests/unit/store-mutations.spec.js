@@ -124,13 +124,25 @@ describe('hive store mutations', () => {
       expect(state.queueMeta[1].status).toBe('failed')
 
       resetFailedQueueStatuses.call(state)
-      expect(state.queueMeta[1].status).toBe('pending')
-      expect(state.queueMeta[1].error).toBe('')
+      expect(state.queueMeta[1].status).toBe('failed')
+      expect(state.queueMeta[1].error).toBe('Rejected')
 
       clearCompletedQueue.call(state)
       expect(state.queue).toHaveLength(1)
       expect(state.queueMeta).toHaveLength(1)
       expect(state.queue[0][1]).toBe('active')
+    })
+
+    it('retries posting failures but leaves active failures for manual review', () => {
+      const state = makeState()
+      addToQueue.call(state, ['alice', 'posting', ['vote', {}]])
+      addToQueue.call(state, ['alice', 'active', ['transfer', {}]])
+      setQueueStatus.call(state, 0, 'failed', 'Rejected posting')
+      setQueueStatus.call(state, 1, 'failed', 'Rejected active')
+
+      resetFailedQueueStatuses.call(state)
+      expect(state.queueMeta[0]).toMatchObject({ status: 'pending', error: '' })
+      expect(state.queueMeta[1]).toMatchObject({ status: 'failed', error: 'Rejected active' })
     })
 
     it('removes an item and its status together', () => {

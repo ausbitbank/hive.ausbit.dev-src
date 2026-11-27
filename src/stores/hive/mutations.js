@@ -1,6 +1,7 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { persistQueue } from './state'
 import { createQueueMeta, normalizeQueueAction, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
+import { queueAuthorityError } from '../../services/queueAuthority'
 import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
 import { setImageProxyMode } from '../../services/imageProxy'
 
@@ -83,6 +84,8 @@ export function updateSettings (settings) {
 
 export function addToQueue (newItem, options = {}) {
   const meta = createQueueMeta(Date.now(), options)
+  const normalized = normalizeQueueAction(newItem)
+  const authorityError = queueAuthorityError(normalized, this.user?.username)
   if (!isOnline()) {
     // Keep the intent, but mark it failed so nothing can be signed until the
     // connection returns. Send-all resets failed items when the user retries.
@@ -90,8 +93,14 @@ export function addToQueue (newItem, options = {}) {
     meta.error = 'You are offline. Reconnect before signing this action.'
     meta.updatedAt = Date.now()
     notifyOfflineSigningBlocked()
+  } else if (authorityError) {
+    // Fail closed: the item stays visible, but it can never request the wrong
+    // key or sign as another account.
+    meta.status = QUEUE_STATUS.FAILED
+    meta.error = authorityError
+    meta.updatedAt = Date.now()
   }
-  this.queue.push(normalizeQueueAction(newItem))
+  this.queue.push(normalized)
   ensureQueueMeta(this).push(meta)
   persistQueue(this.queue, this.queueMeta)
 }
@@ -136,8 +145,13 @@ export function setQueueTxId (index, txId) {
 export function resetFailedQueueStatuses () {
   const meta = ensureQueueMeta(this)
   const normalized = normalizeQueueMeta(this.queue, meta)
-  normalized.forEach(entry => {
-    if (entry.status === QUEUE_STATUS.FAILED) {
+  normalized.forEach((entry, index) => {
+    const action = this.queue[index]
+    const active = Array.isArray(action) && action[1] === 'active'
+    // Retrying an active-key action can double-spend if the first broadcast was
+    // accepted but the response was lost. Leave active failures for an explicit
+    // per-item retry; send-all only resumes posting actions.
+    if (entry.status === QUEUE_STATUS.FAILED && !active) {
       entry.status = QUEUE_STATUS.PENDING
       entry.error = ''
       entry.updatedAt = Date.now()

@@ -210,6 +210,7 @@ import {
   queueCounts,
   statusMeta
 } from 'src/services/queue'
+import { queueAuthorityError } from 'src/services/queueAuthority'
 import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
@@ -263,7 +264,11 @@ export default {
       })
     },
     manualPendingCount () {
-      return this.normalizedMeta.filter(entry => entry.manualOnly && canBroadcast(entry.status)).length
+      return this.normalizedMeta.filter((entry, index) => {
+        const action = this.queue[index]
+        const isActive = Array.isArray(action) && action[1] === 'active'
+        return (entry.manualOnly || isActive) && canBroadcast(entry.status)
+      }).length
     },
     queueButtonLabel () {
       const active = this.badgeCount
@@ -382,10 +387,10 @@ export default {
     scheduleNext () {
       this.clearBroadcastTimer()
       if (!this.timerEnabled && !this.bulkSending) return
-      if (nextActionableIndex(this.normalizedMeta, { auto: true }) < 0) {
+      if (this.nextAutoIndex() < 0) {
         if (this.manualPendingCount > 0) {
           this.$q.notify({
-            message: this.manualPendingCount + ' Lightning payment' + (this.manualPendingCount === 1 ? '' : 's') + ' need individual review. Open the queue and press send.',
+            message: this.manualPendingCount + ' action' + (this.manualPendingCount === 1 ? '' : 's') + ' need individual review. Open the queue and press send.',
             color: 'orange',
             icon: 'bolt',
             position: 'top',
@@ -411,8 +416,16 @@ export default {
         this.$q.notify({ message: 'Auto-send paused. Queued actions stay available.', color: 'orange', icon: 'pause', timeout: 2000 })
       }
     },
+    nextAutoIndex () {
+      // Active-key operations always need a per-item confirmation. Auto-send
+      // only walks posting actions; the manual send button remains available.
+      const skip = this.queue
+        .map((action, index) => (Array.isArray(action) && action[1] === 'active' ? index : -1))
+        .filter(index => index >= 0)
+      return nextActionableIndex(this.normalizedMeta, { auto: true, skip })
+    },
     broadcastNext () {
-      const index = nextActionableIndex(this.normalizedMeta, { auto: true })
+      const index = this.nextAutoIndex()
       if (index >= 0) this.broadcastAt(index, { auto: true })
     },
     manualBroadcast (index) {
@@ -450,9 +463,13 @@ export default {
 
       try {
         const result = await this.sendAction(action, { auto })
+        // The queue may have been spliced while the wallet was open. Find the
+        // original item instead of writing to a stale array index.
+        const currentIndex = this.queue.indexOf(action)
+        if (currentIndex < 0) return
         if (result.success) {
-          this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.SENT)
-          this.$hiveStore.setQueueTxId(index, result.txId)
+          this.$hiveStore.setQueueStatus(currentIndex, QUEUE_STATUS.SENT)
+          this.$hiveStore.setQueueTxId(currentIndex, result.txId)
           invalidateOperationCaches(action[2], { signer: action[0] })
           this.$q.notify({
             message: 'Sent ' + operationLabel(action) + '.',
@@ -464,7 +481,7 @@ export default {
           })
           this.refreshAfterAction(action)
         } else {
-          this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.FAILED, result.error || 'Broadcast failed.')
+          this.$hiveStore.setQueueStatus(currentIndex, QUEUE_STATUS.FAILED, result.error || 'Broadcast failed.')
           this.$q.notify({
             message: result.error || 'Broadcast failed.',
             color: 'red',
@@ -477,7 +494,8 @@ export default {
         }
       } catch (error) {
         const message = error?.message || 'Broadcast failed.'
-        this.$hiveStore.setQueueStatus(index, QUEUE_STATUS.FAILED, message)
+        const currentIndex = this.queue.indexOf(action)
+        if (currentIndex >= 0) this.$hiveStore.setQueueStatus(currentIndex, QUEUE_STATUS.FAILED, message)
         this.$q.notify({ message, color: 'red', icon: 'error', position: 'top', timeout: 6000 })
         this.timerEnabled = false
         this.bulkSending = false
@@ -487,7 +505,9 @@ export default {
       }
     },
     async sendAction (action, { auto }) {
-      const user = action[0]
+      const authorityError = queueAuthorityError(action, this.loggedInUser)
+      if (authorityError) return { success: false, error: authorityError }
+      const user = this.loggedInUser
       const keyType = action[1]
       const operation = JSON.parse(JSON.stringify(action[2]))
 
@@ -511,7 +531,7 @@ export default {
         // A post can ask for a self-reblog in the same transaction. Build the
         // exact operations instead of requestPost, which only carries one.
         if (operation[1]._reblog === true) {
-          result = await keychain(window, 'requestBroadcast', user, expandQueueOperation(operation), keyType)
+          result = await keychain(window, 'requestBroadcast', user, expandQueueOperation(operation, user), keyType)
           return this.normalizeKeychainResult(result)
         }
         // Keychain parses this string and hands it to hive-tx, which cannot
