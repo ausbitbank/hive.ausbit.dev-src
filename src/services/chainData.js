@@ -304,6 +304,32 @@ export function fetchAccountHistory (account, {
   ).then(rows => (Array.isArray(rows) ? rows : []))
 }
 
+/**
+ * One page of account history restricted to an operation bitmask.
+ *
+ * Vault uses this to skip votes/comments so a payment is not pushed out of the
+ * page window. `low`/`high` are the two uint64 halves of Hive's operation filter.
+ */
+export function fetchAccountHistoryFiltered (account, {
+  from = -1,
+  limit = 1000,
+  low = 0,
+  high = 0,
+  force = false
+} = {}) {
+  const name = String(account || '').trim().replace(/^@/, '').toLowerCase()
+  if (!name) return Promise.resolve([])
+  const count = Math.max(1, Math.min(1000, Number(limit) || 1000))
+  const lowMask = Number(low) || 0
+  const highMask = Number(high) || 0
+  return loadCached(
+    'history-filter:' + name + ':' + from + ':' + count + ':' + lowMask + ':' + highMask,
+    () => apiGetAccountHistoryFiltered(name, from, count, lowMask, highMask)
+      .catch(() => apiGetAccountHistory(name, from, count)),
+    { ttl: CACHE_TTL.accountHistory, force }
+  ).then(rows => (Array.isArray(rows) ? rows : []))
+}
+
 export const KE_REWARD_HISTORY_PAGE_SIZE = 1000
 export const KE_REWARD_HISTORY_MAX_PAGES = 10
 export const KE_REWARD_HISTORY_TTL_MS = 2 * 60 * 1000

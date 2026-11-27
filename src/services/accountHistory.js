@@ -8,6 +8,16 @@
 const DEFAULT_PAGE_LIMIT = 1000
 const DEFAULT_PAGES = 10
 
+/**
+ * Hive operation bitmask for Vault payments and plans:
+ * transfer (2), recurrent_transfer (49), fill_recurrent_transfer (83),
+ * failed_recurrent_transfer (84). Operation ids below 64 live in the low half.
+ */
+export const VAULT_HISTORY_FILTER = Object.freeze({
+  low: 2 ** 2 + 2 ** 49,
+  high: 2 ** 19 + 2 ** 20
+})
+
 function normalizeAccount (value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase()
 }

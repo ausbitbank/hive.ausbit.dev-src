@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { collectAccountHistory, vaultHistorySince } from '../../src/services/accountHistory'
+import { collectAccountHistory, VAULT_HISTORY_FILTER, vaultHistorySince } from '../../src/services/accountHistory'
 
 function row (index, timestamp = '2026-11-27T12:00:00') {
   return [index, { timestamp, op: ['transfer', { from: 'bob', to: 'alice' }] }]
@@ -57,5 +57,12 @@ describe('collectAccountHistory', () => {
   it('defaults the window to 400 days', () => {
     const now = Date.parse('2026-11-27T00:00:00Z')
     expect(vaultHistorySince(now)).toBe(now - 400 * 24 * 60 * 60 * 1000)
+  })
+})
+
+describe('Vault history filter', () => {
+  it('matches the Hive operation bitmask for payments and plans', () => {
+    expect(VAULT_HISTORY_FILTER.low).toBe(2 ** 2 + 2 ** 49)
+    expect(VAULT_HISTORY_FILTER.high).toBe(2 ** 19 + 2 ** 20)
   })
 })

@@ -488,8 +488,8 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchAccountHistory } from 'src/services/chainData'
-import { collectAccountHistory, vaultHistorySince } from 'src/services/accountHistory'
+import { fetchAccountHistoryFiltered } from 'src/services/chainData'
+import { collectAccountHistory, VAULT_HISTORY_FILTER, vaultHistorySince } from 'src/services/accountHistory'
 import { hive } from 'src/services/hive'
 import { isValidHiveAccountName } from 'src/services/blogHost'
 import { formatOrderDate, formatRecurrence } from 'src/services/shopOrders'
@@ -725,7 +725,7 @@ export default {
         const [historyResult, openTransfers] = await Promise.all([
           collectAccountHistory({
             account: this.subject,
-            fetchPage: fetchAccountHistory,
+            fetchPage: (name, options) => fetchAccountHistoryFiltered(name, { ...options, ...VAULT_HISTORY_FILTER }),
             pages: 10,
             since: vaultHistorySince()
           }),

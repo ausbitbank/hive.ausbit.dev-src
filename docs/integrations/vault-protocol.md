@@ -1190,10 +1190,12 @@ keyring or any entry invalidates the bulletin signature.
    `banksia.vault.delegation.v1` prefix in this specification. The v1 reader
    rejects delegated bulletins before verification, so the path is reserved and
    not a v1 trust surface.
-13. **History window.** Grant issuance and the reader manager walk up to 10 pages
-    of 1,000 rows (a 400-day window by default) and show a truncation warning if
-    they hit the cap. Very high-volume accounts still need deeper pagination or a
-    HAF index.
+13. **History window.** Grant issuance and the reader manager request only the
+    Vault operation bitmask (transfer, recurrent_transfer,
+    fill_recurrent_transfer, failed_recurrent_transfer), walk up to 10 pages of
+    1,000 matching rows (a 400-day window by default) and warn if the cap is hit.
+    Votes/comments no longer push payments out of the window. Very high-volume
+    transfer accounts still need deeper pagination or a HAF index.
 
 ---
 
@@ -1573,8 +1575,11 @@ document and the on-chain objects.
 - `condenser_api.get_accounts` — metadata, posting authority, reputation.
 - `condenser_api.get_content` — post, product, bulletin, container.
 - `condenser_api.get_content_replies` — container replies / bulletin fallback.
-- `condenser_api.get_account_history` — payments; filter `transfer`,
-  `fill_recurrent_transfer`, and `recurrent_transfer` cancels.
+- `condenser_api.get_account_history` — payments. Pass
+  `operation_filter_low = 2^2 + 2^49` and
+  `operation_filter_high = 2^19 + 2^20` to match `transfer`,
+  `recurrent_transfer`, `fill_recurrent_transfer` and
+  `failed_recurrent_transfer`; paginate backwards with `from = oldestIndex - 1`.
 - `condenser_api.find_recurrent_transfers` — reader plans/cancel verification.
 - `bridge.get_account_posts` — blog archive (filter products/containers).
 - Use a timeout, retry/failover across nodes, and paginate history; the Banksia
@@ -1630,8 +1635,9 @@ The review's practical limitations are accurate and remain explicit in §17.5:
   in v1);
 - one bulletin **part** holds up to 300 entries; larger lists split into a signed
   manifest plus parts, at the cost of more comments/RC;
-- history scans are bounded to 10 pages × 1,000 rows (400-day window) in the
-  beta; very high-volume accounts still need pagination/HAF indexing;
+- history scans use Hive's operation bitmask (transfer, recurrent transfer,
+  fills, failures) and are bounded to 10 pages × 1,000 matching rows (400-day
+  window); extreme accounts still need deeper pagination/HAF indexing;
 - extractable reader keys are an XSS trade-off for recovery export;
 - text-only encryption does not protect image/video URLs;
 - losing the creator passphrase and export, or clearing a reader's browser

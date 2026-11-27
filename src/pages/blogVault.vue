@@ -777,7 +777,7 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchAccount, fetchAccountHistory, fetchAccountPosts, fetchPostContent } from 'src/services/chainData'
+import { fetchAccount, fetchAccountHistoryFiltered, fetchAccountPosts, fetchPostContent } from 'src/services/chainData'
 import { hive } from 'src/services/hive'
 import { readBlogSettings, updateBlog } from 'src/services/blogSettings'
 import { readVaultSettings, vaultIsConfigured } from 'src/services/vaultSettings'
@@ -785,7 +785,7 @@ import { isValidHiveAccountName } from 'src/services/blogHost'
 import { formatOrderDate, parseProductRef } from 'src/services/shopOrders'
 import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
 import { collectVaultPayments, periodFor, summarizeSubscribers, vaultRecurrencePhrase } from 'src/services/vaultPayments'
-import { collectAccountHistory, vaultHistorySince } from 'src/services/accountHistory'
+import { collectAccountHistory, VAULT_HISTORY_FILTER, vaultHistorySince } from 'src/services/accountHistory'
 import {
   AUTO_ISSUE_INTERVAL_MS,
   hasQueuedVaultBulletin,
@@ -1077,7 +1077,7 @@ export default {
       try {
         const collected = await collectAccountHistory({
           account: this.accountName,
-          fetchPage: fetchAccountHistory,
+          fetchPage: (name, options) => fetchAccountHistoryFiltered(name, { ...options, ...VAULT_HISTORY_FILTER }),
           pages: 10,
           since: vaultHistorySince()
         })
