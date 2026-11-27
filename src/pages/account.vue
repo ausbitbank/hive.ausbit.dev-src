@@ -1287,6 +1287,7 @@ export default {
       // this.getRewardFundPost()
       this.page = this.$route.query.page || 1
       this.username = this.$route.params.username
+      this.filter = this.$route.query.filter || null
       this.editJsonMeta = false
       this.editPostingJson = false
       this.updatePageMeta()
