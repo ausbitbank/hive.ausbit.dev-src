@@ -133,16 +133,22 @@
       </ul>
 
       <q-expansion-item
-        v-if="history && history.length"
         dense
         dense-toggle
         expand-separator
         icon="history"
-        :label="history.length + ' Hive-Engine transactions'"
+        :label="historyLoaded ? history.length + ' Hive-Engine transactions' : 'Hive-Engine transactions'"
         class="wallet-tokens__history"
+        @show="ensureHistory"
       >
         <q-scroll-area style="height: 430px">
-          <ul class="wallet-token-history">
+          <div v-if="historyLoading" class="wallet-token-history wallet-token-history--state">
+            <q-spinner-puff size="1.8em" color="primary" aria-label="Loading Hive-Engine transactions" />
+          </div>
+          <p v-else-if="historyLoaded && history.length === 0" class="wallet-token-history wallet-token-history--state">
+            No Hive-Engine transactions were returned for this account.
+          </p>
+          <ul v-else class="wallet-token-history">
             <li v-for="(tx, index) in history" :key="tx.transactionId || index" class="wallet-he-tx">
               <q-icon :name="heView(tx).icon" class="wallet-he-tx__icon" aria-hidden="true" />
               <div class="wallet-he-tx__main">
@@ -428,6 +434,15 @@
   list-style: none;
 }
 
+.wallet-token-history--state {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: 1rem;
+  color: var(--c-text-subtle);
+  text-align: center;
+}
+
 .wallet-he-tx {
   display: flex;
   align-items: flex-start;
@@ -589,7 +604,9 @@ export default {
       balances: null,
       tokenInfo: [],
       marketInfo: [],
-      history: null,
+      history: [],
+      historyLoading: false,
+      historyLoaded: false,
       error: null,
       loading: false,
       filterSmall: true,
@@ -623,6 +640,9 @@ export default {
   },
   watch: {
     username () {
+      this.history = []
+      this.historyLoaded = false
+      this.historyLoading = false
       this.init()
     }
   },
@@ -633,6 +653,9 @@ export default {
     formatUsd,
     init () {
       this.fetchBalances()
+    },
+    ensureHistory () {
+      if (this.historyLoaded || this.historyLoading) return
       this.fetchHistory()
     },
     async fetchBalances () {
@@ -676,6 +699,7 @@ export default {
       }
     },
     async fetchHistory () {
+      this.historyLoading = true
       try {
         const response = await fetch('https://history.hive-engine.com/accountHistory?account=' + this.username + '&limit=250&offset=0&type=user')
         if (!response.ok) throw new Error('HTTP ' + response.status)
@@ -683,6 +707,9 @@ export default {
         this.history = Array.isArray(data) ? data : []
       } catch {
         this.history = []
+      } finally {
+        this.historyLoading = false
+        this.historyLoaded = true
       }
     },
     tokenInfoFor (symbol) {
