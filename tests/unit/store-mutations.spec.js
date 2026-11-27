@@ -113,6 +113,16 @@ describe('hive store mutations', () => {
       expect(state.queueMeta[0]).toMatchObject({ status: 'pending', error: '' })
     })
 
+    it('fails closed when the declared key does not match the operation', () => {
+      const state = makeState()
+
+      addToQueue.call(state, ['alice', 'posting', ['transfer', {}]])
+
+      expect(state.queue).toHaveLength(1)
+      expect(state.queueMeta[0].status).toBe('failed')
+      expect(state.queueMeta[0].error).toContain('needs the active key')
+    })
+
     it('updates, retries and clears item statuses', () => {
       const state = makeState()
       addToQueue.call(state, ['alice', 'posting', ['vote', {}]])
