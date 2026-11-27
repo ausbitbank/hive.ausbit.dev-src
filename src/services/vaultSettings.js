@@ -393,7 +393,13 @@ export function normalizeVaultSettings (input, options = {}) {
   }
 
   const bulletin = normalizeBulletin(input.bulletin, errors)
-  const relay = normalizeRelay(input.relay, errors)
+  // The relay is optional. A malformed/unknown relay certificate is ignored
+  // (fail closed for the relay path) rather than disabling the whole paywall.
+  const relayErrors = []
+  const relay = normalizeRelay(input.relay, relayErrors)
+  if (input.relay !== undefined && input.relay !== null && !relay) {
+    warnings.push(...relayErrors.map(message => 'relay certificate ignored: ' + message))
+  }
 
   let price = VAULT_DEFAULT_PRICE
   if (input.price !== undefined && input.price !== null) {

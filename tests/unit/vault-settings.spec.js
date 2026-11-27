@@ -333,16 +333,16 @@ describe('blog settings integration', () => {
     expect(result.errors.join(' ')).toContain('vault.product is required when vault.enabled is true')
   })
 
-  it('rejects an invalid relay certificate through the blog validator', () => {
+  it('ignores a malformed relay certificate without disabling Vault', () => {
     const result = normalizeBlogSettings({
       version: 1,
       claimed: true,
       title: 'x',
       vault: { ...VALID_VAULT, relay: { delegate: 'p256:abc' } }
     })
-    expect(result.ok).toBe(false)
-    expect(result.errors.join(' ')).toContain('vault.relay.v must be 1')
-    expect(result.errors.join(' ')).toContain('vault.relay.delegate must be a Hive posting public key')
+    expect(result.ok).toBe(true)
+    expect(result.settings.vault.relay).toBeUndefined()
+    expect(result.warnings.join(' ')).toContain('relay certificate ignored')
   })
 
   it('accepts a structurally valid relay certificate', () => {
