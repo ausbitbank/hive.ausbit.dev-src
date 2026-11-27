@@ -65,7 +65,7 @@ custody, auto-broadcast of active actions or server signing was added.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **232 files / 2,252 tests** passing.
+- `bun run test` — **232 files / 2,253 tests** passing.
 - `bun run build` — succeeded.
 - Targeted queue/store/comment/Vault suites pass.
 
