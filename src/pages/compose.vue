@@ -253,6 +253,102 @@
           </div>
         </section>
 
+        <section v-if="!isEditingComment" class="compose-panel home-card home-panel" aria-labelledby="compose-vault-title">
+          <div class="home-panel__head">
+            <div>
+              <div class="home-eyebrow">Membership</div>
+              <h2 id="compose-vault-title" class="home-panel__title">Members only</h2>
+            </div>
+            <q-toggle
+              :model-value="vaultEnabled"
+              color="primary"
+              :aria-label="vaultEnabled ? 'Disable members-only content' : 'Enable members-only content'"
+              @update:model-value="setVaultEnabled"
+            />
+          </div>
+          <div class="home-panel__body">
+            <p v-if="!loggedInUser" class="compose-hint">Log in to configure members-only publishing.</p>
+            <p v-else-if="!vaultAccountReady" class="compose-hint" role="status">Loading your blog settings…</p>
+            <p v-else-if="!vaultConfigured" class="compose-hint">
+              Vault is not configured for this blog.
+              <router-link to="/settings/blog">Set up Vault in blog settings</router-link>.
+              <span v-if="vaultSettingsInfo.error"> {{ vaultSettingsInfo.error }}</span>
+            </p>
+            <template v-else>
+              <div class="compose-vault__mode">
+                <q-select
+                  :model-value="vaultMode"
+                  :options="vaultModeOptions"
+                  label="Locked content"
+                  dense
+                  outlined
+                  emit-value
+                  map-options
+                  :disable="!vaultEnabled"
+                  @update:model-value="setVaultMode"
+                />
+                <q-btn
+                  outline
+                  no-caps
+                  color="primary"
+                  icon="lock"
+                  label="Lock from here"
+                  :disable="!vaultEnabled"
+                  @click="insertVaultLock"
+                />
+              </div>
+              <p v-if="vaultEnabled && vaultMode === 'section' && !vaultHasMarker" class="compose-hint">
+                Put the cursor where the free teaser ends, then choose Lock from here.
+              </p>
+              <p v-else-if="!vaultEnabled" class="compose-hint">
+                Turn on Members only to encrypt part or all of this post.
+              </p>
+              <template v-if="vaultEnabled">
+                <div class="compose-vault__status" role="status" aria-live="polite">
+                  <q-icon :name="vaultUnlocked ? 'lock_open' : 'lock'" size="16px" aria-hidden="true" />
+                  <span>{{ vaultUnlocked ? 'Vault unlocked for ' + vaultKid : 'Vault locked — unlock to encrypt this post.' }}</span>
+                </div>
+                <div v-if="!vaultUnlocked" class="compose-vault__unlock">
+                  <q-input
+                    v-model="vaultPassphrase"
+                    type="password"
+                    label="Vault passphrase"
+                    dense
+                    outlined
+                    autocomplete="current-password"
+                    @keyup.enter="unlockVaultFromComposer"
+                  />
+                  <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    label="Unlock vault"
+                    :loading="vaultUnlocking"
+                    @click="unlockVaultFromComposer"
+                  />
+                </div>
+                <div class="compose-vault__size" :class="'is-' + vaultSize.tone">
+                  <q-icon :name="vaultSize.tone === 'ok' ? 'straighten' : 'warning'" size="15px" aria-hidden="true" />
+                  <span>{{ vaultSize.message }}</span>
+                </div>
+                <p v-if="vaultMediaWarning" class="compose-vault__warning" role="status">
+                  Images in members-only text keep public URLs. Use text only, or host the image where a public link is acceptable.
+                </p>
+                <q-btn
+                  class="compose-vault__preview-btn"
+                  outline
+                  no-caps
+                  color="primary"
+                  icon="visibility"
+                  label="Preview as reader"
+                  :disable="!vaultSplit.premiumBody.trim()"
+                  @click="previewVaultContent"
+                />
+              </template>
+            </template>
+          </div>
+        </section>
+
         <product-fields
           v-if="!isEditingComment"
           v-model="productFields"
@@ -1470,6 +1566,9 @@
           <p v-if="publishedInfo?.alsoReblog" class="compose-hint">
             The same signed transaction also reblogs the post to your blog.
           </p>
+          <p v-if="publishedInfo?.companions" class="compose-hint">
+            The members-only payload travels in {{ publishedInfo.companions }} companion comment{{ publishedInfo.companions === 1 ? '' : 's' }} queued after the post.
+          </p>
           <p class="compose-hint">
             The link starts working after the queued action is signed and broadcast.
           </p>
@@ -1505,7 +1604,7 @@
           <q-expansion-item
             icon="data_object"
             label="Raw json_metadata"
-            caption="Exactly what the queue item will carry"
+            :caption="vaultDraft.enabled ? 'Header metadata; the encrypted payload is added when you queue' : 'Exactly what the queue item will carry'"
             dense-toggle
             class="compose-review__metadata"
           >
@@ -1528,6 +1627,35 @@
             :label="isEditing ? 'Queue edit for signing' : 'Queue for signing'"
             @click="confirmPublish"
           />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="vaultPreviewOpen">
+      <q-card class="compose-review compose-vault-preview">
+        <q-card-section class="compose-media-dialog__head">
+          <div>
+            <div class="home-eyebrow">Membership</div>
+            <h2 class="home-panel__title">Preview as reader</h2>
+          </div>
+          <q-btn flat dense round icon="close" aria-label="Close members-only preview" title="Close" @click="vaultPreviewOpen = false" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="compose-review__body">
+          <p class="compose-hint">
+            Decrypted locally with your unlocked vault. Nothing has been published.
+          </p>
+          <div v-if="vaultPreviewBody.trim()" class="postbody compose-vault-preview__body">
+            <render :input="vaultPreviewBody" />
+          </div>
+          <p v-else class="compose-hint">No members-only text to preview yet.</p>
+          <p v-if="vaultPreviewInfo" class="compose-hint">
+            {{ vaultPreviewInfo.transport === 'comment' ? 'Will travel as companion comments' : 'Fits inside the post' }}
+            · {{ vaultPreviewInfo.plaintextBytes }} bytes
+          </p>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat no-caps label="Close" @click="vaultPreviewOpen = false" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -2057,6 +2185,82 @@
 
 .compose-hint--top {
   margin: 0 0 0.1rem;
+}
+
+.compose-vault__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.35rem;
+}
+
+.compose-vault__mode .q-btn {
+  width: 100%;
+}
+
+.compose-vault__status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  color: var(--c-text-subtle);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.compose-vault__unlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.compose-vault__size {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+  color: var(--c-text-faint);
+  font-size: 0.7rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.compose-vault__size.is-ok .q-icon {
+  color: var(--c-positive);
+}
+
+.compose-vault__size.is-warn .q-icon {
+  color: var(--c-warning);
+}
+
+.compose-vault__size.is-error {
+  color: var(--c-negative);
+}
+
+.compose-vault__size.is-error .q-icon {
+  color: var(--c-negative);
+}
+
+.compose-vault__warning {
+  margin: 0.55rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-left: 3px solid var(--c-warning);
+  background: color-mix(in srgb, var(--c-warning) 8%, transparent);
+  color: var(--c-text-subtle);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.compose-vault__preview-btn {
+  width: 100%;
+  margin-top: 0.6rem;
+}
+
+.compose-vault-preview__body {
+  max-height: 55vh;
+  overflow: auto;
+  padding: 0.2rem 0;
 }
 
 .compose-fields {
@@ -3366,10 +3570,10 @@ import { defineAsyncComponent } from 'vue'
 import ProductFields from 'src/components/ProductFields.vue'
 import moment from 'src/utils/time'
 import { signImageUploadChallenge } from 'src/services/imageSigning'
-import { applyMarkdownAction, continueMarkdownList, markdownHeadings, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
+import { applyMarkdownAction, byteLength, continueMarkdownList, markdownHeadings, shortcutMarkdownAction, wordCount } from 'src/utils/markdownEditor'
 import { altFromFileName, deriveDescription, extractBodyImages, imageFilesFromTransfer, markdownImage } from 'src/utils/media'
 import { detectEmbed } from 'src/services/embeds'
-import { fetchAccountNameSearch, fetchCommunityInfoBatch } from 'src/services/chainData'
+import { fetchAccount, fetchAccountNameSearch, fetchCommunityInfoBatch } from 'src/services/chainData'
 import {
   buildCommunityPickerOptions,
   communitySubscriptionWarning,
@@ -3464,11 +3668,11 @@ import {
 import {
   AI_TOOL_LABELS,
   buildPostMetadata,
-  canPublish as canPublishDraft,
   checklistErrors as collectChecklistErrors,
   createPostPermlink,
   parseHivePostUrl,
   postQueueItem,
+  premiumCompanionQueueItems,
   publishChecklist,
   readCrossPostMetadata,
   resolvedTags,
@@ -3484,6 +3688,22 @@ import {
   validateProductFields
 } from 'src/services/productDraft'
 import { isOnline } from 'src/services/connectivity'
+import {
+  describeVaultSize,
+  normalizeVaultDraft,
+  premiumMediaWarning,
+  prepareVaultPublish,
+  vaultDraftSplit,
+  vaultMetadataForEdit
+} from 'src/services/vaultCompose'
+import { hasVaultMarker, insertVaultMarker, joinVaultBody, MAX_BODY_BYTES, removeVaultMarker, VAULT_MARKER, vaultMarkerIndex } from 'src/services/vaultPayload'
+import {
+  currentVaultKid,
+  getCreatorVault,
+  isCreatorVaultUnlocked,
+  unlockCreatorVault
+} from 'src/services/vaultSession'
+import { readVaultSettings } from 'src/services/vaultSettings'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
@@ -3622,6 +3842,19 @@ export default {
       coverDialogOpen: false,
       centerImages: LocalStorage.getItem('composeCenterImages') === true,
       reviewOpen: false,
+      vaultModeOptions: [
+        { label: 'Locked section', value: 'section' },
+        { label: 'Whole post', value: 'post' }
+      ],
+      vaultPassphrase: '',
+      vaultUnlocking: false,
+      vaultBusy: false,
+      vaultAccount: null,
+      vaultAccountFor: null,
+      vaultSessionTick: 0,
+      vaultPreviewOpen: false,
+      vaultPreviewBody: '',
+      vaultPreviewInfo: null,
       settingsOpen: false,
       helpOpen: false,
       fullscreenEditor: false,
@@ -3739,6 +3972,59 @@ export default {
         description: this.draft.body
       })
     },
+    vaultDraft () {
+      return normalizeVaultDraft(this.draft && this.draft.vault)
+    },
+    vaultEnabled: {
+      get () {
+        return this.vaultDraft.enabled
+      },
+      set (value) {
+        if (!this.draft) return
+        this.draft.vault = { ...this.vaultDraft, enabled: value === true }
+      }
+    },
+    vaultMode: {
+      get () {
+        return this.vaultDraft.mode
+      },
+      set (value) {
+        if (!this.draft) return
+        this.draft.vault = { ...this.vaultDraft, mode: value === 'post' ? 'post' : 'section' }
+      }
+    },
+    vaultAccountReady () {
+      return Boolean(this.loggedInUser) && this.vaultAccountFor === this.loggedInUser
+    },
+    vaultSettingsInfo () {
+      return readVaultSettings(this.vaultAccount)
+    },
+    vaultConfigured () {
+      return this.vaultSettingsInfo.enabled === true
+    },
+    vaultUnlocked () {
+      return Boolean(
+        this.vaultSessionTick >= 0 &&
+        this.loggedInUser &&
+        isCreatorVaultUnlocked(this.loggedInUser)
+      )
+    },
+    vaultKid () {
+      return currentVaultKid(new Date())
+    },
+    vaultSplit () {
+      if (!this.draft) return { publicBody: '', premiumBody: '', hasMarker: false }
+      return vaultDraftSplit({ body: this.draft.body, mode: this.vaultDraft.mode })
+    },
+    vaultHasMarker () {
+      return Boolean(this.draft) && hasVaultMarker(this.draft.body)
+    },
+    vaultSize () {
+      return describeVaultSize({ plaintext: this.vaultSplit.premiumBody })
+    },
+    vaultMediaWarning () {
+      return this.vaultDraft.enabled && premiumMediaWarning(this.vaultSplit.premiumBody)
+    },
     countdownLocal: {
       get () {
         return toLocalDateTimeInput(this.draft?.countdown)
@@ -3838,6 +4124,75 @@ export default {
           })
         }
       }
+      if (!this.isEditingComment && this.vaultDraft.enabled) {
+        if (!this.vaultConfigured) {
+          items.push({
+            id: 'vaultConfig',
+            label: 'Members only',
+            status: 'error',
+            detail: 'Vault is not configured for this blog. Set it up in Settings → Blog.'
+          })
+        } else if (!this.vaultSplit.premiumBody.trim()) {
+          items.push({
+            id: 'vaultPremium',
+            label: 'Members only',
+            status: 'error',
+            detail: 'Add members-only content after the lock marker.'
+          })
+        } else if (this.vaultSize.tone === 'error') {
+          items.push({
+            id: 'vaultSize',
+            label: 'Members only',
+            status: 'error',
+            detail: this.vaultSize.message
+          })
+        } else {
+          items.push({
+            id: 'vault',
+            label: 'Members only',
+            status: this.vaultSize.tone === 'warn' || !this.vaultUnlocked ? 'warn' : 'ok',
+            detail: (this.vaultDraft.mode === 'post' ? 'Whole post · ' : 'Locked section · ') +
+              this.vaultSize.message +
+              (this.vaultUnlocked ? '' : ' Unlock the vault before queueing.')
+          })
+        }
+
+        // The published body is the teaser plus the marker, not the premium
+        // plaintext. Check the 65,535-byte Hive limit against that public body
+        // so a large companion-comment payload is not blocked by the draft size.
+        const wholePost = this.vaultDraft.mode === 'post' && !this.vaultSplit.hasMarker
+        const publicBody = wholePost
+          ? ''
+          : (this.vaultDraft.mode === 'section'
+              ? joinVaultBody(this.vaultSplit.publicBody, 'section')
+              : this.vaultSplit.publicBody)
+        const publicBytes = byteLength(publicBody)
+        const bodyItem = items.find(item => item.id === 'body')
+        const nextBodyItem = publicBytes > MAX_BODY_BYTES
+          ? {
+              id: 'body',
+              label: 'Body',
+              status: 'error',
+              detail: 'The public teaser is ' + publicBytes + ' bytes; the Hive limit is ' + MAX_BODY_BYTES + '.'
+            }
+          : !publicBody.trim()
+            ? {
+                id: 'body',
+                label: 'Body',
+                status: this.vaultDraft.mode === 'post' ? 'ok' : 'warn',
+                detail: this.vaultDraft.mode === 'post'
+                  ? 'Whole post encrypted; only the title is public.'
+                  : 'No public teaser; readers see the paywall and the lock marker.'
+              }
+            : {
+                id: 'body',
+                label: 'Body',
+                status: 'ok',
+                detail: 'Public teaser: ' + publicBytes + ' / ' + MAX_BODY_BYTES + ' bytes'
+              }
+        if (bodyItem) Object.assign(bodyItem, nextBodyItem)
+        else items.push(nextBodyItem)
+      }
       return items.filter(item => {
         if (!item.dismissKey || item.status !== 'warn') return true
         return !this.dismissedChecklistWarnings.includes(item.dismissKey)
@@ -3887,6 +4242,12 @@ export default {
             (preview.subscription ? ' · every ' + preview.recurrenceHours + ' hours' : ' · one-time')
         })
       }
+      if (this.vaultDraft.enabled) {
+        rows.push({
+          label: 'Membership',
+          value: this.vaultDraft.mode === 'post' ? 'Members only · whole post' : 'Members only · locked section'
+        })
+      }
       if (draft.authorDisplay) rows.push({ label: 'Display author', value: draft.authorDisplay })
       if (draft.crossPost) rows.push({ label: 'Cross-post', value: '@' + draft.crossPost.author + '/' + draft.crossPost.permlink })
       if (draft.alsoReblog && this.postingToCommunity && !this.isEditing) {
@@ -3911,7 +4272,24 @@ export default {
       if (editing && editing.parentAuthor) {
         return JSON.stringify({ ...previous, app: 'banksia.io', format: 'markdown' }, null, 2)
       }
-      const next = buildPostMetadata(this.draft)
+      // Vault metadata must be derived from the public teaser, never from the
+      // members-only plaintext in the draft body.
+      let previewSource = this.draft
+      if (this.vaultDraft.enabled) {
+        const wholePost = this.vaultDraft.mode === 'post' && !this.vaultSplit.hasMarker
+        const previewBody = wholePost
+          ? (this.draft.editing ? this.draft.body : '')
+          : this.vaultSplit.publicBody
+        previewSource = { ...this.draft, body: previewBody }
+      }
+      const next = buildPostMetadata(previewSource)
+      if (this.vaultDraft.enabled) {
+        next.banksia_vault = {
+          v: 1,
+          mode: this.vaultDraft.mode,
+          note: 'ciphertext is added when you queue'
+        }
+      }
       // Edits keep an existing cover when the draft has no images of its own.
       if (!next.image && Array.isArray(previousMetadata?.image) && previousMetadata.image.length) {
         next.image = previousMetadata.image
@@ -3921,7 +4299,7 @@ export default {
     canPublish () {
       if (!this.draft) return false
       if (this.isProduct && !this.productValidation.ok) return false
-      return canPublishDraft(this.draft, { username: this.loggedInUser })
+      return this.checklistErrors.length === 0
     },
     activeDraftTitle () {
       return this.draft ? draftDisplayTitle(this.draft) : 'New draft'
@@ -4073,6 +4451,11 @@ export default {
       this.loadPinnedDrafts()
       this.loadRecentValues()
       this.loadChecklistWarnings()
+      this.vaultPassphrase = ''
+      this.vaultAccount = null
+      this.vaultAccountFor = null
+      this.vaultPreviewOpen = false
+      this.loadVaultAccount()
       this.communityStats = {}
       this.communityStatsLoadedFor = null
       this.communityFilter = ''
@@ -4149,6 +4532,7 @@ export default {
     this.loadPinnedDrafts()
     this.loadRecentValues()
     this.loadChecklistWarnings()
+    this.loadVaultAccount()
     this.refreshStorageUsage()
     window.addEventListener('keydown', this.onGlobalKeydown)
     window.addEventListener('beforeunload', this.onBeforeUnload)
@@ -4250,6 +4634,116 @@ export default {
     },
     loadChecklistWarnings () {
       this.dismissedChecklistWarnings = readDismissedWarnings(LocalStorage, this.loggedInUser)
+    },
+    async loadVaultAccount () {
+      const user = this.loggedInUser
+      if (!user) {
+        this.vaultAccount = null
+        this.vaultAccountFor = null
+        return
+      }
+      if (this.vaultAccountFor === user && this.vaultAccount) return
+      try {
+        const cached = this.$hiveStore.accounts && this.$hiveStore.accounts[user]
+        if (cached) {
+          this.vaultAccount = cached
+        } else {
+          if (typeof this.$hiveStore.getAccount === 'function') {
+            await this.$hiveStore.getAccount(user)
+          }
+          this.vaultAccount = (this.$hiveStore.accounts && this.$hiveStore.accounts[user]) || await fetchAccount(user)
+        }
+        this.vaultAccountFor = user
+      } catch (error) {
+        console.error('Failed to load blog settings for members-only publishing', error)
+        this.vaultAccount = null
+        this.vaultAccountFor = user
+      }
+    },
+    async ensureVaultUnlocked () {
+      if (!this.loggedInUser) throw new Error('Log in with Keychain, SmartLock or HiveAuth first.')
+      if (isCreatorVaultUnlocked(this.loggedInUser)) return getCreatorVault(this.loggedInUser)
+      const passphrase = String(this.vaultPassphrase || '')
+      if (!passphrase) throw new Error('Enter your vault passphrase to unlock members-only publishing.')
+      const vault = await unlockCreatorVault(this.loggedInUser, passphrase)
+      this.vaultPassphrase = ''
+      this.vaultSessionTick += 1
+      return vault
+    },
+    async unlockVaultFromComposer () {
+      if (this.vaultUnlocking) return
+      this.vaultUnlocking = true
+      try {
+        await this.ensureVaultUnlocked()
+        this.$q.notify({
+          type: 'positive',
+          message: 'Vault unlocked',
+          caption: 'Keys stay in memory for this session.'
+        })
+      } catch (error) {
+        this.$q.notify({ type: 'negative', message: 'Could not unlock the vault', caption: error.message })
+      } finally {
+        this.vaultUnlocking = false
+      }
+    },
+    setVaultEnabled (value) {
+      this.vaultEnabled = value === true
+    },
+    setVaultMode (value) {
+      this.vaultMode = value
+    },
+    insertVaultLock () {
+      if (!this.draft) return
+      const textarea = this.$refs.body
+      const start = textarea && Number.isInteger(textarea.selectionStart)
+        ? textarea.selectionStart
+        : Number(this.savedSelection && this.savedSelection.start) || this.draft.body.length
+      const existing = vaultMarkerIndex(this.draft.body)
+      if (existing === -1) {
+        this.draft.body = insertVaultMarker(this.draft.body, start)
+      } else {
+        // Move the existing lock instead of stacking a second marker.
+        const withoutMarker = removeVaultMarker(this.draft.body)
+        const target = existing < start ? start - VAULT_MARKER.length : start
+        this.draft.body = insertVaultMarker(withoutMarker, target)
+      }
+      this.draft.vault = { ...this.vaultDraft, enabled: true }
+      this.$nextTick(() => {
+        const element = this.$refs.body
+        if (!element) return
+        const cursor = Math.min(start + VAULT_MARKER.length, this.draft.body.length)
+        element.focus()
+        element.setSelectionRange(cursor, cursor)
+      })
+    },
+    async previewVaultContent () {
+      if (!this.draft) return
+      const info = this.vaultSettingsInfo
+      try {
+        if (!info.enabled) throw new Error('Vault is not configured for this blog.')
+        const vault = await this.ensureVaultUnlocked()
+        const permlink = this.draft.editing ? this.draft.editing.permlink : createPostPermlink(this.draft.title)
+        const prepared = await prepareVaultPublish({
+          account: this.loggedInUser,
+          permlink,
+          draft: this.draft,
+          vault,
+          settings: info.settings
+        })
+        this.vaultPreviewBody = prepared.premiumBody
+        this.vaultPreviewInfo = {
+          transport: prepared.transport,
+          plaintextBytes: prepared.plaintextBytes,
+          ciphertextChars: prepared.ciphertextChars
+        }
+        this.vaultPreviewOpen = true
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Could not preview members-only content',
+          caption: error.message
+        })
+      }
     },
     scheduleImageProbe () {
       if (this.imageProbeTimer) clearTimeout(this.imageProbeTimer)
@@ -5373,6 +5867,7 @@ export default {
         portfolio: false,
         collection: false,
         product: defaultProductFields(),
+        vault: { enabled: false, mode: 'section' },
         authorDisplay: '',
         beneficiaries: normalizeBeneficiaries((this.$hiveStore.user.settings.beneficiary || []).map(item => ({
           account: item.account,
@@ -5432,6 +5927,12 @@ export default {
           collection: metadata.collection === true ||
             tags.map(tag => normalizeTag(tag)).includes(COLLECTION_TAG),
           product: readProductFieldsFromMetadata(metadata),
+          vault: metadata.banksia_vault && typeof metadata.banksia_vault === 'object'
+            ? {
+                enabled: true,
+                mode: metadata.banksia_vault.mode === 'post' ? 'post' : 'section'
+              }
+            : { enabled: false, mode: 'section' },
           authorDisplay: metadata.author || '',
           beneficiaries: (post.beneficiaries || []).map(item => ({ account: item.account, weight: Number(item.weight) })),
           rewards: {
@@ -5506,6 +6007,7 @@ export default {
         portfolio: draft.portfolio,
         collection: draft.collection,
         product: draft.product,
+        vault: draft.vault,
         authorDisplay: draft.authorDisplay,
         scheduledAt: draft.scheduledAt
       })
@@ -5860,8 +6362,8 @@ export default {
       }
       this.reviewOpen = true
     },
-    confirmPublish () {
-      if (!this.draft) return
+    async confirmPublish () {
+      if (!this.draft || this.vaultBusy) return
       this.reviewOpen = false
       if (!this.loggedInUser) {
         this.$q.notify({ type: 'negative', message: 'Log in with Keychain, SmartLock or HiveAuth to publish.' })
@@ -5873,22 +6375,77 @@ export default {
         return
       }
 
+      this.vaultBusy = true
       try {
         const editing = this.draft.editing
+        const isCommentEdit = Boolean(editing && editing.parentAuthor)
         const permlink = editing ? editing.permlink : createPostPermlink(this.draft.title)
         const alsoReblog = Boolean(!editing && this.postingToCommunity && this.draft.alsoReblog)
+        const vaultDraft = normalizeVaultDraft(this.draft.vault)
+        let body = this.draft.body
+        let vaultMetadata
+        let companions = []
+
+        if (!isCommentEdit && vaultDraft.enabled) {
+          if (!this.vaultAccountReady) await this.loadVaultAccount()
+          const info = this.vaultSettingsInfo
+          if (!info.enabled) {
+            throw new Error('Vault is not configured for this blog. Set it up in Settings → Blog first.')
+          }
+          // A teaser-only edit can preserve the previous ciphertext without an
+          // unlocked vault. Unlock only when a passphrase was entered or the
+          // premium body needs re-encrypting (prepareVaultPublish then throws).
+          let vault = getCreatorVault(this.loggedInUser)
+          if (!vault && String(this.vaultPassphrase || '')) {
+            vault = await this.ensureVaultUnlocked()
+          }
+          const decision = await vaultMetadataForEdit({
+            draft: this.draft,
+            previousMetadata: editing ? editing.previousMetadata : null,
+            vault,
+            settings: info.settings,
+            account: this.loggedInUser,
+            permlink,
+            now: new Date(),
+            withDetails: true
+          })
+          if (!decision) throw new Error('Vault is not enabled for this draft.')
+          body = decision.publicBody
+          vaultMetadata = decision.vaultMetadata
+          companions = Array.isArray(decision.companions) ? decision.companions : []
+        } else if (!isCommentEdit && editing &&
+          editing.previousMetadata && editing.previousMetadata.banksia_vault !== undefined) {
+          // Switching Vault off on an edit removes the metadata key and the
+          // marker. The old ciphertext comments stay on chain, as Hive cannot
+          // delete them.
+          vaultMetadata = null
+          body = removeVaultMarker(body)
+        } else if (!isCommentEdit && hasVaultMarker(body)) {
+          body = removeVaultMarker(body)
+        }
+
+        const draftForOperation = body === this.draft.body ? this.draft : { ...this.draft, body }
         const item = postQueueItem({
           username: this.loggedInUser,
-          draft: this.draft,
+          draft: draftForOperation,
           permlink,
           // An edit keeps the original parent and does not resend comment options.
           parentPermlink: editing ? editing.parentPermlink : null,
           parentAuthor: editing ? editing.parentAuthor : '',
           commentOptions: !editing,
           previousMetadata: editing ? editing.previousMetadata : null,
-          alsoReblog
+          alsoReblog,
+          vaultMetadata
         })
         this.$hiveStore.addToQueue(item)
+        if (companions.length) {
+          const companionItems = premiumCompanionQueueItems({
+            account: this.loggedInUser,
+            permlink,
+            companions
+          })
+          for (const companionItem of companionItems) this.$hiveStore.addToQueue(companionItem)
+        }
         this.rememberTags(this.draft.tags)
         this.rememberCommunity(this.draft.community)
         this.publishedInfo = {
@@ -5896,6 +6453,7 @@ export default {
           permlink,
           editing: Boolean(editing),
           alsoReblog,
+          companions: companions.length,
           url: 'https://banksia.io/@' + this.loggedInUser + '/' + permlink
         }
         this.publishedOpen = true
@@ -5925,12 +6483,15 @@ export default {
             : 'Queued, but you are offline',
           caption: (isOnline()
             ? 'Open the action queue to sign and broadcast it.'
-            : 'Reconnect, then retry the failed queue item.') + ' @' + this.loggedInUser + '/' + permlink,
+            : 'Reconnect, then retry the failed queue item.') + ' @' + this.loggedInUser + '/' + permlink +
+            (companions.length ? ' · ' + companions.length + ' companion comment(s)' : ''),
           timeout: 7000
         })
       } catch (error) {
         this.$q.notify({ type: 'negative', message: 'Could not queue the post', caption: error.message })
         console.error('Failed to queue post', error)
+      } finally {
+        this.vaultBusy = false
       }
     },
     exportCurrent () {

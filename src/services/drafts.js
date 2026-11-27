@@ -102,6 +102,19 @@ export function normalizeAuthorDisplay (value) {
   return cleanString(value, AUTHOR_DISPLAY_MAX).replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * Local members-only state. Kept in this module instead of importing
+ * `vaultCompose` so draft reads (dashboard widgets, onboarding) never pull the
+ * crypto modules into their chunks.
+ */
+function normalizeVaultFields (value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+  return {
+    enabled: source.enabled === true,
+    mode: source.mode === 'post' ? 'post' : 'section'
+  }
+}
+
 export function normalizeTag (value) {
   return sanitizeTag(cleanString(value, 60))
 }
@@ -222,6 +235,8 @@ export function normalizeDraft (raw, now = Date.now()) {
     portfolio: source.portfolio === true,
     collection: source.collection === true,
     product: normalizeProductFields(source.product),
+    // Members-only state only; the premium plaintext lives in the local body.
+    vault: normalizeVaultFields(source.vault),
     authorDisplay: normalizeAuthorDisplay(source.authorDisplay),
     scheduledAt: normalizeScheduledAt(source.scheduledAt),
     archivedAt: normalizeArchivedAt(source.archivedAt),
@@ -368,6 +383,7 @@ function snapshotFields (draft) {
     countdown: draft.countdown,
     portfolio: draft.portfolio,
     collection: draft.collection,
+    vault: draft.vault,
     authorDisplay: draft.authorDisplay,
     scheduledAt: draft.scheduledAt
   }

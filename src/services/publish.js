@@ -32,6 +32,10 @@ import { coverIssueDetail } from './imageHealth'
 import { PRODUCT_CONTENT_TYPE, PRODUCT_METADATA_KEYS, buildProductMetadata } from './productDraft'
 
 const ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
+// Kept as a literal so this module does not pull the crypto stack into every
+// page that imports publish.js. `vaultPayload.VAULT_MARKER` is the canonical
+// definition; both must stay identical.
+const VAULT_BODY_MARKER = '<!--banksia:vault-->'
 
 /* json_metadata keys this app owns. On edit they are replaced from the draft
  * so clearing an option removes the old value instead of leaving it behind. */
@@ -50,6 +54,13 @@ const MANAGED_METADATA_KEYS = [
   'cross_post',
   'original_author',
   'original_permlink'
+]
+
+/* Keys owned by another client or an earlier publish that must survive an
+ * edit unless this app deliberately rewrites them. `banksia_vault` is managed
+ * here only for premium posts: an unrelated edit must never drop it. */
+export const PRESERVED_METADATA_KEYS = [
+  'banksia_vault'
 ]
 
 export const AI_TOOL_LABELS = {
@@ -189,8 +200,17 @@ export function readCrossPostMetadata (metadata) {
 }
 
 /** Metadata for a post, including tags, media and optional interoperability flags. */
-export function buildPostMetadata (draft) {
+export function buildPostMetadata (draft, { vaultMetadata } = {}) {
   const source = draft && typeof draft === 'object' ? draft : {}
+  const hasVault = vaultMetadata !== undefined && vaultMetadata !== null &&
+    typeof vaultMetadata === 'object' && !Array.isArray(vaultMetadata)
+  // The marker is transport, not prose: never let it (or anything after it)
+  // reach a description, image list or mention list.
+  const rawBody = String(source.body || '')
+  const markerIndex = rawBody.indexOf(VAULT_BODY_MARKER)
+  const metadataBody = hasVault
+    ? (markerIndex === -1 ? rawBody : rawBody.slice(0, markerIndex))
+    : source.body
   const metadata = {
     app: 'banksia.io',
     format: 'markdown',
@@ -200,17 +220,17 @@ export function buildPostMetadata (draft) {
   const images = []
   const cover = normalizeCoverImage(source.coverImage)
   if (cover) images.push(cover)
-  for (const raw of collectImageUrls(source.body)) {
+  for (const raw of collectImageUrls(metadataBody)) {
     const url = normalizeImageUrl(raw)
     if (url && !images.includes(url)) images.push(url)
   }
   if (images.length) metadata.image = images.slice(0, 20)
 
-  const users = extractMentionedUsers(source.body)
+  const users = extractMentionedUsers(metadataBody)
   if (users.length) metadata.users = users
 
   const description = normalizeDescription(source.description) ||
-    deriveDescription(source.body, DESCRIPTION_MAX)
+    deriveDescription(metadataBody, DESCRIPTION_MAX)
   if (description) metadata.description = description
 
   const aiTools = normalizeAiTools(source.aiTools)
@@ -255,6 +275,13 @@ export function buildPostMetadata (draft) {
       metadata.image = productImages
     }
   }
+
+  // The encrypted payload is written only when the caller supplies one. A
+  // normal post must not grow a `banksia_vault` key.
+  if (vaultMetadata !== undefined && vaultMetadata !== null &&
+    typeof vaultMetadata === 'object' && !Array.isArray(vaultMetadata)) {
+    metadata.banksia_vault = vaultMetadata
+  }
   return metadata
 }
 
@@ -277,7 +304,7 @@ export function stripManagedMetadata (metadata) {
  *
  * The queue splits `comment_options` into the on-chain operation at broadcast.
  */
-export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false } = {}) {
+export function buildPostOperation ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false, vaultMetadata = undefined } = {}) {
   const author = String(username || '').trim().toLowerCase()
   if (!ACCOUNT_RE.test(author)) throw new Error('A valid Hive account is required to publish.')
   // A comment edit keeps its parent author. Comments never have a title.
@@ -313,7 +340,7 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
   if (wasProduct && !(draft && draft.product && draft.product.enabled)) {
     for (const key of PRODUCT_METADATA_KEYS) delete previous[key]
   }
-  const next = isComment ? null : buildPostMetadata(draft)
+  const next = isComment ? null : buildPostMetadata(draft, { vaultMetadata })
   // Keep an existing cover when the draft has no images of its own, unless the
   // editor loaded and cleared them.
   if (next && !next.image && Array.isArray(previousMetadata?.image) && previousMetadata.image.length) {
@@ -329,6 +356,14 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
         ...previous,
         ...next
       }
+
+  // `undefined` means "leave whatever the previous post carried" (another
+  // client may have written `banksia_vault`); `null` removes it because the
+  // creator switched Vault off.
+  if (vaultMetadata !== undefined) {
+    if (vaultMetadata === null) delete metadata.banksia_vault
+    else metadata.banksia_vault = vaultMetadata
+  }
 
   const operation = {
     parent_author: parent,
@@ -360,12 +395,43 @@ export function buildPostOperation ({ username, draft, permlink, now = new Date(
 }
 
 /** Posting-key queue item for a top-level post (new or edited). */
-export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false } = {}) {
+export function postQueueItem ({ username, draft, permlink, now = new Date(), parentPermlink = null, parentAuthor = '', commentOptions = true, previousMetadata = null, alsoReblog = false, vaultMetadata = undefined } = {}) {
   return [
     String(username || '').trim().toLowerCase(),
     'posting',
-    buildPostOperation({ username, draft, permlink, now, parentPermlink, parentAuthor, commentOptions, previousMetadata, alsoReblog })
+    buildPostOperation({ username, draft, permlink, now, parentPermlink, parentAuthor, commentOptions, previousMetadata, alsoReblog, vaultMetadata })
   ]
+}
+
+/**
+ * Wrap pre-built companion `comment` operations as posting queue items.
+ *
+ * `companions` is the array returned by `prepareVaultPublish`; each entry is a
+ * `['comment', operation]` pair. The parent fields are filled in defensively so
+ * a malformed companion cannot post outside the premium post's thread.
+ */
+export function premiumCompanionQueueItems ({ account, permlink, companions } = {}) {
+  const author = String(account || '').trim().toLowerCase()
+  const parent = String(permlink || '').trim()
+  if (!ACCOUNT_RE.test(author) || !parent) return []
+
+  const items = []
+  for (const companion of Array.isArray(companions) ? companions : []) {
+    if (!Array.isArray(companion) || companion[0] !== 'comment') continue
+    const operation = companion[1]
+    if (!operation || typeof operation !== 'object') continue
+    items.push([
+      author,
+      'posting',
+      ['comment', {
+        ...operation,
+        parent_author: author,
+        parent_permlink: operation.parent_permlink || parent,
+        author: operation.author || author
+      }]
+    ])
+  }
+  return items
 }
 
 function checklistItem (id, label, status, detail, options = {}) {
