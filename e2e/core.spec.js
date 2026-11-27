@@ -5,10 +5,17 @@ test.describe('navigation and quick wins', () => {
   test('shows the login key guide and simulates a logged-in session', async ({ page }) => {
     await page.goto('/')
     await waitForApp(page)
-    await page.getByRole('button', { name: 'Login' }).click()
-    await expect(page.locator('.login-card')).toContainText('Posting key')
-    await expect(page.locator('.login-card')).toContainText('Active key')
-    await expect(page.locator('.login-card')).toContainText('Keychain')
+    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    const card = page.locator('.login-card')
+    await expect(card).toContainText('Use Keychain, SmartLock or HiveAuth')
+    await card.getByLabel('Username').fill('ausbitbank')
+    await page.waitForTimeout(2500)
+    await page.keyboard.press('Enter')
+    await expect(card.getByRole('button', { name: 'Hive-Keychain' })).toBeVisible({ timeout: 15000 })
+    await card.getByRole('button', { name: 'SmartLock' }).click()
+    await expect(page.locator('.login-key-guide')).toContainText('Posting key')
+    await expect(page.locator('.login-key-guide')).toContainText('Active key')
+    await expect(page.locator('.login-key-guide')).toContainText('Keychain')
   })
 
   test('restores a simulated account session', async ({ page }) => {

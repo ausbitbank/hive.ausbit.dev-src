@@ -93,7 +93,7 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
           if (account?.name !== 'ausbitbank') continue
           let metadata
           try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
-          metadata['hive.ausbit.dev'] = { theme: SKIN }
+          metadata['banksia.io'] = { ...(metadata['banksia.io'] || {}), theme: SKIN }; delete metadata['hive.ausbit.dev']
           metadata.profile = { ...(metadata.profile || {}), cover_image: 'https://images.hive.blog/DQmcover/cover.png' }
           account.posting_json_metadata = JSON.stringify(metadata)
         }

@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T130849Z-c4dae2e2282f`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T135528Z-c7185ec7ed7e`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T130858Z.tar.gz`
-  (sha256 `df27769e57fe70d454b3fb8ecaa823cb486a009a751b2d11aabe02785a07a882`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T130858Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T135537Z.tar.gz`
+  (sha256 `cb067fcef4b1220bd91d5ed9d06846dabbfecd5887db4e556f3f51b811a50f12`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T135537Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -398,6 +398,19 @@ Deployed on 2026-11-27 from `master`:
   served by the Worker shells; direct-origin requests without
   `Accept: text/html` still 404 on the three new apex paths. Apply the vhost on
   the next privileged session.
+
+### Post-release UI fixes
+
+- The Vault settings section was fully disabled even for the owner because
+  `!canEdit || busy` evaluated to `''` while `busy` was idle; Vue casts an empty
+  string to `true` for a Boolean prop. All disable bindings now use
+  `Boolean(busy)`, with a regression test in
+  `tests/unit/vault-settings-ui.spec.js`.
+- **Open dashboard** now carries `?account=<blog>` so it opens the viewed blog's
+  dashboard instead of the logged-in account's (and works read-only).
+- The four long-standing E2E failures were stale test fixtures: the skin specs
+  still wrote the legacy `hive.ausbit.dev` namespace, the login selector matched
+  a post title, and the mobile logo assertion assumed the old square mark.
 
 ### Live write smoke (2026-11-27)
 
@@ -428,7 +441,7 @@ kept deliberately.
 
 The full gate was: `bun run lint`, `bun run test` (214 files / 2,062 tests),
 `bun run build`, `bun run test:e2e` (pre-existing CDP timeouts),
-`bun run test:e2e:full` (197 passed / 4 pre-existing failures), `bun run
+`bun run test:e2e:full` (200 passed / 1 flaky keepsats axe failure that passes standalone; the four previously failing badges/login/header/skin specs are fixed), `bun run
 perf:check` (passed), and the Vault axe checks (clean at 1440×900 and 390×844).
 
 ## References

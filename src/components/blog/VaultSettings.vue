@@ -15,6 +15,13 @@
         </q-badge>
       </div>
 
+      <q-banner v-if="!canEdit" rounded class="vault-settings__banner">
+        <template #avatar><q-icon name="lock" /></template>
+        Sign in as <strong>@{{ accountName || 'the blog owner' }}</strong> from the
+        top-right login control to edit these settings. You can still preview the
+        current configuration and open the dashboard read-only.
+      </q-banner>
+
       <q-banner v-if="!modelValue.enabled" rounded class="vault-settings__banner">
         <template #avatar><q-icon name="lock" /></template>
         Enabling Vault publishes a Hive Open Market membership product and a hidden
@@ -26,13 +33,13 @@
         <q-toggle
           :model-value="modelValue.enabled"
           label="Enable members-only content"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @update:model-value="patch({ enabled: $event })"
         />
         <q-toggle
           :model-value="modelValue.watermark"
           label="Show a reader watermark"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @update:model-value="patch({ watermark: $event })"
         />
       </div>
@@ -44,7 +51,7 @@
           dense
           label="Price per month"
           suffix="HBD"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           :rules="[priceRule]"
           @update:model-value="patch({ price: normalizePriceInput($event) })"
         />
@@ -56,7 +63,7 @@
           label="Renewal (hours)"
           min="24"
           max="8760"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @update:model-value="patch({ recurrence: Number($event) || 730 })"
         />
         <q-input
@@ -67,7 +74,7 @@
           label="Payments"
           min="2"
           max="120"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @update:model-value="patch({ executions: Number($event) || 12 })"
         />
         <q-select
@@ -78,7 +85,7 @@
           label="Archive access"
           emit-value
           map-options
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @update:model-value="patch({ archive: $event })"
         />
       </div>
@@ -114,7 +121,7 @@
           dense
           label="Vault passphrase"
           autocomplete="new-password"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
         />
         <q-input
           v-model="passphraseConfirm"
@@ -123,7 +130,7 @@
           dense
           label="Confirm passphrase"
           autocomplete="new-password"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
         />
       </div>
 
@@ -135,7 +142,7 @@
           icon="enhanced_encryption"
           label="Generate vault"
           :loading="busy === 'generate'"
-          :disable="!canEdit || busy || !passphraseValid"
+          :disable="!canEdit || Boolean(busy) || !passphraseValid"
           @click="generateVault"
         />
         <q-btn
@@ -144,7 +151,7 @@
           icon="download"
           label="Export vault"
           :loading="busy === 'export'"
-          :disable="!canEdit || busy || !passphrase"
+          :disable="!canEdit || Boolean(busy) || !passphrase"
           @click="exportVault"
         />
         <q-btn
@@ -152,7 +159,7 @@
           no-caps
           icon="upload"
           label="Import vault"
-          :disable="!canEdit || busy || !passphrase"
+          :disable="!canEdit || Boolean(busy) || !passphrase"
           @click="$refs.vaultFile && $refs.vaultFile.click()"
         />
         <input
@@ -179,7 +186,7 @@
           icon="storefront"
           label="Publish membership product"
           :loading="busy === 'product'"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @click="publishProduct"
         />
         <q-btn
@@ -188,7 +195,7 @@
           icon="inventory_2"
           label="Publish grant container"
           :loading="busy === 'container'"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @click="publishContainer"
         />
         <q-btn
@@ -209,7 +216,7 @@
           no-caps
           color="primary"
           label="Save Vault settings"
-          :disable="!canEdit || busy"
+          :disable="!canEdit || Boolean(busy)"
           @click="$emit('save')"
         />
         <span class="blog-settings__size">Vault object: {{ size }} bytes</span>
@@ -335,7 +342,7 @@ export default {
       return (this.account && this.account.name) || ''
     },
     dashboardPath () {
-      return '/settings/blog/vault'
+      return '/settings/blog/vault' + (this.accountName ? '?account=' + encodeURIComponent(this.accountName) : '')
     },
     passphraseValid () {
       return this.passphrase.length >= 10 && this.passphrase === this.passphraseConfirm

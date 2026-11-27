@@ -165,7 +165,7 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
         if (account?.name === 'ausbitbank') {
           let metadata
           try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
-          metadata['hive.ausbit.dev'] = { theme: SKIN }
+          metadata['banksia.io'] = { ...(metadata['banksia.io'] || {}), theme: SKIN }; delete metadata['hive.ausbit.dev']
           metadata.profile = { ...(metadata.profile || {}), pinned: POST.permlink }
           account.posting_json_metadata = JSON.stringify(metadata)
         }

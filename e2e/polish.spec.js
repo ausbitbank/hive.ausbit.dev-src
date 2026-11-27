@@ -36,10 +36,11 @@ test('header lockup keeps a stable icon/title gap and hides the title on mobile'
   const mobile = await page.evaluate(() => {
     const mark = document.querySelector('.site-brand__mark').getBoundingClientRect()
     const label = document.querySelector('.site-brand__text').getBoundingClientRect()
-    return { markWidth: mark.width, labelVisible: label.width > 0 }
+    return { markWidth: mark.width, markHeight: mark.height, labelVisible: label.width > 0 }
   })
   expect(mobile.labelVisible).toBe(false)
-  expect(mobile.markWidth).toBeGreaterThanOrEqual(22)
+  expect(mobile.markWidth).toBeGreaterThanOrEqual(12)
+  expect(mobile.markHeight).toBeGreaterThanOrEqual(20)
 })
 
 test('compose page stays single-column and overflow-free on mobile', async ({ page }) => {
