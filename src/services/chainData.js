@@ -598,7 +598,9 @@ export function invalidateWitnessCache () {
 }
 
 export function invalidatePostCache () {
-  return invalidateCache('posts:')
+  // Feed rows live under `posts:` while hydrated single posts live under
+  // `post:content:`. A vote/comment/edit must clear both.
+  return invalidateCache('posts:') + invalidateCache('post:content:')
 }
 
 export function invalidateCommunityCache (name = null) {
