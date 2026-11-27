@@ -68,6 +68,25 @@
         </div>
       </section>
 
+      <section class="settings-section" aria-labelledby="settings-blog-title">
+        <div class="settings-section__head">
+          <q-icon name="web" size="18px" color="primary" aria-hidden="true" />
+          <div>
+            <h3 id="settings-blog-title" class="settings-section__title">Blog</h3>
+            <p class="settings-section__hint">Claim or customise your reading page at username.banksia.io.</p>
+          </div>
+        </div>
+        <q-btn
+          outline
+          no-caps
+          color="primary"
+          icon="web"
+          label="Open blog settings"
+          to="/settings/blog"
+          v-close-popup
+        />
+      </section>
+
       <section class="settings-section" aria-labelledby="settings-images-title">
         <div class="settings-section__head">
           <q-icon name="image" size="18px" color="teal" aria-hidden="true" />

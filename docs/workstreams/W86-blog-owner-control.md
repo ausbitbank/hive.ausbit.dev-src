@@ -22,6 +22,9 @@ Shipped:
   the 16 KB account-metadata cap.
 - **Settings UI**: a section builder with up/down/visibility controls, a text
   section editor, custom CSS editor and branding previews.
+- **Discoverability**: "Blog settings" is reachable from the account menu, the
+  Settings popover, the navigation drawer, the account page and the blog
+  footer, so the owner never needs to know or type `/settings/blog`.
 - **Backward compatibility**: blogs without `blocks` keep the default
   hero → pinned → archive order.
 
@@ -75,9 +78,9 @@ surface.
   sections, duplicate fixed sections, unknown types, branding URLs, CSS
   sanitisation and the 12 KB cap.
 - `bun run build` — succeeded.
-- `e2e/blog.spec.js` — 6 checks pass with axe at 1440×1100 and 390×844,
-  including a blog with no hero, a text section, a list archive, custom CSS,
-  a custom logo and a custom favicon.
+- `e2e/blog.spec.js` — 7 checks pass with axe at 1440×1100 and 390×844,
+  including the account-menu discovery path and a blog with no hero, a text
+  section, a list archive, custom CSS, a custom logo and a custom favicon.
 - `bun run icons:subset` — regenerated after the new `css`/builder icons;
   403 icons, 23 KB.
 - Deployed with `./scripts/deploy.sh`; deploy verification passed.

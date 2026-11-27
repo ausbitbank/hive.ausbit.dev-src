@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { runAxe } from './helpers'
+import { loginAs, runAxe } from './helpers'
 
 // The production build registers a service worker on loopback. Its navigation
 // fallback can answer the same-origin /api/blogs request before Playwright's
@@ -152,8 +152,16 @@ test('/blogs landing is accessible', async ({ page }) => {
   await axeAtBothWidths(page, '/blogs')
 })
 
-test('/settings/blog social card layout is accessible', async ({ page }) => {
-  await mockHive(page)
+test('blog settings are discoverable from the account menu', async ({ page }) => {
+  await loginAs(page, 'ausbitbank')
+  await page.goto('/blogs', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: /Account menu/ }).click()
+  const link = page.getByRole('link', { name: 'Blog settings', exact: true })
+  await expect(link).toBeVisible()
+  await expect(link).toHaveAttribute('href', '/settings/blog?account=ausbitbank')
+})
+
+test('/settings/blog social card layout is accessible', async ({ page }) => {  await mockHive(page)
   await page.goto('/settings/blog?account=alice', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.blog-settings__title')).toBeVisible()
   await expect(page.locator('.blog-settings__og')).toBeVisible()

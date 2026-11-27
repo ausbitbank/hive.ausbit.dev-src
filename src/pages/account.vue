@@ -38,7 +38,7 @@
                   <router-link :to="'/@' + username + '/lightning'">Lightning</router-link>
                   <router-link :to="'/@' + username + '/delegations'">Delegations</router-link>
                   <router-link :to="linkBlog(username)">Blog</router-link>
-                  <router-link v-if="canEditAccount" :to="'/settings/blog?account=' + username">Blog site</router-link>
+                  <router-link v-if="canEditAccount" :to="'/settings/blog?account=' + username">Blog settings</router-link>
                   <a v-else-if="blogSiteClaimed" :href="blogSiteUrl" target="_blank" rel="noopener noreferrer">Blog site</a>
                   <router-link :to="linkPosts(username)">Posts</router-link>
                   <router-link :to="linkComments(username)">Comments</router-link>

@@ -68,6 +68,7 @@
         <p>
           <template v-if="blog.claimed">
             A Hive blog by <a :href="apexAccountUrl">@{{ accountName }}</a>.
+            <a :href="settingsUrl">Customise this blog</a>
           </template>
           <template v-else>
             Unclaimed preview for <a :href="apexAccountUrl">@{{ accountName }}</a>.

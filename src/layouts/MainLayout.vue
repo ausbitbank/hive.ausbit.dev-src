@@ -100,6 +100,13 @@
               <q-item-label caption :title="link.caption">{{ link.caption }}</q-item-label>
             </q-item-section>
           </q-item>
+          <q-item v-if="loggedInUser" clickable :to="'/settings/blog?account=' + loggedInUser">
+            <q-item-section avatar><q-icon name="web" aria-hidden="true" /></q-item-section>
+            <q-item-section>
+              <q-item-label>My blog</q-item-label>
+              <q-item-label caption>settings and customisation</q-item-label>
+            </q-item-section>
+          </q-item>
           <q-item-label header class="site-nav__heading">Community &amp; links</q-item-label>
           <EssentialLink
             v-for="link in externalLinks"
