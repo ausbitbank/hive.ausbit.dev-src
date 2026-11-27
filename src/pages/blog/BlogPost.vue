@@ -24,7 +24,22 @@
       <img v-if="showCover" :src="cover" alt="" class="blog-post__cover" />
     </header>
 
-    <render :input="post.body" class="postbody blog-post__body" />
+    <div class="postbody blog-post__body">
+      <render :input="displayBody" />
+      <VaultLockedSection
+        v-if="vaultMetadata"
+        :metadata="vaultMetadata"
+        :plaintext="vaultPlaintext"
+        :state="vaultState"
+        :plan="vaultPlan"
+        :blog="blogAccountName"
+        :reader-account="readerAccount"
+        :apex-url="vaultApexUrl"
+        @subscribe="onVaultSubscribe"
+        @restore="onVaultRestore"
+        @retry="onVaultRetry"
+      />
+    </div>
 
     <footer class="blog-post__foot">
       <ul v-if="showTags && tags.length" class="blog-post__tags" aria-label="Tags">
@@ -316,6 +331,13 @@
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useBlogStore } from 'src/stores/blog'
+import { useHiveStore } from 'src/stores/hive'
+import { useVaultStore } from 'src/stores/vault'
+import { fetchPostContent } from 'src/services/chainData'
+import { readVaultSettings } from 'src/services/vaultSettings'
+import { deriveVaultPlan } from 'src/services/vaultProduct'
+import { parseVaultMetadata, splitVaultBody } from 'src/services/vaultPayload'
+import { requiresApex } from 'src/services/vaultUnlock'
 import {
   blogPostExcerpt,
   blogPostHasBodyImage,
@@ -328,16 +350,22 @@ import {
   formatBlogDate
 } from 'src/services/blogPosts'
 import Render from 'components/render.vue'
+import VaultLockedSection from 'components/blog/VaultLockedSection.vue'
 
 export default {
   name: 'BlogPost',
-  components: { Render },
+  components: { Render, VaultLockedSection },
   data () {
     return {
       post: null,
       loading: true,
       notFound: false,
-      requestId: 0
+      requestId: 0,
+      vaultMetadata: null,
+      vaultPlan: null,
+      vaultPlanError: '',
+      vaultSettings: null,
+      publicBody: ''
     }
   },
   computed: {
@@ -391,6 +419,34 @@ export default {
     },
     apexTipUrl () {
       return this.post ? 'https://banksia.io/@' + this.post.author + '/tip' : 'https://banksia.io'
+    },
+    blogAccountName () {
+      return this.blog.accountName
+    },
+    readerAccount () {
+      return useHiveStore().user.username || ''
+    },
+    displayBody () {
+      if (this.vaultMetadata) return this.publicBody
+      return this.post ? this.post.body : ''
+    },
+    vaultState () {
+      if (!this.vaultMetadata || !this.post) return { status: 'locked', message: '' }
+      const state = useVaultStore().postState(this.blogAccountName, this.post.permlink)
+      // A member can still read when the product post is temporarily
+      // unavailable; only the subscribe action needs the plan.
+      if (state.status === 'unlocked' && state.plaintext) return state
+      if (this.vaultPlanError) {
+        return { status: 'error', code: 'no-plan', message: this.vaultPlanError }
+      }
+      return state
+    },
+    vaultPlaintext () {
+      return this.vaultState.plaintext || ''
+    },
+    vaultApexUrl () {
+      if (!this.vaultMetadata || !this.post) return ''
+      return requiresApex() ? this.apexPostUrl : ''
     }
   },
   watch: {
@@ -400,11 +456,20 @@ export default {
   created () {
     this.load()
   },
+  beforeUnmount () {
+    if (this.post && this.vaultMetadata) {
+      useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+    }
+  },
   methods: {
     async load () {
       const permlink = String(this.$route.params.permlink || '').trim()
       const author = String(this.$route.params.author || this.blog.accountName || '').trim().toLowerCase()
       const requestId = ++this.requestId
+      if (this.post) {
+        useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+      }
+      this.resetVault()
       this.loading = true
       this.notFound = false
       this.post = null
@@ -417,14 +482,118 @@ export default {
       if (requestId !== this.requestId) return
       this.post = post
       this.notFound = !post
+      if (post) {
+        await this.prepareVault(post, requestId)
+        if (requestId !== this.requestId) return
+      }
       this.loading = false
       if (post) this.updateMeta()
+    },
+    resetVault () {
+      this.vaultMetadata = null
+      this.vaultPlan = null
+      this.vaultPlanError = ''
+      this.vaultSettings = null
+      this.publicBody = ''
+    },
+    async prepareVault (post, requestId = this.requestId) {
+      const metadata = parseVaultMetadata(post && post.json_metadata)
+      if (!metadata) return
+
+      this.vaultMetadata = metadata
+      this.vaultPlanError = ''
+      this.publicBody = splitVaultBody(post.body, metadata.mode).publicBody
+
+      const settings = readVaultSettings(this.blog.account).settings
+      this.vaultSettings = settings
+      const ref = metadata.product || settings.product
+      if (!ref || typeof ref !== 'string' || !ref.includes('/')) {
+        this.vaultPlanError = 'The membership plan could not be loaded.'
+      } else {
+        const [productAuthor, productPermlink] = ref.split('/')
+        try {
+          const productPost = await fetchPostContent(productAuthor, productPermlink)
+          if (requestId !== this.requestId) return
+          const plan = deriveVaultPlan(productPost, {
+            fallback: { executions: settings.executions }
+          })
+          if (!plan) throw new Error('The membership product is not available.')
+          this.vaultPlan = plan
+        } catch {
+          if (requestId === this.requestId) {
+            this.vaultPlanError = 'The membership plan could not be loaded.'
+          }
+        }
+      }
+
+      // Custom domains are read-only: never hold or use a reader key there.
+      if (requiresApex()) return
+
+      const store = useVaultStore()
+      const existing = await store.readerKey(this.blogAccountName)
+      if (!existing) return
+      if (requestId !== this.requestId) return
+
+      await store.unlockPost({
+        blog: this.blogAccountName,
+        author: post.author,
+        permlink: post.permlink,
+        metadata,
+        settings,
+        readerAccount: this.readerAccount
+      }).catch(() => {})
+    },
+    vaultUnlockArguments () {
+      if (!this.post || !this.vaultMetadata) return null
+      return {
+        blog: this.blogAccountName,
+        author: this.post.author,
+        permlink: this.post.permlink,
+        metadata: this.vaultMetadata,
+        settings: this.vaultSettings || {},
+        readerAccount: this.readerAccount
+      }
+    },
+    onVaultSubscribe () {
+      if (!this.vaultPlan) return
+      const product = this.vaultPlan.product ||
+        (this.vaultPlan.author && this.vaultPlan.permlink
+          ? this.vaultPlan.author + '/' + this.vaultPlan.permlink
+          : '')
+      if (!product) return
+      this.$router.push({
+        path: '/subscribe',
+        query: { blog: this.blogAccountName, product }
+      })
+    },
+    onVaultRestore () {
+      const args = this.vaultUnlockArguments()
+      if (!args) return
+      useVaultStore().restoreAccess(args).catch(() => {})
+    },
+    onVaultRetry () {
+      const args = this.vaultUnlockArguments()
+      if (!args) return
+      useVaultStore().unlockPost({ ...args, force: true }).catch(() => {})
     },
     updateMeta () {
       if (!this.post || typeof window === 'undefined') return
       const origin = window.location.origin
-      const description = blogPostExcerpt(this.post, 200)
+      const excerptPost = this.vaultMetadata
+        ? { ...this.post, body: this.publicBody }
+        : this.post
+      const description = blogPostExcerpt(excerptPost, 200)
       const path = blogPostPathFor(this.post, this.blog.accountName)
+      const paywallMarkup = this.vaultMetadata
+        ? {
+            isAccessibleForFree: false,
+            hasPart: {
+              '@type': 'WebPageElement',
+              isAccessibleForFree: false,
+              cssSelector: '.banksia-locked'
+            }
+          }
+        : {}
       setPageMeta({
         title: this.title + ' — ' + this.blogTitle,
         description,
@@ -439,6 +608,7 @@ export default {
           '@type': 'Article',
           headline: this.title,
           description,
+          ...paywallMarkup,
           image: [this.cover || this.blog.ogImage || this.authorAvatar],
           datePublished: this.post.created || undefined,
           dateModified: this.post.last_update || this.post.created || undefined,

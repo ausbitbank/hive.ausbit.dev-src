@@ -6,6 +6,7 @@
 
 import { stripHtml } from '../utils/safeHtml'
 import { blogPostPathFor as hostBlogPostPathFor } from './blogHost'
+import { isVaultContainer } from './vaultProduct'
 import {
   postCommentCount,
   postDisplayTitle,
@@ -16,11 +17,35 @@ import {
   postVotes
 } from './posts'
 
-/** True for a top-level post (not a comment or a reply). */
+function rawMetadata (post) {
+  const value = post && post.json_metadata
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value
+  if (typeof value !== 'string' || !value.trim()) return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * True for Vault plumbing that must never appear in an archive or feed: the
+ * hidden grant container and the HOM membership product.
+ */
+export function isVaultHiddenPost (post) {
+  if (!post || typeof post !== 'object') return false
+  if (isVaultContainer(post)) return true
+  const metadata = rawMetadata(post)
+  return String(metadata.content_type || '').toLowerCase() === 'product'
+}
+
+/** True for a top-level post (not a comment or a reply, not Vault plumbing). */
 export function isBlogPost (post) {
   if (!post || !post.permlink || !post.author) return false
   if (post.parent_author) return false
-  return Number(post.depth || 0) === 0
+  if (Number(post.depth || 0) !== 0) return false
+  return !isVaultHiddenPost(post)
 }
 
 /** A safe https cover image for a post, or ''. */

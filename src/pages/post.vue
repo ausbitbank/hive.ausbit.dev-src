@@ -150,8 +150,20 @@
               </header>
 
               <div class="post-body-section">
-                <render v-if="post.body" :input="post.body" class="postbody" preload />
-                <q-skeleton v-else type="rect" height="220px" />
+                <render v-if="displayBody" :input="displayBody" class="postbody" preload />
+                <VaultLockedSection
+                  v-if="vaultMetadata"
+                  :metadata="vaultMetadata"
+                  :plaintext="vaultPlaintext"
+                  :state="vaultState"
+                  :plan="vaultPlan"
+                  :blog="blogAccountName"
+                  :reader-account="readerAccount"
+                  @subscribe="onVaultSubscribe"
+                  @restore="onVaultRestore"
+                  @retry="onVaultRetry"
+                />
+                <q-skeleton v-if="!displayBody && !vaultMetadata" type="rect" height="220px" />
               </div>
 
               <footer v-if="postTags.length" class="post-tags" aria-label="Post tags">
@@ -1091,11 +1103,16 @@ import { stripHtml, safeJsonParse } from 'src/utils/safeHtml'
 import reblog from 'components/reblog.vue'
 import { deleteCommentQueueItem, formatReputation } from 'src/services/comments'
 import { AI_TOOL_LABELS, readCrossPostMetadata } from 'src/services/publish'
-import { fetchHiveSenseSimilar } from 'src/services/chainData'
+import { fetchAccount, fetchHiveSenseSimilar, fetchPostContent } from 'src/services/chainData'
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { isValidTag } from 'src/utils/hiveTag'
+import { useVaultStore } from 'src/stores/vault'
+import { readVaultSettings } from 'src/services/vaultSettings'
+import { deriveVaultPlan } from 'src/services/vaultProduct'
+import { parseVaultMetadata, splitVaultBody } from 'src/services/vaultPayload'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
+import VaultLockedSection from 'components/blog/VaultLockedSection.vue'
 import moderation from 'src/mixins/moderation'
 
 export default {
@@ -1113,7 +1130,8 @@ export default {
     shareButtons,
     reblog,
     votesDialog,
-    ProfileSkin
+    ProfileSkin,
+    VaultLockedSection
   },
   data () {
     return {
@@ -1129,7 +1147,13 @@ export default {
       rebloggers: [],
       error: null,
       nowMs: Date.now(),
-      countdownTimer: null
+      countdownTimer: null,
+      vaultMetadata: null,
+      vaultPlan: null,
+      vaultPlanError: '',
+      vaultSettings: null,
+      publicBody: '',
+      vaultRequestId: 0
     }
   },
   watch: {
@@ -1295,6 +1319,28 @@ export default {
         notices.push({ icon: 'money_off', text: 'Rewards capped at ' + this.post.max_accepted_payout })
       }
       return notices
+    },
+    blogAccountName () {
+      return (this.post && this.post.author) || this.author || ''
+    },
+    readerAccount () {
+      return this.loggedInUser || ''
+    },
+    displayBody () {
+      if (this.vaultMetadata) return this.publicBody
+      return (this.post && this.post.body) || ''
+    },
+    vaultState () {
+      if (!this.vaultMetadata || !this.post) return { status: 'locked', message: '' }
+      const state = useVaultStore().postState(this.blogAccountName, this.post.permlink)
+      if (state.status === 'unlocked' && state.plaintext) return state
+      if (this.vaultPlanError) {
+        return { status: 'error', code: 'no-plan', message: this.vaultPlanError }
+      }
+      return state
+    },
+    vaultPlaintext () {
+      return this.vaultState.plaintext || ''
     }
   },
   methods: {
@@ -1326,6 +1372,7 @@ export default {
       }
       this.post = post
       this.updatePageMeta(post)
+      this.prepareVault(post).catch(() => {})
       this.startCountdownTimer()
       this.loadRebloggedBy()
       const category = post && post.category
@@ -1372,7 +1419,11 @@ export default {
       const metadata = this.getPostMeta(post)
       const title = post && post.title ? stripHtmlForMeta(post.title, 120) : ''
       const pageTitle = title || ('Hive post by @' + author)
-      const body = post && post.body ? stripHtmlForMeta(post.body.slice(0, 4000), 160) : ''
+      const vault = parseVaultMetadata(metadata)
+      const publicBody = vault && post && post.body
+        ? splitVaultBody(post.body, vault.mode).publicBody
+        : (post && post.body) || ''
+      const body = publicBody ? stripHtmlForMeta(publicBody.slice(0, 4000), 160) : ''
       const metaDescription = typeof metadata.description === 'string'
         ? stripHtmlForMeta(metadata.description, 160)
         : ''
@@ -1391,7 +1442,17 @@ export default {
             author: { '@type': 'Person', name: '@' + author, url: BASE_URL + '/@' + author },
             publisher: { '@type': 'Organization', name: SITE_NAME, url: BASE_URL },
             mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
-            url: pageUrl
+            url: pageUrl,
+            ...(vault
+              ? {
+                  isAccessibleForFree: false,
+                  hasPart: {
+                    '@type': 'WebPageElement',
+                    isAccessibleForFree: false,
+                    cssSelector: '.banksia-locked'
+                  }
+                }
+              : {})
           }
         : null
       setPageMeta({
@@ -1402,6 +1463,101 @@ export default {
         type: 'article',
         jsonLd
       })
+    },
+    resetVault () {
+      this.vaultRequestId += 1
+      this.vaultMetadata = null
+      this.vaultPlan = null
+      this.vaultPlanError = ''
+      this.vaultSettings = null
+      this.publicBody = ''
+    },
+    async prepareVault (post) {
+      const requestId = ++this.vaultRequestId
+      const metadata = parseVaultMetadata(post && post.json_metadata)
+      if (!metadata) return
+
+      this.vaultMetadata = metadata
+      this.vaultPlanError = ''
+      this.publicBody = splitVaultBody(post.body, metadata.mode).publicBody
+
+      let account
+      try {
+        account = await fetchAccount(post.author)
+      } catch {
+        account = null
+      }
+      if (requestId !== this.vaultRequestId) return
+      const settings = readVaultSettings(account).settings
+      this.vaultSettings = settings
+      const ref = metadata.product || settings.product
+      if (!ref || typeof ref !== 'string' || !ref.includes('/')) {
+        this.vaultPlanError = 'The membership plan could not be loaded.'
+      } else {
+        const [productAuthor, productPermlink] = ref.split('/')
+        try {
+          const productPost = await fetchPostContent(productAuthor, productPermlink)
+          if (requestId !== this.vaultRequestId) return
+          const plan = deriveVaultPlan(productPost, {
+            fallback: { executions: settings.executions }
+          })
+          if (!plan) throw new Error('The membership product is not available.')
+          this.vaultPlan = plan
+        } catch {
+          if (requestId === this.vaultRequestId) {
+            this.vaultPlanError = 'The membership plan could not be loaded.'
+          }
+        }
+      }
+
+      if (requestId !== this.vaultRequestId) return
+      if (!this.post || this.post.permlink !== post.permlink) return
+
+      const store = useVaultStore()
+      const existing = await store.readerKey(post.author)
+      if (!existing) return
+
+      await store.unlockPost({
+        blog: post.author,
+        author: post.author,
+        permlink: post.permlink,
+        metadata,
+        settings,
+        readerAccount: this.readerAccount
+      }).catch(() => {})
+    },
+    vaultUnlockArguments () {
+      if (!this.post || !this.vaultMetadata) return null
+      return {
+        blog: this.blogAccountName,
+        author: this.post.author,
+        permlink: this.post.permlink,
+        metadata: this.vaultMetadata,
+        settings: this.vaultSettings || {},
+        readerAccount: this.readerAccount
+      }
+    },
+    onVaultSubscribe () {
+      if (!this.vaultPlan) return
+      const product = this.vaultPlan.product ||
+        (this.vaultPlan.author && this.vaultPlan.permlink
+          ? this.vaultPlan.author + '/' + this.vaultPlan.permlink
+          : '')
+      if (!product) return
+      this.$router.push({
+        path: '/subscribe',
+        query: { blog: this.blogAccountName, product }
+      })
+    },
+    onVaultRestore () {
+      const args = this.vaultUnlockArguments()
+      if (!args) return
+      useVaultStore().restoreAccess(args).catch(() => {})
+    },
+    onVaultRetry () {
+      const args = this.vaultUnlockArguments()
+      if (!args) return
+      useVaultStore().unlockPost({ ...args, force: true }).catch(() => {})
     },
     linkHiveBlogPost (author, permlink) {
       return 'https://hive.blog/@' + author + '/' + permlink
@@ -1496,6 +1652,10 @@ export default {
       }
     },
     init () {
+      if (this.post && this.vaultMetadata) {
+        useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+      }
+      this.resetVault()
       this.stopCountdownTimer()
       this.post = null
       this.error = null
@@ -1515,6 +1675,9 @@ export default {
     this.init()
   },
   beforeUnmount () {
+    if (this.post && this.vaultMetadata) {
+      useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+    }
     this.stopCountdownTimer()
   }
 }
