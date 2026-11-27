@@ -5,6 +5,7 @@
 // (apart from the API wrappers) and are shared by the list card and the
 // proposal detail page.
 import hive from './hive'
+import { loadCached } from './cache'
 import { vestsToHive } from './wallet'
 import moment from '../utils/time'
 
@@ -285,17 +286,20 @@ export async function listProposals (options = {}) {
     limit = 1000,
     order = 'by_total_votes',
     orderDirection = 'descending',
-    status = 'all'
+    status = 'all',
+    force = false
   } = options
 
-  const response = await hive.api.callAsync('database_api.list_proposals', {
-    start: ['-1'],
-    limit,
-    order,
-    order_direction: orderDirection,
-    status
-  })
-  return response?.proposals || []
+  return loadCached('proposals:list:' + [limit, order, orderDirection, status].join(':'), async () => {
+    const response = await hive.api.callAsync('database_api.list_proposals', {
+      start: ['-1'],
+      limit,
+      order,
+      order_direction: orderDirection,
+      status
+    })
+    return response?.proposals || []
+  }, { ttl: 60 * 1000, force })
 }
 
 export async function findProposal (id) {

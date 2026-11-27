@@ -743,7 +743,12 @@ export function fetchCommunityNameMatches (prefix, limit = 12, { force = false }
  * pages are fetched sequentially and kept locally per request.
  */
 export function fetchPostSearch (plan, { force = false } = {}) {
-  const key = 'search:posts:' + searchReadKey(plan || {}, { sort: plan?.sort })
+  const tag = String(plan?.communities || plan?.tags || '').trim().toLowerCase()
+  // A tag/keyword feed ignores the other plan fields; canonicalise the key so
+  // the analytics, posts and tag groups in one search share a single read.
+  const key = tag
+    ? 'search:posts:tag:' + tag
+    : 'search:posts:' + searchReadKey(plan || {}, { sort: plan?.sort })
   return loadCached(key, async () => {
     const limit = 20
     const tag = plan?.communities || plan?.tags
