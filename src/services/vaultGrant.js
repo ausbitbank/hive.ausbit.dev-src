@@ -24,7 +24,7 @@ import {
 export { canonicalJson }
 
 const HIVE_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
-const PERIOD_RE = /^\d{4}-\d{2}$/
+const PERIOD_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
 const THUMBPRINT_RE = /^[0-9a-f]{16}$/
 const BULLETIN_PERMLINK_RE = /^vault-(\d{4}-\d{2})-(\d+)(?:-\d+)?$/
 

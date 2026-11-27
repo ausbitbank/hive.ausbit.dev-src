@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T152819Z-5c7c459b0877`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T154455Z-c6441a1618c5`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T152828Z.tar.gz`
-  (sha256 `39be48b3bcd619c14d0ff96dc823b9c16b6e05cb108dacf968d4e7c94320b186`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T152828Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T154503Z.tar.gz`
+  (sha256 `4bb3319271f8ef29e133af3074dc04cd1c4a991113efd31a72a24366570a8aa1`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T154503Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -417,6 +417,11 @@ Deployed on 2026-11-27 from `master`:
   **Select pending & issue**.
 - The price field keeps a local draft and commits on blur/Enter, so it no longer
   snaps back while typing.
+- **Protocol specification:** `docs/integrations/vault-protocol.md` is now a
+  normative v1 spec with conformance classes, complete JSON Schemas,
+  cryptographic constructions, exact signature payloads, reproducible test
+  vectors, an independent security-audit checklist and a frontend
+  implementation checklist.
 - **Auto-issue grants:** while the creator dashboard tab is open, visible and
   the vault is unlocked, it polls verified payments every 30 seconds and queues
   a bulletin for pending readers automatically. The toggle is persisted per

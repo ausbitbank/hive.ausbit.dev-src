@@ -1,8 +1,10 @@
 # Banksia Vault protocol (`banksia.vault@1`)
 
-**Status: final for the W89 self-sovereign beta (2026-11-27).** The protocol is
-implemented and unit-tested in this repository. Relay/delegation, encrypted
-media, multi-tier and claim codes are reserved but not implemented; see §15.
+**Status: final v1 specification, 2026-11-28.** The protocol is implemented,
+unit-tested, browser-tested and live-smoked in this repository. Relay/delegation,
+encrypted media, multi-tier and claim codes are reserved but not implemented; see
+§15. A security-audit checklist is in §17 and a frontend implementation
+checklist is in §18.
 
 This document specifies the wire format and cryptographic constructions for
 Banksia Vault, the members-only content protocol for Banksia blogs. It is the
@@ -18,6 +20,26 @@ The design rationale, threat model and product decisions live in
 [`docs/research/members-only-content.md`](../research/members-only-content.md).
 This file is the build contract: exact schemas, byte layouts, AAD strings, limits
 and test vectors.
+
+---
+
+## 0. Conformance
+
+The key words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT** and **MAY** are
+normative. A conforming implementation falls into one or more classes:
+
+| Class | Must be able to |
+| --- | --- |
+| **Reader** | Detect `banksia_vault`, fetch and verify the bulletin, unwrap the ring key, verify/decrypt the payload, and render only the teaser when locked. |
+| **Issuer** | Verify a payment, seal the keyring, wrap `K_ring` to each reader, sign the bulletin and publish it under the container. |
+| **Writer** | Encrypt a section or whole post, write the public teaser and the `banksia_vault` metadata, and preserve Vault metadata on edit. |
+| **Product host** | Publish/parse the HOM membership product and derive payment terms from it. |
+
+A reader that cannot verify a signature, AAD binding or expiry MUST fail closed:
+show the paywall or a generic error, never partial plaintext. Unknown optional
+fields MAY be ignored; unknown `v`, `alg`, `mode` or signature prefixes MUST be
+rejected. The protocol is deliberately small enough that a reader needs only
+Hive RPC reads and WebCrypto.
 
 ---
 
@@ -78,8 +100,8 @@ server-side key custody.
 | Action | Signer | Authority | Operation |
 | --- | --- | --- | --- |
 | Enable/disable Vault, price, product/container pointers | Creator | **Posting** | `account_update2` with `posting_json_metadata` and `json_metadata: ""` |
-| Publish the membership product | Creator | **Posting** | `comment` (+ `comment_options`) |
-| Publish the hidden grant container | Creator | **Posting** | `comment` |
+| Publish the membership product | Creator | **Posting** | `comment` (no `comment_options` required) |
+| Publish the hidden grant container | Creator | **Posting** | `comment` as a reply under the product |
 | Publish a premium post | Creator | **Posting** | `comment` with `json_metadata.banksia_vault` |
 | Publish or replace a bulletin (self-sovereign) | Creator | **Posting** | `comment` under the container |
 | Publish a bulletin (relay) | Relay account | **Posting** (relay's own key) | `comment` + delegation certificate — **reserved, not implemented** |
@@ -92,6 +114,12 @@ server-side key custody.
 
 The creator never needs an active key to receive money. The relay never needs
 the creator's key or any funds. The reader only needs an active key to pay.
+
+The v1 beta's **auto-issue** is a client behaviour, not a new on-chain operation:
+while the creator dashboard is open, visible and the vault is unlocked, it polls
+payments and publishes the same posting-key-signed bulletin a manual click would.
+A future relay performs the same bulletin publication from its own account with a
+delegation certificate; it does not change the reader's verification rules.
 
 ---
 
@@ -115,6 +143,12 @@ Rules:
   public key.
 - Every period has a fresh `K_kid` and a fresh `K_ring`. Old keyring entries are
   retained so members can read the archive.
+- A reader key is per origin/device and may be recorded against the Hive account
+  that created it. The Banksia beta auto-unlocks only when a signed-in reader
+  matches that account; otherwise the reader must use the explicit Restore
+  action. This is a local privacy policy, not an on-chain entitlement check.
+- The creator's product copy (`productTitle`, `productDescription`, `benefits`)
+  is public advertising metadata. It never contains keys or entitlement.
 
 ---
 
@@ -200,6 +234,9 @@ grants access and never contains keys.
   "executions": 12,
   "archive": "all",
   "watermark": true,
+  "productTitle": "Notes from the garden",
+  "productDescription": "Weekly essays, field notes and the full archive.",
+  "benefits": ["Weekly essays", "Full archive"],
   "updatedAt": "2026-11-27T00:00:00Z"
 }
 ```
@@ -212,6 +249,12 @@ grants access and never contains keys.
   account.
 - `bulletin` is a pointer (`{author, permlink}`) because comment permlinks are
   scoped to their author.
+- `productTitle` is ≤ 80 plain-text characters, `productDescription` ≤ 600
+  plain-text characters (newlines allowed, no HTML), and `benefits` is an array
+  of at most six unique plain-text strings of ≤ 80 characters. They are copy for
+  the product/subscribe page, not entitlement.
+- `price` is display copy; the product post's `price` and
+  `subscription_recurrence` are normative for payment.
 - No entitlement, grant, reader key or private material may appear here.
 
 ### 7.2 Post metadata — `json_metadata.banksia_vault`
@@ -245,7 +288,7 @@ grants access and never contains keys.
 | `v` | exactly `1` |
 | `mode` | `section` or `post` |
 | `alg` | exactly `A256GCM` |
-| `kid` | `YYYY-MM`; selects `K_kid` from the keyring |
+| `kid` | `YYYY-MM` with month `01`–`12`; selects `K_kid` from the keyring |
 | `iv` | required with `ct`; base64url of 12 bytes |
 | `ct` | base64url ciphertext (including the 16-byte tag) |
 | `parts` | array of companion-comment permlinks; mutually exclusive with `ct` |
@@ -285,9 +328,10 @@ collide across posts. Each companion is a reply to the premium post and carries:
 ```
 
 Every part uses the same `K_kid` and the **same** content AAD as the whole post
-(§9.4). Readers MUST decrypt every listed part, verify every part hash, order by
-`part`, concatenate, and verify the post-level `hash` and `bytes`. The beta's
-post-level check is hex-only; see §9.5 and the W89 record.
+(§9.4). Readers MUST decrypt every listed part, verify every part hash, reject
+duplicate/out-of-range part indices, concatenate in canonical `part` order, and
+verify the post-level `hash` (hex or base64url) and `bytes`. Implementations MUST
+fail closed on a missing or extra part; partial plaintext is never rendered.
 
 Metadata size is measured as the UTF-8 byte length of the JSON object.
 
@@ -330,6 +374,17 @@ Standard HOM memo plus a namespaced extension:
 - One-time `transfer` payments must be within the 40-day acceptance window, and
   a `fill_recurrent_transfer` must carry a non-negative
   `remaining_executions`.
+- Amounts are Hive asset strings matching `^\d+\.\d{3} (HBD|HIVE)$`; v1 accepts
+  **HBD only** and compares the exact canonical label, never a float.
+- `recurrence` is 24–8,760 hours and `executions` is 2–120. Hive additionally
+  caps a recurrent transfer's total lifetime; writers SHOULD keep
+  `recurrence * executions` within 730 days.
+- Grants are time-bound capabilities: readers MUST honor `expires` and MUST NOT
+  use a payment timestamp as a substitute. Issuers SHOULD set a recurring
+  grant's expiry to `payment_time + recurrence hours + 24 hours grace`, and a
+  one-time transfer to `payment_time + 31 days`, so a slightly late renewal does
+  not lock a member out. The exact `expires` is signed and visible in the
+  bulletin; readers do not recompute it.
 
 ### 7.4 Bulletin comment — `json_metadata.banksia_vault_bulletin`
 
@@ -459,6 +514,58 @@ Verification:
 
 A new blog-metadata write without `relay` revokes the delegation.
 
+### 7.7 Membership product post — HOM + Banksia extension
+
+The product is a normal top-level Hive post with Hive Open Market metadata, so
+the existing shop and `/pay` flow can discover it. The product post is the
+**only** source of truth for amount, recipient, currency and recurrence.
+
+```json
+{
+  "content_type": "product",
+  "version": 0.1,
+  "currency": "HIVE:HBD",
+  "price": 5,
+  "subscription": 1,
+  "subscription_recurrence": 730,
+  "status": 1,
+  "tags": ["membership", "vault"],
+  "banksia_vault_product": {
+    "v": 1,
+    "plan": "member",
+    "container": "banksia-vault",
+    "archive": "all",
+    "title": "Notes from the garden",
+    "description": "Weekly essays, field notes and the full archive.",
+    "benefits": ["Weekly essays", "Full archive"],
+    "executions": 12
+  }
+}
+```
+
+- `price` is an HBD number with the product's currency; `currency` MUST be
+  `HIVE:HBD`.
+- `subscription` MUST be truthy and `subscription_recurrence` MUST be an integer
+  ≥ 24 hours. v1 uses 730 hours for a monthly plan; daily/test plans use 24.
+- `status`: `1` active, `2` inactive, `3` out of stock. Only `1` is purchasable.
+- `banksia_vault_product` is optional for ordinary HOM products tagged
+  `membership` or `vault`; readers then default `plan=member`,
+  `container=banksia-vault`, `archive=all`, `executions=12`.
+- The post title and body are human copy. Banksia writes the
+  `productTitle`/`productDescription`/`benefits` into the body as Markdown and
+  the extension; other frontends SHOULD render the post title/body and MAY use
+  the extension for structured display.
+- The hidden container is a reply under the product. Its `json_metadata` is:
+
+```json
+{ "app": "banksia.io", "format": "markdown", "tags": ["membership"],
+  "banksia_vault_container": true }
+```
+
+It is excluded from archives/feeds/search by the flag. Being a reply, it does
+not consume Hive's five-minute root-post slot. Bulletin comments are replies
+under the container.
+
 ---
 
 ## 8. Off-chain envelopes
@@ -506,7 +613,7 @@ Plaintext:
 
 ### 8.2 Creator export
 
-```json
+```text
 { "type": "banksia.vault.creator@1", "vault": { /* 8.1 envelope */ } }
 ```
 
@@ -585,7 +692,9 @@ argument to `unwrapRingKey`.
 `CryptoKey` in IndexedDB so the reader can export a passphrase-wrapped recovery
 file. The key is therefore readable by any script running on the same origin
 while the page is open. The recovery export is the deliberate trade-off; see
-`docs/SECURITY.md`.
+`docs/SECURITY.md`. A reader implementation MAY use non-extractable keys if it
+provides a different recovery path; it MUST then pass the public key alongside
+the private key at unwrap time.
 
 ### 9.3 Keyring seal
 
@@ -638,8 +747,9 @@ MUST decrypt each part, verify each part hash, reject duplicate or out-of-range
 `part` values, concatenate in `part` order, and verify the post-level `bytes` and
 `hash` (both `sha256:<hex>` and base64url forms) against the complete plaintext.
 A missing, malformed or duplicate part keeps the reader locked; partial plaintext
-is never rendered. The W89 beta verifies per-part hashes and the post-level hash
-only when it is the hex form, and does not yet check `bytes`; see the W89 record.
+is never rendered. The reader verifies every part hash, the exact part count and
+order, and the post-level `bytes` and SHA-256 (hex or base64url) over the
+concatenated plaintext.
 
 The composer selects companion transport above 30,000 plaintext bytes and
 chunks at 28,000 bytes of plaintext per part (well below the 40,000-character
@@ -691,6 +801,8 @@ posting public key for verification.
 | `custom_json` | 8,192 bytes | Hive limit |
 | Paywall title / body | 80 / 240 chars | display only |
 | Paywall benefits | ≤ 6, each ≤ 80 chars | display only |
+| Product title / description | 80 / 600 chars | plain text, no HTML |
+| Product benefits | ≤ 6, each ≤ 80 chars | plain text, no HTML |
 | Bulletin entries | 300 hard cap, 250 warning | `BULLETIN_MAX_ENTRIES`; split is reserved |
 | Bulletin comment | ~60,000 bytes | `BULLETIN_MAX_BYTES` |
 
@@ -741,21 +853,26 @@ account or server detail beyond what the reader already knows.
 
 ## 12. Read/unlock verification order
 
-1. Parse `json_metadata.banksia_vault`; reject unknown `v`/`alg`.
-2. Load the reader key for this blog/origin.
+1. Parse `json_metadata.banksia_vault`; reject unknown `v`/`alg` or a malformed
+   `kid`/mode/hash/ciphertext.
+2. Load the reader key for this blog/origin. A reader MAY auto-unlock only when
+   the visitor is signed in as the key's recorded owner; otherwise require an
+   explicit Restore action.
 3. Fetch the newest bulletin for `blog` + `period` (pointer first, then replies
-   matching `vault-<period>-<seq>`).
-4. Verify the bulletin signature (creator posting key, or relay key plus a
-   valid certificate).
+   authored by the blog account and matching `vault-<period>-<seq>`).
+4. Verify the bulletin signature (creator posting key). For v1, `signer` MUST
+   equal `blog` and `delegation` MUST be null; a future relay needs a verified
+   certificate.
 5. Check `blog`, `period`, `rkt`, `expires` against the reader and the current
    time. Expiry is checked **before** decrypting.
 6. Find the entry whose `rkt` matches the reader key thumbprint; unwrap
    `K_ring`.
 7. Open the keyring; select `K_kid` for the post's `kid`.
-8. Decrypt the payload (or parts), verify the hash, sanitise the HTML with
-   DOMPurify via the normal renderer.
+8. Decrypt the payload (or parts), verify every part hash/order, the post-level
+   `bytes` and hash, sanitise the HTML with DOMPurify via the normal renderer.
 9. Never cache plaintext or keys in localStorage, the service worker, analytics
-   or logs. Keep them in memory only.
+   or logs. Keep them in memory only. Clear decrypted state on logout/account
+   change.
 
 Failure states: no reader key → paywall; payment sent but no grant → poll for
 about two minutes; expired → renew; missing bulletin → "could not verify";
@@ -821,7 +938,54 @@ ct:        jMYuVj4JCk5RL7C_ztPpfQEUI7xSxV4bo1h1jzJDzDDTbCYbnjfm69w
 
 The `ct` is base64url of the 41-byte ciphertext including the 16-byte tag.
 
-### 13.5 Structural vectors
+### 13.5 Ring-key wrap vector (fixed keys)
+
+This is the exact HKDF + AES-GCM construction in §9.2. Reader and ephemeral
+private scalars are public test values, not secrets. Header:
+
+```text
+blog=alice period=2026-11 tier=member expires=2026-12-27T12:00:00Z
+rkt=2bad0fd610d99eae
+```
+
+```text
+readerPriv: 1111111111111111111111111111111111111111111111111111111111111111
+readerPub:  BAIX5hfwtkQ5KCePlpmeaaI6TywVK99tbN9m5bgCgtTtGUp968uXcS0t2jyoWqh2Wlb0X8dYWZZS8ol8ZTBuV5Q
+ephPriv:    2222222222222222222222222222222222222222222222222222222222222222
+epk:        BNZak5d8qj0bCBhS_1ennkZfFmBXcwS66tUF3TpIWJzzUBheiVNy32Ih6joTdVfkc_3bZ1XwW9UHw8Uz_OnJEoU
+ringKey:    ERERERERERERERERERERERERERERERERERERERERERE (base64url of 32 x 0x11)
+iv:         IiIiIiIiIiIiIiIi (base64url of 12 x 0x22)
+info:       canonicalJson({blog,rkt,period,tier,expires})
+KEK:        2175bf9ca8940c759ee0cf80ad1631ca22897501276279b81eae451b4e3b8db7
+ct:         pMbQ1XkUi-FH4VccdS4Wbvr2aIwtSbU6lFwid0o2SNdmCXyafhPQqxFFT7ySCxbD
+```
+
+The salt is `epk || readerPub || UTF8("banksia.vault.wrap.v1")`; the AAD and
+HKDF `info` are the canonical header. A conforming unwrap with `readerPriv`,
+`epk` and the same header returns `ringKey`.
+
+### 13.6 Keyring seal vector
+
+```text
+ringKey: ERERERERERERERERERERERERERERERERERERERERERE
+keyring: {"2026-11":"MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM"}
+AAD:     banksia.vault.keyring.v1|alice|2026-11
+iv:      RERERERERERERERE (12 x 0x44)
+ct:      t2d6XngOCQbYsqW_ZZA6ltWwgUH1d3KtmimsGXGxZ6ZXGYcSGGOMUf6OlZSgWkFcr6Og9s7Ot8SN_lhcrzWAZpRdmJN_s8Y7Ow
+```
+
+### 13.7 Bulletin signature payload vector
+
+```text
+keyringHash: sha256:a8c77bbae3ed01d00382382b299c11a535f7af1b7b7df67ea069dd7aa7405717
+payload:     banksia.vault.bulletin.v1|{"blog":"alice","claims":[],"delegation":null,"entries":[{"alg":"P256-HKDF-SHA256-A256GCM","ct":"example","epk":"example","expires":"2026-12-27T12:00:00Z","iv":"AAECAwQFBgcICQoL","rkt":"a1b2c3d4e5f6a7b8","tier":"member"}],"issued":"2026-11-27T12:00:00Z","keyring":{"alg":"A256GCM","ct":"example","iv":"AAECAwQFBgcICQoL"},"keyringHash":"sha256:a8c77bbae3ed01d00382382b299c11a535f7af1b7b7df67ea069dd7aa7405717","period":"2026-11","seq":3,"signer":"alice","v":1}
+```
+
+The full canonical text is reproducible from the object in §7.4. Signatures are
+non-deterministic for ECDSA; verify by recovering the posting key, not by
+comparing signature bytes.
+
+### 13.8 Structural vectors
 
 Reader thumbprint (property asserted, not a fixed key): 16 lowercase hex
 characters, identical for `CryptoKey` and `p256:` string inputs, different for a
@@ -890,6 +1054,16 @@ keyring or any entry invalidates the bulletin signature.
   neither the creator's posting key nor funds. Relay/delegation is **not
   implemented** in the W89 beta; readers reject a bulletin with a non-null
   `delegation`.
+- **Product copy and renewal labels.** Render the product post title/body and,
+  when present, `banksia_vault_product.title/description/benefits`. Derive
+  renewal wording from `subscription_recurrence`; do not label every plan
+  "monthly".
+- **Container placement.** The container may be a root post or a reply; the
+  pointer in `blog.vault.container` is authoritative. Banksia v1 publishes it as
+  a reply under the product to avoid the five-minute root-post interval.
+- **Auto-issue.** A self-sovereign client may issue while its dashboard is open
+  and unlocked. A relay uses the same signed bulletin format and needs its own
+  delegation certificate; v1 readers reject delegated bulletins.
 - **SEO.** The teaser is public and crawler-visible. Use
   `isAccessibleForFree: false` and a `hasPart` `WebPageElement` with
   `cssSelector: ".banksia-locked"`. Do not include ciphertext or plaintext in
@@ -906,7 +1080,7 @@ keyring or any entry invalidates the bulletin signature.
 
 ---
 
-## 15. Open questions and known deviations
+## 15. Known deviations and reserved extensions
 
 1. **`alg` on a wrapped entry.** The implementation writes
    `alg: "P256-HKDF-SHA256-A256GCM"` (`VAULT_WRAP_ALG`) on `wrapRingKey`
@@ -921,8 +1095,8 @@ keyring or any entry invalidates the bulletin signature.
 3. **Creator envelope `account`.** The envelope carries `account` because the
    AAD is account-bound and decryption needs it. Schemas in the build prompt did
    not list it; it is required for the specified AAD to work.
-4. **Month range.** `period` is validated as `YYYY-MM` by format only; `2026-13`
-   currently passes. Tighten to months `01`–`12` in a future revision.
+4. **Month range.** `period` and `kid` now require a real month `01`–`12`; an
+   invalid month is rejected.
 5. **Cancel matching.** A zero-amount `recurrent_transfer` with the matching
    recipient, recurrence and memo removed a live plan on 2026-11-27
    (`remaining 0`, tx `54f54837…`). The reader cancel button still warns that a
@@ -932,15 +1106,385 @@ keyring or any entry invalidates the bulletin signature.
    enforces that rule, rejects non-null `delegation`, and the reply fallback only
    accepts comments authored by the blog account. A third party cannot publish a
    signed, higher-sequence bulletin to shadow the creator's grants.
-7. **Bulletin splitting.** Part permlinks and the manifest shape
+7. **Account-bound auto-unlock (client policy).** Banksia records the Hive
+   account that created a reader key and only auto-unlocks when that account is
+   signed in. The wire format does not carry this binding; another frontend MAY
+   choose a different local policy, but should avoid exposing a member's content
+   after logout on a shared browser.
+8. **Auto-issue (client policy).** The self-sovereign dashboard can poll and
+   issue while its tab is open. This is not a protocol operation; a relay uses the
+   same bulletin format when it exists.
+9. **Container placement.** The v1 Banksia client publishes the container as a
+   reply under the product to avoid Hive's five-minute root-post interval. The
+   protocol only requires `blog.vault.container` to point at the container
+   permlink; a root container is also valid.
+10. **Bulletin splitting.** Part permlinks and the manifest shape
    (`vault-<period>-<seq>-<part>`) are reserved, but the MVP assumes a single
    bulletin per sequence. Finalise the manifest schema before shipping a
    multi-part bulletin.
-8. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
+11. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
-9. **Delegation payload prefix.** Delegation certificates reuse
+12. **Delegation payload prefix.** Delegation certificates reuse
    `banksia.vault.grant.v1` because no dedicated prefix exists. A future revision
    may add `banksia.vault.delegation.v1`.
-10. **History window.** Grant issuance and the reader manager read at most the
+13. **History window.** Grant issuance and the reader manager read at most the
     most recent 1,000 account-history rows. Older payments and subscribers are
     not discovered; paginate or use a HAF index before scaling past that window.
+
+---
+
+## 16. Normative JSON Schemas
+
+These schemas are the machine-readable form of §7. `additionalProperties: false`
+applies to creator-owned objects where a newer field must not be silently lost;
+readers MAY ignore unknown optional fields on remote objects as described in §2,
+but MUST reject an unknown `v` or `alg`.
+
+### 16.1 `blog.vault`
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/blog-vault@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "enabled", "product", "container", "price", "recurrence", "executions"],
+  "properties": {
+    "v": { "const": 1 },
+    "enabled": { "type": "boolean" },
+    "product": { "type": "string", "pattern": "^(?:[a-z][a-z0-9.-]{2,15}/[a-z0-9][a-z0-9._-]{0,255})?$" },
+    "container": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,255}$" },
+    "bulletin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["author", "permlink"],
+      "properties": {
+        "author": { "type": "string", "pattern": "^(?:[a-z][a-z0-9.-]{2,15})?$" },
+        "permlink": { "type": "string", "pattern": "^(?:vault-\\d{4}-(?:0[1-9]|1[0-2])-\\d+)?$" }
+      }
+    },
+    "price": { "type": "string", "pattern": "^\\d+\\.\\d{3} HBD$" },
+    "period": { "const": "month" },
+    "recurrence": { "type": "integer", "minimum": 24, "maximum": 8760 },
+    "executions": { "type": "integer", "minimum": 2, "maximum": 120 },
+    "archive": { "enum": ["all", "current"] },
+    "watermark": { "type": "boolean" },
+    "productTitle": { "type": "string", "maxLength": 80 },
+    "productDescription": { "type": "string", "maxLength": 600 },
+    "benefits": { "type": "array", "maxItems": 6, "items": { "type": "string", "maxLength": 80 } },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    { "if": { "properties": { "enabled": { "const": true } } },
+      "then": { "properties": { "product": { "minLength": 1 } } } }
+  ]
+}
+```
+
+`price` and `period` are display hints; `recurrence`/`executions` are copied into
+the product so a creator can publish a daily or weekly plan. The product post
+remains normative for payment.
+
+### 16.2 `banksia_vault` post metadata
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/post-vault@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "mode", "alg", "kid", "hash", "bytes", "tier"],
+  "properties": {
+    "v": { "const": 1 },
+    "mode": { "enum": ["section", "post"] },
+    "alg": { "const": "A256GCM" },
+    "kid": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
+    "iv": { "type": "string" },
+    "ct": { "type": "string" },
+    "parts": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "hash": { "type": "string", "pattern": "^(?:sha256:[0-9a-f]{64}|[A-Za-z0-9_-]{43})$" },
+    "bytes": { "type": "integer", "minimum": 0 },
+    "tier": { "type": "string", "minLength": 1, "maxLength": 32 },
+    "price": { "type": "string", "maxLength": 32 },
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}/[a-z0-9][a-z0-9._-]{0,255}$" },
+    "container": { "type": "string", "maxLength": 256 },
+    "paywall": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "maxLength": 80 },
+        "body": { "type": "string", "maxLength": 240 },
+        "benefits": { "type": "array", "maxItems": 6, "items": { "type": "string", "maxLength": 80 } }
+      }
+    }
+  },
+  "oneOf": [
+    { "required": ["iv", "ct"], "not": { "required": ["parts"] } },
+    { "required": ["parts"], "not": { "required": ["iv", "ct"] } }
+  ]
+}
+```
+
+### 16.3 Payment memo
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/memo@1.json",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["product", "quantity", "banksia"],
+  "properties": {
+    "product": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}/[a-z0-9][a-z0-9._-]{0,255}$" },
+    "quantity": { "const": 1 },
+    "banksia": {
+      "type": "object", "additionalProperties": false,
+      "required": ["v", "plan", "reader_key", "sub"],
+      "properties": {
+        "v": { "const": 1 },
+        "plan": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+        "reader_key": { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" },
+        "sub": { "type": "string", "minLength": 16, "maxLength": 64 },
+        "gift_for": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9.-]{2,15}$" }
+      }
+    }
+  }
+}
+```
+
+### 16.4 Bulletin
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/bulletin@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "blog", "period", "seq", "issued", "keyring", "entries", "signer", "sig"],
+  "properties": {
+    "v": { "const": 1 },
+    "blog": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "period": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "issued": { "type": "string", "format": "date-time" },
+    "keyring": {
+      "type": "object", "additionalProperties": false,
+      "required": ["iv", "ct"],
+      "properties": {
+        "alg": { "const": "A256GCM" },
+        "iv": { "type": "string" },
+        "ct": { "type": "string" }
+      }
+    },
+    "entries": {
+      "type": "array", "maxItems": 300,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["rkt", "alg", "epk", "iv", "ct", "tier", "expires"],
+        "properties": {
+          "rkt": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+          "alg": { "const": "P256-HKDF-SHA256-A256GCM" },
+          "epk": { "type": "string" },
+          "iv": { "type": "string" },
+          "ct": { "type": "string" },
+          "tier": { "type": "string", "maxLength": 32 },
+          "expires": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "claims": { "type": "array" },
+    "signer": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "delegation": { "type": ["object", "null"] },
+    "sig": { "type": "string", "minLength": 1 }
+  }
+}
+```
+
+### 16.5 Membership product extension
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/product@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "plan", "container"],
+  "properties": {
+    "v": { "const": 1 },
+    "plan": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
+    "container": { "type": "string", "maxLength": 256 },
+    "archive": { "enum": ["all", "current"] },
+    "title": { "type": "string", "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 600 },
+    "benefits": { "type": "array", "maxItems": 6, "items": { "type": "string", "maxLength": 80 } },
+    "executions": { "type": "integer", "minimum": 2, "maximum": 120 }
+  }
+}
+```
+
+### 16.6 Reader key registry and delegation (reserved)
+
+The registry schema in §7.5 is normative for the reserved `custom_json`
+`banksia.vault.reader_key`: `v=1`, `blog`, `keys[{key,label,created}]`, `revoked`.
+The delegation schema in §7.6 is reserved for the relay; v1 readers reject a
+non-null bulletin `delegation`.
+
+---
+
+## 17. Security audit checklist
+
+An independent audit should be able to reproduce every check below from this
+document and the on-chain objects.
+
+### 17.1 Confidentiality and cryptography
+
+- [ ] A fresh 32-byte `K_kid` and `K_ring` exist per period; neither is derived
+      from a Hive key.
+- [ ] Every AES-GCM encryption uses a fresh 12-byte IV; no IV reuse for a key.
+- [ ] Content AAD is exactly
+      `banksia.vault.content.v1|blog|permlink|kid|mode`; changing any field fails.
+- [ ] Keyring AAD is exactly `banksia.vault.keyring.v1|blog|period`.
+- [ ] Wrap salt is `epk || readerPub || "banksia.vault.wrap.v1"`; HKDF info and
+      AAD are the canonical six-key grant header.
+- [ ] A wrapped key moved to another blog/period/tier/expiry fails to unwrap.
+- [ ] A ciphertext moved to another post/kid/mode fails the tag.
+- [ ] Plaintext hash and byte length are verified after decrypt; a one-bit flip
+      fails closed with no partial output.
+- [ ] Multi-part payloads verify every part hash, exact count, order and the
+      post-level hash/bytes; missing/duplicate/out-of-range parts fail closed.
+- [ ] Canonical JSON sorts keys, rejects floats/non-finite/cycles/non-plain
+      objects, and is identical across implementations.
+- [ ] Base64url rejects invalid alphabet/length and never truncates.
+
+### 17.2 Entitlement and signatures
+
+- [ ] A bulletin without a valid posting-key signature is rejected.
+- [ ] `signer === blog` is enforced for v1; `delegation` non-null is rejected.
+- [ ] The reply fallback only accepts a bulletin authored by the blog account;
+      a third-party higher-sequence bulletin cannot shadow the creator.
+- [ ] `keyringHash` is recomputed from the received keyring; an inbound
+      `keyringHash` is ignored.
+- [ ] Signature covers keyring hash and every entry; swapping either invalidates.
+- [ ] Expiry is checked before any unwrap/decrypt; an expired grant shows the
+      paywall.
+- [ ] Payment verification checks recipient, HBD amount, memo product, reader
+      key, txid uniqueness and time window; wrong/duplicate payments are rejected.
+- [ ] One-time transfers use the 40-day window; recurrent fills require
+      `remaining_executions >= 0`.
+- [ ] Grant issuance rejects a reader key that is not a valid P-256 point and
+      omits revoked readers from the next bulletin.
+
+### 17.3 Payments and replay
+
+- [ ] Recipient, amount and recurrence come from the HOM product post authored
+      by the blog account, never from `blog.vault.price` or URL parameters.
+- [ ] The product status must be active; a different product author is rejected.
+- [ ] `recurrent_transfer` and `transfer` memos parse as the v1 memo; unknown
+      fields do not change entitlement.
+- [ ] Duplicate txids cannot produce a second grant.
+- [ ] A zero-amount `recurrent_transfer` with the matching recipient, recurrence
+      and memo cancels the plan; a mismatched memo does not.
+- [ ] HF28 multiple-transfer matching was verified live (tx `54f54837…`); the UI
+      still warns on mismatched fields.
+
+### 17.4 Client, storage and rendering
+
+- [ ] No plaintext or private key in `localStorage` (except the passphrase-
+      encrypted creator envelope), `sessionStorage`, IndexedDB in plaintext,
+      service worker caches, logs or analytics.
+- [ ] The creator vault is PBKDF2-SHA256 310k + AES-GCM with AAD
+      `banksia.vault.store.v1|<account>`; copying it to another account fails.
+- [ ] Reader private keys are `CryptoKey` objects (extractable only if recovery
+      export is offered); auto-unlock requires a matching signed-in account.
+- [ ] Decrypted HTML is rendered through `Render`/DOMPurify; no raw `v-html`,
+      no unsanitised Markdown URLs.
+- [ ] Logout/account switch locks plaintext and a logged-out reload does not
+      auto-unlock a stored key.
+- [ ] CSP is unchanged or stricter; no new origin, script, worker or dependency.
+- [ ] Blog hosts/custom domains are read-only; premium reads happen on the apex
+      and no private key is placed in a URL/fragment/referrer.
+- [ ] Paywall is a semantic region with heading, price, benefits, Subscribe and
+      Restore actions; locked plaintext is absent from the DOM; axe is clean at
+      1440×900 and 390×844.
+- [ ] RSS/OG/JSON-LD contain the teaser only; `isAccessibleForFree:false` and a
+      `hasPart` `WebPageElement` with `.banksia-locked` are present.
+
+### 17.5 Residual risks to state explicitly
+
+- A subscriber can share the decrypted text; watermarking and rotation raise the
+  bar but do not prevent screenshots or re-sharing.
+- A leaked old key decrypts old ciphertext; v1 has no bulk re-encryption tool.
+- An extractable reader key can be exported by XSS on the origin.
+- Text-only: image/video URLs inside a premium payload remain public once known.
+- Self-sovereign issuing is manual/auto-while-open; a creator offline cannot
+  grant, and no relay exists in v1.
+- On-chain data is permanent; GDPR erasure cannot delete ciphertext or memos.
+- Hive history is read in bounded pages; older payments need pagination/HAF.
+
+---
+
+## 18. Frontend implementation checklist
+
+### 18.1 Read path (minimum reader)
+
+1. `get_accounts([blog])` → `posting_json_metadata` → `banksia.io.blog.vault`.
+   If `enabled` is false, render normally.
+2. `get_content(author, permlink)` → `json_metadata.banksia_vault`. Validate
+   with §16.2.
+3. Fetch the bulletin:
+   - if `blog.vault.bulletin` is set, `get_content(pointer.author, pointer.permlink)`;
+   - otherwise `get_content_replies(blog, container)` and choose the newest
+     bulletin whose `blog` and `signer` equal the blog and whose metadata parses.
+4. Verify the signature: canonical payload from §7.4, recover the posting key,
+   require `signer === blog`, reject `delegation`.
+5. Fetch/lookup the reader key, compute `rkt`, match an entry, check
+   `expires > now`, unwrap `K_ring`, open the keyring, select `kid`.
+6. Decrypt the payload or parts, verify hash/bytes, sanitize, render.
+7. Cache only the bulletin and ciphertext in memory/HTTP cache; never plaintext
+   or keys in persistent storage.
+
+### 18.2 Write/issuer path
+
+1. Create/passphrase-encrypt the creator vault (`K_kid`, keyring, `K_ring`).
+2. Publish the HOM product (`§7.7`) and the hidden container reply.
+3. For each verified payment, build the canonical grant header and wrap
+   `K_ring`; seal the keyring once; sign and publish the bulletin.
+4. Publish/update `blog.vault.bulletin` with the deterministic permlink.
+5. Rotate `K_ring`/`K_kid` monthly (or on a leak); old keyring entries stay for
+   the archive. Omitting a reader from the next bulletin is the v1 revocation.
+
+### 18.3 RPC and data sources
+
+- `condenser_api.get_accounts` — metadata, posting authority, reputation.
+- `condenser_api.get_content` — post, product, bulletin, container.
+- `condenser_api.get_content_replies` — container replies / bulletin fallback.
+- `condenser_api.get_account_history` — payments; filter `transfer`,
+  `fill_recurrent_transfer`, and `recurrent_transfer` cancels.
+- `condenser_api.find_recurrent_transfers` — reader plans/cancel verification.
+- `bridge.get_account_posts` — blog archive (filter products/containers).
+- Use a timeout, retry/failover across nodes, and paginate history; the Banksia
+  beta reads at most 1,000 rows per request.
+
+### 18.4 Display rules
+
+- Derive renewal wording from `subscription_recurrence` (`24` = “every day”,
+  `730` = “every month”), never hard-code “monthly”.
+- Show the product title/description/benefits from the product post/extension.
+- Show `@creator` and the amount from the product; label the payment as direct,
+  irreversible, no escrow and cancel-anytime.
+- Locked content is not in the DOM; unlocked content is announced with
+  `aria-live="polite"` and carries a `Licensed to @reader · period` watermark
+  when the creator enables it.
+
+### 18.5 Interop test matrix
+
+| Test | Expected |
+| --- | --- |
+| Public teaser + marker | teaser rendered, marker hidden, no plaintext |
+| Valid grant | content unlocks; reload keeps it while signed in |
+| Logout + reload | paywall returns; no plaintext |
+| Expired grant | paywall + expiry copy |
+| Tampered ct/hash/AAD | generic unlock error, no plaintext |
+| Foreign bulletin | ignored; creator bulletin still used |
+| Wrong price/recipient/memo | payment rejected; no grant |
+| Duplicate txid | no second grant |
+| Missing/extra part | fail closed |
+| Product republished | new price/copy used for new payments; existing plans keep their amount |

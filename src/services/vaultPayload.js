@@ -23,6 +23,7 @@ export const MAX_BODY_BYTES = 65535
 
 const COMMENT_PLAINTEXT_MAX = 90000
 const MODES = new Set(['section', 'post'])
+const KID_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
 const PAYWALL_TITLE_MAX = 80
 const PAYWALL_BODY_MAX = 240
 const PAYWALL_BENEFITS_MAX = 6
@@ -187,7 +188,7 @@ export function buildVaultMetadata ({
   parts
 } = {}) {
   if (!MODES.has(mode)) throw new Error('mode must be "section" or "post"')
-  if (typeof kid !== 'string' || !kid.trim()) throw new Error('kid is required')
+  if (typeof kid !== 'string' || !KID_RE.test(kid.trim())) throw new Error('kid must be YYYY-MM')
   if (typeof hash !== 'string' || !isHashRef(hash)) throw new Error('hash must be sha256:<hex> or a base64url SHA-256')
   if (!isPositiveInteger(bytes)) throw new Error('bytes must be a non-negative integer')
   if (typeof tier !== 'string' || !tier.trim()) throw new Error('tier must be a non-empty string')

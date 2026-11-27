@@ -15,6 +15,7 @@ import {
   decryptPayload,
   openKeyring,
   readerKeyThumbprint,
+  sha256Base64Url,
   sha256Hex,
   unwrapRingKey
 } from './vaultCrypto'
@@ -34,7 +35,7 @@ export const BULLETIN_CACHE_MS = 5 * 60 * 1000
 const bulletinCache = new Map()
 
 const HIVE_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
-const PERIOD_RE = /^\d{4}-\d{2}$/
+const PERIOD_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
 
 function isPlainObject (value) {
   return Boolean(value) &&
@@ -396,6 +397,9 @@ export async function unlockWithGrant ({
     if (typeof metadata.hash === 'string' && /^sha256:[0-9a-f]{64}$/.test(metadata.hash)) {
       const actual = await sha256Hex(plaintext)
       if (actual !== metadata.hash.slice('sha256:'.length)) return fail('tampered')
+    } else if (typeof metadata.hash === 'string' && /^[A-Za-z0-9_-]{43}$/.test(metadata.hash)) {
+      const actual = await sha256Base64Url(plaintext)
+      if (actual !== metadata.hash) return fail('tampered')
     }
 
     return {
