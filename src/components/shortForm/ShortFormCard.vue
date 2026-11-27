@@ -27,7 +27,7 @@
       @ignore-voter="moderationToggleIgnoredVoter"
     />
 
-    <p v-if="preview && !moderationCollapsed" class="sfc-body" @click="$emit('open', post)">{{ preview }}</p>
+    <button v-if="preview && !moderationCollapsed" type="button" class="sfc-body" @click="$emit('open', post)">{{ preview }}</button>
 
     <short-form-media v-if="!moderationCollapsed" :items="media" :author="post.author" :linked="true" />
 
@@ -210,13 +210,26 @@ export default {
 }
 
 .sfc-body {
+  display: block;
+  width: 100%;
   margin: var(--space-2) 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--c-text-soft);
+  font: inherit;
   font-size: 0.94rem;
   line-height: 1.55;
+  text-align: left;
   white-space: pre-line;
   overflow-wrap: anywhere;
   cursor: pointer;
+}
+
+.sfc-body:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 .sfc-body:hover {

@@ -174,9 +174,7 @@
         </q-item>
         <q-item v-if="username !== '' && username !== null">
           <q-item-section>
-            <q-btn icon="img:/statics/member.webp" flat label="Remember me" title="Save your username to local storage for faster future logins" @click="rememberLogin = !rememberLogin">
-              <q-checkbox v-model="rememberLogin" />
-            </q-btn>
+            <q-checkbox v-model="rememberLogin" label="Remember me" title="Save your username to local storage for faster future logins" />
             <div class="text-caption text-faint">Saves only your username on this device. It never stores your posting, active or memo keys.</div>
           </q-item-section>
         </q-item>

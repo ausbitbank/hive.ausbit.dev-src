@@ -6,8 +6,8 @@
     <q-card-section>
       <div><q-input v-model="toAccount" label="To" /></div>
       <div><q-input label="Amount" v-model="amount" /></div>
-      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
-      <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-primary text-bold" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-if="balance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + balance + ' ' + tokenName" @click="amount = parseFloat(balance)">{{ balance }}</button> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-else-if="availableBalance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + availableBalance + ' ' + tokenName" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</button> {{ tokenName }}</div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
         <q-btn flat label="Stake" icon="account_balance" color="primary" @click="stake()" v-if="!sent" />
@@ -100,3 +100,21 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.amount-shortcut {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.amount-shortcut:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+</style>

@@ -17,8 +17,8 @@
         </q-popup-proxy>
       </q-btn>
       <div><q-input label="Amount" v-model="amount" style="margin: auto; max-width: 200px" /></div>
-      <div class="text-center text-caption" v-if="balance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(balance)">{{ balance }}</span> {{ tokenName }}</div>
-      <div class="text-center text-caption" v-else-if="availableBalance">Available: <span class="cursor-pointer text-bold text-primary" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</span> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-if="balance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + balance + ' ' + tokenName" @click="amount = parseFloat(balance)">{{ balance }}</button> {{ tokenName }}</div>
+      <div class="text-center text-caption" v-else-if="availableBalance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + availableBalance + ' ' + tokenName" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</button> {{ tokenName }}</div>
       <q-input label="Memo" autogrow v-model="memo" debounce="400" @update:model-value="checkEncryption()" style="margin: auto; max-width: 200px" clearable /><q-checkbox v-model="encrypted" @update:model-value="toggleEncryption()" label="Encrypt Memo" />
       <div v-if="network === 'hive'">
         <q-toggle v-model="recurrent" label="Recurring Payments" />
@@ -206,3 +206,21 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.amount-shortcut {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.amount-shortcut:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+</style>
