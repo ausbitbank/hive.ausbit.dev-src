@@ -342,7 +342,7 @@ The dev server opens at <http://localhost:8080>.
 
 Unit tests live in `tests/unit/`; the Playwright suite lives in `e2e/` and runs
 against a built production bundle served by `scripts/serve-dist.mjs`. The repo
-currently has more than 2,100 unit tests and over 100 functional E2E checks.
+currently has more than 2,100 unit tests and over 200 functional E2E checks.
 
 ```bash
 bun run test
