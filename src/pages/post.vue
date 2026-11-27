@@ -1107,12 +1107,8 @@ import { fetchAccount, fetchHiveSenseSimilar, fetchPostContent } from 'src/servi
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { isValidTag } from 'src/utils/hiveTag'
-import { useVaultStore } from 'src/stores/vault'
-import { readVaultSettings } from 'src/services/vaultSettings'
-import { deriveVaultPlan } from 'src/services/vaultProduct'
-import { parseVaultMetadata, splitVaultBody } from 'src/services/vaultPayload'
+import { vaultPublicBody, vaultSummary } from 'src/services/blogPosts'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
-import VaultLockedSection from 'components/blog/VaultLockedSection.vue'
 import moderation from 'src/mixins/moderation'
 
 export default {
@@ -1131,7 +1127,7 @@ export default {
     reblog,
     votesDialog,
     ProfileSkin,
-    VaultLockedSection
+    VaultLockedSection: defineAsyncComponent(() => import('components/blog/VaultLockedSection.vue'))
   },
   data () {
     return {
@@ -1153,7 +1149,10 @@ export default {
       vaultPlanError: '',
       vaultSettings: null,
       publicBody: '',
-      vaultRequestId: 0
+      vaultRequestId: 0,
+      vaultStateData: { status: 'locked', message: '' },
+      vaultStoreRef: null,
+      vaultApexRequired: false
     }
   },
   watch: {
@@ -1332,12 +1331,14 @@ export default {
     },
     vaultState () {
       if (!this.vaultMetadata || !this.post) return { status: 'locked', message: '' }
-      const state = useVaultStore().postState(this.blogAccountName, this.post.permlink)
-      if (state.status === 'unlocked' && state.plaintext) return state
+      const state = this.vaultStoreRef
+        ? this.vaultStoreRef.postState(this.blogAccountName, this.post.permlink)
+        : this.vaultStateData
+      if (state && state.status === 'unlocked' && state.plaintext) return state
       if (this.vaultPlanError) {
         return { status: 'error', code: 'no-plan', message: this.vaultPlanError }
       }
-      return state
+      return state || { status: 'locked', message: '' }
     },
     vaultPlaintext () {
       return this.vaultState.plaintext || ''
@@ -1419,9 +1420,9 @@ export default {
       const metadata = this.getPostMeta(post)
       const title = post && post.title ? stripHtmlForMeta(post.title, 120) : ''
       const pageTitle = title || ('Hive post by @' + author)
-      const vault = parseVaultMetadata(metadata)
+      const vault = vaultSummary(metadata)
       const publicBody = vault && post && post.body
-        ? splitVaultBody(post.body, vault.mode).publicBody
+        ? vaultPublicBody(post.body, vault.mode)
         : (post && post.body) || ''
       const body = publicBody ? stripHtmlForMeta(publicBody.slice(0, 4000), 160) : ''
       const metaDescription = typeof metadata.description === 'string'
@@ -1471,15 +1472,33 @@ export default {
       this.vaultPlanError = ''
       this.vaultSettings = null
       this.publicBody = ''
+      this.vaultStateData = { status: 'locked', message: '' }
+      this.vaultApexRequired = false
     },
     async prepareVault (post) {
+      if (!vaultSummary(post && post.json_metadata)) return
       const requestId = ++this.vaultRequestId
+      const [
+        { parseVaultMetadata, splitVaultBody },
+        { readVaultSettings },
+        { deriveVaultPlan },
+        { requiresApex },
+        { useVaultStore }
+      ] = await Promise.all([
+        import('src/services/vaultPayload'),
+        import('src/services/vaultSettings'),
+        import('src/services/vaultProduct'),
+        import('src/services/vaultUnlock'),
+        import('src/stores/vault')
+      ])
+      if (requestId !== this.vaultRequestId) return
       const metadata = parseVaultMetadata(post && post.json_metadata)
       if (!metadata) return
 
       this.vaultMetadata = metadata
       this.vaultPlanError = ''
       this.publicBody = splitVaultBody(post.body, metadata.mode).publicBody
+      this.vaultApexRequired = requiresApex()
 
       let account
       try {
@@ -1512,11 +1531,14 @@ export default {
 
       if (requestId !== this.vaultRequestId) return
       if (!this.post || this.post.permlink !== post.permlink) return
+      if (this.vaultApexRequired) return
 
       const store = useVaultStore()
+      this.vaultStoreRef = store
       const existing = await store.readerKey(post.author)
       if (!existing) return
 
+      this.vaultStateData = store.postState(post.author, post.permlink)
       await store.unlockPost({
         blog: post.author,
         author: post.author,
@@ -1525,6 +1547,7 @@ export default {
         settings,
         readerAccount: this.readerAccount
       }).catch(() => {})
+      this.vaultStateData = store.postState(post.author, post.permlink)
     },
     vaultUnlockArguments () {
       if (!this.post || !this.vaultMetadata) return null
@@ -1549,15 +1572,23 @@ export default {
         query: { blog: this.blogAccountName, product }
       })
     },
-    onVaultRestore () {
+    async onVaultRestore () {
       const args = this.vaultUnlockArguments()
       if (!args) return
-      useVaultStore().restoreAccess(args).catch(() => {})
+      const { useVaultStore } = await import('src/stores/vault')
+      const store = useVaultStore()
+      this.vaultStoreRef = store
+      await store.restoreAccess(args).catch(() => {})
+      this.vaultStateData = store.postState(this.blogAccountName, this.post.permlink)
     },
-    onVaultRetry () {
+    async onVaultRetry () {
       const args = this.vaultUnlockArguments()
       if (!args) return
-      useVaultStore().unlockPost({ ...args, force: true }).catch(() => {})
+      const { useVaultStore } = await import('src/stores/vault')
+      const store = useVaultStore()
+      this.vaultStoreRef = store
+      await store.unlockPost({ ...args, force: true }).catch(() => {})
+      this.vaultStateData = store.postState(this.blogAccountName, this.post.permlink)
     },
     linkHiveBlogPost (author, permlink) {
       return 'https://hive.blog/@' + author + '/' + permlink
@@ -1652,8 +1683,8 @@ export default {
       }
     },
     init () {
-      if (this.post && this.vaultMetadata) {
-        useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+      if (this.post && this.vaultStoreRef) {
+        this.vaultStoreRef.lockPost(this.blogAccountName, this.post.permlink)
       }
       this.resetVault()
       this.stopCountdownTimer()
@@ -1675,8 +1706,8 @@ export default {
     this.init()
   },
   beforeUnmount () {
-    if (this.post && this.vaultMetadata) {
-      useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+    if (this.post && this.vaultStoreRef) {
+      this.vaultStoreRef.lockPost(this.blogAccountName, this.post.permlink)
     }
     this.stopCountdownTimer()
   }

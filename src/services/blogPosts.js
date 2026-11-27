@@ -178,6 +178,35 @@ export function sortBlogPosts (posts, pinned = []) {
   })
 }
 
+/**
+ * Lightweight Vault detection for the reader shell.
+ *
+ * The full crypto/metadata modules are lazy-loaded only when a post actually
+ * carries `banksia_vault`. This helper parses the same JSON shape without
+ * pulling WebCrypto into every post route.
+ */
+export function vaultSummary (value) {
+  let root = value
+  if (typeof root === 'string') {
+    try { root = JSON.parse(root) } catch { return null }
+  }
+  if (!root || typeof root !== 'object' || Array.isArray(root)) return null
+  const meta = root.banksia_vault
+  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return null
+  if (meta.v !== 1) return null
+  if (meta.mode !== 'section' && meta.mode !== 'post') return null
+  return { mode: meta.mode }
+}
+
+/** Public teaser before the raw lock marker, without importing the crypto chunk. */
+export function vaultPublicBody (body, mode = 'section') {
+  const source = typeof body === 'string' ? body : ''
+  const marker = '<!--banksia:vault-->'
+  const index = source.indexOf(marker)
+  if (mode === 'post' && index === -1) return ''
+  return index === -1 ? source : source.slice(0, index)
+}
+
 /** Blog-relative path for a post, avoiding route-name collisions. */
 export function blogPostPathFor (post, ownerAccount = '') {
   return hostBlogPostPathFor(post && post.permlink, post && post.author, ownerAccount)

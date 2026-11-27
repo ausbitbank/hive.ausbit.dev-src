@@ -70,9 +70,15 @@ async function defaultReplies (blog, container) {
 function parsePostBulletin (post, blog, pointer) {
   if (!post || typeof post !== 'object') return null
   if (!post.author || !post.permlink) return null
+  // A bulletin is only valid under the blog account it claims to serve. The
+  // reply fallback must not accept a third party's comment, or an attacker
+  // could publish a higher-sequence bulletin and shadow the creator's grants.
+  if (normalizeAccount(post.author) !== blog) return null
+  if (pointer && normalizeAccount(pointer.author) !== blog) return null
   const bulletin = parseBulletin(post.json_metadata)
   if (!bulletin) return null
   if (normalizeBlog(bulletin.blog) !== blog) return null
+  if (normalizeAccount(bulletin.signer) !== blog) return null
   return {
     bulletin,
     pointer: pointer || { author: post.author, permlink: post.permlink }
@@ -197,6 +203,10 @@ export async function verifyBulletin ({
 
   const signer = normalizeAccount(bulletin.signer || blog)
   if (!HIVE_ACCOUNT_RE.test(signer)) return { ok: false, reason: 'bulletin' }
+  // Self-sovereign beta: the bulletin must be authored and signed by the blog
+  // account itself. A delegated signer is a later schema and needs a verified
+  // certificate, not just a self-asserted `signer` field.
+  if (signer !== blog) return { ok: false, reason: 'signer' }
 
   let account
   try {
@@ -261,8 +271,11 @@ export async function loadVaultParts ({
   if (!name || !permlinks || !permlinks.length) return null
 
   const parts = []
-  for (const permlink of permlinks) {
-    if (typeof permlink !== 'string' || !permlink) return null
+  const seen = new Set()
+  for (let index = 0; index < permlinks.length; index++) {
+    const permlink = permlinks[index]
+    if (typeof permlink !== 'string' || !permlink || seen.has(permlink)) return null
+    seen.add(permlink)
     let post
     try {
       post = await fetchPost(name, permlink)
@@ -270,6 +283,7 @@ export async function loadVaultParts ({
       return null
     }
     if (!post) return null
+    if (post.author && String(post.author).toLowerCase() !== name) return null
     let root = post.json_metadata
     if (typeof root === 'string') {
       try {
@@ -281,6 +295,8 @@ export async function loadVaultParts ({
     if (!isPlainObject(root)) return null
     const part = isPlainObject(root.banksia_vault_payload) ? root.banksia_vault_payload : root
     if (!isPlainObject(part) || typeof part.iv !== 'string' || typeof part.ct !== 'string') return null
+    if (part.part !== undefined && Number(part.part) !== index + 1) return null
+    if (part.parts !== undefined && Number(part.parts) !== permlinks.length) return null
     parts.push(part)
   }
   return parts
@@ -364,8 +380,19 @@ export async function unlockWithGrant ({
       ? await decryptVaultParts(parts, contentKey, contentHeader)
       : await decryptPayload(metadata, contentKey, contentHeader)
 
-    // Multi-part payloads verify each part's hash inside decryptVaultParts;
-    // also check the post-level plaintext hash when it is the hex form.
+    // A multi-part post must supply exactly the parts named in metadata; a
+    // missing or substituted part is a tamper signal, not a partial read.
+    if (Array.isArray(parts) && parts.length && Array.isArray(metadata.parts) &&
+      parts.length !== metadata.parts.length) {
+      return fail('tampered')
+    }
+
+    // The post-level byte count and hash cover the whole plaintext, including
+    // every companion part.
+    if (Number.isInteger(metadata.bytes) && metadata.bytes >= 0) {
+      const actualBytes = new TextEncoder().encode(plaintext).length
+      if (actualBytes !== metadata.bytes) return fail('tampered')
+    }
     if (typeof metadata.hash === 'string' && /^sha256:[0-9a-f]{64}$/.test(metadata.hash)) {
       const actual = await sha256Hex(plaintext)
       if (actual !== metadata.hash.slice('sha256:'.length)) return fail('tampered')

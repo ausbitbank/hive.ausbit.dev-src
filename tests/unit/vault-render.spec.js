@@ -170,6 +170,23 @@ describe('resolveBulletin', () => {
     expect(resolved.pointer).toEqual({ author: BLOG, permlink: 'vault-2026-11-3' })
     expect(fetchReplies).toHaveBeenCalledWith(BLOG, 'banksia-vault')
   })
+
+  it('ignores a higher-sequence bulletin authored by a third party', async () => {
+    const creator = simpleBulletin({ seq: 1 })
+    const attacker = simpleBulletin({ seq: 9 })
+    const foreign = { ...replyFor(attacker), author: 'mallory' }
+    const fetchPost = vi.fn(async () => null)
+    const fetchReplies = vi.fn(async () => [foreign, replyFor(creator)])
+
+    const resolved = await resolveBulletin({
+      blog: BLOG,
+      settings: { container: 'banksia-vault' },
+      fetchPost,
+      fetchReplies
+    })
+
+    expect(resolved.bulletin.seq).toBe(1)
+  })
 })
 
 describe('verifyBulletin', () => {
@@ -203,6 +220,10 @@ describe('verifyBulletin', () => {
     const delegated = { ...bulletin, delegation: { relay: 'relay' } }
     await expect(verifyBulletin({ bulletin: delegated, fetchAccount, verify }))
       .resolves.toMatchObject({ ok: false, reason: 'delegation-unsupported' })
+
+    const foreignSigner = { ...bulletin, signer: 'mallory' }
+    await expect(verifyBulletin({ bulletin: foreignSigner, fetchAccount, verify }))
+      .resolves.toMatchObject({ ok: false, reason: 'signer' })
   })
 })
 

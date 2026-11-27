@@ -3690,13 +3690,15 @@ import {
 import { isOnline } from 'src/services/connectivity'
 import {
   describeVaultSize,
+  hasVaultMarker,
   normalizeVaultDraft,
   premiumMediaWarning,
   prepareVaultPublish,
   vaultDraftSplit,
+  vaultMarkerIndex,
   vaultMetadataForEdit
 } from 'src/services/vaultCompose'
-import { hasVaultMarker, insertVaultMarker, joinVaultBody, MAX_BODY_BYTES, removeVaultMarker, VAULT_MARKER, vaultMarkerIndex } from 'src/services/vaultPayload'
+import { insertVaultMarker, joinVaultBody, MAX_BODY_BYTES, removeVaultMarker, VAULT_MARKER } from 'src/services/vaultPayload'
 import {
   currentVaultKid,
   getCreatorVault,

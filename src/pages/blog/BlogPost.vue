@@ -329,15 +329,10 @@
 </style>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useBlogStore } from 'src/stores/blog'
 import { useHiveStore } from 'src/stores/hive'
-import { useVaultStore } from 'src/stores/vault'
-import { fetchPostContent } from 'src/services/chainData'
-import { readVaultSettings } from 'src/services/vaultSettings'
-import { deriveVaultPlan } from 'src/services/vaultProduct'
-import { parseVaultMetadata, splitVaultBody } from 'src/services/vaultPayload'
-import { requiresApex } from 'src/services/vaultUnlock'
 import {
   blogPostExcerpt,
   blogPostHasBodyImage,
@@ -347,14 +342,17 @@ import {
   blogPostReadingMinutes,
   blogPostTags,
   blogPostTitle,
-  formatBlogDate
+  formatBlogDate,
+  vaultSummary
 } from 'src/services/blogPosts'
 import Render from 'components/render.vue'
-import VaultLockedSection from 'components/blog/VaultLockedSection.vue'
 
 export default {
   name: 'BlogPost',
-  components: { Render, VaultLockedSection },
+  components: {
+    Render,
+    VaultLockedSection: defineAsyncComponent(() => import('components/blog/VaultLockedSection.vue'))
+  },
   data () {
     return {
       post: null,
@@ -365,7 +363,10 @@ export default {
       vaultPlan: null,
       vaultPlanError: '',
       vaultSettings: null,
-      publicBody: ''
+      publicBody: '',
+      vaultStateData: { status: 'locked', message: '' },
+      vaultStoreRef: null,
+      vaultApexRequired: false
     }
   },
   computed: {
@@ -432,21 +433,23 @@ export default {
     },
     vaultState () {
       if (!this.vaultMetadata || !this.post) return { status: 'locked', message: '' }
-      const state = useVaultStore().postState(this.blogAccountName, this.post.permlink)
+      const state = this.vaultStoreRef
+        ? this.vaultStoreRef.postState(this.blogAccountName, this.post.permlink)
+        : this.vaultStateData
       // A member can still read when the product post is temporarily
       // unavailable; only the subscribe action needs the plan.
-      if (state.status === 'unlocked' && state.plaintext) return state
+      if (state && state.status === 'unlocked' && state.plaintext) return state
       if (this.vaultPlanError) {
         return { status: 'error', code: 'no-plan', message: this.vaultPlanError }
       }
-      return state
+      return state || { status: 'locked', message: '' }
     },
     vaultPlaintext () {
       return this.vaultState.plaintext || ''
     },
     vaultApexUrl () {
       if (!this.vaultMetadata || !this.post) return ''
-      return requiresApex() ? this.apexPostUrl : ''
+      return this.vaultApexRequired ? this.apexPostUrl : ''
     }
   },
   watch: {
@@ -457,8 +460,8 @@ export default {
     this.load()
   },
   beforeUnmount () {
-    if (this.post && this.vaultMetadata) {
-      useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+    if (this.post && this.vaultStoreRef) {
+      this.vaultStoreRef.lockPost(this.blogAccountName, this.post.permlink)
     }
   },
   methods: {
@@ -466,8 +469,8 @@ export default {
       const permlink = String(this.$route.params.permlink || '').trim()
       const author = String(this.$route.params.author || this.blog.accountName || '').trim().toLowerCase()
       const requestId = ++this.requestId
-      if (this.post) {
-        useVaultStore().lockPost(this.blogAccountName, this.post.permlink)
+      if (this.post && this.vaultStoreRef) {
+        this.vaultStoreRef.lockPost(this.blogAccountName, this.post.permlink)
       }
       this.resetVault()
       this.loading = true
@@ -495,14 +498,38 @@ export default {
       this.vaultPlanError = ''
       this.vaultSettings = null
       this.publicBody = ''
+      this.vaultStateData = { status: 'locked', message: '' }
+      this.vaultApexRequired = false
     },
     async prepareVault (post, requestId = this.requestId) {
+      const summary = vaultSummary(post && post.json_metadata)
+      if (!summary) return
+
+      // The crypto, settings and store modules are a lazy chunk: an ordinary
+      // post must not pay for Vault.
+      const [
+        { parseVaultMetadata, splitVaultBody },
+        { fetchPostContent },
+        { readVaultSettings },
+        { deriveVaultPlan },
+        { requiresApex },
+        { useVaultStore }
+      ] = await Promise.all([
+        import('src/services/vaultPayload'),
+        import('src/services/chainData'),
+        import('src/services/vaultSettings'),
+        import('src/services/vaultProduct'),
+        import('src/services/vaultUnlock'),
+        import('src/stores/vault')
+      ])
+      if (requestId !== this.requestId) return
       const metadata = parseVaultMetadata(post && post.json_metadata)
       if (!metadata) return
 
       this.vaultMetadata = metadata
       this.vaultPlanError = ''
       this.publicBody = splitVaultBody(post.body, metadata.mode).publicBody
+      this.vaultApexRequired = requiresApex()
 
       const settings = readVaultSettings(this.blog.account).settings
       this.vaultSettings = settings
@@ -527,13 +554,15 @@ export default {
       }
 
       // Custom domains are read-only: never hold or use a reader key there.
-      if (requiresApex()) return
+      if (this.vaultApexRequired) return
 
       const store = useVaultStore()
+      this.vaultStoreRef = store
       const existing = await store.readerKey(this.blogAccountName)
       if (!existing) return
       if (requestId !== this.requestId) return
 
+      this.vaultStateData = store.postState(this.blogAccountName, post.permlink)
       await store.unlockPost({
         blog: this.blogAccountName,
         author: post.author,
@@ -542,6 +571,7 @@ export default {
         settings,
         readerAccount: this.readerAccount
       }).catch(() => {})
+      this.vaultStateData = store.postState(this.blogAccountName, post.permlink)
     },
     vaultUnlockArguments () {
       if (!this.post || !this.vaultMetadata) return null
@@ -566,15 +596,23 @@ export default {
         query: { blog: this.blogAccountName, product }
       })
     },
-    onVaultRestore () {
+    async onVaultRestore () {
       const args = this.vaultUnlockArguments()
       if (!args) return
-      useVaultStore().restoreAccess(args).catch(() => {})
+      const { useVaultStore } = await import('src/stores/vault')
+      const store = useVaultStore()
+      this.vaultStoreRef = store
+      await store.restoreAccess(args).catch(() => {})
+      this.vaultStateData = store.postState(this.blogAccountName, this.post.permlink)
     },
-    onVaultRetry () {
+    async onVaultRetry () {
       const args = this.vaultUnlockArguments()
       if (!args) return
-      useVaultStore().unlockPost({ ...args, force: true }).catch(() => {})
+      const { useVaultStore } = await import('src/stores/vault')
+      const store = useVaultStore()
+      this.vaultStoreRef = store
+      await store.unlockPost({ ...args, force: true }).catch(() => {})
+      this.vaultStateData = store.postState(this.blogAccountName, this.post.permlink)
     },
     updateMeta () {
       if (!this.post || typeof window === 'undefined') return

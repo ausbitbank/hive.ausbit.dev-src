@@ -648,9 +648,17 @@ export default {
           ])
           bulletin = bulletinFromReplies(replies)
         }
-        const entry = bulletin && Array.isArray(bulletin.entries)
-          ? bulletin.entries.find(item => item && item.rkt === this.readerKey.rkt)
-          : null
+        if (!bulletin || !Array.isArray(bulletin.entries)) return
+        // Never mark a payment as granted from an unverified bulletin: a
+        // third-party comment with a matching rkt and a future expiry is not
+        // an entitlement. Require the creator's signature over the payload.
+        if (String(bulletin.signer || '').toLowerCase() !== String(bulletin.blog || '').toLowerCase()) return
+        const verified = await this.verifyViaUnlockModule(bulletin)
+        if (!verified) {
+          this.pollError = 'The bulletin could not be verified yet. It will retry automatically.'
+          return
+        }
+        const entry = bulletin.entries.find(item => item && item.rkt === this.readerKey.rkt)
         if (entry && Number.isFinite(Date.parse(entry.expires)) && Date.parse(entry.expires) > Date.now()) {
           this.granted = true
           this.stopPolling()
@@ -660,6 +668,12 @@ export default {
       } finally {
         this.checking = false
       }
+    },
+    async verifyViaUnlockModule (bulletin) {
+      const module = await loadOptionalModule(UNLOCK_MODULES, '../services/vaultUnlock.js')
+      if (!module || typeof module.verifyBulletin !== 'function') return false
+      const result = await module.verifyBulletin({ bulletin })
+      return Boolean(result && result.ok)
     },
     async resolveViaUnlockModule () {
       try {
