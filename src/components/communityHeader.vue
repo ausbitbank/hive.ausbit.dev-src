@@ -10,7 +10,7 @@
             <div v-if="postingJsonMeta.profile.about">{{ postingJsonMeta.profile.about }}</div>
             <div v-if="postingJsonMeta.profile.location" title="Location"><q-icon name="location_on" /> {{ postingJsonMeta.profile.location }}</div>
             <div v-if="postingJsonMeta.profile.website" title="Website"><a v-if="safeWebsite" :href="safeWebsite"><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</a><span v-else><q-icon name="link" /> {{ postingJsonMeta.profile.website }}</span></div>
-            <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><router-link v-if="postingJsonMeta.profile.pinned !== 'none'" :to="returnPostLink(account.name, postingJsonMeta.profile.pinned)"><q-icon name="push_pin" /></router-link></span>
+            <span v-if="postingJsonMeta.profile.pinned " title="Pinned Post"><router-link v-if="postingJsonMeta.profile.pinned !== 'none'" :to="returnPostLink(account.name, postingJsonMeta.profile.pinned)" :aria-label="'View pinned post by @' + account.name"><q-icon name="push_pin" /></router-link></span>
         </span>
         <span>
           <div v-if="communityInfo.about">{{ communityInfo.about }}</div>

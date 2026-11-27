@@ -4,7 +4,7 @@
   <q-list dense>
     <q-item v-for="dele in delegations" :key="dele.id" label="Delegations">
       <q-item-section avatar class="gt-xs">
-        <router-link :to="returnAccountLink(dele.delegatee)"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(dele.delegatee)" /></q-avatar></router-link>
+        <router-link :to="returnAccountLink(dele.delegatee)" :aria-label="'View @' + dele.delegatee"><q-avatar size="sm"><q-img :src="getHiveAvatarUrl(dele.delegatee)" alt="" /></q-avatar></router-link>
       </q-item-section>
       <q-item-section>
         <router-link :to="returnAccountLink(dele.delegatee)">{{ dele.delegatee }}</router-link>

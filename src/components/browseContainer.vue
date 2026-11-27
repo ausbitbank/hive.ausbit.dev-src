@@ -52,27 +52,27 @@
                       <q-item-label>Hide voted posts</q-item-label>
                       <q-item-label v-if="!loggedInUser" caption>Log in to filter voted posts</q-item-label>
                     </q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideVoted" dense color="primary" :disable="!loggedInUser" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideVoted" dense color="primary" aria-label="Hide voted posts" :disable="!loggedInUser" /></q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section><q-item-label>Hide reblogs</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideReblogs" dense color="primary" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideReblogs" dense color="primary" aria-label="Hide reblogs" /></q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section><q-item-label>Hide pinned posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hidePinned" dense color="primary" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hidePinned" dense color="primary" aria-label="Hide pinned posts" /></q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section><q-item-label>Hide muted posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideHidden" dense color="primary" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideHidden" dense color="primary" aria-label="Hide muted posts" /></q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section><q-item-label>Hide moderated posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideGray" dense color="primary" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideGray" dense color="primary" aria-label="Hide moderated posts" /></q-item-section>
                   </q-item>
                   <q-item>
                     <q-item-section><q-item-label>Hide rewards outside range</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideRewardsFilter" dense color="primary" /></q-item-section>
+                    <q-item-section side><q-toggle v-model="filter.hideRewardsFilter" dense color="primary" aria-label="Hide rewards outside range" /></q-item-section>
                   </q-item>
                 </q-list>
 
