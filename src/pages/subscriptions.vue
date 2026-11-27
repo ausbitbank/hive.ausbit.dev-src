@@ -692,7 +692,6 @@ export default {
   data () {
     return {
       subject: '',
-      readonly: false,
       loading: true,
       error: '',
       plans: [],
@@ -710,11 +709,13 @@ export default {
   computed: {
     loggedInUser () {
       return this.$hiveStore.user.username || ''
+    },
+    readonly () {
+      return Boolean(this.subject && this.loggedInUser !== this.subject)
     }
   },
   created () {
     this.subject = this.resolveSubject()
-    this.readonly = Boolean(this.subject && this.loggedInUser !== this.subject)
     this.updateMeta()
     if (!this.subject) {
       this.loading = false
@@ -779,6 +780,10 @@ export default {
     },
     queueCancel (plan) {
       this.actionError = ''
+      if (!this.subject || this.subject !== this.loggedInUser) {
+        this.actionError = 'Only the signed-in account can cancel its own membership.'
+        return
+      }
       if (!plan || !plan.hasOpenTransfer) {
         this.actionError = 'There is no open recurring transfer to cancel. Access ends when the paid period expires.'
         return
