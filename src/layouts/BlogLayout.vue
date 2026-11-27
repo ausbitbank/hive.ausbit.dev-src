@@ -193,7 +193,7 @@ html[data-blog] body {
 }
 
 .blog-action--quiet {
-  opacity: 0.7;
+  color: var(--c-text-muted);
 }
 
 .blog-main {

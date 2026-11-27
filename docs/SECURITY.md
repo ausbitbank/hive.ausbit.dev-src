@@ -95,6 +95,10 @@ Notes:
 - Blog settings are public on-chain metadata written with the posting key
   through `account_update2`; no server stores them and no key leaves the
   browser.
+- The opt-in directory stores only account names in Cloudflare KV. Registration
+  and every directory read re-verify the on-chain `claimed && directory` flags.
+  Opting out deletes the entry. The directory page also re-verifies before
+  rendering, so a stale KV entry cannot reveal a blog that has opted out.
 - Unclaimed blogs are `noindex` and carry a visible claim notice. Claiming is a
   normal posting-key metadata write, not an authority change.
 

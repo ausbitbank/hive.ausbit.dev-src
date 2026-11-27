@@ -100,6 +100,18 @@ export const BLOG_THEMES = [
 
 export const DEFAULT_BLOG_THEME_ID = 'paper'
 
+const OG_IMAGES = {
+  paper: '/statics/og-blog-paper.png',
+  studio: '/statics/og-blog-studio.png',
+  terminal: '/statics/og-blog-terminal.png'
+}
+
+/** A deterministic 1200×630 social card for a blog without a cover image. */
+export function blogOgImagePath (themeId) {
+  const id = String(themeId || '').toLowerCase()
+  return OG_IMAGES[id] || OG_IMAGES[DEFAULT_BLOG_THEME_ID]
+}
+
 const BY_ID = new Map(BLOG_THEMES.map(theme => [theme.id, theme]))
 
 export function getBlogTheme (id) {

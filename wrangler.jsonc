@@ -2,6 +2,12 @@
   "name": "banksia-metadata",
   "compatibility_date": "2026-11-18",
   "main": "deploy/cloudflare/metadata-worker.mjs",
+  "kv_namespaces": [
+    {
+      "binding": "BLOGS",
+      "id": "d1d727cfe08b4b98b019d51972437847"
+    }
+  ],
   "routes": [
     "banksia.io/@*",
     "hive.ausbit.dev/@*",
@@ -17,6 +23,8 @@
     "hive.ausbit.dev/settings/blog*",
     "banksia.io/blogs*",
     "hive.ausbit.dev/blogs*",
+    "banksia.io/api/blogs*",
+    "hive.ausbit.dev/api/blogs*",
     "banksia.io/settings/moderation*",
     "hive.ausbit.dev/settings/moderation*",
     "banksia.io/csp-report*",

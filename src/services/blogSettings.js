@@ -31,7 +31,7 @@ const NAV_HREF_RE = /^(?:\/(?!\/)[^\s]*|https:\/\/[^\s]+)$/i
 const BLOG_KEYS = [
   'version', 'claimed', 'title', 'description', 'theme', 'mode', 'accent',
   'nav', 'pinned', 'authors', 'community', 'showPayout', 'showComments',
-  'customDomain', 'updatedAt'
+  'directory', 'customDomain', 'updatedAt'
 ]
 
 function isPlainObject (value) {
@@ -175,6 +175,7 @@ export function defaultBlogSettings (account) {
     community: '',
     showPayout: false,
     showComments: true,
+    directory: false,
     customDomain: '',
     updatedAt: ''
   }
@@ -228,6 +229,8 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
   if (input.showPayout !== undefined && typeof input.showPayout !== 'boolean') errors.push('showPayout must be a boolean')
   const showComments = input.showComments !== false
   if (input.showComments !== undefined && typeof input.showComments !== 'boolean') errors.push('showComments must be a boolean')
+  const directory = input.directory === true
+  if (input.directory !== undefined && typeof input.directory !== 'boolean') errors.push('directory must be a boolean')
 
   const customDomain = normalizeCustomDomain(input.customDomain, errors)
   const updatedAt = input.updatedAt === undefined
@@ -248,6 +251,7 @@ export function normalizeBlogSettings (input, { account = null } = {}) {
     community,
     showPayout,
     showComments,
+    directory,
     customDomain,
     updatedAt
   }

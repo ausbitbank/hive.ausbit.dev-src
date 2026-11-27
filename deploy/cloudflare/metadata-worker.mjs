@@ -15,9 +15,10 @@
 //
 // This file is not bundled into the SPA and is not deployed by scripts/deploy.sh.
 
-import { resolveBlogHost, blogPostPathFor } from '../../src/services/blogHost.js'
+import { resolveBlogHost, blogPostPathFor, isValidHiveAccountName } from '../../src/services/blogHost.js'
 import { readBlogSettings } from '../../src/services/blogSettings.js'
 import { buildBlogRss, blogFeedPosts, escapeXml } from '../../src/services/blogFeed.js'
+import { blogOgImagePath } from '../../src/themes/blogThemes.js'
 
 const HIVE_RPCS = [
   'https://api.hive.blog',
@@ -41,7 +42,8 @@ const THEME_SHELLS = new Map([
   // The blog settings page is a client route without a prerendered shell. Use
   // the app shell so it works before the vhost gains an explicit location.
   ['/settings/blog', '/index.html'],
-  ['/blogs', '/index.html']
+  ['/blogs', '/index.html'],
+  ['/blogs/directory', '/index.html']
 ])
 const THEME_META = new Map([
   ['/settings/blog', {
@@ -73,6 +75,22 @@ const THEME_META = new Map([
       name: 'Free Hive blogs on Banksia',
       description: 'Every Hive account has a clean reading page at username.banksia.io. Claim it free.',
       url: 'https://banksia.io/blogs'
+    }
+  }],
+  ['/blogs/directory', {
+    title: 'Blog directory — banksia.io',
+    description: 'Opt-in Hive blogs on banksia.io. Browse community, project and personal blogs at username.banksia.io.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/blogs/directory',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Hive blogs on Banksia',
+      description: 'Opt-in Hive blogs at username.banksia.io.',
+      url: 'https://banksia.io/blogs/directory'
     }
   }]
 ])
@@ -190,7 +208,7 @@ function proxiedImage (url, width = 800) {
   return 'https://images.hive.blog/' + width + 'x0/' + clean
 }
 
-async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', rss = '', post = null } = {}) {
+async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', rss = '', fallbackImage = '', post = null } = {}) {
   const row = post || await rpc('bridge.get_post', { author, permlink, observer: '' })
   if (!row || !row.author) return null
   let metadata
@@ -201,13 +219,18 @@ async function postMetadata (author, permlink, { origin = 'https://banksia.io', 
   }
   const title = stripMarkdown(row.title, 100) || permlink.replace(/-/g, ' ')
   const description = stripMarkdown(row.body, 180) || ('A Hive post by @' + author + '.')
-  const image = proxiedImage(firstImage(metadata)) || ('https://images.hive.blog/u/' + author + '/avatar')
+  const metaImage = proxiedImage(firstImage(metadata))
+  const image = metaImage || fallbackImage || ('https://images.hive.blog/u/' + author + '/avatar')
+  const fallbackUsed = Boolean(!metaImage && fallbackImage)
   const canonicalPath = path || '/@' + author + '/' + permlink
   const suffix = siteName || ('@' + author + ' on Hive')
   return {
     title: title + ' — ' + suffix,
     description,
     image,
+    imageWidth: fallbackUsed ? 1200 : undefined,
+    imageHeight: fallbackUsed ? 630 : undefined,
+    imageType: fallbackUsed ? 'image/png' : undefined,
     type: 'article',
     path: canonicalPath,
     origin,
@@ -358,7 +381,9 @@ async function blogMetadata (url, tenant) {
   const origin = 'https://' + url.hostname
   const title = settings.title || profileMeta.display
   const description = settings.description || profileMeta.about || ('Posts by @' + tenant.account + ' on Hive.')
-  const image = profileMeta.cover || profileMeta.image
+  const fallbackImage = APEX_ORIGIN + blogOgImagePath(settings.theme)
+  const image = profileMeta.cover || fallbackImage
+  const fallbackUsed = !profileMeta.cover
   const claimed = read.claimed
   const path = url.pathname.replace(/\/+$/, '') || '/'
   const blogJsonLd = {
@@ -379,6 +404,9 @@ async function blogMetadata (url, tenant) {
       title: title + ' — Hive blog',
       description,
       image,
+      imageWidth: fallbackUsed ? 1200 : undefined,
+      imageHeight: fallbackUsed ? 630 : undefined,
+      imageType: fallbackUsed ? 'image/png' : undefined,
       type: 'website',
       path: '/',
       origin,
@@ -395,6 +423,9 @@ async function blogMetadata (url, tenant) {
       title: label + ' — ' + title,
       description,
       image,
+      imageWidth: fallbackUsed ? 1200 : undefined,
+      imageHeight: fallbackUsed ? 630 : undefined,
+      imageType: fallbackUsed ? 'image/png' : undefined,
       type: 'website',
       path,
       origin,
@@ -426,6 +457,7 @@ async function blogMetadata (url, tenant) {
     path: canonicalPath,
     siteName: title,
     rss: origin + '/rss.xml',
+    fallbackImage,
     post
   })
 }
@@ -521,6 +553,86 @@ async function blogRobots (url, tenant) {
   })
 }
 
+const DIRECTORY_PREFIX = 'blog:'
+
+function jsonResponse (value, status = 200, cacheControl = 'no-store') {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': cacheControl,
+      'x-hive-meta': 'blog-directory'
+    }
+  })
+}
+
+async function listDirectory (env) {
+  if (!env?.BLOGS) return []
+  const result = await env.BLOGS.list({ prefix: DIRECTORY_PREFIX })
+  return (result.keys || [])
+    .map(key => key.name.slice(DIRECTORY_PREFIX.length))
+    .filter(Boolean)
+}
+
+async function verifyBlogDirectory (account) {
+  const data = await getAccount(account)
+  if (!data) return { claimed: false, listed: false, settings: null }
+  const read = readBlogSettings(data)
+  return {
+    claimed: read.claimed,
+    listed: read.claimed && read.settings.directory === true,
+    settings: read.settings
+  }
+}
+
+async function syncDirectoryEntry (env, account, listed) {
+  if (!env?.BLOGS) return false
+  const key = DIRECTORY_PREFIX + account
+  if (listed) {
+    await env.BLOGS.put(key, JSON.stringify({ account, updatedAt: new Date().toISOString() }))
+  } else {
+    await env.BLOGS.delete(key)
+  }
+  return true
+}
+
+async function maybeIndexBlog (env, account) {
+  const verify = await verifyBlogDirectory(account)
+  await syncDirectoryEntry(env, account, verify.listed)
+}
+
+async function handleDirectoryApi (request, env, url) {
+  if (url.pathname === '/api/blogs' && request.method === 'GET') {
+    try {
+      const accounts = await listDirectory(env)
+      return jsonResponse({ accounts, configured: Boolean(env?.BLOGS) }, 200, 'public, max-age=60')
+    } catch {
+      return jsonResponse({ accounts: [], configured: false, error: 'The directory index is unavailable.' }, 503)
+    }
+  }
+
+  if (url.pathname === '/api/blogs/register' && request.method === 'POST') {
+    const body = await request.json().catch(() => null)
+    const account = String((body && body.account) || '').trim().toLowerCase()
+    if (!isValidHiveAccountName(account)) {
+      return jsonResponse({ ok: false, listed: false, error: 'A valid Hive account is required.' }, 400)
+    }
+    const verify = await verifyBlogDirectory(account)
+    const stored = await syncDirectoryEntry(env, account, verify.listed)
+    if (verify.listed && !stored) {
+      return jsonResponse({ ok: false, listed: false, error: 'The directory index is not configured.' }, 503)
+    }
+    return jsonResponse(
+      verify.listed
+        ? { ok: true, listed: true, error: '' }
+        : { ok: false, listed: false, error: 'The blog is not claimed with directory listing enabled.' },
+      verify.listed ? 200 : 409
+    )
+  }
+
+  return null
+}
+
 async function handleBlog (request, tenant) {
   const url = new URL(request.url)
   if (request.method !== 'GET' && request.method !== 'HEAD') return fetchApexAsset(request, url)
@@ -588,6 +700,9 @@ export function rewriteHead (html, meta) {
   setMeta('property', 'og:title', meta.title)
   setMeta('property', 'og:description', meta.description)
   setMeta('property', 'og:image', meta.image)
+  if (meta.imageWidth) setMeta('property', 'og:image:width', String(meta.imageWidth))
+  if (meta.imageHeight) setMeta('property', 'og:image:height', String(meta.imageHeight))
+  if (meta.imageType) setMeta('property', 'og:image:type', meta.imageType)
   setMeta('property', 'og:url', origin + meta.path)
   setMeta('property', 'og:type', meta.type)
   if (meta.siteName) setMeta('property', 'og:site_name', meta.siteName)
@@ -721,17 +836,27 @@ export async function handleCspReport (request) {
 }
 
 export default {
-  async fetch (request) {
+  async fetch (request, env, ctx) {
     const url = new URL(request.url)
     if (url.pathname === '/csp-report' || url.pathname.startsWith('/csp-report/')) {
       return handleCspReport(request)
+    }
+
+    if (url.pathname === '/api/blogs' || url.pathname === '/api/blogs/register') {
+      const directory = await handleDirectoryApi(request, env, url)
+      if (directory) return directory
     }
 
     // Account blogs are served from the same build on a first-level subdomain.
     // This runs before the apex metadata rules so a blog host never falls
     // through to the explorer's account/post shells.
     const tenant = blogTenant(url)
-    if (tenant) return handleBlog(request, tenant)
+    if (tenant) {
+      if (env?.BLOGS && ctx?.waitUntil) {
+        ctx.waitUntil(maybeIndexBlog(env, tenant.account).catch(() => {}))
+      }
+      return handleBlog(request, tenant)
+    }
 
     const theme = await themeShell(request).catch(() => null)
     if (theme) return theme

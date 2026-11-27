@@ -80,6 +80,7 @@ const routes = [
       { path: '/token/:token', name: 'token', component: () => import('pages/token.vue') },
       { path: 'communities', name: 'communities', component: () => import('pages/communityIndex.vue') },
       { path: 'blogs', name: 'blogs', component: () => import('pages/blogs.vue') },
+      { path: 'blogs/directory', name: 'blogs-directory', component: () => import('pages/blogsDirectory.vue') },
       { path: 'c', redirect: '/communities' },
       { path: 'c/:username/:sortMethod', name: 'community-sorted', component: () => import('pages/browse.vue'), beforeEnter: redirectDiscontinuedSort },
       { path: 'c/:username', name: 'community', component: () => import('pages/browse.vue') },

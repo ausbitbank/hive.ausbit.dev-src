@@ -20,19 +20,25 @@ claim and customise it from the apex site.
   payout/comment toggles.
 - A public `/blogs` landing page with a username preview, the three theme
   cards, the free/paid story and a claim call to action.
+- An opt-in public directory at `/blogs/directory`. A KV index stores only
+  account names; every read and write is re-verified against the on-chain
+  `claimed` and `directory` flags.
+- Deterministic 1200×630 themed OG fallback cards for blogs without a cover.
+- Playwright axe coverage for `/blogs`, `/blogs/directory` and a blog host.
 - Three built-in reading themes (Paper, Studio, Terminal) plus "match my
   profile skin". An author accent is accepted as a hex colour only.
 - Multi-author/team blogs: an owner plus up to 20 contributors, and/or a Hive
   community feed.
 - Edge metadata and RSS for blog hosts: title, description, Open Graph,
-  Twitter cards, JSON-LD, canonical URLs and `/rss.xml`.
+  Twitter cards, JSON-LD, canonical URLs, `/rss.xml`, `/sitemap.xml` and
+  `/robots.txt`.
 - Unclaimed blogs render a public preview with a claim call to action, a
   `noindex` robots tag and no canonical.
 - Dotted Hive names are encoded as one DNS label (`hive.fund` →
   `hive--fund.banksia.io`) because a wildcard certificate only covers one level.
 
-Not in this workstream: payments/entitlements, premium themes, custom domains,
-a public blog directory, sitemap generation, and live wildcard DNS/TLS.
+Not in this workstream: payments/entitlements, premium themes and custom
+domains.
 
 ## Routes and components
 
@@ -49,6 +55,9 @@ a public blog directory, sitemap generation, and live wildcard DNS/TLS.
 | Card | `src/components/blog/BlogPostCard.vue` |
 | Claim/edit page | `src/pages/blogSettings.vue` |
 | Landing page | `src/pages/blogs.vue` |
+| Directory page | `src/pages/blogsDirectory.vue` |
+| OG fallbacks | `public/statics/og-blog-paper.png`, `og-blog-studio.png`, `og-blog-terminal.png` |
+| E2E/axe | `e2e/blog.spec.js` |
 | Route selection | `src/router/blogRoutes.js`, `src/router/index.js`, `src/router/routes.js` |
 | Page metadata | `src/utils/pageMeta.js` (`baseUrl`, `siteName`) |
 | Explorer integration | `src/pages/account.vue` ("Blog site" quick link) |
@@ -80,6 +89,7 @@ with a blog route name).
       "community": "hive-123456",
       "showPayout": false,
       "showComments": true,
+      "directory": true,
       "customDomain": "",
       "updatedAt": "2026-11-27T00:00:00.000Z"
     }
@@ -101,6 +111,10 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 - No new key handling, storage or server. The existing Keychain, HiveAuth and
   SmartLock queue signs the operation.
 - Blog settings are public by design. The claim page adds no local storage.
+- The directory stores only opted-in account names in Cloudflare KV. Every
+  write and every directory read re-verifies `claimed && directory` against the
+  on-chain metadata; opting out deletes the KV entry. No keys or post content
+  are stored.
 - The blog surface is read-only. Votes, comments, tips and payouts deep-link to
   the apex Banksia post, which keeps signing on the origin the user trusts.
   This matters more once custom domains exist.
@@ -131,6 +145,13 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 - `/sitemap.xml` lists the blog root, About, Contact and the latest 20 posts.
   `/robots.txt` disallows unclaimed previews and points claimed blogs at the
   sitemap.
+- The directory API is `GET /api/blogs` (KV account names) and
+  `POST /api/blogs/register` (re-verifies the on-chain flags, then writes or
+  deletes the KV entry). Visiting a blog also refreshes its entry through
+  `waitUntil`. The directory page re-verifies each account before rendering.
+- When a blog has no cover, the root/About/Contact metadata and posts without
+  their own image use a themed 1200×630 OG card and emit
+  `og:image:width/height/type`. A profile cover still wins.
 - Unclaimed blogs get `robots: noindex, follow` and no canonical.
 - The post header no longer repeats a lead image that is already inside the
   body; the body remains the visual source of truth.
@@ -147,9 +168,10 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 190 files, 1,654 tests passing. New suites:
-  `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`,
-  `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
+- `bun run test` — 192 files, 1,665 tests passing. New suites:
+  `blog-host`, `blog-settings`, `blog-posts`, `blog-themes`, `blog-feed`,
+  `blog-worker`, `blog-directory-worker`, `cloudflare-dns`; `nginx-routes` and
+  `page-meta` extended.
 - `bun run build` — succeeded.
 - Headless Chromium smoke against a real account (`asgarth.localhost`):
   - home rendered 20 post cards and the unclaimed-preview banner;
@@ -194,8 +216,21 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 - `https://banksia.io/blogs` renders the landing page, the three theme cards
   and the username preview/claim form; the claim action opens
   `/settings/blog?account=<name>`.
-- Not run in this workstream: the full Chromium E2E/axe suite, nginx `-t` for
-  the optional wildcard block, and custom domains.
+- `e2e/blog.spec.js` — 3 checks pass: `/blogs`, a mocked `/blogs/directory`
+  and a mocked blog host, with axe at 1440×900 and 390×844.
+- Live directory API: `GET /api/blogs` returns
+  `{ accounts: [], configured: true }`. Registering the claimed but
+  non-opted-in `ausbitbank` returns `409`, proving the on-chain
+  `claimed && directory` check. `ausbitbank.banksia.io` serves the claimed blog
+  with a blog canonical and no `noindex`, and its profile cover is used as
+  `og:image`.
+- `/blogs/directory` returns `200` with `x-hive-meta: theme-shell`; the themed
+  OG assets return `200`.
+- The directory is intentionally empty until an owner opts in: `ausbitbank` is
+  claimed but its settings predate the `directory` field, so it must enable the
+  toggle and refresh the listing.
+- Not run in this workstream: the full Chromium suite (only `e2e/blog.spec.js`
+  was run), nginx `-t` for the optional wildcard block, and custom domains.
 
 ## Deployment checklist (operator)
 
@@ -211,25 +246,26 @@ whole metadata object, so the profile, theme and other apps' keys survive.
    access and custom domains. Apply them with
    `bash scripts/apply-nginx-vhost-remote.sh hurgenburgen apply` only when that
    path is needed.
-4. **Worker — done.** `banksia-metadata` serves `*.banksia.io/*` and
-   `/settings/blog*`.
-5. **SPA — done.** `./scripts/deploy.sh` released the blog route table.
-6. **Smoke — done.** A real claim was tested on 2026-11-27 and works; the
+4. **Worker — done.** `banksia-metadata` serves `*.banksia.io/*`,
+   `/settings/blog*`, `/blogs*` and `/api/blogs*`.
+5. **Directory KV — done.** Namespace `BLOGS`
+   (`d1d727cfe08b4b98b019d51972437847`) is bound in `wrangler.jsonc`.
+6. **SPA — done.** `./scripts/deploy.sh` released the blog route table, the
+   directory and the themed OG assets.
+7. **Smoke — done.** A real claim was tested on 2026-11-27 and works; the
    subdomain updates after the queue broadcasts.
 
 ## Remaining work
 
-- Premium entitlements (recurring HBD via `recurrent_transfer`, HP delegation,
-  or prepaid terms) and premium themes. Verify entitlement from chain state,
+- Premium entitlements and premium themes. Verify entitlement from chain state,
   never from the user-writable blog object.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
   UI. Keep custom-domain blogs read-only for signing.
-- A public, opt-in directory of claimed blogs.
-- A per-blog OG image generator, or a deterministic cover fallback.
+- A per-blog text OG generator (the current fallback is themed, not
+  personalised with the blog title/avatar).
 - Canonical policy for the duplicate: the apex
   `banksia.io/@author/permlink` page still canonicalizes to itself, so a
   claimed blog post exists at two URLs. Decide whether the apex post should
   canonicalize to the blog or both should remain indexable.
-- E2E and axe coverage for the blog routes at desktop and mobile widths.
 - Decide whether unclaimed previews stay public or become claim-only after the
   first abuse report.

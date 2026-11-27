@@ -16,12 +16,13 @@ principles that constrain it. Delivered work and its verification records live i
   reporting, vhost hardening, dependency updates, the repaired E2E suite, the
   profile metadata editor with image uploads (W83), and account blogs on
   `*.banksia.io` (W84).
-- W84 is deployed for public previews: `*.banksia.io` resolves, the
-  `banksia-metadata` Worker proxies the apex shell and serves blog metadata,
-  RSS, sitemap and robots, and the new SPA is live. A real claim has been
-  tested and works; premium entitlements and custom domains remain.
+- W84 is deployed: `*.banksia.io` resolves, the `banksia-metadata` Worker
+  proxies the apex shell and serves blog metadata, RSS, sitemap, robots, the
+  opt-in directory API and themed OG fallbacks, and the new SPA is live. A real
+  claim has been tested and works, and the blog axe suite passes; premium
+  entitlements and custom domains remain.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,654 tests across 190 files.
+  with 1,665 tests across 192 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W85**.
@@ -175,14 +176,16 @@ Record: [`W82`](workstreams/W82-account-creation.md).
 The free account blog at `<account>.banksia.io` is deployed for public
 previews, and the claim flow is verified. Remaining work:
 
-- Premium entitlements: recurring HBD (`recurrent_transfer`), HP delegation or
-  prepaid terms, plus premium themes. Verify entitlement from chain state;
-  never trust a `claimed` or tier field in user-writable metadata.
+- Premium entitlements and premium themes. Verify entitlement from chain state,
+  never from the user-writable blog object.
 - Custom domains via Cloudflare for SaaS custom hostnames, with a verification
   UI. Keep custom-domain blogs read-only for signing.
-- A public, opt-in directory of claimed blogs, blog `sitemap.xml`/`robots.txt`
-  and an OG image fallback.
-- E2E and axe coverage for the blog routes at desktop and mobile widths.
+- A per-blog text OG generator; the current fallback is themed, not
+  personalised with the blog title/avatar.
+- Canonical policy for the duplicate: the apex
+  `banksia.io/@author/permlink` page still canonicalizes to itself, so a
+  claimed blog post exists at two URLs. Decide whether the apex post should
+  canonicalize to the blog or both should remain indexable.
 - Decide whether unclaimed previews stay public or become claim-only after the
   first abuse report.
 

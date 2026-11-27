@@ -34,7 +34,8 @@ describe('blog settings defaults', () => {
       title: 'Alice',
       description: 'Writer and photographer.',
       theme: 'auto',
-      mode: 'auto'
+      mode: 'auto',
+      directory: false
     })
   })
 
@@ -61,6 +62,7 @@ describe('normalizeBlogSettings', () => {
       showPayout: true,
       showComments: true,
       customDomain: 'blog.alice.example',
+      directory: true,
       updatedAt: '2026-11-27T00:00:00.000Z'
     }, { account: ACCOUNT })
 
@@ -133,6 +135,12 @@ describe('normalizeBlogSettings', () => {
     expect(result.ok).toBe(false)
     expect(result.errors.join(' ')).toContain('community must look like hive-123456')
     expect(result.errors.join(' ')).toContain('customDomain must be a bare hostname')
+  })
+
+  it('rejects a non-boolean directory flag', () => {
+    const result = normalizeBlogSettings({ version: 1, claimed: true, title: 'x', directory: 'yes' })
+    expect(result.ok).toBe(false)
+    expect(result.errors.join(' ')).toContain('directory must be a boolean')
   })
 
   it('caps the total blog object size', () => {

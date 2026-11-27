@@ -29,7 +29,8 @@
 
         <p class="blogs-example">
           Not sure yet?
-          <a href="https://asgarth.banksia.io" target="_blank" rel="noopener noreferrer">See a live blog</a>
+          <a href="https://asgarth.banksia.io" target="_blank" rel="noopener noreferrer">See a live blog</a>,
+          <router-link to="/blogs/directory">browse the directory</router-link>
           or
           <router-link to="/settings/blog">open the claim page</router-link>.
         </p>

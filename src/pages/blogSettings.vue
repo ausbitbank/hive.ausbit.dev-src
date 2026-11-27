@@ -207,7 +207,12 @@
               <div class="blog-settings__toggles">
                 <q-toggle v-model="form.showComments" label="Show a comments link" :disable="!canEdit" />
                 <q-toggle v-model="form.showPayout" label="Show Hive payout on posts" :disable="!canEdit" />
+                <q-toggle v-model="form.directory" label="List this blog in the public directory" :disable="!canEdit" />
               </div>
+              <p class="blog-settings__hint q-mt-sm">
+                Directory listings are checked against your on-chain settings. Save and sign,
+                then use “Refresh directory listing” below.
+              </p>
             </q-card-section>
           </q-card>
 
@@ -247,8 +252,18 @@
               :disable="saving"
               @click="reload"
             />
+            <q-btn
+              flat
+              no-caps
+              label="Refresh directory listing"
+              :loading="directorySyncing"
+              :disable="!canEdit || !claimed || directorySyncing"
+              @click="syncDirectory"
+            />
             <span class="blog-settings__size">{{ metadataBytes }} / 4000 bytes of blog settings</span>
           </div>
+
+          <p v-if="directoryMessage" class="blog-settings__hint q-mt-sm">{{ directoryMessage }}</p>
 
           <p class="blog-settings__footnote">
             The blog is a reading surface, not a second account. Posts stay on Hive,
@@ -508,6 +523,8 @@ export default {
       claimed: false,
       loading: false,
       saving: false,
+      directorySyncing: false,
+      directoryMessage: '',
       error: '',
       errors: [],
       queued: false,
@@ -522,6 +539,7 @@ export default {
         community: '',
         showPayout: false,
         showComments: true,
+        directory: false,
         customDomain: ''
       }
     }
@@ -633,6 +651,7 @@ export default {
         community: settings.community || '',
         showPayout: settings.showPayout === true,
         showComments: settings.showComments !== false,
+        directory: settings.directory === true,
         customDomain: settings.customDomain || ''
       }
     },
@@ -648,6 +667,7 @@ export default {
         community: this.form.community,
         showPayout: this.form.showPayout,
         showComments: this.form.showComments,
+        directory: this.form.directory,
         customDomain: this.form.customDomain
       }
     },
@@ -678,6 +698,26 @@ export default {
     async reload () {
       this.queued = false
       await this.load()
+    },
+    async syncDirectory () {
+      if (!this.accountName) return
+      this.directorySyncing = true
+      this.directoryMessage = ''
+      try {
+        const response = await fetch('/api/blogs/register', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ account: this.accountName })
+        })
+        const body = await response.json().catch(() => ({}))
+        this.directoryMessage = body.listed
+          ? 'Listed in the public directory.'
+          : (body.error || 'Not listed. Enable the directory toggle, save, sign, then try again.')
+      } catch {
+        this.directoryMessage = 'The directory could not be reached.'
+      } finally {
+        this.directorySyncing = false
+      }
     },
     updateMeta () {
       setPageMeta({

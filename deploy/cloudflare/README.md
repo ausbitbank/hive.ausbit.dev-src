@@ -126,6 +126,22 @@ account feed, `sitemap.xml` lists the blog pages and latest posts, and
 `robots.txt` disallows an unclaimed preview. Reserved labels (`www`, `api`,
 `files`, `mail`, …) never resolve to a blog.
 
+### Directory and OG fallbacks
+
+- `banksia.io/blogs/directory` is the opt-in directory. The client calls
+  `GET /api/blogs`, which lists account names from the `BLOGS` KV namespace
+  (`d1d727cfe08b4b98b019d51972437847`, binding in `wrangler.jsonc`), then
+  re-verifies each account.
+- `POST /api/blogs/register` (body `{ "account": "name" }`) fetches the
+  account, requires `claimed && directory` in `posting_json_metadata`, then
+  writes or deletes the KV entry. Visiting a blog also refreshes its entry.
+- A directory entry stores only the account name; no keys, posts or profile
+  data are copied.
+- Blogs without a cover use one of three themed 1200×630 cards in
+  `public/statics/og-blog-*.png` and emit `og:image:width/height/type`.
+- `e2e/blog.spec.js` covers `/blogs`, the directory and a blog host with axe at
+  desktop and mobile widths.
+
 ## Traffic and WAF rules
 
 Edge traffic controls (AI crawlers, scraper challenges, exploit probes) are
