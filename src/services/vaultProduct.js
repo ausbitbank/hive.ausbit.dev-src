@@ -250,18 +250,23 @@ export function buildVaultProductOperation ({
  */
 export function buildVaultContainerOperation ({
   account,
-  container = VAULT_DEFAULT_CONTAINER
+  container = VAULT_DEFAULT_CONTAINER,
+  parentAuthor = '',
+  parentPermlink = ''
 } = {}) {
   const owner = normalizeAccount(account)
   if (!isValidHiveAccountName(owner)) return null
   const slug = cleanPermlink(container, '')
   if (!slug) return null
+  const parent = normalizeAccount(parentAuthor)
+  const parentSlug = cleanPermlink(parentPermlink, '')
+  const isReply = Boolean(parent && parentSlug)
   return ['comment', {
-    parent_author: '',
-    parent_permlink: CATEGORY,
+    parent_author: isReply ? parent : '',
+    parent_permlink: isReply ? parentSlug : CATEGORY,
     author: owner,
     permlink: slug,
-    title: 'Membership grant container',
+    title: isReply ? '' : 'Membership grant container',
     body: 'Membership grant container. Do not reply here.',
     json_metadata: JSON.stringify({
       app: 'banksia.io',

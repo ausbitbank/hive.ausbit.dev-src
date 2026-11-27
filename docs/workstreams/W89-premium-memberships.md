@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T141031Z-ef65e910ca6e`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T141958Z-e5de06fbfb4c`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T141039Z.tar.gz`
-  (sha256 `34d3aa5c4b8f82306b499a2c3ebf99c5c90fca1ec928312e14d37428629317d0`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T141039Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T142006Z.tar.gz`
+  (sha256 `4d6b4f8c017a1960fa8851d379883da07a4d314a243851cca7c5fb56dc559ad3`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T142006Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -419,6 +419,10 @@ Deployed on 2026-11-27 from `master`:
   options now go through `requestBroadcast` with the exact operation.
 - Verified live with a stubbed Keychain: the product action called
   `requestBroadcast` with a single `comment` operation and the queue sent it.
+- The grant container is now published as a **reply under the product** rather
+  than a second root post. Product → container is immediate (reply interval is
+  seconds, not the 5-minute root interval). Only the premium post itself still
+  needs Hive's normal 5-minute root-post spacing.
 
 ### Live write smoke (2026-11-27)
 

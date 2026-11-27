@@ -492,13 +492,23 @@ export default {
       this.message = ''
       this.busy = 'container'
       try {
+        const product = String(this.modelValue.product || '').trim().toLowerCase()
+        const [productAuthor, productPermlink] = product.split('/')
+        if (!productAuthor || !productPermlink) {
+          throw new Error('Publish the membership product first; the container is a reply under it.')
+        }
+        if (productAuthor !== this.accountName) {
+          throw new Error('The membership product must be authored by @' + this.accountName + '.')
+        }
         const operation = buildVaultContainerOperation({
           account: this.accountName,
-          container: this.modelValue.container
+          container: this.modelValue.container,
+          parentAuthor: this.accountName,
+          parentPermlink: productPermlink
         })
         if (!operation) throw new Error('The container permlink is not valid.')
         this.$emit('queue', operation)
-        this.message = 'Grant container queued. Sign it, then save the Vault settings.'
+        this.message = 'Grant container queued as a reply to the product. Sign it, then save the Vault settings.'
       } catch (err) {
         this.error = err?.message || 'The grant container could not be built.'
       } finally {

@@ -107,6 +107,22 @@ describe('product and container operations', () => {
   })
 })
 
+  it('builds the hidden grant container as a reply when a parent is given', () => {
+    const operation = buildVaultContainerOperation({
+      account: 'alice',
+      container: 'banksia-vault',
+      parentAuthor: 'alice',
+      parentPermlink: 'membership'
+    })
+    const data = operation[1]
+    expect(data.parent_author).toBe('alice')
+    expect(data.parent_permlink).toBe('membership')
+    expect(data.author).toBe('alice')
+    expect(data.permlink).toBe('banksia-vault')
+    expect(data.title).toBe('')
+    expect(JSON.parse(data.json_metadata).banksia_vault_container).toBe(true)
+  })
+
 describe('parseVaultProduct', () => {
   it('parses our own product from a post', () => {
     const post = postFrom(buildVaultProductMetadata(SETTINGS))
