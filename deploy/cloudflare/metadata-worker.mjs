@@ -48,7 +48,10 @@ const THEME_SHELLS = new Map([
   ['/pay', '/index.html'],
   ['/cart', '/index.html'],
   ['/checkout', '/index.html'],
-  ['/orders', '/index.html']
+  ['/orders', '/index.html'],
+  ['/subscribe', '/index.html'],
+  ['/subscriptions', '/index.html'],
+  ['/settings/blog/vault', '/index.html']
 ])
 const THEME_META = new Map([
   ['/settings/blog', {
@@ -160,6 +163,54 @@ const THEME_META = new Map([
       '@type': 'WebPage',
       name: 'Orders',
       url: 'https://banksia.io/orders'
+    }
+  }],
+  ['/subscribe', {
+    title: 'Subscribe to a Hive blog — banksia.io',
+    description: 'Join a Hive blog with a native HBD recurring transfer. The creator is paid directly and Banksia never holds your keys.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/subscribe',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Subscribe to a Hive blog',
+      url: 'https://banksia.io/subscribe'
+    }
+  }],
+  ['/subscriptions', {
+    title: 'Subscriptions — banksia.io',
+    description: 'Manage Hive blog memberships, recurring HBD payments and local reader keys.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/subscriptions',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Subscriptions',
+      url: 'https://banksia.io/subscriptions'
+    }
+  }],
+  ['/settings/blog/vault', {
+    title: 'Vault dashboard — banksia.io',
+    description: 'Issue members-only grants, manage subscriber keys and export Vault revenue.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/settings/blog/vault',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    noindex: true,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Vault dashboard',
+      url: 'https://banksia.io/settings/blog/vault'
     }
   }]
 ])

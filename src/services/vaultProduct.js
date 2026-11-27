@@ -382,6 +382,7 @@ export function deriveVaultPlan (post, { fallback = {} } = {}) {
   return {
     author: product.author,
     permlink: product.permlink,
+    product: product.author + '/' + product.permlink,
     price: product.price,
     priceLabel: product.priceLabel,
     currency: 'HBD',

@@ -197,6 +197,7 @@ describe('deriveVaultPlan', () => {
     expect(plan).toEqual({
       author: 'alice',
       permlink: 'membership',
+      product: 'alice/membership',
       price: 5,
       priceLabel: '5.000 HBD',
       currency: 'HBD',
