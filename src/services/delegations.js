@@ -90,9 +90,11 @@ export function extractDelegationEvents (history, account) {
 export async function listOutgoingDelegations (account, options = {}) {
   if (!account) return []
   const limit = Math.max(1, Math.min(1000, Number(options.limit) || 1000))
-  const response = await rpcRequest('condenser_api.get_vesting_delegations', [account, '', limit], options)
+  const start = String(options.start || '').toLowerCase()
+  const response = await rpcRequest('condenser_api.get_vesting_delegations', [account, start, limit], options)
   return (Array.isArray(response) ? response : [])
     .filter(delegation => delegation?.delegatee)
+    .filter(delegation => !start || String(delegation.delegatee).toLowerCase() >= start)
     .map(delegation => ({
       ...delegation,
       vests: delegationVests(delegation)
@@ -129,8 +131,11 @@ export async function resolveInboundDelegations (account, events, options = {}) 
     while (cursor < candidates.length) {
       const delegator = candidates[cursor++]
       try {
-        const outgoing = await listOutgoingDelegations(delegator, { ...options, limit: 1000 })
-        const match = outgoing.find(delegation => delegation.delegatee === name)
+        // `get_vesting_delegations` is sorted by delegatee and accepts a start
+        // cursor. Ask for the five rows at this delegatee instead of the
+        // delegator's whole list (which can be 1,000 rows for a busy account).
+        const outgoing = await listOutgoingDelegations(delegator, { ...options, limit: 5, start: name })
+        const match = outgoing.find(delegation => String(delegation.delegatee).toLowerCase() === name)
         if (match) {
           found.push({
             delegator,
