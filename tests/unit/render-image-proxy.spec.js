@@ -4,6 +4,7 @@ import Render from '../../src/components/render.vue'
 import { DEFAULT_IMAGE_PROXY, setImageProxyMode } from '../../src/services/imageProxy'
 
 const BODY = '![photo](https://files.peakd.com/file/peakd-hive/alice/photo.jpg)'
+const RAW_GITHUB_BODY = '![about](https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/master/docs/screenshots/devlog/2026-11-27-devlog/01-about-mark.png)'
 
 async function renderBody (body) {
   const wrapper = mount(Render, {
@@ -26,6 +27,14 @@ describe('render image proxy', () => {
     expect(html).not.toContain('i.ecency.com/p/')
     // The Hive host does not produce AVIF, so the format sources are dropped.
     expect(html).not.toContain('<source')
+  })
+
+  it('loads GitHub raw images directly when the Hive proxy cannot fetch them', async () => {
+    setImageProxyMode('hive')
+    const wrapper = await renderBody(RAW_GITHUB_BODY)
+    const html = wrapper.html()
+    expect(html).toContain('https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/')
+    expect(html).not.toContain('images.hive.blog/p/')
   })
 
   it('keeps the Ecency transform and its AVIF/WebP sources when selected', async () => {

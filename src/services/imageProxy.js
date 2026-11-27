@@ -178,10 +178,14 @@ export function rewriteProxiedImageUrl (url, mode = currentMode) {
   const normalized = normalizeImageProxyMode(mode)
   if (normalized === IMAGE_PROXY_DIRECT) return decodeProxiedImageUrl(url)
   const decoded = decodeProxiedImageUrl(url)
-  // The Hive image host returns 403 for source URLs with a query string, so
-  // those are safer loaded from the origin.
-  if (normalized === IMAGE_PROXY_HIVE && decoded !== url && decoded.includes('?')) {
-    return decoded
+  if (normalized === IMAGE_PROXY_HIVE && decoded !== url) {
+    const source = parseUrl(decoded)
+    // The Hive image host returns 403 for query-string sources and for hosts
+    // it does not know how to fetch. Load those from the origin instead of
+    // replacing a working image with a broken proxy.
+    if (!source || !PROXY_SOURCE_HOSTS.includes(source.hostname) || decoded.includes('?')) {
+      return decoded
+    }
   }
   return retargetProxied(url, normalized)
 }
