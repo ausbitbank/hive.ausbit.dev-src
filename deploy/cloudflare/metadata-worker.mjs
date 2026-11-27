@@ -868,14 +868,14 @@ export function rewriteHead (html, meta) {
   let next = html
   const origin = meta.origin || 'https://banksia.io'
   const title = escapeHtml(meta.title)
-  next = next.replace(/<title>[\s\S]*?<\/title>/i, '<title>' + title + '</title>')
+  next = next.replace(/<title>[\s\S]*?<\/title>/i, () => '<title>' + title + '</title>')
   const setMeta = (attribute, key, value) => {
     const escaped = escapeHtml(value)
     const tag = '<meta ' + attribute + '="' + key + '" content="' + escaped + '">'
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const pattern = new RegExp(`<meta\\b[^>]*${attribute}\\s*=\\s*["']${escapedKey}["'][^>]*>`, 'i')
-    if (pattern.test(next)) next = next.replace(pattern, tag)
-    else next = next.replace('</head>', tag + '\n  </head>')
+    if (pattern.test(next)) next = next.replace(pattern, () => tag)
+    else next = next.replace('</head>', () => tag + '\n  </head>')
   }
   setMeta('name', 'description', meta.description)
   setMeta('property', 'og:title', meta.title)
@@ -892,21 +892,21 @@ export function rewriteHead (html, meta) {
   setMeta('name', 'twitter:image', meta.image)
   if (meta.rss) {
     next = next.replace(/<link\b[^>]*type=["']?application\/rss\+xml["']?[^>]*>/gi, '')
-    next = next.replace('</head>', '<link rel="alternate" type="application/rss+xml" title="' + escapeHtml((meta.siteName || 'Blog') + ' RSS') + '" href="' + escapeHtml(meta.rss) + '">\n  </head>')
+    next = next.replace('</head>', () => '<link rel="alternate" type="application/rss+xml" title="' + escapeHtml((meta.siteName || 'Blog') + ' RSS') + '" href="' + escapeHtml(meta.rss) + '">\n  </head>')
   }
   if (meta.noindex) {
     setMeta('name', 'robots', 'noindex, follow')
     next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '')
   } else {
-    next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, '<link rel="canonical" href="' + escapeHtml(origin + meta.path) + '">')
+    next = next.replace(/<link\b[^>]*rel=["']?canonical["']?[^>]*>/i, () => '<link rel="canonical" href="' + escapeHtml(origin + meta.path) + '">')
   }
   next = next.replace(/<script\b[^>]*type=["']?application\/ld\+json["']?[^>]*>[\s\S]*?<\/script>/gi, '')
   if (meta.jsonLd) {
-    next = next.replace('</head>', '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
+    next = next.replace('</head>', () => '<script type="application/ld+json">' + scriptJson(meta.jsonLd) + '</script>\n  </head>')
   }
   // Replace the static crawler shell heading and summary as well.
-  next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<h1>)[\s\S]*?(<\/h1>)/i, '$1' + title + '$2')
-  next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<\/h1><p>)[\s\S]*?(<\/p>)/i, '$1' + escapeHtml(meta.description) + '$2')
+  next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<h1>)[\s\S]*?(<\/h1>)/i, (match, open, close) => open + title + close)
+  next = next.replace(/(<main\b[^>]*data-seo-shell[^>]*>[\s\S]*?<\/h1><p>)[\s\S]*?(<\/p>)/i, (match, open, close) => open + escapeHtml(meta.description) + close)
   return next
 }
 

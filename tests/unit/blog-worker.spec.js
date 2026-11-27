@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import worker from '../../deploy/cloudflare/metadata-worker.mjs'
+import worker, { rewriteHead } from '../../deploy/cloudflare/metadata-worker.mjs'
 
 const ORIGIN_HTML = [
   '<!doctype html><html><head>',
@@ -9,8 +9,7 @@ const ORIGIN_HTML = [
   '</head><body><main data-seo-shell><h1>Banksia</h1><p>A Hive explorer.</p></main></body></html>'
 ].join('')
 
-const ACCOUNT = {
-  name: 'alice',
+const ACCOUNT = {  name: 'alice',
   posting_json_metadata: JSON.stringify({
     profile: { name: 'Alice', about: 'Writer and photographer.' },
     'banksia.io': {
@@ -293,5 +292,26 @@ describe('blog host metadata', () => {
     const asset = await worker.fetch(blogRequest('/assets/app.js', { userAgent: 'Mozilla/5.0' }))
     expect(asset.status).toBe(200)
     expect([...methods]).toEqual(['origin'])
+  })
+})
+
+describe('rewriteHead replacement safety', () => {
+  it('treats dollar sequences in metadata as literal text', () => {
+    const html = rewriteHead(ORIGIN_HTML, {
+      title: "x$'y",
+      description: 'd$&e',
+      image: 'https://cdn.example/a.png',
+      path: '/blog',
+      type: 'website',
+      origin: 'https://alice.banksia.io'
+    })
+
+    expect(html.match(/<title>/g)).toHaveLength(1)
+    expect(html).toContain("<title>x$'y</title>")
+    expect(html).toContain('d$&amp;e')
+    expect(html).toContain('<h1>x$\'y</h1>')
+    expect(html.match(/<script\b/g)?.length || 0).toBe(0)
+    // The document suffix must not be expanded into the title.
+    expect(html).not.toContain('Banksia</title><meta')
   })
 })
