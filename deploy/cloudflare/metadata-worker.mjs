@@ -24,6 +24,7 @@ const HIVE_RPCS = [
   'https://api.openhive.network',
   'https://rpc.mahdiyari.info'
 ]
+const APEX_ORIGIN = 'https://banksia.io'
 const FETCH_TIMEOUT_MS = 2500
 const CACHE_SECONDS = 300
 
@@ -36,7 +37,27 @@ const THEME_SHELLS = new Map([
   ['/appearance', '/appearance.html'],
   ['/themes', '/themes.html'],
   ['/settings/skin', '/settings/skin.html'],
-  ['/settings/moderation', '/settings/moderation.html']
+  ['/settings/moderation', '/settings/moderation.html'],
+  // The blog settings page is a client route without a prerendered shell. Use
+  // the app shell so it works before the vhost gains an explicit location.
+  ['/settings/blog', '/index.html']
+])
+const THEME_META = new Map([
+  ['/settings/blog', {
+    title: 'Blog settings — banksia.io',
+    description: 'Claim a free Hive blog at yourname.banksia.io and choose its theme, title and content.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/settings/blog',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Blog settings',
+      url: 'https://banksia.io/settings/blog'
+    }
+  }]
 ])
 const RESERVED_SUBPATH = /^\/@[a-z0-9.-]+\/(?:wallet|lightning|delegations|transfers|followers|following|posts|blog|feed|replies|comments|communities|pos|downvotes|tip|trail)(?:\/|$)/i
 const LIGHTNING_PATH = /^\/lightning\/?$/i
@@ -73,7 +94,12 @@ async function themeShell (request) {
   headers.set('content-type', 'text/html; charset=utf-8')
   headers.set('cache-control', 'public, max-age=' + CACHE_SECONDS)
   headers.set('x-hive-meta', 'theme-shell')
-  return new Response(response.body, { status: 200, headers })
+  const meta = THEME_META.get(url.pathname)
+  if (!meta) return new Response(response.body, { status: 200, headers })
+  headers.delete('content-length')
+  headers.delete('content-encoding')
+  const html = rewriteHead(stripHomeSnapshot(await response.text()), meta)
+  return new Response(html, { status: 200, headers })
 }
 
 async function rpc (method, params) {
@@ -255,6 +281,37 @@ export function stripHomeSnapshot (html) {
   )
 }
 
+function apexTarget (url) {
+  return APEX_ORIGIN + url.pathname + url.search
+}
+
+/**
+ * Blog HTML is always built from the apex `index.html` shell. The SPA router
+ * uses the browser URL, so the shell does not need to be the requested path;
+ * this avoids apex 404s for `/<permlink>` and lets the origin keep its existing
+ * `banksia.io` certificate in strict SSL mode.
+ */
+async function fetchBlogShell (request) {
+  return fetch(APEX_ORIGIN + '/index.html', {
+    headers: {
+      accept: 'text/html',
+      'user-agent': request.headers.get('user-agent') || 'banksia-blog'
+    },
+    redirect: 'manual'
+  })
+}
+
+/** Static assets and non-HTML paths are proxied to the apex origin. */
+async function fetchApexAsset (request, url) {
+  const init = {
+    method: request.method,
+    headers: request.headers,
+    redirect: 'manual'
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') init.body = request.body
+  return fetch(apexTarget(url), init)
+}
+
 async function getAccount (name) {
   const result = await rpc('condenser_api.get_accounts', [[name]])
   return Array.isArray(result) ? result[0] || null : null
@@ -393,15 +450,14 @@ async function blogRss (url, tenant) {
 
 async function handleBlog (request, tenant) {
   const url = new URL(request.url)
-  if (request.method !== 'GET') return fetch(request)
+  if (request.method !== 'GET' && request.method !== 'HEAD') return fetchApexAsset(request, url)
   if (url.pathname === '/rss.xml' || url.pathname === '/rss') {
-    return blogRss(url, tenant).catch(() => fetch(request))
+    return blogRss(url, tenant).catch(() => fetchApexAsset(request, url))
   }
   // Assets are shared with the main app and never need metadata.
-  if (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname)) {
-    return fetch(request)
+  if (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname)) {
+    return fetchApexAsset(request, url)
   }
-  if (!hasHtml(request)) return fetch(request)
 
   const cache = typeof caches !== 'undefined' ? caches.default : null
   const cacheKey = new Request(url.toString(), request)
@@ -410,7 +466,7 @@ async function handleBlog (request, tenant) {
     if (cached) return cached
   }
 
-  const originResponse = await fetch(request)
+  const originResponse = await fetchBlogShell(request)
   if (!originResponse.ok || !(originResponse.headers.get('content-type') || '').includes('text/html')) {
     return originResponse
   }

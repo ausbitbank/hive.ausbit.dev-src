@@ -13,6 +13,8 @@
     "hive.ausbit.dev/lightning*",
     "banksia.io/settings/skin*",
     "hive.ausbit.dev/settings/skin*",
+    "banksia.io/settings/blog*",
+    "hive.ausbit.dev/settings/blog*",
     "banksia.io/settings/moderation*",
     "hive.ausbit.dev/settings/moderation*",
     "banksia.io/csp-report*",

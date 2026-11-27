@@ -52,6 +52,18 @@ afterEach(() => {
 })
 
 describe('metadata worker', () => {
+  it('serves the blog settings shell with its own metadata', async () => {
+    stubNetwork()
+    const response = await worker.fetch(new Request('https://banksia.io/settings/blog', {
+      headers: { accept: 'text/html', 'user-agent': 'Mozilla/5.0' }
+    }))
+    const html = await response.text()
+
+    expect(response.headers.get('x-hive-meta')).toBe('theme-shell')
+    expect(html).toContain('<title>Blog settings — banksia.io</title>')
+    expect(html).toContain('<link rel="canonical" href="https://banksia.io/settings/blog">')
+  })
+
   it('rewrites metadata for X/Twitter, whose crawler does not ask for text/html', async () => {
     const calls = stubNetwork()
     const response = await worker.fetch(previewRequest('Twitterbot/1.0'))

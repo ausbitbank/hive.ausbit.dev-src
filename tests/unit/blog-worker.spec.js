@@ -59,22 +59,31 @@ function jsonResponse (result) {
 
 function stubNetwork ({ account = ACCOUNT, profile = PROFILE, post = POST, posts = [POST], originHtml = ORIGIN_HTML } = {}) {
   const methods = []
+  const urls = []
   vi.stubGlobal('fetch', vi.fn(async (input, init = {}) => {
     if (init.method === 'POST') {
       const body = JSON.parse(init.body)
       methods.push(body.method)
-      if (body.method === 'condenser_api.get_accounts') return jsonResponse([account])
-      if (body.method === 'bridge.get_profile') return jsonResponse(profile)
-      if (body.method === 'bridge.get_post') return jsonResponse(post)
-      if (body.method === 'bridge.get_account_posts') return jsonResponse(posts)
-      return jsonResponse(null)
+      return jsonResponse(
+        body.method === 'condenser_api.get_accounts'
+          ? [account]
+          : body.method === 'bridge.get_profile'
+            ? profile
+            : body.method === 'bridge.get_post'
+              ? post
+              : body.method === 'bridge.get_account_posts'
+                ? posts
+                : null
+      )
     }
     methods.push('origin')
+    urls.push(typeof input === 'string' ? input : input.url)
     return new Response(originHtml, {
       status: 200,
       headers: { 'content-type': 'text/html; charset=utf-8' }
     })
   }))
+  methods.urls = urls
   return methods
 }
 
@@ -104,13 +113,23 @@ describe('blog host metadata', () => {
   })
 
   it('gives a post its own canonical blog URL', async () => {
-    stubNetwork()
+    const methods = stubNetwork()
     const response = await worker.fetch(blogRequest('/a-post'))
     const html = await response.text()
 
     expect(html).toContain('<title>A real post — Alice writes</title>')
     expect(html).toContain('<link rel="canonical" href="https://alice.banksia.io/a-post">')
     expect(html).toContain('https://images.hive.blog/800x0/https://images.hive.blog/cover.png')
+    expect(methods.urls).toContain('https://banksia.io/index.html')
+  })
+
+  it('serves blog metadata when the client does not advertise HTML', async () => {
+    stubNetwork()
+    const response = await worker.fetch(blogRequest('/', { userAgent: 'curl/8.0', accept: '*/*' }))
+    const html = await response.text()
+
+    expect(response.headers.get('x-hive-meta')).toBe('blog')
+    expect(html).toContain('<title>Alice writes — Hive blog</title>')
   })
 
   it('keeps a contributor post on the author path', async () => {
@@ -168,11 +187,11 @@ describe('blog host metadata', () => {
     const methods = stubNetwork()
     const reserved = await worker.fetch(blogRequest('/', { host: 'files.banksia.io', userAgent: 'SomeScript/1.0' }))
     expect(reserved.headers.get('x-hive-meta')).toBeNull()
-    expect(methods).toEqual(['origin'])
+    expect([...methods]).toEqual(['origin'])
 
     methods.length = 0
     const asset = await worker.fetch(blogRequest('/assets/app.js', { userAgent: 'Mozilla/5.0' }))
     expect(asset.status).toBe(200)
-    expect(methods).toEqual(['origin'])
+    expect([...methods]).toEqual(['origin'])
   })
 })

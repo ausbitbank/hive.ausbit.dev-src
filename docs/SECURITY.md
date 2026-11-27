@@ -71,14 +71,19 @@ Notes:
 - **Caching → Configuration**: keep HTML uncached or with a short TTL so new
   deployments are picked up. Hashed JS/CSS assets can be cached for a long time.
 - **Blog hosts**: add a proxied `*.banksia.io` DNS record. Universal SSL covers
-  first-level subdomains at the edge; the origin still needs a certificate valid
-  for `*.banksia.io` (Cloudflare Origin CA or a certbot DNS-01 certificate).
+  first-level subdomains at the edge. Blog HTML/assets are proxied to the apex
+  `banksia.io` origin, so the origin keeps its existing certificate in strict
+  mode; a `*.banksia.io` origin certificate is only needed for direct-origin or
+  custom-domain use.
 
 ## Blog hosts (`*.banksia.io`)
 
 - First-level subdomains are served by the same build and the same header
   policy. HSTS already uses `includeSubDomains`, so a blog host cannot fall back
   to HTTP.
+- The Worker proxies blog HTML and assets to the apex `banksia.io` origin. This
+  keeps Cloudflare's strict SSL mode and the existing apex certificate; a
+  per-blog origin certificate is not required for the free blog path.
 - A blog host is a **read-only** surface. It renders posts and deep-links
   voting, comments and tips to the apex Banksia post. It does not expose the
   signing queue, wallet, SmartLock or HiveAuth UI. This is deliberate: a future

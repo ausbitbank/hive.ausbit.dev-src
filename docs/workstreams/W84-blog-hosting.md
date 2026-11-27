@@ -1,7 +1,7 @@
 # W84 — Account blogs on `*.banksia.io`
 
 Date: 2026-11-27
-Status: implemented; Worker route deployed, blog DNS/origin not live
+Status: deployed for public previews; claim flow deployed but not yet exercised with a real key
 
 ## Scope
 
@@ -106,25 +106,39 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 
 ## Edge and origin
 
-- `wrangler.jsonc` adds `*.banksia.io/*` to the metadata Worker.
+- `wrangler.jsonc` adds `*.banksia.io/*` and `banksia.io/settings/blog*` to the
+  metadata Worker.
 - The Worker resolves the host with the same `blogHost.js` module as the SPA,
   reads the account's posting metadata, and rewrites the head for the root,
   About, Contact and post pages. It serves `/rss.xml` from
   `bridge.get_account_posts`.
+- **Apex-origin proxy.** For blog HTML the Worker fetches the apex
+  `https://banksia.io/index.html` shell and rewrites its head. Assets,
+  manifests and other non-HTML paths are proxied to the same apex origin. The
+  SPA router uses the browser URL, so the shell does not need to be the
+  requested path.
+  - This keeps Cloudflare's **strict** SSL mode and the existing `banksia.io`
+    certificate. No wildcard origin certificate and no `*.banksia.io` nginx
+    block are required for the free blog path.
+  - The shell is stripped of the ~39 KB inline dashboard snapshot before it is
+    returned.
 - RSS reuses `src/services/blogFeed.js`, so the edge and the tests share one
   escaping/ordering implementation.
 - Unclaimed blogs get `robots: noindex, follow` and no canonical.
 - Reserved labels (`www`, `api`, `files`, `mail`, …) pass through to their own
   hosts. `files.banksia.io` keeps its separate vhost.
-- The nginx vhost adds `*.banksia.io`, a `$hive_blog_host` map, a
-  `@spa_fallback` named location and guards so `/about` and
-  `/@author/permlink` render the blog shell rather than an apex page.
+- The nginx vhost still documents an optional `*.banksia.io` block,
+  `$hive_blog_host` map and `@spa_fallback` guard. Those are for direct-origin
+  access and future custom domains; the Worker path never sends a blog host to
+  the origin.
+- `/settings/blog` is served at the edge from the app shell, so it works before
+  the vhost has an explicit location for it.
 - Apex behaviour is unchanged: unknown paths still return a real 404.
 
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 190 files, 1,646 tests passing. New suites:
+- `bun run test` — 190 files, 1,648 tests passing. New suites:
   `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`,
   `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
 - `bun run build` — succeeded.
@@ -141,31 +155,50 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 - `/settings/blog?account=asgarth` rendered the preview state, claim CTA,
   disabled form and sign-in notice with no console errors.
 - Wrangler `deploy --dry-run` bundled the Worker with the shared `src`
-  modules (44.64 KiB / 12.05 KiB gzip).
-- Deployed `banksia-metadata` with the `*.banksia.io/*` route. The apex preview
-  still returns `x-hive-meta: hit` and `files.banksia.io` still returns 200.
-  The wildcard DNS record is not installed: the Wrangler OAuth token has no DNS
-  permission, and the origin has no `*.banksia.io` certificate yet.
-- Not run in this workstream: the full Chromium E2E/axe suite, nginx `-t` on
-  the production host, wildcard DNS/TLS, a live blog host, and a real
-  posting-key claim/update.
+  modules.
+- Deployed `banksia-metadata` (46.41 KiB / 12.48 KiB gzip) with the
+  `*.banksia.io/*` and `/settings/blog*` routes.
+- Created the proxied wildcard `A` record `* → 185.130.44.77` with the
+  DNS-scoped token; Cloudflare's authoritative nameservers return the edge
+  addresses.
+- Deployed the new SPA to `/var/www/banksia.io` with `./scripts/deploy.sh`;
+  deploy verification passed.
+- Live checks:
+  - `https://asgarth.banksia.io/` returns `200`, `x-hive-meta: blog`, title
+    "Sergio — Hive blog", `noindex` and no canonical (unclaimed);
+  - a live post returns the real title, canonical
+    `https://asgarth.banksia.io/<permlink>` and the proxied cover image;
+  - `/rss.xml` returns the account feed with absolute blog links;
+  - `/settings/blog?account=asgarth` returns `x-hive-meta: theme-shell` and
+    renders the settings page;
+  - headless Chromium on the live host rendered 20 cards, a 1,634-character
+    post body and the About page with no console errors;
+  - apex `banksia.io/@…` previews still return `x-hive-meta: hit` and
+    `files.banksia.io` still returns `200`.
+- Not run in this workstream: a real posting-key claim/update, the full
+  Chromium E2E/axe suite, nginx `-t` for the optional wildcard block, and
+  custom domains.
 
 ## Deployment checklist (operator)
 
-1. Add a proxied `*.banksia.io` DNS record in Cloudflare. Universal SSL
-   covers first-level subdomains at the edge. The Wrangler OAuth token cannot
-   edit DNS; use a `Zone:Read` + `DNS:Edit` token with
-   `ORIGIN_IP=<origin> bun run cf:blog-dns` (add `--dry-run` first).
-2. Install an origin certificate valid for `*.banksia.io` (Cloudflare Origin CA
-   or a certbot DNS-01 challenge) and point the vhost at it. The current
-   certbot lines only cover the apex, `www` and the legacy host.
-3. Apply `deploy/nginx/banksia.io.conf` with
-   `bash scripts/apply-nginx-vhost-remote.sh hurgenburgen apply`, then
-   `sudo nginx -t`.
-4. Deploy the Worker with `npx wrangler@4 deploy` and confirm
-   `https://<account>.banksia.io/` and `/rss.xml`.
-5. Smoke a real claim on a test account and confirm the subdomain updates after
-   the queue broadcasts.
+1. **DNS — done.** Proxied wildcard `A` record `* → 185.130.44.77`. The
+   Wrangler OAuth token cannot edit DNS; the record was created with the
+   `Zone:Read` + `DNS:Edit` token via `ORIGIN_IP=… bun run cf:blog-dns`.
+2. **Origin certificate — not required for the Worker path.** Blog HTML and
+   assets are fetched from the apex `banksia.io` origin, so strict SSL uses the
+   existing apex certificate. A `*.banksia.io` origin certificate is only
+   needed for direct-origin access or a future custom-domain bypass.
+3. **nginx vhost — not required for the Worker path.** The optional
+   `*.banksia.io` block and `@spa_fallback` guard remain for direct-origin
+   access and custom domains. Apply them with
+   `bash scripts/apply-nginx-vhost-remote.sh hurgenburgen apply` only when that
+   path is needed.
+4. **Worker — done.** `banksia-metadata` serves `*.banksia.io/*` and
+   `/settings/blog*`.
+5. **SPA — done.** `./scripts/deploy.sh` released the blog route table.
+6. **Smoke — public preview done.** A real claim on a test account still needs
+   a Keychain/HiveAuth/SmartLock run to confirm the subdomain updates after the
+   queue broadcasts.
 
 ## Remaining work
 

@@ -73,36 +73,44 @@ release and should be updated only when the metadata rules change.
 
 ## Blog hosts (`*.banksia.io`)
 
-The Worker also serves the free account blogs. The route is
-`*.banksia.io/*`; the host label is decoded to a Hive account by the shared
-`src/services/blogHost.js` module, so the browser and the edge agree.
+The Worker serves blog HTML from the apex `https://banksia.io/index.html`
+shell and proxies assets and non-HTML paths to the same apex origin. The SPA
+router uses the browser URL, so the shell does not need to be the requested
+path. This keeps Cloudflare's **strict** SSL mode and the existing `banksia.io`
+certificate: **no wildcard origin certificate and no `*.banksia.io` nginx block
+are required for the free blog path.** The shell is stripped of the ~39 KB
+inline dashboard snapshot before it is returned.
 
-Two Cloudflare-side prerequisites are separate from the Worker deploy:
+The `/settings/blog` page is also served at the edge from the app shell, so it
+works before the origin vhost has an explicit location for it.
 
-1. **DNS**: a proxied wildcard `A` record for `*` pointing at the nginx origin.
-   The Wrangler OAuth token can deploy Workers and routes but cannot edit DNS.
-   Use a token with `Zone:Read` + `DNS:Edit`:
+### DNS
 
-   ```bash
-   CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
-     bun run cf:blog-dns --dry-run
-   CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
-     bun run cf:blog-dns
-   ```
+A proxied wildcard `A` record for `*` pointing at the origin is required. It is
+already created (`* → 185.130.44.77`). The Wrangler OAuth token cannot edit
+DNS, so use a token with `Zone:Read` + `DNS:Edit` for future changes:
 
-   `ORIGIN_IP` is the nginx origin address:
+```bash
+CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
+  bun run cf:blog-dns --dry-run
+CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
+  bun run cf:blog-dns
+```
 
-   ```bash
-   ssh hurgenburgen 'curl -s -4 https://ifconfig.me'
-   ```
+`ORIGIN_IP` is the nginx origin address:
 
-2. **Origin certificate**: the origin must present a certificate valid for
-   `*.banksia.io` (Cloudflare Origin CA or a certbot DNS-01 challenge). Add the
-   DNS record only after the certificate is installed and
-   `deploy/nginx/banksia.io.conf` is applied, or every blog host returns a TLS
-   error at the edge.
+```bash
+ssh hurgenburgen 'curl -s -4 https://ifconfig.me'
+```
 
-Verify a blog host after both are in place:
+### Optional: direct-origin and custom domains
+
+A `*.banksia.io` origin certificate (Cloudflare Origin CA or a certbot DNS-01
+challenge) and the optional `*.banksia.io` nginx block are only needed when a
+request bypasses the Worker or a future custom domain terminates on this
+origin. The free blog path never sends a blog host to the origin.
+
+### Verify
 
 ```bash
 curl -sS -D - -o /dev/null \
@@ -110,10 +118,11 @@ curl -sS -D - -o /dev/null \
   'https://alice.banksia.io/a-post'
 ```
 
-A claimed blog returns `x-hive-meta: blog`, a canonical `https://alice.banksia.io/a-post`
-URL and the real post image. An unclaimed account returns the same shell with
-`noindex` and no canonical. Reserved labels (`www`, `api`, `files`, `mail`, …)
-never resolve to a blog.
+An unclaimed account returns `x-hive-meta: blog`, a shell with `noindex` and no
+canonical. A claimed blog returns a canonical `https://alice.banksia.io/a-post`
+URL and the real post image. `https://alice.banksia.io/rss.xml` returns the
+account feed. Reserved labels (`www`, `api`, `files`, `mail`, …) never resolve
+to a blog.
 
 ## Traffic and WAF rules
 
