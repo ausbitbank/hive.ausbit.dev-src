@@ -1,9 +1,10 @@
 # W89 — Banksia Vault: premium memberships
 
 Date: 2026-11-27
-Status: implemented, unit-tested and built on `w89-vault`; **not deployed and
-not live-smoked**. Deploy and release are pending the operator's live smoke and
-approval. E2E/axe results are recorded under Verification.
+Status: **deployed 2026-11-27** (SPA + `banksia-metadata` Worker) with the
+read-only live smoke and axe green on `ausbit.vsc`. The paid write smoke
+(enable → publish → pay → unlock → cancel → restore) still needs the operator's
+wallet and HBD; see Deploy notes. Unit/E2E/axe details are under Verification.
 
 ## Scope
 
@@ -376,16 +377,41 @@ items remain.
 
 ## Deploy notes
 
-Not deployed. After the operator approves and the live smoke is complete:
+Deployed on 2026-11-27 from branch `w89-vault` at `5528f0a` (plus the
+subscriptions axe fix committed immediately after):
 
-1. Run the full gate: `bun run lint`, `bun run test`, `bun run build`,
-   `bun run test:e2e`, `bun run test:e2e:full`, `bun run perf:check`, and the
-   Vault axe checks.
-2. Live smoke on a test account: enable Vault, publish the product/container, a
-   premium section and a whole post; subscribe with a small amount; confirm the
-   grant and unlock; reload; expire; cancel; restore with a second key.
-3. Deploy with `./scripts/deploy.sh`; verify with `bun run verify:deploy`.
-4. Record the deploy backup path and live stamp here; neither exists yet.
+- `./scripts/deploy.sh` — SPA deployed, build stamp
+  `20261127T114934Z-5528f0a32d70`, deploy verification passed at the edge.
+- Backup: `hurgenburgen:~/banksia-backups/banksia.io-20261127T114919Z.tar.gz`
+  (sha256 `bd0c346ef0ccbd80c07aeebedf160f58ea046855e4f03b146b300be055d8e549`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T114919Z.tar.gz`.
+- `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
+  routes; `/settings/blog*` already covered the dashboard. `wrangler` version id
+  `be3efd53-255a-4352-b27b-6625e3411703`.
+- `bun run verify:deploy` — passed (edge).
+- Live read-only smoke with `ausbit.vsc` at 1440×900 and 390×844:
+  `/settings/blog`, `/settings/blog/vault`, `/subscribe` (missing product state)
+  and `/subscriptions` all return 200, render the expected state, have no
+  console/page errors, and are axe-clean. Screenshots in `/tmp/opencode/`.
+- Vhost caveat: `scripts/apply-nginx-vhost-remote.sh hurgenburgen apply` could
+  not run because the deploy user needs a sudo password. Browser traffic is
+  served by the Worker shells; direct-origin requests that do not send
+  `Accept: text/html` still 404 on the three new apex paths. Apply the vhost on
+  the next privileged session.
+
+Still required before calling the feature fully live-smoked:
+
+1. Enable Vault on `ausbit.vsc` with its posting key and publish the product and
+   container.
+2. Publish a premium section and a whole post.
+3. Subscribe with a small HBD amount (the account currently has
+   `0.000 HBD`/`0.394 HIVE`, so it needs funding and active-key approval).
+4. Confirm the grant and unlock, reload, cancel, expire and restore with a
+   second reader key.
+
+The full gate is: `bun run lint`, `bun run test`, `bun run build`,
+`bun run test:e2e`, `bun run test:e2e:full`, `bun run perf:check`, and the
+Vault axe checks.
 
 ## References
 
