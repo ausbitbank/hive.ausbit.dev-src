@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T160330Z-284e928908bc`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T161919Z-a2b7a3219532`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T160339Z.tar.gz`
-  (sha256 `22a8578c3eee85616a4e6e16a1cc5a5dd89129d9fa03ba42c329b7be1fa0a15f`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T160339Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T162030Z.tar.gz`
+  (sha256 `b861a574eb876ae8a55e8e4bb688d49e7422179ccb5b02e46880bff493e9d5dc`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T162030Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -417,6 +417,7 @@ Deployed on 2026-11-27 from `master`:
   **Select pending & issue**.
 - The price field keeps a local draft and commits on blur/Enter, so it no longer
   snaps back while typing.
+- **Scaling:** bulletins split into a signed manifest plus `vault-<period>-<seq>-N` part comments when past 300 entries/~60 KB; readers verify the signed part hashes and merge entries. The 300-reader wall is gone, at the cost of one comment per part. Account-history reads now page up to 10×1,000 rows over a 400-day window, with a truncation warning when the cap is hit.
 - **Protocol specification:** `docs/integrations/vault-protocol.md` now includes
   an “Explain like I'm 5” on-ramp, a corrections section from independent
   review, the normative schemas/vectors and the audit/implementation

@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import {
   clearVaultBulletinCache,
   findGrantEntry,
+  loadBulletinParts,
   mayAutoUnlock,
   resolveBulletin,
   unlockWithGrant,
@@ -37,6 +38,7 @@ import { useVaultStore } from '../../src/stores/vault'
 import VaultLockedSection from '../../src/components/blog/VaultLockedSection.vue'
 import VaultPaywall from '../../src/components/blog/VaultPaywall.vue'
 import VaultSubscribeDialog from '../../src/components/blog/VaultSubscribeDialog.vue'
+import { buildVaultBulletinBundle } from '../../src/services/vaultBulletin'
 
 const BLOG = 'alice'
 const PERIOD = '2026-11'
@@ -675,5 +677,41 @@ describe('VaultSubscribeDialog', () => {
       amount: '5.000 HBD'
     })
     expect(JSON.parse(operation[1].memo).product).toBe('alice/membership')
+  })
+})
+
+describe('multi-part bulletins', () => {
+  it('fetches, hash-checks and merges parts into the manifest', async () => {
+    const ringKey = await randomKey()
+    const keyring = { [PERIOD]: await randomKey() }
+    const entries = Array.from({ length: 301 }, (_, index) => ({
+      rkt: index.toString(16).padStart(16, '0'),
+      alg: 'P256-HKDF-SHA256-A256GCM',
+      epk: 'epk', iv: 'iv', ct: 'ct', tier: 'member',
+      expires: '2026-12-21T00:00:00Z'
+    }))
+    const bundle = await buildVaultBulletinBundle({
+      blog: BLOG, period: PERIOD, seq: 4, keyring, ringKey, entries,
+      signer: BLOG, issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    const byPermlink = new Map(bundle.parts.map(part => [part.permlink, part.part]))
+    const fetchPost = async (author, permlink) => ({
+      author,
+      permlink,
+      json_metadata: JSON.stringify({ banksia_vault_bulletin_part: byPermlink.get(permlink) })
+    })
+    const merged = await loadBulletinParts({ bulletin: bundle.bulletin, fetchPost })
+    expect(merged.entries).toHaveLength(301)
+    expect(merged.entries[300].rkt).toBe(entries[300].rkt)
+
+    const tampered = new Map(byPermlink)
+    tampered.set('vault-2026-11-4-1', { ...byPermlink.get('vault-2026-11-4-1'), entries: [] })
+    const badFetch = async (author, permlink) => ({
+      author,
+      permlink,
+      json_metadata: JSON.stringify({ banksia_vault_bulletin_part: tampered.get(permlink) })
+    })
+    expect(await loadBulletinParts({ bulletin: bundle.bulletin, fetchPost: badFetch })).toBeNull()
   })
 })

@@ -5,7 +5,9 @@ import {
   buildBulletinEntries,
   buildReaderRegistry,
   buildVaultBulletin,
+  buildVaultBulletinBundle,
   buildVaultBulletinOperation,
+  buildVaultBulletinPartOperation,
   bulletinFromReplies,
   bulletinSize,
   grantExpiry,
@@ -192,12 +194,13 @@ describe('vault bulletin construction', () => {
     const unwrapped = await unwrapRingKey(entryA, readerA, header)
     expect(unwrapped).toBe(ringKey)
 
-    await expect(buildBulletinEntries({
+    const splitEntries = await buildBulletinEntries({
       blog: BLOG,
       period: PERIOD,
       ringKey,
       readers: Array.from({ length: BULLETIN_MAX_ENTRIES + 1 }, () => ({ readerKey: readerA.publicKeyB64, expires }))
-    })).rejects.toThrow(/split/i)
+    })
+    expect(splitEntries).toHaveLength(1)
   })
 
   it('seals the keyring and signs the exact bulletin payload', async () => {
@@ -372,5 +375,73 @@ describe('vault bulletin discovery and limits', () => {
       now: NOW
     })).toBe(true)
     expect(await pendingGrants({ bulletin, subscriber: {}, now: NOW })).toBe(true)
+  })
+})
+
+describe('multi-part bulletins', () => {
+  it('splits more than 300 entries into a signed manifest and parts', async () => {
+    const ringKey = await randomKey()
+    const keyring = { [PERIOD]: await randomKey() }
+    const entries = Array.from({ length: 301 }, (_, index) => ({
+      rkt: index.toString(16).padStart(16, '0'),
+      alg: 'P256-HKDF-SHA256-A256GCM',
+      epk: 'epk',
+      iv: 'iv',
+      ct: 'ct',
+      tier: 'member',
+      expires: '2026-12-21T00:00:00Z'
+    }))
+    const bundle = await buildVaultBulletinBundle({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 4,
+      keyring,
+      ringKey,
+      entries,
+      signer: BLOG,
+      issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    expect(bundle.bulletin.entries).toEqual([])
+    expect(bundle.bulletin.parts).toHaveLength(2)
+    expect(bundle.bulletin.parts[0]).toMatchObject({
+      permlink: 'vault-2026-11-4-1',
+      hash: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
+      entries: 300
+    })
+    expect(bundle.parts).toHaveLength(2)
+    expect(bundle.parts[1].part).toMatchObject({
+      v: 1, blog: BLOG, period: PERIOD, seq: 4, part: 2, parts: 2
+    })
+    expect(bundle.parts[1].part.entries).toHaveLength(1)
+    expect(bundle.bulletin.sig).toMatch(/^sig:/)
+
+    const partOperation = buildVaultBulletinPartOperation({
+      part: bundle.parts[0].part,
+      author: BLOG,
+      containerAuthor: BLOG,
+      containerPermlink: 'banksia-vault'
+    })
+    expect(partOperation[0]).toBe('comment')
+    expect(partOperation[1].permlink).toBe('vault-2026-11-4-1')
+    expect(JSON.parse(partOperation[1].json_metadata).banksia_vault_bulletin_part.entries).toHaveLength(300)
+  })
+
+  it('keeps a small list as a single signed bulletin', async () => {
+    const ringKey = await randomKey()
+    const bundle = await buildVaultBulletinBundle({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 1,
+      keyring: { [PERIOD]: await randomKey() },
+      ringKey,
+      entries: [],
+      signer: BLOG,
+      issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    expect(bundle.parts).toEqual([])
+    expect(bundle.bulletin.parts).toBeUndefined()
+    expect(bundle.bulletin.entries).toEqual([])
   })
 })

@@ -184,9 +184,14 @@
           <q-card flat bordered class="vault-card">
             <q-card-section>
               <div class="vault-toolbar">
-                <p class="vault-muted vault-muted--flush">
-                  {{ rows.length }} reader {{ rows.length === 1 ? 'key' : 'keys' }} · {{ selected.length }} selected
-                </p>
+                <div>
+                  <p class="vault-muted vault-muted--flush">
+                    {{ rows.length }} reader {{ rows.length === 1 ? 'key' : 'keys' }} · {{ selected.length }} selected
+                  </p>
+                  <p v-if="historyTruncated" class="vault-error" role="alert">
+                    Scanned {{ historyScanned }} history rows and hit the page cap. Older payments may be missing; use a HAF index for very high-volume accounts.
+                  </p>
+                </div>
                 <q-btn
                   flat
                   dense
@@ -780,6 +785,7 @@ import { isValidHiveAccountName } from 'src/services/blogHost'
 import { formatOrderDate, parseProductRef } from 'src/services/shopOrders'
 import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
 import { collectVaultPayments, periodFor, summarizeSubscribers, vaultRecurrencePhrase } from 'src/services/vaultPayments'
+import { collectAccountHistory, vaultHistorySince } from 'src/services/accountHistory'
 import {
   AUTO_ISSUE_INTERVAL_MS,
   hasQueuedVaultBulletin,
@@ -789,8 +795,9 @@ import {
 } from 'src/services/vaultAutoIssue'
 import {
   buildBulletinEntries,
-  buildVaultBulletin,
+  buildVaultBulletinBundle,
   buildVaultBulletinOperation,
+  buildVaultBulletinPartOperation,
   bulletinFromReplies,
   isBulletinTooLarge,
   nextSeq,
@@ -840,6 +847,8 @@ export default {
       plan: null,
       planError: '',
       history: [],
+      historyScanned: 0,
+      historyTruncated: false,
       rows: [],
       summary: { active: 0, expiring: 0, expired: 0, mrr: 0, currency: 'HBD' },
       payments: [],
@@ -904,6 +913,7 @@ export default {
     },
     bulletinTooLarge () {
       const bulletin = this.currentBulletin || this.latestBulletin
+      if (bulletin && Array.isArray(bulletin.parts) && bulletin.parts.length) return false
       return bulletin ? isBulletinTooLarge(bulletin).tooLarge : false
     },
     bulletinWarning () {
@@ -1065,14 +1075,22 @@ export default {
         return
       }
       try {
-        const history = await fetchAccountHistory(this.accountName, { limit: 1000, force: true })
+        const collected = await collectAccountHistory({
+          account: this.accountName,
+          fetchPage: fetchAccountHistory,
+          pages: 10,
+          since: vaultHistorySince()
+        })
+        const history = collected.rows
         this.history = history
+        this.historyScanned = collected.scanned
+        this.historyTruncated = collected.truncated
         const now = Date.now()
         const rows = subscriberRows(history, this.plan, { now })
         this.rows = await this.enrichRows(rows, now)
         this.summary = summarizeSubscribers(this.rows, { now })
-        const collected = collectVaultPayments(history, this.plan, { now })
-        this.payments = collected.payments
+        const payments = collectVaultPayments(history, this.plan, { now })
+        this.payments = payments.payments
       } catch {
         this.actionError = 'Subscriber history could not be loaded.'
       }
@@ -1234,7 +1252,7 @@ export default {
           now: Date.now()
         })
         const seq = this.nextSequence
-        const bulletin = await buildVaultBulletin({
+        const bundle = await buildVaultBulletinBundle({
           blog: this.accountName,
           period: this.period,
           seq,
@@ -1255,6 +1273,7 @@ export default {
             })
           }
         })
+        const bulletin = bundle.bulletin
         const payload = await buildBulletinSigningPayload(bulletin)
         const verified = await verifyVaultPayloadForAccount({
           payload,
@@ -1263,7 +1282,7 @@ export default {
         })
         if (!verified) throw new Error('The bulletin signature could not be verified against the posting key.')
 
-        const size = isBulletinTooLarge(bulletin)
+        const size = bulletin.parts && bulletin.parts.length ? { tooLarge: false } : isBulletinTooLarge(bulletin)
         if (size.tooLarge) throw new Error(size.reason)
 
         const operation = buildVaultBulletinOperation({
@@ -1273,6 +1292,16 @@ export default {
         })
         if (!operation) throw new Error('The bulletin operation could not be built.')
         this.$hiveStore.addToQueue([this.accountName, 'posting', operation])
+        for (const part of bundle.parts) {
+          const partOperation = buildVaultBulletinPartOperation({
+            part: part.part,
+            author: this.accountName,
+            containerAuthor: this.accountName,
+            containerPermlink: this.vaultSettings.container
+          })
+          if (!partOperation) throw new Error('A bulletin part operation could not be built.')
+          this.$hiveStore.addToQueue([this.accountName, 'posting', partOperation])
+        }
 
         const permlink = bulletinPermlink(this.period, seq)
         const update = updateBlog(this.account, {
@@ -1289,12 +1318,14 @@ export default {
         }
 
         this.nextSequence = seq + 1
+        this.currentBulletin = { ...bulletin, entries }
         this.latestBulletin = bulletin
-        this.currentBulletin = bulletin
         this.selected = []
         this.rows = await this.enrichRows(this.rows, Date.now())
         this.actionNotice = 'Bulletin ' + permlink + ' queued with ' + entries.length + ' grant' +
-          (entries.length === 1 ? '' : 's') + '. Approve both posting operations in your signing queue.'
+          (entries.length === 1 ? '' : 's') +
+          (bundle.parts.length ? ' across ' + bundle.parts.length + ' parts' : '') +
+          '. Approve all posting operations in your signing queue.'
         return true
       } catch (error) {
         this.actionError = error && error.message ? error.message : 'The grants could not be issued.'

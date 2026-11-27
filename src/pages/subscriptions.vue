@@ -489,6 +489,7 @@
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchAccountHistory } from 'src/services/chainData'
+import { collectAccountHistory, vaultHistorySince } from 'src/services/accountHistory'
 import { hive } from 'src/services/hive'
 import { isValidHiveAccountName } from 'src/services/blogHost'
 import { formatOrderDate, formatRecurrence } from 'src/services/shopOrders'
@@ -684,6 +685,8 @@ export default {
       error: '',
       plans: [],
       payments: [],
+      historyTruncated: false,
+      historyScanned: 0,
       readerKeys: [],
       readerKeyError: '',
       recoveryFile: null,
@@ -719,10 +722,18 @@ export default {
       this.error = ''
       this.actionError = ''
       try {
-        const [history, openTransfers] = await Promise.all([
-          fetchAccountHistory(this.subject, { limit: 1000, force: true }),
+        const [historyResult, openTransfers] = await Promise.all([
+          collectAccountHistory({
+            account: this.subject,
+            fetchPage: fetchAccountHistory,
+            pages: 10,
+            since: vaultHistorySince()
+          }),
           this.fetchOpenTransfers()
         ])
+        const history = historyResult.rows
+        this.historyTruncated = historyResult.truncated
+        this.historyScanned = historyResult.scanned
         this.plans = readerPlans(history, openTransfers, this.subject, Date.now())
         this.payments = readerPayments(history, this.subject)
       } catch (error) {

@@ -492,10 +492,41 @@ keyring and entries are covered directly, swapping either invalidates the
 signature.
 
 A new subscriber creates a new `seq` with the full entry list (idempotent, easy
-to audit). Above roughly 150–300 entries or ~60 KB, split the bulletin into
-parts and publish `vault-<period>-<seq>-1`, `-2`, …. Bulletin splitting is
-reserved but **not implemented** in v1; the dashboard hard-caps a single
-bulletin at 300 entries and warns above 250.
+to audit). The dashboard splits the list into parts when it exceeds 300 entries
+or the ~60 KB part budget. The **manifest** keeps the base permlink
+`vault-<period>-<seq>` and contains the sealed keyring, an empty `entries` array,
+and:
+
+```text
+{
+  "parts": [
+    { "permlink": "vault-2026-11-3-1", "hash": "sha256:<hex>", "entries": 300 },
+    { "permlink": "vault-2026-11-3-2", "hash": "sha256:<hex>", "entries": 42 }
+  ]
+}
+```
+
+Each part is a reply under the container with
+`json_metadata.banksia_vault_bulletin_part`:
+
+```text
+{
+  "banksia_vault_bulletin_part": {
+    "v": 1, "blog": "alice", "period": "2026-11", "seq": 3,
+    "part": 1, "parts": 2,
+    "entries": [ /* same entry shape */ ]
+  }
+}
+```
+
+The manifest signature covers `parts[].permlink`, `parts[].hash`,
+`parts[].entries` and the sealed keyring. A reader MUST fetch every listed part,
+require `part`/`parts` consistency, recompute
+`sha256:<hex>(canonicalJson(partObject))` and compare it with the signed hash,
+then concatenate entries in order. A missing, duplicate, reordered or tampered
+part fails closed. The number of parts is limited only by Hive comment/RC limits
+and the creator's patience; a practical bulletin is a few hundred readers per
+part.
 
 ### 7.5 Reader key registry — `custom_json` id `banksia.vault.reader_key`
 
@@ -834,8 +865,8 @@ posting public key for verification.
 | Paywall benefits | ≤ 6, each ≤ 80 chars | display only |
 | Product title / description | 80 / 600 chars | plain text, no HTML |
 | Product benefits | ≤ 6, each ≤ 80 chars | plain text, no HTML |
-| Bulletin entries | 300 hard cap, 250 warning | `BULLETIN_MAX_ENTRIES`; split is reserved |
-| Bulletin comment | ~60,000 bytes | `BULLETIN_MAX_BYTES` |
+| Bulletin entries | 300 per part, 250 warning | `BULLETIN_MAX_ENTRIES`; larger lists split |
+| Bulletin part | ~60,000 bytes | `BULLETIN_MAX_BYTES` per part |
 
 `estimateCiphertextLength(30000)` is exactly `40000`; 30,001 plaintext bytes
 therefore choose the companion-comment transport.
@@ -1149,19 +1180,20 @@ keyring or any entry invalidates the bulletin signature.
    reply under the product to avoid Hive's five-minute root-post interval. The
    protocol only requires `blog.vault.container` to point at the container
    permlink; a root container is also valid.
-10. **Bulletin splitting.** Part permlinks and the manifest shape
-   (`vault-<period>-<seq>-<part>`) are reserved, but the MVP assumes a single
-   bulletin per sequence. Finalise the manifest schema before shipping a
-   multi-part bulletin.
+10. **Bulletin splitting.** A signed manifest plus `vault-<period>-<seq>-<part>`
+    comments is implemented when the entry list exceeds 300 or ~60 KB. The
+    manifest carries the sealed keyring and signed part hashes; readers merge the
+    parts after verification.
 11. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
 12. **Delegation payload prefix.** Delegation certificates use the dedicated
    `banksia.vault.delegation.v1` prefix in this specification. The v1 reader
    rejects delegated bulletins before verification, so the path is reserved and
    not a v1 trust surface.
-13. **History window.** Grant issuance and the reader manager read at most the
-    most recent 1,000 account-history rows. Older payments and subscribers are
-    not discovered; paginate or use a HAF index before scaling past that window.
+13. **History window.** Grant issuance and the reader manager walk up to 10 pages
+    of 1,000 rows (a 400-day window by default) and show a truncation warning if
+    they hit the cap. Very high-volume accounts still need deeper pagination or a
+    HAF index.
 
 ---
 
@@ -1322,6 +1354,18 @@ remains normative for payment.
         }
       }
     },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["permlink", "hash"],
+        "properties": {
+          "permlink": { "type": "string", "pattern": "^vault-\\d{4}-(?:0[1-9]|1[0-2])-\\d+-\\d+$" },
+          "hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "entries": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
     "claims": { "type": "array" },
     "signer": {
       "oneOf": [
@@ -1357,7 +1401,41 @@ remains normative for payment.
 }
 ```
 
-### 16.6 Reader key registry and delegation (reserved)
+### 16.6 Bulletin part
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/bulletin-part@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "blog", "period", "seq", "part", "parts", "entries"],
+  "properties": {
+    "v": { "const": 1 },
+    "blog": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "period": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "part": { "type": "integer", "minimum": 1 },
+    "parts": { "type": "integer", "minimum": 1 },
+    "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/entry" } }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rkt", "alg", "epk", "iv", "ct", "tier", "expires"],
+      "properties": {
+        "rkt": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "alg": { "const": "P256-HKDF-SHA256-A256GCM" },
+        "epk": { "type": "string" }, "iv": { "type": "string" }, "ct": { "type": "string" },
+        "tier": { "type": "string", "maxLength": 32 },
+        "expires": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
+```
+
+### 16.7 Reader key registry and delegation (reserved)
 
 The registry schema in §7.5 is normative for the reserved `custom_json`
 `banksia.vault.reader_key`: `v=1`, `blog`, `keys[{key,label,created}]`, `revoked`.
@@ -1385,8 +1463,10 @@ document and the on-chain objects.
 - [ ] A ciphertext moved to another post/kid/mode fails the tag.
 - [ ] Plaintext hash and byte length are verified after decrypt; a one-bit flip
       fails closed with no partial output.
-- [ ] Multi-part payloads verify every part hash, exact count, order and the
-      post-level hash/bytes; missing/duplicate/out-of-range parts fail closed.
+- [ ] Multi-part post payloads verify every part hash, exact count, order and
+      the post-level hash/bytes; missing/duplicate/out-of-range parts fail closed.
+- [ ] Multi-part bulletins verify the signed manifest hashes and merge parts in
+      order; a missing/tampered part fails closed.
 - [ ] Canonical JSON sorts keys, rejects floats/non-finite/cycles/non-plain
       objects, and is identical across implementations.
 - [ ] Base64url rejects invalid alphabet/length and never truncates.
@@ -1548,8 +1628,10 @@ The review's practical limitations are accurate and remain explicit in §17.5:
 
 - the creator must be online or have the dashboard/auto-issue tab open (no relay
   in v1);
-- one bulletin is capped at 300 entries (about 300 active readers per period);
-- history scans are bounded (1,000 rows in the Banksia beta);
+- one bulletin **part** holds up to 300 entries; larger lists split into a signed
+  manifest plus parts, at the cost of more comments/RC;
+- history scans are bounded to 10 pages × 1,000 rows (400-day window) in the
+  beta; very high-volume accounts still need pagination/HAF indexing;
 - extractable reader keys are an XSS trade-off for recovery export;
 - text-only encryption does not protect image/video URLs;
 - losing the creator passphrase and export, or clearing a reader's browser

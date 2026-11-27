@@ -313,8 +313,17 @@ export function parseBulletin (jsonMetadata) {
     if (!Array.isArray(raw.entries)) return null
 
     const entries = raw.entries.map(normalizeEntry).filter(Boolean)
+    let parts = []
+    if (raw.parts !== undefined) {
+      if (!Array.isArray(raw.parts)) return null
+      parts = raw.parts
+        .filter(part => isPlainObject(part) &&
+          typeof part.permlink === 'string' && part.permlink &&
+          typeof part.hash === 'string' && /^sha256:[0-9a-f]{64}$/.test(part.hash))
+        .map(part => ({ ...part }))
+    }
 
-    return {
+    const normalized = {
       ...raw,
       v: 1,
       blog: raw.blog,
@@ -323,6 +332,8 @@ export function parseBulletin (jsonMetadata) {
       keyring,
       entries
     }
+    if (raw.parts !== undefined) normalized.parts = parts
+    return normalized
   } catch {
     return null
   }

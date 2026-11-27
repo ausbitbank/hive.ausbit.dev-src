@@ -11,6 +11,7 @@
 import { defineStore } from 'pinia'
 import {
   findGrantEntry,
+  loadBulletinParts,
   loadVaultParts,
   resolveBulletin,
   unlockWithGrant,
@@ -251,8 +252,19 @@ export const useVaultStore = defineStore('vault', {
             return { ok: false, ...state }
           }
 
+          const mergedBulletin = await loadBulletinParts({ bulletin: resolved.bulletin })
+          if (!mergedBulletin) {
+            const state = this.setPostState(key, {
+              status: 'error',
+              code: 'tampered',
+              message: vaultStatusMessage('tampered'),
+              error: 'bulletin-parts'
+            })
+            return { ok: false, ...state }
+          }
+
           const entry = await findGrantEntry({
-            bulletin: resolved.bulletin,
+            bulletin: mergedBulletin,
             readerPublicKey: record.publicKeyB64
           })
           if (!entry) {
@@ -287,7 +299,7 @@ export const useVaultStore = defineStore('vault', {
           }
 
           const result = await unlockWithGrant({
-            bulletin: resolved.bulletin,
+            bulletin: mergedBulletin,
             entry,
             readerKey: {
               privateKey: record.privateKey,

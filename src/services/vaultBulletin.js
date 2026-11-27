@@ -11,8 +11,8 @@
 // key through `vaultGrant.signGrant`, and queues one `comment` under the hidden
 // container. The reader side only needs the published bulletin.
 
-import { VAULT_WRAP_ALG, readerKeyThumbprint, sealKeyring, wrapRingKey } from './vaultCrypto'
-import { buildGrantHeader, bulletinPermlink, nextBulletinSequence, parseBulletin, signGrant } from './vaultGrant'
+import { VAULT_WRAP_ALG, readerKeyThumbprint, sealKeyring, sha256Hex, wrapRingKey } from './vaultCrypto'
+import { buildGrantHeader, bulletinPermlink, canonicalJson, nextBulletinSequence, parseBulletin, signGrant } from './vaultGrant'
 import {
   collectVaultPayments,
   nextPaymentDate
@@ -171,19 +171,16 @@ export function subscriberRows (history, plan, { now = Date.now(), seenTxIds = n
  *
  * Each entry is bound to `{ blog, rkt, period, tier, expires }` by both the
  * HKDF info and the AES-GCM AAD, so it cannot be moved to another blog, period,
- * tier or expiry. Throws above `BULLETIN_MAX_ENTRIES`; split into parts first.
+ * tier or expiry. The caller splits large lists across parts.
  */
 export async function buildBulletinEntries ({ blog, period, ringKey, readers, now: _now = Date.now(), tier = 'member' } = {}) {
   const owner = normalizeAccount(blog)
   if (!isValidHiveAccountName(owner)) throw codedError('BULLETIN_BAD_BLOG', 'A valid blog account is required.')
-  if (typeof period !== 'string' || !/^\d{4}-\d{2}$/.test(period)) {
-    throw codedError('BULLETIN_BAD_PERIOD', 'The period must be YYYY-MM.')
+  if (typeof period !== 'string' || !/^\d{4}-(?:0[1-9]|1[0-2])$/.test(period)) {
+    throw codedError('BULLETIN_BAD_PERIOD', 'The period must be YYYY-MM with a real month.')
   }
   if (typeof ringKey !== 'string' || !ringKey) throw codedError('BULLETIN_BAD_RING_KEY', 'The ring key is missing.')
   const list = Array.isArray(readers) ? readers : []
-  if (list.length > BULLETIN_MAX_ENTRIES) {
-    throw codedError('BULLETIN_TOO_MANY_ENTRIES', 'A single bulletin supports at most ' + BULLETIN_MAX_ENTRIES + ' entries; split it into parts.')
-  }
 
   const seen = new Set()
   const entries = []
@@ -251,6 +248,138 @@ export async function buildVaultBulletin ({
     delegation: delegation || null
   }
   return signGrant(bulletin, signAdapter)
+}
+
+/**
+ * Build a signed bulletin bundle, splitting entries across part comments when
+ * the single-comment budget would be exceeded.
+ *
+ * The manifest is signed and contains the sealed keyring plus a hash of every
+ * part object. Parts are ordinary comments under the container and contain only
+ * entries; the signature on the manifest binds them by hash.
+ */
+export async function buildVaultBulletinBundle ({
+  blog,
+  period,
+  seq,
+  keyring,
+  ringKey,
+  entries,
+  signer,
+  issued,
+  delegation = null,
+  signAdapter,
+  maxEntries = BULLETIN_MAX_ENTRIES,
+  maxBytes = BULLETIN_MAX_BYTES
+} = {}) {
+  const owner = normalizeAccount(blog)
+  if (!isValidHiveAccountName(owner)) throw codedError('BULLETIN_BAD_BLOG', 'A valid blog account is required.')
+  if (!Number.isInteger(Number(seq)) || Number(seq) < 1) {
+    throw codedError('BULLETIN_BAD_SEQ', 'The bulletin sequence must be a positive integer.')
+  }
+  if (!isPlainObject(keyring)) throw codedError('BULLETIN_BAD_KEYRING', 'The keyring must be an object.')
+  const signingAccount = normalizeAccount(signer || owner)
+  if (!isValidHiveAccountName(signingAccount)) throw codedError('BULLETIN_BAD_SIGNER', 'The bulletin signer is invalid.')
+  const list = Array.isArray(entries) ? entries : []
+  const sealed = await sealKeyring(keyring, ringKey, { blog: owner, period })
+
+  // Split by both entry count and encoded part size.
+  const chunks = []
+  let current = []
+  for (const entry of list) {
+    const candidate = [...current, entry]
+    const wrapper = { app: 'banksia.io', banksia_vault_bulletin_part: {
+      v: 1, blog: owner, period, seq: Number(seq), part: chunks.length + 1,
+      parts: 0, entries: candidate
+    } }
+    const tooMany = candidate.length > maxEntries
+    const tooBig = byteLength(wrapper) > maxBytes
+    if (current.length && (tooMany || tooBig)) {
+      chunks.push(current)
+      current = [entry]
+    } else {
+      current = candidate
+    }
+  }
+  if (current.length) chunks.push(current)
+  if (!chunks.length) chunks.push([])
+
+  const singleWrapper = { app: 'banksia.io', banksia_vault_bulletin: {
+    v: 1, blog: owner, period, seq: Number(seq), issued: issued || new Date().toISOString(),
+    keyring: sealed, entries: list, claims: [], signer: signingAccount, delegation: delegation || null
+  } }
+  if (chunks.length === 1 && list.length <= maxEntries && byteLength(singleWrapper) <= maxBytes) {
+    const bulletin = await signGrant({
+      v: 1,
+      blog: owner,
+      period,
+      seq: Number(seq),
+      issued: issued || new Date().toISOString(),
+      keyring: sealed,
+      entries: list,
+      claims: [],
+      signer: signingAccount,
+      delegation: delegation || null
+    }, signAdapter)
+    return { bulletin, parts: [] }
+  }
+
+  const parts = []
+  for (let index = 0; index < chunks.length; index++) {
+    const part = {
+      v: 1,
+      blog: owner,
+      period,
+      seq: Number(seq),
+      part: index + 1,
+      parts: chunks.length,
+      entries: chunks[index]
+    }
+    parts.push({
+      permlink: bulletinPermlink(period, Number(seq), index + 1),
+      hash: 'sha256:' + await sha256Hex(canonicalJson(part)),
+      entries: chunks[index].length,
+      part
+    })
+  }
+
+  const manifest = await signGrant({
+    v: 1,
+    blog: owner,
+    period,
+    seq: Number(seq),
+    issued: issued || new Date().toISOString(),
+    keyring: sealed,
+    entries: [],
+    parts: parts.map(({ permlink, hash, entries: count }) => ({ permlink, hash, entries: count })),
+    claims: [],
+    signer: signingAccount,
+    delegation: delegation || null
+  }, signAdapter)
+  return { bulletin: manifest, parts }
+}
+
+/** `comment` operation for one bulletin part (manifest holds its hash). */
+export function buildVaultBulletinPartOperation ({ part, author, containerAuthor, containerPermlink } = {}) {
+  if (!isPlainObject(part)) return null
+  const owner = normalizeAccount(author || part.blog)
+  const container = String(containerPermlink || '').trim().toLowerCase()
+  if (!isValidHiveAccountName(owner) || !/^[a-z0-9][a-z0-9._-]{0,255}$/.test(container)) return null
+  const seq = Number(part.seq)
+  const number = Number(part.part)
+  if (!Number.isInteger(seq) || seq < 1 || !Number.isInteger(number) || number < 1) return null
+  return ['comment', {
+    parent_author: normalizeAccount(containerAuthor || owner),
+    parent_permlink: container,
+    author: owner,
+    permlink: bulletinPermlink(part.period, seq, number),
+    title: '',
+    body: 'Vault grant bulletin part.',
+    json_metadata: JSON.stringify({
+      app: 'banksia.io',
+      banksia_vault_bulletin_part: part
+    })
+  }]
 }
 
 /** `comment` operation that publishes a bulletin under the hidden container. */

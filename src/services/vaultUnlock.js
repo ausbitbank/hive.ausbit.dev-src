@@ -22,6 +22,7 @@ import {
 import {
   buildBulletinSigningPayload,
   buildGrantHeader,
+  canonicalJson,
   isGrantValid,
   parseBulletin
 } from './vaultGrant'
@@ -192,7 +193,8 @@ export async function verifyBulletin ({
   if (!blog) return { ok: false, reason: 'bulletin' }
   if (!PERIOD_RE.test(String(bulletin.period || ''))) return { ok: false, reason: 'bulletin' }
   if (!isPlainObject(bulletin.keyring)) return { ok: false, reason: 'bulletin' }
-  if (!Array.isArray(bulletin.entries) || bulletin.entries.length === 0) {
+  const hasParts = Array.isArray(bulletin.parts) && bulletin.parts.length > 0
+  if ((!Array.isArray(bulletin.entries) || bulletin.entries.length === 0) && !hasParts) {
     return { ok: false, reason: 'bulletin' }
   }
   if (typeof bulletin.sig !== 'string' || !bulletin.sig.trim()) {
@@ -415,6 +417,50 @@ export async function unlockWithGrant ({
   } catch (error) {
     return fail(errorCode(error))
   }
+}
+
+/**
+ * Fetch and verify a multi-part bulletin's parts and merge their entries.
+ *
+ * The signed manifest carries `parts: [{permlink, hash, entries}]`. Each part is
+ * a comment under the container with `banksia_vault_bulletin_part`; its canonical
+ * JSON hash MUST match the manifest. Returns null on any missing/tampered part.
+ */
+export async function loadBulletinParts ({
+  bulletin,
+  fetchPost = fetchPostContent
+} = {}) {
+  if (!isPlainObject(bulletin)) return null
+  if (!Array.isArray(bulletin.parts) || bulletin.parts.length === 0) return bulletin
+  const blog = normalizeBlog(bulletin.blog)
+  if (!blog) return null
+  const entries = []
+  for (let index = 0; index < bulletin.parts.length; index++) {
+    const descriptor = bulletin.parts[index]
+    if (!isPlainObject(descriptor) || typeof descriptor.permlink !== 'string') return null
+    let post
+    try {
+      post = await fetchPost(blog, descriptor.permlink)
+    } catch {
+      return null
+    }
+    if (!post || String(post.author || '').toLowerCase() !== blog) return null
+    let root = post.json_metadata
+    if (typeof root === 'string') {
+      try { root = JSON.parse(root) } catch { return null }
+    }
+    if (!isPlainObject(root)) return null
+    const part = isPlainObject(root.banksia_vault_bulletin_part) ? root.banksia_vault_bulletin_part : root
+    if (!isPlainObject(part)) return null
+    if (part.v !== 1 || normalizeBlog(part.blog) !== blog) return null
+    if (part.period !== bulletin.period || Number(part.seq) !== Number(bulletin.seq)) return null
+    if (Number(part.part) !== index + 1 || Number(part.parts) !== bulletin.parts.length) return null
+    if (!Array.isArray(part.entries)) return null
+    const actual = 'sha256:' + await sha256Hex(canonicalJson(part))
+    if (actual !== descriptor.hash) return null
+    entries.push(...part.entries)
+  }
+  return { ...bulletin, entries }
 }
 
 /** Visible watermark for unlocked content: `Licensed to @reader · YYYY-MM`. */export function watermarkLabel (account, period) {
