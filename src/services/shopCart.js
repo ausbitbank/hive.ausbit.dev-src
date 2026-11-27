@@ -149,6 +149,7 @@ export function buildPaymentOperation (product, quantity = 1, username = '', { e
   const subscription = Boolean(product.subscription && Number(product.recurrenceHours) > 0)
   const amount = subscription ? 1 : clampQuantity(quantity)
   const totalLabel = productTotalLabel(product, amount)
+  if (!totalLabel || !(Number.parseFloat(totalLabel) > 0)) return null
   const memo = purchaseMemo(product.author, product.permlink, amount)
   const to = String(product.author).toLowerCase()
   const from = String(username || '')
@@ -264,12 +265,17 @@ export function validateCheckout (products, items, username) {
       continue
     }
     const quantity = product.subscription ? 1 : clampQuantity(rawQuantity)
+    const totalLabel = productTotalLabel(product, quantity)
+    if (!totalLabel || !(Number.parseFloat(totalLabel) > 0)) {
+      errors.push('@' + key + ' has a price that cannot be paid safely.')
+      continue
+    }
     lines.push({
       key,
       product,
       item: { author: item.author, permlink: item.permlink, quantity },
       quantity,
-      totalLabel: productTotalLabel(product, quantity),
+      totalLabel,
       memo: purchaseMemo(product.author, product.permlink, quantity),
       subscription: Boolean(product.subscription),
       recurrenceHours: Number(product.recurrenceHours) || 0

@@ -128,12 +128,17 @@ describe('normalizeProduct', () => {
     expect(normalizeProduct(productPost({ meta: { currency: 'BTC:BTC' } }))).toBeNull()
     expect(normalizeProduct(productPost({ meta: { price: 0 } }))).toBeNull()
     expect(normalizeProduct(productPost({ meta: { price: -1 } }))).toBeNull()
+    expect(normalizeProduct(productPost({ meta: { price: 0.0004 } }))).toBeNull()
+    expect(normalizeProduct(productPost({ meta: { price: 1.2345 } }))).toBeNull()
+    expect(normalizeProduct(productPost({ meta: { price: 1e308 } }))).toBeNull()
     expect(normalizeProduct(null)).toBeNull()
   })
 
   it('always formats money with three decimals', () => {
     expect(formatProductAmount(0.001, 'HBD')).toBe('0.001 HBD')
     expect(formatProductAmount(25, 'HBD')).toBe('25.000 HBD')
+    expect(formatProductAmount(0.0004, 'HBD')).toBe('')
+    expect(formatProductAmount(NaN, 'HBD')).toBe('')
     const product = normalizeProduct(productPost({ meta: { price: 0.001 } }))
     expect(product.priceLabel).toBe('0.001 HBD')
     expect(productTotalLabel(product, 2)).toBe('0.002 HBD')

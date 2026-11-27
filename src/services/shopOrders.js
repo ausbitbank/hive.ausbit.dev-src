@@ -104,7 +104,7 @@ export function parsePurchaseMemo (memo) {
   const product = parseProductRef(parsed.product)
   if (!product) return null
   const quantity = parsed.quantity
-  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 1) return null
+  if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity < 1 || quantity > 99) return null
   return { product, quantity: Math.floor(quantity) }
 }
 

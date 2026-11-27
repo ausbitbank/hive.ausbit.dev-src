@@ -73,6 +73,12 @@ describe('parsePurchaseMemo', () => {
     })
   })
 
+  it('rejects quantities outside the cart limit', () => {
+    expect(parsePurchaseMemo('{"product":"alice/managed-hosting","quantity":100}')).toBeNull()
+    expect(parsePurchaseMemo('{"product":"alice/managed-hosting","quantity":1000000000}')).toBeNull()
+    expect(parsePurchaseMemo('{"product":"alice/managed-hosting","quantity":0}')).toBeNull()
+  })
+
   it('rejects invalid JSON and non-object roots', () => {
     expect(parsePurchaseMemo('not json')).toBeNull()
     expect(parsePurchaseMemo('')).toBeNull()

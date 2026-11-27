@@ -82,7 +82,7 @@ export function decodeCursor (cursor) {
 
 export function formatProductAmount (value, ticker) {
   const amount = Number(value)
-  if (!Number.isFinite(amount)) return ''
+  if (!Number.isFinite(amount) || amount <= 0 || Math.round(amount * 1000) < 1) return ''
   return amount.toFixed(3) + ' ' + String(ticker || '').toUpperCase()
 }
 
@@ -110,7 +110,11 @@ export function normalizeProduct (post) {
   const currency = String(meta.currency || '').toUpperCase()
   const ticker = SUPPORTED[currency] || ''
   const price = Number(meta.price)
-  if (!ticker || !Number.isFinite(price) || price <= 0) return null
+  const milli = Math.round(price * 1000)
+  // HOM prices are positive assets with at most three decimals. Reject values
+  // that would round to zero or overflow the transfer amount.
+  if (!ticker || !Number.isFinite(price) || price <= 0 || price > 1e12 ||
+    milli < 1 || Math.abs(price * 1000 - milli) > 1e-6) return null
   const statusValue = meta.status === undefined ? 1 : Number(meta.status)
   // HOM only defines 1/2/3. A malformed status must not be treated as active.
   if (!STATUS_LABELS[statusValue]) return null
