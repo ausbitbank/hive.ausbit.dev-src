@@ -14,3 +14,23 @@ They are documentation assets, not application assets; runtime images live under
 When refreshing a README image, capture at 1440×1000 with a real browser, wait
 for the chain data to settle, and avoid showing a load error or an empty state.
 Keep the file name stable so the README does not need editing.
+
+## Hosting
+
+The same tree is mirrored to `files.banksia.io` so published posts do not embed
+`raw.githubusercontent.com` URLs:
+
+```
+https://files.banksia.io/docs/screenshots/devlog/<slug>/<file>.png
+```
+
+The vhost lives in `deploy/nginx/files.banksia.io.conf`. After adding
+screenshots, refresh the mirror:
+
+```sh
+rsync -a --chmod=D755,F644 docs/screenshots/ \
+  hurgenburgen:/var/www/files.banksia.io/docs/screenshots/
+```
+
+The in-repo files remain the canonical originals for now; the host is a mirror
+for posts and pages that need a stable, cacheable URL.
