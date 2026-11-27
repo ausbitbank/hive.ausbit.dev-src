@@ -17,6 +17,7 @@ import { mkdir, readFile, writeFile, appendFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { brotliCompressSync, gzipSync } from 'node:zlib'
 import { chromium } from '@playwright/test'
+import { checkBudgets } from './perf-budgets.mjs'
 
 const ROOT = resolve(process.cwd())
 const DIST = resolve(ROOT, 'dist/spa')
@@ -247,37 +248,6 @@ function readBudgets () {
     .catch(() => null)
 }
 
-function checkBudgets (result, budgets) {
-  if (!budgets) return []
-  const failures = []
-  const limitFor = (route, key) => {
-    const routeBudget = budgets.routes?.[route] || {}
-    return routeBudget[key] ?? budgets[key]
-  }
-  for (const route of result.routes) {
-    const checks = [
-      ['initialJsKb', 'initial JS'],
-      ['routeJsKb', 'route JS'],
-      ['jsKb', 'total JS'],
-      ['cssKb', 'CSS'],
-      ['totalKb', 'total transfer'],
-      ['lcpMs', 'LCP'],
-      ['cls', 'CLS']
-    ]
-    for (const [key, name] of checks) {
-      const limit = limitFor(route.route, key)
-      if (limit === undefined || limit === null) continue
-      // Third-party/UGC media varies by live content; the transfer budget
-      // covers app-owned assets so CI does not fail on a remote article image.
-      const value = key === 'totalKb' ? route.appTotalKb : route[key]
-      if (Number(value) > Number(limit)) {
-        failures.push(`${route.name}: ${name} ${value} > budget ${limit}`)
-      }
-    }
-  }
-  return failures
-}
-
 function formatNumber (value) {
   return Number.isInteger(value) ? String(value) : Number(value).toFixed(3)
 }
@@ -459,7 +429,11 @@ async function main () {
     }
 
     const budgets = await readBudgets()
-    const failures = checkBudgets(result, budgets)
+    const { failures, warnings } = checkBudgets(result, budgets)
+    if (warnings.length > 0) {
+      console.warn('\nAdvisory performance notes (live latency, not blocking):')
+      for (const warning of warnings) console.warn('- ' + warning)
+    }
     if (CHECK && failures.length > 0) {
       console.error('\nPerformance budget failures:')
       for (const failure of failures) console.error('- ' + failure)

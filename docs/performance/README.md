@@ -126,3 +126,8 @@ bun run build       # produce dist/spa
 bun run perf        # write latest.json, history.jsonl and this dashboard
 bun run perf:check  # run the same measurement and fail on budget regressions
 ```
+
+`perf:check` blocks on bundle-size, CSS and app-transfer budgets. LCP and CLS are
+reported as advisory notes because they still depend on live public nodes,
+remote images and CI CPU; a slow API node must not look like a bundle
+regression.
