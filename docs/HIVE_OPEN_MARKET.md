@@ -278,7 +278,15 @@ The shop only routes. `src/pages/subscribe.vue` owns reader-key generation and
 `buildVaultMemo`; the creator’s signed bulletin remains the entitlement source.
 No Vault crypto, key or grant code is duplicated in the shop.
 
-### 3.4 Authority and privacy
+### 3.4 Seller trust signals
+
+W92 adds a public seller card to every product page: Hive account age,
+reputation, post count, a profile link and a “seller edited this product” note
+when the chain `last_update` differs from `created`. The card says explicitly
+that these are public account signals, not a buyer-protection rating. A failed
+account read hides the card instead of blocking the product.
+
+### 3.5 Authority and privacy
 
 - Blog settings are posting-key `account_update2` metadata.
 - Purchases, subscriptions and cancellations are active-key operations queued
@@ -417,7 +425,11 @@ the read-only blog, user-held keys and chain-first money.
 
 ### 6.1 Phase A — Make the current model trustworthy (next)
 
-**A1. Seller trust panel**
+**A1. Seller trust panel — shipped in W92**
+
+The product page now shows account age, reputation, post count, a profile link
+and an edit note. Checkout-level aggregation and completed-sale counts remain
+future work. The original target was:
 
 Show, on the product page and checkout:
 

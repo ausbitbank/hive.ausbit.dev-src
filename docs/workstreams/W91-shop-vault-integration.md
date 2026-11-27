@@ -104,5 +104,6 @@ Local, 2026-11-28:
   owns `gift_for` and remains the only path.
 - The shop does not yet filter “memberships only”; tag chips and search already
   expose the `membership`/`vault` tags.
-- No membership-specific seller trust panel beyond the existing product page.
+- The product-wide seller trust card now covers membership products too; a
+  membership-specific completed-sale count is still future work.
 - The optional Vault relay remains W90 work in a separate repository.
