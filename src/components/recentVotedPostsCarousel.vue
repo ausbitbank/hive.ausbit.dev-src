@@ -10,7 +10,7 @@
     <q-spinner-puff size="2em" color="primary" v-if="posts.length === 0" />
     <div v-if="posts.length > 0">
       <q-card flat bordered>
-      <div class="text-h6 text-center section-title"><q-icon name="rss_feed" /> Recently voted by {{ account }} <q-btn v-if="false" icon="settings" @click="settings = true" /></div>
+      <div class="text-h6 text-center section-title"><q-icon name="rss_feed" /> Recently voted by {{ account }} <q-btn :icon="autoplay ? 'pause' : 'play_arrow'" :aria-label="autoplay ? 'Pause slideshow' : 'Play slideshow'" @click="autoplay = !autoplay" /></div>
       <q-carousel
         v-model="slide"
         transition-prev="jump-left"
@@ -21,12 +21,12 @@
         padding
         arrows
         infinite
-        :autoplay="autoplay"
+        :autoplay="autoplay && !hoverPaused"
         :height="$q.screen.lt.sm ? '300px' : '250px'"
         :width="$q.screen.lt.sm ? '100%' : '450px'"
         :aria-label="'Recently voted posts by ' + account"
-        @mouseenter="autoplay = false"
-        @mouseleave="autoplay = true"
+        @mouseenter="hoverPaused = true"
+        @mouseleave="hoverPaused = false"
         class="hive-carousel text-white shadow-2"
       >
         <q-carousel-slide :name="post.permlink" class="column no-wrap flex-center" v-for="post in posts" :key="post.index" :img-src="returnPostImage(post)">
@@ -61,6 +61,11 @@ import { hiveAvatarUrl } from 'src/utils/avatar'
 const voteBitmask = makeBitMaskFilter([
   op.vote
 ])
+
+function prefersReducedMotion () {
+  return typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+}
+
 export default {
   name: 'recentVotedPostsCarousel',
   data () {
@@ -69,14 +74,18 @@ export default {
       showResteems: true,
       api: 'https://api.hive.blog',
       slide: null,
-      autoplay: true,
+      autoplay: !prefersReducedMotion(),
+      hoverPaused: false,
       limit: 10,
       settings: false,
       loading: false,
       votes: [],
       accountHistoryPointer: -1,
       accountHistoryLimit: 100,
-      bitmask: voteBitmask
+      bitmask: voteBitmask,
+      retryTimer: null,
+      retryCount: 0,
+      destroyed: false
     }
   },
   props: {
@@ -95,12 +104,15 @@ export default {
     getPost (author, permlink) {
       this.$hive.api.getContentAsync(author, permlink)
         .then(res => {
+          if (this.destroyed || !res) return
           if (res.title !== '' && res.author !== this.account) {
             this.posts.push(res)
           }
         })
+        .catch(() => {})
     },
     async getRecentVotes (username) {
+      if (this.destroyed) return
       this.loading = true
       await this.$hive.api.callAsync(
         'call',
@@ -114,24 +126,37 @@ export default {
         ]
       )
         .then(res => {
-          this.accountHistoryPointer = parseInt(res[0][0]) - 1
-          if (this.votes.length === 0) {
-            this.votes = res.reverse()
-          } else {
-            this.votes = this.votes.concat(res.reverse())
-          }
+          const rows = Array.isArray(res) ? res : []
           this.loading = false
+          if (this.destroyed || rows.length === 0) return
+          this.retryCount = 0
+          this.accountHistoryPointer = parseInt(rows[0][0]) - 1
+          if (this.votes.length === 0) {
+            this.votes = rows.reverse()
+          } else {
+            this.votes = this.votes.concat(rows.reverse())
+          }
           this.votesToPosts(this.votes)
         })
         .catch(err => {
           this.loading = false
-          if (err.data && err.cause) {
-            if (err.data.stack[0].data.sequence && err.cause.message.includes('Could not find filtered operation in')) {
-              this.accountHistoryPointer = err.data.stack[0].data.sequence
-              setTimeout(() => this.getRecentVotes(username), 1000)
-            }
+          if (this.destroyed) return
+          const sequence = err?.data?.stack?.[0]?.data?.sequence
+          const message = err?.cause?.message || err?.message || ''
+          if (sequence && message.includes('Could not find filtered operation in')) {
+            this.accountHistoryPointer = sequence
+            this.scheduleRetry(username)
           }
         })
+    },
+    scheduleRetry (username) {
+      if (this.destroyed || this.retryTimer || this.retryCount >= 5) return
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      this.retryCount += 1
+      this.retryTimer = setTimeout(() => {
+        this.retryTimer = null
+        if (!this.destroyed) this.getRecentVotes(username)
+      }, 1000 * this.retryCount)
     },
     filterOwnPosts (tx) {
       if (tx[1].op[1].author === this.account) {
@@ -146,20 +171,15 @@ export default {
       }.bind(this))
     },
     returnPostImage (post) {
-      if (post.json_metadata) {
-        var meta = JSON.parse(post.json_metadata)
-      } else {
+      if (!post || !post.json_metadata) return null
+      let meta
+      try {
+        meta = typeof post.json_metadata === 'string' ? JSON.parse(post.json_metadata) : post.json_metadata
+      } catch {
         return null
       }
-      if (meta.image) {
-        if (meta.image[0]) {
-          return meta.image[0]
-        } else {
-          return null
-        }
-      } else {
-        return null
-      }
+      const image = Array.isArray(meta?.image) ? meta.image[0] : meta?.image
+      return typeof image === 'string' && image ? image : null
     },
     returnPostPath (author, permlink) {
       return '/@' + author + '/' + permlink
@@ -176,6 +196,11 @@ export default {
   },
   mounted () {
     this.getRecentVotes(this.account)
+  },
+  beforeUnmount () {
+    this.destroyed = true
+    if (this.retryTimer) clearTimeout(this.retryTimer)
+    this.retryTimer = null
   }
 }
 </script>
