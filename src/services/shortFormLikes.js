@@ -29,7 +29,7 @@ const MAX_ENRICH = 60
 const CONCURRENCY = 6
 
 function lower (value) {
-  return String(value || '').trim().toLowerCase()
+  return String(value || '').trim().replace(/^@/, '').toLowerCase()
 }
 
 function postKey (author, permlink) {
