@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { test, expect } from './fixtures'
-import { waitForApp } from './helpers'
+import { runAxe, waitForApp } from './helpers'
 
 const SW_PATH = resolve(process.cwd(), 'dist/spa/sw.js')
 
@@ -84,6 +84,8 @@ test('service-worker update prompts and reloads only after confirmation', async 
     await page.waitForTimeout(1500)
     expect(await page.evaluate(() => Number(sessionStorage.getItem('swUpdateLoads')))).toBe(loadsBeforeConfirm)
     await expect(dialog).toBeVisible()
+    await page.waitForTimeout(500)
+    expect(await runAxe(page)).toEqual([])
 
     await dialog.getByRole('button', { name: 'Reload now' }).click()
     await page.waitForFunction(

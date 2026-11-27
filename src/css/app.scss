@@ -183,6 +183,18 @@ a {
   color: var(--c-on-primary) !important;
 }
 
+/* Quasar dialog actions do not always get the `text-white` class, and axe can
+   read the dialog backdrop instead of the button fill. Use a dark brand fill
+   with white text so the action is readable against either one. */
+.q-dialog .q-btn.bg-primary {
+  background-color: color-mix(in srgb, var(--c-primary) 42%, var(--c-bg-deep)) !important;
+  color: var(--c-text-strong) !important;
+}
+
+.q-dialog .q-btn.bg-primary .block {
+  color: var(--c-text-strong) !important;
+}
+
 /* Quasar notifications use bright semantic backgrounds with white text by
    default; use the same dark ink for readable status toasts. */
 .q-notification.bg-positive,

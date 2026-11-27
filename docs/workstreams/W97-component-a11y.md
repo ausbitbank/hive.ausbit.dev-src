@@ -30,8 +30,9 @@ fixes the deterministic cases:
 7. **Shorts, trail and witnesses had no page-level heading.** Each now exposes
    exactly one `h1`; the existing section headings stay `h2`.
 8. **PWA update dialog used white text on the light primary blue.** Primary
-   dialog actions now use the same dark ink token as other brand buttons, and
-   the service-worker update test runs axe before confirming the reload.
+   dialog actions now use a darker brand fill with the strong text token, and
+   the service-worker update test waits for the dialog transition and runs axe
+   before confirming the reload.
 
 ## Components
 
