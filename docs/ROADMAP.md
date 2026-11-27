@@ -48,9 +48,10 @@ principles that constrain it. Delivered work and its verification records live i
   reader. Content is AES-256-GCM with P-256 ECDH + HKDF-SHA256 via WebCrypto;
   payments are direct HBD recurrent transfers with a 0% platform fee. The blog
   stays read-only and custom domains deep-link premium reads to the apex. W89
-  is **deployed** (SPA + metadata Worker) with unit/E2E/axe and a read-only live
-  smoke green on `ausbit.vsc`; the paid enable → publish → pay → cancel live
-  smoke still needs the operator's wallet and HBD. See
+  is **deployed and fully live-smoked**: product/container, premium post,
+  0.001 HBD payment, signed grant, desktop/mobile unlock, expiry, restore, a
+  second reader key, and a real HF28 cancel were all verified on `ausbit.vsc` /
+  `ausbitclank`. See
   [`docs/workstreams/W89-premium-memberships.md`](workstreams/W89-premium-memberships.md).
 - Local verification on 2026-11-27 at the W89 gate: `bun run lint` clean,
   `bun run test` green with **2,062 tests across 214 files** (2,053 were W89-only

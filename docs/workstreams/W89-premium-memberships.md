@@ -1,10 +1,13 @@
 # W89 — Banksia Vault: premium memberships
 
 Date: 2026-11-27
-Status: **deployed 2026-11-27** (SPA + `banksia-metadata` Worker) with the
-read-only live smoke and axe green on `ausbit.vsc`. The paid write smoke
-(enable → publish → pay → unlock → cancel → restore) still needs the operator's
-wallet and HBD; see Deploy notes. Unit/E2E/axe details are under Verification.
+Status: **deployed and fully live-smoked on 2026-11-27** (SPA +
+`banksia-metadata` Worker). The paid write smoke on `ausbit.vsc` /
+`ausbitclank` completed end to end: enable → product/container → premium post →
+0.001 HBD payment → signed grant → desktop/mobile unlock → expiry → restore →
+second reader key → cleanup. A real `recurrent_transfer` cancel was also
+verified live. The 50,000 VESTS RC/HP delegation from `ausbitclank` to
+`ausbit.vsc` was intentionally left in place at the operator's request.
 
 ## Scope
 
@@ -327,10 +330,10 @@ items remain.
    `/subscriptions` request `limit: 1000`. Older payments/subscribers are
    invisible and cannot be re-issued from the dashboard until pagination or a
    HAF index is added.
-5. **Low — HF28 cancel matching is unverified.** The zero-amount
-   `recurrent_transfer` is queued with a warning; the exact rule for multiple
-   transfers to the same recipient needs a testnet run before the cancel button
-   is treated as shipped.
+5. **Resolved — HF28 cancel matching verified live.** A zero-amount
+   `recurrent_transfer` with the matching recipient, recurrence and memo removed
+   the live plan (`remaining 0`; tx `54f54837b969d5956c38126a9a05b7dc3f65673f`).
+   The UI still warns because matching depends on the original plan fields.
 6. **Low — no re-encrypt/archive migration.** Rotation protects future content;
    a leaked old key still decrypts old ciphertext and there is no bulk
    re-encryption tool.
@@ -356,7 +359,8 @@ items remain.
   reader.
 - **Custom domains are read-only.** Premium reads happen on the apex; a custom
   domain does not hold a reader key.
-- **HF28 cancel matching is unverified on testnet.**
+- **HF28 cancel matching was verified live** on 2026-11-27 (zero-amount
+  `recurrent_transfer`, matching recipient/recurrence/memo; plan removed).
 - **1,000-row account-history window** for subscribers and reader plans.
 - **Manual grant issuance.** The creator must unlock the vault and publish a
   bulletin; readers can pay while the creator is offline and wait.
@@ -378,41 +382,54 @@ items remain.
 
 ## Deploy notes
 
-Deployed on 2026-11-27 from branch `w89-vault` at `5528f0a` (plus the
-subscriptions axe fix committed immediately after):
+Deployed on 2026-11-27 from `master`:
 
-- `./scripts/deploy.sh` — SPA deployed, build stamp
-  `20261127T114934Z-5528f0a32d70`, deploy verification passed at the edge.
-- Backup: `hurgenburgen:~/banksia-backups/banksia.io-20261127T114919Z.tar.gz`
-  (sha256 `bd0c346ef0ccbd80c07aeebedf160f58ea046855e4f03b146b300be055d8e549`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T114919Z.tar.gz`.
+- Final SPA build stamp `20261127T130849Z-c4dae2e2282f`; `./scripts/deploy.sh`
+  succeeded and `bun run verify:deploy` passed at the edge.
+- Final backup:
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T130858Z.tar.gz`
+  (sha256 `df27769e57fe70d454b3fb8ecaa823cb486a009a751b2d11aabe02785a07a882`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T130858Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
-  routes; `/settings/blog*` already covered the dashboard. `wrangler` version id
+  routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
-- `bun run verify:deploy` — passed (edge).
-- Live read-only smoke with `ausbit.vsc` at 1440×900 and 390×844:
-  `/settings/blog`, `/settings/blog/vault`, `/subscribe` (missing product state)
-  and `/subscriptions` all return 200, render the expected state, have no
-  console/page errors, and are axe-clean. Screenshots in `/tmp/opencode/`.
 - Vhost caveat: `scripts/apply-nginx-vhost-remote.sh hurgenburgen apply` could
   not run because the deploy user needs a sudo password. Browser traffic is
-  served by the Worker shells; direct-origin requests that do not send
+  served by the Worker shells; direct-origin requests without
   `Accept: text/html` still 404 on the three new apex paths. Apply the vhost on
   the next privileged session.
 
-Still required before calling the feature fully live-smoked:
+### Live write smoke (2026-11-27)
 
-1. Enable Vault on `ausbit.vsc` with its posting key and publish the product and
-   container.
-2. Publish a premium section and a whole post.
-3. Subscribe with a small HBD amount (the account currently has
-   `0.000 HBD`/`0.394 HIVE`, so it needs funding and active-key approval).
-4. Confirm the grant and unlock, reload, cancel, expire and restore with a
-   second reader key.
+Creator `ausbit.vsc`, reader/payer `ausbitclank` (0.001 HBD), price `0.001 HBD`:
 
-The full gate is: `bun run lint`, `bun run test`, `bun run build`,
-`bun run test:e2e`, `bun run test:e2e:full`, `bun run perf:check`, and the
-Vault axe checks.
+| Step | Tx / result |
+| --- | --- |
+| Membership product | `880c7d48c0c117be1caf965cf77deccd4151dc07` |
+| Hidden container (reply) | `d40461f571c2fe6016991c3668e265a854b20358` |
+| Enable `blog.vault` | `368600c96478e78d06918daa7915ee48d942452e` |
+| Premium section post | `ae5f6ff250cd48aa41cdd18214d557a9a157e7f1` |
+| One-time 0.001 HBD payment | `a380db0f95c883b2867ef4de0369b72b1efebf48` |
+| Bulletin seq 1 + pointer | `726438131b4566de46eb08ef3cda33f0db6dc210`, `5575e5549991dd1948289b7168e2e4bbdac84937` |
+| Node unlock | decrypted 55-byte payload, hash verified |
+| Browser unlock | desktop 1440 and mobile 390 both unlocked, no page errors |
+| Expiry (seq 2) | `c3883ff94c4b521c03e2ddc998b4c93d64adcea6` — paywall restored |
+| Restore (seq 3) | `7e1089aa08bcb894f2a8ff74db38d42d5dd171f5` — unlocked |
+| Second reader key | unlocked with the second P-256 key |
+| Real cancel probe | `54f54837b969d5956c38126a9a05b7dc3f65673f` — plan removed |
+| Metadata restore | `80c63887593da4e407fdfb0398f43654861d3bd8` |
+| Refund 0.001 HBD | `dc6e0be9098e877c96f20af9d8368e1940ab9775` |
+
+Cleanup deleted all three bulletins, the premium post, the container and the
+product; `blog.vault` is back to absent; both accounts are back to their
+pre-smoke balances; no `w89-*` post remains on chain. The temporary key file was
+shredded. The 50,000 VESTS delegation from `ausbitclank` to `ausbit.vsc` was
+kept deliberately.
+
+The full gate was: `bun run lint`, `bun run test` (214 files / 2,062 tests),
+`bun run build`, `bun run test:e2e` (pre-existing CDP timeouts),
+`bun run test:e2e:full` (197 passed / 4 pre-existing failures), `bun run
+perf:check` (passed), and the Vault axe checks (clean at 1440×900 and 390×844).
 
 ## References
 

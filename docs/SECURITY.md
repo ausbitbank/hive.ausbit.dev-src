@@ -306,9 +306,11 @@ later schema and needs a verified certificate, not a self-asserted `signer`.
 - Grant issuance and the reader manager read at most the most recent 1,000
   account-history rows. Older subscribers are not discovered until pagination
   or an index is added.
-- Cancellation queues a zero-amount `recurrent_transfer`. The exact HF28 matching
-  rule for multiple transfers to one recipient is **not yet verified on
-  testnet**; the UI warns and access continues to the grant expiry.
+- Cancellation queues a zero-amount `recurrent_transfer` with the matching
+  recipient, recurrence and memo. This was verified live on 2026-11-27: the plan
+  was removed (`remaining 0`, tx `54f54837…`). The UI still warns because a
+  mismatched memo or recurrence will not cancel the plan; access continues to
+  the grant expiry.
 
 ### CSP and network
 

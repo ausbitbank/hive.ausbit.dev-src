@@ -315,8 +315,9 @@ Standard HOM memo plus a namespaced extension:
   `executions: 12`.
 - One-time: a normal `transfer` with the same memo.
 - Cancel: `recurrent_transfer` with `amount: "0.000 HBD"` for the matching
-  plan. The exact HF28 matching rule must be confirmed on testnet before the
-  cancel UI is treated as shipped; the beta warns in the confirmation dialog.
+  plan. Verified live on 2026-11-27 with the matching recipient, recurrence and
+  memo (plan removed, tx `54f54837…`). The beta still warns in the confirmation
+  dialog because a mismatched memo will not cancel.
 - The recipient, amount and recurrence are derived from the on-chain product and
   blog account, never from URL parameters.
 - `gift_for` is part of the v1 memo schema but gift issuance is not implemented
@@ -922,10 +923,10 @@ keyring or any entry invalidates the bulletin signature.
    not list it; it is required for the specified AAD to work.
 4. **Month range.** `period` is validated as `YYYY-MM` by format only; `2026-13`
    currently passes. Tighten to months `01`–`12` in a future revision.
-5. **Cancel matching.** The exact HF28 matching rule for
-   `recurrent_transfer` with amount `0` has not been verified on testnet in this
-   repository. The reader cancel button ships with an explicit warning; treat
-   the cancellation as unverified until the testnet run is recorded.
+5. **Cancel matching.** A zero-amount `recurrent_transfer` with the matching
+   recipient, recurrence and memo removed a live plan on 2026-11-27
+   (`remaining 0`, tx `54f54837…`). The reader cancel button still warns that a
+   mismatched memo will not cancel the plan.
 6. **Signer binding in the reader.** The normative rule is `signer === blog`
    unless a valid delegation certificate names another signer. The implementation
    enforces that rule, rejects non-null `delegation`, and the reply fallback only
