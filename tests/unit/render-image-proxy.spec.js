@@ -5,6 +5,7 @@ import { DEFAULT_IMAGE_PROXY, setImageProxyMode } from '../../src/services/image
 
 const BODY = '![photo](https://files.peakd.com/file/peakd-hive/alice/photo.jpg)'
 const RAW_GITHUB_BODY = '![about](https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/master/docs/screenshots/devlog/2026-11-27-devlog/01-about-mark.png)'
+const UNKNOWN_HOST_BODY = '![photo](https://cdn.example.com/photo.png)'
 
 async function renderBody (body) {
   const wrapper = mount(Render, {
@@ -35,6 +36,14 @@ describe('render image proxy', () => {
     const html = wrapper.html()
     expect(html).toContain('https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/')
     expect(html).not.toContain('images.hive.blog/p/')
+  })
+
+  it('keeps other unknown hosts on the Hive proxy', async () => {
+    setImageProxyMode('hive')
+    const wrapper = await renderBody(UNKNOWN_HOST_BODY)
+    const html = wrapper.html()
+    expect(html).toContain('https://images.hive.blog/p/')
+    expect(html).not.toContain('https://cdn.example.com/photo.png')
   })
 
   it('keeps the Ecency transform and its AVIF/WebP sources when selected', async () => {

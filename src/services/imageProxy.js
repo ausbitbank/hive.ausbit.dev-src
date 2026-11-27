@@ -19,7 +19,7 @@ export const IMAGE_PROXY_OPTIONS = [
   {
     value: IMAGE_PROXY_HIVE,
     label: 'images.hive.blog',
-    hint: 'Resized copies from the Hive image host. Works for Hive, PeakD, Ecency and most public image hosts.'
+    hint: 'Resized copies from the Hive image host for known Hive hosts. GitHub raw images load directly; other unknown hosts may not load.'
   },
   {
     value: IMAGE_PROXY_ECENCY,
@@ -38,8 +38,8 @@ export const IMAGE_PROXY_BASES = {
   [IMAGE_PROXY_ECENCY]: 'https://i.ecency.com'
 }
 
-// Hosts the Hive image host is known to resize for us. Unknown hosts are left
-// alone so a broken proxy cannot replace an image that would otherwise load.
+// Hosts the Hive image host is known to resize for us. Other hosts stay on the
+// proxy so the original host does not see the reader's IP.
 export const PROXY_SOURCE_HOSTS = [
   'images.hive.blog',
   'files.peakd.com',
@@ -49,6 +49,12 @@ export const PROXY_SOURCE_HOSTS = [
   'steemitimages.com',
   'images.3speak.tv'
 ]
+
+// The one non-Hive source we deliberately load directly: GitHub raw URLs are
+// used by the devlog pipeline and the Hive image host returns 403 for them.
+export const DIRECT_FALLBACK_HOSTS = new Set([
+  'raw.githubusercontent.com'
+])
 
 // Hosts whose images are already sized/processed by the host itself.
 export const SHORT_FORM_DIRECT_HOSTS = [
@@ -180,12 +186,12 @@ export function rewriteProxiedImageUrl (url, mode = currentMode) {
   const decoded = decodeProxiedImageUrl(url)
   if (normalized === IMAGE_PROXY_HIVE && decoded !== url) {
     const source = parseUrl(decoded)
-    // The Hive image host returns 403 for query-string sources and for hosts
-    // it does not know how to fetch. Load those from the origin instead of
-    // replacing a working image with a broken proxy.
-    if (!source || !PROXY_SOURCE_HOSTS.includes(source.hostname) || decoded.includes('?')) {
-      return decoded
-    }
+    // The Hive image host returns 403 for query-string sources. Load those
+    // from the origin rather than replacing a working image with a broken
+    // proxy. GitHub raw is the one unknown host we load directly; every other
+    // unknown host stays proxied so its origin does not see the reader's IP.
+    if (!source || decoded.includes('?')) return decoded
+    if (DIRECT_FALLBACK_HOSTS.has(source.hostname)) return decoded
   }
   return retargetProxied(url, normalized)
 }
