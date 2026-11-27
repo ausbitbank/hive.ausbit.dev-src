@@ -637,3 +637,28 @@ export function summarizeSubscribers (subscribers, { now = Date.now() } = {}) {
     currency: currencies.size === 1 ? [...currencies][0] : 'HBD'
   }
 }
+
+/**
+ * Human renewal label derived from the on-chain recurrence, never from a
+ * hard-coded "monthly" assumption.
+ */
+export function vaultRecurrenceLabel (hours) {
+  const value = Number(hours)
+  if (!Number.isFinite(value) || value <= 0) return 'period'
+  if (value === 24) return 'day'
+  if (value === 48) return '2 days'
+  if (value === 168) return 'week'
+  if (value === 720 || value === 730 || value === 744) return 'month'
+  if (value === 8760) return 'year'
+  if (value % 24 === 0) {
+    const days = value / 24
+    return days + ' days'
+  }
+  return value + ' hours'
+}
+
+/** `every day`, `every 30 days`, etc. */
+export function vaultRecurrencePhrase (hours) {
+  const label = vaultRecurrenceLabel(hours)
+  return label === 'period' ? 'each period' : 'every ' + label
+}

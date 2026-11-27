@@ -12,6 +12,8 @@ import {
   subscriptionExpiry,
   summarizeSubscribers,
   VAULT_CANCEL_MATCHING,
+  vaultRecurrenceLabel,
+  vaultRecurrencePhrase,
   verifyVaultPayment
 } from '../../src/services/vaultPayments'
 
@@ -433,5 +435,18 @@ describe('date and subscriber helpers', () => {
       mrr: 5,
       currency: 'HBD'
     })
+  })
+})
+
+describe('vault recurrence copy', () => {
+  it('derives day/week/month/year labels from the on-chain hours', () => {
+    expect(vaultRecurrenceLabel(24)).toBe('day')
+    expect(vaultRecurrenceLabel(48)).toBe('2 days')
+    expect(vaultRecurrenceLabel(168)).toBe('week')
+    expect(vaultRecurrenceLabel(730)).toBe('month')
+    expect(vaultRecurrenceLabel(8760)).toBe('year')
+    expect(vaultRecurrenceLabel(36)).toBe('36 hours')
+    expect(vaultRecurrencePhrase(24)).toBe('every day')
+    expect(vaultRecurrencePhrase(730)).toBe('every month')
   })
 })

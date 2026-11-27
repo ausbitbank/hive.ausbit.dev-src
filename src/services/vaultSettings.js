@@ -30,7 +30,8 @@ const BULLETIN_RE = /^vault-\d{4}-(?:0[1-9]|1[0-2])-\d+$/
 const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/
 const VAULT_KEYS = [
   'v', 'enabled', 'product', 'container', 'bulletin', 'price', 'period',
-  'recurrence', 'executions', 'archive', 'watermark', 'updatedAt'
+  'recurrence', 'executions', 'archive', 'watermark',
+  'productTitle', 'productDescription', 'benefits', 'updatedAt'
 ]
 const BULLETIN_KEYS = ['author', 'permlink']
 
@@ -39,6 +40,9 @@ const BULLETIN_KEYS = ['author', 'permlink']
 // own message so a client mistake is obvious.
 const PRIVATE_KEY_RE = /^(?:private|secret|seed|mnemonic|passphrase|password|wif|privkey|private_key|secret_key|api_key|access_token|refresh_token|token|keys?)$/i
 const WIF_RE = /^(?:5[HJK][1-9A-HJ-NP-Za-km-z]{49}|[KL][1-9A-HJ-NP-Za-km-z]{50,51}|PVT_[A-Za-z0-9]+)$/
+// eslint-disable-next-line no-control-regex
+const CONTROL_RE = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/
+const BIDI_RE = /[\u202a-\u202e\u2066-\u2069]/
 
 function isPlainObject (value) {
   return Boolean(value) &&
@@ -124,8 +128,57 @@ export function defaultVaultSettings (_account = null) {
     executions: VAULT_DEFAULT_EXECUTIONS,
     archive: 'all',
     watermark: true,
+    productTitle: '',
+    productDescription: '',
+    benefits: [],
     updatedAt: ''
   }
+}
+
+function productCopy (value, path, max, errors, { multiline = false } = {}) {
+  if (value === undefined || value === null || value === '') return ''
+  if (typeof value !== 'string') {
+    errors.push(path + ' must be a string')
+    return ''
+  }
+  const text = value.trim()
+  if (text.length > max) {
+    errors.push(path + ' must be ' + max + ' characters or fewer')
+    return text.slice(0, max)
+  }
+  if (/[<>]/.test(text) || CONTROL_RE.test(text.replace(multiline ? /\n/g : /$^/, '')) || BIDI_RE.test(text)) {
+    errors.push(path + ' must be plain text' + (multiline ? ' with no HTML' : ''))
+    return ''
+  }
+  return text
+}
+
+function normalizeBenefits (value, errors) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) {
+    errors.push('vault.benefits must be an array of short strings')
+    return []
+  }
+  if (value.length > 6) errors.push('vault.benefits supports at most 6 items')
+  const out = []
+  for (const item of value.slice(0, 6)) {
+    if (typeof item !== 'string') {
+      errors.push('vault.benefits must contain only strings')
+      continue
+    }
+    const text = item.trim()
+    if (!text) continue
+    if (text.length > 80) {
+      errors.push('vault.benefits items must be 80 characters or fewer')
+      continue
+    }
+    if (/[<>]/.test(text) || CONTROL_RE.test(text) || BIDI_RE.test(text)) {
+      errors.push('vault.benefits items must be plain text')
+      continue
+    }
+    if (!out.includes(text)) out.push(text)
+  }
+  return out
 }
 
 function privateMaterialPaths (value, path = 'vault', seen = new Set()) {
@@ -322,6 +375,10 @@ export function normalizeVaultSettings (input, options = {}) {
     }
   }
 
+  const productTitle = productCopy(input.productTitle, 'vault.productTitle', 80, errors)
+  const productDescription = productCopy(input.productDescription, 'vault.productDescription', 600, errors, { multiline: true })
+  const benefits = normalizeBenefits(input.benefits, errors)
+
   const watermark = input.watermark !== false
   if (input.watermark !== undefined && typeof input.watermark !== 'boolean') {
     errors.push('vault.watermark must be a boolean')
@@ -360,6 +417,9 @@ export function normalizeVaultSettings (input, options = {}) {
     executions,
     archive,
     watermark,
+    productTitle,
+    productDescription,
+    benefits,
     updatedAt
   }
 

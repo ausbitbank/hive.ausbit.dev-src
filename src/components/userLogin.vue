@@ -896,6 +896,7 @@ export default {
         { title: 'Feed', icon: 'rss_feed', to: this.linkFeed(user) },
         { title: 'Blog', icon: 'menu_book', to: this.linkBlog(user) },
         { title: 'Blog settings', icon: 'web', to: '/settings/blog?account=' + user },
+        { title: 'Vault dashboard', icon: 'lock', to: '/settings/blog/vault?account=' + user },
         { title: 'Posts', icon: 'library_books', to: this.linkPosts(user) },
         { title: 'Communities', icon: 'forum', to: this.linkCommunities(user) },
         { title: 'Replies', icon: 'comment', to: this.linkReplies(user) },

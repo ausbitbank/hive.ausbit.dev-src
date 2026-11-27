@@ -102,7 +102,7 @@
           </div>
           <p v-if="planError" class="vault-error" role="alert">{{ planError }}</p>
           <p v-else-if="plan" class="vault-muted">
-            Plan @{{ plan.author }} · {{ plan.priceLabel }} every {{ plan.recurrence }} hours · {{ plan.executions }} payments.
+            Plan @{{ plan.author }} · {{ plan.priceLabel }} {{ recurrencePhrase }} · {{ plan.executions }} payments.
           </p>
         </section>
 
@@ -134,6 +134,21 @@
             </q-card-section>
           </q-card>
         </section>
+
+        <q-banner v-if="pendingCount" rounded class="vault-banner vault-banner--pending">
+          <template #avatar><q-icon name="notifications_active" /></template>
+          <strong>{{ pendingCount }}</strong>
+          {{ pendingCount === 1 ? 'subscriber needs' : 'subscribers need' }} a grant.
+          <q-btn
+            flat
+            no-caps
+            color="primary"
+            label="Select pending & issue"
+            :disable="!vault || !isOwner || !plan || busy === 'issue'"
+            :loading="busy === 'issue'"
+            @click="issuePending"
+          />
+        </q-banner>
 
         <section aria-labelledby="vault-subscribers-title">
           <h2 id="vault-subscribers-title" class="vault-section-title">Subscribers</h2>
@@ -483,6 +498,10 @@
   border-color: var(--c-warning);
 }
 
+.vault-banner--pending {
+  border-color: var(--c-primary);
+}
+
 .vault-section-title {
   margin: 1.6rem 0 0.6rem;
   font-size: 1.1rem;
@@ -711,7 +730,7 @@ import { readVaultSettings, vaultIsConfigured } from 'src/services/vaultSettings
 import { isValidHiveAccountName } from 'src/services/blogHost'
 import { formatOrderDate, parseProductRef } from 'src/services/shopOrders'
 import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
-import { collectVaultPayments, periodFor, summarizeSubscribers } from 'src/services/vaultPayments'
+import { collectVaultPayments, periodFor, summarizeSubscribers, vaultRecurrencePhrase } from 'src/services/vaultPayments'
 import {
   buildBulletinEntries,
   buildVaultBulletin,
@@ -833,6 +852,9 @@ export default {
     },
     pendingCount () {
       return this.rows.filter(row => row.pending).length
+    },
+    recurrencePhrase () {
+      return this.plan ? vaultRecurrencePhrase(this.plan.recurrence) : 'each period'
     },
     grantTargetCount () {
       return this.selected.length || this.rows.filter(row => row.active).length
@@ -1026,6 +1048,10 @@ export default {
       } finally {
         this.busy = ''
       }
+    },
+    async issuePending () {
+      this.selected = this.rows.filter(row => row.pending).map(row => row.readerKey)
+      await this.issueGrants()
     },
     selectForReissue (row) {
       if (!this.selected.includes(row.readerKey)) this.selected.push(row.readerKey)

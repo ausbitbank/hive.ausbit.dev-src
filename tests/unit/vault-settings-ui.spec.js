@@ -54,12 +54,11 @@ describe('Vault settings controls', () => {
     const wrapper = mountSettings(true)
     expect(wrapper.props('canEdit')).toBe(true)
     expect(wrapper.vm.busy).toBe('')
-    expect(button(wrapper, 'Publish membership product').props('disable')).toBe(false)
-    expect(button(wrapper, 'Publish grant container').props('disable')).toBe(false)
+    expect(button(wrapper, 'Publish product & container').props('disable')).toBe(false)
     expect(button(wrapper, 'Save Vault settings').props('disable')).toBe(false)
     const toggle = wrapper.findAllComponents(QToggle).find(item => item.props('label') === 'Enable members-only content')
     expect(toggle.props('disable')).toBe(false)
-    const price = wrapper.findAllComponents(QInput).find(item => item.props('label') === 'Price per month')
+    const price = wrapper.findAllComponents(QInput).find(item => item.props('label') === 'Price')
     expect(price.props('disable')).toBe(false)
 
     wrapper.vm.priceInput = '0.500'
@@ -70,7 +69,7 @@ describe('Vault settings controls', () => {
 
   it('keeps every action disabled for a read-only viewer', () => {
     const wrapper = mountSettings(false)
-    expect(button(wrapper, 'Publish membership product').props('disable')).toBe(true)
+    expect(button(wrapper, 'Publish product & container').props('disable')).toBe(true)
     expect(button(wrapper, 'Save Vault settings').props('disable')).toBe(true)
   })
 })

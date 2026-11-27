@@ -45,7 +45,11 @@ describe('buildVaultProductMetadata', () => {
         v: 1,
         plan: 'member',
         container: 'banksia-vault',
-        archive: 'all'
+        archive: 'all',
+        title: '',
+        description: '',
+        benefits: [],
+        executions: 12
       }
     })
     expect(metadata.id).toBeUndefined()
@@ -62,11 +66,31 @@ describe('buildVaultProductBody', () => {
   it('explains price, renewal, cancellation and direct payment', () => {
     const body = buildVaultProductBody(SETTINGS, { account: 'alice' })
     expect(body).toContain('5.000 HBD per month')
-    expect(body).toContain('12 monthly payments')
+    expect(body).toContain('12 payments every month')
     expect(body).toContain('cancel any time')
     expect(body).toContain('no escrow')
     expect(body).toContain('alice/membership')
     expect(body.length).toBeLessThan(4000)
+  })
+
+  it('uses the creator product title, description and benefits', () => {
+    const custom = {
+      ...SETTINGS,
+      productTitle: 'The Garden Letter',
+      productDescription: 'Essays, field notes and the full archive.',
+      benefits: ['Weekly essays', 'Full archive']
+    }
+    const body = buildVaultProductBody(custom, { account: 'alice' })
+    expect(body).toContain('# The Garden Letter')
+    expect(body).toContain('Essays, field notes and the full archive.')
+    expect(body).toContain('- Weekly essays')
+    expect(body).toContain('- Full archive')
+    expect(body).not.toContain('- Every members-only post published')
+    const op = buildVaultProductOperation({ account: 'alice', settings: custom })
+    expect(op[1].title).toBe('The Garden Letter')
+    const plan = deriveVaultPlan(postFrom(JSON.parse(op[1].json_metadata)))
+    expect(plan.description).toBe('Essays, field notes and the full archive.')
+    expect(plan.benefits).toEqual(['Weekly essays', 'Full archive'])
   })
 })
 
@@ -225,6 +249,8 @@ describe('deriveVaultPlan', () => {
       plan: 'member',
       container: 'banksia-vault',
       archive: 'all',
+      description: '',
+      benefits: [],
       title: 'Membership'
     })
   })

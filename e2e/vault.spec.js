@@ -44,6 +44,9 @@ const VAULT_SETTINGS = {
   executions: 12,
   archive: 'all',
   watermark: true,
+  productTitle: 'The Orchid Letter',
+  productDescription: 'Weekly orchid field notes and the full archive.',
+  benefits: ['Weekly orchid notes', 'Full archive'],
   updatedAt: '2026-11-27T09:00:00.000Z'
 }
 
@@ -144,8 +147,8 @@ async function makeVaultFixture ({ tamperCiphertext = false } = {}) {
   const productPost = {
     author: BLOG,
     permlink: 'membership',
-    title: 'Membership — @alice',
-    body: 'Support the blog and read every members-only post.',
+    title: VAULT_SETTINGS.productTitle,
+    body: 'Weekly orchid field notes and the full archive.',
     created: '2026-11-18T10:00:00',
     depth: 0,
     json_metadata: JSON.stringify({ ...productMetadata, app: 'banksia.io', format: 'markdown' })
@@ -491,13 +494,17 @@ test('subscribe queues exactly one active recurrent transfer with the public rea
   await mockHive(page, state)
 
   await page.goto('/subscribe?blog=alice&product=alice%2Fmembership', { waitUntil: 'domcontentloaded' })
-  await expect(page.locator('.subscribe-title')).toContainText('Membership')
+  await expect(page.locator('.subscribe-title')).toHaveText('The Orchid Letter')
+  await expect(page.locator('.subscribe-head')).toContainText('Weekly orchid field notes and the full archive.')
+  await expect(page.locator('.subscribe-benefits')).toContainText('Weekly orchid notes')
+  await expect(page.locator('.subscribe-benefits')).toContainText('Full archive')
   await expect(page.locator('.subscribe-price')).toHaveText(PRICE)
+  await expect(page.locator('.subscribe-plan .subscribe-muted')).toContainText('every month')
 
   await axeAtBothWidths(page, 'subscribe')
 
   await page.getByRole('checkbox').click()
-  const payButton = page.getByRole('button', { name: 'Queue monthly payment' })
+  const payButton = page.getByRole('button', { name: /Queue .*recurring payments/ })
   await expect(payButton).toBeEnabled()
   await payButton.click()
 

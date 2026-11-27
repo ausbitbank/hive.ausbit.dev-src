@@ -19,6 +19,7 @@ import {
 } from '../config/blog'
 import { isValidHiveAccountName } from './blogHost'
 import { formatVaultPrice, vaultPriceValue, vaultProductRef } from './vaultSettings'
+import { vaultRecurrenceLabel, vaultRecurrencePhrase } from './vaultPayments'
 
 export const VAULT_PRODUCT_CONTENT_TYPE = 'product'
 
@@ -129,6 +130,23 @@ function hasSubscription (value) {
  * @param {{ plan?: string }} [options]
  * @returns {object|null} null when the price is missing or invalid.
  */
+function cleanCopy (value, max) {
+  if (typeof value !== 'string') return ''
+  return value.trim().slice(0, max)
+}
+
+function cleanBenefits (value) {
+  if (!Array.isArray(value)) return []
+  const out = []
+  for (const item of value) {
+    if (typeof item !== 'string') continue
+    const text = item.trim()
+    if (text && text.length <= 80 && !/[<>]/.test(text) && !out.includes(text)) out.push(text)
+    if (out.length >= 6) break
+  }
+  return out
+}
+
 export function buildVaultProductMetadata (settings, { plan = 'member' } = {}) {
   const price = vaultPriceValue(settings && settings.price)
   if (price === null || price <= 0) return null
@@ -146,7 +164,11 @@ export function buildVaultProductMetadata (settings, { plan = 'member' } = {}) {
       v: 1,
       plan: cleanPlan(plan),
       container: cleanPermlink(settings && settings.container, VAULT_DEFAULT_CONTAINER),
-      archive: cleanArchive(settings && settings.archive)
+      archive: cleanArchive(settings && settings.archive),
+      title: cleanCopy(settings && settings.productTitle, 80),
+      description: cleanCopy(settings && settings.productDescription, 600),
+      benefits: cleanBenefits(settings && settings.benefits),
+      executions: cleanExecutions(settings && settings.executions)
     }
   }
 }
@@ -165,23 +187,35 @@ export function buildVaultProductBody (settings, { account = null } = {}) {
     (validOwner ? owner + '/' + VAULT_DEFAULT_PRODUCT_PERMLINK : '')
   const price = formatVaultPrice(settings && settings.price) || '5.000 HBD'
   const executions = cleanExecutions(settings && settings.executions)
+  const recurrence = cleanRecurrence(settings && settings.recurrence)
+  const recurrenceLabel = vaultRecurrenceLabel(recurrence)
+  const recurrencePhrase = vaultRecurrencePhrase(recurrence)
   const container = cleanPermlink(settings && settings.container, VAULT_DEFAULT_CONTAINER)
   const mention = validOwner ? '@' + owner : 'the creator'
+  const title = cleanCopy(settings && settings.productTitle, 80) || 'Membership'
+  const description = cleanCopy(settings && settings.productDescription, 600) ||
+    'Support ' + mention + ' and read every members-only post on this blog.'
+  const benefits = cleanBenefits(settings && settings.benefits)
+  const benefitLines = (benefits.length
+    ? benefits
+    : [
+        'Every members-only post published while your membership is active',
+        'The full members-only archive, including posts from before you joined',
+        'Text-only content in this first release (encrypted media is not promised)'
+      ]).map(item => '- ' + item)
 
   const body = [
-    '# Membership',
+    '# ' + title,
     '',
-    'Support ' + mention + ' and read every members-only post on this blog.',
+    description,
     '',
-    '**Price:** ' + price + ' per month',
-    '**Billing:** ' + executions + ' monthly payments, then it stops automatically.',
+    '**Price:** ' + price + ' per ' + recurrenceLabel,
+    '**Billing:** ' + executions + ' payments ' + recurrencePhrase + ', then it stops automatically.',
     '**Cancel:** cancel any time; access lasts until the paid period ends.',
     '',
     '## What is included',
     '',
-    '- Every members-only post published while your membership is active',
-    '- The full members-only archive, including posts from before you joined',
-    '- Text-only content in this first release (encrypted media is not promised)',
+    ...benefitLines,
     '',
     '## How payment works',
     '',
@@ -228,7 +262,7 @@ export function buildVaultProductOperation ({
     permlink: slug,
     title: typeof title === 'string' && title.trim()
       ? title.trim()
-      : 'Membership — @' + owner,
+      : (cleanCopy(settings && settings.productTitle, 80) || 'Membership — @' + owner),
     body,
     json_metadata: JSON.stringify({
       ...metadata,
@@ -310,6 +344,8 @@ export function parseVaultProduct (postOrMetadata) {
   let container = VAULT_DEFAULT_CONTAINER
   let archive = 'all'
   let executions = VAULT_DEFAULT_EXECUTIONS
+  let description = ''
+  let benefits = []
   if (isPlainObject(extension)) {
     if (extension.v !== undefined && extension.v !== 1) return null
     vaultMarked = true
@@ -317,6 +353,8 @@ export function parseVaultProduct (postOrMetadata) {
     container = cleanPermlink(extension.container, VAULT_DEFAULT_CONTAINER)
     archive = cleanArchive(extension.archive)
     executions = cleanExecutions(extension.executions)
+    description = cleanCopy(extension.description, 600)
+    benefits = cleanBenefits(extension.benefits)
   }
   if (!vaultMarked) {
     const marked = tags.some(tag => PRODUCT_TAGS.includes(tag.toLowerCase()))
@@ -345,6 +383,8 @@ export function parseVaultProduct (postOrMetadata) {
     plan,
     container,
     archive,
+    description,
+    benefits,
     status,
     tags
   }
@@ -399,6 +439,8 @@ export function deriveVaultPlan (post, { fallback = {} } = {}) {
     plan,
     container,
     archive,
+    description: product.description || '',
+    benefits: product.benefits || [],
     title: product.title || String(local.title || '')
   }
 }

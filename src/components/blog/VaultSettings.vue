@@ -49,7 +49,7 @@
           v-model="priceInput"
           outlined
           dense
-          label="Price per month"
+          label="Price"
           suffix="HBD"
           :disable="!canEdit || Boolean(busy)"
           :rules="[priceRule]"
@@ -91,9 +91,47 @@
         />
       </div>
 
+      <div class="vault-settings__grid vault-settings__grid--copy">
+        <q-input
+          :model-value="modelValue.productTitle"
+          outlined
+          dense
+          label="Product title"
+          maxlength="80"
+          counter
+          :disable="!canEdit || Boolean(busy)"
+          hint="Shown on the product and subscribe page."
+          @update:model-value="patch({ productTitle: $event })"
+        />
+        <q-input
+          :model-value="modelValue.productDescription"
+          type="textarea"
+          autogrow
+          outlined
+          dense
+          label="What members get"
+          maxlength="600"
+          counter
+          :disable="!canEdit || Boolean(busy)"
+          hint="A short description of the content people are paying for."
+          @update:model-value="patch({ productDescription: $event })"
+        />
+        <q-input
+          v-model="benefitsText"
+          type="textarea"
+          autogrow
+          outlined
+          dense
+          label="Benefits (one per line, up to 6)"
+          :disable="!canEdit || Boolean(busy)"
+          @blur="commitBenefits"
+        />
+      </div>
+
       <p class="blog-settings__hint">
-        The Hive Open Market product is the payment source of truth. The price here
-        is a display hint; editing it does not change an existing product post.
+        The Hive Open Market product is the payment source of truth. The price and
+        copy here are used when you publish or update the product post; changing
+        them later requires <strong>Update membership product</strong>.
       </p>
 
       <div v-if="modelValue.product" class="vault-settings__refs">
@@ -182,23 +220,36 @@
       </p>
       <div class="vault-settings__actions">
         <q-btn
-          outline
+          v-if="!modelValue.product"
+          unelevated
           no-caps
-          icon="storefront"
-          label="Publish membership product"
+          color="primary"
+          icon="rocket_launch"
+          label="Publish product & container"
           :loading="busy === 'product'"
           :disable="!canEdit || Boolean(busy)"
-          @click="publishProduct"
+          @click="publishSetup"
         />
-        <q-btn
-          outline
-          no-caps
-          icon="inventory_2"
-          label="Publish grant container"
-          :loading="busy === 'container'"
-          :disable="!canEdit || Boolean(busy)"
-          @click="publishContainer"
-        />
+        <template v-else>
+          <q-btn
+            outline
+            no-caps
+            icon="storefront"
+            :label="productButtonLabel"
+            :loading="busy === 'product'"
+            :disable="!canEdit || Boolean(busy)"
+            @click="publishProduct"
+          />
+          <q-btn
+            outline
+            no-caps
+            icon="inventory_2"
+            label="Publish grant container"
+            :loading="busy === 'container'"
+            :disable="!canEdit || Boolean(busy) || !modelValue.product"
+            @click="publishContainer"
+          />
+        </template>
         <q-btn
           flat
           no-caps
@@ -330,6 +381,7 @@ export default {
       passphrase: '',
       passphraseConfirm: '',
       priceInput: '',
+      benefitsText: '',
       busy: '',
       message: '',
       error: '',
@@ -357,15 +409,22 @@ export default {
     },
     maxBytes () {
       return Math.min(VAULT_MAX_BYTES, BLOG_MAX_BYTES)
+    },
+    productButtonLabel () {
+      return this.modelValue.product ? 'Update membership product' : 'Publish membership product'
     }
   },
   watch: {
     'modelValue.price' (value) {
       this.priceInput = typeof value === 'string' ? value : ''
+    },
+    'modelValue.benefits' (value) {
+      this.benefitsText = Array.isArray(value) ? value.join('\n') : ''
     }
   },
   created () {
     this.priceInput = this.modelValue.price || ''
+    this.benefitsText = Array.isArray(this.modelValue.benefits) ? this.modelValue.benefits.join('\n') : ''
   },
   methods: {
     patch (changes) {
@@ -386,6 +445,18 @@ export default {
     },
     priceRule (value) {
       return Boolean(formatVaultPrice(value)) || 'Use a price like 5.000 HBD'
+    },
+    benefitsFromText () {
+      return String(this.benefitsText || '')
+        .split('\n')
+        .map(item => item.trim().slice(0, 80))
+        .filter(Boolean)
+        .slice(0, 6)
+    },
+    commitBenefits () {
+      const benefits = this.benefitsFromText()
+      this.benefitsText = benefits.join('\n')
+      this.patch({ benefits })
     },
     async generateVault () {
       this.error = ''
@@ -468,7 +539,12 @@ export default {
       this.message = ''
       this.busy = 'product'
       try {
-        const settings = normalizeVaultSettings(this.modelValue, { account: this.account }).settings
+        const price = formatVaultPrice(this.priceInput) || this.modelValue.price
+        const settings = normalizeVaultSettings({
+          ...this.modelValue,
+          price,
+          benefits: this.benefitsFromText()
+        }, { account: this.account }).settings
         const operation = buildVaultProductOperation({
           account: this.accountName,
           settings,
@@ -478,11 +554,53 @@ export default {
         this.$emit('queue', operation)
         this.patch({
           enabled: true,
-          product: this.accountName + '/membership'
+          product: this.accountName + '/membership',
+          price,
+          benefits: this.benefitsFromText()
         })
-        this.message = 'Membership product queued. Sign it, then save the Vault settings.'
+        this.message = (this.modelValue.product ? 'Product update' : 'Membership product') +
+          ' queued. Sign it, then save the Vault settings.'
       } catch (err) {
         this.error = err?.message || 'The membership product could not be built.'
+      } finally {
+        this.busy = ''
+      }
+    },
+    async publishSetup () {
+      this.error = ''
+      this.message = ''
+      this.busy = 'product'
+      try {
+        const price = formatVaultPrice(this.priceInput) || this.modelValue.price
+        const settings = normalizeVaultSettings({
+          ...this.modelValue,
+          price,
+          benefits: this.benefitsFromText()
+        }, { account: this.account }).settings
+        const product = buildVaultProductOperation({
+          account: this.accountName,
+          settings,
+          permlink: 'membership'
+        })
+        if (!product) throw new Error('Set a valid price before publishing the product.')
+        const container = buildVaultContainerOperation({
+          account: this.accountName,
+          container: settings.container,
+          parentAuthor: this.accountName,
+          parentPermlink: 'membership'
+        })
+        if (!container) throw new Error('The container permlink is not valid.')
+        this.$emit('queue', product)
+        this.$emit('queue', container)
+        this.patch({
+          enabled: true,
+          product: this.accountName + '/membership',
+          price,
+          benefits: this.benefitsFromText()
+        })
+        this.message = 'Product and container queued. Approve both, then save the Vault settings.'
+      } catch (err) {
+        this.error = err?.message || 'The Vault setup could not be prepared.'
       } finally {
         this.busy = ''
       }

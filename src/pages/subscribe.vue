@@ -31,9 +31,7 @@
           <p class="subscribe-kicker">Banksia Vault membership</p>
           <h1 class="subscribe-title">{{ plan.title || 'Membership' }}</h1>
           <p class="subscribe-muted">
-            Support
-            <router-link :to="'/@' + plan.author">@{{ plan.author }}</router-link>
-            and read every members-only post on this blog.
+            {{ displayDescription }}
           </p>
         </header>
 
@@ -43,17 +41,14 @@
               <div>
                 <p class="subscribe-price">{{ plan.priceLabel }}</p>
                 <p class="subscribe-muted">
-                  Every {{ recurrenceLabel }} ({{ plan.recurrence }} hours), {{ plan.executions }} payments.
+                  {{ plan.priceLabel }} {{ recurrencePhrase }} · {{ plan.executions }} payments.
                 </p>
               </div>
               <span class="subscribe-badge">{{ plan.plan }}</span>
             </div>
 
             <ul class="subscribe-benefits">
-              <li>Members-only posts published while your membership is active</li>
-              <li>The members-only archive, including posts from before you joined</li>
-              <li>Cancel any time; access lasts until the paid period ends</li>
-              <li>Text-only content in this release; encrypted media is not promised</li>
+              <li v-for="benefit in displayBenefits" :key="benefit">{{ benefit }}</li>
             </ul>
 
             <q-banner rounded class="subscribe-banner">
@@ -93,7 +88,8 @@
               />
               <span>
                 I understand this is a recurring direct payment to @{{ plan.author }}
-                and that I can cancel it from my wallet or from
+                {{ recurrencePhrase }} for {{ plan.executions }} payments, and that
+                I can cancel it from my wallet or from
                 <router-link to="/subscriptions">/subscriptions</router-link>.
               </span>
             </label>
@@ -103,7 +99,7 @@
                 unelevated
                 no-caps
                 color="primary"
-                :label="paymentMode === 'once' ? 'Queue one-month payment' : 'Queue monthly payment'"
+                :label="payButtonLabel"
                 :disable="!canSubscribe || queued"
                 @click="pay"
               />
@@ -346,12 +342,14 @@
 import { setPageMeta } from 'src/utils/pageMeta'
 import { fetchPostContent } from 'src/services/chainData'
 import { isValidHiveAccountName } from 'src/services/blogHost'
-import { formatRecurrence, parseProductRef } from 'src/services/shopOrders'
+import { parseProductRef } from 'src/services/shopOrders'
 import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
 import {
   buildOneTimeTransferOperation,
   buildRecurrentTransferOperation,
-  buildVaultMemo
+  buildVaultMemo,
+  vaultRecurrenceLabel,
+  vaultRecurrencePhrase
 } from 'src/services/vaultPayments'
 import { base64UrlEncode, randomBytes, readerKeyThumbprint } from 'src/services/vaultCrypto'
 import { bulletinFromReplies } from 'src/services/vaultBulletin'
@@ -517,16 +515,35 @@ export default {
       return this.$hiveStore.user.username || ''
     },
     paymentModes () {
+      const executions = this.plan ? this.plan.executions : 12
       return [
-        { label: 'Monthly — ' + (this.plan ? this.plan.executions : 12) + ' payments', value: 'recurring' },
-        { label: 'One month', value: 'once' }
+        { label: 'Recurring — ' + executions + ' payments, ' + this.recurrencePhrase, value: 'recurring' },
+        { label: 'One payment (' + this.recurrenceLabel + ')', value: 'once' }
       ]
     },
     recurrenceLabel () {
-      if (!this.plan) return ''
-      const days = Math.round(Number(this.plan.recurrence) / 24)
-      const formatted = formatRecurrence(this.plan.recurrence)
-      return days === 30 ? '30 days' : (formatted || this.plan.recurrence + ' hours')
+      return this.plan ? vaultRecurrenceLabel(this.plan.recurrence) : 'period'
+    },
+    recurrencePhrase () {
+      return this.plan ? vaultRecurrencePhrase(this.plan.recurrence) : 'each period'
+    },
+    payButtonLabel () {
+      return this.paymentMode === 'once'
+        ? 'Queue one payment'
+        : 'Queue ' + (this.plan ? this.plan.executions : 12) + ' recurring payments'
+    },
+    displayDescription () {
+      if (this.plan && this.plan.description) return this.plan.description
+      return 'Support @' + (this.plan ? this.plan.author : '') + ' and read every members-only post on this blog.'
+    },
+    displayBenefits () {
+      if (this.plan && Array.isArray(this.plan.benefits) && this.plan.benefits.length) return this.plan.benefits
+      return [
+        'Members-only posts published while your membership is active',
+        'The members-only archive, including posts from before you joined',
+        'Cancel any time; access lasts until the paid period ends',
+        'Text-only content in this release; encrypted media is not promised'
+      ]
     },
     postPath () {
       if (!this.plan) return this.blog ? '/@' + this.blog : '/blogs'

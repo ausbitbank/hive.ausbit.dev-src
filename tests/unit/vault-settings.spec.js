@@ -35,6 +35,9 @@ const VALID_VAULT = {
   executions: 12,
   archive: 'all',
   watermark: true,
+  productTitle: 'Notes from the garden',
+  productDescription: 'Weekly essays, field notes and the full archive.',
+  benefits: ['Weekly essays', 'Full archive'],
   updatedAt: '2026-11-27T00:00:00.000Z'
 }
 
@@ -62,6 +65,9 @@ describe('vault settings defaults', () => {
       executions: 12,
       archive: 'all',
       watermark: true,
+      productTitle: '',
+      productDescription: '',
+      benefits: [],
       updatedAt: ''
     })
     expect(defaultVaultSettings({ name: 'alice' })).toEqual(defaultVaultSettings())
@@ -127,6 +133,31 @@ describe('normalizeVaultSettings', () => {
       expect(result.ok, String(executions)).toBe(false)
       expect(result.errors.join(' ')).toContain('vault.executions must be an integer between 2 and 120')
     }
+  })
+
+  it('normalises product copy and benefits', () => {
+    const result = normalizeVaultSettings({
+      ...VALID_VAULT,
+      productTitle: '  Garden notes  ',
+      productDescription: 'Essays and field notes.\nNew issue every week.',
+      benefits: [' Weekly essays ', 'Weekly essays', '', 'Full archive']
+    }, { now: NOW })
+    expect(result.ok).toBe(true)
+    expect(result.settings.productTitle).toBe('Garden notes')
+    expect(result.settings.productDescription).toContain('Essays and field notes.')
+    expect(result.settings.benefits).toEqual(['Weekly essays', 'Full archive'])
+  })
+
+  it('rejects HTML in product copy and too many benefits', () => {
+    const html = normalizeVaultSettings({ ...VALID_VAULT, productTitle: '<b>Hi</b>' }, { now: NOW })
+    expect(html.ok).toBe(false)
+    expect(html.errors.join(' ')).toContain('plain text')
+    const many = normalizeVaultSettings({
+      ...VALID_VAULT,
+      benefits: ['1','2','3','4','5','6','7']
+    }, { now: NOW })
+    expect(many.ok).toBe(false)
+    expect(many.errors.join(' ')).toContain('at most 6')
   })
 
   it('rejects an unknown archive policy and period', () => {

@@ -384,12 +384,12 @@ items remain.
 
 Deployed on 2026-11-27 from `master`:
 
-- Final SPA build stamp `20261127T145011Z-cdf7b7486501`; `./scripts/deploy.sh`
+- Final SPA build stamp `20261127T151816Z-4f88c2d92780`; `./scripts/deploy.sh`
   succeeded and `bun run verify:deploy` passed at the edge.
 - Final backup:
-  `hurgenburgen:~/banksia-backups/banksia.io-20261127T145021Z.tar.gz`
-  (sha256 `558dc11d4c6334ae90bf75781366138f7cc4209b9a1edcf8243fb64b54df26e4`).
-  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T145021Z.tar.gz`.
+  `hurgenburgen:~/banksia-backups/banksia.io-20261127T151820Z.tar.gz`
+  (sha256 `4a0430b9aaabc14ae81ad244341a283fe50449a649ba3d02afc361d5b74b18ee`).
+  Rollback: `./scripts/rollback.sh ~/banksia-backups/banksia.io-20261127T151820Z.tar.gz`.
 - `banksia-metadata` Worker deployed with `/subscribe*` and `/subscriptions*`
   routes; `/settings/blog*` covers the dashboard. Version
   `be3efd53-255a-4352-b27b-6625e3411703`.
@@ -398,6 +398,25 @@ Deployed on 2026-11-27 from `master`:
   served by the Worker shells; direct-origin requests without
   `Accept: text/html` still 404 on the three new apex paths. Apply the vhost on
   the next privileged session.
+
+### Post-release UX slice
+
+- Product authoring: `blog.vault` now carries `productTitle`,
+  `productDescription` and up to six `benefits`. The product post body, title
+  and metadata use them; the subscribe page renders the custom title,
+  description and benefit list. Re-publishing with **Update membership product**
+  edits the existing product post.
+- Renewal copy is derived from the on-chain recurrence, not hard-coded
+  "monthly": 24h reads "every day", 730h "every month", weekly/yearly likewise.
+  The subscribe payment modes, terms, CTA and dashboard plan line all use it.
+- One-click setup: with no product, **Publish product & container** queues the
+  product and the container reply together. The container no longer consumes a
+  root-post slot.
+- Creator notification: the account menu has a Vault dashboard link, and the
+  dashboard shows a prominent "N subscribers need a grant" banner with
+  **Select pending & issue**.
+- The price field keeps a local draft and commits on blur/Enter, so it no longer
+  snaps back while typing.
 
 ### Post-release UI fixes
 
