@@ -127,6 +127,34 @@ const PRODUCTS = [
   }
 ]
 
+const MEMBERSHIP_PRODUCT = {
+  author: 'alice',
+  permlink: 'membership',
+  title: 'The Orchid Letter',
+  body: 'Weekly orchid field notes and the full archive.',
+  created: '2026-11-16T10:00:00',
+  depth: 0,
+  json_metadata: JSON.stringify({
+    content_type: 'product',
+    version: 0.1,
+    currency: 'HIVE:HBD',
+    price: 5,
+    subscription: 1,
+    subscription_recurrence: 730,
+    status: 1,
+    tags: ['membership', 'vault'],
+    banksia_vault_product: {
+      v: 1,
+      plan: 'member',
+      container: 'banksia-vault',
+      archive: 'all',
+      executions: 12,
+      benefits: ['Weekly orchid notes', 'Full archive']
+    }
+  }),
+  stats: { total_votes: 1 }
+}
+
 const GLOBAL_PROPS = {
   head_block_number: 1,
   head_block_id: '0000000000000000000000000000000000000000',
@@ -387,6 +415,52 @@ test('product detail renders price, gallery and Product JSON-LD', async ({ page 
     }
   })
   await axeAtBothWidths(page, 'product detail')
+})
+
+test('shop routes Vault membership products to Subscribe', async ({ page }) => {
+  const account = accountWithBlog({
+    shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
+  })
+  await mockHive(page, { account, posts: [MEMBERSHIP_PRODUCT] })
+  await page.goto('http://alice.localhost:4173/shop', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.shop-item')).toHaveCount(1)
+  await expect(page.locator('.shop-item__membership')).toHaveText('Membership')
+  await expect(page.getByRole('link', { name: 'Subscribe (membership)' }))
+    .toHaveAttribute('href', 'https://banksia.io/subscribe?blog=alice&product=alice%2Fmembership')
+  await axeAtBothWidths(page, 'shop membership')
+})
+
+test('membership detail explains the reader-key flow and skips the cart', async ({ page }) => {
+  const account = accountWithBlog({
+    shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
+  })
+  await mockHive(page, { account, posts: [MEMBERSHIP_PRODUCT] })
+  await page.goto('http://alice.localhost:4173/shop/membership', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.product-title')).toHaveText('The Orchid Letter')
+  await expect(page.locator('.product-membership')).toContainText('reader key')
+  await expect(page.locator('.product-membership')).toContainText('Weekly orchid notes')
+  await expect(page.getByRole('link', { name: 'Subscribe to membership' }))
+    .toHaveAttribute('href', 'https://banksia.io/subscribe?blog=alice&product=alice%2Fmembership')
+  await expect(page.getByRole('button', { name: 'Add to cart' })).toHaveCount(0)
+  await axeAtBothWidths(page, 'membership detail')
+})
+
+test('legacy pay and cart checkout refuse a Vault membership', async ({ page }) => {
+  await loginAs(page, 'ausbitbank')
+  await mockHive(page, { posts: [MEMBERSHIP_PRODUCT] })
+
+  await page.goto('/pay?product=alice/membership&quantity=1', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.pay-title')).toHaveText('The Orchid Letter')
+  await expect(page.getByText('Subscribe on the membership page so your reader key', { exact: false })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Queue subscription' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Open membership page' }))
+    .toHaveAttribute('href', '/subscribe?blog=alice&product=alice%2Fmembership')
+
+  await page.goto('/checkout?items=alice%2Fmembership:1', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.checkout-errors')).toContainText('Banksia Vault membership')
+  await expect(page.locator('.checkout-line')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Queue/ })).toBeDisabled()
+  await axeAtBothWidths(page, 'membership checkout guard')
 })
 
 test('cart imports a product link and groups it by seller', async ({ page }) => {
