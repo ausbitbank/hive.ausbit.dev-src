@@ -13,6 +13,7 @@ import {
   productTotalLabel,
   purchaseMemo
 } from './blogShop'
+import { isMembershipProduct } from './shopMembership'
 
 export const CART_STORAGE_KEY = 'banksia:shop-cart'
 export const PURCHASES_STORAGE_KEY = 'banksia:shop-purchases'
@@ -195,6 +196,9 @@ export function buildCheckoutOperations (products, items, username, { executions
     if (!item) continue
     const product = catalog.get(cartItemKey(item))
     if (!product || !isPurchasable(product)) continue
+    // A Vault membership needs a reader key in the memo. Cart checkout cannot
+    // supply one, so it must use the apex Subscribe flow instead.
+    if (isMembershipProduct(product)) continue
     const operation = buildPaymentOperation(product, item.quantity, username, { executions })
     if (!operation) continue
     lines.push({
@@ -240,6 +244,10 @@ export function validateCheckout (products, items, username) {
     const product = catalog.get(key)
     if (!product) {
       errors.push('@' + key + ' could not be loaded from Hive.')
+      continue
+    }
+    if (isMembershipProduct(product)) {
+      errors.push('@' + key + ' is a Banksia Vault membership. Use the Subscribe page so your reader key can be attached.')
       continue
     }
     if (!isSupportedProduct(product)) {

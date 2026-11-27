@@ -56,7 +56,7 @@
             />
           </div>
 
-          <div class="pay-total">
+          <div v-if="!membership" class="pay-total">
             <span>Total per payment</span>
             <strong>{{ totalLabel }}</strong>
           </div>
@@ -68,12 +68,19 @@
             signing.
           </q-banner>
 
+          <q-banner v-if="membership" rounded class="pay-banner">
+            <template #avatar><q-icon name="lock" /></template>
+            This is a Banksia Vault membership. Subscribe on the membership page
+            so your reader key is attached to the payment memo; a plain transfer
+            cannot unlock the content.
+          </q-banner>
+
           <q-banner v-if="!loggedInUser" rounded class="pay-banner">
             <template #avatar><q-icon name="login" /></template>
             Sign in from the top bar to pay.
           </q-banner>
 
-          <q-banner v-if="!canPurchase" rounded class="pay-banner pay-banner--warning">
+          <q-banner v-if="!canPurchase && !membership" rounded class="pay-banner pay-banner--warning">
             <template #avatar><q-icon name="block" /></template>
             {{ unavailableReason }}
           </q-banner>
@@ -85,6 +92,15 @@
 
           <div class="pay-actions">
             <q-btn
+              v-if="membership"
+              unelevated
+              no-caps
+              color="primary"
+              label="Open membership page"
+              :to="membershipPath"
+            />
+            <q-btn
+              v-else
               unelevated
               no-caps
               color="primary"
@@ -95,7 +111,7 @@
             <q-btn flat no-caps label="Read product post" :href="postUrl" />
           </div>
 
-          <p class="pay-memo">
+          <p v-if="!membership" class="pay-memo">
             <strong>Memo</strong>
             <code>{{ memo }}</code>
           </p>
@@ -282,6 +298,7 @@ import {
   parseProductMetadata
 } from 'src/services/blogShop'
 import { buildPaymentOperation } from 'src/services/shopCart'
+import { membershipFromProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
 
 export default {
   name: 'PayPage',
@@ -305,11 +322,18 @@ export default {
       return this.operation ? this.operation[1].memo : ''
     },
     operation () {
-      if (!this.product) return null
+      if (!this.product || this.membership) return null
       return buildPaymentOperation(this.product, this.quantity, this.loggedInUser, { executions: 12 })
+    },
+    membership () {
+      return membershipFromProduct(this.product)
+    },
+    membershipPath () {
+      return membershipSubscribeUrl(this.product)
     },
     canPurchase () {
       return Boolean(
+        !this.membership &&
         this.loggedInUser &&
         this.product &&
         isPurchasable(this.product) &&
@@ -319,6 +343,7 @@ export default {
     },
     unavailableReason () {
       if (!this.product) return ''
+      if (this.membership) return 'This is a Banksia Vault membership. Use the membership page to subscribe with your reader key.'
       if (!isSupportedProduct(this.product)) return 'This product uses a currency Banksia does not support yet.'
       if (this.product.status !== 1) return 'This product is ' + this.product.statusLabel.toLowerCase() + '.'
       if (Number(this.quantity) < 1 || Number(this.quantity) > 99) return 'Quantity must be between 1 and 99.'
@@ -363,7 +388,7 @@ export default {
       }
     },
     pay () {
-      if (!this.canPurchase) return
+      if (!this.canPurchase || this.membership) return
       const user = this.loggedInUser
       const operation = buildPaymentOperation(this.product, this.quantity, user, { executions: 12 })
       if (!operation) return

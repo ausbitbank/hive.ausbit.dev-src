@@ -75,6 +75,10 @@
             <span aria-hidden="true">·</span>
             <time :datetime="product.created">{{ dateLabel }}</time>
           </template>
+          <template v-if="membership">
+            <span aria-hidden="true">·</span>
+            <span class="product-membership-badge">Membership</span>
+          </template>
         </p>
 
         <p class="product-seller">
@@ -93,15 +97,15 @@
       <div class="product-actions">
         <a
           v-if="purchasable"
-          :href="payUrl"
+          :href="ctaUrl"
           class="product-buy"
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ product.subscription ? 'Subscribe (' + recurrenceLabel(product) + ')' : 'Buy on Banksia' }}
+          {{ ctaLabel }}
         </a>
 
-        <div v-if="purchasable" class="product-cart">
+        <div v-if="purchasable && !membership" class="product-cart">
           <template v-if="!product.subscription">
             <label class="product-cart__label" for="product-quantity">Quantity</label>
             <input
@@ -129,6 +133,22 @@
           {{ unavailableReason }}
         </p>
       </div>
+
+      <section v-if="membership" class="product-membership" aria-label="Membership details">
+        <h2 class="product-description__title">Membership</h2>
+        <p class="product-membership__note">
+          This is a Banksia Vault membership. Subscribe on banksia.io so your
+          reader key can be attached to the payment memo and the creator can
+          issue your access grant. Cart checkout is not used for memberships.
+        </p>
+        <ul v-if="membership.benefits.length" class="product-membership__list">
+          <li v-for="benefit in membership.benefits" :key="benefit">{{ benefit }}</li>
+        </ul>
+        <p class="product-membership__note">
+          Billing: {{ product.priceLabel }} every {{ membership.recurrenceHours }} hours.
+          Cancel from <a href="https://banksia.io/subscriptions">your subscriptions</a>.
+        </p>
+      </section>
 
       <section class="product-description" aria-label="Product description">
         <h2 class="product-description__title">Description</h2>
@@ -392,6 +412,38 @@
   line-height: 1.5;
 }
 
+.product-membership {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--c-primary);
+  border-radius: var(--skin-radius-card, 12px);
+  background: var(--c-surface);
+}
+
+.product-membership__note {
+  margin: 0.35rem 0 0;
+  color: var(--c-text-muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.product-membership__note a {
+  color: var(--c-link);
+}
+
+.product-membership__list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--c-text);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.product-membership-badge {
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
 .product-description {
   margin: 1.5rem 0 0;
 }
@@ -497,6 +549,7 @@ import { normalizeProduct, productJsonLd } from 'src/services/hiveMarket'
 import { blogProductPath, parseProductRoute } from 'src/services/blogProductPath'
 import { blogPostExcerpt, formatBlogDate } from 'src/services/blogPosts'
 import { PURCHASES_STORAGE_KEY, serializeCheckoutItems } from 'src/services/shopCart'
+import { membershipFromProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
 import { useBlogStore } from 'src/stores/blog'
 import { useCartStore } from 'src/stores/cart'
 
@@ -579,6 +632,12 @@ export default {
     sellerUrl () {
       return this.product ? 'https://banksia.io/@' + this.product.author : 'https://banksia.io'
     },
+    membership () {
+      return membershipFromProduct(this.product)
+    },
+    membershipUrl () {
+      return membershipSubscribeUrl(this.product, { absolute: true })
+    },
     purchasable () {
       return isPurchasable(this.product)
     },
@@ -596,6 +655,15 @@ export default {
       if (!this.product) return 'https://banksia.io/pay'
       const reference = encodeURIComponent(this.product.author + '/' + this.product.permlink)
       return 'https://banksia.io/pay?product=' + reference + '&quantity=1'
+    },
+    ctaUrl () {
+      return this.membership ? this.membershipUrl : this.payUrl
+    },
+    ctaLabel () {
+      if (this.membership) return 'Subscribe to membership'
+      return this.product && this.product.subscription
+        ? 'Subscribe (' + recurrenceLabel(this.product) + ')'
+        : 'Buy on Banksia'
     },
     path () {
       if (!this.product) return '/shop'

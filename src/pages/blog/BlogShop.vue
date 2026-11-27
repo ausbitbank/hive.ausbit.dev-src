@@ -118,6 +118,10 @@
                 <span aria-hidden="true">·</span>
                 <span>Recurring {{ recurrenceLabel(product) }}</span>
               </template>
+              <template v-if="isMembership(product)">
+                <span aria-hidden="true">·</span>
+                <span class="shop-item__membership">Membership</span>
+              </template>
             </p>
             <ul v-if="product.tags && product.tags.length" class="shop-item__tags" aria-label="Product tags">
               <li v-for="tag in product.tags" :key="tag">#{{ tag }}</li>
@@ -125,7 +129,7 @@
             <div class="shop-item__actions">
               <a
                 v-if="isPurchasable(product)"
-                :href="payUrl(product)"
+                :href="buyUrl(product)"
                 class="shop-item__buy"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -416,6 +420,11 @@
 .shop-item__status--2 { color: var(--c-text-muted); }
 .shop-item__status--3 { color: var(--c-warning); }
 
+.shop-item__membership {
+  color: var(--c-primary);
+  font-weight: 700;
+}
+
 .shop-item__tags {
   display: flex;
   flex-wrap: wrap;
@@ -544,6 +553,7 @@ import { setPageMeta } from 'src/utils/pageMeta'
 import { isPurchasable } from 'src/services/blogShop'
 import { listProducts } from 'src/services/hiveMarket'
 import { blogProductPath } from 'src/services/blogProductPath'
+import { isMembershipProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
 import { useBlogStore } from 'src/stores/blog'
 
 const PAGE_SIZE = 24
@@ -816,8 +826,18 @@ export default {
       const reference = encodeURIComponent(product.author + '/' + product.permlink)
       return 'https://banksia.io/pay?product=' + reference + '&quantity=1'
     },
+    isMembership (product) {
+      return isMembershipProduct(product)
+    },
+    membershipUrl (product) {
+      return membershipSubscribeUrl(product, { absolute: true })
+    },
+    buyUrl (product) {
+      return this.isMembership(product) ? this.membershipUrl(product) : this.payUrl(product)
+    },
     recurrenceLabel,
     buyLabel (product) {
+      if (this.isMembership(product)) return 'Subscribe (membership)'
       if (!product.subscription) return 'Buy on Banksia'
       return 'Subscribe (' + recurrenceLabel(product) + ')'
     },

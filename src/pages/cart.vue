@@ -94,6 +94,11 @@
                   are limited to one per line; the renewal count is chosen at checkout.
                 </p>
                 <p v-if="line.error" class="cart-line__error" role="alert">{{ line.error }}</p>
+                <p v-if="line.product && isMembership(line.product)" class="cart-line__hint">
+                  This is a Banksia Vault membership.
+                  <a :href="membershipUrl(line.product)">Subscribe on the membership page</a>
+                  instead of using cart checkout.
+                </p>
 
                 <div v-if="line.product" class="cart-line__controls">
                   <template v-if="!line.product.subscription">
@@ -161,8 +166,21 @@
             </p>
           </div>
 
+          <div v-if="hasMembership" class="cart-banner cart-banner--warning" role="status">
+            <q-icon name="warning" size="18px" aria-hidden="true" />
+            Remove membership products from the cart and use their Subscribe
+            link so the reader key is attached to the payment.
+          </div>
+
           <div class="cart-actions">
-            <q-btn unelevated no-caps color="primary" label="Checkout" :to="checkoutLink" />
+            <q-btn
+              unelevated
+              no-caps
+              color="primary"
+              label="Checkout"
+              :to="checkoutLink"
+              :disable="hasMembership"
+            />
             <q-btn flat no-caps label="Continue shopping" to="/blogs" />
             <q-btn flat no-caps color="negative" label="Clear cart" @click="confirmClear" />
           </div>
@@ -334,6 +352,17 @@
   margin-left: 0.3rem;
 }
 
+.cart-line__hint {
+  margin: 0.35rem 0 0;
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.cart-line__hint a {
+  color: var(--c-link);
+}
+
 .cart-line__error {
   margin: 0.35rem 0 0;
   color: var(--c-warning);
@@ -451,6 +480,7 @@ import { normalizeProduct } from 'src/services/hiveMarket'
 import { blogBaseUrl } from 'src/services/blogHost'
 import { parseProductMetadata, productTotalLabel } from 'src/services/blogShop'
 import { checkoutUrl, parseCheckoutItems, totalsByTicker } from 'src/services/shopCart'
+import { isMembershipProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
 import { MAX_CART_QUANTITY, useCartStore } from 'src/stores/cart'
 import { BLOG_MAX_CART_ITEMS } from 'src/config/blog'
 
@@ -501,6 +531,9 @@ export default {
     },
     productErrorsVisible () {
       return this.lines.some(line => line.error)
+    },
+    hasMembership () {
+      return this.lines.some(line => line.product && isMembershipProduct(line.product))
     },
     checkoutLink () {
       return checkoutUrl(this.items)
@@ -574,6 +607,12 @@ export default {
     productPath (line) {
       if (!line.product) return ''
       return blogBaseUrl(line.product.author) + '/@' + line.product.author + '/' + line.product.permlink
+    },
+    isMembership (product) {
+      return isMembershipProduct(product)
+    },
+    membershipUrl (product) {
+      return membershipSubscribeUrl(product, { absolute: true })
     },
     setQuantity (line, quantity) {
       this.cart.setQuantity(line.key, quantity)
