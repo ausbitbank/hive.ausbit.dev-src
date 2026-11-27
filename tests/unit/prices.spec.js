@@ -126,4 +126,22 @@ describe('getHivePrices', () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(1)
     expect(results.every(value => value === results[0])).toBe(true)
   })
+
+  it('shares one market-chart request between concurrent callers', async () => {
+    globalThis.fetch.mockResolvedValue(coinGeckoResponse({
+      prices: [[1_700_000_000_000, 0.4], [1_700_086_400_000, 0.5]]
+    }))
+
+    const { getHivePriceHistory, resetPriceHistoryCache } = await import('../../src/services/prices')
+    resetPriceHistoryCache()
+    const [first, second, third] = await Promise.all([
+      getHivePriceHistory({ days: 30 }),
+      getHivePriceHistory({ days: 30 }),
+      getHivePriceHistory({ days: 30 })
+    ])
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+    expect(first).toBe(second)
+    expect(second).toBe(third)
+    expect(first.points).toHaveLength(2)
+  })
 })

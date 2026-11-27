@@ -62,6 +62,7 @@ export function resetHivePricesCache () {
 const CHART_TTL = 10 * 60 * 1000
 const CHART_DAYS = [7, 30, 90]
 const chartCache = new Map()
+const chartInflight = new Map()
 
 /** Clamp a requested history window to a CoinGecko daily bucket. */
 export function normaliseChartDays (days) {
@@ -97,27 +98,34 @@ export async function getHivePriceHistory ({ days = 30, force = false } = {}) {
   const windowDays = normaliseChartDays(days)
   const cached = chartCache.get(windowDays)
   if (!force && cached && Date.now() - cached.at < CHART_TTL) return cached.value
+  if (chartInflight.has(windowDays)) return chartInflight.get(windowDays)
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 8000)
-  try {
-    const res = await fetch(
-      'https://api.coingecko.com/api/v3/coins/hive/market_chart?vs_currency=usd&days=' +
-        encodeURIComponent(windowDays),
-      { signal: controller.signal }
-    )
-    if (!res.ok) throw new Error('CoinGecko HTTP ' + res.status)
-    const points = normaliseMarketChart(await res.json())
-    if (points.length < 2) throw new Error('CoinGecko returned no usable history')
-    const value = { days: windowDays, points, source: 'coingecko' }
-    chartCache.set(windowDays, { at: Date.now(), value })
-    return value
-  } finally {
-    clearTimeout(timeout)
-  }
+  const promise = (async () => {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+    try {
+      const res = await fetch(
+        'https://api.coingecko.com/api/v3/coins/hive/market_chart?vs_currency=usd&days=' +
+          encodeURIComponent(windowDays),
+        { signal: controller.signal }
+      )
+      if (!res.ok) throw new Error('CoinGecko HTTP ' + res.status)
+      const points = normaliseMarketChart(await res.json())
+      if (points.length < 2) throw new Error('CoinGecko returned no usable history')
+      const value = { days: windowDays, points, source: 'coingecko' }
+      chartCache.set(windowDays, { at: Date.now(), value })
+      return value
+    } finally {
+      clearTimeout(timeout)
+    }
+  })().finally(() => { chartInflight.delete(windowDays) })
+
+  chartInflight.set(windowDays, promise)
+  return promise
 }
 
 /** Test helper: drop the memoised chart cache. */
 export function resetPriceHistoryCache () {
   chartCache.clear()
+  chartInflight.clear()
 }
