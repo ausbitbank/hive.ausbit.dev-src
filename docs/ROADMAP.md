@@ -17,11 +17,11 @@ principles that constrain it. Delivered work and its verification records live i
   profile metadata editor with image uploads (W83), and account blogs on
   `*.banksia.io` (W84).
 - W84 is deployed for public previews: `*.banksia.io` resolves, the
-  `banksia-metadata` Worker proxies the apex shell and serves blog metadata and
-  RSS, and the new SPA is live. A real posting-key claim smoke, premium
-  entitlements and custom domains remain.
+  `banksia-metadata` Worker proxies the apex shell and serves blog metadata,
+  RSS, sitemap and robots, and the new SPA is live. A real claim has been
+  tested and works; premium entitlements and custom domains remain.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,652 tests across 190 files.
+  with 1,654 tests across 190 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W85**.
@@ -173,10 +173,8 @@ Record: [`W82`](workstreams/W82-account-creation.md).
 ### 8. Blog hosting follow-ups — W84
 
 The free account blog at `<account>.banksia.io` is deployed for public
-previews. Remaining work:
+previews, and the claim flow is verified. Remaining work:
 
-- Run one real claim/update with Keychain, HiveAuth and SmartLock and confirm
-  the subdomain changes after the queue broadcasts.
 - Premium entitlements: recurring HBD (`recurrent_transfer`), HP delegation or
   prepaid terms, plus premium themes. Verify entitlement from chain state;
   never trust a `claimed` or tier field in user-writable metadata.

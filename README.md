@@ -98,7 +98,8 @@ searches live in your browser.
 | Route | What it does |
 | --- | --- |
 | `/@:author/:permlink` | Content-first post page, comments, replies and a native markdown composer |
-| `username.banksia.io` | Account blog: a clean reading surface for one account, a contributor list or a community, with Paper/Studio/Terminal themes (or the profile skin), pinned posts, RSS and OG cards. It ships no explorer chrome and needs no account to read. |
+| `username.banksia.io` | Account blog: a clean reading surface for one account, a contributor list or a community, with Paper/Studio/Terminal themes (or the profile skin), pinned posts, RSS, sitemap, robots and OG cards. It ships no explorer chrome and needs no account to read. |
+| `/blogs` | Free Hive blog landing page: preview any account's `username.banksia.io`, see the three reading themes, read the free/paid story and open the claim flow. |
 | `/settings/blog` | Claim or edit an account blog. Writes `banksia.io.blog` to posting metadata with the posting key: title, description, theme, accent, pinned posts, contributors, community and payout/comment toggles. |
 | `/shorts`, `/shorts/:format`, `/shorts/:format/@:author/:permlink` | Snaps, Waves, Threads, D.Buzz and Moments: per-format readers, composer, reactions, replies, reblogs and sats zaps |
 | `/compose` | Local-first creator workflow: autosaved drafts with history and archive, markdown/split preview, image uploads, media embeds, snippets and templates, community/tags, cross-post attribution, beneficiaries, checklists, reminders, cross-tab sync and JSON backup |

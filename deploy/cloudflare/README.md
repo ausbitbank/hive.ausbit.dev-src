@@ -81,8 +81,9 @@ certificate: **no wildcard origin certificate and no `*.banksia.io` nginx block
 are required for the free blog path.** The shell is stripped of the ~39 KB
 inline dashboard snapshot before it is returned.
 
-The `/settings/blog` page is also served at the edge from the app shell, so it
-works before the origin vhost has an explicit location for it.
+The `/settings/blog` and `/blogs` pages are also served at the edge from the
+app shell, so they work before the origin vhost has explicit locations for
+them.
 
 ### DNS
 

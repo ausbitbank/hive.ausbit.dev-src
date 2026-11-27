@@ -64,6 +64,18 @@ describe('metadata worker', () => {
     expect(html).toContain('<link rel="canonical" href="https://banksia.io/settings/blog">')
   })
 
+  it('serves the blog landing shell with its own metadata', async () => {
+    stubNetwork()
+    const response = await worker.fetch(new Request('https://banksia.io/blogs', {
+      headers: { accept: 'text/html', 'user-agent': 'Mozilla/5.0' }
+    }))
+    const html = await response.text()
+
+    expect(response.headers.get('x-hive-meta')).toBe('theme-shell')
+    expect(html).toContain('<title>Free Hive blogs — banksia.io</title>')
+    expect(html).toContain('<link rel="canonical" href="https://banksia.io/blogs">')
+  })
+
   it('rewrites metadata for X/Twitter, whose crawler does not ask for text/html', async () => {
     const calls = stubNetwork()
     const response = await worker.fetch(previewRequest('Twitterbot/1.0'))

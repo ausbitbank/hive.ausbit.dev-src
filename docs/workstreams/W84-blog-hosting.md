@@ -1,7 +1,7 @@
 # W84 — Account blogs on `*.banksia.io`
 
 Date: 2026-11-27
-Status: deployed for public previews; claim flow deployed but not yet exercised with a real key
+Status: deployed; claim flow verified by the operator on 2026-11-27
 
 ## Scope
 
@@ -18,6 +18,8 @@ claim and customise it from the apex site.
 - Free claim and edit page at `/settings/blog` on `banksia.io`, including title,
   description, theme, accent, pinned posts, contributors, community feed and
   payout/comment toggles.
+- A public `/blogs` landing page with a username preview, the three theme
+  cards, the free/paid story and a claim call to action.
 - Three built-in reading themes (Paper, Studio, Terminal) plus "match my
   profile skin". An author accent is accepted as a hex colour only.
 - Multi-author/team blogs: an owner plus up to 20 contributors, and/or a Hive
@@ -46,6 +48,7 @@ a public blog directory, sitemap generation, and live wildcard DNS/TLS.
 | Blog pages | `src/pages/blog/BlogHome.vue`, `BlogPost.vue`, `BlogAbout.vue`, `BlogContact.vue`, `BlogNotFound.vue` |
 | Card | `src/components/blog/BlogPostCard.vue` |
 | Claim/edit page | `src/pages/blogSettings.vue` |
+| Landing page | `src/pages/blogs.vue` |
 | Route selection | `src/router/blogRoutes.js`, `src/router/index.js`, `src/router/routes.js` |
 | Page metadata | `src/utils/pageMeta.js` (`baseUrl`, `siteName`) |
 | Explorer integration | `src/pages/account.vue` ("Blog site" quick link) |
@@ -144,7 +147,7 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 190 files, 1,652 tests passing. New suites:
+- `bun run test` — 190 files, 1,654 tests passing. New suites:
   `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`,
   `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
 - `bun run build` — succeeded.
@@ -186,9 +189,13 @@ whole metadata object, so the profile, theme and other apps' keys survive.
     post body and the About page with no console errors;
   - apex `banksia.io/@…` previews still return `x-hive-meta: hit` and
     `files.banksia.io` still returns `200`.
-- Not run in this workstream: a real posting-key claim/update, the full
-  Chromium E2E/axe suite, nginx `-t` for the optional wildcard block, and
-  custom domains.
+- A real claim was tested by the operator on 2026-11-27 and works; no code
+  change was needed.
+- `https://banksia.io/blogs` renders the landing page, the three theme cards
+  and the username preview/claim form; the claim action opens
+  `/settings/blog?account=<name>`.
+- Not run in this workstream: the full Chromium E2E/axe suite, nginx `-t` for
+  the optional wildcard block, and custom domains.
 
 ## Deployment checklist (operator)
 
@@ -207,9 +214,8 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 4. **Worker — done.** `banksia-metadata` serves `*.banksia.io/*` and
    `/settings/blog*`.
 5. **SPA — done.** `./scripts/deploy.sh` released the blog route table.
-6. **Smoke — public preview done.** A real claim on a test account still needs
-   a Keychain/HiveAuth/SmartLock run to confirm the subdomain updates after the
-   queue broadcasts.
+6. **Smoke — done.** A real claim was tested on 2026-11-27 and works; the
+   subdomain updates after the queue broadcasts.
 
 ## Remaining work
 
@@ -225,6 +231,5 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   claimed blog post exists at two URLs. Decide whether the apex post should
   canonicalize to the blog or both should remain indexable.
 - E2E and axe coverage for the blog routes at desktop and mobile widths.
-- A live claim/update smoke with Keychain, HiveAuth and SmartLock.
 - Decide whether unclaimed previews stay public or become claim-only after the
   first abuse report.

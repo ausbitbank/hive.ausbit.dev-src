@@ -15,6 +15,8 @@
     "hive.ausbit.dev/settings/skin*",
     "banksia.io/settings/blog*",
     "hive.ausbit.dev/settings/blog*",
+    "banksia.io/blogs*",
+    "hive.ausbit.dev/blogs*",
     "banksia.io/settings/moderation*",
     "hive.ausbit.dev/settings/moderation*",
     "banksia.io/csp-report*",

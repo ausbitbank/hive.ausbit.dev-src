@@ -40,7 +40,8 @@ const THEME_SHELLS = new Map([
   ['/settings/moderation', '/settings/moderation.html'],
   // The blog settings page is a client route without a prerendered shell. Use
   // the app shell so it works before the vhost gains an explicit location.
-  ['/settings/blog', '/index.html']
+  ['/settings/blog', '/index.html'],
+  ['/blogs', '/index.html']
 ])
 const THEME_META = new Map([
   ['/settings/blog', {
@@ -56,6 +57,22 @@ const THEME_META = new Map([
       '@type': 'WebPage',
       name: 'Blog settings',
       url: 'https://banksia.io/settings/blog'
+    }
+  }],
+  ['/blogs', {
+    title: 'Free Hive blogs — banksia.io',
+    description: 'Every Hive account has a clean reading page at username.banksia.io. All your posts, three themes, RSS and link previews. Claim it free.',
+    image: 'https://banksia.io/statics/og-banksia.png',
+    type: 'website',
+    path: '/blogs',
+    origin: 'https://banksia.io',
+    siteName: 'Banksia',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: 'Free Hive blogs on Banksia',
+      description: 'Every Hive account has a clean reading page at username.banksia.io. Claim it free.',
+      url: 'https://banksia.io/blogs'
     }
   }]
 ])

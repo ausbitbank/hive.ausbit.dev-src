@@ -133,6 +133,7 @@
         <nav class="site-footer__links" aria-label="Footer navigation">
           <router-link to="/created">Browse</router-link>
           <router-link to="/communities">Communities</router-link>
+          <router-link to="/blogs">Blogs</router-link>
           <router-link to="/blocks">Blocks</router-link>
           <router-link to="/proposals">Proposals</router-link>
           <router-link to="/nodes">Nodes</router-link>
@@ -595,6 +596,12 @@ export default {
           caption: 'discover and join',
           icon: 'forum',
           to: '/communities'
+        },
+        {
+          title: 'Blogs',
+          caption: 'yourname.banksia.io',
+          icon: 'rss_feed',
+          to: '/blogs'
         },
         {
           title: 'Short posts',
