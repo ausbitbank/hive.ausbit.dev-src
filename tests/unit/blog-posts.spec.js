@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import {
+  blogPostCommentCount,
+  blogPostDate,
   blogPostExcerpt,
   blogPostHasBodyImage,
   blogPostImage,
   blogPostPathFor,
+  blogPostPayout,
+  blogPostReadingMinutes,
+  blogPostTags,
+  blogPostTitle,
+  blogPostVoteCount,
+  dedupePosts,
   formatBlogDate,
   isBlogPost,
-  sortBlogPosts
+  isVaultHiddenPost,
+  sortBlogPosts,
+  vaultPublicBody,
+  vaultSummary
 } from '../../src/services/blogPosts'
 
 function post (overrides = {}) {
@@ -15,7 +26,10 @@ function post (overrides = {}) {
     permlink: 'a-post',
     title: 'A post',
     body: 'Hello world.',
+    depth: 0,
+    parent_author: '',
     created: '2026-11-20T10:00:00',
+    json_metadata: {},
     ...overrides
   }
 }
@@ -79,5 +93,93 @@ describe('blog post helpers', () => {
     expect(formatBlogDate('2026-11-20T10:00:00')).toBe('Nov 20, 2026')
     expect(formatBlogDate('')).toBe('')
     expect(formatBlogDate('not a date')).toBe('')
+  })
+})
+
+describe('blog post classification', () => {
+  it('hides Vault plumbing but keeps normal posts', () => {
+    expect(isVaultHiddenPost(post({ json_metadata: { content_type: 'product' } }))).toBe(true)
+    expect(isVaultHiddenPost(post({ json_metadata: '{"content_type":"product"}' }))).toBe(true)
+    expect(isVaultHiddenPost(post({ json_metadata: { content_type: 'blog' } }))).toBe(false)
+    expect(isVaultHiddenPost(null)).toBe(false)
+  })
+
+  it('never archives a Vault product post', () => {
+    expect(isBlogPost(post({ json_metadata: { content_type: 'product' } }))).toBe(false)
+  })
+})
+
+describe('blog presentation helpers', () => {
+  it('derives title, reading time and tags safely', () => {
+    expect(blogPostTitle(post({ title: '<b>Hello</b>' }))).toBe('Hello')
+    expect(blogPostTitle(post({ title: '', parent_author: 'bob' }))).toBe('Comment by @alice')
+
+    expect(blogPostReadingMinutes(post({ body: '' }))).toBe(1)
+    expect(blogPostReadingMinutes(post({ body: Array.from({ length: 220 }, () => 'word').join(' ') }))).toBe(1)
+    expect(blogPostReadingMinutes(post({ body: Array.from({ length: 660 }, () => 'word').join(' ') }))).toBe(3)
+
+    expect(blogPostTags(post({ json_metadata: { tags: ['hive', 'one', 'one', 'two', 'three', 'four'] } }))).toEqual(['hive', 'one', 'two'])
+    expect(blogPostTags(post({ json_metadata: { tags: 'not-an-array' } }))).toEqual([])
+  })
+
+  it('clips an excerpt on a word boundary', () => {
+    const short = blogPostExcerpt(post({ body: 'one two three' }), 5)
+    expect(short).toBe('one t…')
+    expect(blogPostExcerpt(post({ body: 'short text' }), 50)).toBe('short text')
+  })
+
+  it('accepts a trailing Z and rejects impossible dates', () => {
+    expect(formatBlogDate('2026-01-01T00:00:00Z')).toBe('Jan 1, 2026')
+    expect(blogPostDate(post())).toBe('2026-11-20T10:00:00')
+    expect(blogPostDate(null)).toBe('')
+  })
+
+  it('wraps payout, vote and comment helpers', () => {
+    expect(blogPostPayout(post({ pending_payout_value: '1.234 HBD' }))).toBe('1.234 HBD')
+    expect(blogPostPayout(post({ pending_payout_value: '0.000 HBD' }))).toBe('')
+    expect(blogPostVoteCount(post({ stats: { total_votes: '7' } }))).toBe(7)
+    expect(blogPostVoteCount(post({ active_votes: [{}, {}] }))).toBe(2)
+    expect(blogPostCommentCount(post({ children: 3 }))).toBe(3)
+    expect(blogPostCommentCount(post({ children: 'nope' }))).toBe(0)
+  })
+})
+
+describe('dedupe helpers', () => {
+  it('drops malformed rows and keeps the first author/permlink pair', () => {
+    const rows = dedupePosts([
+      post({ permlink: 'a' }),
+      post({ permlink: 'A' }),
+      post({ author: '', permlink: 'b' }),
+      null,
+      post({ author: 'bob', permlink: 'a' })
+    ])
+    expect(rows.map(row => row.author + '/' + row.permlink)).toEqual(['alice/a', 'bob/a'])
+  })
+
+  it('ignores pinned permlinks that are not present', () => {
+    const rows = sortBlogPosts([
+      post({ permlink: 'old', created: '2026-01-01T00:00:00' }),
+      post({ permlink: 'new', created: '2026-03-01T00:00:00' })
+    ], ['missing'])
+    expect(rows.map(row => row.permlink)).toEqual(['new', 'old'])
+  })
+})
+
+describe('Vault summary helpers', () => {
+  it('parses section and whole-post markers only', () => {
+    expect(vaultSummary({ banksia_vault: { v: 1, mode: 'section' } })).toEqual({ mode: 'section' })
+    expect(vaultSummary('{"banksia_vault":{"v":1,"mode":"post"}}')).toEqual({ mode: 'post' })
+    expect(vaultSummary({ banksia_vault: { v: 2, mode: 'post' } })).toBeNull()
+    expect(vaultSummary({ banksia_vault: { v: 1, mode: 'other' } })).toBeNull()
+    expect(vaultSummary('not json')).toBeNull()
+    expect(vaultSummary(null)).toBeNull()
+  })
+
+  it('cuts the public teaser at the marker', () => {
+    const marker = '<!--banksia:vault-->'
+    expect(vaultPublicBody('intro ' + marker + ' secret')).toBe('intro ')
+    expect(vaultPublicBody('no marker')).toBe('no marker')
+    expect(vaultPublicBody('no marker', 'post')).toBe('')
+    expect(vaultPublicBody(null)).toBe('')
   })
 })
