@@ -330,6 +330,7 @@ The dev server opens at <http://localhost:8080>.
 | `bun run serve:dist` | Serve the built SPA with history fallback and compression |
 | `bun run verify:deploy` | Verify the deployed site's routes, headers and metadata |
 | `bun run nginx:ips` | Refresh the trusted Cloudflare real-IP ranges |
+| `bun run cf:blog-dns` | Create/update the proxied `*.banksia.io` blog record (DNS-edit token required) |
 | `bun run v4vapp:contract` | Run the read-only v4v.app bridge contract check |
 | `bun run icons:subset` | Regenerate the subsetted Material Icons font |
 | `bun run devlog` | Collect, screenshot, draft and validate a development blog post |

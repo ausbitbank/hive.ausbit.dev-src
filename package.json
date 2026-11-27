@@ -42,6 +42,7 @@
     "perf:check": "node scripts/perf-baseline.mjs --check",
     "prerender": "node scripts/prerender.mjs",
     "nginx:ips": "node scripts/refresh-cloudflare-ips.mjs",
+    "cf:blog-dns": "node scripts/cloudflare-blog-dns.mjs",
     "serve:dist": "node scripts/serve-dist.mjs",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "v4vapp:contract": "node scripts/v4vapp-contract-check.mjs",

@@ -19,7 +19,7 @@ principles that constrain it. Delivered work and its verification records live i
 - W84 is implemented and verified locally but not deployed: wildcard DNS/TLS,
   the Worker deploy and a live claim smoke remain.
 - Local verification on 2026-11-27: `bun run lint` clean, `bun run test` green
-  with 1,642 tests across 189 files.
+  with 1,646 tests across 190 files.
 - The full Chromium suite and the performance budgets are the CI release gate.
   The fast Obscura suite (126 functional checks) is the local loop.
 - The next free workstream number is **W85**.

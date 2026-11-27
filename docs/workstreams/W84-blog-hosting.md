@@ -1,7 +1,7 @@
 # W84 — Account blogs on `*.banksia.io`
 
 Date: 2026-11-27
-Status: implemented and verified locally; not deployed
+Status: implemented; Worker route deployed, blog DNS/origin not live
 
 ## Scope
 
@@ -124,9 +124,9 @@ whole metadata object, so the profile, theme and other apps' keys survive.
 ## Verification
 
 - `bun run lint` — clean, including the theme-token scanner.
-- `bun run test` — 189 files, 1,642 tests passing. New suites:
-  `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`;
-  `nginx-routes` and `page-meta` extended.
+- `bun run test` — 190 files, 1,646 tests passing. New suites:
+  `blog-host`, `blog-settings`, `blog-posts`, `blog-feed`, `blog-worker`,
+  `cloudflare-dns`; `nginx-routes` and `page-meta` extended.
 - `bun run build` — succeeded.
 - Headless Chromium smoke against a real account (`asgarth.localhost`):
   - home rendered 20 post cards and the unclaimed-preview banner;
@@ -142,14 +142,20 @@ whole metadata object, so the profile, theme and other apps' keys survive.
   disabled form and sign-in notice with no console errors.
 - Wrangler `deploy --dry-run` bundled the Worker with the shared `src`
   modules (44.64 KiB / 12.05 KiB gzip).
+- Deployed `banksia-metadata` with the `*.banksia.io/*` route. The apex preview
+  still returns `x-hive-meta: hit` and `files.banksia.io` still returns 200.
+  The wildcard DNS record is not installed: the Wrangler OAuth token has no DNS
+  permission, and the origin has no `*.banksia.io` certificate yet.
 - Not run in this workstream: the full Chromium E2E/axe suite, nginx `-t` on
-  the production host, a live Worker deploy, wildcard DNS/TLS, and a real
+  the production host, wildcard DNS/TLS, a live blog host, and a real
   posting-key claim/update.
 
 ## Deployment checklist (operator)
 
 1. Add a proxied `*.banksia.io` DNS record in Cloudflare. Universal SSL
-   covers first-level subdomains at the edge.
+   covers first-level subdomains at the edge. The Wrangler OAuth token cannot
+   edit DNS; use a `Zone:Read` + `DNS:Edit` token with
+   `ORIGIN_IP=<origin> bun run cf:blog-dns` (add `--dry-run` first).
 2. Install an origin certificate valid for `*.banksia.io` (Cloudflare Origin CA
    or a certbot DNS-01 challenge) and point the vhost at it. The current
    certbot lines only cover the apex, `www` and the legacy host.

@@ -17,6 +17,10 @@ The Worker:
   tags, plus the static crawler `<h1>`/summary;
 - accepts CSP violation reports, caps the body at 8 KB and logs one compact
   JSON line per report;
+- serves account blogs on `*.banksia.io/*`: it resolves the host to a Hive
+  account, rewrites the root/About/Contact/post metadata, serves `/rss.xml`,
+  marks unclaimed previews `noindex`, and passes reserved hosts such as
+  `files.banksia.io` through untouched;
 - caches successful HTML for five minutes;
 - returns the untouched origin response on any failure.
 
@@ -66,6 +70,50 @@ fall back to the generic permlink title and avatar.
 
 `scripts/deploy.sh` does not deploy this Worker. It is independent of a SPA
 release and should be updated only when the metadata rules change.
+
+## Blog hosts (`*.banksia.io`)
+
+The Worker also serves the free account blogs. The route is
+`*.banksia.io/*`; the host label is decoded to a Hive account by the shared
+`src/services/blogHost.js` module, so the browser and the edge agree.
+
+Two Cloudflare-side prerequisites are separate from the Worker deploy:
+
+1. **DNS**: a proxied wildcard `A` record for `*` pointing at the nginx origin.
+   The Wrangler OAuth token can deploy Workers and routes but cannot edit DNS.
+   Use a token with `Zone:Read` + `DNS:Edit`:
+
+   ```bash
+   CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
+     bun run cf:blog-dns --dry-run
+   CLOUDFLARE_API_TOKEN=... ORIGIN_IP=185.130.44.77 \
+     bun run cf:blog-dns
+   ```
+
+   `ORIGIN_IP` is the nginx origin address:
+
+   ```bash
+   ssh hurgenburgen 'curl -s -4 https://ifconfig.me'
+   ```
+
+2. **Origin certificate**: the origin must present a certificate valid for
+   `*.banksia.io` (Cloudflare Origin CA or a certbot DNS-01 challenge). Add the
+   DNS record only after the certificate is installed and
+   `deploy/nginx/banksia.io.conf` is applied, or every blog host returns a TLS
+   error at the edge.
+
+Verify a blog host after both are in place:
+
+```bash
+curl -sS -D - -o /dev/null \
+  -A 'Twitterbot/1.0' -H 'Accept: */*' \
+  'https://alice.banksia.io/a-post'
+```
+
+A claimed blog returns `x-hive-meta: blog`, a canonical `https://alice.banksia.io/a-post`
+URL and the real post image. An unclaimed account returns the same shell with
+`noindex` and no canonical. Reserved labels (`www`, `api`, `files`, `mail`, …)
+never resolve to a blog.
 
 ## Traffic and WAF rules
 
