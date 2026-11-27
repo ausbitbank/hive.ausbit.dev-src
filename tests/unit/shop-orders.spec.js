@@ -151,8 +151,22 @@ describe('history classification', () => {
       timestamp: '2026-11-27T10:00:00',
       memo: MEMO,
       recurring: false,
-      recurrenceHours: 0
+      recurrenceHours: 0,
+      vault: false
     })
+  })
+
+  it('marks a Vault membership memo without importing the Vault crypto layer', () => {
+    const memo = JSON.stringify({
+      product: 'alice/membership',
+      quantity: 1,
+      banksia: { v: 1, plan: 'member', reader_key: 'p256:abc', sub: 'sub-1234567890123456', gift_for: null }
+    })
+    const order = orderFromHistoryRow(historyRow({
+      memo,
+      amount: '5.000 HBD'
+    }), 'buyer')
+    expect(order).toMatchObject({ vault: true, author: 'alice', permlink: 'membership', amount: '5.000 HBD' })
   })
 
   it('treats an incoming product transfer as a sale', () => {
@@ -241,8 +255,21 @@ describe('subscriptionFromRecurrent', () => {
       remainingExecutions: 11,
       nextExecution: '2026-12-27T10:00:00',
       pairId: 77,
-      product: { author: 'alice', permlink: 'managed-hosting' }
+      product: { author: 'alice', permlink: 'managed-hosting' },
+      vault: false
     })
+  })
+
+  it('recognises a Vault membership recurring transfer', () => {
+    const memo = JSON.stringify({
+      product: 'alice/membership',
+      quantity: 1,
+      banksia: { v: 1, plan: 'member', reader_key: 'p256:abc', sub: 'sub-1234567890123456', gift_for: null }
+    })
+    expect(subscriptionFromRecurrent(recurrentRow({
+      memo,
+      amount: '5.000 HBD'
+    }))).toMatchObject({ vault: true, product: { author: 'alice', permlink: 'membership' } })
   })
 
   it('defaults an absent pair id to zero and a missing count to null', () => {

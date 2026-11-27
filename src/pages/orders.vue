@@ -110,6 +110,10 @@
                       <span aria-hidden="true">·</span>
                       <span>Recurring payment</span>
                     </template>
+                    <template v-if="order.vault">
+                      <span aria-hidden="true">·</span>
+                      <span class="orders-membership">Vault membership</span>
+                    </template>
                     <span aria-hidden="true">·</span>
                     <span>Quantity {{ order.quantity }}</span>
                   </p>
@@ -155,6 +159,10 @@
                     <template v-if="order.recurring">
                       <span aria-hidden="true">·</span>
                       <span>Recurring payment</span>
+                    </template>
+                    <template v-if="order.vault">
+                      <span aria-hidden="true">·</span>
+                      <span class="orders-membership">Vault membership</span>
                     </template>
                     <span aria-hidden="true">·</span>
                     <span>Quantity {{ order.quantity }}</span>
@@ -214,6 +222,10 @@
                     </span>
                     <span aria-hidden="true">·</span>
                     <span>Every {{ formatRecurrenceLabel(subscription.recurrenceHours) }}</span>
+                    <template v-if="subscription.vault">
+                      <span aria-hidden="true">·</span>
+                      <span class="orders-membership">Vault membership</span>
+                    </template>
                   </p>
                   <p v-if="productTitle(subscription.product) !== productRef(subscription.product)" class="orders-item__ref">{{ productRef(subscription.product) }}</p>
 
@@ -237,6 +249,15 @@
 
                   <div class="orders-cancel">
                     <q-btn
+                      v-if="subscription.vault"
+                      outline
+                      no-caps
+                      color="primary"
+                      label="Manage membership"
+                      to="/subscriptions"
+                    />
+                    <q-btn
+                      v-else
                       outline
                       no-caps
                       color="negative"
@@ -469,6 +490,11 @@
   align-items: flex-start;
   gap: 0.5rem 0.9rem;
   margin-top: 0.7rem;
+}
+
+.orders-membership {
+  color: var(--c-primary);
+  font-weight: 700;
 }
 
 .orders-cancel__warning {
@@ -748,6 +774,7 @@ export default {
       return count === 1 ? '1 payment' : count + ' payments'
     },
     canCancel (subscription) {
+      if (subscription && subscription.vault) return false
       return Boolean(buildCancelOperation(subscription, this.username))
     },
     isCancelQueued (subscription) {

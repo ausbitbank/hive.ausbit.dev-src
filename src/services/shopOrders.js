@@ -16,6 +16,26 @@ const AMOUNT_RE = /^(\d+(?:\.\d+)?)\s+(HIVE|HBD)$/i
 const TRANSFER_OPS = new Set(['transfer', 'recurrent_transfer'])
 const ZERO_AMOUNT = '0.000'
 
+/**
+ * Detect the Banksia Vault extension in a HOM memo without importing the Vault
+ * crypto layer (which would create a cycle through `vaultPayments`).
+ */
+function isVaultMemo (memo) {
+  if (typeof memo !== 'string' || !memo.trim()) return false
+  try {
+    const parsed = JSON.parse(memo)
+    const banksia = parsed && parsed.banksia
+    return Boolean(
+      banksia &&
+      banksia.v === 1 &&
+      typeof banksia.reader_key === 'string' &&
+      typeof banksia.sub === 'string'
+    )
+  } catch {
+    return false
+  }
+}
+
 function normalizeAccount (value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase()
 }
@@ -204,7 +224,8 @@ export function orderFromHistoryRow (row, account) {
     timestamp: String(record.timestamp || ''),
     memo: String(body.memo || ''),
     recurring,
-    recurrenceHours
+    recurrenceHours,
+    vault: isVaultMemo(body.memo)
   }
 }
 
@@ -268,7 +289,8 @@ export function subscriptionFromRecurrent (row) {
     remainingExecutions: Number.isFinite(remaining) ? Math.max(0, Math.trunc(remaining)) : null,
     nextExecution: typeof row.trigger_date === 'string' ? row.trigger_date : '',
     pairId,
-    product: parsedMemo.product
+    product: parsedMemo.product,
+    vault: isVaultMemo(memo)
   }
 }
 
