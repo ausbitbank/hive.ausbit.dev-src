@@ -27,6 +27,8 @@ fixes the deterministic cases:
    temporarily, a visible play/pause button gives keyboard users control, and
    the gap-retry loop is capped at five attempts, cleared on unmount, and
    skipped while the tab is hidden.
+7. **Shorts, trail and witnesses had no page-level heading.** Each now exposes
+   exactly one `h1`; the existing section headings stay `h2`.
 
 ## Components
 
