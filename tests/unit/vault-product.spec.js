@@ -77,6 +77,7 @@ describe('product and container operations', () => {
     const data = operation[1]
     expect(data.parent_author).toBe('')
     expect(data.parent_permlink).toBe('membership')
+    expect(data.author).toBe('alice')
     expect(data.permlink).toBe('membership')
     expect(data.title).toBe('Membership — @alice')
     const metadata = JSON.parse(data.json_metadata)
@@ -97,6 +98,7 @@ describe('product and container operations', () => {
     const data = operation[1]
     expect(operation[0]).toBe('comment')
     expect(data.parent_permlink).toBe('membership')
+    expect(data.author).toBe('alice')
     expect(data.permlink).toBe('banksia-vault')
     expect(data.body).toBe('Membership grant container. Do not reply here.')
     const metadata = JSON.parse(data.json_metadata)

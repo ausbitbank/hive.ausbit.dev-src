@@ -224,6 +224,7 @@ export function buildVaultProductOperation ({
   return ['comment', {
     parent_author: '',
     parent_permlink: CATEGORY,
+    author: owner,
     permlink: slug,
     title: typeof title === 'string' && title.trim()
       ? title.trim()
@@ -258,6 +259,7 @@ export function buildVaultContainerOperation ({
   return ['comment', {
     parent_author: '',
     parent_permlink: CATEGORY,
+    author: owner,
     permlink: slug,
     title: 'Membership grant container',
     body: 'Membership grant container. Do not reply here.',
