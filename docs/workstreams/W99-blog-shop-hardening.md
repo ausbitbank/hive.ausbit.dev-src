@@ -66,7 +66,7 @@ buyer-protection claims.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **232 files / 2,253 tests** passing.
+- `bun run test` — **232 files / 2,255 tests** passing.
 - `bun run build` — succeeded.
 - Targeted blog/worker/shop suites pass.
 

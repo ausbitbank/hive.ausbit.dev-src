@@ -94,7 +94,7 @@ principles that constrain it. Delivered work and its verification records live i
   Hive Open Market price/quantity handling. See
   [`docs/workstreams/W99-blog-shop-hardening.md`](workstreams/W99-blog-shop-hardening.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,253 tests across 232 files**, `bun run build`
+  `bun run test` green with **2,255 tests across 232 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **206/206**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not

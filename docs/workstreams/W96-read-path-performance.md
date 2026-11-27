@@ -66,7 +66,7 @@ ones that can be verified without changing signing or server behaviour:
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **232 files / 2,253 tests** passing.
+- `bun run test` — **232 files / 2,255 tests** passing.
 - `bun run build` — succeeded.
 - Targeted unit suites: delegation cursor, prices in-flight, carousel retry and
   the existing search/proposal suites.
