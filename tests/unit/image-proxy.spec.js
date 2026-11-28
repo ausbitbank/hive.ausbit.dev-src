@@ -85,9 +85,15 @@ describe('proxied image URLs', () => {
       .toBe('https://images.hive.blog/p/' + HASH + '?format=match&mode=fit&width=800')
   })
 
-  it('loads query-string sources directly because the Hive host refuses them', () => {
+  it('loads query-string sources directly on known Hive image hosts', () => {
     const source = 'https://files.peakd.com/file/peakd-hive/alice/photo.png?w=100'
     expect(rewriteProxiedImageUrl(proxied(source), 'hive')).toBe(source)
+  })
+
+  it('keeps a query-string source from an unknown host proxied', () => {
+    const source = 'https://tracker.example/p.gif?uid=1'
+    const url = proxied(source)
+    expect(rewriteProxiedImageUrl(url, 'hive')).toMatch(/^https:\/\/images\.hive\.blog\/p\//)
   })
 
   it('loads GitHub raw sources directly because the Hive host cannot fetch them', () => {
@@ -127,9 +133,9 @@ describe('resizeImageUrl', () => {
     expect(resizeImageUrl(peakd, 480, 0, 'direct')).toBe(peakd)
   })
 
-  it('leaves unknown hosts and sized avatars alone', () => {
+  it('proxies unknown hosts but leaves sized avatars alone', () => {
     expect(resizeImageUrl('https://cdn.example/photo.png', 480, 0, 'hive'))
-      .toBe('https://cdn.example/photo.png')
+      .toBe('https://images.hive.blog/480x0/https://cdn.example/photo.png')
     expect(resizeImageUrl('https://i.ecency.com/u/alice/avatar/large', 64, 0, 'hive'))
       .toBe('https://i.ecency.com/u/alice/avatar/large')
   })

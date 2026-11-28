@@ -436,6 +436,15 @@ describe('publish checklist', () => {
     expect(checklistErrors(items)).toEqual([])
   })
 
+  it('treats a literal "image" alt as missing', () => {
+    const items = publishChecklist({
+      ...draft,
+      body: 'Text\n\n![image](https://images.hive.blog/photo.jpg)'
+    }, { username: 'alice' })
+    expect(items.find(item => item.id === 'images').status).toBe('warn')
+    expect(items.find(item => item.id === 'images').detail).toContain('alt text')
+  })
+
   it('blocks malformed beneficiary rows instead of silently dropping them', () => {
     const items = publishChecklist({
       ...draft,

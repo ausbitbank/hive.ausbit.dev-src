@@ -237,6 +237,7 @@ import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
 import { importKeysToKeychain as importKeysToKeychainService } from 'src/services/keychainAccounts'
 import {
+  authoritiesMatchPayload,
   buildClaimLink,
   buildClaimPayload,
   claimAgeDays,
@@ -396,8 +397,18 @@ export default {
       try {
         const accounts = await this.$hive.api.getAccountsAsync([this.keys.username])
         if (accounts.length) {
+          if (!authoritiesMatchPayload(accounts[0], this.claimPayload)) {
+            this.$q.notify({
+              message: 'Account @' + this.keys.username + ' exists, but its on-chain keys do not match your claim. Do not import these keys.',
+              color: 'red',
+              icon: 'report',
+              position: 'top',
+              timeout: 10000
+            })
+            return
+          }
           this.$q.notify({
-            message: 'Account @' + this.keys.username + ' exists. You can import your keys now.',
+            message: 'Account @' + this.keys.username + ' exists with your keys. You can import them now.',
             color: 'green',
             icon: 'check_circle',
             position: 'top',

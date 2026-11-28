@@ -329,7 +329,11 @@ export default {
         : { start: this.body.length, end: this.body.length }
     },
     insertUploadedImages (images) {
-      const result = insertImageMarkdown(this.body, images, this.savedSelection || {})
+      const textarea = this.$refs.body
+      const selection = textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : (this.savedSelection || {})
+      const result = insertImageMarkdown(this.body, images, selection)
       this.body = result.body
       this.savedSelection = { start: result.cursor, end: result.cursor }
       this.$nextTick(() => {

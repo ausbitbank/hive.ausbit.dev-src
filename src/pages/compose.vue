@@ -929,7 +929,7 @@
       </aside>
     </div>
 
-    <q-dialog v-model="uploadDialogOpen">
+    <q-dialog v-model="uploadDialogOpen" :persistent="uploadBusy">
       <q-card class="compose-media-dialog">
         <q-card-section class="compose-media-dialog__head">
           <div>
@@ -5797,7 +5797,7 @@ export default {
       if (!text) return
       const element = this.$refs.body
       if (element && element.selectionStart !== element.selectionEnd) return
-      const detected = detectEmbed(text)
+      const detected = /^\S+$/.test(text) ? detectEmbed(text) : null
       if (!detected) return
       event.preventDefault()
       this.applyAction({ type: 'embed', markdown: detected.markdown })

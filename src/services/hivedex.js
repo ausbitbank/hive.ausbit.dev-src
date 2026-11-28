@@ -126,14 +126,25 @@ export async function getPrice ({ force = false } = {}) {
   return value
 }
 
+export function safeHivedexPayLink (value) {
+  try {
+    const url = new URL(String(value || '').trim())
+    if (url.protocol !== 'https:' || !url.hostname) return ''
+    return url.href
+  } catch {
+    return ''
+  }
+}
+
 export async function createInvoice (details) {
   const body = buildInvoiceBody(details)
   const data = await request('/invoice', { method: 'POST', body })
-  if (!data?.payLink || !data?.trackId) {
-    throw new HivedexError('Hivedex did not return a payment link.', { detail: data })
+  const payLink = safeHivedexPayLink(data?.payLink)
+  if (!payLink || !data?.trackId) {
+    throw new HivedexError('Hivedex did not return a safe https payment link.', { detail: data })
   }
   return {
-    payLink: String(data.payLink),
+    payLink,
     trackId: String(data.trackId),
     orderId: data.orderId ? String(data.orderId) : ''
   }

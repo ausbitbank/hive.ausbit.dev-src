@@ -27,7 +27,7 @@ import {
   hasAiTools
 } from './drafts'
 import { byteLength } from '../utils/markdownEditor'
-import { collectImageUrls, deriveDescription, extractMentionedUsers, normalizeImageUrl } from '../utils/media'
+import { collectImageUrls, deriveDescription, extractBodyImages, extractMentionedUsers, normalizeImageUrl } from '../utils/media'
 import { coverIssueDetail } from './imageHealth'
 import { PRODUCT_CONTENT_TYPE, PRODUCT_METADATA_KEYS, buildProductMetadata } from './productDraft'
 
@@ -581,7 +581,10 @@ export function publishChecklist (draft, { username = null, imageHealth = null }
 
   const images = collectImageUrls(body)
   const cover = normalizeCoverImage(source.coverImage)
-  const missingAlt = /!\[\s*\]\(/.test(body)
+  const missingAlt = extractBodyImages(body).some(image => {
+    const alt = String(image.alt || '').trim()
+    return !alt || /^image$/i.test(alt)
+  })
   if (isCommentEdit) {
     items.push(checklistItem('images', 'Images', 'ok', 'Comments have no cover image.'))
   } else if (!images.length && !cover) {

@@ -44,6 +44,8 @@ export function isImageUrl (value) {
  */
 export function extractBodyImages (body, { limit = 40 } = {}) {
   const text = String(body || '')
+    .replace(CODE_BLOCK, ' ')
+    .replace(INLINE_CODE, ' ')
   const found = []
   const seen = new Set()
 

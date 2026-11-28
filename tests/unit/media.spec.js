@@ -31,6 +31,19 @@ describe('body image extraction', () => {
     ])
   })
 
+  it('ignores image syntax inside fenced and inline code', () => {
+    const body = [
+      '```md',
+      '![fenced](https://images.hive.blog/fenced.jpg)',
+      '```',
+      'Real ![shot](https://images.hive.blog/real.jpg)',
+      'Inline `![inline](https://images.hive.blog/inline.jpg)` code.'
+    ].join('\n')
+    expect(extractBodyImages(body)).toEqual([
+      { url: 'https://images.hive.blog/real.jpg', alt: 'shot' }
+    ])
+  })
+
   it('decodes entities and trims prose punctuation from image URLs', () => {
     expect(normalizeImageUrl('https://example.com/a.png),')).toBe('https://example.com/a.png')
     expect(normalizeImageUrl('<https://example.com/a.png>')).toBe('https://example.com/a.png')

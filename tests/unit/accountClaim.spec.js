@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   authoritiesFromPayload,
+  authoritiesMatchKeys,
+  authoritiesMatchPayload,
   buildClaimLink,
   buildClaimPayload,
   claimAgeDays,
@@ -102,5 +104,45 @@ describe('account claim links', () => {
     expect(first).toBe(second)
     expect(first).toMatch(/^[0-9a-f]{8,16}$/)
     expect(claimAgeDays(claim, claim.t + 86400000)).toBeCloseTo(1)
+  })
+})
+
+describe('claim authority matching', () => {
+  it('accepts the exact generated authorities', () => {
+    const claim = payload()
+    const account = { ...authoritiesFromPayload(claim), name: 'alice' }
+    expect(authoritiesMatchPayload(account, claim)).toBe(true)
+    expect(authoritiesMatchKeys(account, {
+      owner: claim.o,
+      active: claim.a,
+      posting: claim.p,
+      memo: claim.m
+    })).toBe(true)
+  })
+
+  it('rejects extra account authority, thresholds and extra keys', () => {
+    const claim = payload()
+    const exact = authoritiesFromPayload(claim)
+    const withAccount = {
+      ...exact,
+      active: { ...exact.active, account_auths: [['sponsor', 1]] }
+    }
+    const withThreshold = {
+      ...exact,
+      posting: { ...exact.posting, weight_threshold: 2 }
+    }
+    const withExtraKey = {
+      ...exact,
+      owner: { ...exact.owner, key_auths: [...exact.owner.key_auths, ['STM' + 'B'.repeat(50), 1]] }
+    }
+    expect(authoritiesMatchPayload(withAccount, claim)).toBe(false)
+    expect(authoritiesMatchPayload(withThreshold, claim)).toBe(false)
+    expect(authoritiesMatchPayload(withExtraKey, claim)).toBe(false)
+    expect(authoritiesMatchPayload({ ...exact, memo_key: 'STM' + 'C'.repeat(50) }, claim)).toBe(false)
+  })
+
+  it('rejects a missing key set or payload', () => {
+    expect(authoritiesMatchPayload({}, null)).toBe(false)
+    expect(authoritiesMatchKeys({}, {})).toBe(false)
   })
 })

@@ -149,6 +149,8 @@ export default {
     return {
       newUsername: '',
       availableUsername: null,
+      checkedUsername: '',
+      checkToken: 0,
       keys: null,
       generatedAuthorities: null,
       roles: ['active', 'owner', 'posting', 'memo'],
@@ -159,7 +161,14 @@ export default {
     }
   },
   watch: {
-    newUsername: function () { this.availableUsername = null },
+    newUsername: function () {
+      this.availableUsername = null
+      this.checkedUsername = ''
+      this.checkToken += 1
+      this.keys = null
+      this.generatedAuthorities = null
+      this.confirmedSaved = false
+    },
     loggedInUser: function () { this.init() },
     keys: function (value) { if (!value) this.generatedAuthorities = null }
   },
@@ -182,17 +191,33 @@ export default {
     }
   },
   methods: {
-    checkUsernameAvailable (username) {
+    async checkUsernameAvailable (username) {
+      const name = String(username || '').trim().toLowerCase()
+      const token = ++this.checkToken
       this.availableUsername = null
-      this.$hive.api.getAccountsAsync([username])
-        .then(response => { if (response.length === 0) { this.availableUsername = true } else { this.availableUsername = false } })
-        .catch(err => { this.availableUsername = null; console.error(err?.cause?.data || err) })
+      this.checkedUsername = ''
+      if (!name || this.validateUsername(name) !== null) return false
+      try {
+        const response = await this.$hive.api.getAccountsAsync([name])
+        if (token !== this.checkToken || name !== String(this.newUsername || '').trim().toLowerCase()) return false
+        this.availableUsername = response.length === 0
+        this.checkedUsername = name
+        return this.availableUsername
+      } catch (err) {
+        console.error(err?.cause?.data || err)
+        return false
+      }
     },
     validateUsername (username) {
       return validateAccountName(username)
     },
     async genKeys () {
       const username = String(this.newUsername || '').trim().toLowerCase()
+      if (this.validateUsername(username) !== null) return
+      if (this.availableUsername !== true || this.checkedUsername !== username) {
+        const available = await this.checkUsernameAvailable(username)
+        if (!available) return
+      }
       const password = await createPassword()
       const generated = await generateKeys(username, password)
       this.generatedAuthorities = generated
@@ -293,7 +318,11 @@ export default {
     claimAccountWithToken () {
       if (!this.generatedAuthorities) return
       const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
-      const username = this.keys?.username || this.newUsername
+      const username = String(this.keys?.username || '').trim().toLowerCase()
+      if (!username || username !== String(this.newUsername || '').trim().toLowerCase()) {
+        this.$q.notify({ type: 'negative', message: 'The username changed after key generation. Generate keys again.' })
+        return
+      }
       var op = {
         creator: this.loggedInUser,
         new_account_name: username,
@@ -311,7 +340,11 @@ export default {
     claimAccountWithHive () {
       if (!this.generatedAuthorities) return
       const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
-      const username = this.keys?.username || this.newUsername
+      const username = String(this.keys?.username || '').trim().toLowerCase()
+      if (!username || username !== String(this.newUsername || '').trim().toLowerCase()) {
+        this.$q.notify({ type: 'negative', message: 'The username changed after key generation. Generate keys again.' })
+        return
+      }
       var op = {
         fee: this.accountCreationFee,
         creator: this.loggedInUser,

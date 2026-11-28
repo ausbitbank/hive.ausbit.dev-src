@@ -42,10 +42,10 @@ describe('postImage', () => {
   it('prefers metadata thumbnails, then image arrays', () => {
     expect(postImage({
       json_metadata: JSON.stringify({ thumbnails: ['https://cdn.example/thumb.jpg'], image: ['https://cdn.example/full.jpg'] })
-    })).toBe('https://cdn.example/thumb.jpg')
+    })).toBe('https://images.hive.blog/480x0/https://cdn.example/thumb.jpg')
     expect(postImage({
       json_metadata: JSON.stringify({ image: ['https://cdn.example/full.jpg'] })
-    })).toBe('https://cdn.example/full.jpg')
+    })).toBe('https://images.hive.blog/480x0/https://cdn.example/full.jpg')
   })
 
   it('decodes HTML entities in image URLs', () => {
@@ -55,9 +55,9 @@ describe('postImage', () => {
   })
 
   it('finds markdown, HTML and bare body images', () => {
-    expect(postImage({ body: '![alt](https://cdn.example/markdown.png)' })).toBe('https://cdn.example/markdown.png')
-    expect(postImage({ body: '<p><img src="https://cdn.example/html.webp" alt=""></p>' })).toBe('https://cdn.example/html.webp')
-    expect(postImage({ body: 'Look https://cdn.example/bare.gif here' })).toBe('https://cdn.example/bare.gif')
+    expect(postImage({ body: '![alt](https://cdn.example/markdown.png)' })).toBe('https://images.hive.blog/480x0/https://cdn.example/markdown.png')
+    expect(postImage({ body: '<p><img src="https://cdn.example/html.webp" alt=""></p>' })).toBe('https://images.hive.blog/480x0/https://cdn.example/html.webp')
+    expect(postImage({ body: 'Look https://cdn.example/bare.gif here' })).toBe('https://images.hive.blog/480x0/https://cdn.example/bare.gif')
   })
 
   it('returns an empty string when no image exists', () => {
@@ -84,11 +84,11 @@ describe('postImage', () => {
       .toBe('https://images.hive.blog/400x0/https://images.hive.blog/DQmExample/photo.png')
     expect(previewImageUrl('https://files.peakd.com/file/peakd-hive/alice/photo.png', 480))
       .toBe('https://images.hive.blog/480x0/https://files.peakd.com/file/peakd-hive/alice/photo.png')
-    // Already transformed URLs and unknown hosts are left untouched.
+    // Already transformed URLs keep their proxy form; unknown hosts are proxied.
     expect(previewImageUrl('https://images.hive.blog/p/abc?width=400', 400))
       .toBe('https://images.hive.blog/p/abc?width=400')
     expect(previewImageUrl('https://cdn.example/photo.png', 400))
-      .toBe('https://cdn.example/photo.png')
+      .toBe('https://images.hive.blog/400x0/https://cdn.example/photo.png')
   })
 
   it('requests the compact YouTube thumbnail for card images', () => {

@@ -298,7 +298,11 @@ export default {
         : { start: this.replyBody.length, end: this.replyBody.length }
     },
     insertUploadedImages (images) {
-      const result = insertImageMarkdown(this.replyBody, images, this.savedSelection || {})
+      const textarea = this.$refs.reply
+      const selection = textarea
+        ? { start: textarea.selectionStart, end: textarea.selectionEnd }
+        : (this.savedSelection || {})
+      const result = insertImageMarkdown(this.replyBody, images, selection)
       this.replyBody = result.body
       this.savedSelection = { start: result.cursor, end: result.cursor }
       this.$nextTick(() => {

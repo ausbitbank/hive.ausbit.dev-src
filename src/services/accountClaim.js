@@ -136,6 +136,35 @@ export function authoritiesFromPayload (payload) {
   }
 }
 
+/** Exact authority match for a generated key set (public keys only). */
+export function authoritiesMatchKeys (account, keys = {}) {
+  const keyAuthMatches = (authority, key) => {
+    if (!authority || !key) return false
+    const keyAuths = Array.isArray(authority.key_auths) ? authority.key_auths : []
+    const accountAuths = Array.isArray(authority.account_auths) ? authority.account_auths : []
+    return Number(authority.weight_threshold) === 1 &&
+      accountAuths.length === 0 &&
+      keyAuths.length === 1 &&
+      keyAuths[0]?.[0] === key &&
+      Number(keyAuths[0]?.[1]) === 1
+  }
+  return keyAuthMatches(account?.owner, keys.owner) &&
+    keyAuthMatches(account?.active, keys.active) &&
+    keyAuthMatches(account?.posting, keys.posting) &&
+    String(account?.memo_key || '') === String(keys.memo || '')
+}
+
+/** Exact authority match for a claim payload. */
+export function authoritiesMatchPayload (account, payload) {
+  if (!payload) return false
+  return authoritiesMatchKeys(account, {
+    owner: payload.o,
+    active: payload.a,
+    posting: payload.p,
+    memo: payload.m
+  })
+}
+
 export function encodeClaimPayload (payload) {
   const normalised = buildClaimPayload({
     username: payload?.u,

@@ -44,6 +44,7 @@ import { LocalStorage } from 'quasar'
 import { altFromFileName } from 'src/utils/media'
 import {
   appendUploadHistory,
+  buildImageChecksumSigningPayload,
   buildImageSigningPayload,
   imageHostErrorMessage,
   readImageBytes,
@@ -170,10 +171,16 @@ export default {
         for (const file of queue) {
           try {
             const bytes = await readImageBytes(file)
+            // HiveAuth's relay cannot carry a whole file through the signing
+            // message; use the image host's checksum endpoint instead.
+            const checksum = this.mode === 'hiveauth'
+            const payload = checksum
+              ? await buildImageChecksumSigningPayload(bytes)
+              : buildImageSigningPayload(bytes)
             const signature = await signImageUploadChallenge({
               username: this.account,
               loginType: this.mode,
-              payload: buildImageSigningPayload(bytes),
+              payload,
               smartlockSessionMs: this.smartlockSessionMs,
               promptPassword: () => this.promptSmartlockPassword()
             })
@@ -181,6 +188,7 @@ export default {
               username: this.account,
               signature,
               file,
+              checksum,
               onProgress: value => { this.progress = value }
             })
             const alt = altFromFileName(file.name)

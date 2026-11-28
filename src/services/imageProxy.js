@@ -119,7 +119,7 @@ export function isProxiedImageUrl (url) {
 /** Decode the base58 URL segment both image proxies use. */
 export function decodeBase58 (value) {
   const input = String(value || '').trim()
-  if (!input) return null
+  if (!input || input.length > 2048) return null
   const bytes = []
   for (const char of input) {
     const digit = BASE58_LOOKUP.get(char)
@@ -190,8 +190,12 @@ export function rewriteProxiedImageUrl (url, mode = currentMode) {
     // from the origin rather than replacing a working image with a broken
     // proxy. GitHub raw is the one unknown host we load directly; every other
     // unknown host stays proxied so its origin does not see the reader's IP.
-    if (!source || decoded.includes('?')) return decoded
+    if (!source) return decoded
+    // Query-string sources are refused by the Hive image host. Only load them
+    // directly for known Hive image hosts (or the deliberate GitHub fallback);
+    // an arbitrary origin must stay proxied so its host cannot track readers.
     if (DIRECT_FALLBACK_HOSTS.has(source.hostname)) return decoded
+    if (decoded.includes('?') && PROXY_SOURCE_HOSTS.includes(source.hostname)) return decoded
   }
   return retargetProxied(url, normalized)
 }
@@ -229,7 +233,7 @@ export function resizeImageUrl (url, width, height = 0, mode = currentMode) {
   if (isProxiedImageUrl(url)) return rewriteProxiedImageUrl(url, normalized)
   if (normalized === IMAGE_PROXY_DIRECT) return url
   const parsed = parseUrl(url)
-  if (!parsed || !PROXY_SOURCE_HOSTS.includes(parsed.hostname)) return url
+  if (!parsed) return url
   // Avatars already come at the requested size and the Hive host refuses to
   // chain-proxy them.
   if (parsed.pathname.startsWith('/u/')) return url

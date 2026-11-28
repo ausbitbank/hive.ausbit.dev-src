@@ -217,6 +217,7 @@ import {
   claimFromLink
 } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { authoritiesMatchPayload } from 'src/services/accountClaim'
 import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
 
@@ -395,11 +396,7 @@ export default {
       }
     },
     accountMatchesPayload (account, payload) {
-      const firstKey = authority => authority?.key_auths?.[0]?.[0] || ''
-      return firstKey(account?.owner) === payload.o &&
-        firstKey(account?.active) === payload.a &&
-        firstKey(account?.posting) === payload.p &&
-        (account?.memo_key || '') === payload.m
+      return authoritiesMatchPayload(account, payload)
     },
     statusLabel (claim) {
       if (claim.state === 'created') return 'Already created'

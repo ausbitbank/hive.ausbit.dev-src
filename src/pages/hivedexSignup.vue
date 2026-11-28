@@ -278,16 +278,20 @@
               </div>
 
               <div v-if="accountExists" class="hivedex-result" :class="keysMatch === false ? 'hivedex-result--bad' : 'hivedex-result--ok'">
-                <q-icon :name="keysMatch === false ? 'report' : 'check_circle'" size="24px" aria-hidden="true" />
+                <q-icon :name="keysMatch === true ? 'check_circle' : keysMatch === false ? 'report' : 'help_outline'" size="24px" aria-hidden="true" />
                 <div>
                   <strong v-if="keysMatch === false">The account exists, but its keys do not match this order.</strong>
-                  <strong v-else>Account created.</strong>
+                  <strong v-else-if="keysMatch === true">Account created with your keys.</strong>
+                  <strong v-else>Account exists — keys not verified.</strong>
                   <p v-if="keysMatch === false">
                     Do not reuse this order. Choose another username and create a new invoice.
                   </p>
-                  <p v-else>
+                  <p v-else-if="keysMatch === true">
                     @{{ username }} is live. The new owner should import their backup into SmartLock
                     or Hive Keychain and keep the owner key offline.
+                  </p>
+                  <p v-else>
+                    Verify the account keys against the saved order before treating this as complete.
                   </p>
                   <div class="hivedex-actions">
                     <q-btn no-caps outline color="primary" :to="'/@' + username" :label="'View @' + username" />
@@ -366,12 +370,13 @@ import { validateAccountName } from 'src/services/hiveNames'
 import { pollWhileVisible } from 'src/services/polling'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
 import { importKeysToKeychain } from 'src/services/keychainAccounts'
-import { buildClaimPayload, claimFingerprint, publicKeysFromAuthorities } from 'src/services/accountClaim'
+import { authoritiesMatchKeys, buildClaimPayload, claimFingerprint, publicKeysFromAuthorities } from 'src/services/accountClaim'
 import {
   createInvoice,
   getInvoiceStatus,
   getPrice,
-  HIVEDEX_STATUS
+  HIVEDEX_STATUS,
+  safeHivedexPayLink
 } from 'src/services/hivedex'
 import PageHeader from 'components/ui/PageHeader.vue'
 
@@ -425,6 +430,7 @@ export default {
       accountExists: false,
       accountCreated: null,
       keysMatch: null,
+      resumePublicKeys: null,
       checkingAccount: false,
       savedOrder: null,
       statusPoller: null,
@@ -557,12 +563,11 @@ export default {
     },
     async createPaymentInvoice () {
       if (!this.keys || !this.confirmedSaved || this.creatingInvoice) return
-      const available = await this.checkUsernameAvailability()
-      if (!available) return
-
       this.creatingInvoice = true
       this.invoiceError = ''
       try {
+        const available = await this.checkUsernameAvailability()
+        if (!available) return
         const publicKeys = publicKeysFromAuthorities(this.generatedAuthorities)
         const returnUrl = window.location.origin + '/join/hivedex?resume=1'
         const invoice = await createInvoice({
@@ -583,6 +588,7 @@ export default {
           orderId: invoice.orderId,
           payLink: invoice.payLink,
           fingerprint: this.fingerprint,
+          publicKeys: publicKeysFromAuthorities(this.generatedAuthorities),
           createdAt: Date.now()
         }
         this.savedOrder = order
@@ -614,8 +620,9 @@ export default {
     },
     loadSavedOrder () {
       const order = this.$q.localStorage.getItem(ORDER_KEY)
-      if (!order || !order.username || !order.trackId || !order.payLink) {
+      if (!order || !order.username || !order.trackId || !safeHivedexPayLink(order.payLink)) {
         this.savedOrder = null
+        if (order) this.$q.localStorage.remove(ORDER_KEY)
         return
       }
       this.savedOrder = order
@@ -632,6 +639,7 @@ export default {
       this.fingerprint = order.fingerprint || ''
       this.keys = null
       this.generatedAuthorities = null
+      this.resumePublicKeys = order.publicKeys || null
       this.confirmedSaved = false
       this.status = HIVEDEX_STATUS.NEW
       this.statusError = ''
@@ -708,10 +716,18 @@ export default {
         if (accounts.length) {
           this.accountExists = true
           this.accountCreated = accounts[0]
-          this.keysMatch = this.keys ? this.accountMatchesPayload(accounts[0]) : null
+          this.keysMatch = this.keys
+            ? this.accountMatchesPayload(accounts[0])
+            : this.resumePublicKeys
+              ? authoritiesMatchKeys(accounts[0], this.resumePublicKeys)
+              : null
           this.stopAccountPolling()
-          this.$q.localStorage.remove(ORDER_KEY)
-          this.savedOrder = null
+          // Keep the order when the chain keys do not match or cannot be
+          // verified, so the user can see and act on the mismatch.
+          if (this.keysMatch === true) {
+            this.$q.localStorage.remove(ORDER_KEY)
+            this.savedOrder = null
+          }
         } else {
           this.accountExists = false
           this.accountCreated = null
@@ -725,12 +741,7 @@ export default {
     },
     accountMatchesPayload (account) {
       if (!this.generatedAuthorities) return null
-      const publicKeys = publicKeysFromAuthorities(this.generatedAuthorities)
-      const firstKey = authority => authority?.key_auths?.[0]?.[0] || ''
-      return firstKey(account?.owner) === publicKeys.owner &&
-        firstKey(account?.active) === publicKeys.active &&
-        firstKey(account?.posting) === publicKeys.posting &&
-        (account?.memo_key || '') === publicKeys.memo
+      return authoritiesMatchKeys(account, publicKeysFromAuthorities(this.generatedAuthorities))
     },
     async importToKeychain () {
       if (!this.keys || this.keychainImporting) return

@@ -11,7 +11,12 @@
         </template>
       </page-header>
 
-      <q-banner v-if="payloadError" class="claim-banner claim-banner--error" rounded>
+      <q-banner v-if="checkError" class="claim-banner claim-banner--error" rounded>
+      <q-icon name="warning" aria-hidden="true" />
+      {{ checkError }}
+    </q-banner>
+
+    <q-banner v-if="payloadError" class="claim-banner claim-banner--error" rounded>
         <template #avatar><q-icon name="error" color="negative" aria-hidden="true" /></template>
         {{ payloadError }}
       </q-banner>
@@ -213,7 +218,7 @@
 <script>
 import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { claimAgeDays, claimFingerprint, claimFromLink, buildClaimLink, authoritiesFromPayload } from 'src/services/accountClaim'
+import { claimAgeDays, claimFingerprint, claimFromLink, buildClaimLink, authoritiesFromPayload, authoritiesMatchPayload } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
 import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
@@ -228,6 +233,8 @@ export default {
     return {
       payload: null,
       payloadError: '',
+      checkError: '',
+      checkToken: 0,
       pastedLink: '',
       fingerprint: '',
       checkingAccount: false,
@@ -346,6 +353,8 @@ export default {
     async applyPayload (payload) {
       this.payload = payload
       this.payloadError = ''
+      this.checkError = ''
+      this.checkToken += 1
       this.existingAccount = null
       this.accountExists = false
       this.keysMatch = false
@@ -359,13 +368,17 @@ export default {
     },
     async checkExistingAccount () {
       if (!this.payload) return
+      const payload = this.payload
+      const token = this.checkToken
       this.checkingAccount = true
+      this.checkError = ''
       try {
-        const accounts = await this.$hive.api.getAccountsAsync([this.payload.u])
+        const accounts = await this.$hive.api.getAccountsAsync([payload.u])
+        if (token !== this.checkToken || payload !== this.payload) return
         if (accounts.length) {
           this.existingAccount = accounts[0]
           this.accountExists = true
-          this.keysMatch = this.accountMatchesPayload(accounts[0], this.payload)
+          this.keysMatch = this.accountMatchesPayload(accounts[0], payload)
           if (this.keysMatch) {
             this.created = true
             this.stopPolling()
@@ -376,17 +389,14 @@ export default {
           this.keysMatch = false
         }
       } catch {
-        // Leave the previous state; the user can retry with the button.
+        if (token !== this.checkToken || payload !== this.payload) return
+        this.checkError = 'Could not check @' + payload.u + ' on chain. Try again before creating it.'
       } finally {
-        this.checkingAccount = false
+        if (token === this.checkToken) this.checkingAccount = false
       }
     },
     accountMatchesPayload (account, payload) {
-      const firstKey = authority => authority?.key_auths?.[0]?.[0] || ''
-      return firstKey(account?.owner) === payload.o &&
-        firstKey(account?.active) === payload.a &&
-        firstKey(account?.posting) === payload.p &&
-        (account?.memo_key || '') === payload.m
+      return authoritiesMatchPayload(account, payload)
     },
     initAccount () {
       if (this.loggedInUser) this.$hiveStore.getAccount(this.loggedInUser)

@@ -6,7 +6,8 @@ import {
   getInvoiceStatus,
   isPaidStatus,
   isTerminalStatus,
-  normalizeStatus
+  normalizeStatus,
+  safeHivedexPayLink
 } from '../../src/services/hivedex'
 
 const PUBLIC_KEYS = {
@@ -94,6 +95,18 @@ describe('Hivedex client', () => {
       status: 503,
       message: 'No capacity right now'
     })
+  })
+
+  it('rejects unsafe or non-https payment links', async () => {
+    for (const payLink of ['javascript:alert(1)', 'http://pay.example/1', 'data:text/html,x']) {
+      mockFetch({ payLink, trackId: '123' })
+      await expect(createInvoice({ username: 'alice', ...PUBLIC_KEYS })).rejects.toMatchObject({
+        name: 'HivedexError',
+        message: expect.stringContaining('safe https')
+      })
+    }
+    expect(safeHivedexPayLink('https://pay.example/1')).toBe('https://pay.example/1')
+    expect(safeHivedexPayLink('javascript:alert(1)')).toBe('')
   })
 
   it('maps a network failure to a HivedexError', async () => {
