@@ -192,8 +192,14 @@ principles that constrain it. Delivered work and its verification records live i
   items become sent without another signature; an inconclusive lookup fails
   closed. See
   [`docs/workstreams/W121-active-retry-reconciliation.md`](workstreams/W121-active-retry-reconciliation.md).
+- W122 verifies that Hive Keychain's dApp API cannot sign owner changes: its
+  request schema accepts only posting/active roles and hard-codes active
+  signing for authority requests. Owner authority is now read-only with an
+  explained fail-closed path; active/posting edits are unchanged. Owner key
+  replacement and owner thresholds remain blocked. See
+  [`docs/workstreams/W122-owner-authority-blocker.md`](workstreams/W122-owner-authority-blocker.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,402 tests across 249 files**, `bun run build`
+  `bun run test` green with **2,401 tests across 249 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
   after a retry and are reported as flaky). `bun run
   perf:check` passed in an isolated worktree; the shared worktree's uncommitted
@@ -203,7 +209,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W122**. **W90** remains the separate
+- The next free workstream number is **W123**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

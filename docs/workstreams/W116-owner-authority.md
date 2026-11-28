@@ -1,7 +1,13 @@
 # W116 — Keychain owner-authority editing
 
 Date: 2026-11-28
-Status: implemented and verified locally
+Status: implemented and verified locally; owner flow corrected by W122
+
+> **Correction (W122):** the owner flow below assumed Keychain accepted an
+> `Owner` role. The current extension's dApp request schema accepts only
+> `Posting`/`Active` and signs authority requests with the active key, so that
+> request is rejected. W122 makes owner authority read-only and records the
+> verified API shape.
 
 ## Scope
 

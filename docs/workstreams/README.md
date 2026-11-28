@@ -180,4 +180,5 @@ service.
 | [W119-duplicate-edit-draft](W119-duplicate-edit-draft.md) | Duplicate an edited post as a fresh draft for payout changes |
 | [W120-active-retry-guidance](W120-active-retry-guidance.md) | Inline warning before retrying a failed active broadcast |
 | [W121-active-retry-reconciliation](W121-active-retry-reconciliation.md) | Verify a failed active broadcast against the chain before retrying |
+| [W122-owner-authority-blocker](W122-owner-authority-blocker.md) | Fail closed on owner authority; Keychain signs posting/active only |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |

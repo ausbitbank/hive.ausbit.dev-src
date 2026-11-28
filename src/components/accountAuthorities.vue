@@ -55,7 +55,7 @@
         <router-link :to="accountLink(auth[0])" class="authorities__account">@{{ auth[0] }}</router-link>
         <span class="authorities__weight" title="Weight">{{ auth[1] }}</span>
         <q-btn
-          v-if="loggedInUser === account.name && editorEnabled"
+          v-if="loggedInUser === account.name && editorEnabled && permission.name !== 'owner'"
           flat
           dense
           round
@@ -74,7 +74,17 @@
       </li>
     </ul>
 
-    <div v-if="loggedInUser === account.name && editorEnabled" class="authorities__add">
+    <div v-if="loggedInUser === account.name && editorEnabled && permission.name === 'owner'" class="authorities__note" role="note">
+      <q-icon name="info" size="14px" aria-hidden="true" />
+      <span>
+        Owner authority is read-only in Banksia. Hive Keychain's dApp API signs
+        posting and active requests only, so Banksia never requests an owner key.
+        Change owner keys or the owner threshold in Keychain's Change Keys tool
+        or another owner-key tool.
+      </span>
+    </div>
+
+    <div v-if="loggedInUser === account.name && editorEnabled && permission.name !== 'owner'" class="authorities__add">
       <q-btn flat dense no-caps icon="person_add" color="primary" class="authorities__add-btn" :title="'Add ' + permission.label + ' authority'">
         <q-popup-proxy>
           <q-card flat class="authorities__editor">
@@ -181,9 +191,7 @@
 </div>
 </template>
 <script>
-import { keychain } from '@hiveio/keychain'
 import { accountAuthorityKeyUpdate, accountAuthorityUpdate } from 'src/services/authority'
-import { isValidHiveAccountName } from 'src/services/blogHost'
 
 const PERMISSION_META = {
   owner: {
@@ -291,7 +299,7 @@ export default {
         return
       }
       if (permission === 'owner') {
-        return this.changeOwnerAuthority(options)
+        return this.ownerEditBlocked()
       }
       try {
         const operation = accountAuthorityUpdate(this.account, permission, options)
@@ -310,57 +318,13 @@ export default {
         })
       }
     },
-    async changeOwnerAuthority ({ add = true, target, weight = 1 } = {}) {
-      const loginType = this.$hiveStore.user.loginType || ''
-      if (loginType !== 'keychain') {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Owner authority changes require Hive Keychain.',
-          caption: 'The signing queue has no owner-key role. Use a Keychain session or another owner-key tool.',
-          timeout: 7000
-        })
-        return
-      }
-      const name = String(target || '').trim().replace(/^@/, '').toLowerCase()
-      if (!isValidHiveAccountName(name)) {
-        this.$q.notify({ type: 'negative', message: 'Enter a valid Hive account name.' })
-        return
-      }
-      if (name === this.account?.name) {
-        this.$q.notify({ type: 'negative', message: 'An account cannot delegate owner authority to itself.' })
-        return
-      }
-      const ownerWeight = Number(weight)
-      if (add && (!Number.isInteger(ownerWeight) || ownerWeight < 1 || ownerWeight > 65535)) {
-        this.$q.notify({ type: 'negative', message: 'Authority weight must be a whole number between 1 and 65535.' })
-        return
-      }
-      try {
-        const result = add
-          ? await keychain(window, 'requestAddAccountAuthority', this.account.name, name, 'Owner', ownerWeight)
-          : await keychain(window, 'requestRemoveAccountAuthority', this.account.name, name, 'Owner')
-        if (result?.success) {
-          this.$emit('authEdited')
-          return
-        }
-        let message = result?.msg || result?.message || 'Keychain did not approve the owner change.'
-        if (result?.notInstalled) message = 'Hive Keychain is not installed.'
-        else if (result?.notActive) message = 'Allow Hive Keychain to access this site.'
-        else if (result?.cancel) message = 'Cancelled in Keychain.'
-        this.$q.notify({
-          type: 'negative',
-          message: 'Could not change the owner authority.',
-          caption: message,
-          timeout: 7000
-        })
-      } catch (error) {
-        this.$q.notify({
-          type: 'negative',
-          message: 'Could not change the owner authority.',
-          caption: error?.message || 'Keychain did not respond.',
-          timeout: 7000
-        })
-      }
+    ownerEditBlocked () {
+      this.$q.notify({
+        type: 'negative',
+        message: 'Owner authority is read-only in Banksia.',
+        caption: "Hive Keychain's dApp API cannot sign owner changes. Use Keychain's Change Keys tool or another owner-key tool.",
+        timeout: 8000
+      })
     }
   }
 }
@@ -521,6 +485,25 @@ export default {
 
 .authorities__add {
   margin-top: 0.35rem;
+}
+
+.authorities__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--c-warning) 32%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--c-text-muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.authorities__note .q-icon {
+  flex: none;
+  margin-top: 0.1rem;
+  color: var(--c-warning);
 }
 
 .authorities__add-btn {

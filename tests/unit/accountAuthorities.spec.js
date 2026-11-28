@@ -22,7 +22,7 @@ function context ({ loginType = 'keychain' } = {}) {
     $q: { notify },
     $emit: emit,
     newKey: { active: { key: '', weight: 1 }, posting: { key: '', weight: 1 } },
-    changeOwnerAuthority: AccountAuthorities.methods.changeOwnerAuthority,
+    ownerEditBlocked: AccountAuthorities.methods.ownerEditBlocked,
     queueKeyChange: AccountAuthorities.methods.queueKeyChange,
     queueAuthorityChange: AccountAuthorities.methods.queueAuthorityChange
   }
@@ -66,21 +66,19 @@ describe('account authority editor', () => {
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'negative' }))
   })
 
-  it('uses Keychain for an owner change when the session allows it', async () => {
-    const { ctx, emit } = context({ loginType: 'keychain' })
-    keychain.mockResolvedValue({ success: true })
-    await ctx.queueAuthorityChange('owner', { add: true, target: 'bob', weight: 2 })
+  it('never sends owner changes to Keychain or the queue from any session', async () => {
+    for (const loginType of ['keychain', 'smartlock', 'hiveauth']) {
+      keychain.mockReset()
+      const { ctx, emit, notify, addToQueue } = context({ loginType })
+      await ctx.queueAuthorityChange('owner', { add: true, target: 'bob', weight: 2 })
 
-    expect(keychain).toHaveBeenCalledWith(window, 'requestAddAccountAuthority', 'alice', 'bob', 'Owner', 2)
-    expect(emit).toHaveBeenCalledWith('authEdited')
-  })
-
-  it('fails closed for an owner change on a non-Keychain session', async () => {
-    const { ctx, emit, notify } = context({ loginType: 'smartlock' })
-    await ctx.queueAuthorityChange('owner', { add: true, target: 'bob', weight: 2 })
-
-    expect(keychain).not.toHaveBeenCalled()
-    expect(emit).not.toHaveBeenCalled()
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'negative' }))
+      expect(keychain, loginType).not.toHaveBeenCalled()
+      expect(addToQueue, loginType).not.toHaveBeenCalled()
+      expect(emit, loginType).not.toHaveBeenCalled()
+      expect(notify, loginType).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'negative',
+        message: expect.stringContaining('read-only')
+      }))
+    }
   })
 })
