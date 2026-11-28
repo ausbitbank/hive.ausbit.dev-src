@@ -254,6 +254,20 @@ export function createDraft (overrides = {}, now = Date.now()) {
   }, now)
 }
 
+/** Copy an existing draft as a fresh new post (no edit marker or id). */
+export function duplicateDraftAsNew (draft, owner, now = Date.now()) {
+  if (!draft) return null
+  return normalizeDraft({
+    ...draft,
+    id: undefined,
+    owner: owner || null,
+    editing: null,
+    archivedAt: null,
+    createdAt: now,
+    updatedAt: now
+  }, now)
+}
+
 /** True when the draft has anything worth saving. */
 export function draftHasContent (draft) {
   return Boolean(draft && (String(draft.title || '').trim() || String(draft.body || '').trim()))

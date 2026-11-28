@@ -11,6 +11,7 @@ import {
   draftExportFileName,
   draftHasContent,
   draftLengthGuidance,
+  duplicateDraftAsNew,
   hasAiTools,
   mergeImportedDrafts,
   normalizeBeneficiaries,
@@ -181,6 +182,24 @@ describe('draft ownership selection', () => {
     expect(visible.map(draft => draft.id)).toEqual(['bob-old', 'legacy'])
     expect(pickInitialDraft(drafts, 'bob', 'alice-new', { id: 'blank' }).id).toBe('bob-old')
     expect(pickInitialDraft(drafts, 'bob', 'bob-old', { id: 'blank' }).id).toBe('bob-old')
+  })
+  it('duplicates an edit as a fresh new-post draft', () => {
+    const source = createDraft({
+      id: 'edit-1',
+      owner: 'alice',
+      title: 'Existing post',
+      body: 'Body',
+      editing: { author: 'alice', permlink: 'existing', parentAuthor: '', parentPermlink: 'hive-1' },
+      archivedAt: 123
+    }, 1000)
+    const copy = duplicateDraftAsNew(source, 'alice', 5000)
+    expect(copy.id).not.toBe('edit-1')
+    expect(copy.editing).toBeNull()
+    expect(copy.archivedAt).toBeNull()
+    expect(copy.title).toBe('Existing post')
+    expect(copy.body).toBe('Body')
+    expect(copy.createdAt).toBe(5000)
+    expect(copy.owner).toBe('alice')
   })
 })
 

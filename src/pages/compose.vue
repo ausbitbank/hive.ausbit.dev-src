@@ -232,6 +232,16 @@
               <span v-if="draft.scheduledAt" class="compose-hint">{{ scheduledLabel }} · local only</span>
             </div>
             <q-btn
+              v-if="isEditing"
+              flat
+              no-caps
+              color="primary"
+              icon="content_copy"
+              label="Duplicate as new"
+              title="Create a new draft with this content so payout settings can be applied"
+              @click="duplicateAsNew"
+            />
+            <q-btn
               class="compose-publish"
               unelevated
               no-caps
@@ -3596,6 +3606,7 @@ import {
   draftExportFileName,
   draftHasContent,
   draftLengthGuidance,
+  duplicateDraftAsNew,
   mergeImportedDrafts,
   normalizeBeneficiaries,
   normalizeCoverImage,
@@ -6137,6 +6148,20 @@ export default {
     },
     onVisibilityChange () {
       if (document.visibilityState === 'hidden') this.flushAutosave()
+    },
+    duplicateAsNew () {
+      if (!this.draft) return
+      if (this.hasUnsavedDraft() && !this.saveDraft({ silent: true })) return
+      const copy = duplicateDraftAsNew(this.draft, this.loggedInUser)
+      this.draftView = 'active'
+      this.setActiveDraft(copy)
+      this.$router.replace({ name: 'compose' }).catch(() => {})
+      this.$q.notify({
+        message: 'Duplicated as a new draft.',
+        caption: 'Payout settings now apply because this is a new post.',
+        color: 'primary',
+        timeout: 4000
+      })
     },
     startNewDraft () {
       if (this.draft && draftHasContent(this.draft) && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
