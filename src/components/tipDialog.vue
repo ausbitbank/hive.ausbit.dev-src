@@ -1,6 +1,6 @@
 <template>
   <q-list bordered separator class="surface-1">
-    <q-item clickable>
+    <q-item>
       <q-item-section avatar>
         <q-avatar><q-icon name="img:/statics/hive.svg" title="Hive" /></q-avatar>
       </q-item-section>
@@ -22,7 +22,7 @@
         <transfer-dialog tokenName="HIVE" network="hive" :to="account" :username="$hiveStore.user.username" />
       </q-dialog>
     </q-item>
-    <q-item clickable>
+    <q-item>
       <q-item-section avatar>
         <q-avatar><q-icon name="img:/statics/hbd.svg" title="Hive Dollars" /></q-avatar>
       </q-item-section>
@@ -44,7 +44,7 @@
         <transfer-dialog tokenName="HBD" network="hive" :to="account" :username="$hiveStore.user.username" />
       </q-dialog>
     </q-item>
-    <q-item clickable>
+    <q-item>
       <q-item-section avatar>
         <q-avatar><q-icon name="img:/statics/lightning.webp" title="Lightning" /></q-avatar>
       </q-item-section>
@@ -71,7 +71,7 @@
     <q-item v-if="!accountData">
       <q-spinner-pie color="primary" size="sm" />
     </q-item>
-    <q-item clickable v-for="coin in coins" :key="coin.index">
+    <q-item v-for="coin in coins" :key="coin.index">
       <q-item-section avatar>
         <q-avatar size="lg"><q-icon :name="returnCoinSvg(coin)" :title="coin" /></q-avatar>
       </q-item-section>
