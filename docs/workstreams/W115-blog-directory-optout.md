@@ -1,7 +1,7 @@
 # W115 — Blog directory opt-out verification
 
 Date: 2026-11-28
-Status: implemented and verified locally
+Status: implemented and verified locally; window and error handling updated by W123
 
 ## Scope
 

@@ -286,6 +286,38 @@ async function rpc (method, params) {
   return null
 }
 
+/**
+ * Like `rpc`, but throws when every endpoint fails so callers can tell "the
+ * chain says no" from "the chain did not answer". An empty result (for example
+ * no matching account) is still a successful answer.
+ */
+async function rpcRequired (method, params) {
+  for (const endpoint of HIVE_RPCS) {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'user-agent': 'banksia.io link-preview (+https://banksia.io)'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: controller.signal
+      })
+      if (!response.ok) continue
+      const json = await response.json()
+      if (json && json.result !== undefined && json.result !== null) return json.result
+    } catch {
+      // Try the next known node.
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  throw new Error('Hive RPC unavailable')
+}
+
 function stripMarkdown (value, length = 160) {
   const text = String(value || '')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
@@ -762,7 +794,10 @@ async function blogRobots (url, tenant) {
 }
 
 const DIRECTORY_PREFIX = 'blog:'
-const DIRECTORY_REVERIFY_MS = 6 * 60 * 60 * 1000
+// The directory is a cache of the on-chain opt-in, not the source of truth.
+// Re-verify quickly enough that an opt-out does not linger for most of a day
+// while keeping the first public read after the window bounded to five reads.
+const DIRECTORY_REVERIFY_MS = 30 * 60 * 1000
 
 async function mapLimit (items, limit, fn) {
   const results = []
@@ -825,7 +860,11 @@ async function listDirectory (env) {
 }
 
 async function verifyBlogDirectory (account) {
-  const data = await getAccount(account)
+  // `getAccount` returns null for both "account missing" and "every node
+  // failed". Directory writes must distinguish them, so use a strict read:
+  // an RPC failure throws and the caller keeps the existing entry.
+  const result = await rpcRequired('condenser_api.get_accounts', [[account]])
+  const data = Array.isArray(result) ? result[0] || null : null
   if (!data) return { claimed: false, listed: false, settings: null }
   const read = readBlogSettings(data)
   return {
@@ -867,7 +906,10 @@ async function handleDirectoryApi (request, env, url) {
     if (!isValidHiveAccountName(account)) {
       return jsonResponse({ ok: false, listed: false, error: 'A valid Hive account is required.' }, 400)
     }
-    const verify = await verifyBlogDirectory(account)
+    const verify = await verifyBlogDirectory(account).catch(() => null)
+    if (!verify) {
+      return jsonResponse({ ok: false, listed: false, error: 'The chain could not confirm the directory state yet.' }, 503)
+    }
     const stored = await syncDirectoryEntry(env, account, verify.listed)
     if (verify.listed && !stored) {
       return jsonResponse({ ok: false, listed: false, error: 'The directory index is not configured.' }, 503)
