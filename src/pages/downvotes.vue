@@ -22,6 +22,28 @@
           <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="load({ force: true })" />
           <q-btn v-if="isOwn" flat dense no-caps :icon="direction === 'received' ? 'south' : 'north'" :label="direction === 'received' ? 'Received' : 'Given'" @click="toggleDirection" />
           <q-btn flat dense no-caps icon="person" label="Account" :to="'/@' + username" />
+          <q-btn flat dense no-caps icon="bookmark" label="Views">
+            <q-menu>
+              <div class="dv-views">
+                <button type="button" class="dv-views__item" v-close-popup @click="promptSaveView">
+                  <q-icon name="bookmark_add" size="18px" aria-hidden="true" />
+                  <span>Save current view</span>
+                </button>
+                <button type="button" class="dv-views__item" v-close-popup @click="copyViewLink">
+                  <q-icon name="link" size="18px" aria-hidden="true" />
+                  <span>Copy filter link</span>
+                </button>
+                <div v-for="view in savedViews" :key="'view-' + view.name" class="dv-views__row">
+                  <button type="button" class="dv-views__item" v-close-popup @click="loadView(view)">
+                    <span>{{ view.name }}</span>
+                    <small>{{ view.summary || 'Saved filters' }}</small>
+                  </button>
+                  <button type="button" class="dv-views__delete" :aria-label="'Delete view ' + view.name" @click.stop="deleteView(view.name)">×</button>
+                </div>
+                <p v-if="!savedViews.length" class="dv-views__empty">No saved views yet.</p>
+              </div>
+            </q-menu>
+          </q-btn>
         </div>
       </header>
 
@@ -66,6 +88,12 @@
             <strong>{{ impactSummary.afterPayoutCount }}</strong>
             <small>signal-only votes · no reward impact</small>
           </div>
+          <div class="dv-stat">
+            <span>Since last visit</span>
+            <strong>{{ firstVisit ? '—' : newCount }}</strong>
+            <small v-if="firstVisit">First visit recorded</small>
+            <small v-else>{{ moneyLabel(newUsd, { approximate: true }) }} · {{ lastVisitLabel }}</small>
+          </div>
         </section>
 
         <p v-if="valuationLoading" class="dv-note">Estimating dollar impact from voter stake…</p>
@@ -83,6 +111,9 @@
           <q-input v-model="targetFilter" dense outlined clearable label="Target" class="dv-control" />
           <q-toggle v-model="showIgnored" label="Show locally ignored voters" dense class="dv-control" />
           <q-toggle v-model="noteFilter" :label="'With notes' + (noteCount ? ' (' + noteCount + ')' : '')" dense class="dv-control" />
+          <q-toggle v-model="watchFilter" :label="'Watched only' + (watchedCount ? ' (' + watchedCount + ')' : '')" dense class="dv-control" />
+          <q-toggle v-model="newOnly" :label="'New only' + (newCount ? ' (' + newCount + ')' : '')" dense class="dv-control" />
+          <q-btn v-if="!firstVisit && newCount" flat dense no-caps icon="done_all" label="Mark seen" @click="markSeen" />
           <q-btn flat dense no-caps icon="filter_alt_off" label="Clear filters" @click="clearFilters" />
           <q-btn flat dense no-caps icon="download" label="Export CSV" @click="exportCsv" />
           <q-btn flat dense no-caps icon="content_copy" label="Copy report" @click="copyReport" />
@@ -229,6 +260,35 @@
               </div>
             </div>
           </div>
+          <div v-if="voterWeek.voters.length" class="dv-heat-wrap">
+            <h3 class="dv-mini-title">Voter activity by week</h3>
+            <table class="dv-heat">
+              <caption class="sr-only">Downvotes by top voter per UTC week</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Voter</th>
+                  <th v-for="week in voterWeek.weeks" :key="'hw-' + week.key" scope="col">{{ week.label }}</th>
+                  <th scope="col">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in voterWeek.voters" :key="'hr-' + entry.voter">
+                  <th scope="row"><button type="button" class="dv-link" @click="focusVoter(entry.voter)">@{{ entry.voter }}</button></th>
+                  <td
+                    v-for="(cell, index) in entry.cells"
+                    :key="'hc-' + entry.voter + index"
+                    class="dv-heat__cell"
+                    :style="heatStyle(cell)"
+                    :title="voterWeek.weeks[index].key + ': ' + cell.count + ' votes, ' + moneyLabel(cell.usd, { approximate: true })"
+                  >
+                    {{ cell.count || '' }}
+                  </td>
+                  <td class="dv-heat__total">{{ moneyLabel(entry.totalUsd, { approximate: true }) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="dv-note">Top {{ voterWeek.voters.length }} voters · {{ voterWeek.weekCount }} UTC weeks · hover a cell for the dollar value.</p>
+          </div>
         </section>
 
         <section v-if="coordination" class="dv-evidence" aria-labelledby="dv-evidence-title">
@@ -326,6 +386,15 @@
               <li v-for="entry in topVoters" :key="'tv-' + entry.key">
                 <div class="dv-rank__head">
                   <button type="button" class="dv-link" @click="focusVoter(entry.key)">@{{ entry.key }}</button>
+                  <q-btn
+                    flat
+                    dense
+                    round
+                    size="sm"
+                    :icon="isWatched(entry.key) ? 'star' : 'star_border'"
+                    :aria-label="(isWatched(entry.key) ? 'Unwatch ' : 'Watch ') + '@' + entry.key"
+                    @click.stop="toggleWatch(entry.key)"
+                  />
                   <span class="dv-rank__meta">{{ entry.count }} votes · {{ entry.exactCount }}/{{ entry.effectiveCount }} exact</span>
                 </div>
                 <div class="dv-rank__bar"><div :style="{ width: barWidth(entry.totalUsd, topVoters[0]?.totalUsd) }" /></div>
@@ -401,7 +470,8 @@
 
         <div v-else-if="!filtered.length" class="dv-state">
           <q-icon name="shield" size="1.6em" aria-hidden="true" />
-          <span>{{ allDownvotes.length ? 'No downvotes match these filters.' : 'No ' + direction + ' downvotes in the loaded history.' }}</span>
+          <span v-if="impactLoading && impactNeedsAllTargets">Calculating exact impact for the loaded downvotes…</span>
+          <span v-else>{{ allDownvotes.length ? 'No downvotes match these filters.' : 'No ' + direction + ' downvotes in the loaded history.' }}</span>
         </div>
 
         <div v-else class="dv-table-wrap">
@@ -423,6 +493,8 @@
                 <td><time :datetime="row.timestamp">{{ timeLabel(row.timestamp) }}</time></td>
                 <td>
                   <router-link :to="'/@' + row.voter">@{{ row.voter }}</router-link>
+                  <q-icon v-if="isWatched(row.voter)" name="star" size="11px" class="dv-watched" aria-hidden="true" />
+                  <span v-if="isWatched(row.voter)" class="sr-only">Watched voter</span>
                   <span v-if="noteForRow(row)" class="dv-note-dot" title="You have a private note" aria-hidden="true">●</span>
                 </td>
                 <td><q-badge :color="relationshipColor(row.voter)">{{ relationship(row.voter) }}</q-badge></td>
@@ -498,6 +570,7 @@
             <p v-if="contextError" class="dv-note dv-note--error">{{ contextError }}</p>
             <div class="dv-context__actions">
               <q-btn outline no-caps color="primary" icon="travel_explore" label="Check voter’s recent downvotes" :loading="voterHistoryLoading" @click="loadVoterHistory" />
+              <q-btn flat no-caps :icon="isWatched(contextRow.voter) ? 'star' : 'star_border'" :label="isWatched(contextRow.voter) ? 'Watching' : 'Watch voter'" @click="toggleWatch(contextRow.voter)" />
               <q-btn flat no-caps :to="voterLink(contextRow.voter)" label="Voter profile" />
               <q-btn flat no-caps :to="postLink(contextRow)" label="Open post" />
             </div>
@@ -586,6 +659,14 @@
 .dv-title { margin: 0.2rem 0 0.35rem; font-size: clamp(1.4rem, 3vw, 1.9rem); overflow-wrap: anywhere; }
 .dv-intro { max-width: 760px; margin: 0; color: var(--c-text-muted); line-height: 1.55; }
 .dv-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.dv-views { min-width: 260px; padding: var(--space-1) 0; }
+.dv-views__row { display: flex; align-items: stretch; gap: 0.15rem; }
+.dv-views__item { flex: 1; display: flex; align-items: center; gap: 0.45rem; width: 100%; padding: 0.5rem 0.75rem; border: 0; background: none; color: var(--c-text); font: inherit; text-align: left; cursor: pointer; }
+.dv-views__item:hover, .dv-views__item:focus-visible { background: color-mix(in srgb, var(--c-text) 7%, transparent); }
+.dv-views__item span { display: block; }
+.dv-views__item small { display: block; color: var(--c-text); font-size: 0.68rem; }
+.dv-views__delete { border: 0; background: none; color: var(--c-negative); font-size: 1rem; padding: 0 0.6rem; cursor: pointer; }
+.dv-views__empty { margin: 0; padding: 0.5rem 0.75rem; color: var(--c-text); font-size: 0.76rem; }
 .dv-state { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-4); color: var(--c-text-muted); }
 .dv-state--error { color: var(--c-negative); }
 .dv-skeletons { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
@@ -621,6 +702,14 @@
 .dv-rank__meta { color: var(--c-text-muted); font-size: 0.7rem; }
 .dv-rank__bar { height: 6px; border-radius: var(--radius-pill); background: color-mix(in srgb, var(--c-text) 8%, transparent); overflow: hidden; }
 .dv-rank__bar > div { height: 100%; border-radius: inherit; background: var(--c-primary); }
+.dv-watched { margin-left: 0.15rem; color: var(--c-warning); }
+.dv-heat-wrap { margin-top: var(--space-3); overflow-x: auto; }
+.dv-heat { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.dv-heat th, .dv-heat td { padding: 0.3rem 0.35rem; border-bottom: 1px solid var(--c-border); text-align: center; white-space: nowrap; }
+.dv-heat thead th { color: var(--c-text-muted); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.dv-heat th[scope="row"] { text-align: left; }
+.dv-heat__cell { min-width: 34px; color: var(--c-text); font-variant-numeric: tabular-nums; }
+.dv-heat__total { text-align: right !important; color: var(--c-text); }
 .dv-pattern-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--space-2); margin-top: var(--space-2); }
 .dv-pattern { display: flex; flex-direction: column; gap: 0.15rem; padding: var(--space-2); border: 1px solid var(--c-border); border-radius: var(--radius-card); background: color-mix(in srgb, var(--c-text) 3%, transparent); }
 .dv-pattern__row { display: grid; gap: 0.1rem; padding: 0.35rem 0; border: 0; border-bottom: 1px solid var(--c-border); background: none; color: var(--c-text-muted); font: inherit; font-size: 0.72rem; text-align: left; cursor: pointer; }
@@ -703,6 +792,7 @@ import {
   sumAccountRewards,
   summarizeImpact,
   voteChanges,
+  voterWeekMatrix,
   weightEscalation
 } from 'src/services/downvoteImpact'
 import { extractVoteContext, extractVoterComments, mergeVoteContext } from 'src/services/downvoteContext'
@@ -714,6 +804,9 @@ import {
   saveNote
 } from 'src/services/downvoteNotes'
 import { buildDownvoteCsv, buildDownvoteReport, reportFilename } from 'src/services/downvoteReport'
+import { loadViews, removeView as removeSavedView, saveView } from 'src/services/downvoteViews'
+import { loadWatchlist, toggleWatched } from 'src/services/downvoteWatchlist'
+import { loadLastVisit, saveLastVisit } from 'src/services/downvoteVisit'
 import {
   fetchDownvoteDiscussion,
   fetchDownvoteTargetPosts,
@@ -736,6 +829,11 @@ import { useModerationStore } from 'src/stores/moderation'
 
 const PAGE_ROWS = 40
 const DAY_MS = 24 * 60 * 60 * 1000
+const RANGE_VALUES = ['7', '30', '90', 'all']
+const RELATIONSHIP_VALUES = ['all', 'follows', 'muted', 'blacklist', 'followed list', 'followed blacklist', 'unknown']
+const WEIGHT_VALUES = ['0', '1', '5', '10', '25', '50']
+const IMPACT_VALUES = ['all', 'effective', 'exact', 'estimated', 'after-payout']
+const GROUP_VALUES = ['none', 'voter', 'target', 'day']
 
 export default {
   name: 'DownvotesPage',
@@ -803,6 +901,14 @@ export default {
       rewardsLoading: false,
       rewardsError: '',
       rewardsComparison: null,
+      queryReady: false,
+      queryTimer: null,
+      firstVisit: false,
+      savedViews: [],
+      watchedVoters: [],
+      watchFilter: false,
+      lastVisitAt: 0,
+      newOnly: false,
       rangeOptions: [
         { label: 'Last 7 days', value: '7' },
         { label: 'Last 30 days', value: '30' },
@@ -949,15 +1055,56 @@ export default {
       return Object.keys(this.targetPosts).length
     },
     missingTargetCount () {
-      const all = this.uniqueTargets(this.filtered)
+      const source = this.impactNeedsAllTargets || !this.filtered.length ? this.impactedDownvotes : this.filtered
+      const all = this.uniqueTargets(source)
       return all.filter(target => !this.targetPosts[target]).length
     },
     exactCoveragePercent () {
       const value = Number(this.filteredImpactSummary.exactCoverage) || 0
       return Math.round(value * 100)
     },
+    impactNeedsAllTargets () {
+      return this.impactFilter === 'exact' || this.impactFilter === 'estimated'
+    },
     noteCount () {
       return this.allDownvotes.reduce((count, row) => count + (this.noteForRow(row) ? 1 : 0), 0)
+    },
+    voterWeek () {
+      return voterWeekMatrix(this.filtered, { weeks: 8, voters: 6, now: Date.now() })
+    },
+    newDownvotes () {
+      if (!this.lastVisitAt) return []
+      return this.impactedDownvotes.filter(row => (Number(row.time) || 0) > this.lastVisitAt)
+    },
+    newCount () {
+      return this.newDownvotes.length
+    },
+    newUsd () {
+      return this.newDownvotes.reduce((sum, row) => sum + (row.effective ? Math.abs(Number(row.impactUsd) || 0) : 0), 0)
+    },
+    lastVisitLabel () {
+      return this.lastVisitAt ? this.timeLabel(new Date(this.lastVisitAt).toISOString()) : ''
+    },
+    watchedCount () {
+      return this.watchedVoters.length
+    },
+    normalizedFilters () {
+      return {
+        range: this.range,
+        rel: this.relationshipFilter,
+        weight: this.minWeight,
+        impact: this.impactFilter,
+        group: this.groupBy,
+        voter: String(this.voterFilter || '').trim().toLowerCase().replace(/^@/, '').slice(0, 16),
+        target: String(this.targetFilter || '').trim().toLowerCase().slice(0, 200),
+        notes: this.noteFilter ? '1' : '',
+        ignored: this.showIgnored ? '1' : '',
+        watch: this.watchFilter ? '1' : '',
+        new: this.newOnly ? '1' : ''
+      }
+    },
+    filterSignature () {
+      return JSON.stringify(this.normalizedFilters)
     },
     scannedLabel () {
       return Math.max(0, Number(this.scanned) || 0).toLocaleString('en-US')
@@ -970,6 +1117,12 @@ export default {
     },
     filtered () {
       let list = this.impactedDownvotes
+      if (this.watchFilter) {
+        list = list.filter(row => this.isWatched(row.voter))
+      }
+      if (this.newOnly) {
+        list = list.filter(row => this.lastVisitAt && (Number(row.time) || 0) > this.lastVisitAt)
+      }
       if (this.voterFilter) {
         const needle = this.voterFilter.trim().toLowerCase().replace(/^@/, '')
         if (needle) list = list.filter(row => String(row.voter || '').includes(needle))
@@ -1056,6 +1209,22 @@ export default {
       this.visibleCount = PAGE_ROWS
       this.scheduleHydration()
     },
+    watchFilter () {
+      this.visibleCount = PAGE_ROWS
+      this.scheduleHydration()
+    },
+    newOnly () {
+      this.visibleCount = PAGE_ROWS
+      this.scheduleHydration()
+    },
+    filterSignature () {
+      if (this.queryReady) this.syncQueryFilters()
+    },
+    '$route.query' (query) {
+      if (!this.queryReady) return
+      if (this.filterSignature === this.filterSignatureFor(query)) return
+      this.applyQueryFilters(query)
+    },
     showIgnored () {
       this.visibleCount = PAGE_ROWS
       this.scheduleHydration()
@@ -1073,6 +1242,16 @@ export default {
     this.moderation.setScope(this.loggedInUser || 'guest')
     this.moderation.ensureContext()
     this.notes = loadNotes(this.scopeKey)
+    this.savedViews = loadViews(this.scopeKey)
+    this.watchedVoters = loadWatchlist(this.scopeKey)
+    this.lastVisitAt = loadLastVisit(this.scopeKey, this.username)
+    this.applyQueryFilters(this.$route.query)
+    this.queryReady = true
+    this.syncQueryFilters()
+    if (!this.lastVisitAt) {
+      this.firstVisit = true
+      this.lastVisitAt = saveLastVisit(this.scopeKey, this.username, Date.now())
+    }
     if (!this.account) this.$hiveStore.getAccount(this.username)
     this.load()
   },
@@ -1083,6 +1262,7 @@ export default {
     this.impactRequest += 1
     this.contextRequest += 1
     if (this.hydrationTimer) clearTimeout(this.hydrationTimer)
+    if (this.queryTimer) clearTimeout(this.queryTimer)
   },
   methods: {
     resetHistory () {
@@ -1211,7 +1391,13 @@ export default {
       if (this.hydrationTimer) clearTimeout(this.hydrationTimer)
       this.hydrationTimer = setTimeout(() => {
         this.hydrationTimer = null
-        const rows = all || this.uniqueTargets(this.filtered).length <= PAGE_ROWS ? this.filtered : this.pagedRows
+        const baseRows = this.impactNeedsAllTargets || !this.filtered.length
+          ? this.impactedDownvotes
+          : this.filtered
+        const allTargets = this.uniqueTargets(baseRows)
+        const rows = all || allTargets.length <= PAGE_ROWS
+          ? baseRows
+          : (this.pagedRows.length ? this.pagedRows : baseRows.slice(0, PAGE_ROWS))
         this.hydrateTargetsFor(rows, { force })
       }, 120)
     },
@@ -1256,7 +1442,10 @@ export default {
     },
     hydrateAllImpact () {
       this.failedTargets = markRaw(new Set())
-      this.hydrateTargetsFor(this.filtered)
+      const rows = this.impactNeedsAllTargets || !this.filtered.length
+        ? this.impactedDownvotes
+        : this.filtered
+      this.hydrateTargetsFor(rows)
     },
     moneyLabel (value, { approximate = false } = {}) {
       const number = Number(value)
@@ -1537,6 +1726,133 @@ export default {
       this.targetFilter = ''
       this.impactFilter = 'all'
       this.noteFilter = false
+      this.watchFilter = false
+      this.newOnly = false
+    },
+    queryToFilters (query = {}) {
+      const raw = query || {}
+      return {
+        range: RANGE_VALUES.includes(String(raw.range)) ? String(raw.range) : '30',
+        rel: RELATIONSHIP_VALUES.includes(String(raw.rel)) ? String(raw.rel) : 'all',
+        weight: WEIGHT_VALUES.includes(String(raw.weight)) ? String(raw.weight) : '0',
+        impact: IMPACT_VALUES.includes(String(raw.impact)) ? String(raw.impact) : 'all',
+        group: GROUP_VALUES.includes(String(raw.group)) ? String(raw.group) : 'none',
+        voter: String(raw.voter || '').trim().toLowerCase().replace(/^@/, '').slice(0, 16),
+        target: String(raw.target || '').trim().toLowerCase().slice(0, 200),
+        notes: raw.notes === '1' ? '1' : '',
+        ignored: raw.ignored === '1' ? '1' : '',
+        watch: raw.watch === '1' ? '1' : '',
+        new: raw.new === '1' ? '1' : ''
+      }
+    },
+    filterSignatureFor (query) {
+      return JSON.stringify(this.queryToFilters(query))
+    },
+    applyQueryFilters (query) {
+      if (this.queryTimer) {
+        clearTimeout(this.queryTimer)
+        this.queryTimer = null
+      }
+      const filters = this.queryToFilters(query)
+      this.range = filters.range
+      this.relationshipFilter = filters.rel
+      this.minWeight = filters.weight
+      this.impactFilter = filters.impact
+      this.groupBy = filters.group
+      this.voterFilter = filters.voter
+      this.targetFilter = filters.target
+      this.noteFilter = filters.notes === '1'
+      this.showIgnored = filters.ignored === '1'
+      this.watchFilter = filters.watch === '1'
+      this.newOnly = filters.new === '1'
+    },
+    filtersToQuery () {
+      const filters = this.normalizedFilters
+      const query = {}
+      if (filters.range !== '30') query.range = filters.range
+      if (filters.rel !== 'all') query.rel = filters.rel
+      if (filters.weight !== '0') query.weight = filters.weight
+      if (filters.impact !== 'all') query.impact = filters.impact
+      if (filters.group !== 'none') query.group = filters.group
+      if (filters.voter) query.voter = filters.voter
+      if (filters.target) query.target = filters.target
+      if (filters.notes) query.notes = filters.notes
+      if (filters.ignored) query.ignored = filters.ignored
+      if (filters.watch) query.watch = filters.watch
+      if (filters.new) query.new = filters.new
+      return query
+    },
+    syncQueryFilters () {
+      if (!this.queryReady) return
+      if (this.filterSignature === this.filterSignatureFor(this.$route.query)) return
+      if (this.queryTimer) clearTimeout(this.queryTimer)
+      this.queryTimer = setTimeout(() => {
+        this.queryTimer = null
+        this.$router.replace({ query: this.filtersToQuery() }).catch(() => {})
+      }, 250)
+    },
+    copyViewLink () {
+      this.syncQueryFilters()
+      const resolved = this.$router.resolve({ path: this.$route.path, query: this.filtersToQuery() })
+      const url = window.location.origin + resolved.href
+      navigator.clipboard.writeText(url)
+        .then(() => this.$q.notify({ type: 'positive', message: 'Filter link copied.', position: 'top' }))
+        .catch(() => this.$q.notify({ type: 'negative', message: 'Could not copy the filter link.', position: 'top' }))
+    },
+    viewSummary (filters = this.normalizedFilters) {
+      const parts = []
+      const range = this.rangeOptions.find(option => option.value === filters.range)
+      if (range) parts.push(range.label)
+      if (filters.voter) parts.push('@' + filters.voter)
+      if (filters.target) parts.push(filters.target)
+      const impact = this.impactFilterOptions.find(option => option.value === filters.impact)
+      if (impact && filters.impact !== 'all') parts.push(impact.label)
+      if (filters.notes) parts.push('with notes')
+      if (filters.watch) parts.push('watched voters')
+      if (filters.new) parts.push('new only')
+      return parts.join(' · ').slice(0, 120)
+    },
+    promptSaveView () {
+      this.$q.dialog({
+        title: 'Save view',
+        message: 'Name this filter combination.',
+        prompt: { model: '', type: 'text' },
+        cancel: true,
+        persistent: true
+      }).onOk(name => {
+        const label = String(name || '').trim()
+        if (!label) return
+        this.savedViews = saveView(this.scopeKey, label, this.filtersToQuery(), this.viewSummary())
+        this.$q.notify({ type: 'positive', message: 'View saved.', position: 'top' })
+      })
+    },
+    loadView (view) {
+      this.applyQueryFilters(view.filters)
+      this.syncQueryFilters()
+      this.$q.notify({ type: 'info', message: 'View loaded.', position: 'top' })
+    },
+    deleteView (name) {
+      this.savedViews = removeSavedView(this.scopeKey, name)
+      this.$q.notify({ type: 'info', message: 'View removed.', position: 'top' })
+    },
+    isWatched (voter) {
+      return this.watchedVoters.includes(String(voter || '').trim().replace(/^@/, '').toLowerCase())
+    },
+    toggleWatch (voter) {
+      this.watchedVoters = toggleWatched(this.scopeKey, voter)
+      const watched = this.isWatched(voter)
+      this.$q.notify({ type: 'info', message: watched ? 'Voter watched.' : 'Voter unwatched.', position: 'top' })
+    },
+    markSeen () {
+      this.lastVisitAt = saveLastVisit(this.scopeKey, this.username, Date.now())
+      this.newOnly = false
+      this.firstVisit = false
+      this.$q.notify({ type: 'positive', message: 'Marked as seen.', position: 'top' })
+    },
+    heatStyle (cell) {
+      const max = this.voterWeek.maxCount || 0
+      const percent = max > 0 ? Math.round((Number(cell.count) / max) * 35) : 0
+      return { background: 'color-mix(in srgb, var(--c-primary) ' + percent + '%, transparent)' }
     },
     async loadValuation ({ force = false } = {}) {
       const voters = this.direction === 'given'

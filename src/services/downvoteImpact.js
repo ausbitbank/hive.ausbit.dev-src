@@ -559,9 +559,53 @@ export function detectBursts (rows, { windowMinutes = 60, minVotes = 2 } = {}) {
   }
 }
 
-/** Voters who account for repeated downvotes on the profile. */
-export function repeatTargeting (rows, { minVotes = 3 } = {}) {
+/**
+ * Top voters by week for a compact activity heatmap. Weeks are UTC Monday
+ * starts; rows outside the window are ignored.
+ */
+export function voterWeekMatrix (rows, { weeks = 8, voters = 6, now = Date.now() } = {}) {
   const list = Array.isArray(rows) ? rows : []
+  const weekCount = Math.max(1, Math.min(26, Number(weeks) || 8))
+  const voterCount = Math.max(1, Math.min(12, Number(voters) || 6))
+  const current = new Date(Number(now) || Date.now())
+  const day = current.getUTCDay()
+  const mondayOffset = (day + 6) % 7
+  const currentWeekStart = Date.UTC(
+    current.getUTCFullYear(),
+    current.getUTCMonth(),
+    current.getUTCDate() - mondayOffset
+  )
+  const weekMs = 7 * DAY_MS
+  const starts = Array.from({ length: weekCount }, (_, index) => currentWeekStart - (weekCount - 1 - index) * weekMs)
+  const top = groupImpactRows(list, 'voter').slice(0, voterCount)
+  const matrix = top.map(group => {
+    const cells = starts.map(() => ({ count: 0, usd: 0 }))
+    for (const row of list) {
+      if (row.voter !== group.key) continue
+      const time = Number(row.time) || 0
+      if (!time) continue
+      const index = starts.findIndex(start => time >= start && time < start + weekMs)
+      if (index < 0) continue
+      cells[index].count += 1
+      if (row.effective) cells[index].usd += Math.abs(Number(row.impactUsd) || 0)
+    }
+    return { voter: group.key, cells, totalUsd: group.totalUsd, count: group.count }
+  })
+  return {
+    weeks: starts.map(start => {
+      const key = new Date(start).toISOString().slice(0, 10)
+      return { start, key, label: key.slice(5) }
+    }),
+    voters: matrix,
+    maxCount: matrix.reduce((max, entry) => Math.max(max, ...entry.cells.map(cell => cell.count)), 0),
+    maxUsd: matrix.reduce((max, entry) => Math.max(max, ...entry.cells.map(cell => cell.usd)), 0),
+    weekCount,
+    voterCount
+  }
+}
+
+/** Voters who account for repeated downvotes on the profile. */
+export function repeatTargeting (rows, { minVotes = 3 } = {}) {  const list = Array.isArray(rows) ? rows : []
   const total = list.length
   const groups = groupImpactRows(list, 'voter')
   return groups

@@ -696,7 +696,7 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
   await expect(page.getByText('100% exact')).toBeVisible()
   await expect(page.locator('.dv-evidence')).toContainText('Possible coordinated downvotes')
   await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
-  await expect(page.getByRole('columnheader', { name: 'Impact' })).toBeVisible()
+  await expect(page.locator('.dv-table thead').getByRole('columnheader', { name: 'Impact' })).toBeVisible()
   await expect(page.locator('.dv-impact--exact').first()).toContainText('$1.00')
 
   const contextRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).filter({ hasText: 'ausbitbank/one' }).first()
@@ -709,6 +709,44 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
   await contextDialog.getByRole('button', { name: 'Save note' }).click()
   await contextDialog.getByRole('button', { name: 'Close vote context' }).click()
   await expect(contextRow.locator('.dv-note-dot')).toBeVisible()
+
+  await expect(page.locator('.dv-heat')).toBeVisible()
+  await expect(page.locator('.dv-heat').getByRole('columnheader', { name: 'Total' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Views' }).click()
+  await expect(page.getByText('Save current view')).toBeVisible()
+  expect(await runAxe(page)).toEqual([])
+  await page.keyboard.press('Escape')
+
+  await page.goto('/@ausbitbank/downvotes?range=7&voter=bob&impact=exact')
+  await waitForApp(page)
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(3)
+  await expect(page.locator('.dv-controls')).toContainText('3 of 9')
+  await page.getByRole('button', { name: 'Clear filters' }).click()
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
+
+  const topVoters = page.locator('.dv-panel').filter({ hasText: 'Top voters' })
+  await topVoters.getByRole('button', { name: 'Watch @bob' }).click()
+  await page.getByLabel('Watched only (1)').check()
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(3)
+  await page.getByLabel('Watched only (1)').uncheck()
+  await topVoters.getByRole('button', { name: 'Unwatch @bob' }).click()
+
+  await page.getByRole('button', { name: 'Views' }).click()
+  await page.getByRole('button', { name: 'Save current view' }).click()
+  const saveViewDialog = page.locator('.q-dialog')
+  await saveViewDialog.locator('input[type="text"]').fill('Everything')
+  await saveViewDialog.getByRole('button', { name: 'OK' }).click()
+  await page.getByRole('button', { name: 'Views' }).click()
+  await expect(page.getByRole('button', { name: /^Everything/ })).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.goto('/@ausbitbank/downvotes?voter=bob')
+  await waitForApp(page)
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(3)
+  await page.getByRole('button', { name: 'Views' }).click()
+  await page.getByRole('button', { name: /^Everything/ }).click()
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
 
   const firstRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()
   await firstRow.getByRole('button', { name: 'Ignore voter' }).click()

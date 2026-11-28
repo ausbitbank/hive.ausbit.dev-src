@@ -12,6 +12,7 @@ import {
   sumAccountRewards,
   summarizeImpact,
   voteChanges,
+  voterWeekMatrix,
   weightEscalation
 } from '../../src/services/downvoteImpact'
 
@@ -251,8 +252,25 @@ describe('downvote timing', () => {
     expect(changes[0]).toMatchObject({ voter: 'bob', count: 2, firstWeight: 10000, lastWeight: 5000 })
   })
 
-  it('flags weight escalation and post-payout signals', () => {
-    const escalation = weightEscalation([
+  it('builds a voter-by-week activity matrix for top voters', () => {
+    const rows = annotateDownvoteImpact([
+      row({ voter: 'bob', index: 1, time: Date.parse('2026-11-24T10:00:00Z') }),
+      row({ voter: 'bob', index: 2, time: Date.parse('2026-11-17T10:00:00Z') }),
+      row({ voter: 'bob', index: 3, time: Date.parse('2026-11-10T10:00:00Z') }),
+      row({ voter: 'carol', index: 4, time: Date.parse('2026-11-25T10:00:00Z') }),
+      row({ voter: 'bob', index: 5, time: Date.parse('2026-10-01T10:00:00Z') })
+    ], {}, { now: NOW })
+    const matrix = voterWeekMatrix(rows, { weeks: 3, voters: 2, now: NOW })
+    expect(matrix.weeks).toHaveLength(3)
+    expect(matrix.voters[0].voter).toBe('bob')
+    expect(matrix.voters[0].cells.map(cell => cell.count)).toEqual([1, 1, 1])
+    expect(matrix.voters[1].voter).toBe('carol')
+    expect(matrix.voters[1].cells[2].count).toBe(1)
+    expect(matrix.maxCount).toBe(1)
+    expect(matrix.maxUsd).toBeGreaterThan(0)
+  })
+
+  it('flags weight escalation and post-payout signals', () => {    const escalation = weightEscalation([
       row({ voter: 'bob', index: 1, weight: -1000, time: NOW - 3 * DAY }),
       row({ voter: 'bob', index: 2, weight: -3000, time: NOW - 2 * DAY }),
       row({ voter: 'bob', index: 3, weight: -10000, time: NOW - 1 * DAY })

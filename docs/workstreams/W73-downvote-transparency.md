@@ -22,8 +22,12 @@ Shipped:
   priced with the post reward fund and median feed; the exact signed weight stays visible.
   Vote history stores only the weight, so historical stake/mana cannot be replayed exactly
   and the estimate is labelled as current-stake, not a historical promise.
-- Filters for time range, relationship, voter, target, impact state and local
-  notes; grouping by voter, target or day.
+- Filters for time range, relationship, voter, target, impact state, local
+  notes, watched voters and new-since-last-visit; grouping by voter, target or
+  day. The filter set is deep-linkable via query parameters.
+- **Saved views**: name the current filter set, reload it from the Views menu,
+  copy a shareable filter link, or delete it. Views are local to the device and
+  signed-in account.
 - Conservative “Possible coordinated downvotes” evidence: voter count, shared
   targets, time window and pairwise target overlap. Always qualified as
   possible and never used to hide or punish.
@@ -42,7 +46,11 @@ Shipped:
 - Finalized vs pending loss, the approximate author/curator split, post-payout
   signal counts, exact-row coverage and a same-period author-reward comparison.
 - **Timing**: daily count/impact bars, cumulative loss line, post-age-at-vote
-  buckets, UTC-hour histogram and same-target/same-voter burst detection.
+  buckets, UTC-hour histogram, voter-by-week activity heatmap and
+  same-target/same-voter burst detection.
+- **Monitoring**: a local voter watchlist with a watched-only filter and stars
+  in the top-voter and table views; a last-visit marker showing new downvotes
+  and their estimated impact, with a New-only filter and Mark seen action.
 - **Patterns**: repeat targeting, vote changes, weight escalation, new accounts
   and after-payout signal votes, in addition to the conservative coordination
   card.
@@ -83,6 +91,12 @@ Shipped:
   in the service.
 - Malformed responses (OpenAPI schema stubs) reject instead of rendering an
   empty successful result.
+- Filter state is mirrored to the route query (`range`, `rel`, `weight`,
+  `impact`, `group`, `voter`, `target`, `notes`, `ignored`, `watch`, `new`) and
+  sanitized on read. Saved views, watchlists and last-visit timestamps are
+  local to the viewer/account; they never write to the chain.
+- The voter-by-week matrix is computed from the filtered rows using UTC Monday
+  week starts, so the heatmap needs no additional RPC reads.
 
 ## Evidence heuristic
 
@@ -104,6 +118,11 @@ is taken from the label.
   exclusion hides rows.
 - Financial impact, timing, patterns and top voters/targets panels above the
   filter bar; each panel respects the active filters.
+- The filter bar is deep-linkable; the Views menu saves/reloads filter sets,
+  copies a filter link and deletes local views.
+- The timing panel includes a voter-by-week heatmap. The summary shows new
+  downvotes since the last visit, and watched voters carry a star in the top
+  voter and table views.
 - Pattern evidence is an advisory card with “not a verdict”.
 - Grouping is a separate aggregate view; the flat table remains for review.
 - The flat table shows 40 matching rows at a time; “Show more rows” expands
@@ -134,7 +153,13 @@ is taken from the label.
 - `tests/unit/downvote-impact.spec.js` — exact payout share, paid/pending
   states, post-payout signals, superseded/offset/inactive votes, timeline, post
   age, hour buckets, bursts, repeat targeting, vote changes, weight escalation,
-  new accounts and the reward comparison.
+  new accounts, the voter-by-week matrix and the reward comparison.
+- `tests/unit/downvote-views.spec.js` — saved-view save/replace/remove,
+  scope isolation, caps and filter normalization.
+- `tests/unit/downvote-watchlist.spec.js` — watch/unwatch, scope isolation,
+  name normalization and caps.
+- `tests/unit/downvote-visit.spec.js` — per-account last-visit timestamps and
+  invalid values.
 - `tests/unit/downvote-context.spec.js` — markdown excerpts, keyword hits,
   target-thread comments, author replies, voter comments on other posts and
   de-duplicated merged context.
@@ -147,10 +172,11 @@ is taken from the label.
 - `tests/unit/vote-breakdown.spec.js` — existing votes dialog still green.
 - `e2e/moderation.spec.js` — downvotes tab with mocked posts and discussion:
   exact $9.00 impact, 100% exact badge, context drawer, local note, evidence
-  card and ignore-voter local exclusion; a second test loads three full pages,
+  card, voter-by-week heatmap, deep-link filters, watchlist filter, saved view
+  load and ignore-voter local exclusion; a second test loads three full pages,
   expands the table and then loads the final older page without a cap.
 - Axe: `/@ausbitbank/downvotes` at 1440×900 and 390×844, plus the open context
-  drawer.
+  drawer and Views menu.
 
 ## Verification
 
@@ -168,12 +194,16 @@ is taken from the label.
 
 | Check | Result |
 | --- | --- |
-| `bun run lint` | clean |
-| `bun run test` | 258 files, 2450 tests, all green |
+| `bunx eslint` on the changed downvote files | clean |
+| `bun run test` | 262 files, 2466 tests, all green |
 | `bun run build` | green |
 | `e2e/moderation.spec.js` downvotes | 2/2 green |
 | Axe `/@ausbitbank/downvotes` and the open context drawer | clean |
-| Live smoke `@hive3/downvotes` | exact hydration, reward comparison and context drawer rendered with no page errors |
+| Live smoke `@hive3/downvotes` | exact hydration, reward comparison, deep links, watchlist and heatmap rendered with no page errors |
+
+Repo-wide `bun run lint` currently also flags unrelated in-progress
+`src/components/feed/FeedFilters.vue` prop mutations; the downvote files are
+clean under the same config.
 
 ## Deployment
 
