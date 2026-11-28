@@ -762,6 +762,20 @@ async function blogRobots (url, tenant) {
 }
 
 const DIRECTORY_PREFIX = 'blog:'
+const DIRECTORY_REVERIFY_MS = 6 * 60 * 60 * 1000
+
+async function mapLimit (items, limit, fn) {
+  const results = []
+  let index = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (index < items.length) {
+      const current = index++
+      results[current] = await fn(items[current])
+    }
+  })
+  await Promise.all(workers)
+  return results
+}
 
 function jsonResponse (value, status = 200, cacheControl = 'no-store') {
   return new Response(JSON.stringify(value), {
@@ -777,9 +791,37 @@ function jsonResponse (value, status = 200, cacheControl = 'no-store') {
 async function listDirectory (env) {
   if (!env?.BLOGS) return []
   const result = await env.BLOGS.list({ prefix: DIRECTORY_PREFIX })
-  return (result.keys || [])
+  const keys = (result.keys || [])
     .map(key => key.name.slice(DIRECTORY_PREFIX.length))
     .filter(Boolean)
+  if (typeof env.BLOGS.get !== 'function') return keys
+
+  // KV entries are a cache of the on-chain opt-in. Re-verify stale entries and
+  // delete an account that has turned its directory flag off, so a consumer of
+  // /api/blogs cannot keep seeing an opted-out blog indefinitely.
+  const verified = await mapLimit(keys, 5, async account => {
+    const key = DIRECTORY_PREFIX + account
+    let updatedAt = 0
+    try {
+      const stored = await env.BLOGS.get(key)
+      const parsed = stored ? JSON.parse(stored) : null
+      updatedAt = Date.parse(parsed?.updatedAt || '') || 0
+    } catch {}
+    if (updatedAt && Date.now() - updatedAt < DIRECTORY_REVERIFY_MS) return account
+    try {
+      const verify = await verifyBlogDirectory(account)
+      if (!verify.listed) {
+        await env.BLOGS.delete(key)
+        return null
+      }
+      await env.BLOGS.put(key, JSON.stringify({ account, updatedAt: new Date().toISOString() }))
+      return account
+    } catch {
+      // A chain hiccup must not erase a valid opt-in entry.
+      return account
+    }
+  })
+  return verified.filter(Boolean)
 }
 
 async function verifyBlogDirectory (account) {

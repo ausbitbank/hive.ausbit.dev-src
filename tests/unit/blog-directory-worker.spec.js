@@ -44,6 +44,7 @@ function fakeEnv () {
           .map(name => ({ name }))
       }),
       put: async (key, value) => { store.set(key, String(value)) },
+      get: async key => (store.has(key) ? store.get(key) : null),
       delete: async key => { store.delete(key) },
       _store: store
     }
@@ -92,6 +93,19 @@ describe('blog directory API', () => {
     const response = await worker.fetch(api('/api/blogs/register', { account: 'alice' }), env)
     expect(response.status).toBe(409)
     expect(await response.json()).toMatchObject({ listed: false })
+    expect(env.BLOGS._store.has('blog:alice')).toBe(false)
+  })
+
+  it('prunes a stale opted-out entry when the public list is read', async () => {
+    const env = fakeEnv()
+    await env.BLOGS.put('blog:alice', JSON.stringify({
+      account: 'alice',
+      updatedAt: '2020-01-01T00:00:00.000Z'
+    }))
+    stubAccount(DISABLED)
+
+    const response = await worker.fetch(api('/api/blogs'), env)
+    expect(await response.json()).toMatchObject({ accounts: [], configured: true })
     expect(env.BLOGS._store.has('blog:alice')).toBe(false)
   })
 
