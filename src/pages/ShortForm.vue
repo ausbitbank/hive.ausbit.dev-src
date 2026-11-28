@@ -43,58 +43,13 @@
           </span>
         </router-link>
       </nav>
-
-      <section
-        v-if="loggedInUser"
-        class="sfo-liked home-card"
-        aria-labelledby="sfo-liked-title"
-      >
-        <div class="home-panel__head">
-          <div>
-            <div class="home-eyebrow">Your activity</div>
-            <h2 id="sfo-liked-title" class="home-panel__title">Short posts you reacted to</h2>
-          </div>
-          <router-link :to="{ name: 'account', params: { username: loggedInUser } }" class="sfo-liked__link">
-            @{{ loggedInUser }}
-          </router-link>
-        </div>
-        <div v-if="loadingLiked" class="sfo-liked__body">
-          <q-spinner-dots color="primary" size="24px" aria-hidden="true" />
-        </div>
-        <p v-else-if="liked.length === 0" class="sfo-liked__body sfo-liked__body--empty">
-          Nothing yet. Post or like a short post and it will show up here.
-        </p>
-        <ol v-else class="sfo-grid-list">
-          <li v-for="item in liked" :key="item.author + '/' + item.permlink">
-            <router-link
-              :to="{ name: 'short-form-post', params: { formatId: item.format, author: item.author, permlink: item.permlink } }"
-              class="sfo-mini"
-            >
-              <img
-                v-if="miniImage(item)"
-                :src="miniImage(item)"
-                alt=""
-                loading="lazy"
-                decoding="async"
-                referrerpolicy="no-referrer"
-              />
-              <span class="sfo-mini__text">
-                <span class="sfo-mini__author">@{{ item.author }}</span>
-                <span class="sfo-mini__body">{{ miniText(item) }}</span>
-              </span>
-            </router-link>
-          </li>
-        </ol>
-      </section>
     </div>
   </q-page>
 </template>
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchShortFormFeed, shortFormatList, shortMedia, shortPreview } from 'src/services/shortForm'
-import { fetchLikedShortPosts } from 'src/services/shortFormLikes'
-import { bridgeRequest } from 'src/services/api'
+import { fetchShortFormFeed, shortFormatList, shortMedia } from 'src/services/shortForm'
 
 export default {
   name: 'ShortFormIndex',
@@ -102,22 +57,7 @@ export default {
   data () {
     return {
       formats: shortFormatList(),
-      previews: {},
-      liked: [],
-      loadingLiked: false
-    }
-  },
-  computed: {
-    loggedInUser () {
-      return this.$hiveStore.user.username
-    }
-  },
-  watch: {
-    loggedInUser: {
-      immediate: true,
-      handler (value) {
-        if (value) this.loadLiked(value)
-      }
+      previews: {}
     }
   },
   mounted () {
@@ -147,23 +87,6 @@ export default {
     },
     previewImage (formatId) {
       return this.previews[formatId] || ''
-    },
-    async loadLiked (account) {
-      this.loadingLiked = true
-      try {
-        this.liked = await fetchLikedShortPosts(account, { limit: 8, request: bridgeRequest })
-      } catch {
-        this.liked = []
-      } finally {
-        this.loadingLiked = false
-      }
-    },
-    miniImage (item) {
-      const media = shortMedia(item, { limit: 1 })
-      return media.length ? media[0].url : ''
-    },
-    miniText (item) {
-      return shortPreview(item.body, 90)
     }
   }
 }
@@ -270,83 +193,5 @@ export default {
   color: var(--c-text-faint);
   font-size: 0.72rem;
   text-align: center;
-}
-
-.sfo-liked {
-  margin-top: var(--space-4);
-}
-
-.sfo-liked__link {
-  color: var(--c-link);
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.sfo-liked__body {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-4);
-}
-
-.sfo-liked__body--empty {
-  color: var(--c-text-faint);
-  font-size: 0.85rem;
-}
-
-.sfo-grid-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: var(--space-2);
-  margin: 0;
-  padding: var(--space-3);
-  list-style: none;
-}
-
-.sfo-mini {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  height: 100%;
-  padding: var(--space-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: inherit;
-  text-decoration: none;
-}
-
-.sfo-mini:hover {
-  border-color: color-mix(in srgb, var(--c-link) 40%, transparent);
-  text-decoration: none;
-}
-
-.sfo-mini img {
-  width: 100%;
-  height: 96px;
-  border-radius: 4px;
-  object-fit: cover;
-}
-
-.sfo-mini__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.sfo-mini__author {
-  color: var(--c-link);
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-
-.sfo-mini__body {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--c-text-soft);
-  font-size: 0.78rem;
-  line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
 }
 </style>
