@@ -51,6 +51,13 @@ a single Hive transaction.
 - `bun run build` — succeeded.
 - `bun run perf:check` — passed in an isolated worktree.
 
+## Follow-up
+
+W124 re-checked the two-transaction ordering, added `tests/unit/batch-create.spec.js`
+and wrote the operator testnet checklist at
+[`docs/account-creation-testnet-smoke.md`](../account-creation-testnet-smoke.md). The
+live testnet smoke is still blocked on a funded testnet account with Keychain.
+
 ## Remaining
 
 - The batch page still requires Hive Keychain for the creation transaction;

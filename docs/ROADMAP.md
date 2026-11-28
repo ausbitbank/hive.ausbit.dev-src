@@ -202,8 +202,15 @@ principles that constrain it. Delivered work and its verification records live i
   minutes and makes directory verification fail safe: a failed chain read now
   keeps the entry instead of deleting it, and register returns `503`. See
   [`docs/workstreams/W123-blog-directory-staleness.md`](workstreams/W123-blog-directory-staleness.md).
+- W124 re-checks batch creation: HP remains inside the single active creation
+  transaction, RC remains a separate posting transaction only for confirmed
+  accounts, and failure states are now covered by 6 component tests. The
+  operator testnet checklist is in
+  [`docs/account-creation-testnet-smoke.md`](account-creation-testnet-smoke.md);
+  a live run is blocked on testnet Keychain access. See
+  [`docs/workstreams/W124-batch-testnet-checklist.md`](workstreams/W124-batch-testnet-checklist.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,405 tests across 249 files**, `bun run build`
+  `bun run test` green with **2,411 tests across 250 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
   after a retry and are reported as flaky). `bun run
   perf:check` passed in an isolated worktree; the shared worktree's uncommitted
@@ -213,7 +220,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W124**. **W90** remains the separate
+- The next free workstream number is **W125**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.
