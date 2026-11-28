@@ -176,7 +176,7 @@
   border-radius: calc(var(--skin-radius-card, 12px) - 2px);
 }
 
-.blog-post__body :deep(a) {
+.blog-post__body :deep(a:not(.banksia-locked__button)) {
   color: var(--c-link);
 }
 
@@ -648,6 +648,10 @@ export default {
       }
     },
     async onVaultRestore () {
+      if (!this.readerAccount) {
+        this.$q.notify({ type: 'info', message: 'Sign in with the Hive account you subscribed with to restore access.' })
+        return
+      }
       const args = this.vaultUnlockArguments()
       if (!args) return
       const { useVaultStore } = await import('src/stores/vault')

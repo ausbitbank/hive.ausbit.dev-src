@@ -309,6 +309,23 @@ export const useBlogStore = defineStore('blog', {
     shopEnabled () {
       return Boolean(this.shop.enabled)
     },
+    vault () {
+      const value = this.settings && this.settings.vault
+      return value && typeof value === 'object' ? value : null
+    },
+    vaultEnabled () {
+      return Boolean(this.vault && this.vault.enabled && this.vault.product)
+    },
+    vaultProductPath () {
+      const product = this.vault && this.vault.product
+      return product ? '/@' + product : ''
+    },
+    vaultSubscribeUrl (state) {
+      const product = this.vault && this.vault.product
+      if (!product || !state.accountName) return ''
+      return BLOG_APEX_URL + '/subscribe?blog=' + encodeURIComponent(state.accountName) +
+        '&product=' + encodeURIComponent(product)
+    },
     canEdit () {
       const hive = useHiveStore()
       return Boolean(this.accountName && hive.user.username === this.accountName)

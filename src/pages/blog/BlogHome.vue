@@ -11,6 +11,14 @@
       <a class="blog-claim__button" :href="settingsUrl">Claim this blog</a>
     </section>
 
+    <blog-membership-callout
+      v-if="showMembership && !hasHeroBlock"
+      :settings="blog.vault"
+      :blog="accountName"
+      :subscribe-url="subscribeUrl"
+      :product-path="membershipProductPath"
+    />
+
     <template v-for="(block, index) in visibleBlocks" :key="blockKey(block, index)">
       <section
         v-if="block.type === 'hero'"
@@ -129,6 +137,14 @@
         </div>
         <div class="blog-custom-section__text" v-html="renderTextBlock(block.body)"></div>
       </section>
+
+      <blog-membership-callout
+        v-if="block.type === 'hero' && showMembership"
+        :settings="blog.vault"
+        :blog="accountName"
+        :subscribe-url="subscribeUrl"
+        :product-path="membershipProductPath"
+      />
     </template>
   </div>
 </template>
@@ -427,10 +443,11 @@ import { setPageMeta } from 'src/utils/pageMeta'
 import { simpleMarkdownToHtml } from 'src/utils/safeHtml'
 import { useBlogStore } from 'src/stores/blog'
 import BlogPostCard from 'src/components/blog/BlogPostCard.vue'
+import BlogMembershipCallout from 'src/components/blog/BlogMembershipCallout.vue'
 
 export default {
   name: 'BlogHome',
-  components: { BlogPostCard },
+  components: { BlogPostCard, BlogMembershipCallout },
   computed: {
     blog () {
       return useBlogStore()
@@ -476,6 +493,22 @@ export default {
     },
     hasPinnedBlock () {
       return this.visibleBlocks.some(block => block.type === 'pinned') && this.pinnedPosts.length > 0
+    },
+    hasHeroBlock () {
+      return this.visibleBlocks.some(block => block.type === 'hero')
+    },
+    showMembership () {
+      return this.blog.vaultEnabled && Boolean(this.blog.vault && this.blog.vault.price)
+    },
+    subscribeUrl () {
+      return this.blog.vaultSubscribeUrl
+    },
+    membershipProductPath () {
+      const product = this.blog.vault && this.blog.vault.product
+      if (!product) return ''
+      const [author, permlink] = String(product).split('/')
+      if (!permlink) return ''
+      return author === this.accountName ? '/shop/' + permlink : '/shop/@' + author + '/' + permlink
     }
   },
   watch: {

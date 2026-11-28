@@ -214,6 +214,15 @@ principles that constrain it. Delivered work and its verification records live i
   managed in `/settings/moderation`, the browse filter dialog and quick tag
   actions. See
   [`docs/workstreams/W125-ignored-tags.md`](workstreams/W125-ignored-tags.md).
+- W126 is a public-promotion UX pass for Banksia Vault: reader paywall hierarchy
+  and recurrence copy, a plain-language subscribe page, blog membership
+  discovery (nav link, callout and Members badge), a one-action creator setup
+  with advanced tools collapsed, a dashboard share-links card, and updated
+  `/blogs` and README messaging. Crypto, schemas, payment operations and
+  authority are unchanged. Local gate: lint clean, **264 files / 2,473 unit
+  tests**, build succeeded, **156 functional Chromium checks**, and **14/14
+  Vault checks** with axe at 390 and 1440. See
+  [`docs/workstreams/W126-vault-public-ux.md`](workstreams/W126-vault-public-ux.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,411 tests across 250 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
@@ -225,7 +234,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W126**. **W90** remains the separate
+- The next free workstream number is **W127**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.
@@ -449,18 +458,24 @@ container, AES-256-GCM/P-256/HKDF, 0% fee. Remaining work:
   `vaultMarkerIndex` from `vaultPayload.js`) is fixed: the page imports them
   from `vaultCompose.js` and `bun run build` succeeds. Keep the deployed smoke
   checklist current when Vault code changes.
-- Bind bulletin signers to the blog (or implement delegation verification)
-  before public launch; see the open risks in the W89 record.
-- Relay and delegated signing so a reader can be granted while the creator is
-  offline.
+- Bulletin signing is bound to the blog account; delegated bulletins require a
+  valid relay certificate (see `docs/integrations/vault-relay.md`).
+- Relay and delegated signing exist for offline creators; the client UI keeps
+  them under advanced tools. A hosted relay remains operator work.
 - Encrypted media (encrypted blobs or signed URLs); v1 is text-only and media
   URLs leak.
 - Multi-tier, trials, gifts/claim codes, annual and lifetime plans.
-- Bulletin splitting for large subscriber lists (schema reserved, not shipped).
-- Reader-key registry and multi-device wrapping (schema exists, UI post-MVP).
-- Verify the HF28 zero-amount cancel matching rule on Hive testnet before
-  treating the cancel button as shipped.
-- Run Agent F's E2E/axe suite and record the results.
+- Bulletin splitting for large subscriber lists is implemented and verified by
+  tests and the dashboard shard preview.
+- Multi-device access is implemented through account metadata device
+  authorization; the `banksia.vault.reader_key` registry remains reserved for
+  indexers.
+- HF28 zero-amount cancel matching was verified live; multi-pair cancellation
+  still needs a testnet confirmation before promising every wallet/browser path.
+- W126 completed the reader/creator public-UX pass and axe checks for the main
+  Vault surfaces. Full axe coverage for every theme/variant remains deferred.
+- `bun run perf:check` reports pre-existing route-budget drift (Home, Browse,
+  Block, Post, Wallet, Internal market, Compose, Search); re-baseline separately.
 
 Record: [`W89`](workstreams/W89-premium-memberships.md). Protocol:
 [`docs/integrations/vault-protocol.md`](integrations/vault-protocol.md).

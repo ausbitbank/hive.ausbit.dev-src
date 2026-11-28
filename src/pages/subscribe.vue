@@ -4,7 +4,7 @@
       <nav class="subscribe-crumb" aria-label="Breadcrumb">
         <router-link to="/">Banksia</router-link>
         <span aria-hidden="true">/</span>
-        <span>Subscribe</span>
+        <span>Membership</span>
       </nav>
 
       <q-card v-if="loading" flat bordered class="subscribe-card" aria-busy="true" aria-label="Loading membership">
@@ -28,11 +28,13 @@
 
       <template v-else-if="plan">
         <header class="subscribe-head">
-          <p class="subscribe-kicker">Banksia Vault membership</p>
+          <p class="subscribe-kicker">Membership</p>
+          <div class="subscribe-author">
+            <img :src="authorAvatar" alt="" class="subscribe-author__avatar" width="36" height="36" />
+            <span>Supporting <strong>@{{ plan.author }}</strong></span>
+          </div>
           <h1 class="subscribe-title">{{ plan.title || 'Membership' }}</h1>
-          <p class="subscribe-muted">
-            {{ displayDescription }}
-          </p>
+          <p class="subscribe-muted subscribe-lede">{{ displayDescription }}</p>
         </header>
 
         <q-card flat bordered class="subscribe-card">
@@ -41,57 +43,80 @@
               <div>
                 <p class="subscribe-price">{{ plan.priceLabel }}</p>
                 <p class="subscribe-muted">
-                  {{ plan.priceLabel }} {{ recurrencePhrase }} · {{ plan.executions }} payments.
+                  Billed {{ recurrencePhrase }} · {{ plan.executions }} payments in total.
                 </p>
               </div>
-              <span class="subscribe-badge">{{ plan.plan }}</span>
+              <span class="subscribe-badge">Membership</span>
             </div>
 
+            <p class="subscribe-includes">What you get</p>
             <ul class="subscribe-benefits">
-              <li v-for="benefit in displayBenefits" :key="benefit">{{ benefit }}</li>
+              <li v-for="benefit in displayBenefits" :key="benefit">
+                <q-icon name="check_circle" size="16px" aria-hidden="true" />
+                <span>{{ benefit }}</span>
+              </li>
             </ul>
 
-            <q-banner rounded class="subscribe-banner">
-              <template #avatar><q-icon name="warning" /></template>
-              This is a direct Hive payment to @{{ plan.author }}. There is no
-              escrow and no platform balance. Review the amount and memo in your
-              wallet before signing. Hive transfers are irreversible; refunds are
-              the creator's policy.
+            <div class="subscribe-next">
+              <p class="subscribe-label">How it works</p>
+              <ol class="subscribe-steps">
+                <li>Approve the payment in your Hive wallet or signing queue.</li>
+                <li>@{{ plan.author }} confirms it and issues your access.</li>
+                <li>Your post unlocks here automatically when it arrives.</li>
+              </ol>
+            </div>
+          </q-card-section>
+        </q-card>
+
+        <q-card flat bordered class="subscribe-card">
+          <q-card-section>
+            <h2 class="subscribe-subtitle">Choose how to pay</h2>
+
+            <div class="subscribe-modes" role="radiogroup" aria-labelledby="subscribe-mode-label">
+              <p id="subscribe-mode-label" class="subscribe-label">Payment</p>
+              <label
+                v-for="mode in paymentModes"
+                :key="mode.value"
+                class="subscribe-mode"
+                :class="{ 'subscribe-mode--active': paymentMode === mode.value }"
+              >
+                <input
+                  v-model="paymentMode"
+                  type="radio"
+                  name="vault-payment-mode"
+                  :value="mode.value"
+                />
+                <span class="subscribe-mode__copy">
+                  <strong>{{ mode.label }}</strong>
+                  <span>{{ mode.caption }}</span>
+                </span>
+                <span class="subscribe-mode__price">{{ plan.priceLabel }}</span>
+              </label>
+            </div>
+
+            <q-banner rounded class="subscribe-note">
+              <template #avatar><q-icon name="info" /></template>
+              You pay @{{ plan.author }} directly. Banksia takes no fee and never
+              holds your money. Hive payments cannot be reversed.
             </q-banner>
 
-            <q-banner v-if="!loggedInUser" rounded class="subscribe-banner">
+            <q-banner v-if="!loggedInUser" rounded class="subscribe-note subscribe-note--warning">
               <template #avatar><q-icon name="login" /></template>
-              Sign in from the top bar to subscribe.
+              Sign in from the top bar to continue.
             </q-banner>
 
-            <q-banner v-if="keyError" rounded class="subscribe-banner subscribe-banner--warning">
+            <q-banner v-if="keyError" rounded class="subscribe-note subscribe-note--warning">
               <template #avatar><q-icon name="key_off" /></template>
               {{ keyError }}
             </q-banner>
-
-            <div class="subscribe-mode">
-              <p class="subscribe-label" id="subscribe-mode-label">Payment</p>
-              <q-option-group
-                v-model="paymentMode"
-                :options="paymentModes"
-                color="primary"
-                inline
-                aria-labelledby="subscribe-mode-label"
-              />
-            </div>
 
             <label class="subscribe-terms">
               <q-checkbox
                 v-model="accepted"
                 color="primary"
-                aria-label="I understand this is a recurring direct payment"
+                aria-label="I understand the payment terms"
               />
-              <span>
-                I understand this is a recurring direct payment to @{{ plan.author }}
-                {{ recurrencePhrase }} for {{ plan.executions }} payments, and that
-                I can cancel it from my wallet or from
-                <router-link to="/subscriptions">/subscriptions</router-link>.
-              </span>
+              <span>{{ termsText }}</span>
             </label>
 
             <div class="subscribe-actions">
@@ -103,29 +128,35 @@
                 :disable="!canSubscribe || queued"
                 @click="pay"
               />
-              <q-btn flat no-caps label="Read the product post" :to="productPath" />
+              <q-btn flat no-caps :label="'About @' + plan.author + '’s membership'" :to="productPath" />
             </div>
 
             <p v-if="operationError" class="subscribe-error" role="alert">{{ operationError }}</p>
 
-            <p class="subscribe-memo">
-              <strong>Memo shown in your wallet</strong>
-              <code>{{ memoPreview }}</code>
-            </p>
+            <details class="subscribe-details">
+              <summary>Payment details</summary>
+              <dl>
+                <div><dt>Paid to</dt><dd>@{{ plan.author }}</dd></div>
+                <div><dt>Amount</dt><dd>{{ plan.priceLabel }}</dd></div>
+                <div><dt>Schedule</dt><dd>{{ paymentMode === 'once' ? 'One payment' : plan.executions + ' payments, ' + recurrencePhrase }}</dd></div>
+                <div v-if="memoPreview"><dt>Memo</dt><dd><code>{{ memoPreview }}</code></dd></div>
+              </dl>
+            </details>
           </q-card-section>
         </q-card>
 
         <q-card v-if="queued" flat bordered class="subscribe-card subscribe-status" aria-live="polite">
           <q-card-section>
-            <h2 class="subscribe-subtitle">{{ granted ? 'Payment received — unlocking…' : 'Payment queued' }}</h2>
+            <h2 class="subscribe-subtitle">
+              {{ granted ? 'You’re in — access granted' : 'Payment added to your signing queue' }}
+            </h2>
             <p class="subscribe-muted">
               <template v-if="granted">
-                The creator's bulletin includes a grant for your reader key. You can
-                return to the blog post now.
+                Your membership is active. Return to the post; it will unlock automatically.
               </template>
               <template v-else>
-                Approve the payment in your wallet. The creator's dashboard issues
-                the grant; this page checks for 2 minutes.
+                Approve the payment in your wallet or the signing queue (the clock icon at
+                the top of the page). This page checks for up to two minutes.
               </template>
             </p>
             <p v-if="pollError" class="subscribe-error" role="alert">{{ pollError }}</p>
@@ -139,6 +170,7 @@
                 :to="returnPath"
               />
               <q-btn v-else flat no-caps label="Check again" :loading="checking" @click="checkBulletin" />
+              <q-btn flat no-caps label="Manage subscriptions" to="/subscriptions" />
             </div>
           </q-card-section>
         </q-card>
@@ -177,11 +209,11 @@
 }
 
 .subscribe-head {
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .subscribe-kicker {
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.45rem;
   color: var(--c-primary);
   font-size: 0.72rem;
   font-weight: 700;
@@ -189,14 +221,40 @@
   text-transform: uppercase;
 }
 
+.subscribe-author {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+  color: var(--c-text-muted);
+  font-size: 0.86rem;
+}
+
+.subscribe-author strong {
+  color: var(--c-text);
+}
+
+.subscribe-author__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+
 .subscribe-title {
   margin: 0;
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  line-height: 1.2;
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  line-height: 1.18;
+}
+
+.subscribe-lede {
+  max-width: 58ch;
 }
 
 .subscribe-subtitle {
-  margin: 0;
+  margin: 0 0 0.8rem;
   font-size: 1.05rem;
 }
 
@@ -230,7 +288,7 @@
 
 .subscribe-price {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   font-weight: 700;
 }
 
@@ -244,42 +302,127 @@
   letter-spacing: 0.08em;
 }
 
-.subscribe-benefits {
-  margin: 1rem 0;
-  padding-left: 1.1rem;
-  color: var(--c-text);
-  font-size: 0.88rem;
-  line-height: 1.6;
+.subscribe-includes {
+  margin: 1.2rem 0 0.5rem;
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.subscribe-banner {
-  margin-top: 0.8rem;
+.subscribe-benefits {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--c-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.subscribe-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+}
+
+.subscribe-benefits .q-icon {
+  flex: none;
+  margin-top: 0.12rem;
+  color: var(--c-primary);
+}
+
+.subscribe-next {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--c-border-subtle);
+}
+
+.subscribe-label {
+  margin: 0 0 0.5rem;
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.subscribe-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--c-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.subscribe-modes {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.subscribe-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: var(--c-surface-2);
+  cursor: pointer;
+}
+
+.subscribe-mode--active {
+  border-color: var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-surface));
+}
+
+.subscribe-mode input {
+  flex: none;
+  accent-color: var(--c-primary);
+}
+
+.subscribe-mode__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  font-size: 0.86rem;
+}
+
+.subscribe-mode__copy strong {
+  font-weight: 600;
+}
+
+.subscribe-mode__copy span {
+  color: var(--c-text-muted);
+  font-size: 0.78rem;
+}
+
+.subscribe-mode__price {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.subscribe-note {
+  margin-top: 1rem;
   background: var(--c-surface-2);
   color: var(--c-text);
   border: 1px solid var(--c-border);
   font-size: 0.84rem;
 }
 
-.subscribe-banner--warning {
+.subscribe-note--warning {
   border-color: var(--c-warning);
-}
-
-.subscribe-mode {
-  margin-top: 1rem;
-}
-
-.subscribe-label {
-  margin: 0 0 0.3rem;
-  color: var(--c-text-muted);
-  font-size: 0.78rem;
-  font-weight: 600;
 }
 
 .subscribe-terms {
   display: flex;
   gap: 0.4rem;
   align-items: flex-start;
-  margin-top: 0.8rem;
+  margin-top: 0.9rem;
   color: var(--c-text-muted);
   font-size: 0.82rem;
   line-height: 1.5;
@@ -303,18 +446,42 @@
   font-size: 0.84rem;
 }
 
-.subscribe-memo {
-  margin: 1rem 0 0;
+.subscribe-details {
+  margin-top: 1rem;
   color: var(--c-text-muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+}
+
+.subscribe-details summary {
+  cursor: pointer;
+  color: var(--c-link);
+}
+
+.subscribe-details dl {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.7rem 0 0;
+}
+
+.subscribe-details dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.subscribe-details dt {
+  flex: none;
+}
+
+.subscribe-details dd {
+  margin: 0;
+  text-align: right;
   overflow-wrap: anywhere;
 }
 
-.subscribe-memo code {
-  display: block;
-  margin-top: 0.3rem;
-  padding: 0.4rem;
-  border-radius: 6px;
+.subscribe-details code {
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
   background: var(--c-surface-2);
   color: var(--c-text);
   font-size: 0.74rem;
@@ -334,6 +501,15 @@
   .subscribe-plan {
     flex-direction: column;
     gap: 0.4rem;
+  }
+
+  .subscribe-mode__price {
+    display: none;
+  }
+
+  .subscribe-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 </style>
@@ -538,23 +714,55 @@ export default {
     loggedInUser () {
       return this.$hiveStore.user.username || ''
     },
+    authorAvatar () {
+      return this.plan ? 'https://images.hive.blog/u/' + this.plan.author + '/avatar' : ''
+    },
     paymentModes () {
-      const executions = this.plan ? this.plan.executions : 12
+      if (!this.plan) return []
+      const executions = this.plan.executions
       return [
-        { label: 'Recurring — ' + executions + ' payments, ' + this.recurrencePhrase, value: 'recurring' },
-        { label: 'One payment (' + this.recurrenceLabel + ')', value: 'once' }
+        {
+          label: 'Recurring membership',
+          caption: this.plan.priceLabel + ' ' + this.recurrencePhrase + ' · ' + executions + ' payments, cancel anytime',
+          value: 'recurring'
+        },
+        {
+          label: this.oneOffLabel,
+          caption: this.plan.priceLabel + ' once · access for ' + this.oneOffAccess,
+          value: 'once'
+        }
       ]
     },
     recurrenceLabel () {
       return this.plan ? vaultRecurrenceLabel(this.plan.recurrence) : 'period'
     },
+    onePeriodUnit () {
+      const label = this.recurrenceLabel
+      return ['day', 'week', 'month', 'year'].includes(label) ? label : ''
+    },
+    oneOffLabel () {
+      return this.onePeriodUnit ? 'One ' + this.onePeriodUnit : 'One payment'
+    },
+    oneOffAccess () {
+      return this.onePeriodUnit ? 'one ' + this.onePeriodUnit : this.recurrenceLabel
+    },
     recurrencePhrase () {
       return this.plan ? vaultRecurrencePhrase(this.plan.recurrence) : 'each period'
     },
     payButtonLabel () {
-      return this.paymentMode === 'once'
-        ? 'Queue one payment'
-        : 'Queue ' + (this.plan ? this.plan.executions : 12) + ' recurring payments'
+      if (!this.plan) return 'Continue'
+      if (this.paymentMode === 'once') return 'Pay ' + this.plan.priceLabel + ' once'
+      return 'Pay ' + this.plan.priceLabel + ' ' + this.recurrencePhrase
+    },
+    termsText () {
+      if (!this.plan) return ''
+      if (this.paymentMode === 'once') {
+        return 'I understand this is a one-time payment of ' + this.plan.priceLabel +
+          ' to @' + this.plan.author + '. Hive payments cannot be reversed.'
+      }
+      return 'I understand this is a recurring payment of ' + this.plan.priceLabel + ' ' +
+        this.recurrencePhrase + ' to @' + this.plan.author + ' for ' + this.plan.executions +
+        ' payments, and that I can cancel it from my wallet or my subscriptions page.'
     },
     displayDescription () {
       if (this.plan && this.plan.description) return this.plan.description
@@ -566,7 +774,7 @@ export default {
         'Members-only posts published while your membership is active',
         'The members-only archive, including posts from before you joined',
         'Cancel any time; access lasts until the paid period ends',
-        'Text-only content in this release; encrypted media is not promised'
+        'Read on any device when you sign in with your Hive account'
       ]
     },
     productPath () {
@@ -580,7 +788,7 @@ export default {
       return Boolean(this.loggedInUser && this.plan && this.readerKey && this.accepted && !this.queued)
     },
     memoPreview () {
-      return this.operation ? this.operation[1].memo : 'Created when you queue the payment.'
+      return this.operation ? this.operation[1].memo : ''
     }
   },
   watch: {
@@ -679,7 +887,7 @@ export default {
       this.pollTimer = setInterval(() => {
         if (Date.now() > this.pollDeadline) {
           this.stopPolling()
-          this.pollError = 'The grant has not appeared yet. The payment may still be confirming; check again or open your subscriptions.'
+          this.pollError = 'Your access has not arrived yet. The payment may still be confirming; check again or open your subscriptions.'
           return
         }
         this.checkBulletin()
@@ -711,7 +919,7 @@ export default {
         if (String(bulletin.signer || '').toLowerCase() !== String(bulletin.blog || '').toLowerCase()) return
         const verified = await this.verifyViaUnlockModule(bulletin)
         if (!verified) {
-          this.pollError = 'The bulletin could not be verified yet. It will retry automatically.'
+          this.pollError = 'Your access could not be verified yet. This page will retry automatically.'
           return
         }
         const entry = bulletin.entries.find(item => item && item.rkt === this.readerKey.rkt)
@@ -720,7 +928,7 @@ export default {
           this.stopPolling()
         }
       } catch {
-        this.pollError = 'The bulletin could not be checked yet. It will retry automatically.'
+        this.pollError = 'Your access could not be checked yet. This page will retry automatically.'
       } finally {
         this.checking = false
       }
@@ -748,8 +956,8 @@ export default {
     },
     updateMeta () {
       setPageMeta({
-        title: 'Subscribe — Banksia Vault',
-        description: 'Join a Banksia Vault membership with a direct HBD payment on Hive.',
+        title: 'Membership — Banksia',
+        description: 'Join a Banksia blog membership with a direct HBD payment on Hive.',
         url: '/subscribe',
         type: 'website',
         noindex: true

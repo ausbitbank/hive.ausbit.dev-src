@@ -437,16 +437,16 @@ test('shop routes Vault membership products to Subscribe', async ({ page }) => {
   await axeAtBothWidths(page, 'shop membership')
 })
 
-test('membership detail explains the reader-key flow and skips the cart', async ({ page }) => {
+test('membership detail explains account access and skips the cart', async ({ page }) => {
   const account = accountWithBlog({
     shop: { enabled: true, title: 'Shop', description: 'Buy directly from Alice.' }
   })
   await mockHive(page, { account, posts: [MEMBERSHIP_PRODUCT] })
   await page.goto('http://alice.localhost:4173/shop/membership', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.product-title')).toHaveText('The Orchid Letter')
-  await expect(page.locator('.product-membership')).toContainText('reader key')
+  await expect(page.locator('.product-membership')).toContainText('Hive account')
   await expect(page.locator('.product-membership')).toContainText('Weekly orchid notes')
-  await expect(page.getByRole('link', { name: 'Subscribe to membership' }))
+  await expect(page.getByRole('link', { name: 'Become a member' }))
     .toHaveAttribute('href', 'https://banksia.io/subscribe?blog=alice&product=alice%2Fmembership')
   await expect(page.getByRole('button', { name: 'Add to cart' })).toHaveCount(0)
   await axeAtBothWidths(page, 'membership detail')

@@ -472,6 +472,23 @@ test('locked premium post shows a paywall and never renders plaintext', async ({
   await axeAtBothWidths(page, 'locked premium post')
 })
 
+test('the blog home advertises membership and labels locked posts', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  await mockHive(page, state)
+
+  await page.goto('http://alice.localhost:4173/', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.blog-membership')).toBeVisible()
+  await expect(page.locator('#blog-membership-title')).toHaveText('The Orchid Letter')
+  await expect(page.locator('.blog-membership')).toContainText('5.000 HBD')
+  await expect(page.locator('.blog-membership')).toContainText('per month')
+  await expect(page.getByRole('link', { name: 'Become a member' }))
+    .toHaveAttribute('href', /\/subscribe\?blog=alice&product=alice%2Fmembership/)
+  await expect(page.locator('.blog-card__members').first()).toContainText('Members')
+
+  await axeAtBothWidths(page, 'blog membership home')
+})
+
 test('a subdomain blog is read-only and sends members to the apex', async ({ page }) => {
   const fixture = await makeVaultFixture()
   const state = makeState(fixture)
@@ -489,7 +506,7 @@ test('a subdomain blog is read-only and sends members to the apex', async ({ pag
   await expect(apexLink).toHaveAttribute('href', 'https://banksia.io/@alice/members-post')
   await expect(page.getByText(/read-only/i)).toBeVisible()
   await expect(page.getByRole('button', { name: /Subscribe/ })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Use my membership on this device' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Use this device' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Already a member? Restore access' })).toHaveCount(0)
 
   await axeAtBothWidths(page, 'read-only blog premium post')
@@ -503,7 +520,7 @@ test('a signed-in member can authorize this device with a public key only', asyn
 
   await page.goto('/@alice/members-post', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.banksia-locked')).toBeVisible()
-  const useDevice = page.getByRole('button', { name: 'Use my membership on this device' })
+  const useDevice = page.getByRole('button', { name: 'Use this device' })
   await expect(useDevice).toBeVisible()
   await expect(useDevice).toBeEnabled()
   await useDevice.click()
@@ -621,7 +638,7 @@ test('subscribe queues exactly one active recurrent transfer with the public rea
   await axeAtBothWidths(page, 'subscribe')
 
   await page.getByRole('checkbox').click()
-  const payButton = page.getByRole('button', { name: /Queue .*recurring payments/ })
+  const payButton = page.getByRole('button', { name: /Pay .* every month/ })
   await expect(payButton).toBeEnabled()
   await payButton.click()
 

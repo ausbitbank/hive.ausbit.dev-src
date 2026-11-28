@@ -1,25 +1,38 @@
 <template>
-  <section class="banksia-locked" :class="{ 'banksia-locked--busy': busy }" aria-labelledby="banksia-locked-title">
+  <section
+    class="banksia-locked"
+    :class="{ 'banksia-locked--busy': busy }"
+    aria-labelledby="banksia-locked-title"
+    :aria-busy="busy ? 'true' : 'false'"
+  >
     <p class="banksia-locked__eyebrow">
       <span class="banksia-locked__lock" aria-hidden="true">🔒</span>
       Members-only
     </p>
 
+    <div v-if="authorName" class="banksia-locked__author">
+      <img :src="authorAvatar" alt="" class="banksia-locked__avatar" width="32" height="32" />
+      <span>By <strong>@{{ authorName }}</strong></span>
+    </div>
+
     <h2 id="banksia-locked-title" class="banksia-locked__title">{{ heading }}</h2>
     <p class="banksia-locked__lede">{{ lede }}</p>
 
-    <p v-if="priceLabel" class="banksia-locked__price">
-      <strong>{{ priceLabel }}</strong>
-      <span v-if="usdEstimate" class="banksia-locked__usd">≈ {{ usdEstimate }} USD</span>
-      <span class="banksia-locked__cadence">per month</span>
-    </p>
+    <div class="banksia-locked__offer">
+      <p v-if="priceLabel" class="banksia-locked__price">
+        <strong>{{ priceLabel }}</strong>
+        <span v-if="usdEstimate" class="banksia-locked__usd">≈ {{ usdEstimate }} USD</span>
+        <span class="banksia-locked__cadence">{{ cadenceLabel }}</span>
+      </p>
 
-    <ul v-if="benefits.length" class="banksia-locked__benefits">
-      <li v-for="benefit in benefits" :key="benefit">
-        <span class="banksia-locked__tick" aria-hidden="true">✓</span>
-        {{ benefit }}
-      </li>
-    </ul>
+      <p class="banksia-locked__benefits-title">Membership includes</p>
+      <ul v-if="benefits.length" class="banksia-locked__benefits">
+        <li v-for="benefit in benefits" :key="benefit">
+          <span class="banksia-locked__tick" aria-hidden="true">✓</span>
+          {{ benefit }}
+        </li>
+      </ul>
+    </div>
 
     <p v-if="message" class="banksia-locked__status" role="status" aria-live="polite">{{ message }}</p>
 
@@ -29,7 +42,7 @@
         :href="apexUrl"
         class="banksia-locked__button banksia-locked__button--primary"
       >
-        Read on Banksia
+        {{ apexLabel }}
       </a>
       <template v-else>
         <button
@@ -40,23 +53,28 @@
         >
           {{ primaryLabel }}
         </button>
-        <button
-          v-if="readerAccount"
-          type="button"
-          class="banksia-locked__button"
-          :disabled="busy || !plan"
-          @click="$emit('use-device')"
-        >
-          Use my membership on this device
-        </button>
-        <button
-          type="button"
-          class="banksia-locked__button"
-          :disabled="busy"
-          @click="$emit('restore')"
-        >
-          Already a member? Restore access
-        </button>
+        <div class="banksia-locked__helper">
+          <span>Already a member?</span>
+          <button
+            type="button"
+            class="banksia-locked__button banksia-locked__button--link"
+            :disabled="busy"
+            @click="$emit('restore')"
+          >
+            Restore access
+          </button>
+          <template v-if="readerAccount">
+            <span aria-hidden="true">·</span>
+            <button
+              type="button"
+              class="banksia-locked__button banksia-locked__button--link"
+              :disabled="busy || !plan"
+              @click="$emit('use-device')"
+            >
+              Use this device
+            </button>
+          </template>
+        </div>
         <button
           v-if="showRetry"
           type="button"
@@ -78,7 +96,9 @@
     </p>
 
     <p class="banksia-locked__micro">
-      <span>Cancel anytime</span>
+      <span v-if="priceLabel">Cancel anytime</span>
+      <span v-if="priceLabel" aria-hidden="true">·</span>
+      <span>Secure keys stay on your device</span>
       <span aria-hidden="true">·</span>
       <span>Powered by Hive</span>
     </p>
@@ -90,6 +110,18 @@ const DEFAULT_BENEFITS = [
   'Every members-only post on this blog',
   'The full members-only archive'
 ]
+
+function recurrencePhrase (hours) {
+  const value = Number(hours)
+  if (!Number.isFinite(value) || value <= 0) return 'per month'
+  if (value === 24) return 'per day'
+  if (value === 48) return 'every 2 days'
+  if (value === 168) return 'per week'
+  if (value === 720 || value === 730 || value === 744) return 'per month'
+  if (value === 8760) return 'per year'
+  if (value % 24 === 0) return 'every ' + (value / 24) + ' days'
+  return 'every ' + value + ' hours'
+}
 
 export default {
   name: 'VaultPaywall',
@@ -107,15 +139,27 @@ export default {
     paywall () {
       return this.metadata && this.metadata.paywall ? this.metadata.paywall : null
     },
+    authorName () {
+      if (this.plan && this.plan.author) return this.plan.author
+      return String(this.blog || '').trim().replace(/^@/, '')
+    },
+    authorAvatar () {
+      return this.authorName
+        ? 'https://images.hive.blog/u/' + this.authorName + '/avatar'
+        : ''
+    },
     heading () {
       const title = this.paywall && this.paywall.title
       if (title) return title
       if (this.plan && this.plan.title) return this.plan.title
-      return 'Members-only'
+      return 'Read the rest of this post'
     },
     lede () {
       const body = this.paywall && this.paywall.body
       if (body) return body
+      if (this.authorName) {
+        return 'Support @' + this.authorName + ' and read every members-only post, including the full archive.'
+      }
       return 'Read the rest of this post and the full members-only archive.'
     },
     benefits () {
@@ -136,18 +180,27 @@ export default {
       // a quote, and the payment is always the on-chain HBD amount.
       return '$' + value.toFixed(2)
     },
+    cadenceLabel () {
+      if (!this.plan) return 'per period'
+      return recurrencePhrase(this.plan.recurrence)
+    },
     busy () {
       return this.status === 'checking' || this.status === 'unlocking'
     },
     showRetry () {
-      return this.status === 'payment-pending' || this.status === 'device-pending' ||
-        this.status === 'error' || this.status === 'expired'
+      return this.status === 'payment-pending' || this.status === 'error' || this.status === 'expired'
+    },
+    apexLabel () {
+      return this.status === 'expired' ? 'Renew on Banksia' : 'Read on Banksia'
     },
     primaryLabel () {
       if (this.status === 'expired') return 'Renew membership'
       if (this.status === 'device-pending') return 'Subscribe instead'
       if (this.busy) return 'Unlocking…'
-      return 'Subscribe'
+      if (this.plan && this.priceLabel) {
+        return 'Join for ' + this.priceLabel + ' ' + this.cadenceLabel
+      }
+      return 'Join membership'
     }
   }
 }
@@ -159,10 +212,11 @@ export default {
   width: 100%;
   max-width: 100%;
   margin: 1.4rem 0;
-  padding: 1.4rem 1.35rem;
-  border: 1px solid var(--c-border);
+  padding: 1.5rem 1.45rem;
+  border: 1px solid color-mix(in srgb, var(--c-primary) 24%, var(--c-border));
   border-radius: var(--skin-radius-card, 12px);
-  background: var(--c-surface);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--c-primary) 7%, var(--c-surface)), var(--c-surface) 62%);
   color: var(--c-text);
   overflow-wrap: anywhere;
 }
@@ -171,11 +225,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.5rem;
   color: var(--c-text-muted);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -184,18 +238,49 @@ export default {
   line-height: 1;
 }
 
+.banksia-locked__author {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  color: var(--c-text-muted);
+  font-size: 0.84rem;
+}
+
+.banksia-locked__author strong {
+  color: var(--c-text);
+  font-weight: 600;
+}
+
+.banksia-locked__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+
 .banksia-locked__title {
   margin: 0 0 0.45rem;
   font-family: var(--font-display, inherit);
-  font-size: clamp(1.2rem, 3vw, 1.55rem);
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
   line-height: 1.25;
 }
 
 .banksia-locked__lede {
-  margin: 0 0 0.9rem;
+  margin: 0 0 1rem;
   color: var(--c-text-muted);
   font-size: 0.95rem;
   line-height: 1.55;
+}
+
+.banksia-locked__offer {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: calc(var(--skin-radius-card, 12px) - 4px);
+  background: color-mix(in srgb, var(--c-surface) 82%, transparent);
 }
 
 .banksia-locked__price {
@@ -203,8 +288,8 @@ export default {
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin: 0 0 0.9rem;
-  font-size: 1.2rem;
+  margin: 0 0 0.7rem;
+  font-size: 1.35rem;
 }
 
 .banksia-locked__usd,
@@ -214,10 +299,19 @@ export default {
   font-weight: 500;
 }
 
+.banksia-locked__benefits-title {
+  margin: 0 0 0.4rem;
+  color: var(--c-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .banksia-locked__benefits {
   display: grid;
   gap: 0.35rem;
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0;
   list-style: none;
   color: var(--c-text-soft);
@@ -239,9 +333,9 @@ export default {
 
 .banksia-locked__status {
   margin: 0 0 0.9rem;
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--c-primary) 9%, transparent);
+  background: color-mix(in srgb, var(--c-primary) 10%, transparent);
   color: var(--c-text);
   font-size: 0.85rem;
   line-height: 1.45;
@@ -254,18 +348,25 @@ export default {
   gap: 0.5rem;
 }
 
+/* Blog post styles set a broad `a` colour; raise the primary button above them
+   so the label always contrasts with the filled background. */
+.banksia-locked .banksia-locked__actions .banksia-locked__button--primary {
+  color: var(--c-on-primary);
+  text-decoration: none;
+}
+
 .banksia-locked__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0.6rem 1rem;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
   border: 1px solid var(--c-border-strong);
   border-radius: 999px;
   background: transparent;
   color: var(--c-text);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
@@ -281,8 +382,34 @@ export default {
 .banksia-locked__button--quiet {
   border-color: transparent;
   color: var(--c-link);
+  font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 0.16em;
+}
+
+.banksia-locked__button--link {
+  min-height: auto;
+  padding: 0.15rem 0.2rem;
+  border-color: transparent;
+  color: var(--c-link);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.banksia-locked__helper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+  color: var(--c-text-muted);
+  font-size: 0.8rem;
+}
+
+.banksia-locked__helper .banksia-locked__button {
+  font-size: 0.8rem;
 }
 
 .banksia-locked__button:hover:not(:disabled) {
@@ -328,7 +455,11 @@ export default {
 
 @media (max-width: 420px) {
   .banksia-locked {
-    padding: 1.1rem 1rem;
+    padding: 1.15rem 1rem;
+  }
+
+  .banksia-locked__offer {
+    padding: 0.8rem;
   }
 
   .banksia-locked__actions {

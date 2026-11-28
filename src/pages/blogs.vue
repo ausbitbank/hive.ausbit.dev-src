@@ -127,12 +127,14 @@
 
       <section class="blogs-free">
         <div>
-          <h2>Free forever. Paid extras later.</h2>
+          <h2>Free forever. Memberships optional.</h2>
           <p>
-            The free blog includes the reading surface, all your posts, the three
+            The free blog includes the reading surface, all your posts, five
             themes, profile-skin matching, pinned posts, contributors, RSS,
-            sitemap and link previews. Custom domains, premium themes and team
-            features are planned. No card, no subscription and no lock-in.
+            sitemap and link previews. You can also sell members-only posts with
+            Banksia Vault: set a price in HBD, get paid directly, and keep the
+            content encrypted in the reader's browser. Banksia takes 0% and holds
+            no funds. Custom domains and team features are planned.
           </p>
         </div>
         <q-btn unelevated no-caps color="primary" label="Claim your blog" to="/settings/blog" />
@@ -147,6 +149,10 @@
           <dd>No. The blog reads the posts that are already on Hive. Publish from any app and they appear.</dd>
           <dt>Who holds my keys?</dt>
           <dd>You do. Claiming and editing use the posting key through your wallet. No server stores a key.</dd>
+          <dt>How do paid memberships work?</dt>
+          <dd>Readers pay you directly in HBD. Your browser encrypts the members-only part of a post, and each member's browser decrypts it with a key the payment granted. There is no platform fee and no escrow.</dd>
+          <dt>Can I still publish free posts?</dt>
+          <dd>Yes. Free and members-only posts live side by side, and every premium post keeps a public teaser for search and sharing.</dd>
           <dt>Can I use my own domain?</dt>
           <dd>Custom domains are planned. The free address is <code>username.banksia.io</code>.</dd>
           <dt>What happens if I stop using Banksia?</dt>

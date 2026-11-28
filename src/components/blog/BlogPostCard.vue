@@ -9,6 +9,10 @@
         <time v-if="dateLabel" :datetime="post.created">{{ dateLabel }}</time>
         <span v-if="readingMinutes && showReadingTime" class="blog-card__dot" aria-hidden="true">·</span>
         <span v-if="readingMinutes && showReadingTime">{{ readingMinutes }} min read</span>
+        <span v-if="membersOnly" class="blog-card__members">
+          <q-icon name="lock" size="12px" aria-hidden="true" />
+          Members
+        </span>
         <span v-if="pinned" class="blog-card__pin">Pinned</span>
       </div>
 
@@ -88,6 +92,25 @@
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.blog-card__members {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.08rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--c-primary) 36%, var(--c-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c-primary) 8%, transparent);
+  color: var(--c-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blog-card__members .q-icon {
+  font-size: 12px;
 }
 
 .blog-card__title {
@@ -184,7 +207,7 @@
 </style>
 
 <script>
-import { blogPostExcerpt, blogPostImage, blogPostPathFor, blogPostReadingMinutes, blogPostTags, blogPostTitle, formatBlogDate } from 'src/services/blogPosts'
+import { blogPostExcerpt, blogPostImage, blogPostPathFor, blogPostReadingMinutes, blogPostTags, blogPostTitle, formatBlogDate, vaultSummary } from 'src/services/blogPosts'
 import { useBlogStore } from 'src/stores/blog'
 
 export default {
@@ -209,6 +232,9 @@ export default {
     },
     title () {
       return blogPostTitle(this.post)
+    },
+    membersOnly () {
+      return Boolean(vaultSummary(this.post && this.post.json_metadata))
     },
     excerpt () {
       return blogPostExcerpt(this.post, this.feature ? 260 : 180)

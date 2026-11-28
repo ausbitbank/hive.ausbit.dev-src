@@ -11,9 +11,9 @@
         <p class="vault-kicker">Banksia Vault</p>
         <h1 class="vault-title">Creator dashboard{{ accountName ? ' — @' + accountName : '' }}</h1>
         <p class="vault-muted">
-          Payments, grants and keys are read from the Hive blockchain and this
-          browser. Nothing here holds funds and no plaintext or private key is
-          stored by this page.
+          See who supports your blog, give members access, and share your
+          membership page. Payments go straight to you; Banksia never holds your
+          funds, plaintext or private keys.
         </p>
       </header>
 
@@ -55,18 +55,18 @@
           <q-card-section>
             <div class="vault-auto__head">
               <div>
-                <h2 class="vault-section-title vault-section-title--flush">Auto-issue grants</h2>
+                <h2 class="vault-section-title vault-section-title--flush">Give access automatically</h2>
                 <p class="vault-muted">
-                  While this dashboard tab is open, check the public payment
-                  history every {{ autoIssueBatch }} seconds and queue a bulletin
-                  when a subscriber needs a grant. Your vault must stay unlocked.
-                  Background tabs may be throttled by the browser.
+                  While this dashboard tab is open, check payments every
+                  {{ autoIssueBatch }} seconds and queue access for new members
+                  automatically. Your vault must stay unlocked. Background tabs may
+                  be slowed down by the browser.
                 </p>
               </div>
               <q-toggle
                 v-model="autoIssue"
                 color="primary"
-                label="Auto-issue while this tab is open"
+                label="Give access while this tab is open"
               />
             </div>
             <q-select
@@ -179,17 +179,38 @@
         <q-banner v-if="pendingCount" rounded class="vault-banner vault-banner--pending">
           <template #avatar><q-icon name="notifications_active" /></template>
           <strong>{{ pendingCount }}</strong>
-          {{ pendingCount === 1 ? 'subscriber needs' : 'subscribers need' }} a grant.
+          {{ pendingCount === 1 ? 'new member needs' : 'new members need' }} access.
           <q-btn
             flat
             no-caps
             color="primary"
-            label="Select pending & issue"
+            label="Give access now"
             :disable="!vault || !isOwner || !plan || busy === 'issue'"
             :loading="busy === 'issue'"
             @click="issuePending"
           />
         </q-banner>
+
+        <section aria-labelledby="vault-share-title">
+          <h2 id="vault-share-title" class="vault-section-title">Share your membership</h2>
+          <q-card flat bordered class="vault-card vault-share">
+            <q-card-section>
+              <p class="vault-muted">
+                Send readers to your membership page, or share the subscribe link
+                directly. Both open the page that collects the payment and issues access.
+              </p>
+              <div class="vault-share__row">
+                <code>{{ membershipPageUrl }}</code>
+                <q-btn dense no-caps outline color="primary" label="Copy page link" @click="copyText(membershipPageUrl)" />
+                <q-btn dense no-caps flat color="primary" label="Open page" :to="membershipPagePath" />
+              </div>
+              <div v-if="subscribeShareUrl" class="vault-share__row">
+                <code>{{ subscribeShareUrl }}</code>
+                <q-btn dense no-caps outline color="primary" label="Copy subscribe link" @click="copyText(subscribeShareUrl)" />
+              </div>
+            </q-card-section>
+          </q-card>
+        </section>
 
         <section aria-labelledby="vault-subscribers-title">
           <h2 id="vault-subscribers-title" class="vault-section-title">Subscribers</h2>
@@ -262,8 +283,8 @@
                     </tr>
                     <tr v-if="!rows.length">
                       <td colspan="8" class="vault-empty">
-                        No verified Vault payments yet. A row appears after a payment
-                        whose memo matches the product in the current period.
+                        No members yet. Share your membership page above; a row
+                        appears here after a reader’s first verified payment.
                       </td>
                     </tr>
                   </tbody>
@@ -316,6 +337,13 @@
             </q-card-section>
           </q-card>
         </section>
+
+        <details class="vault-advanced-tools">
+          <summary>Advanced tools</summary>
+          <p class="vault-muted vault-muted--small">
+            Relay uptime, key rotation and encrypted backups. You do not need any of
+            these to start selling memberships.
+          </p>
 
         <section aria-labelledby="vault-relay-title">
           <h2 id="vault-relay-title" class="vault-section-title">Relay (optional)</h2>
@@ -444,6 +472,8 @@
             </q-card-section>
           </q-card>
         </section>
+
+        </details>
 
         <section aria-labelledby="vault-content-title">
           <h2 id="vault-content-title" class="vault-section-title">Premium content</h2>
@@ -688,6 +718,25 @@
   font-weight: 600;
 }
 
+.vault-share__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+
+.vault-share__row code {
+  flex: 1 1 320px;
+  min-width: 0;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--c-border);
+  border-radius: 7px;
+  background: var(--c-surface-2);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
 .vault-toolbar {
   display: flex;
   align-items: center;
@@ -836,6 +885,19 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-top: 0.9rem;
+}
+
+.vault-advanced-tools {
+  margin-top: 1.6rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--c-border-subtle);
+}
+
+.vault-advanced-tools > summary {
+  cursor: pointer;
+  color: var(--c-link);
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .vault-error {
@@ -1008,6 +1070,21 @@ export default {
     },
     setupPath () {
       return '/settings/blog' + (this.accountName ? '?account=' + this.accountName : '')
+    },
+    membershipPagePath () {
+      const product = this.vaultSettings && this.vaultSettings.product
+      return product ? '/@' + product : '/@' + this.accountName
+    },
+    membershipPageUrl () {
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://banksia.io'
+      return origin + this.membershipPagePath
+    },
+    subscribeShareUrl () {
+      const product = this.vaultSettings && this.vaultSettings.product
+      if (!product) return ''
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://banksia.io'
+      return origin + '/subscribe?blog=' + encodeURIComponent(this.accountName) +
+        '&product=' + encodeURIComponent(product)
     },
     kids () {
       if (!this.vault || !this.vault.keyring) return []

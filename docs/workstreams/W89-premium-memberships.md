@@ -9,6 +9,10 @@ second reader key → cleanup. A real `recurrent_transfer` cancel was also
 verified live. The 50,000 VESTS RC/HP delegation from `ausbitclank` to
 `ausbit.vsc` was intentionally left in place at the operator's request.
 
+> Later public-UX pass: see
+> [`W126-vault-public-ux.md`](W126-vault-public-ux.md) for the reader paywall,
+> subscribe flow, blog discovery and creator-onboarding polish.
+
 ## Scope
 
 Banksia Vault lets a blog owner sell monthly access to a locked section or a

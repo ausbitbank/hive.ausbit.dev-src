@@ -573,7 +573,7 @@ describe('VaultLockedSection', () => {
 
     expect(wrapper.find('section.banksia-locked').exists()).toBe(true)
     expect(wrapper.find('h2').text()).toBe('Members-only')
-    expect(wrapper.text()).toContain('Subscribe')
+    expect(wrapper.text()).toContain('Join for')
     expect(wrapper.text()).toContain('Already a member? Restore access')
     expect(wrapper.text()).toContain('Cancel anytime')
     expect(wrapper.text()).toContain('Powered by Hive')
@@ -658,8 +658,21 @@ describe('VaultPaywall', () => {
     expect(wrapper.text()).toContain('≈ $5.00 USD')
     expect(wrapper.text()).toContain('Weekly essays')
     const labels = wrapper.findAll('button').map(button => button.text())
-    expect(labels.some(label => label.includes('Subscribe'))).toBe(true)
+    expect(labels.some(label => label.includes('Join for'))).toBe(true)
     expect(labels.some(label => label.includes('Restore access'))).toBe(true)
+  })
+
+  it('uses the plan recurrence for the price cadence', () => {
+    const wrapper = mount(VaultPaywall, {
+      props: {
+        plan: { author: 'alice', priceLabel: '3.000 HBD', recurrence: 168 },
+        metadata: { paywall: { title: 'Members-only', body: 'A weekly letter.' } },
+        blog: 'alice'
+      }
+    })
+
+    expect(wrapper.text()).toContain('per week')
+    expect(wrapper.text()).not.toContain('per month')
   })
 
   it('replaces local actions with an apex link on a read-only blog host', () => {

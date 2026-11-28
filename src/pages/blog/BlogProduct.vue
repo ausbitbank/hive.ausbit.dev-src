@@ -168,16 +168,16 @@
       <section v-if="membership" class="product-membership" aria-label="Membership details">
         <h2 class="product-description__title">Membership</h2>
         <p class="product-membership__note">
-          This is a Banksia Vault membership. Subscribe on banksia.io so your
-          reader key can be attached to the payment memo and the creator can
-          issue your access grant. Cart checkout is not used for memberships.
+          Support @{{ product.author }} directly and unlock the members-only posts
+          on this blog. Membership is tied to your Hive account, so it works on
+          any device when you sign in. Cart checkout is not used for memberships.
         </p>
         <ul v-if="membership.benefits.length" class="product-membership__list">
           <li v-for="benefit in membership.benefits" :key="benefit">{{ benefit }}</li>
         </ul>
         <p class="product-membership__note">
-          Billing: {{ product.priceLabel }} every {{ membership.recurrenceHours }} hours.
-          Cancel from <a href="https://banksia.io/subscriptions">your subscriptions</a>.
+          Billing: {{ product.priceLabel }} {{ recurrencePhrase }}.
+          Cancel any time from <a href="https://banksia.io/subscriptions">your subscriptions</a>.
         </p>
       </section>
 
@@ -650,6 +650,7 @@ import { blogProductPath, parseProductRoute } from 'src/services/blogProductPath
 import { blogPostExcerpt, formatBlogDate } from 'src/services/blogPosts'
 import { PURCHASES_STORAGE_KEY, serializeCheckoutItems } from 'src/services/shopCart'
 import { membershipFromProduct, membershipSubscribeUrl } from 'src/services/shopMembership'
+import { vaultRecurrencePhrase } from 'src/services/vaultPayments'
 import { buildSellerTrust } from 'src/services/shopSeller'
 import { useBlogStore } from 'src/stores/blog'
 import { useCartStore } from 'src/stores/cart'
@@ -748,6 +749,9 @@ export default {
     membershipUrl () {
       return membershipSubscribeUrl(this.product, { absolute: true })
     },
+    recurrencePhrase () {
+      return vaultRecurrencePhrase(this.membership && this.membership.recurrenceHours)
+    },
     purchasable () {
       return isPurchasable(this.product)
     },
@@ -770,7 +774,7 @@ export default {
       return this.membership ? this.membershipUrl : this.payUrl
     },
     ctaLabel () {
-      if (this.membership) return 'Subscribe to membership'
+      if (this.membership) return 'Become a member'
       return this.product && this.product.subscription
         ? 'Subscribe (' + recurrenceLabel(this.product) + ')'
         : 'Buy on Banksia'
