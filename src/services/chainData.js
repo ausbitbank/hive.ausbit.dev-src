@@ -13,6 +13,7 @@ import {
   apiGetGlobalProps,
   apiGetMedianHistoryPrice,
   apiGetOpenOrders,
+  apiGetRewardFund,
   apiGetTicker,
   apiGetWitnessByAccount,
   apiGetWitnessesByVote,
@@ -240,6 +241,13 @@ export function rememberFollowing (account, target, follows) {
 
 export function fetchMedianHistoryPrice ({ force = false } = {}) {
   return loadCached('medianHistory', () => apiGetMedianHistoryPrice(), {
+    ttl: CACHE_TTL.median,
+    force
+  })
+}
+
+export function fetchRewardFund (name = 'post', { force = false } = {}) {
+  return loadCached('rewardFund:' + name, () => apiGetRewardFund(name), {
     ttl: CACHE_TTL.median,
     force
   })

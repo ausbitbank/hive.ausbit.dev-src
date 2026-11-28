@@ -8,7 +8,8 @@ import {
   normalizeHistoryVote,
   normalizeHistoryVotes,
   relationshipFor,
-  summarizeDownvotes
+  summarizeDownvotes,
+  withDownvoteValues
 } from '../../src/services/downvotes'
 
 const now = Date.now()
@@ -60,6 +61,52 @@ describe('downvote history normalization', () => {
     expect(summary.distinctTargets).toBe(2)
     expect(summary.totalWeight).toBe(1700)
     expect(summary.largestWeight).toBe(1000)
+    expect(summary.totalValueUsd).toBe(0)
+    expect(summary.totalRshares).toBe(0)
+  })
+
+  it('adds estimated dollar values without changing the chain weight', () => {
+    const account = {
+      vesting_shares: '1000000.000000 VESTS',
+      voting_manabar: { current_mana: 1000000000000 },
+      downvote_manabar: { current_mana: 250000000000 }
+    }
+    const rewardFund = { recent_claims: '1000000000000000', reward_balance: '50000.000 HIVE' }
+    const medianHistory = { base: '0.500 HBD', quote: '1.000 HIVE' }
+    const rows = normalizeHistoryVotes([
+      vote({ voter: 'bob', weight: -1000, index: 1 }),
+      vote({ voter: 'carol', weight: -500, index: 2, permlink: 'other' })
+    ])
+    const valued = withDownvoteValues(rows, {
+      accounts: { bob: account, carol: account },
+      rewardFund,
+      medianHistory
+    })
+
+    expect(valued[0].weight).toBe(-1000)
+    expect(valued[0].valueRshares).toBe(2e9)
+    expect(valued[0].valueUsd).toBeCloseTo(0.05, 6)
+    expect(valued[1].valueRshares).toBe(1e9)
+    expect(valued[1].valueUsd).toBeCloseTo(0.025, 6)
+
+    const summary = summarizeDownvotes(valued)
+    expect(summary.totalWeight).toBe(1500)
+    expect(summary.totalRshares).toBe(3e9)
+    expect(summary.totalValueUsd).toBeCloseTo(0.075, 6)
+    expect(summary.largestValueUsd).toBeCloseTo(0.05, 6)
+    expect(summary.topValueShare).toBeCloseTo(0.05 / 0.075, 6)
+
+    const grouped = groupDownvotes(valued, 'voter')
+    const bob = grouped.find(group => group.key === 'bob')
+    expect(bob.totalValueUsd).toBeCloseTo(0.05, 6)
+    expect(bob.totalRshares).toBe(2e9)
+  })
+
+  it('leaves value estimates empty when the voter account is unknown', () => {
+    const rows = normalizeHistoryVotes([vote({ voter: 'bob', weight: -1000 })])
+    const valued = withDownvoteValues(rows, { accounts: {}, rewardFund: null, medianHistory: null })
+    expect(valued[0].valueUsd).toBe(0)
+    expect(valued[0].valueRshares).toBe(0)
   })
 
   it('groups by voter, target and day', () => {

@@ -5,6 +5,7 @@
 // distinct and never turns a heuristic into an automatic hide.
 
 import { normalizeVotes, voteDirection } from './voteBreakdown'
+import { estimateDownvoteValueUsd } from './voteValue'
 
 export const DOWNVOTE_WINDOW_HOURS = 72
 export const COORDINATION_MIN_VOTERS = 3
@@ -62,21 +63,53 @@ export function downvotesFor (rows, account, direction = 'received') {
     .filter(row => direction === 'given' ? row.voter === name : row.author === name)
 }
 
+/**
+ * Attach an estimated rshares/USD impact to each history row.
+ *
+ * The estimate uses the voter's current stake and mana because a history vote
+ * op does not store rshares. Rows without a resolved voter account keep zero
+ * values and the UI shows "—" rather than guessing.
+ */
+export function withDownvoteValues (rows, { accounts = {}, rewardFund = null, medianHistory = null } = {}) {
+  return (Array.isArray(rows) ? rows : []).map(row => {
+    const voter = String(row?.voter || '').trim().toLowerCase()
+    const account = voter && accounts ? accounts[voter] : null
+    if (!account) return { ...row, valueUsd: 0, valueRshares: 0 }
+    const estimate = estimateDownvoteValueUsd({
+      account,
+      rewardFund,
+      medianHistory,
+      weight: Math.abs(Number(row?.weight) || 0)
+    })
+    return { ...row, valueUsd: estimate.usd, valueRshares: estimate.rshares }
+  })
+}
+
 export function summarizeDownvotes (rows) {
   const list = Array.isArray(rows) ? rows : []
   const voters = new Set()
   const targets = new Set()
   let totalWeight = 0
   let largestWeight = 0
+  let totalValueUsd = 0
+  let largestValueUsd = 0
+  let totalRshares = 0
+  let largestRshares = 0
   let latest = null
   let earliest = null
 
   for (const row of list) {
     const weight = Math.abs(Number(row.weight) || 0)
+    const valueUsd = Math.abs(Number(row.valueUsd) || 0)
+    const valueRshares = Math.abs(Number(row.valueRshares) || 0)
     voters.add(row.voter)
     targets.add(row.target || row.author + '/' + row.permlink)
     totalWeight += weight
+    totalValueUsd += valueUsd
+    totalRshares += valueRshares
     if (weight > largestWeight) largestWeight = weight
+    if (valueUsd > largestValueUsd) largestValueUsd = valueUsd
+    if (valueRshares > largestRshares) largestRshares = valueRshares
     const time = Number(row.time) || timestamp(row.timestamp)
     if (time) {
       if (latest === null || time > latest) latest = time
@@ -91,6 +124,11 @@ export function summarizeDownvotes (rows) {
     totalWeight,
     largestWeight,
     topVoterShare: totalWeight ? largestWeight / totalWeight : 0,
+    totalValueUsd,
+    largestValueUsd,
+    topValueShare: totalValueUsd ? largestValueUsd / totalValueUsd : 0,
+    totalRshares,
+    largestRshares,
     latest,
     earliest
   }
@@ -105,13 +143,15 @@ export function groupDownvotes (rows, by = 'voter') {
         ? String(row.timestamp || '').slice(0, 10)
         : row.voter
     if (!map.has(key)) {
-      map.set(key, { key, rows: [], voters: new Set(), targets: new Set(), totalWeight: 0, latest: 0 })
+      map.set(key, { key, rows: [], voters: new Set(), targets: new Set(), totalWeight: 0, totalValueUsd: 0, totalRshares: 0, latest: 0 })
     }
     const group = map.get(key)
     group.rows.push(row)
     group.voters.add(row.voter)
     group.targets.add(row.target || row.author + '/' + row.permlink)
     group.totalWeight += Math.abs(Number(row.weight) || 0)
+    group.totalValueUsd += Math.abs(Number(row.valueUsd) || 0)
+    group.totalRshares += Math.abs(Number(row.valueRshares) || 0)
     group.latest = Math.max(group.latest, Number(row.time) || timestamp(row.timestamp))
   }
   return [...map.values()]
@@ -121,6 +161,8 @@ export function groupDownvotes (rows, by = 'voter') {
       voters: group.voters.size,
       targets: group.targets.size,
       totalWeight: group.totalWeight,
+      totalValueUsd: group.totalValueUsd,
+      totalRshares: group.totalRshares,
       latest: group.latest,
       rows: group.rows
     }))

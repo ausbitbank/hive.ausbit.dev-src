@@ -48,16 +48,23 @@
             <small>Raw chain impact</small>
           </div>
           <div class="dv-stat">
-            <span>Total weight</span>
-            <strong>{{ weightLabel(summary.totalWeight) }}</strong>
-            <small>Sum of downvote weight</small>
+            <span>Total deducted</span>
+            <strong>{{ valueLabel(summary.totalValueUsd) }}</strong>
+            <small v-if="summary.totalRshares">{{ compactNumber(summary.totalRshares) }} rshares total (est.)</small>
+            <small v-else>Estimate unavailable</small>
           </div>
           <div class="dv-stat">
-            <span>Largest vote</span>
-            <strong>{{ weightLabel(summary.largestWeight) }}</strong>
-            <small>{{ shareLabel(summary.topVoterShare) }} of the total</small>
+            <span>Largest deduction</span>
+            <strong>{{ valueLabel(summary.largestValueUsd) }}</strong>
+            <small v-if="summary.totalValueUsd">{{ shareLabel(summary.topValueShare) }} of the total</small>
+            <small v-else>{{ weightLabel(summary.largestWeight) }} largest weight</small>
           </div>
         </section>
+
+        <p v-if="valuationLoading" class="dv-note">Estimating dollar impact from voter stake…</p>
+        <p v-else-if="allDownvotes.length && !summary.totalValueUsd" class="dv-note">
+          {{ valuationError || 'Dollar estimates need each voter\'s Hive Power, downvote mana, the post reward fund and a price feed. The weight column is exact chain data; the dollar estimate is unavailable right now.' }}
+        </p>
 
         <section v-if="coordination" class="dv-evidence" aria-labelledby="dv-evidence-title">
           <div class="dv-evidence__head">
@@ -104,13 +111,26 @@
           </p>
         </details>
 
+        <details class="dv-help">
+          <summary>How dollar estimates work</summary>
+          <p>
+            Each downvote's weight is applied to the voter's <strong>current</strong> Hive Power and
+            downvote mana, then priced with the post reward fund and median price feed. The estimate
+            shows the value the vote would deduct now; vote history stores the weight but not the
+            stake or mana at the time of the vote, so old rows cannot be replayed exactly.
+            The table's weight column remains the exact chain value.
+          </p>
+        </details>
+
         <div v-if="groupBy !== 'none' && grouped.length" class="dv-groups">
           <article v-for="group in grouped" :key="group.key" class="dv-group">
             <div>
               <router-link v-if="groupBy === 'voter'" :to="'/@' + group.key" class="dv-group__key">@{{ group.key }}</router-link>
               <router-link v-else-if="groupBy === 'target'" :to="targetLink(group.key)" class="dv-group__key">{{ group.key }}</router-link>
               <span v-else class="dv-group__key">{{ group.key }}</span>
-              <div class="dv-group__meta">{{ group.count }} votes · {{ group.voters }} voters · {{ weightLabel(group.totalWeight) }}</div>
+              <div class="dv-group__meta">
+                {{ group.count }} votes · {{ group.voters }} voters<span v-if="groupValueLabel(group)"> · {{ groupValueLabel(group) }}</span>
+              </div>
             </div>
             <div class="dv-group__actions">
               <q-btn v-if="groupBy === 'voter'" flat dense no-caps :label="isIgnored(group.key) ? 'Unignore voter' : 'Ignore voter'" @click="toggleIgnored(group.key)" />
@@ -125,13 +145,14 @@
 
         <div v-else class="dv-table-wrap">
           <table class="dv-table">
-            <caption class="sr-only">Downvotes with voter, weight, target time and local relationship</caption>
+            <caption class="sr-only">Downvotes with voter, weight, estimated value, target time and local relationship</caption>
             <thead>
               <tr>
                 <th scope="col">Time</th>
                 <th scope="col">Voter</th>
                 <th scope="col">Relationship</th>
                 <th scope="col" class="dv-num">Weight</th>
+                <th scope="col" class="dv-num">Value</th>
                 <th scope="col">Target</th>
                 <th scope="col"><span class="sr-only">Actions</span></th>
               </tr>
@@ -142,6 +163,7 @@
                 <td><router-link :to="'/@' + row.voter">@{{ row.voter }}</router-link></td>
                 <td><q-badge :color="relationshipColor(row.voter)">{{ relationship(row.voter) }}</q-badge></td>
                 <td class="dv-num">{{ weightLabel(row.weight) }}</td>
+                <td class="dv-num" :title="valueTitle(row)">{{ valueLabel(row.valueUsd) }}</td>
                 <td><router-link :to="targetLink(row.target)">{{ row.target }}</router-link></td>
                 <td class="dv-row-action">
                   <button type="button" class="dv-link" @click="toggleIgnored(row.voter)">
@@ -183,6 +205,7 @@
 .dv-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-2); margin-top: var(--space-4); }
 .dv-stat { display: flex; flex-direction: column; gap: 0.1rem; padding: var(--space-3); border: 1px solid var(--c-border); border-radius: var(--radius-card); background: var(--c-surface-2); color: var(--c-text-muted); font-size: 0.74rem; }
 .dv-stat strong { color: var(--c-text); font-size: 1.25rem; }
+.dv-note { margin: var(--space-2) 0 0; color: var(--c-text-muted); font-size: 0.76rem; line-height: 1.5; }
 .dv-evidence { margin-top: var(--space-4); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--c-warning) 35%, var(--c-border)); border-radius: var(--radius-card); background: color-mix(in srgb, var(--c-warning) 7%, var(--c-surface-2)); }
 .dv-evidence__head { display: flex; justify-content: space-between; gap: var(--space-2); align-items: flex-start; }
 .dv-evidence__eyebrow { color: var(--c-warning); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -202,7 +225,7 @@
 .dv-group__key { color: var(--c-text); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .dv-group__meta { color: var(--c-text-muted); font-size: 0.74rem; }
 .dv-table-wrap { margin-top: var(--space-3); overflow-x: auto; }
-.dv-table { width: 100%; border-collapse: collapse; min-width: 720px; }
+.dv-table { width: 100%; border-collapse: collapse; min-width: 780px; }
 .dv-table th, .dv-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--c-border); text-align: left; font-size: 0.78rem; vertical-align: top; }
 .dv-table thead th { color: var(--c-text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .dv-num { text-align: right !important; white-space: nowrap; }
@@ -222,9 +245,11 @@ import {
   filterIgnoredVoters,
   groupDownvotes,
   relationshipFor,
-  summarizeDownvotes
+  summarizeDownvotes,
+  withDownvoteValues
 } from 'src/services/downvotes'
 import { fetchAccountVoteHistory } from 'src/services/accountDownvotes'
+import { fetchDownvoteValuation } from 'src/services/downvoteValuation'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useModerationStore } from 'src/stores/moderation'
 
@@ -247,6 +272,12 @@ export default {
       groupBy: 'none',
       showIgnored: false,
       visibleCount: PAGE_ROWS,
+      voterAccounts: {},
+      rewardFund: null,
+      medianHistory: null,
+      valuationLoading: false,
+      valuationError: '',
+      valuationRequest: 0,
       rangeOptions: [
         { label: 'Last 7 days', value: '7' },
         { label: 'Last 30 days', value: '30' },
@@ -300,8 +331,15 @@ export default {
     allDownvotes () {
       return downvotesFor(this.rows, this.username, this.direction)
     },
+    valuedDownvotes () {
+      return withDownvoteValues(this.allDownvotes, {
+        accounts: this.voterAccounts,
+        rewardFund: this.rewardFund,
+        medianHistory: this.medianHistory
+      })
+    },
     summary () {
-      return summarizeDownvotes(this.allDownvotes)
+      return summarizeDownvotes(this.valuedDownvotes)
     },
     coordination () {
       return coordinationEvidence(this.allDownvotes)
@@ -310,7 +348,7 @@ export default {
       return this.moderation.ignoredVoters
     },
     filtered () {
-      let list = this.allDownvotes
+      let list = this.valuedDownvotes
       if (this.range !== 'all') {
         const cutoff = Date.now() - Number(this.range) * 24 * 60 * 60 * 1000
         list = list.filter(row => (Number(row.time) || 0) >= cutoff)
@@ -341,6 +379,7 @@ export default {
     },
     direction () {
       this.visibleCount = PAGE_ROWS
+      this.loadValuation()
     },
     range () {
       this.visibleCount = PAGE_ROWS
@@ -355,7 +394,7 @@ export default {
   mounted () {
     setPageMeta({
       title: '@' + this.username + ' downvotes — voter and target transparency — banksia.io',
-      description: 'Public downvote activity for @' + this.username + ' on banksia.io, with voter, weight, target, time and local relationship context.',
+      description: 'Public downvote activity for @' + this.username + ' on banksia.io, with voter, weight, estimated dollar impact, target, time and local relationship context.',
       url: '/@' + this.username + '/downvotes'
     })
     this.moderation.setScope(this.loggedInUser || 'guest')
@@ -376,6 +415,35 @@ export default {
         this.error = error?.message || 'Could not load downvote history.'
       } finally {
         this.loading = false
+      }
+      this.loadValuation({ force })
+    },
+    async loadValuation ({ force = false } = {}) {
+      const voters = this.direction === 'given'
+        ? [this.username]
+        : [...new Set(this.allDownvotes.map(row => row.voter).filter(Boolean))]
+      const requestId = ++this.valuationRequest
+      if (!voters.length) {
+        this.voterAccounts = {}
+        this.valuationError = ''
+        this.valuationLoading = false
+        return
+      }
+      this.valuationLoading = true
+      try {
+        const valuation = await fetchDownvoteValuation(voters, { force })
+        if (requestId !== this.valuationRequest) return
+        this.voterAccounts = valuation.accounts
+        this.rewardFund = valuation.rewardFund
+        this.medianHistory = valuation.medianHistory
+        this.valuationError = valuation.rewardFundUnavailable || valuation.priceUnavailable
+          ? 'Dollar estimates are unavailable: the reward fund or price feed could not be read.'
+          : ''
+      } catch (error) {
+        if (requestId !== this.valuationRequest) return
+        this.valuationError = error?.message || 'Could not estimate the dollar impact.'
+      } finally {
+        if (requestId === this.valuationRequest) this.valuationLoading = false
       }
     },
     loadOlder () {
@@ -413,6 +481,34 @@ export default {
       const percent = Number(weight) / 100
       if (!Number.isFinite(percent)) return '—'
       return (percent > 0 ? '+' : '') + percent.toFixed(1) + '%'
+    },
+    valueLabel (value) {
+      const number = Number(value)
+      if (!Number.isFinite(number) || number <= 0) return '—'
+      if (number < 0.01) return '≈ <$0.01'
+      return '≈ ' + number.toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+    },
+    groupValueLabel (group) {
+      const value = Number(group.totalValueUsd)
+      return Number.isFinite(value) && value > 0 ? this.valueLabel(value) : ''
+    },
+    valueTitle (row) {
+      const rshares = Math.abs(Number(row.valueRshares) || 0)
+      if (!rshares) return 'Voter stake, mana, reward fund or price feed unavailable'
+      return 'Estimated ' + this.compactNumber(rshares) + ' rshares at current stake and mana'
+    },
+    compactNumber (value) {
+      const number = Math.abs(Number(value) || 0)
+      if (number >= 1e12) return (number / 1e12).toFixed(1) + 'T'
+      if (number >= 1e9) return (number / 1e9).toFixed(1) + 'B'
+      if (number >= 1e6) return (number / 1e6).toFixed(1) + 'M'
+      if (number >= 1e3) return (number / 1e3).toFixed(1) + 'K'
+      return number.toFixed(0)
     },
     shareLabel (value) {
       const percent = Number(value) * 100

@@ -87,7 +87,7 @@ searches live in your browser.
 | `/blocks`, `/b/:blockNum`, `/tx/:txId` | Latest blocks, block detail with grouped operations, transaction detail and raw JSON |
 | `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
-| `/@:username/downvotes` | Received/given downvote transparency: voter, weight, target, time, relationship, conservative pattern evidence and per-voter local exclusion |
+| `/@:username/downvotes` | Received/given downvote transparency: voter, weight, estimated dollar impact, target, time, relationship, conservative pattern evidence and per-voter local exclusion |
 | `/@:username/trail` | Recent votes and curation activity carousel |
 | `/@:username/followers`, `/@:username/following` | Follower and following lists with live counts |
 | `/@:username/posts`, `/@:username/blog`, `/@:username/feed`, `/@:username/replies`, `/@:username/comments` | Account-scoped post, blog, feed, reply and comment views |

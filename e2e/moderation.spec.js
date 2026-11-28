@@ -118,6 +118,30 @@ async function mockChain (page, {
         })
       }
 
+      if (payload.method === 'condenser_api.get_reward_fund' && voteHistory) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            result: { recent_claims: '1000000000000000', reward_balance: '50000.000 HIVE' }
+          })
+        })
+      }
+
+      if (payload.method === 'condenser_api.get_current_median_history_price' && voteHistory) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            result: { base: '0.500 HBD', quote: '1.000 HIVE' }
+          })
+        })
+      }
+
       if (payload.method === 'bridge.get_ranked_posts' && rankedPosts) {
         return route.fulfill({
           status: 200,
@@ -558,7 +582,9 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
       posting_json_metadata: '{}',
       balance: '0.000 HIVE',
       hbd_balance: '0.000 HBD',
-      vesting_shares: '0.000000 VESTS',
+      vesting_shares: '1000000.000000 VESTS',
+      voting_manabar: { current_mana: 1000000000000, last_update_time: 0 },
+      downvote_manabar: { current_mana: 250000000000, last_update_time: 0 },
       post_count: 0,
       created: '2020-01-01T00:00:00'
     }
@@ -568,8 +594,10 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
   await waitForApp(page)
   await expect(page.getByRole('heading', { level: 1, name: '@ausbitbank downvotes' })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('.dv-summary')).toContainText('9')
+  await expect(page.locator('.dv-summary')).toContainText('≈ $0.45')
   await expect(page.locator('.dv-evidence')).toContainText('Possible coordinated downvotes')
   await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
+  await expect(page.getByRole('columnheader', { name: 'Value' })).toBeVisible()
 
   const firstRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()
   await firstRow.getByRole('button', { name: 'Ignore voter' }).click()

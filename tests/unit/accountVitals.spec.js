@@ -75,8 +75,8 @@ describe('account vitals summary', () => {
     expect(summary.rc.budget.transfers).toBe('1,847')
     expect(summary.rc.budget.claimAccounts).toBe('0')
 
-    expect(summary.voteValue.usd).toBeCloseTo(4.95, 6)
-    expect(summary.voteValue.hive).toBeCloseTo(9.9, 6)
+    expect(summary.voteValue.usd).toBeCloseTo(495, 6)
+    expect(summary.voteValue.hive).toBeCloseTo(990, 6)
     expect(summary.voteValue.weight).toBe(10000)
     expect(summary.voteValue.available).toBe(true)
     expect(summary.voteValue.label).toContain('≈')
@@ -112,8 +112,8 @@ describe('account vitals summary', () => {
       now: NOW
     })
 
-    expect(summary.voteValue.usd).toBeCloseTo(4.95, 6)
-    expect(summary.voteValue.hive).toBeCloseTo(9.9, 6)
+    expect(summary.voteValue.usd).toBeCloseTo(495, 6)
+    expect(summary.voteValue.hive).toBeCloseTo(990, 6)
   })
 
   it('handles a new account whose manabars are missing', () => {

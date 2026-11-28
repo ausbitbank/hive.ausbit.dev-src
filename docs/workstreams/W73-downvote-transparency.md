@@ -17,8 +17,11 @@ Shipped:
   view for the viewer's own account.
 - Voter, weight, target and time per row, with the viewer's local relationship
   (follows / muted / blacklist / followed list / unknown).
-- Summary cards: count, distinct voters, targets, total weight, largest vote
-  and share.
+- Summary cards: count, distinct voters, targets, estimated total deducted, largest deduction and share.
+- Per-row estimated dollar impact from the voter's current Hive Power and downvote mana,
+  priced with the post reward fund and median feed; the exact signed weight stays visible.
+  Vote history stores only the weight, so historical stake/mana cannot be replayed exactly
+  and the estimate is labelled as current-stake, not a historical promise.
 - Filters for time range and relationship; grouping by voter, target or day.
 - Conservative “Possible coordinated downvotes” evidence: voter count, shared
   targets, time window and pairwise target overlap. Always qualified as
