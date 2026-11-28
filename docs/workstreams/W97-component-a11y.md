@@ -33,6 +33,9 @@ fixes the deterministic cases:
    dialog actions now use a darker brand fill with the strong text token, and
    the service-worker update test waits for the dialog transition and runs axe
    before confirming the reload.
+9. **Amber operation badges used white text.** v4vapp/keepsats operation type
+   badges now request black text, keeping the live account activity list
+   axe-clean when such operations appear.
 
 ## Components
 
