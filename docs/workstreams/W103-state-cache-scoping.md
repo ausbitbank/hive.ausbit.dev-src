@@ -42,6 +42,8 @@ one-shot timers that restarted after firing.
 8. **Stale-chunk recovery can prompt again.** Choosing “Later” resets the latch,
    so a later stale chunk still surfaces the reload prompt instead of silently
    doing nothing.
+9. **Telemetry is reset on identity change.** In-memory request/cache diagnostics
+   no longer carry search text or account names across a login switch.
 
 ## Components
 
