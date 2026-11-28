@@ -54,5 +54,5 @@ no-op, and every Keychain edit skipped the queue's review/audit surface.
 
 - Key-level authority edits (adding/removing a public key, changing the
   threshold) are still view-only; the same builder can be extended to them.
-- Owner changes need a dedicated owner-key flow, which is outside the queue's
-  active/posting model.
+- Owner changes use the Keychain-only flow added in
+  [`W116`](W116-owner-authority.md); the queue still only handles active/posting.

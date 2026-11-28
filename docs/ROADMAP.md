@@ -169,6 +169,9 @@ principles that constrain it. Delivered work and its verification records live i
 - W115 re-verifies stale `/api/blogs` entries against the on-chain directory
   flag, so an opted-out blog cannot remain visible through the public API. See
   [`docs/workstreams/W115-blog-directory-optout.md`](workstreams/W115-blog-directory-optout.md).
+- W116 adds a Keychain-only owner-authority add/remove flow and keeps every
+  other signer fail-closed; active/posting edits stay queued. See
+  [`docs/workstreams/W116-owner-authority.md`](workstreams/W116-owner-authority.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,362 tests across 248 files**, `bun run build`
   succeeded, and the full Chromium suite passed **213 checks**. `bun run
@@ -179,7 +182,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W116**. **W90** remains the separate
+- The next free workstream number is **W117**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.
