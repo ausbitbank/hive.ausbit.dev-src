@@ -90,9 +90,10 @@ through.
 - `bun run build` — succeeded.
 - `bunx playwright test e2e/search.spec.js e2e/dashboard.spec.js` — **37/37**
   passing.
-- Full Chromium suite — **207/207** after changing the browse Table toggle
-  locator to `exact: true` (a live post titled “Vegetables” was matching the
-  substring).
+- Full Chromium suite — **209 checks**, all passing after one
+  custom-dashboard-template mount timed out once and passed on the exact
+  isolated rerun. The browse Table locator was made `exact: true` because a
+  live post titled “Vegetables” matched the substring.
 - `bun run perf:check` — budgets passed.
 
 ## Remaining

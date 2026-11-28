@@ -129,13 +129,20 @@ principles that constrain it. Delivered work and its verification records live i
   honestly, polling skips overlapping async ticks, and social cards measure with
   the font they draw. See
   [`docs/workstreams/W106-dashboard-blog-reliability.md`](workstreams/W106-dashboard-blog-reliability.md).
+- W107 adds opt-in post-creation delegation to `/create` and `/create/claim`:
+  the sponsor can queue a posting-authority `rc` custom_json for Resource
+  Credits and an active-authority `delegate_vesting_shares` for HP, each after
+  the creation item and reviewed separately. See
+  [`docs/workstreams/W107-account-delegation.md`](workstreams/W107-account-delegation.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,328 tests across 241 files**, `bun run build`
+  `bun run test` green with **2,340 tests across 243 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
-  **207/207**. The four Playwright failures listed in the pre-W89 snapshot
-  (badges shelf, login-key guide, header lockup, profile-skin scope) do not
-  reproduce on this tree. The full Chromium suite remains the release gate.
-- The next free workstream number is **W107**. **W90** remains the separate
+  **209 checks** (one unrelated dashboard-template mount timed out once and
+  passed on the exact isolated rerun). The four Playwright failures listed in
+  the pre-W89 snapshot (badges shelf, login-key guide, header lockup,
+  profile-skin scope) do not reproduce on this tree. The full Chromium suite
+  remains the release gate.
+- The next free workstream number is **W108**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.
@@ -277,7 +284,9 @@ no stored active authority. Remaining work:
   testnet before using it with live account tokens.
 - Run one small live Hivedex payment smoke (invoice → pay → account → status)
   before advertising the paid flow.
-- Add opt-in `delegate_rc` / `delegate_vesting_shares` after account creation.
+- ~~Add opt-in `delegate_rc` / `delegate_vesting_shares` after account creation.~~
+  Delivered for `/create` and `/create/claim` in
+  [`W107`](workstreams/W107-account-delegation.md); `/create/batch` remains.
 - Keyless Worker queue deferred by the operator; the static batch page is the
   current substitute.
 - Later experiments: Butter Auth Google/GitHub/Discord signup and v4vapp

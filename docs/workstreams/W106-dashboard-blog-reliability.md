@@ -105,8 +105,9 @@ card that measured text with the wrong font.
 - `bun run build` — succeeded.
 - `bunx playwright test e2e/search.spec.js e2e/dashboard.spec.js` — **37/37**
   passing.
-- Full Chromium suite — **207/207** (the browse Table locator fix is recorded in
-  W105).
+- Full Chromium suite — **209 checks**, all passing after one
+  custom-dashboard-template mount timeout passed on the exact isolated rerun.
+  The browse Table locator fix is recorded in W105.
 - `bun run perf:check` — budgets passed.
 - Targeted unit suites for the blog store, dashboard prefs/store, account widget
   mixin/composable, polling, social card and account safety pass.
