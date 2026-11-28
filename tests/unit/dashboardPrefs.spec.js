@@ -148,6 +148,13 @@ describe('saving and reading dashboards', () => {
     const resolved = resolveDashboard('carol', storage)
     expect(resolved.source).toBe('guest')
     expect(resolved.widgets.map(widget => widget.type)).toEqual(['market'])
+    // The preview is the guest layout, but the first save belongs to carol.
+    expect(resolved.scope).toBe('carol')
+    expect(resolved.customised).toBe(false)
+
+    saveDashboard(resolved.scope, resolved.widgets, { storage })
+    expect(readDashboard('carol', storage).widgets.map(widget => widget.type)).toEqual(['market'])
+    expect(readDashboard(GUEST_SCOPE, storage).widgets.map(widget => widget.type)).toEqual(['market'])
   })
 
   it('does not leak an account layout into the guest layout', () => {

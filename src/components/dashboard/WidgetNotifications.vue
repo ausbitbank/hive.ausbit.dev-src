@@ -15,7 +15,7 @@
       :error="loadError"
       guest-title="Log in to see your notifications"
       guest-text="Replies, votes and mentions for your own account."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="state === 'ready' || state === 'stale'">

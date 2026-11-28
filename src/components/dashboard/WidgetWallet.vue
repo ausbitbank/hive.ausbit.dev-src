@@ -5,7 +5,7 @@
       :error="loadError"
       guest-title="Log in to see your wallet"
       guest-text="Portfolio value, liquid balances and claimable rewards for your account."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="state === 'ready' || state === 'stale'">
@@ -44,7 +44,7 @@
             <span class="dw-wallet__label">Claimable rewards</span>
             <span class="dw-wallet__reward-parts">{{ summary.rewards.parts.join(' · ') }}</span>
           </div>
-          <span class="dw-wallet__reward-usd">{{ money(summary.portfolio.pendingUsd) }}</span>
+          <span class="dw-wallet__reward-usd">{{ pricesReady ? money(summary.portfolio.pendingUsd) : '—' }}</span>
         </div>
       </q-card-section>
 
@@ -55,6 +55,7 @@
         <span v-if="magiLoading">Loading Magi…</span>
         <span v-else-if="magiError" class="dw-wallet__note">{{ magiError }}</span>
         <span v-if="magiTokenNote" class="dw-wallet__note">{{ magiTokenNote }}</span>
+        <span v-if="forexError" class="dw-wallet__note">{{ forexError }}</span>
         <span>
           {{ pricesReady ? 'Prices from CoinGecko' : 'Prices unavailable' }}
           <template v-if="magiPricedTokenCount"> · Magi token prices from DEX pools</template>
@@ -219,6 +220,8 @@ export default {
   data () {
     return {
       forexRate: 1,
+      forexToken: 0,
+      forexError: '',
       heTokens: [],
       heTotalHive: 0,
       heValueUsd: 0,
@@ -298,7 +301,7 @@ export default {
       return ''
     },
     totalLabel () {
-      return this.money(this.totalUsd)
+      return this.pricesReady ? this.money(this.totalUsd) : '—'
     },
     rows () {
       if (!this.summary) return []
@@ -339,7 +342,7 @@ export default {
           usd: this.magiTokenValueLabel
         })
       }
-      return rows
+      return rows.map(row => ({ ...row, usd: this.pricesReady ? row.usd : '—' }))
     },
     walletPath () {
       return '/@' + (this.accountName || this.targetAccount) + '/wallet'
@@ -371,7 +374,8 @@ export default {
       if (value === null || value === undefined) return '—'
       const number = Number(value)
       if (!Number.isFinite(number)) return '—'
-      return this.symbol + (number * this.rate).toLocaleString('en-US', {
+      const symbol = this.forexError ? '$' : this.symbol
+      return symbol + (number * this.rate).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       })
@@ -394,14 +398,23 @@ export default {
       if (this.includeMagi) this.loadMagi(result.accountName || this.targetAccount)
     },
     async loadCurrencyRate () {
-      if (!isForexCurrency(this.currency)) {
+      const token = ++this.forexToken
+      const currency = this.currency
+      if (!isForexCurrency(currency)) {
         this.forexRate = 1
+        this.forexError = ''
         return
       }
       try {
-        this.forexRate = await loadForexRate(this.currency)
+        const rate = await loadForexRate(currency)
+        if (token !== this.forexToken || currency !== this.currency) return
+        this.forexRate = rate
+        this.forexError = ''
       } catch {
+        // Keep the USD value with a `$` symbol rather than labelling it `A$`.
+        if (token !== this.forexToken || currency !== this.currency) return
         this.forexRate = 1
+        this.forexError = 'Exchange rate unavailable — showing USD'
       }
     },
     async loadMagi (name) {

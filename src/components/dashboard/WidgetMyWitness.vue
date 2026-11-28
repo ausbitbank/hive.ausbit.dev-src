@@ -5,7 +5,7 @@
       :error="loadError"
       guest-title="Log in to see your witness"
       guest-text="Your witness rank, approval and the gap to the top 20."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="state === 'ready' || state === 'stale'">

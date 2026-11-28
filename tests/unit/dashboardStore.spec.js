@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import dashboardState from '../../src/stores/hive/dashboard'
+import dashboardState, { loadDashboard } from '../../src/stores/hive/dashboard'
 import { saveDashboard, setupPromptKey } from '../../src/services/dashboardPrefs'
 import { buildLayout } from '../../src/services/dashboardLayout'
 
@@ -28,5 +28,12 @@ describe('dashboard boot state', () => {
   it('keeps the prompt dismissed at boot', () => {
     localStorage.setItem(setupPromptKey('alice'), String(Date.now()))
     expect(dashboardState('alice').dashboard.setupPromptVisible).toBe(false)
+  })
+
+  it('closes the editor when the identity changes', () => {
+    const ctx = { dashboard: { ...dashboardState('alice').dashboard }, refreshSetupPrompt: () => {} }
+    ctx.dashboard.editing = true
+    loadDashboard.call(ctx, 'bob')
+    expect(ctx.dashboard.editing).toBe(false)
   })
 })

@@ -6,10 +6,20 @@
 export function pollWhileVisible (callback, intervalMs, { immediate = true } = {}) {
   let timer = null
   let running = false
+  let pending = false
 
   const run = () => {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
-    callback()
+    if (pending) return
+    const result = callback()
+    if (result && typeof result.then === 'function') {
+      // A slow async read must not stack up behind the next interval tick.
+      pending = true
+      Promise.resolve(result).then(
+        () => { pending = false },
+        () => { pending = false }
+      )
+    }
   }
 
   const start = () => {

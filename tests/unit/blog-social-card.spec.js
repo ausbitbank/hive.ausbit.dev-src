@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildBlogSocialCardModel, wrapTextLines } from '../../src/services/blogSocialCard'
+import { buildBlogSocialCardModel, drawBlogSocialCard, wrapTextLines } from '../../src/services/blogSocialCard'
 
 describe('blog social card model', () => {
   it('uses the Paper theme by default', () => {
@@ -58,5 +58,48 @@ describe('wrapTextLines', () => {
   it('returns nothing for empty text', () => {
     expect(wrapTextLines('', 100, 2, measure)).toEqual([])
     expect(wrapTextLines('one', 100, 0, measure)).toEqual([])
+  })
+})
+
+describe('blog social card drawing', () => {
+  function fakeContext () {
+    const measurements = []
+    const fills = []
+    return {
+      font: '',
+      measurements,
+      fills,
+      clearRect () {},
+      fillRect () {},
+      save () {},
+      restore () {},
+      beginPath () {},
+      arc () {},
+      fill () {},
+      fillText (text) { fills.push({ font: this.font, text }) },
+      measureText (text) {
+        measurements.push({ font: this.font, text })
+        const size = Number((this.font.match(/(\d+)px/) || [])[1]) || 10
+        return { width: String(text).length * size * 0.5 }
+      }
+    }
+  }
+
+  it('measures each block with the font it is drawn in', () => {
+    const model = buildBlogSocialCardModel({
+      title: 'A very long title about gardening, seasons, soil and the slow work of tending a patch of earth through the year',
+      account: 'alice',
+      description: 'Notes on what grew, what failed, and what to try again next spring. Read the full archive on the blog.'
+    })
+    const ctx = fakeContext()
+    drawBlogSocialCard(ctx, model)
+
+    const fonts = new Set(ctx.measurements.map(entry => entry.font))
+    expect(fonts).toEqual(new Set([model.fonts.title, model.fonts.body]))
+    expect(ctx.measurements.some(entry => entry.font === model.fonts.label)).toBe(false)
+
+    const titleLines = ctx.fills.filter(entry => entry.font === model.fonts.title)
+    expect(titleLines.length).toBeGreaterThan(1)
+    expect(ctx.fills.some(entry => entry.font === model.fonts.body)).toBe(true)
   })
 })

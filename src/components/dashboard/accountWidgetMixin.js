@@ -61,8 +61,13 @@ export const accountWidgetMixin = {
   mounted () {
     this.reload()
   },
+  beforeUnmount () {
+    // Invalidate any in-flight account read: a late result must not run
+    // applyAccountData() (and its follow-up L2 reads) on a dead widget.
+    this.accountWidgetRequest += 1
+  },
   methods: {
-    async reload () {
+    async reload (force = false) {
       const token = ++this.accountWidgetRequest
       const name = this.targetAccount
       if (!name) {
@@ -75,7 +80,7 @@ export const accountWidgetMixin = {
       this.loading = true
       this.loadError = ''
       try {
-        const result = await this.loadAccountData(name)
+        const result = await this.loadAccountData(name, force)
         if (token !== this.accountWidgetRequest || name !== this.targetAccount) return
         if (!result) {
           this.loadError = 'Could not load @' + name + '.'
@@ -101,10 +106,14 @@ export const accountWidgetMixin = {
         if (token === this.accountWidgetRequest && name === this.targetAccount) this.loading = false
       }
     },
+    /** Explicit user refresh: bypass the short-lived read cache. */
+    async refresh () {
+      return this.reload(true)
+    },
     /** Override in a widget to receive the raw result before it is stored. */
     applyAccountData () {},
-    async loadAccountData (name) {
-      return loadAccountWidgetData(this, { getSettings: () => ({ account: name }) })
+    async loadAccountData (name, force = false) {
+      return loadAccountWidgetData(this, { getSettings: () => ({ account: name }), force })
     }
   }
 }

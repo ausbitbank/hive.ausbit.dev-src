@@ -62,4 +62,32 @@ describe('account widget mixin', () => {
     expect(vm.loadError).toBe('Account @alice was not found.')
     expect(vm.state).toBe('error')
   })
+
+  it('normalises a configured widget account', async () => {
+    const { resolveWidgetAccount } = await import('../../src/composables/useAccountWidget')
+    expect(resolveWidgetAccount({ account: '@Alice' }, '')).toBe('alice')
+    expect(resolveWidgetAccount({}, 'Bob')).toBe('bob')
+  })
+
+  it('drops a late account read after unmount', async () => {
+    let resolveLoad
+    loadAccountWidgetData.mockImplementationOnce(() => new Promise(resolve => { resolveLoad = resolve }))
+    const vm = makeVm()
+    const apply = vi.fn()
+    vm.applyAccountData = apply
+
+    const loading = vm.reload()
+    accountWidgetMixin.beforeUnmount.call(vm)
+    resolveLoad({
+      ok: true,
+      accountName: 'alice',
+      account: { name: 'alice' },
+      globalProps: null,
+      prices: null
+    })
+    await loading
+
+    expect(apply).not.toHaveBeenCalled()
+    expect(vm.accountRecord).toBeNull()
+  })
 })

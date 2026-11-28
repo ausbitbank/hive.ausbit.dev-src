@@ -17,7 +17,7 @@ import { getHivePrices } from 'src/services/prices'
  * `settings.account` (explicit) -> signed-in user -> '' (guest).
  */
 export function resolveWidgetAccount (settings = {}, username = '') {
-  return String(settings?.account || username || '').trim()
+  return String(settings?.account || username || '').trim().replace(/^@/, '').toLowerCase()
 }
 
 export function useSignedInUsername (vm) {
@@ -31,15 +31,15 @@ export function useSignedInUsername (vm) {
  *
  * Returns `{ ok, accountName, account, globalProps, prices, error }`.
  */
-export async function loadAccountWidgetData (vm, { getSettings = () => ({}) } = {}) {
+export async function loadAccountWidgetData (vm, { getSettings = () => ({}), force = false } = {}) {
   const username = useSignedInUsername(vm)
   const accountName = resolveWidgetAccount(getSettings(), username)
   if (!accountName) return { ok: false, guest: true, accountName: '' }
   try {
     const [account, globalProps, prices] = await Promise.all([
-      fetchAccount(accountName),
-      fetchGlobalProps().catch(() => null),
-      getHivePrices().catch(() => null)
+      fetchAccount(accountName, { force }),
+      fetchGlobalProps({ force }).catch(() => null),
+      getHivePrices(force ? { maxAge: 0 } : {}).catch(() => null)
     ])
     return {
       ok: Boolean(account),

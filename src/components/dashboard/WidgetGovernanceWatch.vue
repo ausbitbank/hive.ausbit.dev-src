@@ -509,6 +509,7 @@ export default {
       account: null,
       globalProps: null,
       votedIds: new Set(),
+      requestToken: 0,
       loading: true,
       loaded: false,
       loadError: ''
@@ -546,12 +547,16 @@ export default {
   created () {
     this.reload()
   },
+  beforeUnmount () {
+    this.requestToken += 1
+  },
   methods: {
     formatHbd,
     async reload () {
+      const token = ++this.requestToken
+      const signed = this.signedIn
       if (!this.loaded) this.loading = true
       this.loadError = ''
-      const signed = this.signedIn
       const results = await Promise.allSettled([
         listProposals(),
         fetchAccount('hive.fund'),
@@ -559,6 +564,9 @@ export default {
         signed ? fetchAccount(signed) : Promise.resolve(null),
         signed ? getVoterVoteIds(signed) : Promise.resolve(new Set())
       ])
+      // A login switch while the reads were pending must not paint the previous
+      // account's votes or weight under the new identity.
+      if (token !== this.requestToken || signed !== this.signedIn) return
       const [proposalsResult, fundResult, propsResult, accountResult, votedResult] = results
 
       if (proposalsResult.status === 'fulfilled') {

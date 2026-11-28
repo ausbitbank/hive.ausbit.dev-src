@@ -5,24 +5,33 @@
       :error="loadError"
       guest-title="Log in to see your witness health"
       guest-text="Check the witnesses you vote for: signing keys, price feeds and versions."
-      @retry="reload"
+      @retry="retryAll"
     />
 
     <template v-if="state === 'ready' || state === 'stale'">
       <q-card-section class="dw-whealth__body">
         <div class="dw-whealth__hero">
           <q-icon
-            :name="summary.notHealthy ? 'warning' : 'verified_user'"
+            :name="witnessesError && !witnesses.length ? 'cloud_off' : summary.notHealthy ? 'warning' : 'verified_user'"
             size="25px"
-            :class="summary.notHealthy ? 'is-warn' : 'is-good'"
+            :class="witnessesError && !witnesses.length ? 'is-warn' : summary.notHealthy ? 'is-warn' : 'is-good'"
             aria-hidden="true"
           />
           <div>
             <div class="dw-whealth__title">
-              {{ summary.notHealthy ? summary.notHealthy + ' need attention' : 'All voted witnesses healthy' }}
+              <template v-if="witnessesLoading && !witnesses.length">Checking witness health…</template>
+              <template v-else-if="witnessesError && !witnesses.length">Witness health unavailable</template>
+              <template v-else-if="!summary.total && summary.votesUsed">Voted witnesses are not in the ranked list</template>
+              <template v-else>{{ summary.notHealthy ? summary.notHealthy + ' need attention' : 'All voted witnesses healthy' }}</template>
             </div>
             <div class="dw-whealth__sub">
-              {{ summary.votesUsed }} of {{ summary.votesMax }} votes · weight {{ summary.weightLabel }}
+              <template v-if="witnessesError">
+                {{ witnessesError }}
+                <button type="button" class="dw-whealth__retry" @click="loadWitnesses(true)">Retry</button>
+              </template>
+              <template v-else>
+                {{ summary.votesUsed }} of {{ summary.votesMax }} votes · weight {{ summary.weightLabel }}
+              </template>
             </div>
           </div>
         </div>
@@ -99,6 +108,17 @@
   margin-top: 0.1rem;
   color: var(--c-text-faint);
   font-size: 0.72rem;
+}
+
+.dw-whealth__retry {
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-link);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .dw-whealth__stats {
@@ -203,7 +223,9 @@ export default {
   },
   data () {
     return {
-      witnesses: []
+      witnesses: [],
+      witnessesLoading: false,
+      witnessesError: ''
     }
   },
   computed: {
@@ -215,9 +237,26 @@ export default {
     }
   },
   created () {
-    fetchWitnessesByVote(200)
-      .then(list => { this.witnesses = Array.isArray(list) ? list : [] })
-      .catch(error => console.error('Failed to load witnesses for the witness-health widget', error))
+    this.loadWitnesses()
+  },
+  methods: {
+    retryAll () {
+      this.refresh()
+      this.loadWitnesses(true)
+    },
+    async loadWitnesses (force = false) {
+      this.witnessesLoading = true
+      this.witnessesError = ''
+      try {
+        const list = await fetchWitnessesByVote(200, { force })
+        this.witnesses = Array.isArray(list) ? list : []
+      } catch (error) {
+        console.error('Failed to load witnesses for the witness-health widget', error)
+        this.witnessesError = 'Could not load the witness list.'
+      } finally {
+        this.witnessesLoading = false
+      }
+    }
   }
 }
 </script>

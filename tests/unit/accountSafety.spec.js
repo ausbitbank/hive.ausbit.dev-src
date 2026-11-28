@@ -80,6 +80,12 @@ describe('account safety summary', () => {
   it('validates and normalises names', () => {
     expect(safetySummary({ account: 'not a name', reads: [] }).validAccount).toBe(false)
     expect(safetySummary({ account: '', reads: [] }).validAccount).toBe(false)
+    // Hive requires a leading letter, at least three characters and 3+ character
+    // dot segments; the local check must not accept looser shapes.
+    expect(safetySummary({ account: 'ab', reads: [] }).validAccount).toBe(false)
+    expect(safetySummary({ account: '9lives', reads: [] }).validAccount).toBe(false)
+    expect(safetySummary({ account: 'a.b', reads: [] }).validAccount).toBe(false)
+    expect(safetySummary({ account: '@Alice', reads: [] }).validAccount).toBe(true)
   })
 
   it('exposes the curated sources and their defaults', () => {

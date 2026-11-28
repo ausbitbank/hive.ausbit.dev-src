@@ -8,6 +8,8 @@
 //
 // This module is pure. The widget performs the cached list reads.
 
+import { isValidHiveAccountName } from './blogHost'
+
 export const SAFETY_SOURCES = [
   {
     id: 'hive-blog-phishing',
@@ -37,8 +39,6 @@ export const SAFETY_SOURCES = [
 
 export const DEFAULT_SAFETY_SOURCES = SAFETY_SOURCES.map(source => source.id)
 export const MAX_SAFETY_SOURCES = 4
-
-const NAME = /^[a-z0-9][a-z0-9.-]{1,15}$/
 
 export function safetySourceById (id) {
   return SAFETY_SOURCES.find(source => source.id === id) || null
@@ -114,7 +114,7 @@ export function safetySummary ({ account = '', reads = [] } = {}) {
 
   return {
     account: name,
-    validAccount: NAME.test(name),
+    validAccount: isValidHiveAccountName(name),
     level,
     levelLabel,
     matches,

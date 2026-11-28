@@ -15,7 +15,7 @@
       :error="stateError"
       guest-title="Log in to see your delegations"
       guest-text="Outgoing and incoming Hive Power delegations, plus effective HP."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="displayState === 'ready' || displayState === 'stale'">
@@ -99,7 +99,7 @@
           aria-label="Refresh delegation snapshot"
           title="Refresh delegation snapshot"
           :loading="loading || delegationsLoading"
-          @click="reload"
+          @click="refresh"
         />
       </q-card-section>
     </template>

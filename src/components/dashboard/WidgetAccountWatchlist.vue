@@ -266,6 +266,7 @@ export default {
     return {
       records: [],
       globalProps: null,
+      requestToken: 0,
       loading: true,
       loaded: false,
       loadError: '',
@@ -309,6 +310,9 @@ export default {
   mounted () {
     this.reload()
   },
+  beforeUnmount () {
+    this.requestToken += 1
+  },
   methods: {
     formatCount,
     onAvatarError (event) {
@@ -321,6 +325,7 @@ export default {
       this.reload({ force: true })
     },
     async reload ({ force = false } = {}) {
+      const token = ++this.requestToken
       this.loading = !this.loaded
       this.loadError = ''
       const names = this.names
@@ -338,6 +343,10 @@ export default {
         fetchAccounts(names, { force }),
         fetchGlobalProps({ force })
       ])
+
+      // A watchlist edit can start a second read; only the newest one may
+      // replace the rows and clear the spinner.
+      if (token !== this.requestToken) return
 
       if (accountsResult.status === 'fulfilled') {
         this.records = Array.isArray(accountsResult.value) ? accountsResult.value : []

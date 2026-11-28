@@ -305,6 +305,13 @@ export default {
       return availableWidgetCount(base, { signedIn: this.signedIn })
     }
   },
+  watch: {
+    '$hiveStore.user.username' () {
+      // An identity switch mid-edit must not let Save write one account's draft
+      // into the other account's layout.
+      if (this.$hiveStore.dashboard.editing || this.draft.length) this.finishEditing()
+    }
+  },
   mounted () {
     setPageMeta({
       title: 'Banksia — Hive block explorer',

@@ -73,6 +73,7 @@ export function loadDashboard (username) {
   this.dashboard.tiling = resolved.tiling || 'rows'
   this.dashboard.layouts = resolved.layouts || []
   this.dashboard.activeLayoutId = resolved.activeLayoutId || ''
+  this.dashboard.editing = false
   this.dashboard.storageFailed = false
   this.dashboard.setupPromptDismissed = false
   this.refreshSetupPrompt(username)

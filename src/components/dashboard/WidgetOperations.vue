@@ -41,7 +41,13 @@
     />
 
     <template v-else>
-      <div v-if="error" class="dw-ops__state" role="status">
+      <div v-if="error && entries.length" class="dw-ops__state dw-ops__state--stale" role="status">
+        <q-icon name="cloud_off" size="20px" color="orange" aria-hidden="true" />
+        <span>{{ error }} Showing the last values.</span>
+        <q-btn flat dense no-caps color="primary" label="Retry" @click="loadOperations()" />
+      </div>
+
+      <div v-if="error && !entries.length" class="dw-ops__state" role="status">
         <q-icon name="cloud_off" size="20px" color="orange" aria-hidden="true" />
         <span>{{ error }}</span>
         <q-btn flat dense no-caps color="primary" label="Retry" @click="loadOperations()" />
@@ -291,7 +297,7 @@ export default {
     },
     pollingLabel () {
       const seconds = Number(this.pollSeconds)
-      return seconds > 0 ? 'Refreshes every ' + seconds + 's' : 'Manual refresh'
+      return seconds >= 5 ? 'Refreshes every ' + seconds + 's' : 'Manual refresh'
     },
     updatedLabel () {
       if (!this.updatedAt) return ''

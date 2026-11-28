@@ -47,6 +47,23 @@ describe('pollWhileVisible', () => {
     poller.stop()
   })
 
+  it('does not overlap a slow async callback', async () => {
+    let resolve
+    const callback = vi.fn(() => new Promise(done => { resolve = done }))
+    const poller = pollWhileVisible(callback, 1000, { immediate: false })
+    poller.start()
+
+    vi.advanceTimersByTime(3000)
+    expect(callback).toHaveBeenCalledTimes(1)
+
+    resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    vi.advanceTimersByTime(1000)
+    expect(callback).toHaveBeenCalledTimes(2)
+    poller.stop()
+  })
+
   it('stops the interval and listener', () => {
     const callback = vi.fn()
     const poller = pollWhileVisible(callback, 1000, { immediate: false })

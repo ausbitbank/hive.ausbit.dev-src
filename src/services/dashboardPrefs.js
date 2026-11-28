@@ -238,15 +238,20 @@ export function resolveDashboard (username, storage) {
   }
   const guest = readDashboard(GUEST_SCOPE, storage)
   if (guest && !guest.corrupt && guest.widgets.length) {
+    // A signed-in account with no document of its own previews the guest
+    // layout but must save to its own scope. Sharing the guest scope here made
+    // the first save write another identity's key (and leak the layout to the
+    // next account through the same fallback).
+    const scope = account && account !== GUEST_SCOPE ? account : GUEST_SCOPE
     if (!guest.customised && (isDefaultLayout(guest.widgets) || isLegacyDefaultLayout(guest.widgets))) {
-      return builtinDashboard(GUEST_SCOPE, guest)
+      return builtinDashboard(scope, guest)
     }
     return {
       widgets: guest.widgets,
       source: 'guest',
-      scope: GUEST_SCOPE,
+      scope,
       savedAt: guest.savedAt,
-      customised: true,
+      customised: !account,
       tiling: guest.tiling,
       layouts: guest.layouts,
       activeLayoutId: guest.activeLayoutId

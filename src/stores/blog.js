@@ -72,6 +72,7 @@ export const useBlogStore = defineStore('blog', {
     posts: [],
     postsLoading: false,
     postsError: '',
+    loadPromise: null,
     hasMore: false,
     cursor: null,
     modePreference: readModePreference(),
@@ -299,13 +300,30 @@ export const useBlogStore = defineStore('blog', {
       this.posts = []
       this.postsLoading = false
       this.postsError = ''
+      this.loadPromise = null
       this.hasMore = false
       this.cursor = null
       this.pending = false
       this.pendingText = ''
     },
 
-    async load ({ force = false } = {}) {
+    async load (options = {}) {
+      if (!this.accountName) return false
+      // Direct visits race the layout's account read: the post page calls
+      // loadPost() as soon as it is created. Share the in-flight tenant load so
+      // the settings are known before a contributor/community post is judged.
+      if (!this.loadPromise) {
+        const run = this.loadInternal(options)
+        this.loadPromise = run
+        run.then(
+          () => { if (this.loadPromise === run) this.loadPromise = null },
+          () => { if (this.loadPromise === run) this.loadPromise = null }
+        )
+      }
+      return this.loadPromise
+    },
+
+    async loadInternal ({ force = false } = {}) {
       if (!this.accountName) return false
       this.loading = true
       this.error = ''
@@ -404,9 +422,20 @@ export const useBlogStore = defineStore('blog', {
           const known = new Set(ordered.map(post => String(post.permlink).toLowerCase()))
           const missing = pinned.filter(permlink => !known.has(String(permlink).toLowerCase()))
           if (missing.length) {
-            const extra = await Promise.all(missing.map(permlink =>
-              fetchPostContent(this.accountName, permlink, { force }).catch(() => null)
-            ))
+            // A pinned permlink can belong to a curated contributor, not only
+            // the blog owner. Try the owner and every configured author, and
+            // keep the same post filter the feed uses so a comment, Vault
+            // container or product is not injected as hero content.
+            const candidates = [...new Set([this.accountName, ...authors]
+              .map(name => String(name || '').toLowerCase())
+              .filter(Boolean))]
+            const extra = await Promise.all(missing.map(async permlink => {
+              for (const author of candidates) {
+                const found = await fetchPostContent(author, permlink, { force }).catch(() => null)
+                if (found && isBlogPost(found)) return found
+              }
+              return null
+            }))
             ordered = sortBlogPosts([...ordered, ...extra.filter(Boolean)], pinned)
           }
         }
@@ -451,6 +480,12 @@ export const useBlogStore = defineStore('blog', {
 
     async loadPost (permlink, { author = '', force = false } = {}) {
       if (!this.accountName || !permlink) return null
+      // The blog page can create before the layout finishes the tenant read.
+      // Wait for it so a contributor/community post is not rejected against an
+      // empty settings object.
+      if (!this.settings && this.loadPromise) {
+        try { await this.loadPromise } catch {}
+      }
       const authorName = String(author || this.accountName).toLowerCase()
       const cached = this.posts.find(post =>
         String(post.permlink).toLowerCase() === String(permlink).toLowerCase() &&

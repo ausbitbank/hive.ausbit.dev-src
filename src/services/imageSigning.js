@@ -9,17 +9,34 @@ let keychainPromise = null
 let smartlockPromise = null
 let hiveauthPromise = null
 
-// Load signers only when the user uploads, not when a composer opens.
+// Load signers only when the user uploads, not when a composer opens. A failed
+// chunk import clears the memo so a later retry can succeed instead of reusing
+// the cached rejection for the rest of the session.
 export function loadKeychain () {
-  return (keychainPromise ||= import('@hiveio/keychain').then(module => module.keychain))
+  return (keychainPromise ||= import('@hiveio/keychain')
+    .then(module => module.keychain)
+    .catch(error => {
+      keychainPromise = null
+      throw error
+    }))
 }
 
 export function loadSmartlock () {
-  return (smartlockPromise ||= import('components/smartlock/index.js').then(module => module.default))
+  return (smartlockPromise ||= import('components/smartlock/index.js')
+    .then(module => module.default)
+    .catch(error => {
+      smartlockPromise = null
+      throw error
+    }))
 }
 
 export function loadHiveAuth () {
-  return (hiveauthPromise ||= import('src/services/hiveauth').then(module => module.default))
+  return (hiveauthPromise ||= import('src/services/hiveauth')
+    .then(module => module.default)
+    .catch(error => {
+      hiveauthPromise = null
+      throw error
+    }))
 }
 
 /**

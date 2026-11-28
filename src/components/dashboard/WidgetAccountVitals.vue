@@ -15,7 +15,7 @@
       :error="loadError"
       guest-title="Log in to see your account vitals"
       guest-text="Voting power, resource credits, vote value and effective Hive Power for your account."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="displayState === 'ready' || displayState === 'stale'">
@@ -131,7 +131,7 @@
           aria-label="Refresh account vitals"
           title="Refresh account vitals"
           :loading="loading || extrasLoading"
-          @click="reload"
+          @click="refresh"
         />
       </q-card-section>
     </template>
@@ -517,7 +517,7 @@ export default {
       const seconds = Number(this.refreshSeconds)
       if (!Number.isFinite(seconds) || seconds <= 0) return
       this._vitalsPoll = pollWhileVisible(() => {
-        if (this.targetAccount) this.reload()
+        if (this.targetAccount) this.refresh()
       }, seconds * 1000, { immediate: false })
       this._vitalsPoll.start()
     },

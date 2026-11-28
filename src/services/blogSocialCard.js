@@ -141,13 +141,13 @@ export function drawBlogSocialCard (ctx, model) {
   ctx.fillRect(90, 205, 64, 6)
 
   // Title.
+  ctx.font = model.fonts.title
   const titleLines = wrapTextLines(
     model.title,
     980,
     3,
     value => ctx.measureText(value).width
   )
-  ctx.font = model.fonts.title
   ctx.fillStyle = model.text
   titleLines.forEach((line, index) => {
     ctx.fillText(line, 90, TITLE_Y + index * model.titleLineHeight)
@@ -155,6 +155,7 @@ export function drawBlogSocialCard (ctx, model) {
 
   // Description, with less room when the title uses three lines.
   const titleBottom = TITLE_Y + Math.max(0, titleLines.length - 1) * model.titleLineHeight
+  ctx.font = model.fonts.body
   const descriptionLines = wrapTextLines(
     model.description,
     940,
@@ -162,7 +163,6 @@ export function drawBlogSocialCard (ctx, model) {
     value => ctx.measureText(value).width
   )
   if (descriptionLines.length) {
-    ctx.font = model.fonts.body
     ctx.fillStyle = model.muted
     const descriptionY = Math.min(titleBottom + 58, FOOTER_Y - 110)
     descriptionLines.forEach((line, index) => {

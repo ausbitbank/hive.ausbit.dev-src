@@ -25,7 +25,7 @@
       :error="stateError"
       guest-title="Log in to track follower growth"
       guest-text="Followers, following and growth measured from a baseline saved in this browser."
-      @retry="reload"
+      @retry="refresh"
     />
 
     <template v-if="displayState === 'ready' || displayState === 'stale'">
@@ -40,7 +40,7 @@
           <strong>Follower counts unavailable.</strong>
           <span>Hive returned no follower count for @{{ accountName }}.</span>
         </div>
-        <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="reload" />
+        <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="refresh" />
       </div>
 
       <template v-else>
