@@ -1,7 +1,10 @@
 export const REPO = 'ausbitbank/banksia.io'
 export const BRANCH = 'master'
 export const OWNER = 'ausbitbank'
-export const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`
+// Images are served from the asset host, whose docroot mirrors the repository,
+// so a URL is the repository path with a different origin. The host is fed by
+// `devlog sync`; it does not wait for a commit to be pushed.
+export const IMAGE_BASE = 'https://files.banksia.io'
 export const BLOB_BASE = `https://github.com/${REPO}/blob/${BRANCH}`
 export const HIVE_MAX_BODY_BYTES = 65535
 export const HIVE_WARN_BODY_BYTES = 58000

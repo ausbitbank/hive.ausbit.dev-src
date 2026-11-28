@@ -1,5 +1,6 @@
 import { statSync } from 'node:fs'
-import { RAW_BASE, SHOT_ROOT } from './config.mjs'
+import { IMAGE_BASE, SHOT_ROOT } from './config.mjs'
+import { imageUrl } from './assets.mjs'
 import { exists, formatBytes, gitMaybe, listFiles, rootPath, run } from './util.mjs'
 
 export function packageShots (args) {
@@ -40,7 +41,9 @@ export function packageShots (args) {
 
   const head = gitMaybe(['rev-parse', '--short', 'HEAD'])
   console.log(`  commit ${head || '(none)'}`)
-  console.log(`  raw base ${RAW_BASE}/${dir}/`)
+  console.log(`  image base ${imageUrl(dir)}/`)
+  console.log(`  sync first: node scripts/devlog.mjs sync --slug ${slug}`)
+  console.log(`  assets host ${IMAGE_BASE}`)
   console.log('  draft was not committed')
   return { dir, files, commit: head }
 }

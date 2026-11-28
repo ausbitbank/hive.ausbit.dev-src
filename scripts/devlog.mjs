@@ -4,9 +4,10 @@ import { shots, listRecipes } from './lib/devlog/shots.mjs'
 import { draft } from './lib/devlog/draft.mjs'
 import { check } from './lib/devlog/check.mjs'
 import { packageShots } from './lib/devlog/package.mjs'
+import { syncAssets } from './lib/devlog/assets.mjs'
 import { recordPublishedPost } from './lib/devlog/history.mjs'
 import { parseArgs, gitMaybe, formatBytes } from './lib/devlog/util.mjs'
-import { HIVE_MAX_BODY_BYTES, DESCRIPTION_MAX, WORK_DIR, RAW_BASE } from './lib/devlog/config.mjs'
+import { HIVE_MAX_BODY_BYTES, DESCRIPTION_MAX, WORK_DIR, IMAGE_BASE } from './lib/devlog/config.mjs'
 
 const HELP = `
 devlog — build a Hive development blog post from git, GitHub and the live site
@@ -14,6 +15,7 @@ devlog — build a Hive development blog post from git, GitHub and the live site
 Usage:
   node scripts/devlog.mjs collect  [range] [--slug <slug>] [--tests] [--no-comments]
   node scripts/devlog.mjs shots    --slug <slug> [--only home,wallet] [--build]
+  node scripts/devlog.mjs sync     --slug <slug> [--dry-run] [--host hurgenburgen]
   node scripts/devlog.mjs draft    --slug <slug> [--force] [--out <file>]
   node scripts/devlog.mjs check    <post.md> [--description "..."] [--strict]
   node scripts/devlog.mjs package  --slug <slug> [--amend] [--tag] [--push]
@@ -47,11 +49,12 @@ Rules:
   - Thank external issue reporters, PR authors, reviewers and commenters.
   - Crop screenshots to the feature; omit global chrome.
   - Commit screenshots only. Never commit the draft or .devlog working data.
-  - Raw images resolve from ${RAW_BASE}/ when the screenshot commit is pushed.
+  - Images are served from ${IMAGE_BASE}/; run sync after capture and before publishing.
 
 Examples:
   node scripts/devlog.mjs collect --since 2026-11-18 --until 2026-11-21 --slug 2026-11-21
   node scripts/devlog.mjs shots --slug 2026-11-21 --only home,wallet,lightning
+  node scripts/devlog.mjs sync --slug 2026-11-21
   node scripts/devlog.mjs draft --slug 2026-11-21
   node scripts/devlog.mjs check docs/blog/2026-11-21.md --description "128 commits in 3 days: ..."
   node scripts/devlog.mjs package --slug 2026-11-21 --amend
@@ -93,6 +96,10 @@ async function main () {
   }
   if (command === 'shots') {
     await shots(args)
+    return
+  }
+  if (command === 'sync') {
+    await syncAssets(args)
     return
   }
   if (command === 'draft') {

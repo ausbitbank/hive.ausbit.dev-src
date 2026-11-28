@@ -1,4 +1,5 @@
-import { BLOB_BASE, DESCRIPTION_MAX, WORK_DIR, BLOG_DIR, HIVE_MAX_BODY_BYTES, RAW_BASE } from './config.mjs'
+import { BLOB_BASE, DESCRIPTION_MAX, WORK_DIR, BLOG_DIR, HIVE_MAX_BODY_BYTES } from './config.mjs'
+import { imageUrl } from './assets.mjs'
 import {
   exists,
   readJson,
@@ -45,14 +46,19 @@ function sectionImages (section, plan, results) {
   return enabled
     .filter(shot => section.surfaces.includes(shot.surface))
     .map(shot => {
-      if (captured.has(shot.recipe)) return captured.get(shot.recipe)
+      if (captured.has(shot.recipe)) {
+        const result = captured.get(shot.recipe)
+        // Rebuild from the current asset origin so re-drafting an older slug
+        // picks up the move off GitHub raw.
+        return { ...result, url: imageUrl(result.file) }
+      }
       const index = String(indexes.get(shot.recipe) || 0).padStart(2, '0')
       const file = `${plan.output}/${index}-${shot.recipe}.png`
       return {
         name: shot.recipe,
         surface: shot.surface,
         file,
-        url: `${RAW_BASE}/${file}`,
+        url: imageUrl(file),
         alt: shot.alt,
         caption: shot.caption
       }

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { SHOT_RECIPES, RECIPE_KEYS, DEFAULTS, RAW_BASE, WORK_DIR } from './config.mjs'
+import { SHOT_RECIPES, RECIPE_KEYS, DEFAULTS, WORK_DIR } from './config.mjs'
+import { imageUrl } from './assets.mjs'
 import {
   ensureDir,
   exists,
@@ -176,7 +177,7 @@ async function captureShot (browser, shot, plan, baseUrl) {
     surface: shot.surface || '',
     route: shot.route,
     file,
-    url: `${RAW_BASE}/${file}`,
+    url: imageUrl(file),
     alt: shot.alt,
     caption: shot.caption,
     bytes: buffer.length,
@@ -248,6 +249,7 @@ export async function shots (args) {
   writeJson(manifestPath, manifest)
   const sheet = contactSheet(results, plan.output)
   if (sheet) console.log(`  contact sheet: ${sheet}`)
+  console.log(`  next: node scripts/devlog.mjs sync --slug ${plan.slug || slug}`)
   if (failures.length) {
     console.error(`${failures.length} shot(s) failed`)
     process.exitCode = 1
@@ -257,8 +259,4 @@ export async function shots (args) {
 
 export function listRecipes () {
   return RECIPE_KEYS
-}
-
-export function rawUrl (file) {
-  return `${RAW_BASE}/${file}`
 }

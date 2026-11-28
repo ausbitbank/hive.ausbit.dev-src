@@ -1,4 +1,5 @@
-import { BRANCH, DESCRIPTION_MAX, HIVE_MAX_BODY_BYTES, HIVE_WARN_BODY_BYTES, RAW_BASE, WORK_DIR } from './config.mjs'
+import { DESCRIPTION_MAX, HIVE_MAX_BODY_BYTES, HIVE_WARN_BODY_BYTES, WORK_DIR } from './config.mjs'
+import { localImagePath } from './assets.mjs'
 import {
   exists,
   fileSize,
@@ -13,16 +14,8 @@ import {
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 
-function localFromUrl (url) {
-  if (url.startsWith(RAW_BASE + '/')) return url.slice(RAW_BASE.length + 1)
-  if (url.startsWith('https://github.com/') && url.includes(`/raw/${BRANCH}/`)) {
-    return url.split(`/raw/${BRANCH}/`)[1]
-  }
-  return ''
-}
-
 function resolveImagePath (url, postPath) {
-  const fromUrl = localFromUrl(url)
+  const fromUrl = localImagePath(url)
   if (fromUrl) return fromUrl
   if (/^https?:\/\//.test(url)) return ''
   if (url.startsWith('/')) return url.slice(1)

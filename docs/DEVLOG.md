@@ -42,19 +42,22 @@ jq '.surfaces, .contributors' .devlog/2026-11-21/context.json
 # 3. Capture the proposed screenshots (edits the plan first)
 node scripts/devlog.mjs shots --slug 2026-11-21
 
-# 4. Scaffold the draft
+# 4. Publish the images to the asset host
+node scripts/devlog.mjs sync --slug 2026-11-21
+
+# 5. Scaffold the draft
 node scripts/devlog.mjs draft --slug 2026-11-21
 
-# 5. Write the real post in docs/blog/2026-11-21.md
+# 6. Write the real post in docs/blog/2026-11-21.md
 #    Replace every <!-- DEVLOG: ... --> placeholder.
 
-# 6. Validate size, images, links, description and praise
+# 7. Validate size, images, links, description and praise
 node scripts/devlog.mjs check docs/blog/2026-11-21.md --strict
 
-# 7. Commit only the screenshots, then push when ready
+# 8. Commit only the screenshots, then push when ready
 node scripts/devlog.mjs package --slug 2026-11-21 --amend --tag
 
-# 8. Record the published URL so the next post links back to it
+# 9. Record the published URL so the next post links back to it
 node scripts/devlog.mjs record --slug 2026-11-21 --url https://banksia.io/@ausbitbank/...
 ```
 
@@ -280,14 +283,27 @@ commits `.devlog/` or `docs/blog/`. `--amend` folds the images into the current
 local commit; `--tag` creates `devlog-<slug>` for the next range; `--push` is
 explicit and pushes both the commit and the tag.
 
-Raw images resolve from:
+Images resolve from the asset host, whose docroot mirrors the repository path:
 
 ```
-https://raw.githubusercontent.com/ausbitbank/banksia.io/master/docs/screenshots/devlog/<slug>/
+https://files.banksia.io/docs/screenshots/devlog/<slug>/
 ```
 
-They will 404 until the screenshot commit is pushed. If the frontend blocks
-GitHub raw images, upload the same files through the editor; keep the alt text.
+Upload them after capturing and before publishing:
+
+```sh
+node scripts/devlog.mjs sync --slug 2026-11-21
+```
+
+`sync` rsyncs the slug directory to `hurgenburgen` and then `HEAD`s every URL,
+so a missing or unreadable file fails the command instead of shipping a broken
+post. `--dry-run` prints the rsync, `--no-verify` skips the URL check. The vhost
+is `deploy/nginx/files.banksia.io.conf`. The GitHub copies stay in the
+repository for comparison, but the published post embeds the asset host.
+
+`check` maps both the `files.banksia.io` URLs and the older
+`raw.githubusercontent.com` forms back to local files, so drafts written before
+the move still validate.
 
 After proof-reading and posting:
 
