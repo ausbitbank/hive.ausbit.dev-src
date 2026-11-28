@@ -134,15 +134,19 @@ principles that constrain it. Delivered work and its verification records live i
   Credits and an active-authority `delegate_vesting_shares` for HP, each after
   the creation item and reviewed separately. See
   [`docs/workstreams/W107-account-delegation.md`](workstreams/W107-account-delegation.md).
+- W108 keeps the dashboard grid mounted across Customise/Cancel and recycles
+  live widgets when they scroll off-screen, so pollers stop and the edit
+  transition no longer remounts every widget. See
+  [`docs/workstreams/W108-dashboard-edit-lifecycle.md`](workstreams/W108-dashboard-edit-lifecycle.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,340 tests across 243 files**, `bun run build`
+  `bun run test` green with **2,344 tests across 244 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **209 checks** (one unrelated dashboard-template mount timed out once and
   passed on the exact isolated rerun). The four Playwright failures listed in
   the pre-W89 snapshot (badges shelf, login-key guide, header lockup,
   profile-skin scope) do not reproduce on this tree. The full Chromium suite
   remains the release gate.
-- The next free workstream number is **W108**. **W90** remains the separate
+- The next free workstream number is **W109**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

@@ -59,7 +59,7 @@ new operations into the creation transaction or weakening the review boundary.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **243 files / 2,340 tests** passing.
+- `bun run test` — **244 files / 2,344 tests** passing.
 - `bun run build` — succeeded.
 - `bunx playwright test e2e/a11y.spec.js -g "axe clean: /create"` — `/create`
   and `/create/claim` axe-clean at 1440×900 and 390×844 (both routes were added

@@ -33,6 +33,8 @@ export default {
   name: 'DashboardWidgetViewport',
   props: {
     enabled: { type: Boolean, default: false },
+    // Live widgets unmount again when they scroll away so their pollers stop.
+    recycle: { type: Boolean, default: false },
     rootMargin: { type: String, default: '240px' },
     minHeight: { type: String, default: '120px' }
   },
@@ -47,6 +49,10 @@ export default {
       if (!value) {
         this.visible = true
         this.disconnect()
+        return
+      }
+      if (this.recycle) {
+        this.observe()
         return
       }
       if (!this.visible) this.observe()
@@ -64,13 +70,22 @@ export default {
   },
   methods: {
     observe () {
-      if (this.visible || !this.$refs.root || typeof IntersectionObserver === 'undefined') {
+      if (!this.$refs.root || typeof IntersectionObserver === 'undefined') {
+        this.visible = true
+        return
+      }
+      if (!this.recycle && this.visible) {
         this.visible = true
         return
       }
       if (this.observer) this.disconnect()
       this.observer = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) {
+        const intersecting = entries.some(entry => entry.isIntersecting)
+        if (this.recycle) {
+          this.visible = intersecting
+          return
+        }
+        if (intersecting) {
           this.visible = true
           this.disconnect()
         }

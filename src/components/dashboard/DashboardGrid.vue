@@ -43,7 +43,10 @@
         @width-step="$emit('width-step', $event)"
         @remove="$emit('remove', $event)"
       >
-        <dashboard-widget-viewport :enabled="deferFor(entry.widget) && !editing">
+        <dashboard-widget-viewport
+          :enabled="viewportEnabledFor(entry.widget)"
+          :recycle="recycleFor(entry.widget)"
+        >
           <home-block-card
             v-if="entry.widget.type === 'block'"
             v-bind="settingsFor(entry.widget, { compact: entry.widget.settings?.compact })"
@@ -682,8 +685,13 @@ export default {
     configurableFor (widget) {
       return widgetMeta(widget.type)?.configurable !== false
     },
-    deferFor (widget) {
-      return widgetMeta(widget.type)?.defer === true
+    viewportEnabledFor (widget) {
+      if (this.editing) return false
+      const meta = widgetMeta(widget.type)
+      return meta?.defer === true || meta?.live === true
+    },
+    recycleFor (widget) {
+      return !this.editing && widgetMeta(widget.type)?.live === true
     },
     guestBlocked (widget) {
       return Boolean(widgetMeta(widget.type)?.requiresAccount) && !this.signedIn

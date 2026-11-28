@@ -92,6 +92,11 @@ describe('dashboard widget registry', () => {
     }
     expect(widgetMeta('creatorStats').defer).toBe(true)
     expect(widgetMeta('vitals').requiresAccount).toBe(true)
+    // Live pollers must declare `live` so the grid can recycle them off-screen.
+    for (const type of ['block', 'network', 'vitals', 'operations', 'priceAlert']) {
+      expect(widgetMeta(type).live, type).toBe(true)
+    }
+    expect(widgetMeta('market').live).toBeUndefined()
     expect(widgetMeta('governance').requiresAccount).toBeUndefined()
     expect(widgetMeta('hbd').requiresAccount).toBeUndefined()
     expect(widgetMeta('communityPulse').requiresAccount).toBeUndefined()

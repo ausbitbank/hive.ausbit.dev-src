@@ -74,24 +74,16 @@
       />
 
       <dashboard-grid
-        v-if="editing"
-        class="home-editing"
-        :widgets="draft"
+        :class="{ 'home-editing': editing }"
+        :widgets="gridWidgets"
         :signed-in="signedIn"
-        :masonry="draftTiling === 'masonry'"
-        editing
+        :masonry="gridMasonry"
+        :editing="editing"
+        :packed="!editing"
         @move-to="onMoveTo"
         @remove="onRemove"
         @width-step="onWidthStep"
         @configure="openConfigure"
-      />
-
-      <dashboard-grid
-        v-else
-        :widgets="widgets"
-        :signed-in="signedIn"
-        :masonry="tiling === 'masonry'"
-        packed
       />
 
       <add-widget-drawer
@@ -299,6 +291,12 @@ export default {
       return isDirtyDraft(this.draft, this.draftBase) ||
         this.draftTiling !== this.tiling ||
         this.draftLayoutId !== (this.$hiveStore.dashboard.activeLayoutId || '')
+    },
+    gridWidgets () {
+      return this.editing ? this.draft : this.widgets
+    },
+    gridMasonry () {
+      return (this.editing ? this.draftTiling : this.tiling) === 'masonry'
     },
     available () {
       const base = this.editing ? this.draft : this.widgets

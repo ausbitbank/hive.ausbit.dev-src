@@ -114,11 +114,7 @@ card that measured text with the wrong font.
 
 ## Remaining
 
-- Entering or cancelling Customise still mounts two different `DashboardGrid`
-  trees, so widgets refetch on both transitions. A single keyed grid is the
-  follow-up; it was left out of this slice to avoid destabilising drag state.
-- Off-screen widgets stay mounted after the viewport observer first sees them,
-  so live pollers keep running below the fold. A reversible intersection
-  observer is the follow-up.
+- The recycled widget body is now handled by W108 for live widgets; deferred
+  non-live widgets still mount once and stay mounted.
 - The wallet forex rate is fixed per page load; there is no periodic forex
   refresh.

@@ -178,7 +178,8 @@ export const WIDGET_REGISTRY = [
     defaultWidth: 'half',
     minWidth: 'third',
     defaultSettings: { account: '', filters: ['all'], jsonIds: '', limit: 8, pollSeconds: 30, includeMagi: false },
-    singleton: false
+    singleton: false,
+    live: true
   },
   {
     type: 'vitals',
@@ -485,7 +486,8 @@ export const WIDGET_REGISTRY = [
     defaultWidth: 'third',
     minWidth: 'third',
     defaultSettings: { target: 0, direction: 'above' },
-    singleton: true
+    singleton: true,
+    live: true
   },
   {
     type: 'followerGrowth',
