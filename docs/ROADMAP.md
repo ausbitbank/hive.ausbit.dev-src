@@ -186,8 +186,14 @@ principles that constrain it. Delivered work and its verification records live i
 - W120 warns before retrying a failed active queue item that the earlier
   broadcast may already have landed, with a link to the account's activity. See
   [`docs/workstreams/W120-active-retry-guidance.md`](workstreams/W120-active-retry-guidance.md).
+- W121 reconciles a failed active queue item against the chain before retry:
+  a known tx id is checked with `transaction_status_api.find_transaction`, and
+  transfers/recurring transfers are matched in bounded account history. Found
+  items become sent without another signature; an inconclusive lookup fails
+  closed. See
+  [`docs/workstreams/W121-active-retry-reconciliation.md`](workstreams/W121-active-retry-reconciliation.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,362 tests across 248 files**, `bun run build`
+  `bun run test` green with **2,402 tests across 249 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
   after a retry and are reported as flaky). `bun run
   perf:check` passed in an isolated worktree; the shared worktree's uncommitted
@@ -197,7 +203,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W121**. **W90** remains the separate
+- The next free workstream number is **W122**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

@@ -397,6 +397,11 @@ export function normalizeQueueMetaEntry (entry, now = Date.now()) {
     addedAt: Number.isFinite(Number(entry.addedAt)) ? Number(entry.addedAt) : now,
     updatedAt: Number.isFinite(Number(entry.updatedAt)) ? Number(entry.updatedAt) : now
   }
+  // Recorded when a broadcast starts so a failed active item can be reconciled
+  // against account history before it is retried.
+  if (Number.isFinite(Number(entry.attemptedAt)) && Number(entry.attemptedAt) > 0) {
+    normalized.attemptedAt = Number(entry.attemptedAt)
+  }
   if (entry.manualOnly === true) normalized.manualOnly = true
   return normalized
 }

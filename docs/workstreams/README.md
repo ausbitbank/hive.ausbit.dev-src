@@ -179,4 +179,5 @@ service.
 | [W118-batch-delegation](W118-batch-delegation.md) | Batch creation with HP in the atomic tx and RC after confirmation |
 | [W119-duplicate-edit-draft](W119-duplicate-edit-draft.md) | Duplicate an edited post as a fresh draft for payout changes |
 | [W120-active-retry-guidance](W120-active-retry-guidance.md) | Inline warning before retrying a failed active broadcast |
+| [W121-active-retry-reconciliation](W121-active-retry-reconciliation.md) | Verify a failed active broadcast against the chain before retrying |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |

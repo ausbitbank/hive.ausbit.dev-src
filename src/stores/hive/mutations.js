@@ -147,11 +147,15 @@ export function setQueueStatus (index, status, error = '') {
   if (index < 0 || index >= this.queue.length) return
   const meta = ensureQueueMeta(this)
   const current = normalizeQueueMeta(this.queue, meta)[index]
+  const updatedAt = Date.now()
   meta[index] = {
     ...current,
     status,
     error: typeof error === 'string' ? error : '',
-    updatedAt: Date.now()
+    updatedAt,
+    // The attempt time is the anchor for reconciling a failed active
+    // broadcast against account history.
+    ...(status === QUEUE_STATUS.BROADCASTING ? { attemptedAt: updatedAt } : {})
   }
   meta.splice(0, meta.length, ...normalizeQueueMeta(this.queue, meta))
   persistQueue(this.queue, this.queueMeta, this.user?.username || '')

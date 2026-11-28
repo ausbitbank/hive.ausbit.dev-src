@@ -144,7 +144,7 @@
 
                   <div v-if="metaFor(index).status === 'failed' && action[1] === 'active'" class="queue-item__error" role="status">
                     <q-icon name="warning_amber" size="14px" aria-hidden="true" />
-                    A failed active broadcast may already have landed. Check
+                    A failed active broadcast may already have landed. Banksia checks
                     <router-link :to="'/@' + action[0]">@{{ action[0] }} activity</router-link>
                     before retrying.
                   </div>
@@ -164,8 +164,8 @@
                     :color="metaFor(index).status === 'failed' ? 'orange' : 'primary'"
                     :aria-label="(metaFor(index).status === 'failed' ? 'Retry ' : 'Broadcast ') + operationLabel(action)"
                     :title="metaFor(index).status === 'failed' ? 'Retry action' : 'Broadcast now'"
-                    :loading="metaFor(index).status === 'broadcasting'"
-                    :disable="offline || broadcastingIndex !== null"
+                    :loading="metaFor(index).status === 'broadcasting' || reconcilingIndex === index"
+                    :disable="offline || broadcastingIndex !== null || reconcilingIndex !== null"
                     @click="manualBroadcast(index)"
                   />
                   <q-spinner-dots v-if="metaFor(index).status === 'broadcasting'" color="primary" size="20px" aria-label="Broadcasting" />
@@ -217,6 +217,7 @@ import {
   statusMeta
 } from 'src/services/queue'
 import { queueAuthorityError } from 'src/services/queueAuthority'
+import { HISTORY_LOOKUP_LIMIT, reconcileFailedBroadcast } from 'src/services/queueReconcile'
 import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
@@ -235,6 +236,7 @@ export default {
       timerEnabled: true,
       bulkSending: false,
       broadcastingIndex: null,
+      reconcilingIndex: null,
       broadcastTimer: null,
       hiveauthStatus: null,
       hiveauthClock: Date.now(),
@@ -441,7 +443,90 @@ export default {
       if (index >= 0) this.broadcastAt(index, { auto: true })
     },
     manualBroadcast (index) {
-      this.broadcastAt(index, { auto: false })
+      return this.retryAfterReconcile(index)
+    },
+    /**
+     * A failed active broadcast may already be on chain. Check it before the
+     * signer can build a second transaction. Found items become sent; an
+     * inconclusive check fails closed and leaves Retry available for later.
+     */
+    async retryAfterReconcile (index) {
+      if (this.broadcastingIndex !== null || this.reconcilingIndex !== null) return
+      const action = this.queue[index]
+      const status = this.metaFor(index).status
+      if (action?.[1] === 'active' && status === QUEUE_STATUS.FAILED) {
+        const result = await this.reconcileFailedActive(index)
+        if (result.verdict === 'found') {
+          const currentIndex = this.queue.indexOf(action)
+          if (currentIndex >= 0) {
+            this.$hiveStore.setQueueStatus(currentIndex, QUEUE_STATUS.SENT)
+            if (result.txId) this.$hiveStore.setQueueTxId(currentIndex, result.txId)
+          }
+          invalidateOperationCaches(action[2], { signer: action[0] })
+          this.refreshAfterAction(action)
+          this.$q.notify({
+            message: 'Already sent as ' + operationLabel(action) + '. Nothing was re-broadcast.',
+            caption: result.txId ? 'Transaction ' + this.shortTx(result.txId) : undefined,
+            color: 'green',
+            icon: 'verified',
+            position: 'top',
+            timeout: 6000
+          })
+          return
+        }
+        if (result.verdict === 'uncertain') {
+          this.$q.notify({
+            message: 'Could not verify the earlier broadcast, so nothing was sent.',
+            caption: (result.reason || 'Retry when the chain lookup responds.') + ' Check @' + action[0] + ' activity first.',
+            color: 'orange',
+            icon: 'help_outline',
+            position: 'top',
+            timeout: 8000
+          })
+          return
+        }
+        // `absent`: the original did not land and a retry is safe. `unsupported`
+        // keeps the existing warning-and-retry path for operations without a
+        // history identity.
+      }
+      return this.broadcastAt(index, { auto: false })
+    },
+    async reconcileFailedActive (index) {
+      const action = this.queue[index]
+      if (!action) return { verdict: 'unsupported', txId: '', reason: '' }
+      const meta = this.metaFor(index)
+      this.reconcilingIndex = index
+      try {
+        let tx = null
+        if (meta.txId) {
+          try {
+            const status = await this.$hive.api.callAsync('transaction_status_api.find_transaction', {
+              transaction_id: meta.txId
+            })
+            tx = { ok: true, status, txId: meta.txId }
+          } catch {
+            // An absent tx and an unreachable node both throw here; history is
+            // the second opinion and the verdict fails closed if it is unclear.
+            tx = { ok: false }
+          }
+        }
+        let rows
+        try {
+          rows = await this.$hive.api.getAccountHistory(action[0], -1, HISTORY_LOOKUP_LIMIT)
+        } catch {
+          rows = undefined
+        }
+        return reconcileFailedBroadcast({
+          action,
+          // Legacy items do not carry an attempt time. `addedAt` predates the
+          // attempt, so the match window stays wide rather than missing it.
+          attemptedAt: meta.attemptedAt || meta.addedAt,
+          tx,
+          rows
+        })
+      } finally {
+        this.reconcilingIndex = null
+      }
     },
     async broadcastAt (index, { auto = false } = {}) {
       if (this.broadcastingIndex !== null) return

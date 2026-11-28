@@ -143,6 +143,24 @@ describe('hive store mutations', () => {
       expect(state.queue[0][1]).toBe('active')
     })
 
+    it('records when a broadcast attempt starts so failures can be reconciled', () => {
+      const state = makeState()
+      addToQueue.call(state, ['alice', 'active', ['transfer', { from: 'alice', to: 'bob', amount: '1.000 HIVE', memo: '' }]])
+
+      setQueueStatus.call(state, 0, 'broadcasting')
+      const attemptedAt = state.queueMeta[0].attemptedAt
+      expect(Number.isFinite(attemptedAt)).toBe(true)
+      expect(attemptedAt).toBeGreaterThan(0)
+
+      setQueueStatus.call(state, 0, 'failed', 'Connection closed.')
+      expect(state.queueMeta[0].status).toBe('failed')
+      expect(state.queueMeta[0].attemptedAt).toBe(attemptedAt)
+
+      // A later retry attempt replaces the anchor.
+      setQueueStatus.call(state, 0, 'broadcasting')
+      expect(state.queueMeta[0].attemptedAt).toBeGreaterThanOrEqual(attemptedAt)
+    })
+
     it('retries posting failures but leaves active failures for manual review', () => {
       const state = makeState()
       addToQueue.call(state, ['alice', 'posting', ['vote', {}]])

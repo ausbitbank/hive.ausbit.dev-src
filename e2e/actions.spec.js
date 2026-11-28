@@ -950,6 +950,64 @@ test.describe('action flows', () => {
     }).toBe(true)
   })
 
+  test('a failed active transfer already in history is marked sent without retrying', async ({ page }) => {
+    const attemptedAt = Date.now() - 5 * 60 * 1000
+    await loginAs(page)
+    await seedQueue(page, {
+      items: [['ausbitbank', 'active', ['transfer', { from: 'ausbitbank', to: 'alice', amount: '1.000 HIVE', memo: 'E2E reconcile' }]]],
+      meta: [{ status: 'failed', error: 'Connection closed.', txId: '', addedAt: attemptedAt, updatedAt: attemptedAt + 1000, attemptedAt }]
+    })
+    await page.route('**/*', async route => {
+      const request = route.request()
+      if (request.method() !== 'POST') return route.fallback()
+      let body
+      try { body = request.postDataJSON() } catch { return route.fallback() }
+      if (body?.method !== 'condenser_api.get_account_history') return route.fallback()
+      if (body.params?.[0] !== 'ausbitbank' || body.params?.[2] !== 200) return route.fallback()
+      const now = new Date().toISOString()
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: body.id,
+          result: [
+            [0, { trx_id: 'older', timestamp: new Date(attemptedAt - 10 * 60 * 1000).toISOString(), op: ['vote', { voter: 'ausbitbank' }] }],
+            [1, { trx_id: 'landed123', timestamp: now, op: ['transfer', { from: 'ausbitbank', to: 'alice', amount: '1.000 HIVE', memo: 'E2E reconcile' }] }]
+          ]
+        })
+      })
+    })
+
+    await page.goto('/')
+    await waitForApp(page)
+    await page.locator('.q-header button[aria-label="Action queue"], .q-header button[aria-label*="queued action"]').first().click()
+    const panel = page.locator('.queue-panel')
+    await panel.getByRole('button', { name: 'Retry Transfer' }).click()
+
+    await expect(page.getByText('Already sent as Transfer. Nothing was re-broadcast.')).toBeVisible()
+    await expect(panel).toContainText('Sent')
+
+    await expect.poll(async () => {
+      const queue = await readQueue(page)
+      return queue?.meta?.[0]
+    }).toMatchObject({ status: 'sent', txId: 'landed123' })
+  })
+
+  test('the action queue panel is accessible at desktop and mobile widths', async ({ page }) => {
+    await loginAs(page)
+    await seedQueue(page, { items: QUEUE_ITEMS, meta: QUEUE_META })
+    for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+      await page.setViewportSize(viewport)
+      await page.goto('/')
+      await waitForApp(page)
+      await page.locator('.q-header button[aria-label="Action queue"], .q-header button[aria-label*="queued action"]').first().click()
+      const panel = page.locator('.queue-panel')
+      await expect(panel).toBeVisible()
+      expect(await runAxe(page, { context: '.queue-panel' }), viewport.width + 'px axe').toEqual([])
+    }
+  })
+
   test('queue controls expose sent and failed items and clear completed work', async ({ page }) => {
     await loginAs(page)
     await seedQueue(page, { items: QUEUE_ITEMS, meta: QUEUE_META })
