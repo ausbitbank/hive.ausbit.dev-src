@@ -154,8 +154,9 @@ the creator's key or any funds. The reader only needs an active key to pay.
 The v1 beta's **auto-issue** is a client behaviour, not a new on-chain operation:
 while the creator dashboard is open, visible and the vault is unlocked, it polls
 payments and publishes the same posting-key-signed bulletin a manual click would.
-A future relay performs the same bulletin publication from its own account with a
-delegation certificate; it does not change the reader's verification rules.
+An optional relay performs the same bulletin publication from its own dedicated
+Hive account with a delegation certificate; it does not change the self-sovereign
+reader's verification rules.
 
 ---
 
@@ -483,16 +484,18 @@ Validation:
   Issuers use it to decide whether previously wrapped entries can be reused
   after a key rotation; readers ignore it.
 - `claims` defaults to `[]`.
-- `signer` is the creator account or the relay's `p256:` public key.
-- `delegation` is the delegation certificate hash/object when the signer is a
-  relay, otherwise `null`.
+- `signer` is the creator account for a self-signed bulletin, or the dedicated
+  relay Hive account for a delegated bulletin.
+- `delegation` is the certificate hash/object when the signer is a relay,
+  otherwise `null`.
 - **Signer binding.** For a self-signed bulletin, `signer` MUST equal `blog`
   (case-insensitively) and the signature MUST verify against that account's
   posting authority. A bulletin whose `signer` is a different Hive account is
-  valid only with a delegation certificate that verifies against the blog's
-  posting keys and names the signer. The v1 beta rejects delegated bulletins
-  (`delegation !== null`) and must not accept an arbitrary third-party signer;
-  see §15.6.
+  valid only with a current delegation certificate that verifies against the
+  blog's posting keys and names that relay account/key; see §7.6. The base v1
+  reader rejects delegated bulletins (`delegation !== null`). A relay-aware
+  reader MUST verify the creator certificate and relay authority before using a
+  delegated bulletin, and MUST reject an arbitrary third-party signer.
 
 `keyring.ct` is the sealed keyring blob, stored **once per bulletin**, not once
 per reader. `entries[].ct` is the wrapped `K_ring` (≈200 bytes), not the keyring.
@@ -679,32 +682,62 @@ index because it uses the account-metadata directory above. See
 
 ### 7.6 Delegation certificate
 
-Published in `blog.vault.relay` and referenced by relay bulletins. Signed with
-the creator's posting key.
+Optional relay extension. The certificate is published in
+`posting_json_metadata["banksia.io"].blog.vault.relay` and referenced by relay
+bulletins. It is signed with the creator's posting key. The relay is a dedicated
+Hive account; `delegate` is that account's Hive **posting public key**, not a
+P-256 key. The relay never receives the creator's posting/active key and never
+moves funds.
 
 ```json
 {
   "v": 1,
   "id": "banksia.vault.delegate",
   "blog": "alice",
-  "delegate": "p256:...",
+  "delegate_account": "alice-relay",
+  "delegate": "STM...",
   "scope": ["grant", "bulletin"],
   "notBefore": "2026-11-27T00:00:00Z",
-  "notAfter": "2027-05-27T00:00:00Z",
-  "nonce": "random",
+  "notAfter": "2027-02-25T00:00:00Z",
+  "nonce": "128-bit-random-base64url",
   "sig": "posting-key-signature"
 }
 ```
 
+- `v` is exactly `1` and `id` is exactly `banksia.vault.delegate`.
+- `blog` and `delegate_account` are valid Hive accounts and MUST differ.
+- `delegate` is the relay account's `STM...` posting public key.
+- `scope` MUST include both `grant` and `bulletin` for relay issuance.
+- `notBefore`/`notAfter` are required ISO timestamps. A 90-day window is
+  recommended.
+- `nonce` is 16-128 URL-safe base64url characters; `sig` is the 130-character
+  recoverable posting signature.
+- The exact signed fields are the certificate without `sig`. Timestamps and
+  account strings MUST NOT be re-normalised before verifying or hashing; the
+  same bytes the creator signed are the ones the reader checks.
+
 Verification:
 
-1. `v === 1` and `scope` includes `grant`.
-2. Current time is within `notBefore`/`notAfter`.
-3. Signature verifies against one of the creator's posting keys.
-4. Signature payload:
+1. Check the structural fields, `v`/`id`, blog, delegate account, posting key,
+   scope, nonce and time window.
+2. Verify `sig` against one of the creator's current posting keys.
+3. Signature payload:
    `banksia.vault.delegation.v1|<canonicalJson(cert without sig)>`.
+4. Compute
+   `certHash = "sha256:" + lowercaseHex(SHA-256(canonicalJson(cert without sig)))`.
+5. If verifying a relay bulletin, require its `delegation.certHash`,
+   `delegate_account` and `delegate` to equal the current certificate.
+6. Confirm the relay account's current posting authority still contains
+   `delegate`; a rotated relay key invalidates the certificate.
+7. Verify the bulletin signature with exactly `delegate`, not merely any current
+   relay posting key.
 
-A new blog-metadata write without `relay` revokes the delegation.
+A new blog-metadata write without `relay` revokes the certificate immediately.
+The relay MUST re-check the current certificate before every issuance; readers
+MUST verify it before using a delegated bulletin. A missing, expired,
+not-yet-valid, wrong-blog, wrong-scope or wrong-key certificate leaves the normal
+paywall/self-signed path. See
+[`vault-relay.md`](vault-relay.md) for the relay extension.
 
 ### 7.7 Membership product post — HOM + Banksia extension
 
@@ -967,9 +1000,10 @@ Banksia implementation keeps signing behind an adapter:
 Signature payloads:
 
 ```text
-bulletin:   banksia.vault.bulletin.v1|canonicalJson(bulletin with keyringHash, no sig)
-grant:      banksia.vault.grant.v1|canonicalJson(grant, no sig)
-delegation: banksia.vault.delegation.v1|canonicalJson(cert, no sig)
+bulletin v1: banksia.vault.bulletin.v1|canonicalJson(bulletin with keyringHash, no sig)
+bulletin v2: banksia.vault.bulletin.v2|canonicalJson(bulletin with keyringHash, no sig)
+grant:       banksia.vault.grant.v1|canonicalJson(grant, no sig)
+delegation:  banksia.vault.delegation.v1|canonicalJson(cert, no sig)
 ```
 
 `signGrant` auto-detects a bulletin by the presence of `keyring` or `entries`;
@@ -1066,10 +1100,12 @@ account or server detail beyond what the reader already knows.
    register its public key in the reader's account metadata and wait for the
    creator to wrap the next bulletin to it.
 3. Fetch the newest bulletin for `blog` + `period` (pointer first, then replies
-   authored by the blog account and matching `vault-<period>-<seq>`).
-4. Verify the bulletin signature (creator posting key) with the v1 or v2 prefix.
-   For self-signed bulletins, `signer` MUST equal `blog` and `delegation` MUST be
-   null; a relay needs a verified certificate.
+   matching `vault-<period>-<seq>`). A relay-aware reader may also consider
+   replies authored by the certified relay account.
+4. Verify the bulletin signature with the v1 or v2 prefix. For self-signed
+   bulletins, `signer` MUST equal `blog` and `delegation` MUST be null. For a
+   relay-authored bulletin, verify the §7.6 certificate and current relay
+   authority first, then verify the signature with the named delegate key.
 5. For a v2 manifest, compute the reader shard from its `rkt`, fetch only that
    shard, verify the signed content hash, and expand its tuples. For v1, fetch
    the signed parts and merge them.
@@ -1559,12 +1595,7 @@ from bulletin entries for their own `rkt`, never from the memo.
       }
     },
     "claims": { "type": "array" },
-    "signer": {
-      "oneOf": [
-        { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
-        { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" }
-      ]
-    },
+    "signer": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
     "delegation": { "type": ["object", "null"] },
     "sig": { "type": "string", "minLength": 1 }
   }
@@ -1694,26 +1725,55 @@ from bulletin entries for their own `rkt`, never from the memo.
         ]
       }
     },
-    "signer": {
-      "oneOf": [
-        { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
-        { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" }
-      ]
-    },
+    "signer": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
     "delegation": { "type": ["object", "null"] },
     "sig": { "type": "string", "minLength": 1 }
   }
 }
 ```
 
-### 16.7 Reader key registry and delegation (reserved)
+### 16.7 Reader key registry and delegation
 
-The registry schema in §7.5 is normative for the reserved `custom_json`
-`banksia.vault.reader_key`: `v=1`, `blog`, `keys[{key,label,created}]`, `revoked`.
-The delegation schema in §7.6 is the base sketch. W90's relay extension
-restricts `delegate` to the relay account's Hive posting public key and adds
-`delegate_account`; see [`vault-relay.md`](vault-relay.md). Base v1 readers
-reject a non-null bulletin `delegation`.
+The reader device registry is implemented in account metadata as described in
+§7.5 (`posting_json_metadata["banksia.io"].reader.devices["<blog>"]`). The
+`custom_json` id `banksia.vault.reader_key` remains reserved for indexers and
+other frontends: `v=1`, `blog`, `keys[{key,label,created}]`, `revoked`.
+
+The delegation certificate in §7.6 is normative for the optional
+`banksia.vault.relay@1` extension:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/relay-delegation@1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "id", "blog", "delegate_account", "delegate", "scope", "notBefore", "notAfter", "nonce", "sig"],
+  "properties": {
+    "v": { "const": 1 },
+    "id": { "const": "banksia.vault.delegate" },
+    "blog": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "delegate_account": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "delegate": { "type": "string", "pattern": "^STM[1-9A-HJ-NP-Za-km-z]{40,60}$" },
+    "scope": {
+      "type": "array", "minItems": 2, "uniqueItems": true,
+      "items": { "enum": ["grant", "bulletin"] },
+      "allOf": [
+        { "contains": { "const": "grant" } },
+        { "contains": { "const": "bulletin" } }
+      ]
+    },
+    "notBefore": { "type": "string", "format": "date-time" },
+    "notAfter": { "type": "string", "format": "date-time" },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]{16,128}$" },
+    "sig": { "type": "string", "pattern": "^[0-9a-fA-F]{130}$" }
+  }
+}
+```
+
+Base v1 readers reject a non-null bulletin `delegation`. Relay-aware readers
+verify §7.6 before accepting a relay-authored v1 part or v2 sharded bulletin.
+The old `p256:` `signer` placeholder is not used by this extension.
 
 ---
 
@@ -1747,9 +1807,14 @@ document and the on-chain objects.
 ### 17.2 Entitlement and signatures
 
 - [ ] A bulletin without a valid posting-key signature is rejected.
-- [ ] `signer === blog` is enforced for v1; `delegation` non-null is rejected.
-- [ ] The reply fallback only accepts a bulletin authored by the blog account;
-      a third-party higher-sequence bulletin cannot shadow the creator.
+- [ ] `signer === blog` is enforced for a self-signed v1/v2 bulletin.
+- [ ] A base v1 reader rejects `delegation` non-null; a relay-aware reader accepts
+      it only after verifying the current §7.6 certificate and relay authority.
+- [ ] The reply fallback only accepts a bulletin authored by the blog account, or
+      by the certified relay account in a relay-aware reader; a third party cannot
+      shadow the creator with a higher-sequence bulletin.
+- [ ] A revoked/expired/wrong-scope/wrong-key certificate hides the relay path and
+      leaves the normal paywall.
 - [ ] `keyringHash` is recomputed from the received keyring; an inbound
       `keyringHash` is ignored.
 - [ ] Signature covers keyring hash and every entry; swapping either invalidates.
@@ -1822,9 +1887,12 @@ document and the on-chain objects.
 3. Fetch the bulletin:
    - if `blog.vault.bulletin` is set, `get_content(pointer.author, pointer.permlink)`;
    - otherwise `get_content_replies(blog, container)` and choose the newest
-     bulletin whose `blog` and `signer` equal the blog and whose metadata parses.
-4. Verify the signature: canonical payload from §7.4, recover the posting key,
-   require `signer === blog`, reject `delegation`.
+     valid bulletin whose `blog` matches, from the blog account or (in a
+     relay-aware reader) the certified relay account.
+4. Verify the signature: canonical payload from §7.4, recover the posting key.
+   Require `signer === blog` for a self-signed bulletin. For a relay-authored
+   bulletin, verify the §7.6 certificate and current relay authority, then verify
+   with the named delegate key.
 5. Fetch/lookup the reader key, compute `rkt`, match an entry, check
    `expires > now`, unwrap `K_ring`, open the keyring, select `kid`.
 6. Decrypt the payload or parts, verify hash/bytes, sanitize, render.
@@ -1889,16 +1957,17 @@ document and the on-chain objects.
 An external review of the first final draft raised three spec defects and several
 limitations. All three defects are fixed in this revision:
 
-1. **Bulletin `signer` schema.** §7.4 allows a future relay's `p256:` public key,
-   but §16.4 only accepted a Hive username. The schema now accepts exactly one of
-   a Hive account name or a `p256:` uncompressed point. v1 readers still require
-   `signer === blog` and reject delegated bulletins.
+1. **Bulletin `signer` schema.** §7.4 and §16.4 now use a Hive account name for
+   both self-signed and delegated bulletins. The optional relay extension uses a
+   dedicated relay account's Hive posting key; a `p256:` delegated signer is not
+   implemented. Base v1 readers still require `signer === blog` and reject
+   delegated bulletins unless the relay-aware companion verifies §7.6.
 2. **Grant-header count.** §9.2 said “exactly six keys” and listed five. The
    header is five keys: `blog`, `rkt`, `period`, `tier`, `expires`.
-3. **Delegation prefix.** Delegation certificates now use the dedicated
-   `banksia.vault.delegation.v1` prefix instead of reusing the grant prefix. v1
-   rejects delegated bulletins before verification, so this path remains
-   reserved.
+3. **Delegation prefix.** Delegation certificates use the dedicated
+   `banksia.vault.delegation.v1` prefix instead of reusing the grant prefix. Base
+   v1 readers reject delegated bulletins before verification; the optional
+   relay-aware companion verifies §7.6 before accepting one.
 
 The review's practical limitations are accurate and remain explicit in §17.5:
 
