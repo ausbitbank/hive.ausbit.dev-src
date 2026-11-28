@@ -38,8 +38,8 @@ const COMPRESSIBLE = new Set(['.html', '.js', '.mjs', '.css', '.json', '.webmani
 const COMPRESSED = new Map()
 const MAX_CACHE_ENTRIES = 240
 
-function compress (file, body, encoding) {
-  const key = file + ':' + encoding + ':' + body.length
+function compress (file, body, encoding, stamp) {
+  const key = file + ':' + encoding + ':' + stamp
   const cached = COMPRESSED.get(key)
   if (cached) return cached
   const result = encoding === 'br'
@@ -78,12 +78,15 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')
     const file = await fileFor(url.pathname)
     const body = await readFile(file)
+    // A rebuilt file can keep the same byte length (asset hashes are the same
+    // shape), so stamp the cache with mtime instead of the length.
+    const stamp = (await stat(file)).mtimeMs
     const type = MIME[extname(file)] || 'application/octet-stream'
     const encodingHeader = request.headers['accept-encoding'] || ''
     const encoding = COMPRESSIBLE.has(extname(file)) && body.length > 1024
       ? (accepts(encodingHeader, 'br') ? 'br' : accepts(encodingHeader, 'gzip') ? 'gzip' : null)
       : null
-    const payload = encoding ? compress(file, body, encoding) : body
+    const payload = encoding ? compress(file, body, encoding, stamp) : body
     response.writeHead(200, {
       'Content-Type': type,
       'Content-Length': payload.length,
