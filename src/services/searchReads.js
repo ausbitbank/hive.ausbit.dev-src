@@ -301,7 +301,9 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   } else if (author) {
     const authorPosts = await authorContextPromise
     result.authorContext.facets = exploreFacets(authorPosts)
-    result.facets = result.authorContext.facets
+    result.facets = result.authorContext.facets.tags.length || result.authorContext.facets.communities.length
+      ? result.authorContext.facets
+      : null
     if (postCandidates === null && include('posts')) {
       result.posts.items = rankPosts(authorPosts, {
         query: '',
