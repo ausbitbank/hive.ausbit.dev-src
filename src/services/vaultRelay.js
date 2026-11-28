@@ -300,6 +300,7 @@ export async function createRelayBundle ({
   ringKid,
   ringKey,
   period,
+  ringId = '',
   passphrase,
   now = new Date(),
   iterations = PBKDF2_ITERATIONS
@@ -319,12 +320,16 @@ export async function createRelayBundle ({
   const salt = randomBytes(16)
   const iv = randomBytes(12)
   const key = await deriveBundleKey(passphrase, salt, iterations)
+  if (ringId !== undefined && ringId !== null && typeof ringId !== 'string') {
+    throw new VaultCryptoError('VAULT_BAD_INPUT', 'The relay bundle ringId must be a string.')
+  }
   const plaintext = {
     keyring,
     ringKid: ringKid || ringPeriod,
     ringKey,
     period: ringPeriod,
-    createdAt: (now instanceof Date ? now : new Date(now)).toISOString()
+    createdAt: (now instanceof Date ? now : new Date(now)).toISOString(),
+    ...(typeof ringId === 'string' && ringId.trim() ? { ringId: ringId.trim() } : {})
   }
   const ct = new Uint8Array(await subtle().encrypt(
     { name: 'AES-GCM', iv, additionalData: new TextEncoder().encode(relayBundleAad(owner, relay)), tagLength: 128 },
