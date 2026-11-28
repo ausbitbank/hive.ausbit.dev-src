@@ -55,7 +55,7 @@ searches live in your browser.
 | | |
 | --- | --- |
 | **Explore the chain**<br>Blocks, transactions, accounts, authorities, delegations, followers, downvote transparency and a unified search across nine categories, from accounts to Lightning invoices. | **Own your wallet**<br>HIVE, HBD, Hive Power, savings, Hive-Engine tokens, Magi balances, transfers and a tax-friendly CSV export. |
-| **Create and publish**<br>A local-first composer with drafts, history, media uploads, embeds, snippets, templates, checklists and cross-posting. | **Find your people**<br>Public community discovery, per-account community feeds, short-form readers, curation trails and Lightning tips. |
+| **Create and publish**<br>A local-first composer with drafts, history, media uploads, embeds, snippets, templates, checklists and cross-posting. | **Find your people**<br>Public community discovery, per-account community feeds, short-form readers and Lightning tips. |
 | **Trade and earn**<br>The internal Hive market, external charts, HBD peg tools, witness and proposal governance, and sats quotes. | **Sign your way**<br>Keychain, HiveAuth or SmartLock. Posting and active actions stay separated, reviewed and queued. |
 | **Make it yours**<br>Ten built-in themes, draggable dashboard layouts, profile skins, badges and a theme wall. | **Moderate locally**<br>Open, Balanced, Strict, Follow-only or custom moderation policy with explainable decisions, overrides and portable JSON. |
 
@@ -88,7 +88,6 @@ searches live in your browser.
 | `/@:username` | Account overview, activity filters, authorities, authority risk review, delegations, rewards and profile links |
 | `/@:username/delegations` | Incoming/outgoing Hive Power delegations, effective HP and recent delegation changes |
 | `/@:username/downvotes` | Received/given downvote transparency: voter, weight, estimated dollar impact, target, time, relationship, conservative pattern evidence and per-voter local exclusion |
-| `/@:username/trail` | Recent votes and curation activity carousel |
 | `/@:username/followers`, `/@:username/following` | Follower and following lists with live counts |
 | `/@:username/posts`, `/@:username/blog`, `/@:username/feed`, `/@:username/replies`, `/@:username/comments` | Account-scoped post, blog, feed, reply and comment views |
 | `/search` | Unified search for accounts, posts, tags, communities, blocks, transactions, proposals, witnesses and Lightning invoices/addresses, with facets, topic analytics, saved searches and optional AI semantic post search (HiveSense) |

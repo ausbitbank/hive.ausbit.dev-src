@@ -57,7 +57,7 @@ Banksia is also a working creator and trader surface. The composer supports auto
 drafts, history, media embeds, snippets, templates, checklists and cross-posting. The
 wallet covers HIVE, HBD, Hive Power, savings, Hive-Engine tokens, the internal market,
 HBD peg tools and a tax-friendly CSV export. Discovery covers a public community
-browser, five short-form formats, curation trails and Lightning tips. A unified search
+browser, five short-form formats and Lightning tips. A unified search
 spans accounts, posts, tags, communities, blocks, transactions, proposals, witnesses and
 Lightning invoices, with saved searches and optional semantic post search.
 

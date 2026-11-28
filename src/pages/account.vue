@@ -729,7 +729,6 @@ export default {
     ShareMenu,
     ProfileSkin,
     ProfileShelf
-    // recentVotedPostsCarousel
   },
   data () {
     return {

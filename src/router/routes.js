@@ -32,7 +32,6 @@ const routes = [
       { path: '@:username/downvotes', name: 'account-downvotes', component: () => import('pages/downvotes.vue') },
       { path: '@:username/transfers', name: 'wallet-transfers', component: () => import('pages/wallet.vue') },
       { path: 'account/@:username', name: 'account-alias', component: () => import('pages/account.vue') },
-      { path: '@:account/trail', name: 'trail', component: () => import('pages/trail.vue') },
       { path: '@:account/followers', name: 'followers', component: () => import('pages/connections.vue') },
       { path: '@:account/following', name: 'following', component: () => import('pages/connections.vue') },
       { path: '@:account/posts', name: 'account-posts', component: () => import('pages/browse.vue') },

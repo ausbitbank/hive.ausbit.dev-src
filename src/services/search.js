@@ -5,7 +5,7 @@ import { isValidTag as isValidHiveTag } from '../utils/hiveTag'
 const URL_HOSTS = [BRAND.domain, 'www.' + BRAND.domain, BRAND.legacyHost, 'hive.blog', 'peakd.com', 'ecency.com']
 const ACCOUNT_SUBPAGES = [
   'wallet', 'posts', 'blog', 'feed', 'replies', 'comments', 'communities',
-  'followers', 'following', 'tip', 'transfers', 'trail', 'lightning', 'pos'
+  'followers', 'following', 'tip', 'transfers', 'lightning', 'pos'
 ]
 const SORT_ROUTES = ['trending', 'created', 'hot', 'payout', 'payout_comments', 'muted']
 
