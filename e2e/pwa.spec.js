@@ -41,9 +41,12 @@ test('offline navigation is served by the cached app shell', async ({ page }) =>
     return Boolean(registration?.active && navigator.serviceWorker.controller)
   }), { timeout: 30000 }).toBe(true)
 
-  // Reload once under the active worker so route assets and fonts are cached
-  // by the service worker before the navigation goes offline.
+  // Reload once under the active worker, then visit the target route online so
+  // its lazy chunks and fonts are cached by the service worker before the
+  // navigation goes offline.
   await page.reload()
+  await waitForApp(page)
+  await page.goto('/blocks')
   await waitForApp(page)
   await page.waitForTimeout(1000)
 
