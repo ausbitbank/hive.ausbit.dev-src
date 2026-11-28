@@ -376,6 +376,18 @@ export default {
     },
     applyAccountData (result) {
       this.loadCurrencyRate()
+      // Never mix the previous account's L2 balances into the new total while
+      // the new requests are in flight.
+      this.heTokens = []
+      this.heTotalHive = 0
+      this.heValueUsd = 0
+      this.heError = ''
+      this.magi = null
+      this.magiTokens = []
+      this.magiTokenPrices = {}
+      this.magiError = ''
+      this.magiTokensError = ''
+      this.magiPricesError = ''
       if (this.includeHiveEngine) this.loadHiveEngine(result.accountName || this.targetAccount)
       if (this.includeMagi) this.loadMagi(result.accountName || this.targetAccount)
     },
@@ -399,6 +411,7 @@ export default {
         this.magiPricesError = ''
         return
       }
+      const account = name
       this.magiLoading = true
       this.magiError = ''
       this.magiTokensError = ''
@@ -409,6 +422,7 @@ export default {
           fetchMagiTokens(name),
           fetchMagiTokenPrices()
         ])
+        if (this.targetAccount !== account) return
 
         if (accountResult.status === 'fulfilled') {
           this.magi = accountResult.value?.balances || null
@@ -434,7 +448,7 @@ export default {
           this.magiPricesError = 'Magi token prices unavailable'
         }
       } finally {
-        this.magiLoading = false
+        if (this.targetAccount === account) this.magiLoading = false
       }
     },
     async loadHiveEngine (name) {
@@ -444,10 +458,12 @@ export default {
         this.heValueUsd = 0
         return
       }
+      const account = name
       this.heLoading = true
       this.heError = ''
       try {
         const result = await fetchHiveEnginePortfolio(name)
+        if (this.targetAccount !== account) return
         this.heTokens = result.tokens
         this.heTotalHive = result.totalHive
         const hive = price(this.prices, 'hive')
@@ -459,13 +475,14 @@ export default {
           return sum + token.balance * token.priceHive * unit
         }, 0)
       } catch (error) {
+        if (this.targetAccount !== account) return
         console.error('Failed to load Hive-Engine balances', error)
         this.heError = 'Hive-Engine balances unavailable.'
         this.heTokens = []
         this.heTotalHive = 0
         this.heValueUsd = 0
       } finally {
-        this.heLoading = false
+        if (this.targetAccount === account) this.heLoading = false
       }
     }
   }

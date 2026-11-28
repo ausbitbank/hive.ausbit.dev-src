@@ -61,9 +61,10 @@ describe('account vitals summary', () => {
     expect(summary.votingPower.fullInSeconds).toBeCloseTo(43200, 0)
     expect(summary.votingPower.fullInLabel).toBe('12h 0m')
 
-    // 1.1b effective VESTS gives a 2.75e12 downvote bar; 2.2e12 is 80%.
-    expect(summary.downvote.percent).toBeCloseTo(80, 6)
-    expect(summary.downvote.label).toBe('80.00%')
+    // Canonical downvote power: max mana is vests * 1e6, and the 25% pool
+    // scales the stored downvote mana by 4. 2.2e12 / (1.1e9 * 1e6) * 4.
+    expect(summary.downvote.percent).toBeCloseTo(0.8, 6)
+    expect(summary.downvote.label).toBe('0.80%')
 
     expect(summary.rc.percent).toBeCloseTo(90, 6)
     expect(summary.rc.label).toBe('90.00%')
@@ -193,7 +194,7 @@ describe('account vitals summary', () => {
     expect(summary.hp.label).toBe('0.00 HP')
     expect(summary.voteValue.available).toBe(false)
     expect(summary.voteValue.usd).toBe(0)
-    expect(summary.downvote.percent).toBeCloseTo(80, 6)
+    expect(summary.downvote.percent).toBeCloseTo(0.8, 6)
   })
 
   it('returns an unavailable summary with no account', () => {

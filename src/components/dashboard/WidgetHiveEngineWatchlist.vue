@@ -292,7 +292,8 @@ export default {
       loading: true,
       loaded: false,
       loadError: '',
-      updatedAt: 0
+      updatedAt: 0,
+      reloadToken: 0
     }
   },
   computed: {
@@ -360,6 +361,8 @@ export default {
       this.reload()
     },
     async reload () {
+      const token = ++this.reloadToken
+      const account = this.accountName
       this.loading = !this.loaded
       this.loadError = ''
       const symbols = this.normalizedSymbols
@@ -370,6 +373,9 @@ export default {
         this.loading = false
         return
       }
+      // Do not keep the previous account's token rows visible while the new
+      // query runs.
+      this.balances = []
 
       const engine = getHiveEngine()
       const withBalances = Boolean(this.accountName && this.showBalances)
@@ -384,6 +390,7 @@ export default {
       }
 
       const results = await Promise.allSettled(requests)
+      if (token !== this.reloadToken || account !== this.accountName) return
       const metricsResult = results[0]
       let failed = false
 

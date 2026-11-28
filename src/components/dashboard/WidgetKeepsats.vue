@@ -266,6 +266,7 @@ export default {
       this.reset()
       this.refreshSession()
       if (this.connected) this.load()
+      else this.loaded = true
     }
   },
   mounted () {
@@ -300,9 +301,12 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        this.data = await loadKeepsats(account)
+        const data = await loadKeepsats(account)
+        if (this.targetAccount !== account) return
+        this.data = data
         this.loaded = true
       } catch (error) {
+        if (this.targetAccount !== account) return
         if (isAuthExpired(error)) {
           this.auth = null
           this.error = 'The v4v.app session expired. Reconnect from the wallet Lightning panel.'
@@ -310,7 +314,7 @@ export default {
           this.error = error?.message || 'Could not read the keepsats balance.'
         }
       } finally {
-        this.loading = false
+        if (this.targetAccount === account) this.loading = false
       }
     }
   }

@@ -28,7 +28,8 @@ export const accountWidgetMixin = {
       loadError: '',
       loading: false,
       loaded: false,
-      updatedAt: 0
+      updatedAt: 0,
+      accountWidgetRequest: 0
     }
   },
   computed: {
@@ -49,20 +50,20 @@ export const accountWidgetMixin = {
   },
   watch: {
     targetAccount () {
+      // Drop the previous account's record immediately; a pending request is
+      // invalidated by the request token in reload().
+      this.accountName = ''
+      this.accountRecord = null
+      this.loaded = false
       this.reload()
     }
-  },
-  created () {
-    this._accountWidgetStop = this.$watch(() => this.signedInUser, () => this.reload())
   },
   mounted () {
     this.reload()
   },
-  beforeUnmount () {
-    if (this._accountWidgetStop) this._accountWidgetStop()
-  },
   methods: {
     async reload () {
+      const token = ++this.accountWidgetRequest
       const name = this.targetAccount
       if (!name) {
         this.accountName = ''
@@ -73,25 +74,32 @@ export const accountWidgetMixin = {
       }
       this.loading = true
       this.loadError = ''
-      const result = await this.loadAccountData(name)
-      this.loading = false
-      if (!result) {
-        this.loadError = 'Could not load @' + name + '.'
-        return
+      try {
+        const result = await this.loadAccountData(name)
+        if (token !== this.accountWidgetRequest || name !== this.targetAccount) return
+        if (!result) {
+          this.loadError = 'Could not load @' + name + '.'
+          return
+        }
+        if (result.error && !result.ok) {
+          this.loadError = result.error
+          return
+        }
+        this.accountName = result.accountName || name
+        this.accountRecord = result.account
+        // Global properties and prices drive every HP/USD figure in the widgets;
+        // store them here so no widget has to remember to.
+        this.globalProps = result.globalProps || null
+        this.prices = result.prices || null
+        this.applyAccountData(result)
+        this.loaded = true
+        this.updatedAt = Date.now()
+      } catch (error) {
+        if (token !== this.accountWidgetRequest || name !== this.targetAccount) return
+        this.loadError = error?.message || 'Could not load @' + name + '.'
+      } finally {
+        if (token === this.accountWidgetRequest && name === this.targetAccount) this.loading = false
       }
-      if (result.error && !result.ok) {
-        this.loadError = result.error
-        return
-      }
-      this.accountName = result.accountName || name
-      this.accountRecord = result.account
-      // Global properties and prices drive every HP/USD figure in the widgets;
-      // store them here so no widget has to remember to.
-      this.globalProps = result.globalProps || null
-      this.prices = result.prices || null
-      this.applyAccountData(result)
-      this.loaded = true
-      this.updatedAt = Date.now()
     },
     /** Override in a widget to receive the raw result before it is stored. */
     applyAccountData () {},

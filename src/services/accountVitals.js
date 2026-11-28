@@ -6,7 +6,7 @@
 //
 // This module intentionally has no Vue imports and no timers.
 
-import { estimateVoteValueUsd, formatRecharge, vpRechargeSeconds } from './voteValue'
+import { downvotePowerPercent, estimateVoteValueUsd, formatRecharge, vpRechargeSeconds } from './voteValue'
 import { formatHp, parseAmount, vestsToHp } from './witnesses'
 import { medianPrice } from './network'
 
@@ -73,23 +73,10 @@ function votingPowerSummary (account, now) {
   }
 }
 
-function effectiveVests (account) {
-  if (!account) return 0
-  return Math.max(0,
-    parseAmount(account.vesting_shares) +
-    parseAmount(account.received_vesting_shares) -
-    parseAmount(account.delegated_vesting_shares) -
-    parseAmount(account.vesting_withdraw_rate)
-  )
-}
-
 function downvoteSummary (account) {
   const current = Number(account?.downvote_manabar?.current_mana)
-  const max = (effectiveVests(account) / 4) * 1e4
-  if (!Number.isFinite(current) || !Number.isFinite(max) || max <= 0) {
-    return { percent: null, label: '—' }
-  }
-  const percent = clamp((current / max) * 100, 0, 100)
+  if (!Number.isFinite(current)) return { percent: null, label: '—' }
+  const percent = downvotePowerPercent(account)
   return { percent, label: percentLabel(percent) }
 }
 

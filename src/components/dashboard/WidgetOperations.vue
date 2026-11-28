@@ -312,7 +312,10 @@ export default {
   },
   watch: {
     targetAccount () {
+      this.requestToken += 1
       this.entries = []
+      this.accountName = ''
+      this.updatedAt = 0
       this.loadOperations()
       this.restartPolling()
     },
@@ -348,9 +351,12 @@ export default {
       return ICONS[filter] || 'receipt_long'
     },
     async loadOperations () {
-      const name = this.targetAccount
-      if (!name) return
       const token = ++this.requestToken
+      const name = this.targetAccount
+      if (!name) {
+        this.loading = false
+        return
+      }
       this.loading = true
       this.error = ''
       try {

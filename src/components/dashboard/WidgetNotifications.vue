@@ -156,7 +156,9 @@ export default {
   data () {
     return {
       notifications: [],
-      unreadCount: 0
+      unreadCount: 0,
+      feedError: '',
+      feedRequest: 0
     }
   },
   computed: {
@@ -168,22 +170,38 @@ export default {
     }
   },
   watch: {
-    accountName () {
-      this.loadFeed()
+    targetAccount () {
+      this.notifications = []
+      this.unreadCount = 0
+      this.feedError = ''
     }
   },
   methods: {
+    applyAccountData () {
+      this.notifications = []
+      this.unreadCount = 0
+      this.loadFeed()
+    },
     iconFor (category) {
       return ICONS[category] || ICONS.other
     },
     async loadFeed () {
-      if (!this.accountName) return
+      const account = this.accountName
+      if (!account) return
+      const token = ++this.feedRequest
+      this.feedError = ''
       try {
-        const feed = await notifyAccountNotifications(this.accountName, { limit: this.limit })
+        const feed = await notifyAccountNotifications(account, { limit: this.limit })
+        if (token !== this.feedRequest || account !== this.accountName) return
         this.notifications = feed.items
         this.unreadCount = feed.unread
       } catch (error) {
+        if (token !== this.feedRequest || account !== this.accountName) return
         console.error('Failed to load dashboard notifications', error)
+        this.notifications = []
+        this.unreadCount = 0
+        this.feedError = 'Notifications could not be loaded.'
+        this.loadError = this.feedError
       }
     }
   }
