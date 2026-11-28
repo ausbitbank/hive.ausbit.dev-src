@@ -114,8 +114,8 @@ maintenance window; the worker path can then be retired if desired.
   against a 730 KB budget at HEAD; the route's JS is 472.6 KB.
 - Targeted fast E2E: `bun run test:e2e lightning.spec.js` — 2 passed.
   - mocked receive invoice settles and shows **Paid**;
-  - pay dialog queues `0.673 HBD` to `v4vapp` with memo
-    `alice@getalby.com #HBD #v4vapp` and `manualOnly: true`;
+  - pay dialog resolves `alice@getalby.com` to a BOLT11 invoice and queues it
+    with `manualOnly: true`;
   - blocked bridge falls back to the Lightning address.
 - Headless checks at 1440px and 390px: lightning section on wallet, tip page
   and profile sidebar render; horizontal overflow `0`; no page errors.

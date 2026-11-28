@@ -21,6 +21,12 @@
         <strong>A Lightning payment link is ready.</strong>
         <p>Log in with Keychain, SmartLock or HiveAuth from the header to review and pay it with HBD or HIVE.</p>
         <code>{{ payQueryLabel }}</code>
+        <p v-if="payAmountLabel && payAmount.unit === 'sats'">
+          Invoice amount: <strong>{{ payAmountLabel }}</strong>. The bridge fee is added when the payment opens.
+        </p>
+        <p v-else-if="payAmountLabel">
+          Total to spend: <strong>{{ payAmountLabel }}</strong>, including the bridge fee. The recipient sats are calculated from the live rate when the payment opens.
+        </p>
       </div>
     </section>
 
@@ -133,12 +139,15 @@
     />
     <lightning-pay-dialog
       v-if="account && loggedInUser && payOpen"
+      :key="'pay-' + payAmount.amount + '-' + payAmount.unit"
       v-model="payOpen"
       :account="loggedInUser"
       :liquid-hive="liquidHive"
       :liquid-hbd="liquidHbd"
       :initial-input="payPrefill"
       :initial-sats="1000"
+      :initial-amount="payAmount.amount || 0"
+      :initial-currency="payAmount.unit"
       @queued="onQueued"
     />
   </q-page>
@@ -148,7 +157,7 @@
 import { defineAsyncComponent } from 'vue'
 import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
-import { isValidHiveAccount, lightningAddress, normalizeFeePolicy } from 'src/services/lightning'
+import { isValidHiveAccount, lightningAddress, normalizeFeePolicy, payLinkAmount } from 'src/services/lightning'
 import { bridgeFeePolicy, getBridgeStatus } from 'src/services/v4vapp'
 import UserSearchBox from 'components/userSearchBox.vue'
 import LightningAddressCard from 'components/lightning/LightningAddressCard.vue'
@@ -180,6 +189,14 @@ export default {
     payQueryLabel () {
       const value = this.payQuery
       return value.length > 80 ? value.slice(0, 54) + '…' + value.slice(-18) : value
+    },
+    payAmount () {
+      return payLinkAmount(this.$route.query)
+    },
+    payAmountLabel () {
+      const { amount, unit } = this.payAmount
+      if (!amount) return ''
+      return amount.toLocaleString('en-US', { maximumFractionDigits: 3 }) + ' ' + unit.toUpperCase()
     },
     feePercentLabel () {
       return (Math.round(this.feePolicy.percent * 1000) / 10) + '%'
@@ -219,6 +236,12 @@ export default {
       this.syncFromRoute()
     },
     '$route.query.pay' () {
+      this.preparePayLink()
+    },
+    '$route.query.amount' () {
+      this.preparePayLink()
+    },
+    '$route.query.currency' () {
       this.preparePayLink()
     },
     loggedInUser (value) {

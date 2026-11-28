@@ -10,12 +10,20 @@ import {
   isValidHiveAccount,
   lightningAddress,
   lightningAddressDomain,
+  lightningFeeBufferSats,
   lightningMemo,
+  lnurlCallbackUrl,
   normalizeAccount,
+  normalizeAmountUnit,
   normalizeFeePolicy,
+  normalizeLnurlPayInfo,
   parseLightningTarget,
+  parseLnurlInvoice,
   parseV4vappMemo,
+  payLinkAmount,
   quoteSatsPayment,
+  quoteSpendPayment,
+  satsRatesFromBridgeQuote,
   satsRatesFromPrices
 } from '../../src/services/lightning'
 
@@ -120,12 +128,77 @@ describe('Fees and quotes', () => {
       satsPerHbd: 1602.198869,
       policy: { conv_fee_percent: 0.029, conv_fee_sats: 50 }
     })
-    expect(quote).toMatchObject({ valid: true, amountSats: 1000, feeSats: 79, totalSats: 1079 })
-    expect(quote.hbd).toBeCloseTo(0.6734, 3)
-    expect(quote.hive).toBeCloseTo(18.34, 1)
+    expect(quote).toMatchObject({
+      valid: true,
+      amountSats: 1000,
+      bridgeFeeSats: 83,
+      bufferSats: 51,
+      feeSats: 134,
+      totalSats: 1134
+    })
+    expect(quote.hbd).toBeCloseTo(0.708, 3)
+    expect(quote.hive).toBeCloseTo(19.3, 1)
 
     expect(quoteSatsPayment({ amountSats: 49 }).valid).toBe(false)
     expect(quoteSatsPayment({ amountSats: 180001 }).valid).toBe(false)
+  })
+
+  it('treats a fixed HBD spend as the total including the fee', () => {
+    const quote = quoteSpendPayment({
+      spendAmount: 5,
+      asset: 'hbd',
+      satsPerHive: 58.829245,
+      satsPerHbd: 1602.198869,
+      policy: { conv_fee_percent: 0.029, conv_fee_sats: 50 }
+    })
+    expect(quote).toMatchObject({
+      valid: true,
+      spend: 5,
+      spendAsset: 'hbd',
+      totalSats: 8011,
+      bridgeFeeSats: 283,
+      bufferSats: 58,
+      feeSats: 341,
+      amountSats: 7670
+    })
+    expect(quote.hbd).toBeCloseTo(5, 3)
+    // The bridge fee is charged on the gross spend, and the routing buffer is
+    // held back from the remaining sats. Together they explain the invoice.
+    expect(quote.bridgeFeeSats + quote.bufferSats).toBe(quote.feeSats)
+    expect(quote.amountSats + quote.feeSats).toBe(quote.totalSats)
+  })
+
+  it('rounds a fixed spend to three decimals and enforces limits', () => {
+    const policy = { conv_fee_percent: 0.029, conv_fee_sats: 50 }
+    const rounded = quoteSpendPayment({
+      spendAmount: '1.23456',
+      asset: 'hive',
+      satsPerHive: 58.829245,
+      satsPerHbd: 1602,
+      policy
+    })
+    expect(rounded.spend).toBe(1.235)
+    expect(quoteSpendPayment({ spendAmount: 0.01, asset: 'hbd', satsPerHbd: 1602, policy }).valid).toBe(false)
+    expect(quoteSpendPayment({ spendAmount: 200, asset: 'hbd', satsPerHbd: 1602, policy }).valid).toBe(false)
+    expect(quoteSpendPayment({ spendAmount: 5, asset: 'hbd', satsPerHbd: null, policy }).valid).toBe(false)
+    expect(quoteSpendPayment({ spendAmount: 0, asset: 'hbd', satsPerHbd: 1602, policy }).valid).toBe(false)
+  })
+
+  it('reserves the bridge fee and routing buffer from a fixed spend', () => {
+    const quote = quoteSpendPayment({
+      spendAmount: 1.079,
+      asset: 'hbd',
+      satsPerHive: 58,
+      satsPerHbd: 1000,
+      policy: { conv_fee_percent: 0.029, conv_fee_sats: 50 }
+    })
+    expect(quote).toMatchObject({ valid: true, totalSats: 1079, feeSats: 133, amountSats: 946 })
+    expect(quote.bridgeFeeSats + quote.bufferSats).toBe(quote.feeSats)
+  })
+
+  it('reserves a routing buffer for fixed invoices', () => {
+    expect(lightningFeeBufferSats(1000)).toBe(51)
+    expect(lightningFeeBufferSats(0)).toBe(0)
   })
 
   it('derives sats rates from the site price feed', () => {
@@ -137,6 +210,32 @@ describe('Fees and quotes', () => {
     expect(rates.satsPerHive).toBeCloseTo(58.829245, 4)
     expect(rates.satsPerHbd).toBeCloseTo(1602.198869, 3)
     expect(rates.btcUsd).toBe(61704.005)
+  })
+})
+
+describe('Payment-link amounts', () => {
+  it('reads HBD, HIVE and sats amounts from a link', () => {
+    expect(payLinkAmount({ amount: '5', currency: 'hbd' })).toEqual({ amount: 5, unit: 'hbd' })
+    expect(payLinkAmount({ amount: '5', currency: 'HIVE' })).toEqual({ amount: 5, unit: 'hive' })
+    expect(payLinkAmount({ amount: '5000' })).toEqual({ amount: 5000, unit: 'sats' })
+    expect(payLinkAmount({ sats: '5000' })).toEqual({ amount: 5000, unit: 'sats' })
+    expect(payLinkAmount({ amount: '5', asset: 'hbd' })).toEqual({ amount: 5, unit: 'hbd' })
+    expect(payLinkAmount({ amount: '-1', currency: 'hbd' })).toEqual({ amount: null, unit: '' })
+    expect(payLinkAmount({ amount: 'nope' })).toEqual({ amount: null, unit: '' })
+    expect(payLinkAmount({})).toEqual({ amount: null, unit: '' })
+  })
+
+  it('normalises units and falls back safely', () => {
+    expect(normalizeAmountUnit('SAT')).toBe('sats')
+    expect(normalizeAmountUnit('HBD')).toBe('hbd')
+    expect(normalizeAmountUnit('hp')).toBe('hive')
+    expect(normalizeAmountUnit('usd', 'sats')).toBe('sats')
+  })
+
+  it('prefers the bridge rates and falls back to nulls', () => {
+    expect(satsRatesFromBridgeQuote({ v4vapp: { sats_Hive: 60, sats_HBD: 1600 } }))
+      .toEqual({ satsPerHive: 60, satsPerHbd: 1600 })
+    expect(satsRatesFromBridgeQuote({})).toEqual({ satsPerHive: null, satsPerHbd: null })
   })
 })
 
@@ -180,16 +279,61 @@ describe('v4vapp memos', () => {
 
   it('builds safe transfer memos and rejects testnet', () => {
     expect(lightningMemo(INVOICE_67_SATS)).toBe(INVOICE_67_SATS + ' #v4vapp')
-    expect(lightningMemo(INVOICE_67_SATS, { hbd: true })).toBe(INVOICE_67_SATS + ' #HBD #v4vapp')
-    expect(lightningMemo('alice@getalby.com')).toBe('alice@getalby.com #v4vapp')
-    expect(lightningMemo('lnurl1dp68gurn8ghj7')).toBe('lnurl1dp68gurn8ghj7 #v4vapp')
+    expect(lightningMemo('alice@getalby.com')).toBe('alice@getalby.com')
+    expect(lightningMemo('lnurl1dp68gurn8ghj7')).toBe('lnurl1dp68gurn8ghj7')
     expect(() => lightningMemo('lntb100u1abc')).toThrow()
     expect(() => lightningMemo('hello')).toThrow()
+  })
+
+  it('never puts app tags after an address that v4vapp forwards as a comment', () => {
+    // v4vapp splits the memo at the first space and sends the remainder as the
+    // LNURL comment. A provider that rejects it makes the bridge fall back to a
+    // keepsats deposit instead of paying the address.
+    for (const address of ['ausbitbank@bitrefill.me', 'alice@getalby.com', 'user+tag@sub.domain.com']) {
+      const memo = lightningMemo(address)
+      expect(memo).toBe(address)
+      expect(memo).not.toContain('#')
+      expect(memo).not.toContain(' ')
+    }
+    expect(lightningMemo('lnurl1dp68gurn8ghj7')).not.toContain('#')
   })
 
   it('formats sats consistently', () => {
     expect(formatSats(1234.5, 1)).toBe('1,234.5 sats')
     expect(formatSats(null)).toBe('—')
+  })
+})
+
+describe('Lightning address resolution helpers', () => {
+  const info = {
+    tag: 'payRequest',
+    callback: 'https://bitrefill.me/v1/lnurl_pay/abc/callback/ausbitbank',
+    minSendable: 1000,
+    maxSendable: 3343487000,
+    metadata: '[]'
+  }
+
+  it('normalises the LNURL-pay response to whole sats', () => {
+    expect(normalizeLnurlPayInfo(info)).toMatchObject({
+      callback: info.callback,
+      minSats: 1,
+      maxSats: 3343487,
+      commentAllowed: 0
+    })
+    expect(() => normalizeLnurlPayInfo({ ...info, tag: 'withdrawRequest' })).toThrow()
+    expect(() => normalizeLnurlPayInfo({ ...info, callback: 'not a url' })).toThrow()
+  })
+
+  it('builds a callback with the exact millisat amount and no comment', () => {
+    const url = new URL(lnurlCallbackUrl(info.callback, 14887))
+    expect(url.searchParams.get('amount')).toBe('14887000')
+    expect(url.searchParams.has('comment')).toBe(false)
+  })
+
+  it('reads the BOLT11 invoice from the callback proxy response', () => {
+    expect(parseLnurlInvoice({ pr: INVOICE_67_SATS })).toBe(INVOICE_67_SATS)
+    expect(parseLnurlInvoice({ payment_request: INVOICE_67_SATS })).toBe(INVOICE_67_SATS)
+    expect(() => parseLnurlInvoice({ pr: 'lntb100u1abc' })).toThrow()
   })
 })
 

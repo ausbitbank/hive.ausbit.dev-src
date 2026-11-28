@@ -96,6 +96,8 @@ Public, no auth:
 | `GET /v1/decode_lightning/?pay_req=...` | Decode BOLT11 (amount, expiry, description, destination) |
 | `GET /v1/lnurlp/bech32/{acct}` | LNURL/bech32/`lightning:` string for an account |
 | `GET /v1/lnurlp/qrcode/{acct}` | PNG QR for an account's Lightning address |
+| `POST /v1/lnurlp/proxy/` (`{anything}`) | Resolve any Lightning address/LNURL to its LNURL-pay info (verified live 2026-11-28) |
+| `GET /v1/lnurlp/proxy/callback/?callbackUrl=...` | Generate the BOLT11 invoice for that LNURL callback (verified live 2026-11-28) |
 | `GET /.well-known/lnurlp/{acct}` | LNURL-pay response (wallet-facing) |
 | `GET /v1/lnurlp/callback/{acct}?amount=msat` | Invoice for a wallet paying the address |
 | `GET /v2/v4vapp/account/cost` | Live Hive account creation cost in Hive/HBD/sats |
@@ -183,6 +185,13 @@ Notes:
   mode B can be added without a new signing stack.
 - `parent_id` links the notification/transfer back to the originating ledger
   operation; it is the only reliable correlation id the bridge exposes.
+- **Resolve addresses before queuing.** The bridge splits a memo at the first
+  space and sends the remainder as the LNURL comment. A provider that rejects the
+  comment makes the lookup fail; `follow_on_transfer` then treats the transfer as
+  a keepsats deposit (the notification still says the invoice was paid). Resolve
+  the address through `/v1/lnurlp/proxy/` + `/v1/lnurlp/proxy/callback/` and put
+  the returned BOLT11 invoice in the memo. A fixed invoice either pays or is
+  refunded, so a decode failure can no longer become a keepsats deposit.
 
 ### 2.4 Fee reality (important UX input)
 
@@ -192,7 +201,10 @@ Observed on chain:
 - 180,000 sats inbound → 2,960.375 HIVE, fee 5,270 sats (~2.9%).
 - 22 HBD → 35,151 sats gross / 34,082 net keepsats, fee 1,069 sats (~3.0%).
 - 1,000 sats outbound quote: 16.967 HIVE / 0.624 HBD mid-market; +79 sats fee
-  (2.9% + 50) → 1,079 sats all-in.
+  (2.9% + 50) → 1,079 sats all-in. v4v.app charges its percentage on the gross
+  and reserves a routing buffer (default 50 sats + 0.1%) before checking the
+  invoice, so the app overfunds to ~1,134 sats; the bridge returns the buffer
+  and any unused sats as change.
 
 Consequences for the UI:
 
@@ -350,8 +362,15 @@ LN invoice without an exchange, using the signing flow the site already has.
 3. Quote: `sats_to_hive` + live fee config → "costs ~19.1 HBD (incl. ~79 sat
    fee); any change is refunded".
 4. Choose asset: HBD (recommended) or HIVE. Show balance and remaining.
-5. Queue a `transfer` to `@v4vapp` with memo `<invoice> #v4vapp` (add `#HBD`
-   only if the asset is HBD and the flag is needed; the asset already says it).
+5. For a Lightning address, resolve it first: `POST /v1/lnurlp/proxy/` with
+   `{anything: address}`, then `GET /v1/lnurlp/proxy/callback/?callbackUrl=...`
+   with `amount` in msats, and queue the returned **BOLT11 invoice** as the memo.
+   This is the same path v4v.app's own frontend uses and removes the bridge's
+   second, settlement-time address lookup. For a pasted invoice, queue
+   `<invoice> #v4vapp`. Never append app tags after an address: v4vapp forwards
+   the rest of the memo to the provider as the LNURL comment, and a rejected
+   comment turns the payment into a keepsats deposit. The asset already says HBD
+   or HIVE, so `#HBD` is not needed.
 6. Sign with Keychain/SmartLock through the existing queue. Never auto-broadcast.
 7. Track: the outgoing transfer is the request; a `v4vapp_notification` or a
    refund transfer from `@v4vapp` is the result. Show pending until then.
@@ -366,14 +385,22 @@ LN invoice without an exchange, using the signing flow the site already has.
   truncated string.
 - Warn that memos and payments are public.
 - Do not include the invoice twice or add unescaped `|`.
+- Keep address/LNURL memos bare. v4vapp treats trailing text as the LNURL
+  comment; if the provider rejects it, the bridge silently deposits the transfer
+  as keepsats instead of paying. Prefer pasting the BOLT11 invoice when the
+  payment is for a specific order rather than a top-up to an address.
 
 **Memo builder:**
 
 ```js
-export function lightningMemo (invoice, { hbd = false } = {}) {
-  const clean = String(invoice).trim().replace(/\s+/g, '')
-  if (!/^lnbc[0-9a-z]+$/i.test(clean)) throw new Error('Not a mainnet BOLT11 invoice')
-  return [clean, hbd ? '#HBD' : '', '#v4vapp'].filter(Boolean).join(' ')
+export function lightningMemo (target, { appTag = '#v4vapp' } = {}) {
+  const clean = String(target).trim().replace(/^lightning:/i, '').replace(/\s+/g, '')
+  const parsed = parseLightningTarget(clean)
+  // Addresses and LNURLs must stay bare: v4vapp sends trailing text as the
+  // provider's LNURL comment and can fall back to a keepsats deposit.
+  if (parsed.type === 'address' || parsed.type === 'lnurl') return parsed.value
+  if (parsed.type !== 'invoice') throw new Error('Paste a mainnet BOLT11 invoice or a Lightning address.')
+  return [parsed.value, appTag].filter(Boolean).join(' ')
 }
 ```
 
@@ -857,7 +884,7 @@ this response alone — confirm on Hive.
 
 | Case | Result |
 | --- | --- |
-| 1,000 sats outbound | 16.967 HIVE / 0.624 HBD mid-market; fee 79 sats; all-in 1,079 sats |
+| 1,000 sats outbound | ~1,134 sats sent: 1,000 paid, 83 fee, 51 routing buffer returned |
 | 180,000 sats inbound | 2,960.375 HIVE; fee 5,270 sats (~2.9%) |
 | 77 sats inbound | 0.421 HIVE net; fee 52 sats; recipient nets ~25 sats |
 | 22 HBD keepsats deposit | 35,151 sats gross / 34,082 net; fee 1,069 sats (~3.0%) |
@@ -870,16 +897,19 @@ Always show gross, fee and net. Round fees up and label estimates as estimates.
 <bolt11>                       pay this invoice
 <bolt11> #HBD                   use the HBD rate (when sending HIVE)
 <bolt11> #paywithsats:5000      pay from keepsats, cap 5,000 sats
-<user@domain>                   resolve and pay a Lightning address
+<user@domain>                   resolve and pay a Lightning address (keep bare)
 <user@domain> #paywithsats:5000 same, from keepsats
 <acct> #paywithsats:5000        transfer 5,000 keepsats to acct
 #sats                           deposit the full amount as keepsats
 #balance_request [private]      query balance, optional encrypted reply
-#v4vapp                         app marker (stripped from public memos)
+#v4vapp                         app marker for invoices; never after an address
 ```
 
 Do not invent flags. Unknown flags can be silently treated as a keepsats
-deposit, which would be a costly surprise.
+deposit, which would be a costly surprise. Text after an address is not a flag:
+v4vapp forwards it to the provider as the LNURL comment. If the provider rejects
+the comment, the bridge fails the lookup and deposits the whole transfer as
+keepsats. Keep `<user@domain>` memos bare.
 
 ### E. User-facing copy suggestions
 

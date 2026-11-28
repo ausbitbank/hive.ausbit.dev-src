@@ -147,6 +147,22 @@ async function main () {
       String(json?.bech32 || 'missing bech32'))
   }
 
+  // Address -> invoice resolution used before queuing a Lightning address.
+  // Only the read-only info call: the callback proxy would create an invoice.
+  {
+    const { response, json } = await call('/v1/lnurlp/proxy/', {
+      method: 'POST',
+      body: { anything: 'brianoflondon@v4v.app' }
+    })
+    assert('POST /v1/lnurlp/proxy status', response.status === 200, String(response.status))
+    checkCors('POST /v1/lnurlp/proxy', response)
+    assert('LNURL proxy is a payRequest', json?.tag === 'payRequest',
+      String(json?.tag || 'missing tag'))
+    assert('LNURL proxy amount range',
+      isFinitePositive(json?.minSendable) && isFinitePositive(json?.maxSendable),
+      JSON.stringify({ minSendable: json?.minSendable, maxSendable: json?.maxSendable }))
+  }
+
   // Status polling uses POST because the r_hash is base64. Use an unknown hash
   // of the right size: this proves POST works without creating anything.
   {

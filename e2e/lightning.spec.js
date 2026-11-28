@@ -3,6 +3,49 @@ import { loginAs, readQueue, waitForApp } from './helpers'
 
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lV9W6QAAAABJRU5ErkJggg=='
 
+// A valid, non-expired BOLT11 for the mocked address callback. The E2E never
+// broadcasts it; the dialog only needs to decode the amount and expiry.
+const BECH32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
+function polymod (values) {
+  const gen = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]
+  let chk = 1
+  for (const value of values) {
+    const top = chk >> 25
+    chk = ((chk & 0x1ffffff) << 5) ^ value
+    for (let i = 0; i < 5; i++) if ((top >> i) & 1) chk ^= gen[i]
+  }
+  return chk
+}
+function hrpExpand (hrp) {
+  const out = []
+  for (const char of hrp) out.push(char.charCodeAt(0) >> 5)
+  out.push(0)
+  for (const char of hrp) out.push(char.charCodeAt(0) & 31)
+  return out
+}
+function toWords (value, count) {
+  const out = []
+  for (let i = count - 1; i >= 0; i--) out.push(Math.floor(value / (32 ** i)) % 32)
+  return out
+}
+function invoiceTag (tag, data) {
+  return [tag, (data.length >> 5) & 31, data.length & 31, ...data]
+}
+function makeInvoice (amountSats) {
+  // `n` is 100 msat, so 1,000 sats is lnbc10000n.
+  const hrp = 'lnbc' + Math.round((amountSats * 1000) / 100) + 'n'
+  const words = [
+    ...toWords(Math.floor(Date.now() / 1000), 7),
+    ...invoiceTag(6, toWords(315360000, 7)) // ten-year expiry
+  ]
+  const values = [...hrpExpand(hrp), ...words, 0, 0, 0, 0, 0, 0]
+  const mod = polymod(values) ^ 1
+  const checksum = []
+  for (let i = 0; i < 6; i++) checksum.push((mod >> (5 * (5 - i))) & 31)
+  return hrp + '1' + [...words, ...checksum].map(word => BECH32[word]).join('')
+}
+const ADDRESS_INVOICE = makeInvoice(1000)
+
 async function mockBridge (page, { paid = true } = {}) {
   await page.route('https://api.v4v.app/**', async route => {
     const url = route.request().url()
@@ -53,6 +96,18 @@ async function mockBridge (page, { paid = true } = {}) {
     if (url.includes('/v1/check_invoice')) {
       return json({ paid, settled: paid, state: paid ? 'SETTLED' : 'OPEN', expired: false })
     }
+    if (url.includes('/v1/lnurlp/proxy/callback/')) {
+      return json({ pr: ADDRESS_INVOICE, successAction: null, routes: [] })
+    }
+    if (url.includes('/v1/lnurlp/proxy/')) {
+      return json({
+        tag: 'payRequest',
+        callback: 'https://example.com/.well-known/lnurlp/alice-callback',
+        minSendable: 1000,
+        maxSendable: 3343487000,
+        metadata: '[]'
+      })
+    }
     if (url.includes('/v1/lnurlp/qrcode/')) {
       return route.fulfill({
         status: 200,
@@ -95,7 +150,7 @@ test.describe('Lightning bridge', () => {
     await pay.getByLabel('Lightning invoice or address').fill('alice@getalby.com')
     await pay.getByRole('button', { name: 'Review payment' }).click()
     await pay.locator('.lightning-pay__sats-input input').fill('1000')
-    await expect(pay.locator('.lightning-pay__summary-row--total strong')).toContainText('1,079 sats')
+    await expect(pay.locator('.lightning-pay__summary-row--total strong')).toContainText('1,134 sats')
     await expect(pay.locator('.lightning-pay__balance')).toContainText('HBD')
     await expect(pay.locator('.lightning-pay__balance')).not.toContainText('Not enough')
     await pay.getByRole('button', { name: 'Queue payment' }).click()
@@ -113,7 +168,7 @@ test.describe('Lightning bridge', () => {
     }).toEqual({
       to: 'v4vapp',
       amount: '0.673 HBD',
-      memo: 'alice@getalby.com #HBD #v4vapp',
+      memo: ADDRESS_INVOICE + ' #v4vapp',
       manualOnly: true
     })
 

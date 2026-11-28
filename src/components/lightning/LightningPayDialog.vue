@@ -21,8 +21,9 @@
       <q-card-section class="lightning-pay__body">
         <template v-if="step === 'input'">
           <p class="lightning-pay__lede">
-            Paste a mainnet BOLT11 invoice or a Lightning address (name@domain). The payment is
-            sent as HIVE or HBD to <strong>@v4vapp</strong>, which pays the invoice.
+            Paste a mainnet BOLT11 invoice to pay it, or a Lightning address (name@domain) to send
+            sats to that address. The payment is sent as HIVE or HBD to <strong>@v4vapp</strong>,
+            which pays the invoice or address.
           </p>
 
           <q-input
@@ -80,18 +81,60 @@
             </div>
 
             <div v-if="isAmountless" class="lightning-pay__sats-input">
+              <div class="lightning-pay__amount-head">
+                <span class="lightning-pay__amount-label">Amount</span>
+                <q-btn-toggle
+                  v-model="amountUnit"
+                  no-caps
+                  dense
+                  unelevated
+                  toggle-color="amber-9"
+                  toggle-text-color="black"
+                  text-color="blue-grey-4"
+                  :options="amountUnitOptions"
+                  aria-label="Choose the amount unit"
+                  @update:model-value="onUnitChange"
+                />
+              </div>
               <q-input
                 v-model="manualSats"
                 type="number"
-                min="1"
-                step="1"
+                min="0"
+                :step="amountUnit === 'sats' ? 1 : 'any'"
                 dense
                 outlined
-                label="Amount to send (sats)"
-                aria-label="Amount to send in sats"
+                :label="amountInputLabel"
+                :aria-label="amountInputLabel"
                 @update:model-value="onManualSats"
-              />
-              <div class="lightning-pay__presets" role="group" aria-label="Common sats amounts">
+              >
+                <template v-if="amountUnit !== 'sats'" #append>
+                  <q-btn
+                    flat
+                    dense
+                    no-caps
+                    color="amber-9"
+                    label="Use full balance"
+                    :disable="!assetBalance"
+                    @click="useFullBalance"
+                  />
+                </template>
+              </q-input>
+              <div v-if="amountUnit !== 'sats'" class="lightning-pay__spend-hint">
+                Liquid {{ amountUnit.toUpperCase() }}: <strong>{{ formatAsset(assetBalance) }}</strong>
+              </div>
+              <div v-if="amountUnit !== 'sats' && quote?.valid" class="lightning-pay__conversion">
+                <q-icon name="bolt" size="14px" aria-hidden="true" />
+                <span>
+                  {{ formatAsset(quote.spend) }} total = {{ formatSats(quote.amountSats) }} invoice
+                  + {{ formatSats(quote.bridgeFeeSats ?? quote.feeSats) }} fee
+                  + {{ formatSats(quote.bufferSats || 0) }} routing buffer (returned) at {{ rateLabel }}.
+                </span>
+              </div>
+              <div v-else-if="amountUnit !== 'sats' && amountError" class="lightning-pay__conversion lightning-pay__conversion--warn">
+                <q-icon name="info_outline" size="14px" aria-hidden="true" />
+                <span>{{ amountError }}</span>
+              </div>
+              <div v-if="amountUnit === 'sats'" class="lightning-pay__presets" role="group" aria-label="Common sats amounts">
                 <q-btn v-for="preset in presets" :key="preset" flat dense no-caps :label="preset.toLocaleString()" @click="setSats(preset)" />
               </div>
             </div>
@@ -102,10 +145,14 @@
             </div>
             <div class="lightning-pay__summary-row">
               <span>Bridge fee <small>({{ feePercentLabel }} + {{ formatSats(quote?.fixed || 0) }})</small></span>
-              <strong>{{ formatSats(quote?.feeSats || 0) }}</strong>
+              <strong>{{ formatSats(quote?.bridgeFeeSats ?? quote?.feeSats ?? 0) }}</strong>
+            </div>
+            <div v-if="quote?.bufferSats" class="lightning-pay__summary-row">
+              <span>Routing buffer <small>(returned as change)</small></span>
+              <strong>{{ formatSats(quote.bufferSats) }}</strong>
             </div>
             <div class="lightning-pay__summary-row lightning-pay__summary-row--total">
-              <span>Total sats leaving</span>
+              <span>Total sent</span>
               <strong>{{ formatSats(quote?.totalSats || 0) }}</strong>
             </div>
 
@@ -117,6 +164,17 @@
               <span>Invoice expiry</span>
               <p>{{ expiryLabel }}</p>
             </div>
+          </div>
+
+          <div v-if="isAddress" class="lightning-pay__hint lightning-pay__hint--warn">
+            <q-icon name="info_outline" size="15px" aria-hidden="true" />
+            <span>
+              An address payment sends sats to that address. Some addresses (for example a
+              Bitrefill address) top up an account balance rather than paying a specific invoice.
+              banksia.io resolves the address to a BOLT11 invoice before queuing, so v4vapp pays
+              that invoice instead of re-resolving the address. Paste the BOLT11 invoice instead
+              when you are paying for an order.
+            </span>
           </div>
 
           <div v-if="quoteError" class="lightning-pay__error" role="alert">
@@ -140,6 +198,7 @@
               toggle-text-color="black"
               text-color="blue-grey-4"
               :options="assetOptions"
+              :disable="assetLocked"
               :aria-label="'Choose the asset to spend'"
             />
             <div class="lightning-pay__balance">
@@ -155,7 +214,12 @@
 
           <div class="lightning-pay__warning">
             <q-icon name="warning_amber" size="16px" aria-hidden="true" />
-            <span>
+            <span v-if="isAddress">
+              This sends {{ asset }} to @v4vapp, which pays the BOLT11 invoice resolved from the
+              address. If the Lightning payment fails, the bridge refunds the deposit to this
+              account, minus its fee. Anyone can see the amount and memo on chain.
+            </span>
+            <span v-else>
               This sends {{ asset }} to @v4vapp. If the Lightning payment fails, the bridge refunds
               the deposit to this account, minus its fee. Anyone can see the amount and memo on chain.
             </span>
@@ -170,6 +234,7 @@
               text-color="black"
               icon="playlist_add"
               label="Queue payment"
+              :loading="busy"
               :disable="!canQueue"
               @click="queue"
             />
@@ -190,7 +255,7 @@
 
           <div class="lightning-pay__queued-details">
             <span>{{ formatSats(quote?.totalSats || 0) }} · {{ formatAsset(cost) }} to @v4vapp</span>
-            <span v-if="isAddress">{{ displayTarget }} · {{ formatSats(amountSats) }}</span>
+            <span v-if="isAddress">{{ displayTarget }} · {{ formatSats(amountSats) }}<template v-if="shortHash"> · {{ shortHash }}</template></span>
             <span v-else>Invoice {{ shortHash }}</span>
           </div>
 
@@ -210,17 +275,23 @@ import {
   ceilAmount,
   formatSats,
   lightningMemo,
+  normalizeAmountUnit,
   normalizeFeePolicy,
   parseLightningTarget,
   quoteSatsPayment,
+  quoteSpendPayment,
+  roundAmount,
+  satsRatesFromBridgeQuote,
   satsRatesFromPrices
 } from 'src/services/lightning'
 import {
   BRIDGE_STATES,
   bridgeFeePolicy,
+  getBridgeQuote,
   getBridgeState,
   getBridgeStatus,
-  getSatsToHive
+  getSatsToHive,
+  resolveLightningAddress
 } from 'src/services/v4vapp'
 
 export default {
@@ -231,7 +302,9 @@ export default {
     liquidHive: { type: Number, default: 0 },
     liquidHbd: { type: Number, default: 0 },
     initialInput: { type: String, default: '' },
-    initialSats: { type: Number, default: 0 }
+    initialSats: { type: Number, default: 0 },
+    initialAmount: { type: [Number, String], default: 0 },
+    initialCurrency: { type: String, default: '' }
   },
   emits: ['update:modelValue', 'queued'],
   data () {
@@ -241,6 +314,8 @@ export default {
       decoded: null,
       decodeError: '',
       manualSats: '',
+      amountUnit: 'sats',
+      rates: { satsPerHive: null, satsPerHbd: null },
       step: 'input',
       busy: false,
       quote: null,
@@ -258,12 +333,38 @@ export default {
     isAmountless () {
       return this.isAddress || (Boolean(this.decoded?.valid) && this.decoded?.hasAmount === false)
     },
+    amountUnitOptions () {
+      return [
+        { label: 'sats', value: 'sats' },
+        { label: 'HBD', value: 'hbd' },
+        { label: 'HIVE', value: 'hive' }
+      ]
+    },
+    amountInputLabel () {
+      if (this.amountUnit === 'hbd') return 'Total to spend (HBD)'
+      if (this.amountUnit === 'hive') return 'Total to spend (HIVE)'
+      return 'Amount to send (sats)'
+    },
+    assetLocked () {
+      return this.isAmountless && this.amountUnit !== 'sats'
+    },
+    rateLabel () {
+      const rate = this.amountUnit === 'hive' ? this.rates.satsPerHive : this.rates.satsPerHbd
+      return Number(rate) > 0 ? '1 ' + this.amountUnit.toUpperCase() + ' ≈ ' + Math.round(rate) + ' sats' : 'the live rate'
+    },
+    amountError () {
+      if (this.busy || this.amountUnit === 'sats' || !(Number(this.manualSats) > 0)) return ''
+      const rate = this.amountUnit === 'hive' ? this.rates.satsPerHive : this.rates.satsPerHbd
+      if (Number(rate) > 0) return ''
+      return 'Could not read a ' + this.amountUnit.toUpperCase() + ' price to convert the amount.'
+    },
     amountSats () {
-      if (this.isAmountless) {
+      if (!this.isAmountless) return Number(this.decoded?.amountSats) || 0
+      if (this.amountUnit === 'sats') {
         const value = Number(this.manualSats)
         return Number.isFinite(value) && value > 0 ? value : 0
       }
-      return Number(this.decoded?.amountSats) || 0
+      return Number(this.quote?.amountSats) || 0
     },
     expired () {
       return Boolean(this.decoded?.expired) || (this.decoded?.expiresAt && this.decoded.expiresAt <= Date.now())
@@ -284,11 +385,15 @@ export default {
     },
     cost () {
       if (!this.quote) return null
+      if (this.assetLocked) return roundAmount(this.quote.spend ?? this.manualSats, 3)
       const value = this.asset === 'HBD' ? this.quote.hbd : this.quote.hive
       return ceilAmount(value, 3)
     },
     balance () {
       return this.asset === 'HBD' ? Number(this.liquidHbd) || 0 : Number(this.liquidHive) || 0
+    },
+    assetBalance () {
+      return this.amountUnit === 'hive' ? Number(this.liquidHive) || 0 : Number(this.liquidHbd) || 0
     },
     insufficient () {
       return this.cost !== null && this.cost > this.balance
@@ -362,8 +467,13 @@ export default {
       if (this.input) this.$nextTick(() => this.review())
     },
     reset () {
+      const initialAmount = Number(this.initialAmount)
       this.input = this.initialInput || ''
-      this.manualSats = this.initialSats > 0 ? String(this.initialSats) : ''
+      this.amountUnit = normalizeAmountUnit(this.initialCurrency, 'sats')
+      this.manualSats = initialAmount > 0
+        ? String(initialAmount)
+        : (this.initialSats > 0 ? String(this.initialSats) : '')
+      this.rates = { satsPerHive: null, satsPerHbd: null }
       this.target = null
       this.decoded = null
       this.decodeError = ''
@@ -373,7 +483,7 @@ export default {
       this.quoteError = ''
       this.quoteSource = 'estimated'
       this.bridgeIssue = ''
-      this.asset = 'HBD'
+      this.asset = this.amountUnit === 'hive' ? 'HIVE' : 'HBD'
       if (this.quoteTimer) clearTimeout(this.quoteTimer)
     },
     onInput () {
@@ -381,6 +491,15 @@ export default {
       this.decoded = null
       this.target = null
       this.quote = null
+    },
+    onUnitChange () {
+      // Switching units must not reinterpret "1000 sats" as "1000 HBD".
+      this.manualSats = ''
+      this.quote = null
+      this.quoteError = ''
+      if (this.amountUnit === 'hive') this.asset = 'HIVE'
+      else if (this.amountUnit === 'hbd') this.asset = 'HBD'
+      if (this.quoteTimer) clearTimeout(this.quoteTimer)
     },
     onManualSats () {
       this.quote = null
@@ -392,6 +511,12 @@ export default {
     },
     setSats (value) {
       this.manualSats = value
+      this.onManualSats()
+    },
+    useFullBalance () {
+      const amount = roundAmount(this.assetBalance, 3)
+      if (!(amount > 0)) return
+      this.manualSats = String(amount)
       this.onManualSats()
     },
     async paste () {
@@ -456,8 +581,7 @@ export default {
       this.target = null
     },
     async loadQuote () {
-      const amount = this.amountSats
-      if (!amount) {
+      if (!this.amountSats && this.amountUnit === 'sats') {
         this.quote = null
         this.quoteError = ''
         return
@@ -465,21 +589,50 @@ export default {
       this.busy = true
       this.quoteError = ''
       try {
-        const [pricesResult, statusResult] = await Promise.allSettled([
+        const [pricesResult, statusResult, bridgeQuoteResult] = await Promise.allSettled([
           getHivePrices(),
-          getBridgeStatus()
+          getBridgeStatus(),
+          getBridgeQuote()
         ])
         const prices = pricesResult.status === 'fulfilled' ? pricesResult.value : {}
         const status = statusResult.status === 'fulfilled' ? statusResult.value : null
+        const bridgeQuote = bridgeQuoteResult.status === 'fulfilled' ? bridgeQuoteResult.value : null
         const policy = status ? bridgeFeePolicy(status) : normalizeFeePolicy({})
-        const rates = satsRatesFromPrices(prices)
-        let quote = quoteSatsPayment({
-          amountSats: amount,
-          satsPerHive: rates.satsPerHive,
-          satsPerHbd: rates.satsPerHbd,
-          policy,
-          source: 'estimated'
-        })
+        const marketRates = satsRatesFromPrices(prices)
+        const bridgeRates = satsRatesFromBridgeQuote(bridgeQuote)
+        const quoteRates = satsRatesFromPrices(bridgeQuote)
+        this.rates = {
+          satsPerHive: bridgeRates.satsPerHive ?? quoteRates.satsPerHive ?? marketRates.satsPerHive,
+          satsPerHbd: bridgeRates.satsPerHbd ?? quoteRates.satsPerHbd ?? marketRates.satsPerHbd
+        }
+        // For a HBD/HIVE amount the entered value is the total wallet debit,
+        // so the recipient invoice is only known after the fee is solved.
+        const exactSpend = this.isAmountless && this.amountUnit !== 'sats'
+        const amount = this.amountSats
+        if (!exactSpend && !amount) {
+          this.quote = null
+          this.quoteError = this.amountError || ''
+          return
+        }
+        let quote
+        if (exactSpend) {
+          quote = quoteSpendPayment({
+            spendAmount: this.manualSats,
+            asset: this.amountUnit,
+            satsPerHive: this.rates.satsPerHive,
+            satsPerHbd: this.rates.satsPerHbd,
+            policy,
+            source: 'estimated'
+          })
+        } else {
+          quote = quoteSatsPayment({
+            amountSats: amount,
+            satsPerHive: this.rates.satsPerHive,
+            satsPerHbd: this.rates.satsPerHbd,
+            policy,
+            source: 'estimated'
+          })
+        }
         if (!quote.valid) {
           this.quote = quote
           this.quoteError = quote.error
@@ -524,17 +677,35 @@ export default {
         this.busy = false
       }
     },
-    queue () {
+    async queue () {
       if (!this.canQueue) return
+      this.busy = true
+      this.quoteError = ''
       let memo
       try {
-        memo = lightningMemo(this.isAddress ? this.target.value : this.decoded.raw, {
-          hbd: this.asset === 'HBD'
-        })
+        let invoice = this.decoded?.raw
+        if (this.isAddress) {
+          // Resolve to a fixed invoice. If the bridge only sees the address it
+          // re-resolves it at settlement; a failed lookup there becomes a
+          // keepsats deposit. A BOLT11 invoice either pays or is refunded.
+          const resolved = await resolveLightningAddress(this.target.value, this.quote.amountSats)
+          const decoded = decodeBolt11(resolved.paymentRequest)
+          if (!decoded.valid) throw new Error(decoded.error)
+          if (decoded.expired) throw new Error('The address provider returned an expired invoice.')
+          if (!decoded.hasAmount) throw new Error('The address provider returned an invoice without an amount. Try again.')
+          if (decoded.amountSats > this.quote.amountSats + 1) {
+            throw new Error('The address provider returned a larger invoice than quoted. Try again.')
+          }
+          invoice = resolved.paymentRequest
+          this.decoded = { ...decoded, raw: invoice }
+        }
+        memo = lightningMemo(invoice)
       } catch (error) {
-        this.quoteError = error.message
+        this.quoteError = error?.message || 'Could not resolve this Lightning address.'
+        this.busy = false
         return
       }
+      this.busy = false
       this.$hiveStore.addToQueue([
         this.account,
         'active',
@@ -751,6 +922,43 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.lightning-pay__amount-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.lightning-pay__amount-label {
+  color: var(--c-text-faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lightning-pay__spend-hint {
+  color: var(--c-text-faint);
+  font-size: 0.68rem;
+}
+
+.lightning-pay__spend-hint strong {
+  color: var(--c-text-muted);
+}
+
+.lightning-pay__conversion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  color: var(--c-warning-soft);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.lightning-pay__conversion--warn {
+  color: var(--c-text-faint);
 }
 
 .lightning-pay__presets {

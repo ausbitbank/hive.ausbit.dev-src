@@ -21,7 +21,10 @@ import {
   V4VAPP_AUTH_SCOPE,
   invoiceStatus,
   lightningAddressQrUrl,
-  normalizeFeePolicy
+  lnurlCallbackUrl,
+  normalizeFeePolicy,
+  normalizeLnurlPayInfo,
+  parseLnurlInvoice
 } from './lightning'
 
 export { V4VAPP_API }
@@ -333,6 +336,68 @@ export async function decodeInvoiceRemote (invoice, { signal = null } = {}) {
   const value = String(invoice || '').trim().replace(/^lightning:/i, '')
   if (!value) return null
   return request('/v1/decode_lightning/?pay_req=' + encodeURIComponent(value), { signal })
+}
+
+// ---------------------------------------------------------------------------
+// Lightning address resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a Lightning address to a BOLT11 invoice through v4v.app's LNURL
+ * proxy. This is the same server-side path the bridge uses, so it works even
+ * when the address provider blocks browser CORS.
+ *
+ * The invoice is then sent in the Hive memo. Paying the address directly lets
+ * the bridge resolve it again at settlement; if that second lookup fails, the
+ * bridge converts the transfer to keepsats and still says the invoice was paid.
+ * A fixed BOLT11 invoice either pays or is refunded, so resolving first removes
+ * that failure mode.
+ */
+export async function getLnurlPayInfo (address, { signal = null } = {}) {
+  const anything = String(address || '').trim().replace(/^lightning:/i, '').toLowerCase()
+  if (!anything) throw new V4vappError('Choose a Lightning address.')
+  const data = await request('/v1/lnurlp/proxy/', {
+    method: 'POST',
+    body: { anything },
+    signal
+  })
+  try {
+    return normalizeLnurlPayInfo(data)
+  } catch (error) {
+    throw new V4vappError(error.message, { code: 'lnurl', detail: data, path: '/v1/lnurlp/proxy/' })
+  }
+}
+
+export async function getLnurlInvoice (callback, amountSats, { signal = null } = {}) {
+  let url
+  try {
+    url = lnurlCallbackUrl(callback, amountSats)
+  } catch (error) {
+    throw new V4vappError(error.message, { code: 'lnurl', path: '/v1/lnurlp/proxy/callback/' })
+  }
+  const data = await request('/v1/lnurlp/proxy/callback/?callbackUrl=' + encodeURIComponent(url), { signal })
+  try {
+    return parseLnurlInvoice(data)
+  } catch (error) {
+    throw new V4vappError(error.message, { code: 'lnurl', detail: data, path: '/v1/lnurlp/proxy/callback/' })
+  }
+}
+
+/** Address -> LNURL info -> BOLT11 invoice for exactly `amountSats`. */
+export async function resolveLightningAddress (address, amountSats, { signal = null } = {}) {
+  const amount = Math.round(Number(amountSats))
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new V4vappError('Enter an amount to send to the Lightning address.')
+  }
+  const info = await getLnurlPayInfo(address, { signal })
+  if (amount < info.minSats || amount > info.maxSats) {
+    throw new V4vappError(
+      'This Lightning address accepts ' + info.minSats.toLocaleString('en-US') +
+      '–' + info.maxSats.toLocaleString('en-US') + ' sats.'
+    )
+  }
+  const paymentRequest = await getLnurlInvoice(info.callback, amount, { signal })
+  return { ...info, amountSats: amount, paymentRequest }
 }
 
 // ---------------------------------------------------------------------------

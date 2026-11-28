@@ -59,7 +59,23 @@ test.describe('Lightning search and links', () => {
     await expect(pay).toBeVisible({ timeout: 30000 })
     await expect(pay.locator('.lightning-pay__invoice-value')).toContainText(ADDRESS)
     await expect(pay.getByRole('button', { name: 'Queue payment' })).toBeVisible()
-    await expect(pay.locator('.lightning-pay__summary-row--total')).toContainText('1,079 sats')
+    await expect(pay.locator('.lightning-pay__summary-row--total')).toContainText('1,134 sats')
+  })
+
+  test('spends an exact HBD amount from a payment link, fee included', async ({ page }) => {
+    test.setTimeout(120000)
+    await mockBridge(page)
+    await loginAs(page, 'brianoflondon')
+
+    await page.goto('/lightning?pay=' + encodeURIComponent(ADDRESS) + '&account=brianoflondon&amount=5&currency=hbd')
+    await waitForApp(page)
+    const pay = page.locator('.lightning-pay')
+    await expect(pay).toBeVisible({ timeout: 30000 })
+    await expect(pay.locator('.lightning-pay__conversion')).toContainText('5.000 HBD total')
+    await expect(pay.locator('.lightning-pay__conversion')).toContainText('7,670 sats invoice')
+    await expect(pay.locator('.lightning-pay__balance')).toContainText('5.000 HBD')
+    await expect(pay.locator('.lightning-pay__summary-row--total strong')).toContainText('8,011 sats')
+    await expect(pay.getByRole('button', { name: 'Queue payment' })).toBeVisible()
   })
 
   test('explains a payment link to a logged-out visitor', async ({ page }) => {
