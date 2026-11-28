@@ -3,6 +3,7 @@ import { persistQueue, readSettingsFor, scopedSessionKey, settingsStorageKey } f
 import { createQueueMeta, normalizeQueueAction, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
 import { queueAuthorityError } from '../../services/queueAuthority'
 import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
+import { resetTelemetry } from '../../services/telemetry'
 import { setImageProxyMode } from '../../services/imageProxy'
 
 function sessionKeyFor (state, base) {
@@ -19,6 +20,7 @@ export function updateLoggedInUser (username) {
   this.user.username = username
   SessionStorage.set('loggedInUser', username)
   if (previous !== username) this.user.settings = readSettingsFor(username)
+  if (previous !== username) resetTelemetry()
   if (previous !== username && previous) {
     // Do not carry one account's queue or community list into another account.
     // The queue is scoped to a single owner and may request active keys.
