@@ -32,7 +32,7 @@ function loadHiveTx () {
 }
 
 function loadSha256 () {
-  return (sha256Promise ||= import('@noble/hashes/sha256').then(module => module.sha256))
+  return (sha256Promise ||= import('@noble/hashes/sha2.js').then(module => module.sha256))
 }
 
 /**

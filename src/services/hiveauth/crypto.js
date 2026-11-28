@@ -5,7 +5,7 @@
 // Web Crypto has AES-CBC but not MD5, so MD5 comes from @noble/hashes. This is
 // deliberately a small adapter: the protocol only needs this one envelope.
 
-import { md5 } from '@noble/hashes/legacy'
+import { md5 } from '@noble/hashes/legacy.js'
 import { HiveAuthError } from './errors'
 
 const encoder = new TextEncoder()
