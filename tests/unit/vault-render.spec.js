@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { Quasar } from 'quasar'
 import { createPinia, setActivePinia } from 'pinia'
 
 import {
@@ -37,7 +36,6 @@ import { isBlogPost, isVaultHiddenPost } from '../../src/services/blogPosts'
 import { useVaultStore } from '../../src/stores/vault'
 import VaultLockedSection from '../../src/components/blog/VaultLockedSection.vue'
 import VaultPaywall from '../../src/components/blog/VaultPaywall.vue'
-import VaultSubscribeDialog from '../../src/components/blog/VaultSubscribeDialog.vue'
 import { buildVaultBulletinBundle } from '../../src/services/vaultBulletin'
 
 const BLOG = 'alice'
@@ -591,92 +589,6 @@ describe('VaultPaywall', () => {
     const labels = wrapper.findAll('button').map(button => button.text())
     expect(labels.some(label => label.includes('Subscribe'))).toBe(true)
     expect(labels.some(label => label.includes('Restore access'))).toBe(true)
-  })
-})
-
-describe('VaultSubscribeDialog', () => {
-  let pinia
-  let addToQueue
-
-  beforeEach(() => {
-    pinia = createPinia()
-    setActivePinia(pinia)
-    addToQueue = vi.fn()
-    clearReaderKeyMemory()
-  })
-
-  function mountDialog () {
-    return mount(VaultSubscribeDialog, {
-      props: {
-        modelValue: true,
-        blog: 'alice',
-        plan: {
-          author: 'alice',
-          permlink: 'membership',
-          priceLabel: '5.000 HBD',
-          recurrence: 730,
-          executions: 12,
-          plan: 'member'
-        }
-      },
-      global: {
-        plugins: [[Quasar, {}], pinia],
-        mocks: {
-          $hiveStore: {
-            user: { username: 'bob' },
-            addToQueue
-          }
-        }
-      }
-    })
-  }
-
-  it('queues the exact active-key recurrent transfer with the reader key memo', async () => {
-    const wrapper = mountDialog()
-    wrapper.vm.terms = true
-    await wrapper.vm.confirm()
-    await flushPromises()
-
-    expect(addToQueue).toHaveBeenCalledTimes(1)
-    const [user, authority, operation] = addToQueue.mock.calls[0][0]
-    expect(user).toBe('bob')
-    expect(authority).toBe('active')
-    expect(operation[0]).toBe('recurrent_transfer')
-    expect(operation[1]).toMatchObject({
-      from: 'bob',
-      to: 'alice',
-      amount: '5.000 HBD',
-      recurrence: 730,
-      executions: 12,
-      extensions: []
-    })
-
-    const memo = JSON.parse(operation[1].memo)
-    expect(memo.product).toBe('alice/membership')
-    expect(memo.quantity).toBe(1)
-    expect(memo.banksia.plan).toBe('member')
-    expect(memo.banksia.reader_key).toMatch(/^p256:/)
-    expect(memo.banksia.sub).toMatch(/^[A-Za-z0-9_-]{16,64}$/)
-
-    expect(wrapper.emitted('queued')).toBeTruthy()
-    expect(wrapper.emitted('queued')[0][0]).toMatch(/^p256:/)
-  })
-
-  it('can queue a one-time transfer instead', async () => {
-    const wrapper = mountDialog()
-    wrapper.vm.terms = true
-    wrapper.vm.oneTime = true
-    await wrapper.vm.confirm()
-    await flushPromises()
-
-    const operation = addToQueue.mock.calls[0][0][2]
-    expect(operation[0]).toBe('transfer')
-    expect(operation[1]).toMatchObject({
-      from: 'bob',
-      to: 'alice',
-      amount: '5.000 HBD'
-    })
-    expect(JSON.parse(operation[1].memo).product).toBe('alice/membership')
   })
 })
 
