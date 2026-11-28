@@ -174,7 +174,8 @@ principles that constrain it. Delivered work and its verification records live i
   [`docs/workstreams/W116-owner-authority.md`](workstreams/W116-owner-authority.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,362 tests across 248 files**, `bun run build`
-  succeeded, and the full Chromium suite passed **213 checks**. `bun run
+  succeeded, and the full Chromium suite passed **214 checks** (4 passed only
+  after a retry and are reported as flaky). `bun run
   perf:check` passed in an isolated worktree; the shared worktree's uncommitted
   Vault changes push the same routes slightly over budget. Four E2E checks hit a
   missing `dist` while a concurrent session rebuilt the shared worktree and all
