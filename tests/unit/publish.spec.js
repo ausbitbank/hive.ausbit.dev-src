@@ -408,6 +408,26 @@ describe('publish checklist', () => {
     expect(canPublish({ title: '', body: '' })).toBe(false)
   })
 
+  it('does not pass a collection-only draft with no real category', () => {
+    const items = publishChecklist({
+      ...draft,
+      community: '',
+      tags: [],
+      collection: true
+    }, { username: 'alice' })
+    expect(checklistErrors(items).map(item => item.id)).toContain('tags')
+  })
+
+  it('warns that edits keep the original payout settings', () => {
+    const items = publishChecklist({
+      ...draft,
+      editing: { author: 'alice', permlink: 'existing', parentAuthor: '', parentPermlink: 'hive-174578' },
+      beneficiaries: [{ account: 'bob', weight: 500 }]
+    }, { username: 'alice' })
+    expect(items.find(item => item.id === 'beneficiaries').status).toBe('warn')
+    expect(items.find(item => item.id === 'rewards').status).toBe('warn')
+  })
+
   it('passes a complete draft and explains authorities and beneficiaries', () => {
     const items = publishChecklist(draft, { username: 'alice' })
     expect(checklistErrors(items)).toEqual([])

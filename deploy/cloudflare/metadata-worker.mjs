@@ -328,7 +328,7 @@ function proxiedImage (url, width = 800) {
   return 'https://images.hive.blog/' + width + 'x0/' + clean
 }
 
-async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', rss = '', fallbackImage = '', post = null } = {}) {
+async function postMetadata (author, permlink, { origin = 'https://banksia.io', path = '', siteName = '', rss = '', fallbackImage = '', post = null, noindex = false } = {}) {
   const row = post || await rpc('bridge.get_post', { author, permlink, observer: '' })
   if (!row || !row.author) return null
   let metadata
@@ -356,6 +356,7 @@ async function postMetadata (author, permlink, { origin = 'https://banksia.io', 
     origin,
     siteName,
     rss,
+    noindex,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Article',
@@ -632,6 +633,28 @@ async function blogMetadata (url, tenant) {
 
   const post = await rpc('bridge.get_post', { author, permlink, observer: '' })
   if (!post || !post.author) return null
+  // Match the SPA's blog filter: top-level posts only, no Vault plumbing or
+  // products, and the author must be the owner, a curated contributor or the
+  // configured community. Otherwise /@someone/anything would advertise itself
+  // as this blog's canonical article.
+  if (post.parent_author || Number(post.depth || 0) !== 0) return null
+  let postMeta
+  try {
+    postMeta = typeof post.json_metadata === 'string' ? JSON.parse(post.json_metadata) : (post.json_metadata || {})
+  } catch {
+    postMeta = {}
+  }
+  if (!postMeta || typeof postMeta !== 'object' || Array.isArray(postMeta)) postMeta = {}
+  if (postMeta.banksia_vault_container === true) return null
+  if (String(postMeta.content_type || '').toLowerCase() === 'product') return null
+  const postAuthor = String(post.author || '').toLowerCase()
+  const allowedAuthors = (Array.isArray(settings.authors) ? settings.authors : [])
+    .map(name => String(name || '').toLowerCase())
+  const community = String(settings.community || '').toLowerCase()
+  const inCommunity = Boolean(community) &&
+    [post.community, post.category].some(value => String(value || '').toLowerCase() === community)
+  if (postAuthor !== tenant.account && !allowedAuthors.includes(postAuthor) && !inCommunity) return null
+
   const canonicalPath = blogPostPathFor(post.permlink, post.author, tenant.account)
   return postMetadata(post.author, post.permlink, {
     origin,
@@ -639,7 +662,8 @@ async function blogMetadata (url, tenant) {
     siteName: title,
     rss: origin + '/rss.xml',
     fallbackImage: customOg || fallbackImage,
-    post
+    post,
+    noindex: !claimed
   })
 }
 
@@ -667,6 +691,8 @@ async function blogRss (url, tenant) {
   ])
   const read = readBlogSettings(account || { name: tenant.account })
   const settings = read.settings
+  // Unclaimed blogs are noindex previews; do not advertise a feed.
+  if (!read.claimed) return new Response('Unclaimed blog', { status: 404 })
   const profileMeta = blogProfileMeta(profile, tenant.account)
   const posts = await blogPostRows(tenant, settings)
   const xml = buildBlogRss({
@@ -690,6 +716,7 @@ async function blogRss (url, tenant) {
 async function blogSitemap (url, tenant) {
   const account = await getAccount(tenant.account)
   const read = readBlogSettings(account || { name: tenant.account })
+  if (!read.claimed) return new Response('Unclaimed blog', { status: 404 })
   const posts = blogFeedPosts(await blogPostRows(tenant, read.settings, 20), 20)
   const origin = 'https://' + url.hostname
   const entries = [
@@ -826,8 +853,11 @@ async function handleBlog (request, tenant) {
   if (url.pathname === '/robots.txt') {
     return blogRobots(url, tenant).catch(() => fetchApexAsset(request, url))
   }
-  // Assets are shared with the main app and never need metadata.
-  if (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname)) {
+  // Assets are shared with the main app and never need metadata. Blog page
+  // routes are exempt so a permlink containing a dot (or /p/<permlink>) still
+  // resolves as a post instead of being proxied as a file.
+  const blogPagePath = /^\/(?:p|@|shop)\//.test(url.pathname)
+  if (!blogPagePath && (/^\/(?:assets|statics)\//.test(url.pathname) || /\.(?:js|mjs|css|map|json|txt|xml|webmanifest|png|jpe?g|webp|gif|svg|ico|woff2?|ttf|eot|mp4|webm|pdf)$/i.test(url.pathname))) {
     return fetchApexAsset(request, url)
   }
 

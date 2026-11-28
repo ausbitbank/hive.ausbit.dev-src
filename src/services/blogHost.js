@@ -24,7 +24,7 @@ const HOSTNAME_RE = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a
 // A permlink that is also a fixed blog route needs the /p/ fallback.
 const BLOG_ROUTE_SLUGS = new Set([
   'about', 'contact', 'p', 'settings', 'shop', 'portfolio',
-  'rss.xml', 'sitemap.xml', 'robots.txt',
+  'rss', 'rss.xml', 'sitemap.xml', 'robots.txt', 'csp-report',
   'manifest.webmanifest', 'sw.js', 'assets', 'statics'
 ])
 
@@ -150,7 +150,9 @@ export function blogPostPathFor (permlink, author = '', owner = '') {
   if (postAuthor && blogOwner && postAuthor !== blogOwner) {
     return '/@' + postAuthor + '/' + value
   }
-  return BLOG_ROUTE_SLUGS.has(value.toLowerCase()) ? '/p/' + value : '/' + value
+  return BLOG_ROUTE_SLUGS.has(value.toLowerCase()) || value.includes('.')
+    ? '/p/' + value
+    : '/' + value
 }
 
 /** A collision-proof fallback path for a permlink that is also a route name. */

@@ -107,6 +107,8 @@ describe('blog URLs', () => {
     expect(blogPostPathFor('about', 'alice', 'alice')).toBe('/p/about')
     expect(blogPostPathFor('shop', 'alice', 'alice')).toBe('/p/shop')
     expect(blogPostPathFor('portfolio', 'alice', 'alice')).toBe('/p/portfolio')
+    expect(blogPostPathFor('rss', 'alice', 'alice')).toBe('/p/rss')
+    expect(blogPostPathFor('report.pdf', 'alice', 'alice')).toBe('/p/report.pdf')
     expect(blogPostFallbackPath('about')).toBe('/p/about')
     expect(blogPostUrl('alice', 'my-post')).toBe('https://alice.banksia.io/my-post')
   })

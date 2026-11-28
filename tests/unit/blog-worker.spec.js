@@ -17,7 +17,8 @@ const ACCOUNT = {  name: 'alice',
         version: 1,
         claimed: true,
         title: 'Alice writes',
-        description: 'Notes from the garden.'
+        description: 'Notes from the garden.',
+        authors: ['bob']
       }
     }
   })
@@ -267,6 +268,32 @@ describe('blog host metadata', () => {
     expect(html).toContain('name="robots" content="noindex, follow"')
     expect(html).not.toContain('rel="canonical"')
     expect(html).toContain('<title>Alice — Hive blog</title>')
+  })
+
+  it('keeps an unclaimed post noindex and does not advertise its feed or sitemap', async () => {
+    stubNetwork({ account: UNCLAIMED_ACCOUNT })
+    const html = await (await worker.fetch(blogRequest('/a-post'))).text()
+    expect(html).toContain('name="robots" content="noindex, follow"')
+    expect(html).not.toContain('rel="canonical" href="https://alice.banksia.io/a-post"')
+    expect((await worker.fetch(blogRequest('/rss.xml'))).status).toBe(404)
+    expect((await worker.fetch(blogRequest('/sitemap.xml'))).status).toBe(404)
+  })
+
+  it('does not canonicalise a contributor the blog has not curated', async () => {
+    stubNetwork({ post: { ...POST, author: 'carol', permlink: 'guest' } })
+    const html = await (await worker.fetch(blogRequest('/@carol/guest'))).text()
+    expect(html).not.toContain('rel="canonical" href="https://alice.banksia.io/@carol/guest"')
+    expect(html).not.toContain('"@type":"Article"')
+  })
+
+  it('uses the /p fallback for reserved and dotted permlinks', async () => {
+    stubNetwork({ post: { ...POST, permlink: 'rss' } })
+    const rssPost = await (await worker.fetch(blogRequest('/p/rss'))).text()
+    expect(rssPost).toContain('rel="canonical" href="https://alice.banksia.io/p/rss"')
+
+    stubNetwork({ post: { ...POST, permlink: 'report.pdf' } })
+    const dotted = await (await worker.fetch(blogRequest('/p/report.pdf'))).text()
+    expect(dotted).toContain('rel="canonical" href="https://alice.banksia.io/p/report.pdf"')
   })
 
   it('drops the apex dashboard snapshot from the blog shell', async () => {

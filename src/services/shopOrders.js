@@ -200,6 +200,9 @@ export function orderFromHistoryRow (row, account) {
 
   const parsedMemo = parsePurchaseMemo(body.memo)
   if (!parsedMemo) return null
+  // The recipient is the seller: a memo naming a different author must not
+  // create a purchase/sale row in this account's history.
+  if (parsedMemo.product.author !== to) return null
 
   const recurring = opName === 'recurrent_transfer'
   const recurrence = Number(body.recurrence)
@@ -271,6 +274,7 @@ export function subscriptionFromRecurrent (row) {
   const memo = typeof row.memo === 'string' ? row.memo : ''
   const parsedMemo = parsePurchaseMemo(memo)
   if (!parsedMemo) return null
+  if (parsedMemo.product.author !== to) return null
 
   const recurrence = Number(row.recurrence)
   if (!Number.isFinite(recurrence) || recurrence <= 0) return null

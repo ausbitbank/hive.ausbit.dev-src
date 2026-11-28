@@ -57,6 +57,15 @@ describe('RSS helpers', () => {
     const posts = blogFeedPosts(POSTS, 10)
     expect(posts.map(post => post.permlink)).toEqual(['newer', 'older'])
   })
+
+  it('keeps Vault containers and HOM products out of feeds', () => {
+    const posts = blogFeedPosts([
+      { author: 'alice', permlink: 'post', title: 'Post', created: '2026-11-20T10:00:00', json_metadata: '{}' },
+      { author: 'alice', permlink: 'vault', title: 'Vault', created: '2026-11-21T10:00:00', json_metadata: '{"banksia_vault_container":true}' },
+      { author: 'alice', permlink: 'product', title: 'Product', created: '2026-11-22T10:00:00', json_metadata: '{"content_type":"product"}' }
+    ], 10)
+    expect(posts.map(post => post.permlink)).toEqual(['post'])
+  })
 })
 
 describe('buildBlogRss', () => {

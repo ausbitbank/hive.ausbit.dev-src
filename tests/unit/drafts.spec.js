@@ -18,6 +18,7 @@ import {
   normalizeTag,
   normalizeTags,
   parseDraftExport,
+  pickInitialDraft,
   readDraftHistory,
   readDraftState,
   readDrafts,
@@ -29,6 +30,7 @@ import {
   sortDrafts,
   togglePinnedDraftId,
   upsertDraft,
+  visibleDraftsFor,
   writeDrafts,
   writePinnedDraftIds
 } from '../../src/services/drafts'
@@ -168,6 +170,20 @@ describe('draft normalization', () => {
   })
 })
 
+describe('draft ownership selection', () => {
+  it('never selects another account draft by id or newest position', () => {
+    const drafts = [
+      createDraft({ id: 'alice-new', owner: 'alice', title: 'Alice' }, 3000),
+      createDraft({ id: 'bob-old', owner: 'bob', title: 'Bob' }, 1000),
+      createDraft({ id: 'legacy', owner: null, title: 'Legacy' }, 500)
+    ]
+    const visible = visibleDraftsFor(drafts, 'bob')
+    expect(visible.map(draft => draft.id)).toEqual(['bob-old', 'legacy'])
+    expect(pickInitialDraft(drafts, 'bob', 'alice-new', { id: 'blank' }).id).toBe('bob-old')
+    expect(pickInitialDraft(drafts, 'bob', 'bob-old', { id: 'blank' }).id).toBe('bob-old')
+  })
+})
+
 describe('draft storage', () => {
   it('round-trips drafts through raw and Quasar-style storage', () => {
     for (const storage of [memoryStorage(), quasarStorage()]) {
@@ -234,6 +250,16 @@ describe('draft history', () => {
     expect(restored.owner).toBe('alice')
     expect(restored.title).toBe('Old title')
     expect(restored.body).toBe('Old body')
+  })
+
+  it('ignores a history storage failure instead of breaking autosave', () => {
+    const storage = {
+      getItem () { throw new Error('blocked') },
+      setItem () { throw new Error('QuotaExceededError') }
+    }
+    const previous = createDraft({ id: 'draft-1', title: 'Old', body: 'Body' }, 1000)
+    expect(() => appendDraftHistory(storage, previous, { now: 2000, force: true })).not.toThrow()
+    expect(readDraftHistory(storage)).toEqual({})
   })
 
   it('removes history for a specific draft', () => {

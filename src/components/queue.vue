@@ -539,6 +539,13 @@ export default {
           result = await keychain(window, 'requestBroadcast', user, expandQueueOperation(operation, user), keyType)
           return this.normalizeKeychainResult(result)
         }
+        if (broadcastMode === 'raw') {
+          // Edits, replies and comments without comment options go through
+          // requestBroadcast. Expand the queue marker so a reply's separate
+          // comment_options operation is not dropped.
+          result = await keychain(window, 'requestBroadcast', user, expandQueueOperation(operation, user), keyType)
+          return this.normalizeKeychainResult(result)
+        }
         // Keychain parses this string and hands it to hive-tx, which cannot
         // serialise a comment_options operation without `extensions`. Always
         // send the array, even when there are no beneficiaries.
@@ -555,25 +562,18 @@ export default {
         delete operation[1]._edit
         delete operation[1]._reblog
 
-        if (broadcastMode === 'raw') {
-          // Edits, replies and comments without comment options (Vault product
-          // and container) go through requestBroadcast. requestPost appends
-          // post-only defaults and returns "incomplete" when options are absent.
-          result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
-        } else {
-          result = await keychain(
-            window,
-            'requestPost',
-            user,
-            operation[1].title,
-            operation[1].body,
-            operation[1].parent_permlink,
-            operation[1].parent_author,
-            postMetadataArgument(operation[1].json_metadata),
-            operation[1].permlink,
-            commentOptions ? JSON.stringify(commentOptions) : null
-          )
-        }
+        result = await keychain(
+          window,
+          'requestPost',
+          user,
+          operation[1].title,
+          operation[1].body,
+          operation[1].parent_permlink,
+          operation[1].parent_author,
+          postMetadataArgument(operation[1].json_metadata),
+          operation[1].permlink,
+          commentOptions ? JSON.stringify(commentOptions) : null
+        )
       } else {
         result = await keychain(window, 'requestBroadcast', user, [operation], keyType)
       }

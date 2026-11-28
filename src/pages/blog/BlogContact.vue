@@ -147,6 +147,11 @@ export default {
   mounted () {
     this.updateMeta()
   },
+  watch: {
+    blogTitle () { this.updateMeta() },
+    'blog.claimed' () { this.updateMeta() },
+    'blog.settings' () { this.updateMeta() }
+  },
   methods: {
     updateMeta () {
       if (typeof window === 'undefined') return

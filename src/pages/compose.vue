@@ -3603,6 +3603,7 @@ import {
   normalizeTag,
   normalizeTags,
   parseDraftExport,
+  pickInitialDraft,
   readDraftHistory,
   readDrafts,
   readPinnedDraftIds,
@@ -3612,6 +3613,7 @@ import {
   serializeDraftExport,
   togglePinnedDraftId,
   upsertDraft,
+  visibleDraftsFor,
   writePinnedDraftIds,
   writeDrafts
 } from 'src/services/drafts'
@@ -3675,6 +3677,7 @@ import {
   premiumCompanionQueueItems,
   publishChecklist,
   readCrossPostMetadata,
+  resolveCategory,
   resolvedTags,
   stripManagedMetadata
 } from 'src/services/publish'
@@ -4220,7 +4223,7 @@ export default {
           ' · cap ' + draft.rewards.maxAcceptedPayout)
       const rows = [
         { label: 'Title', value: draft.title.trim() || 'Untitled' },
-        { label: 'Destination', value: draft.community ? '#' + draft.community : (tags[0] ? '#' + tags[0] : 'None') },
+        { label: 'Destination', value: draft.community ? '#' + draft.community : (resolveCategory(draft) ? '#' + resolveCategory(draft) : 'None') },
         { label: 'Tags', value: tags.length ? tags.map(tag => '#' + tag).join(' ') : 'None' },
         { label: 'Cover', value: this.coverImage ? (this.coverIsCustom ? 'Custom image' : 'First body image') : 'No image' },
         { label: 'Description', value: draft.description || '(auto from the opening paragraph)' },
@@ -4330,8 +4333,7 @@ export default {
       return Boolean(this.draft && /^hive-\d+$/.test(String(this.draft.community || '')))
     },
     visibleDrafts () {
-      if (!this.loggedInUser) return this.drafts
-      return this.drafts.filter(item => !item.owner || item.owner === this.loggedInUser)
+      return visibleDraftsFor(this.drafts, this.loggedInUser)
     },
     filteredDrafts () {
       const query = this.draftSearch.trim().toLowerCase()
@@ -4445,6 +4447,15 @@ export default {
     },
     loggedInUser (value, previous) {
       if (value === previous) return
+      // Do not leave another account's active draft in the editor after a
+      // login switch. The previous draft stays in storage under its owner.
+      if (this.draft && this.draft.owner && this.draft.owner !== (value || '')) {
+        const initial = value
+          ? pickInitialDraft(this.drafts, value, '', this.blankDraft())
+          : this.blankDraft()
+        this.setActiveDraft(initial)
+        this.$router.replace({ name: 'compose', params: initial.id ? { draftId: initial.id } : {} }).catch(() => {})
+      }
       this.communityLoadedFor = null
       this.loadCommunitySubscriptions()
       this.loadUploadHistory()
@@ -5036,7 +5047,11 @@ export default {
         this.drafts = next
         const active = this.draft ? next.find(item => item.id === this.draft.id) : null
         if (this.draft && !active) {
-          this.setActiveDraft(next[0] || this.blankDraft())
+          if (this.hasUnsavedDraft()) {
+            this.$q.notify({ message: 'Drafts changed in another tab', caption: 'Your unsaved edits were kept.' })
+          } else {
+            this.setActiveDraft(this.visibleDrafts[0] || this.blankDraft())
+          }
         } else if (active && this.snapshotDraft(this.draft) === this.lastSavedSnapshot) {
           this.setActiveDraft(active)
         } else if (active) {
@@ -5889,8 +5904,7 @@ export default {
         return
       }
       const requested = this.$route.params.draftId
-      const found = requested ? this.drafts.find(item => item.id === requested) : null
-      const initial = found || this.drafts[0] || this.blankDraft()
+      const initial = pickInitialDraft(this.drafts, this.loggedInUser, requested, this.blankDraft())
       this.setActiveDraft(initial)
     },
     /**
@@ -5901,12 +5915,12 @@ export default {
       const parsed = parseHivePostUrl(this.$route.query.edit)
       if (!parsed) {
         this.$q.notify({ type: 'negative', message: 'That edit link is not a Hive post.' })
-        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+        this.setActiveDraft(this.visibleDrafts[0] || this.blankDraft())
         return
       }
       if (this.loggedInUser !== parsed.author) {
         this.$q.notify({ type: 'negative', message: 'You can only edit your own posts.', caption: 'Sign in as @' + parsed.author + ' first.' })
-        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+        this.setActiveDraft(this.visibleDrafts[0] || this.blankDraft())
         return
       }
 
@@ -5960,7 +5974,7 @@ export default {
       } catch (error) {
         console.error('Failed to load post for editing', error)
         this.$q.notify({ type: 'negative', message: 'Could not load that post', caption: error.message })
-        this.setActiveDraft(this.drafts[0] || this.blankDraft())
+        this.setActiveDraft(this.visibleDrafts[0] || this.blankDraft())
       } finally {
         this.editingLoading = false
       }
@@ -6044,6 +6058,17 @@ export default {
     },
     saveDraft ({ silent = false } = {}) {
       if (!this.draft || !draftHasContent(this.draft)) return false
+      // Never take ownership of another account's local draft. A login switch
+      // resets the editor, so this is a final guard against a stale writer.
+      if (this.draft.owner && this.loggedInUser && this.draft.owner !== this.loggedInUser) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'This draft belongs to @' + this.draft.owner + '.',
+          caption: 'Switch back to that account or start a new draft.',
+          timeout: 6000
+        })
+        return false
+      }
       const now = Date.now()
       const saved = normalizeDraft({
         ...this.draft,
@@ -6115,17 +6140,17 @@ export default {
     },
     startNewDraft () {
       if (this.draft && draftHasContent(this.draft) && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
-        this.saveDraft({ silent: true })
+        if (!this.saveDraft({ silent: true })) return
       }
       this.draftView = 'active'
       this.setActiveDraft(this.blankDraft())
       this.$router.replace({ name: 'compose', params: {} }).catch(() => {})
     },
     selectDraft (id) {
-      const found = this.drafts.find(item => item.id === id)
+      const found = this.visibleDrafts.find(item => item.id === id)
       if (!found) return
       if (this.draft && this.snapshotDraft(this.draft) !== this.lastSavedSnapshot) {
-        this.saveDraft({ silent: true })
+        if (!this.saveDraft({ silent: true })) return
         const refreshed = this.drafts.find(item => item.id === id) || found
         this.setActiveDraft(refreshed)
       } else {
@@ -6149,8 +6174,8 @@ export default {
       writePinnedDraftIds(LocalStorage, this.loggedInUser, this.pinnedDraftIds)
       this.refreshStorageUsage()
       if (this.draft && this.draft.id === target.id) {
-        this.setActiveDraft(this.drafts[0] || this.blankDraft())
-        this.$router.replace({ name: 'compose', params: this.drafts[0] ? { draftId: this.drafts[0].id } : {} }).catch(() => {})
+        this.setActiveDraft(this.visibleDrafts[0] || this.blankDraft())
+        this.$router.replace({ name: 'compose', params: this.visibleDrafts[0] ? { draftId: this.visibleDrafts[0].id } : {} }).catch(() => {})
       }
       this.$q.notify({ message: 'Draft discarded' })
     },
@@ -6534,6 +6559,8 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Import failed', caption: parsed.error })
           return
         }
+        // Persist the active draft first; importing replaces the editor.
+        if (this.hasUnsavedDraft() && !this.saveDraft({ silent: true })) return
         const merged = mergeImportedDrafts(this.drafts, parsed.drafts, { owner: this.loggedInUser })
         this.drafts = merged.drafts
         if (!writeDrafts(LocalStorage, this.drafts)) {

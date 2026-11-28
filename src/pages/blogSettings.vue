@@ -1368,7 +1368,8 @@ export default {
       this.$hiveStore.addToQueue([this.accountName, 'posting', operation])
     },
     submit () {
-      if (!this.canEdit || !this.account) return      this.errors = []
+      if (!this.canEdit || !this.account) return
+      this.errors = []
       this.queued = false
       this.saving = true
       try {

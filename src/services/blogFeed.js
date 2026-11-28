@@ -81,10 +81,26 @@ function isTopLevel (post) {
   return Boolean(post && post.author && post.permlink && !post.parent_author && Number(post.depth || 0) === 0)
 }
 
+/** Vault containers and HOM products are plumbing, never feed content. */
+function isHiddenFeedPost (post) {
+  let metadata = post && post.json_metadata
+  if (typeof metadata === 'string') {
+    try {
+      metadata = JSON.parse(metadata)
+    } catch {
+      metadata = null
+    }
+  }
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return false
+  return metadata.banksia_vault_container === true ||
+    String(metadata.content_type || '').toLowerCase() === 'product'
+}
+
 export function blogFeedPosts (posts, limit = 20) {
   const seen = new Set()
   return (Array.isArray(posts) ? posts : [])
     .filter(isTopLevel)
+    .filter(post => !isHiddenFeedPost(post))
     .filter(post => {
       const key = String(post.author).toLowerCase() + '/' + String(post.permlink).toLowerCase()
       if (seen.has(key)) return false

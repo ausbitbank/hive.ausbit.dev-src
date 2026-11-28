@@ -176,7 +176,12 @@ describe('history classification', () => {
   })
 
   it('treats an incoming product transfer as a sale', () => {
-    const order = orderFromHistoryRow(historyRow({ from: 'someone', to: 'shop', amount: '9.500 HIVE' }), 'shop')
+    const order = orderFromHistoryRow(historyRow({
+      from: 'someone',
+      to: 'shop',
+      amount: '9.500 HIVE',
+      memo: '{"product":"shop/managed-hosting","quantity":1}'
+    }), 'shop')
     expect(order).toMatchObject({
       kind: 'sale',
       direction: 'in',
@@ -201,6 +206,7 @@ describe('history classification', () => {
     expect(orderFromHistoryRow(historyRow({ memo: 'thanks!' }), 'buyer')).toBeNull()
     expect(orderFromHistoryRow(historyRow({ memo: '{"product":"alice/managed-hosting"}' }), 'buyer')).toBeNull()
     expect(orderFromHistoryRow(historyRow({ from: 'a', to: 'b' }), 'buyer')).toBeNull()
+    expect(orderFromHistoryRow(historyRow({ to: 'shop' }), 'shop')).toBeNull()
     expect(orderFromHistoryRow(historyRow({ amount: '0.000 HBD' }), 'buyer')).toBeNull()
     expect(orderFromHistoryRow(historyRow({ amount: '25.000 USD' }), 'buyer')).toBeNull()
     expect(orderFromHistoryRow(historyRow({ op: 'vote' }), 'buyer')).toBeNull()
@@ -233,7 +239,7 @@ describe('collectOrders', () => {
   it('splits purchases and sales and ignores non-product rows', () => {
     const rows = [
       historyRow({ index: 1, trxId: 'buy', from: 'buyer', to: 'alice' }),
-      historyRow({ index: 2, trxId: 'sell', from: 'someone', to: 'buyer' }),
+      historyRow({ index: 2, trxId: 'sell', from: 'someone', to: 'buyer', memo: '{"product":"buyer/managed-hosting","quantity":1}' }),
       historyRow({ index: 3, trxId: 'other', from: 'a', to: 'b' }),
       historyRow({ index: 4, trxId: 'chat', memo: 'hello' })
     ]

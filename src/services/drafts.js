@@ -433,7 +433,11 @@ function parseDraftHistory (raw) {
 }
 
 export function readDraftHistory (storage) {
-  return parseDraftHistory(storageGet(storage, DRAFT_HISTORY_KEY))
+  try {
+    return parseDraftHistory(storageGet(storage, DRAFT_HISTORY_KEY))
+  } catch {
+    return {}
+  }
 }
 
 function writeDraftHistory (storage, history) {
@@ -451,13 +455,21 @@ function writeDraftHistory (storage, history) {
     total += 1
   }
   if (!total) {
-    storageRemove(storage, DRAFT_HISTORY_KEY)
+    try {
+      storageRemove(storage, DRAFT_HISTORY_KEY)
+    } catch {
+      // History is a recovery convenience; a blocked storage call is ignored.
+    }
     return true
   }
-  return storageSet(storage, DRAFT_HISTORY_KEY, {
-    version: DRAFT_HISTORY_VERSION,
-    drafts: compact
-  })
+  try {
+    return storageSet(storage, DRAFT_HISTORY_KEY, {
+      version: DRAFT_HISTORY_VERSION,
+      drafts: compact
+    })
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -597,6 +609,20 @@ export function readDraftState (storage, now = Date.now()) {
 
 export function readDrafts (storage, now = Date.now()) {
   return readDraftState(storage, now).drafts
+}
+
+/** Drafts a viewer may see: own drafts plus legacy drafts with no owner. */
+export function visibleDraftsFor (drafts, owner) {
+  const list = Array.isArray(drafts) ? drafts : []
+  if (!owner) return list
+  return list.filter(draft => !draft.owner || draft.owner === owner)
+}
+
+/** The requested draft when it belongs to the viewer, else their newest. */
+export function pickInitialDraft (drafts, owner, requestedId = '', fallback = null) {
+  const list = visibleDraftsFor(drafts, owner)
+  const requested = requestedId ? list.find(draft => draft.id === requestedId) : null
+  return requested || list[0] || fallback
 }
 
 /** Persist drafts. Returns false when storage is unavailable or over quota. */

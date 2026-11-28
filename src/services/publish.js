@@ -498,7 +498,7 @@ export function publishChecklist (draft, { username = null, imageHealth = null }
   const community = normalizeTag(source.community)
   if (isCommentEdit) {
     items.push(checklistItem('tags', 'Tags and community', 'ok', 'Comments inherit their parent’s category.'))
-  } else if (!tags.length) {
+  } else if (!resolveCategory(source)) {
     items.push(checklistItem('tags', 'Tags and community', 'error', 'Add a community or at least one tag.'))
   } else {
     const displayTags = tags.filter(tag => tag !== community)
@@ -537,8 +537,8 @@ export function publishChecklist (draft, { username = null, imageHealth = null }
     const weight = Number(item && item.weight)
     return !ACCOUNT_RE.test(account) || !Number.isFinite(weight) || weight <= 0 || weight > 10000
   })
-  if (isCommentEdit) {
-    items.push(checklistItem('beneficiaries', 'Beneficiaries', 'ok', 'Comment edits keep the original payout settings.'))
+  if (source.editing) {
+    items.push(checklistItem('beneficiaries', 'Beneficiaries', 'warn', 'Edits keep the original payout settings on chain; beneficiary changes are not resent.'))
   } else if (invalidBene) {
     items.push(checklistItem('beneficiaries', 'Beneficiaries', 'error', 'Each beneficiary needs a valid account and a share between 0.01% and 100%.'))
   } else if (rawBeneficiaries.length > MAX_BENEFICIARIES) {
@@ -559,8 +559,8 @@ export function publishChecklist (draft, { username = null, imageHealth = null }
 
   const rewards = normalizeRewards(source.rewards)
   const payout = normalizeMaxPayout(rewards.maxAcceptedPayout)
-  if (isCommentEdit) {
-    items.push(checklistItem('rewards', 'Reward settings', 'ok', 'Comment edits do not resend comment_options.'))
+  if (source.editing) {
+    items.push(checklistItem('rewards', 'Reward settings', 'warn', 'Edits do not resend comment_options; the original payout settings remain.'))
   } else if (rewards.decline) {
     items.push(checklistItem('rewards', 'Reward settings', 'ok', 'Rewards declined — max_accepted_payout will be 0.000 HBD.'))
   } else if (!payout) {

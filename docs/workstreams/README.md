@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W113**. **W90** remains the separate
+The next free workstream number is **W115**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -171,4 +171,6 @@ service.
 | [W110-wallet-witness-safety](W110-wallet-witness-safety.md) | Claim authority, HE JSON, memo privacy, amounts, IDs and witness state |
 | [W111-proposal-paging-delegation](W111-proposal-paging-delegation.md) | Cursor-paged proposal voters and powerdown-aware delegation limits |
 | [W112-authority-queue](W112-authority-queue.md) | Account-authority edits through the active signing queue |
+| [W113-composer-draft-integrity](W113-composer-draft-integrity.md) | Cross-account draft safety, autosave persistence and publish integrity |
+| [W114-blog-shop-seo](W114-blog-shop-seo.md) | Canonical/feed policy, reserved blog paths and shop order attribution |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |
