@@ -1,7 +1,7 @@
 <template>
   <div class="block-op" :class="{ 'block-op--virtual': virtual }">
     <div class="block-op__row">
-      <q-badge :color="opColor" class="block-op__type">{{ type }}</q-badge>
+      <q-badge :color="opColor" :text-color="opColor === 'amber-9' ? 'black' : undefined" class="block-op__type">{{ type }}</q-badge>
 
       <div class="block-op__summary">
         <template v-if="type === 'vote'">

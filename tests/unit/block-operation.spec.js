@@ -30,6 +30,7 @@ describe('BlockOperation bridge legibility', () => {
     expect(text).toContain('1,234 sats')
     expect(text).toContain('@alice')
     expect(text).toContain('@v4vapp')
+    expect(wrapper.find('.block-op__type').attributes('text-color')).toBe('black')
     expect(wrapper.text()).not.toContain('open JSON for payload')
   })
 
