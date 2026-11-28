@@ -172,6 +172,9 @@ principles that constrain it. Delivered work and its verification records live i
 - W116 adds a Keychain-only owner-authority add/remove flow and keeps every
   other signer fail-closed; active/posting edits stay queued. See
   [`docs/workstreams/W116-owner-authority.md`](workstreams/W116-owner-authority.md).
+- W117 adds active/posting public-key add/remove through the signing queue while
+  preserving every other authority field. See
+  [`docs/workstreams/W117-authority-key-editing.md`](workstreams/W117-authority-key-editing.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,362 tests across 248 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
@@ -183,7 +186,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W117**. **W90** remains the separate
+- The next free workstream number is **W118**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

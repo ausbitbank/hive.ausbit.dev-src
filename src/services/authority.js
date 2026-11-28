@@ -304,3 +304,45 @@ export function accountAuthorityUpdate (account, permission, { add = true, targe
     json_metadata: typeof account.json_metadata === 'string' ? account.json_metadata : ''
   }]
 }
+
+/**
+ * Build an active-authority `account_update` that adds/removes one public key
+ * on the active or posting permission. Owner key edits need owner authority,
+ * which the queue cannot express.
+ */
+export function accountAuthorityKeyUpdate (account, permission, { add = true, key, weight = 1 } = {}) {
+  const name = String(account?.name || '').trim().toLowerCase()
+  const perm = String(permission || '').trim().toLowerCase()
+  if (!name) throw new Error('The account is not loaded.')
+  if (perm !== 'active' && perm !== 'posting') {
+    throw new Error('Only active and posting keys can be queued here.')
+  }
+  const current = account?.[perm]
+  if (!current || typeof current !== 'object') throw new Error('That permission is not available.')
+  const publicKey = String(key || '').trim()
+  if (!/^STM[1-9A-HJ-NP-Za-km-z]{45,52}$/.test(publicKey)) {
+    throw new Error('Enter a valid Hive public key (STM…).')
+  }
+  let weightValue = 1
+  if (add) {
+    weightValue = Number(weight)
+    if (!Number.isInteger(weightValue) || weightValue < 1 || weightValue > 65535) {
+      throw new Error('Key weight must be a whole number between 1 and 65535.')
+    }
+  }
+  const keyAuths = (Array.isArray(current.key_auths) ? current.key_auths : [])
+    .filter(entry => String(entry?.[0] || '') !== publicKey)
+  if (add) keyAuths.push([publicKey, weightValue])
+  keyAuths.sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+
+  return ['account_update', {
+    account: name,
+    [perm]: {
+      weight_threshold: Number(current.weight_threshold) || 1,
+      key_auths: keyAuths,
+      account_auths: Array.isArray(current.account_auths) ? current.account_auths : []
+    },
+    memo_key: account.memo_key,
+    json_metadata: typeof account.json_metadata === 'string' ? account.json_metadata : ''
+  }]
+}

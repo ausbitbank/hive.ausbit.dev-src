@@ -50,7 +50,8 @@ every other signer fail-closed.
 
 ## Remaining
 
-- Key-level owner edits (replace a key, change the owner threshold) still need a
-  dedicated owner-key UI; only account authorities are covered.
+- Active/posting key edits are delivered in
+  [`W117`](W117-authority-key-editing.md); owner key replacement and threshold
+  changes still need a dedicated owner-key UI.
 - Owner changes cannot be queued for offline review; they are a direct Keychain
   request by design.

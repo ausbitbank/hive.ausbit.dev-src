@@ -35,6 +35,19 @@
         <q-icon name="vpn_key" size="14px" class="authorities__row-icon" aria-hidden="true" />
         <code class="authorities__key" tabindex="0" :title="auth[0]">{{ shortKey(auth[0]) }}</code>
         <span class="authorities__weight" title="Weight">{{ auth[1] }}</span>
+        <q-btn
+          v-if="loggedInUser === account.name && editorEnabled && permission.name !== 'owner'"
+          flat
+          dense
+          round
+          size="sm"
+          icon="delete_outline"
+          color="red-4"
+          class="authorities__remove"
+          :aria-label="'Remove ' + permission.name + ' key ' + shortKey(auth[0])"
+          title="Remove key"
+          @click="removeKeyAuth(permission.name, auth[0])"
+        />
       </li>
 
       <li v-for="auth in permission.accounts" :key="'account-' + auth[0]" class="authorities__row authorities__row--account">
@@ -92,6 +105,46 @@
           </q-card>
         </q-popup-proxy>
       </q-btn>
+
+      <q-btn
+        v-if="permission.name !== 'owner'"
+        flat
+        dense
+        no-caps
+        icon="vpn_key"
+        color="primary"
+        class="authorities__add-btn"
+        :title="'Add a public key to ' + permission.label"
+      >
+        <q-popup-proxy>
+          <q-card flat class="authorities__editor">
+            <div class="authorities__editor-head">
+              <div class="authorities__eyebrow">Add key</div>
+              <h4 class="authorities__editor-title">Add a {{ permission.label }} key</h4>
+            </div>
+            <div class="authorities__editor-body">
+              <q-input dense outlined v-model="newKey[permission.name].key" label="Public key (STM…)" />
+              <q-input dense outlined v-model.number="newKey[permission.name].weight" label="Weight" type="number" min="1" />
+              <p class="authorities__editor-hint">
+                <q-icon name="warning_amber" size="14px" aria-hidden="true" />
+                <span>{{ permission.warning }}</span>
+              </p>
+            </div>
+            <div class="authorities__editor-actions">
+              <q-btn flat dense no-caps label="Cancel" color="grey" v-close-popup />
+              <q-btn
+                unelevated
+                dense
+                no-caps
+                label="Queue key change"
+                color="primary"
+                @click="addKeyAuth(permission.name, newKey[permission.name].key, newKey[permission.name].weight)"
+                v-close-popup
+              />
+            </div>
+          </q-card>
+        </q-popup-proxy>
+      </q-btn>
     </div>
   </section>
 
@@ -129,7 +182,7 @@
 </template>
 <script>
 import { keychain } from '@hiveio/keychain'
-import { accountAuthorityUpdate } from 'src/services/authority'
+import { accountAuthorityKeyUpdate, accountAuthorityUpdate } from 'src/services/authority'
 import { isValidHiveAccountName } from 'src/services/blogHost'
 
 const PERMISSION_META = {
@@ -163,6 +216,10 @@ export default {
         owner: { account: '', weight: 1 },
         active: { account: '', weight: 1 },
         posting: { account: '', weight: 1 }
+      },
+      newKey: {
+        active: { key: '', weight: 1 },
+        posting: { key: '', weight: 1 }
       }
     }
   },
@@ -196,6 +253,36 @@ export default {
     async addAuth (keyType, authType, accountToModify, toAdd, weight) {
       if (authType !== 'account') return
       this.queueAuthorityChange(keyType, { add: true, target: toAdd, weight })
+    },
+    removeKeyAuth (permission, key) {
+      this.queueKeyChange(permission, { add: false, key })
+    },
+    addKeyAuth (permission, key, weight) {
+      this.queueKeyChange(permission, { add: true, key, weight })
+    },
+    queueKeyChange (permission, options) {
+      const username = this.$hiveStore.user.username
+      if (!username || username !== this.account?.name) {
+        this.$q.notify({ type: 'negative', message: 'Sign in as @' + (this.account?.name || 'this account') + ' to edit its keys.' })
+        return
+      }
+      try {
+        const operation = accountAuthorityKeyUpdate(this.account, permission, options)
+        this.$hiveStore.addToQueue([username, 'active', operation])
+        this.$q.notify({
+          type: 'positive',
+          message: 'Key change queued.',
+          caption: 'Review it in the signing queue. It needs active authority.',
+          timeout: 6000
+        })
+        if (options.add) this.newKey[permission].key = ''
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error?.message || 'That key change is not valid.',
+          timeout: 6000
+        })
+      }
     },
     queueAuthorityChange (permission, options) {
       const username = this.$hiveStore.user.username

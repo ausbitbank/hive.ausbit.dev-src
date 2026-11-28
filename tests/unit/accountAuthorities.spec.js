@@ -21,7 +21,9 @@ function context ({ loginType = 'keychain' } = {}) {
     $hiveStore: { user: { username: 'alice', loginType }, addToQueue },
     $q: { notify },
     $emit: emit,
+    newKey: { active: { key: '', weight: 1 }, posting: { key: '', weight: 1 } },
     changeOwnerAuthority: AccountAuthorities.methods.changeOwnerAuthority,
+    queueKeyChange: AccountAuthorities.methods.queueKeyChange,
     queueAuthorityChange: AccountAuthorities.methods.queueAuthorityChange
   }
   return { ctx, notify, emit, addToQueue }
@@ -43,6 +45,25 @@ describe('account authority editor', () => {
     expect(operation[0]).toBe('account_update')
     expect(operation[1].active.account_auths).toEqual([['bob', 2]])
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'positive' }))
+  })
+
+  it('queues active/posting key changes and refuses owner key edits', () => {
+    const key = 'STM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4'
+    const { ctx, addToQueue, notify } = context({ loginType: 'smartlock' })
+    ctx.queueKeyChange('posting', { add: true, key, weight: 2 })
+
+    expect(addToQueue).toHaveBeenCalledTimes(1)
+    const [, authority, operation] = addToQueue.mock.calls[0][0]
+    expect(authority).toBe('active')
+    expect(operation[0]).toBe('account_update')
+    expect(operation[1].posting.key_auths).toContainEqual([key, 2])
+    expect(ctx.newKey.posting.key).toBe('')
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'positive' }))
+
+    addToQueue.mockClear()
+    ctx.queueKeyChange('owner', { add: true, key, weight: 1 })
+    expect(addToQueue).not.toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: 'negative' }))
   })
 
   it('uses Keychain for an owner change when the session allows it', async () => {

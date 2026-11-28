@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  accountAuthorityKeyUpdate,
   accountAuthorityUpdate,
   authorityDiff,
   authorityRisk,
@@ -169,6 +170,41 @@ describe('accountAuthorityUpdate', () => {
     expect(() => accountAuthorityUpdate(current, 'active', { target: 'bob', weight: 0 }))
       .toThrow(/weight/)
     expect(() => accountAuthorityUpdate(current, 'active', { target: 'bob', weight: 1.5 }))
+      .toThrow(/weight/)
+  })
+})
+
+describe('accountAuthorityKeyUpdate', () => {
+  const KEY = 'STM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4'
+
+  it('adds a key while preserving accounts, threshold and metadata', () => {
+    const current = account({ memo_key: 'STMmemo', json_metadata: '{"profile":{}}' })
+    const operation = accountAuthorityKeyUpdate(current, 'posting', { add: true, key: KEY, weight: 2 })
+    expect(operation[0]).toBe('account_update')
+    expect(operation[1].posting.key_auths).toEqual([
+      [KEY, 2],
+      ['STMposting', 1]
+    ])
+    expect(operation[1].posting.account_auths).toEqual([])
+    expect(operation[1].memo_key).toBe('STMmemo')
+    expect(operation[1].json_metadata).toBe('{"profile":{}}')
+    expect(operation[1].owner).toBeUndefined()
+  })
+
+  it('removes only the requested key', () => {
+    const current = account({ active: auth(KEY, 2, 1, [['bob', 1]]) })
+    const operation = accountAuthorityKeyUpdate(current, 'active', { add: false, key: KEY })
+    expect(operation[1].active.key_auths).toEqual([])
+    expect(operation[1].active.account_auths).toEqual([['bob', 1]])
+  })
+
+  it('rejects owner edits, malformed keys and bad weights', () => {
+    const current = account()
+    expect(() => accountAuthorityKeyUpdate(current, 'owner', { key: KEY }))
+      .toThrow(/Only active and posting/)
+    expect(() => accountAuthorityKeyUpdate(current, 'active', { key: 'STMbad' }))
+      .toThrow(/public key/)
+    expect(() => accountAuthorityKeyUpdate(current, 'active', { key: KEY, weight: 0 }))
       .toThrow(/weight/)
   })
 })
