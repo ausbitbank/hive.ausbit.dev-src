@@ -94,9 +94,10 @@ principles that constrain it. Delivered work and its verification records live i
   Hive Open Market price/quantity handling. See
   [`docs/workstreams/W99-blog-shop-hardening.md`](workstreams/W99-blog-shop-hardening.md).
 - W100 adds amount-aware Lightning payment links: `amount` + `currency` on
-  `/lightning?pay=…` prefills a HBD/HIVE invoice value, the pay dialog converts
-  it to sats from the bridge or market rate, and the fee is still quoted and
-  reviewed before a `manualOnly` queue item. See
+  `/lightning?pay=…` prefills an exact HBD/HIVE wallet debit including the
+  bridge fee, the pay dialog solves the recipient invoice sats out of the total,
+  and the spend is still quoted and reviewed before a `manualOnly` queue item.
+  See
   [`docs/workstreams/W100-lightning-amount-links.md`](workstreams/W100-lightning-amount-links.md).
 - W101 hardens dashboard account switching, HiveAuth session storage/expiry,
   SmartLock memo and timeout boundaries, and the notification inbox races. See
@@ -105,13 +106,21 @@ principles that constrain it. Delivered work and its verification records live i
   authoritative, reports failed groups honestly and validates API-node URLs.
   See
   [`docs/workstreams/W102-search-settings.md`](workstreams/W102-search-settings.md).
+- W103 scopes the action queue, settings, notifications and community
+  subscriptions to the signed-in account, fixes cache de-dupe/invalidation and
+  one-shot timers, and preserves settings during boot node probing. See
+  [`docs/workstreams/W103-state-cache-scoping.md`](workstreams/W103-state-cache-scoping.md).
+- W104 hardens HiveAuth image uploads, card-image proxying, code-fence image
+  detection, claim authority matching, safe Hivedex payment links and the
+  create/claim form state. See
+  [`docs/workstreams/W104-media-account-hardening.md`](workstreams/W104-media-account-hardening.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,255 tests across 232 files**, `bun run build`
+  `bun run test` green with **2,307 tests across 238 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **207/207**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
   reproduce on this tree. The full Chromium suite remains the release gate.
-- The next free workstream number is **W103**. **W90** remains the separate
+- The next free workstream number is **W105**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.
