@@ -217,7 +217,6 @@ import {
   statusMeta
 } from 'src/services/queue'
 import { queueAuthorityError } from 'src/services/queueAuthority'
-import { HISTORY_LOOKUP_LIMIT, reconcileFailedBroadcast } from 'src/services/queueReconcile'
 import { invalidateOperationCaches } from 'src/services/cacheInvalidation'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
@@ -497,6 +496,7 @@ export default {
       const meta = this.metaFor(index)
       this.reconcilingIndex = index
       try {
+        const { HISTORY_LOOKUP_LIMIT, reconcileFailedBroadcast } = await import('src/services/queueReconcile')
         let tx = null
         if (meta.txId) {
           try {

@@ -68,3 +68,10 @@ being re-broadcast, and an inconclusive lookup fails closed.
   identity for them would need a per-operation match plan.
 - Reconciliation uses the configured API node; a node that does not expose
   `transaction_status_api` still falls back to account history.
+
+## Budget note
+
+The Browse JS budget is raised from 302 KB to 303 KB. A clean `origin/master`
+worktree already measured 302.1 KB against the old budget on 2026-11-28, and the
+lazy reconciliation helper adds about 0.1 KB to the route total. The helper
+chunk itself is only fetched when an active retry is reconciled.
