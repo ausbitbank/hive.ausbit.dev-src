@@ -140,6 +140,8 @@
               </div>
 
               <template v-else>
+                <delegation-options v-model="delegation" />
+
                 <div class="claim-actions claim-actions--stack">
                   <q-btn
                     no-caps
@@ -220,15 +222,19 @@ import { copyToClipboard } from 'quasar'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { claimAgeDays, claimFingerprint, claimFromLink, buildClaimLink, authoritiesFromPayload, authoritiesMatchPayload } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { buildDelegationOperations } from 'src/services/accountDelegation'
+import { requiredAuthority } from 'src/services/queueAuthority'
+import { fetchGlobalProps } from 'src/services/chainData'
 import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
+import DelegationOptions from 'components/onboarding/DelegationOptions.vue'
 
 const POLL_INTERVAL_MS = 5000
 const POLL_ATTEMPTS = 60
 
 export default {
   name: 'claimAccountPage',
-  components: { PageHeader },
+  components: { PageHeader, DelegationOptions },
   data () {
     return {
       payload: null,
@@ -245,6 +251,7 @@ export default {
       queued: false,
       tokenQueued: false,
       created: false,
+      delegation: { rcEnabled: false, rcAmount: 5, hpEnabled: false, hpAmount: 5 },
       poller: null,
       pollCount: 0,
       polling: false
@@ -439,20 +446,52 @@ export default {
     },
     createWithToken () {
       if (!this.payload || !this.loggedInUser || this.pendingClaimed < 1) return
-      const tx = ['create_claimed_account', {
+      return this.queueCreationWithOptions('create_claimed_account', {
         creator: this.loggedInUser,
         ...this.accountOpBase()
-      }]
-      this.queueCreation(tx)
+      })
     },
     createWithHive () {
       if (!this.payload || !this.loggedInUser || !this.hasEnoughHive) return
-      const tx = ['account_create', {
+      return this.queueCreationWithOptions('account_create', {
         fee: this.accountCreationFee,
         creator: this.loggedInUser,
         ...this.accountOpBase()
-      }]
-      this.queueCreation(tx)
+      })
+    },
+    async queueCreationWithOptions (type, body) {
+      const username = this.payload?.u
+      const delegationOps = await this.delegationOperations(username)
+      if (delegationOps === null) return
+      this.queueCreation([type, body], delegationOps)
+    },
+    async delegationOperations (username) {
+      if (!this.delegation.rcEnabled && !this.delegation.hpEnabled) return []
+      const rcAmount = this.delegation.rcEnabled
+        ? Math.round(Number(this.delegation.rcAmount || 0) * 1e9)
+        : 0
+      const hpAmount = this.delegation.hpEnabled ? Number(this.delegation.hpAmount || 0) : 0
+      let globalProps = null
+      if (hpAmount > 0) {
+        globalProps = await fetchGlobalProps().catch(() => null)
+      }
+      try {
+        return buildDelegationOperations({
+          sponsor: this.loggedInUser,
+          account: username,
+          rcAmount,
+          hpAmount,
+          globalProps
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error?.message || 'The delegation options are invalid.',
+          caption: 'Nothing was queued.',
+          timeout: 6000
+        })
+        return null
+      }
     },
     claimAccountToken () {
       if (!this.loggedInUser) return
@@ -468,15 +507,21 @@ export default {
       })
       this.startPolling()
     },
-    queueCreation (tx) {
+    queueCreation (tx, delegationOps = []) {
       this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
+      for (const operation of delegationOps) {
+        this.$hiveStore.addToQueue([this.loggedInUser, requiredAuthority(operation) || 'active', operation])
+      }
       this.queued = true
       this.$q.notify({
-        message: 'Account creation queued. Approve it in your wallet.',
+        message: 'Account creation queued.',
+        caption: delegationOps.length
+          ? delegationOps.length + ' delegation action' + (delegationOps.length === 1 ? '' : 's') + ' will follow it in the queue.'
+          : '',
         color: 'primary',
         icon: 'person_add',
         position: 'top',
-        timeout: 5000
+        timeout: 6000
       })
       this.startPolling()
     },

@@ -19,6 +19,8 @@ const ROUTES = [
   '/themes',
   '/settings/skin',
   '/settings/moderation',
+  '/create',
+  '/create/claim',
   '/lightning',
   '/health',
   '/@ausbitbank',

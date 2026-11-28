@@ -93,6 +93,10 @@
             <q-btn dense label="Import keys to Hive Keychain" color="primary" icon="img:/statics/hive-keychain.svg" :loading="keychainImporting" @click="importToKeychain()" />
             <q-btn dense label="Import to SmartLock" color="primary" icon="lock" :loading="smartlockImporting" @click="importToSmartlock()" />
           </q-card-actions>
+          <q-separator />
+          <q-card-section>
+            <delegation-options v-model="delegation" />
+          </q-card-section>
         </q-card>
       </q-card-section>
 
@@ -139,9 +143,14 @@ import { validateAccountName } from 'src/services/hiveNames'
 import { createPassword, generateKeys } from 'src/services/hiveTx'
 import { importKeysToKeychain } from 'src/services/keychainAccounts'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { buildDelegationOperations } from 'src/services/accountDelegation'
+import { requiredAuthority } from 'src/services/queueAuthority'
+import { fetchGlobalProps } from 'src/services/chainData'
+import DelegationOptions from 'components/onboarding/DelegationOptions.vue'
 export default {
   name: 'createAccountPage',
   components: {
+    DelegationOptions,
     jsonViewer: defineAsyncComponent(() => import('components/jsonViewer.vue')),
     rc: defineAsyncComponent(() => import('components/rc.vue'))
   },
@@ -157,7 +166,8 @@ export default {
       confirmedSaved: false,
       chainProperties: null,
       smartlockImporting: false,
-      keychainImporting: false
+      keychainImporting: false,
+      delegation: { rcEnabled: false, rcAmount: 5, hpEnabled: false, hpAmount: 5 }
     }
   },
   watch: {
@@ -315,7 +325,7 @@ export default {
         .then(props => { if (props) this.chainProperties = props })
         .catch(err => { console.error('Failed to load chain properties', err?.cause?.data || err) })
     },
-    claimAccountWithToken () {
+    async claimAccountWithToken () {
       if (!this.generatedAuthorities) return
       const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
       const username = String(this.keys?.username || '').trim().toLowerCase()
@@ -323,6 +333,8 @@ export default {
         this.$q.notify({ type: 'negative', message: 'The username changed after key generation. Generate keys again.' })
         return
       }
+      const delegationOps = await this.delegationOperations(username)
+      if (delegationOps === null) return
       var op = {
         creator: this.loggedInUser,
         new_account_name: username,
@@ -334,10 +346,9 @@ export default {
         extensions: []
       }
       var tx = ['create_claimed_account', op]
-      this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
-      this.$q.notify({ message: 'Account creation queued. Approve it in your wallet.', color: 'primary', icon: 'person_add', position: 'top' })
+      this.queueCreation(tx, delegationOps)
     },
-    claimAccountWithHive () {
+    async claimAccountWithHive () {
       if (!this.generatedAuthorities) return
       const { owner, active, posting, memo_key: memoKey } = this.generatedAuthorities
       const username = String(this.keys?.username || '').trim().toLowerCase()
@@ -345,6 +356,8 @@ export default {
         this.$q.notify({ type: 'negative', message: 'The username changed after key generation. Generate keys again.' })
         return
       }
+      const delegationOps = await this.delegationOperations(username)
+      if (delegationOps === null) return
       var op = {
         fee: this.accountCreationFee,
         creator: this.loggedInUser,
@@ -357,8 +370,51 @@ export default {
         extensions: []
       }
       var tx = ['account_create', op]
+      this.queueCreation(tx, delegationOps)
+    },
+    async delegationOperations (username) {
+      if (!this.delegation.rcEnabled && !this.delegation.hpEnabled) return []
+      const rcAmount = this.delegation.rcEnabled
+        ? Math.round(Number(this.delegation.rcAmount || 0) * 1e9)
+        : 0
+      const hpAmount = this.delegation.hpEnabled ? Number(this.delegation.hpAmount || 0) : 0
+      let globalProps = null
+      if (hpAmount > 0) {
+        globalProps = await fetchGlobalProps().catch(() => null)
+      }
+      try {
+        return buildDelegationOperations({
+          sponsor: this.loggedInUser,
+          account: username,
+          rcAmount,
+          hpAmount,
+          globalProps
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error?.message || 'The delegation options are invalid.',
+          caption: 'Nothing was queued.',
+          timeout: 6000
+        })
+        return null
+      }
+    },
+    queueCreation (tx, delegationOps = []) {
       this.$hiveStore.addToQueue([this.loggedInUser, 'active', tx])
-      this.$q.notify({ message: 'Account creation queued. Approve it in your wallet.', color: 'primary', icon: 'person_add', position: 'top' })
+      for (const operation of delegationOps) {
+        this.$hiveStore.addToQueue([this.loggedInUser, requiredAuthority(operation) || 'active', operation])
+      }
+      this.$q.notify({
+        message: 'Account creation queued.',
+        caption: delegationOps.length
+          ? delegationOps.length + ' delegation action' + (delegationOps.length === 1 ? '' : 's') + ' will follow it in the queue.'
+          : '',
+        color: 'primary',
+        icon: 'person_add',
+        position: 'top',
+        timeout: 6000
+      })
     },
     async importToKeychain () {
       if (!this.keys || this.keychainImporting) return

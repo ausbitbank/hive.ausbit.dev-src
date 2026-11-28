@@ -199,6 +199,7 @@ export function operationData (action) {
 
 export function operationLabel (action) {
   const type = operationType(action)
+  if (type === 'custom_json' && operationData(action)?.id === 'rc') return 'Delegate RC'
   return OPERATION_LABELS[type] || type.replace(/_/g, ' ') || 'Action'
 }
 
@@ -250,6 +251,21 @@ function shorten (value, max = 70) {
 function mention (author, permlink) {
   if (!author) return ''
   return '@' + author + (permlink ? '/' + shorten(permlink, 28) : '')
+}
+
+function rcDelegationSummary (data = {}) {
+  if (data?.id !== 'rc') return ''
+  try {
+    const parsed = JSON.parse(data.json)
+    if (!Array.isArray(parsed) || parsed[0] !== 'delegate_rc') return ''
+    const body = parsed[1] || {}
+    const targets = Array.isArray(body.delegatees) ? body.delegatees : []
+    if (!targets.length) return ''
+    return 'Delegate ' + Number(body.max_rc || 0).toLocaleString('en-US') +
+      ' RC to ' + targets.map(name => '@' + name).join(', ')
+  } catch {
+    return ''
+  }
 }
 
 function baseOperationSummary (action) {
@@ -312,6 +328,8 @@ function baseOperationSummary (action) {
     case 'delegate_vesting_shares':
       return 'Delegate ' + (data.vesting_shares || 'HP') + ' to @' + (data.delegatee || '')
     case 'custom_json': {
+      const rc = rcDelegationSummary(data)
+      if (rc) return rc
       const keepsats = keepsatsSummary(data)
       return keepsats || ((data.id || 'custom') + ' app action')
     }
