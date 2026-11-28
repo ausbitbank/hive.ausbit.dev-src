@@ -456,42 +456,6 @@ The build stamps a unique id into `sw.js` and `version.json`
 available" prompt fire for normal deploys rather than only when `sw.js` is
 edited.
 
-### banksia.io cutover
-
-1. Point `banksia.io` and `www.banksia.io` at Cloudflare and add the zone.
-2. Install the vhost, enable it and disable the old symlink so only one server
-   block owns the names:
-   ```bash
-   scp deploy/nginx/banksia.io.conf hurgenburgen:/tmp/
-   ssh hurgenburgen 'sudo cp /tmp/banksia.io.conf /etc/nginx/sites-available/banksia.io'
-   ssh hurgenburgen 'sudo ln -sf /etc/nginx/sites-available/banksia.io /etc/nginx/sites-enabled/banksia.io'
-   ssh hurgenburgen 'sudo rm -f /etc/nginx/sites-enabled/hive.ausbit.dev'
-   ssh hurgenburgen 'sudo nginx -t && sudo systemctl reload nginx'
-   ```
-3. Issue or expand the certificate so the same vhost covers all three names:
-   ```bash
-   ssh hurgenburgen 'sudo certbot --nginx -d banksia.io -d www.banksia.io -d hive.ausbit.dev'
-   ```
-   Keep the certbot-managed `ssl_certificate` lines it writes.
-4. Deploy the SPA with `./scripts/deploy.sh`. The first run seeds
-   `/var/www/banksia.io` from the old build and verifies both hosts.
-5. Deploy the metadata Worker with `npx wrangler@4 deploy`, verify the new routes,
-   then delete the old `hive-metadata` Worker.
-6. Confirm `https://banksia.io` and `https://hive.ausbit.dev` both return the app;
-   canonical, Open Graph and JSON-LD URLs should always be `banksia.io`.
-7. Ask v4v.app to add `https://banksia.io` to its CORS allowlist and to register
-   the `banksia` app name. The legacy `hive.ausbit.dev` origin remains allowlisted,
-   so Lightning keeps working there during the transition.
-
-The origin also trusts Cloudflare's `CF-Connecting-IP` header so access logs
-record real visitor IPs instead of edge IPs. The trusted ranges live in
-`deploy/nginx/cloudflare-realip.conf` and are refreshed from Cloudflare with
-`bun run nginx:ips`. Apply the real-IP and JSON access-log block with
-`bash scripts/apply-nginx-remote.sh hurgenburgen dry-run` first; the same script
-with `apply` backs up the live config, tests it and reloads nginx. See
-[`docs/analytics-review.md`](docs/analytics-review.md) for the traffic analysis
-that prompted it.
-
 ## Data sources
 
 - Public Hive API nodes: accounts, blocks, transactions, global properties,
