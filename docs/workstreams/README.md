@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W100**. **W90** remains the separate
+The next free workstream number is **W103**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -159,3 +159,6 @@ service.
 | [W97-component-a11y](W97-component-a11y.md) | Named controls, real buttons and carousel motion |
 | [W98-queue-authority](W98-queue-authority.md) | Authority checks, stable status and active retry safety |
 | [W99-blog-shop-hardening](W99-blog-shop-hardening.md) | Worker, CSS, routes, RSS and shop input hardening |
+| [W101-dashboard-session-races](W101-dashboard-session-races.md) | Dashboard account races, HiveAuth/SmartLock sessions |
+| [W102-search-settings](W102-search-settings.md) | Account search, facets, page state and node validation |
+| [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |

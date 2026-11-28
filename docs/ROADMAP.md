@@ -93,13 +93,25 @@ principles that constrain it. Delivered work and its verification records live i
 - W99 hardens the metadata Worker, blog CSS/navigation/routes, RSS escaping and
   Hive Open Market price/quantity handling. See
   [`docs/workstreams/W99-blog-shop-hardening.md`](workstreams/W99-blog-shop-hardening.md).
+- W100 adds amount-aware Lightning payment links: `amount` + `currency` on
+  `/lightning?pay=…` prefills a HBD/HIVE invoice value, the pay dialog converts
+  it to sats from the bridge or market rate, and the fee is still quoted and
+  reviewed before a `manualOnly` queue item. See
+  [`docs/workstreams/W100-lightning-amount-links.md`](workstreams/W100-lightning-amount-links.md).
+- W101 hardens dashboard account switching, HiveAuth session storage/expiry,
+  SmartLock memo and timeout boundaries, and the notification inbox races. See
+  [`docs/workstreams/W101-dashboard-session-races.md`](workstreams/W101-dashboard-session-races.md).
+- W102 fixes account search results, renders real facets, makes `?page=`
+  authoritative, reports failed groups honestly and validates API-node URLs.
+  See
+  [`docs/workstreams/W102-search-settings.md`](workstreams/W102-search-settings.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,255 tests across 232 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **207/207**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
   reproduce on this tree. The full Chromium suite remains the release gate.
-- The next free workstream number is **W100**. **W90** remains the separate
+- The next free workstream number is **W103**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

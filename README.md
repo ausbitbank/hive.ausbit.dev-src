@@ -174,8 +174,8 @@ searches live in your browser.
   override where the app is allowed to. Reputation-gated features can be
   reviewed instead of silently hidden.
 - **Scoped skins.** Profile skins never rearrange content, are bounded to the
-  author's profile, blog and post pages, carry a visible “Skin by” badge, and
-  can be hidden at any time.
+  author's profile, wallet, communities, downvotes, blog and post pages, carry
+  a visible “Skin by” badge, and can be hidden at any time.
 - **Resilient by default.** Every network path has a timeout, a fallback and a
   stale/error state. A dead API node must not become a dead page.
 - **Accessible.** One page-level `h1`, semantic controls, visible focus,
@@ -516,7 +516,7 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current open work and next priorities
 - [`docs/HIVE_OPEN_MARKET.md`](docs/HIVE_OPEN_MARKET.md) — HOM protocol reference, honest limitations, non-goal justifications and the shop roadmap
-- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W99 implementation record
+- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W101 implementation record
 - [`docs/SECURITY.md`](docs/SECURITY.md) — response headers and the client-side key model
 - [`docs/e2e.md`](docs/e2e.md) — Obscura/Chromium suite split and troubleshooting
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
