@@ -137,10 +137,9 @@ follow-ups.
 
 ## Remaining
 
-- Active-broadcast retry still has no automatic on-chain reconciliation
-  (`transaction_status_api.find_transaction` or history) for a lost response, so
-  the queue keeps failed active items manual. A confirmation/warning was drafted
-  but removed to stay inside the Home JS budget.
+- Active-broadcast retry has inline guidance (W120) but still no automatic
+  on-chain reconciliation (`transaction_status_api.find_transaction` or
+  history) for a lost response; failed active items stay manual.
 - The delegation slider still uses `vesting_shares - delegated_vesting_shares`;
   it does not subtract an active powerdown or cap by voting mana.
 - The HBD interest claim still queues the deposit and cancel as two separate

@@ -183,6 +183,9 @@ principles that constrain it. Delivered work and its verification records live i
   beneficiary changes can be applied to a fresh post instead of silently
   ignored on the edit. See
   [`docs/workstreams/W119-duplicate-edit-draft.md`](workstreams/W119-duplicate-edit-draft.md).
+- W120 warns before retrying a failed active queue item that the earlier
+  broadcast may already have landed, with a link to the account's activity. See
+  [`docs/workstreams/W120-active-retry-guidance.md`](workstreams/W120-active-retry-guidance.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,362 tests across 248 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
@@ -194,7 +197,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W120**. **W90** remains the separate
+- The next free workstream number is **W121**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

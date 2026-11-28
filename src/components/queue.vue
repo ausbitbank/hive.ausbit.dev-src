@@ -142,6 +142,13 @@
                     {{ metaFor(index).error }}
                   </div>
 
+                  <div v-if="metaFor(index).status === 'failed' && action[1] === 'active'" class="queue-item__error" role="status">
+                    <q-icon name="warning_amber" size="14px" aria-hidden="true" />
+                    A failed active broadcast may already have landed. Check
+                    <router-link :to="'/@' + action[0]">@{{ action[0] }} activity</router-link>
+                    before retrying.
+                  </div>
+
                   <q-expansion-item dense icon="code" label="Details" class="queue-details">
                     <jsonViewer :data="action[2]" />
                   </q-expansion-item>
