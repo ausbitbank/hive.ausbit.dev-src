@@ -87,6 +87,7 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   const plan = buildSearchPlan(text)
   const include = type => filters.type === 'all' || filters.type === type
   const author = filters.authors[0] || (plan.kind === 'account' && !filters.tags.length ? cleanAccount(plan.accounts) : '')
+  const authorContextPromise = author ? fetchAuthorContext(author, { force }) : null
 
   const result = {
     query: text,
@@ -101,6 +102,7 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
     proposals: emptyGroup('Proposals'),
     witnesses: emptyGroup('Witnesses'),
     authorContext: author ? { author, facets: null } : null,
+    facets: null,
     analytics: null,
     semantic: { attempted: false, ok: false, count: 0 },
     recommendedAuthors: []
@@ -135,11 +137,13 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   let postCandidates = null
   let postsPromise = null
   if (include('posts') && (plan.posts || author)) {
-    postsPromise = fetchPostSearch(author ? { ...plan, tags: '', communities: '', accounts: '' } : plan, { force })
-      .then(posts => {
+    if (author) {
+      // An account search must show that account's posts, not every global post
+      // that happens to mention the name.
+      postsPromise = authorContextPromise.then(posts => {
         postCandidates = posts
         result.posts.items = rankPosts(posts, {
-          query: searchableQuery(plan),
+          query: '',
           sort: filters.sort,
           period: filters.period,
           tags: filters.tags,
@@ -147,7 +151,21 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
           authors: filters.authors
         }).slice(0, RESULT_LIMITS.posts)
       })
-      .catch(() => { result.posts.error = 'Posts could not be loaded.' })
+    } else {
+      postsPromise = fetchPostSearch(plan, { force })
+        .then(posts => {
+          postCandidates = posts
+          result.posts.items = rankPosts(posts, {
+            query: searchableQuery(plan),
+            sort: filters.sort,
+            period: filters.period,
+            tags: filters.tags,
+            communities: filters.communities,
+            authors: filters.authors
+          }).slice(0, RESULT_LIMITS.posts)
+        })
+        .catch(() => { result.posts.error = 'Posts could not be loaded.' })
+    }
     tasks.push(postsPromise)
   }
 
@@ -273,12 +291,17 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
 
   await Promise.allSettled(tasks)
 
+  const facetPosts = postCandidates || result.posts.items || []
+  const facets = exploreFacets(facetPosts)
+  if (facets.tags.length || facets.communities.length) result.facets = facets
+
   const analyticsLabel = filters.tags[0] || filters.communities[0] || (plan.kind === 'tag' ? plan.tags : '')
   if (analyticsLabel) {
     result.analytics = await buildAnalyticsFor(analyticsLabel, filters, { force })
   } else if (author) {
-    const authorPosts = await fetchAuthorContext(author, { force })
+    const authorPosts = await authorContextPromise
     result.authorContext.facets = exploreFacets(authorPosts)
+    result.facets = result.authorContext.facets
     if (postCandidates === null && include('posts')) {
       result.posts.items = rankPosts(authorPosts, {
         query: '',

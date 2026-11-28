@@ -63,7 +63,7 @@
 
     <div class="search-layout">
       <div class="search-main">
-        <section v-if="!query.trim()" class="search-start home-card home-panel" aria-labelledby="search-start-title">
+        <section v-if="!submittedQuery" class="search-start home-card home-panel" aria-labelledby="search-start-title">
           <div class="home-panel__head">
             <div>
               <div class="home-eyebrow">Start here</div>
@@ -86,9 +86,10 @@
           </div>
         </section>
 
-        <section v-if="query.trim()" class="search-status" aria-live="polite">
+        <section v-if="submittedQuery" class="search-status" aria-live="polite">
           <template v-if="loading">Searching…</template>
           <template v-else-if="totalCount">{{ totalCount }} {{ totalCount === 1 ? 'result' : 'results' }} for “{{ submittedQuery }}”</template>
+          <template v-else-if="hasErrors">Some results could not be loaded. Retry or narrow the query.</template>
           <template v-else>No results for “{{ submittedQuery }}”. Try a shorter or differently spelled query.</template>
         </section>
 
@@ -1282,7 +1283,13 @@ export default {
       return this.groups.filter(group => group.rows.length > 0 || Boolean(group.error))
     },
     totalCount () {
-      return this.groups.reduce((total, group) => total + group.rows.length, 0)
+      const result = this.result
+      if (!result) return 0
+      return ['accounts', 'posts', 'tags', 'communities', 'blocks', 'transactions', 'proposals', 'witnesses']
+        .reduce((total, key) => total + (result[key]?.items?.length || 0), 0)
+    },
+    hasErrors () {
+      return this.groups.some(group => Boolean(group.error))
     },
     facets () {
       const context = this.result
@@ -1371,7 +1378,7 @@ export default {
       }
       const token = ++this.searchToken
       this.submittedQuery = text
-      this.postsVisible = POSTS_PAGE_SIZE
+      this.postsVisible = Math.max(1, Number(this.filters.page) || 1) * POSTS_PAGE_SIZE
       if (!text) {
         this.result = null
         this.loading = false
@@ -1424,7 +1431,7 @@ export default {
       }))
     },
     pushState (state) {
-      this.filters = normalizeSearchState(state)
+      this.filters = normalizeSearchState({ ...state, page: 1 })
       this.$router.push(this.buildUrl(this.query, this.filters)).catch(() => {})
     },
     setType (type) {
@@ -1441,8 +1448,12 @@ export default {
     },
     showMorePosts () {
       const total = (this.result?.posts?.items || []).length
-      this.postsVisible = Math.min(total, this.postsVisible + POSTS_PAGE_SIZE)
+      const next = Math.min(total, this.postsVisible + POSTS_PAGE_SIZE)
+      if (next === this.postsVisible) return
+      this.postsVisible = next
       this.activeKey = ''
+      this.filters = normalizeSearchState({ ...this.filters, page: Math.ceil(next / POSTS_PAGE_SIZE) })
+      this.$router.push(this.buildUrl(this.query, this.filters)).catch(() => {})
       this.updateTypeCounts()
     },
     filterTag (tag, { toggle = false } = {}) {

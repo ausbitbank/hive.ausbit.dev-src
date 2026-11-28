@@ -606,6 +606,19 @@ export default {
         return
       }
 
+      const apiNode = this.apiNode.trim() || 'https://api.hive.blog'
+      const ahNode = this.ahNode.trim() || 'https://api.hive.blog'
+      const heApiNode = this.heApiNode.trim() || DEFAULT_HIVE_ENGINE_NODE
+      const magiApiNode = String(this.magiApiNode || '').trim() || DEFAULT_MAGI_NODE
+      if (![apiNode, ahNode, heApiNode, magiApiNode].every(this.isHttpNodeUrl)) {
+        this.$q.notify({
+          type: 'negative',
+          message: 'Every API node must be a valid http:// or https:// URL.',
+          position: 'top'
+        })
+        return
+      }
+
       const voteWeight = Number(this.voteWeightPost)
       const settings = {
         voteWeightPost: Number.isFinite(voteWeight) ? Math.min(100, Math.max(-100, voteWeight)) : 0,
@@ -613,16 +626,24 @@ export default {
           account: bene.account,
           weight: Math.round(Number(bene.percent) * 100)
         })),
-        apiNode: this.apiNode.trim() || 'https://api.hive.blog',
-        ahNode: this.ahNode.trim() || 'https://api.hive.blog',
-        heApiNode: this.heApiNode.trim() || DEFAULT_HIVE_ENGINE_NODE,
-        magiApiNode: String(this.magiApiNode || '').trim() || DEFAULT_MAGI_NODE,
+        apiNode,
+        ahNode,
+        heApiNode,
+        magiApiNode,
         imageProxy: normalizeImageProxyMode(this.imageProxy),
         smartlockSessionMinutes: Number(this.smartlockSessionMinutes) || 15
       }
       this.$hiveStore.updateSettings(settings)
       setHiveNode(settings.apiNode)
       this.$emit('hide')
+    },
+    isHttpNodeUrl (value) {
+      try {
+        const url = new URL(String(value || ''))
+        return (url.protocol === 'https:' || url.protocol === 'http:') && Boolean(url.hostname)
+      } catch {
+        return false
+      }
     }
   }
 }

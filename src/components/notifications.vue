@@ -62,7 +62,7 @@
 
         <q-separator />
 
-        <div v-if="loadError" class="notifications-state notifications-state--error" role="status">
+        <div v-if="loadError && notifications.length === 0" class="notifications-state notifications-state--error" role="status">
           <q-icon name="warning" size="20px" aria-hidden="true" />
           <span>{{ loadError }}</span>
           <q-btn flat dense no-caps color="primary" label="Retry" @click="refreshOnOpen" />
@@ -130,9 +130,15 @@
             </q-item>
           </q-list>
 
+          <div v-if="loadMoreError" class="notifications-state notifications-state--error" role="status">
+            <q-icon name="warning" size="20px" aria-hidden="true" />
+            <span>{{ loadMoreError }}</span>
+            <q-btn flat dense no-caps color="primary" label="Retry" @click="loadMore" />
+          </div>
+
           <infinite-scroll
             v-if="filteredNotifications.length > 0"
-            :can-load="!reachedEnd"
+            :can-load="!reachedEnd && !loadMoreError"
             :loading="loadingMore"
             scroll-target=".notifications-scroll"
             :offset="200"
@@ -179,16 +185,24 @@ export default {
       loading: false,
       loadingMore: false,
       loadError: '',
+      loadMoreError: '',
       filter: 'all',
       unreadOnly: false,
       reachedEnd: false,
       markQueued: false,
+      markQueuedItem: null,
       limit: 20,
       pollTimer: null,
       initialRefreshHandle: null
     }
   },
   computed: {
+    queueItems () {
+      return this.$hiveStore.queue || []
+    },
+    queueMetaItems () {
+      return this.$hiveStore.queueMeta || []
+    },
     loggedInUser () {
       return this.$hiveStore.user.username
     },
@@ -232,6 +246,18 @@ export default {
     },
     unreadNotificationCount (value) {
       if (value === 0) this.markQueued = false
+    },
+    queueItems: {
+      deep: true,
+      handler () {
+        this.syncMarkQueued()
+      }
+    },
+    queueMetaItems: {
+      deep: true,
+      handler () {
+        this.syncMarkQueued()
+      }
     }
   },
   mounted () {
@@ -312,20 +338,25 @@ export default {
       this.$hiveStore.updateNotificationsLastRead(null)
       this.reachedEnd = false
       this.loadError = ''
+      this.loadMoreError = ''
       this.markQueued = false
+      this.markQueuedItem = null
     },
     async refreshOnOpen () {
       if (!this.loggedInUser) return
       this.loadError = ''
+      this.loadMoreError = ''
       await Promise.allSettled([
         this.refreshUnreadCount(),
         this.loadNotifications({ reset: true })
       ])
     },
     async refreshUnreadCount () {
-      if (!this.loggedInUser) return
+      const account = this.loggedInUser
+      if (!account) return
       try {
-        const response = await this.$hive.api.callAsync('bridge.unread_notifications', { account: this.loggedInUser })
+        const response = await this.$hive.api.callAsync('bridge.unread_notifications', { account })
+        if (this.loggedInUser !== account) return
         const unread = Number(response?.unread) || 0
         this.$hiveStore.updateUnreadNotificationCount(unread)
         if (response?.lastread) this.$hiveStore.updateNotificationsLastRead(response.lastread)
@@ -336,42 +367,65 @@ export default {
       }
     },
     async loadNotifications ({ reset = false } = {}) {
-      if (!this.loggedInUser) return
+      const account = this.loggedInUser
+      if (!account) return
       if (reset) this.loading = true
       else this.loadingMore = true
-      this.loadError = ''
+      if (reset) this.loadError = ''
+      else this.loadMoreError = ''
 
       const lastId = reset ? null : this.notifications[this.notifications.length - 1]?.id
-      const params = { account: this.loggedInUser, limit: this.limit }
+      const params = { account, limit: this.limit }
       if (lastId) params.last_id = lastId
 
       try {
         const response = await this.$hive.api.callAsync('bridge.account_notifications', params)
+        if (this.loggedInUser !== account) return
         const page = Array.isArray(response) ? response : []
         this.$hiveStore.updateNotifications(reset
           ? mergeNotifications([], page)
           : mergeNotifications(this.notifications, page))
         this.reachedEnd = page.length < this.limit
       } catch (error) {
+        if (this.loggedInUser !== account) return
         console.error('Failed to load notifications', error)
-        this.loadError = 'Notifications could not be loaded. Try again in a moment.'
+        if (reset) this.loadError = 'Notifications could not be loaded. Try again in a moment.'
+        else this.loadMoreError = 'Older notifications could not be loaded.'
       } finally {
-        this.loading = false
-        this.loadingMore = false
+        if (this.loggedInUser === account) {
+          this.loading = false
+          this.loadingMore = false
+        }
       }
     },
     loadMore () {
       this.loadNotifications()
     },
+    syncMarkQueued () {
+      if (!this.markQueued) return
+      const index = this.queueItems.indexOf(this.markQueuedItem)
+      if (index < 0) {
+        this.markQueued = false
+        this.markQueuedItem = null
+        return
+      }
+      const status = this.queueMetaItems[index]?.status
+      if (status === 'failed' || status === 'sent') {
+        this.markQueued = false
+        this.markQueuedItem = null
+      }
+    },
     markNotificationsRead () {
       if (!this.loggedInUser || this.unreadNotificationCount === 0) return
       const date = moment.utc().format('YYYY-MM-DDTHH:mm:ss')
       const json = JSON.stringify(['setLastRead', { date }])
-      this.$hiveStore.addToQueue([
+      const item = [
         this.loggedInUser,
         'posting',
         ['custom_json', { required_posting_auths: [this.loggedInUser], id: 'notify', json }]
-      ])
+      ]
+      const queued = this.$hiveStore.addToQueue(item)
+      this.markQueuedItem = queued || item
       this.markQueued = true
       this.$q.notify({
         message: 'Mark-all-read queued with posting authority. It applies when the queue broadcasts it.',

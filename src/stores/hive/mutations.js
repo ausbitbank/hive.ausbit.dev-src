@@ -103,6 +103,7 @@ export function addToQueue (newItem, options = {}) {
   this.queue.push(normalized)
   ensureQueueMeta(this).push(meta)
   persistQueue(this.queue, this.queueMeta)
+  return normalized
 }
 
 export function removeFromQueue (itemToRemove) {

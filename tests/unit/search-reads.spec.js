@@ -23,6 +23,7 @@ function reset () {
     title: 'Hive post',
     body: 'hive',
     category: 'hive',
+    community: 'hive-123',
     created: '2026-01-01T00:00:00',
     json_metadata: { tags: ['hive', 'test'] },
     net_votes: 4,
@@ -92,6 +93,8 @@ describe('runUnifiedSearch', () => {
     expect(result.witnesses.items.length).toBe(1)
     expect(result.blocks.items).toEqual([])
     expect(result.transactions.items).toEqual([])
+    expect(result.facets.tags.map(row => row.value)).toContain('hive')
+    expect(result.facets.communities.map(row => row.value)).toContain('hive-123')
     expect(result.semantic.attempted).toBe(true)
     expect(result.semantic.ok).toBe(false)
   })
@@ -104,6 +107,8 @@ describe('runUnifiedSearch', () => {
     expect(result.plan.kind).toBe('account')
     expect(result.authorContext.author).toBe('alice')
     expect(result.authorContext.facets).toBeTruthy()
+    expect(result.posts.items.every(post => post.author === 'alice')).toBe(true)
+    expect(chain.fetchPostSearch).not.toHaveBeenCalled()
     expect(chain.fetchAccountNameSearch).toHaveBeenCalled()
     expect(chain.fetchAccountPosts).toHaveBeenCalledWith({ account: 'alice', sort: 'posts', limit: 20 }, { force: false })
     expect(result.tags.items).toEqual([])
