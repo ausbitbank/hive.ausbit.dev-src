@@ -20,6 +20,9 @@ import { useAppearanceStore } from 'src/stores/appearance'
 import { useHiveStore } from 'src/stores/hive'
 
 const PAGE_SIZE = 20
+// Contributors are an addition to the owner archive, not a replacement, so
+// their first page stays small; each source pages forward independently.
+const CONTRIBUTOR_PAGE_SIZE = 10
 const BLOG_MODE_KEY = 'banksia:blog-mode'
 
 const TYPOGRAPHY_STACKS = {
@@ -57,6 +60,75 @@ function isAllowedPost (post, accountName, settings) {
   return false
 }
 
+/**
+ * The feeds that make up one blog archive. Each source keeps its own cursor so
+ * a contributor or community page can never stop the owner archive from
+ * paging, and vice versa.
+ */
+function blogSources (accountName, settings, claimed) {
+  const owner = {
+    key: 'owner',
+    kind: 'account',
+    account: accountName,
+    limit: PAGE_SIZE
+  }
+  const authors = Array.isArray(settings && settings.authors) ? settings.authors : []
+  const community = (settings && settings.community) || ''
+  // An unclaimed blog is a single-account preview: the on-chain authors and
+  // community fields are not trusted until the owner claims the blog.
+  if (!claimed || (!authors.length && !community)) return [owner]
+
+  const sources = [owner]
+  for (const author of authors) {
+    const name = String(author || '').toLowerCase()
+    if (!name || name === accountName) continue
+    sources.push({
+      key: 'author:' + name,
+      kind: 'account',
+      account: name,
+      limit: CONTRIBUTOR_PAGE_SIZE
+    })
+  }
+  if (community) {
+    sources.push({
+      key: 'community:' + community,
+      kind: 'community',
+      tag: community,
+      limit: PAGE_SIZE
+    })
+  }
+  return sources
+}
+
+function sourceParams (source, cursor, observer) {
+  const params = source.kind === 'community'
+    ? { sort: 'created', tag: source.tag, observer, limit: source.limit }
+    : { sort: 'posts', account: source.account, observer, limit: source.limit }
+  if (cursor) {
+    params.start_author = cursor.start_author
+    params.start_permlink = cursor.start_permlink
+  }
+  return params
+}
+
+function fetchSourcePage (source, cursor, observer, { force = false } = {}) {
+  const params = sourceParams(source, cursor, observer)
+  return source.kind === 'community'
+    ? fetchRankedPosts(params, { force })
+    : fetchAccountPosts(params, { force })
+}
+
+/** Cursor from the raw page, not the filtered cards, so hidden rows step too. */
+function pageCursor (rows) {
+  for (let index = rows.length - 1; index >= 0; index--) {
+    const row = rows[index]
+    if (row && row.author && row.permlink) {
+      return { start_author: row.author, start_permlink: row.permlink }
+    }
+  }
+  return null
+}
+
 export const useBlogStore = defineStore('blog', {
   state: () => ({
     initialized: false,
@@ -74,7 +146,7 @@ export const useBlogStore = defineStore('blog', {
     postsError: '',
     loadPromise: null,
     hasMore: false,
-    cursor: null,
+    sources: [],
     modePreference: readModePreference(),
     pending: false,
     pendingText: ''
@@ -302,7 +374,7 @@ export const useBlogStore = defineStore('blog', {
       this.postsError = ''
       this.loadPromise = null
       this.hasMore = false
-      this.cursor = null
+      this.sources = []
       this.pending = false
       this.pendingText = ''
     },
@@ -355,66 +427,25 @@ export const useBlogStore = defineStore('blog', {
       try {
         const settings = this.settings || {}
         const authors = Array.isArray(settings.authors) ? settings.authors : []
-        const community = settings.community || ''
         const hive = useHiveStore()
         const observer = hive.user.username || ''
-        const sources = []
 
-        // A claimed multi-author or community blog merges its sources. An
-        // unclaimed blog stays a single-account preview.
-        if (!this.claimed || (!authors.length && !community)) {
-          sources.push(fetchAccountPosts({
-            sort: 'posts',
-            account: this.accountName,
-            observer,
-            limit: PAGE_SIZE,
-            start_author: null,
-            start_permlink: null
-          }, { force }))
-        } else {
-          sources.push(fetchAccountPosts({
-            sort: 'posts',
-            account: this.accountName,
-            observer,
-            limit: PAGE_SIZE,
-            start_author: null,
-            start_permlink: null
-          }, { force }))
-          for (const author of authors) {
-            if (author === this.accountName) continue
-            sources.push(fetchAccountPosts({
-              sort: 'posts',
-              account: author,
-              observer,
-              limit: 10,
-              start_author: null,
-              start_permlink: null
-            }, { force }))
-          }
-          if (community) {
-            sources.push(fetchRankedPosts({
-              sort: 'created',
-              tag: community,
-              observer,
-              limit: PAGE_SIZE,
-              start_author: null,
-              start_permlink: null
-            }, { force }))
-          }
-        }
+        this.sources = blogSources(this.accountName, settings, this.claimed)
+        const batches = await Promise.allSettled(
+          this.sources.map(source => fetchSourcePage(source, null, observer, { force }))
+        )
 
-        const batches = await Promise.allSettled(sources)
-        const rows = batches
-          .filter(batch => batch.status === 'fulfilled' && Array.isArray(batch.value))
-          .flatMap(batch => batch.value)
-          .filter(isBlogPost)
+        const rows = []
+        batches.forEach((batch, index) => {
+          const source = this.sources[index]
+          const page = batch.status === 'fulfilled' && Array.isArray(batch.value) ? batch.value : []
+          rows.push(...page)
+          source.cursor = pageCursor(page)
+          source.hasMore = Boolean(source.cursor) && page.length >= source.limit
+        })
+        this.hasMore = this.claimed && this.sources.some(source => source.hasMore)
 
-        const primary = batches[0] && batches[0].status === 'fulfilled' ? batches[0].value : []
-        const last = Array.isArray(primary) && primary.length ? primary[primary.length - 1] : null
-        this.cursor = last ? { start_author: last.author, start_permlink: last.permlink } : null
-        this.hasMore = this.claimed && !authors.length && !community && Array.isArray(primary) && primary.length >= PAGE_SIZE
-
-        let ordered = sortBlogPosts(rows, settings.pinned)
+        let ordered = sortBlogPosts(rows.filter(isBlogPost), settings.pinned)
         // Pinned posts may be older than the page window. Fetch any that are
         // missing so an author's "start here" link always resolves.
         const pinned = Array.isArray(settings.pinned) ? settings.pinned : []
@@ -452,24 +483,35 @@ export const useBlogStore = defineStore('blog', {
     },
 
     async loadMore () {
-      if (!this.hasMore || !this.cursor || this.postsLoading) return []
+      if (!this.hasMore || this.postsLoading) return []
+      const pending = this.sources.filter(source => source.hasMore && source.cursor)
+      if (!pending.length) {
+        this.hasMore = false
+        return []
+      }
       this.postsLoading = true
       try {
         const hive = useHiveStore()
-        const rows = await fetchAccountPosts({
-          sort: 'posts',
-          account: this.accountName,
-          observer: hive.user.username || '',
-          limit: PAGE_SIZE,
-          start_author: this.cursor.start_author,
-          start_permlink: this.cursor.start_permlink
+        const observer = hive.user.username || ''
+        const batches = await Promise.allSettled(
+          pending.map(source => fetchSourcePage(source, source.cursor, observer))
+        )
+        const added = []
+        batches.forEach((batch, index) => {
+          // A failed source keeps its cursor so the next click retries it
+          // instead of silently ending that part of the archive.
+          if (batch.status !== 'fulfilled' || !Array.isArray(batch.value)) return
+          const source = pending[index]
+          const page = batch.value
+          added.push(...page.filter(isBlogPost))
+          source.cursor = pageCursor(page)
+          source.hasMore = Boolean(source.cursor) && page.length >= source.limit
         })
-        const page = Array.isArray(rows) ? rows.filter(isBlogPost) : []
-        const last = page.length ? page[page.length - 1] : null
-        if (last) this.cursor = { start_author: last.author, start_permlink: last.permlink }
-        this.hasMore = page.length >= PAGE_SIZE
-        this.posts = sortBlogPosts([...this.posts, ...page], this.settings?.pinned)
-        return page
+        this.hasMore = this.claimed && this.sources.some(source => source.hasMore)
+        if (added.length) {
+          this.posts = sortBlogPosts([...this.posts, ...added], this.settings?.pinned)
+        }
+        return added
       } catch (error) {
         this.postsError = error && error.message ? error.message : 'More posts could not be loaded.'
         return []

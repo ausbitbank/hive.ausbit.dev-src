@@ -88,3 +88,63 @@ describe('blog tenant load race', () => {
     expect(services.fetchPostContent).toHaveBeenCalledWith('bob', 'contrib-post', { force: false })
   })
 })
+
+function rowsFor (author, count, offset = 0) {
+  return Array.from({ length: count }, (_, index) => {
+    const n = offset + index
+    return {
+      author,
+      permlink: author + '-post-' + n,
+      title: author + ' post ' + n,
+      body: 'Body ' + n,
+      created: new Date(Date.UTC(2026, 10, 27) - n * 3600 * 1000).toISOString().replace('Z', ''),
+      depth: 0,
+      json_metadata: '{}'
+    }
+  })
+}
+
+describe('blog archive pagination', () => {
+  it('pages the owner archive when the blog also has a contributor', async () => {
+    services.fetchAccount.mockResolvedValue(accountWithAuthors(['bob']))
+    const ownerFirst = rowsFor('alice', 20)
+    const ownerNext = rowsFor('alice', 5, 20)
+    const contributorFirst = rowsFor('bob', 10)
+
+    services.fetchAccountPosts.mockImplementation(async params => {
+      if (params.account === 'bob') return params.start_permlink ? [] : contributorFirst
+      return params.start_permlink ? ownerNext : ownerFirst
+    })
+
+    const blog = useBlogStore()
+    blog.accountName = 'alice'
+    await blog.load()
+
+    expect(blog.posts).toHaveLength(30)
+    expect(blog.hasMore).toBe(true)
+
+    await blog.loadMore()
+
+    expect(blog.posts).toHaveLength(35)
+    expect(blog.hasMore).toBe(false)
+    expect(services.fetchAccountPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ account: 'alice', start_author: 'alice', start_permlink: 'alice-post-19' }),
+      { force: false }
+    )
+    expect(services.fetchAccountPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ account: 'bob', start_author: 'bob', start_permlink: 'bob-post-9' }),
+      { force: false }
+    )
+  })
+
+  it('keeps an unclaimed preview to its first page', async () => {
+    services.fetchAccount.mockResolvedValue(accountWithAuthors(['bob'], { claimed: false }))
+    services.fetchAccountPosts.mockResolvedValue(rowsFor('alice', 20))
+
+    const blog = useBlogStore()
+    blog.accountName = 'alice'
+    await blog.load()
+
+    expect(blog.hasMore).toBe(false)
+  })
+})
