@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AGE_BANDS, HP_BANDS, voterSegments } from '../../src/services/witnessVoters'
+import { voterSegments } from '../../src/services/witnessVoters'
 
 const GLOBAL_PROPS = {
   total_vesting_shares: '1000000.000000 VESTS',
@@ -44,13 +44,6 @@ describe('voterSegments', () => {
     expect(result.ageBands.find(band => band.id === '5y-plus').count).toBe(1)
     expect(result.topVoters[0].voter).toBe('bob')
     expect(result.topVoters[0].hp).toBeCloseTo(1500000)
-  })
-
-  it('exposes the band definitions in ascending order', () => {
-    expect(HP_BANDS[0].label).toBe('< 100 HP')
-    expect(HP_BANDS[HP_BANDS.length - 1].id).toBe('100k-plus')
-    expect(AGE_BANDS[0].id).toBe('under-1y')
-    expect(AGE_BANDS[AGE_BANDS.length - 1].id).toBe('5y-plus')
   })
 
   it('handles an empty sample', () => {

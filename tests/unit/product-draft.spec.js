@@ -37,11 +37,6 @@ function valid (overrides = {}) {
 }
 
 describe('product draft fields', () => {
-  it('ships a self-contained authoring panel', () => {
-    expect(ProductFields.name).toBe('ProductFields')
-    expect(ProductFields.emits).toContain('update:modelValue')
-  })
-
   it('emits normalized fields from the panel controls', async () => {
     const wrapper = shallowMount(ProductFields, {
       props: {

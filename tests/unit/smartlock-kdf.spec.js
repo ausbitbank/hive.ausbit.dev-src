@@ -5,7 +5,7 @@ import { KDF_ITERATIONS, decryptKey, encryptKey } from '../../src/components/sma
 const KEY = '5Kdummykeydummykeydummykeydummykeydummy'
 const PASSWORD = 'correct horse battery staple'
 
-describe('SmartLock KDF', () => {
+describe('SmartLock KDF', { tags: ['slow'] }, () => {
   it('uses the current iteration count for new ciphertexts', () => {
     const secured = encryptKey(KEY, PASSWORD)
     const envelope = JSON.parse(new TextDecoder().decode(base58.decode(secured)))

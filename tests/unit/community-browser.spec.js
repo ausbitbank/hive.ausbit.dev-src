@@ -99,28 +99,14 @@ describe('buildDirectoryCards', () => {
 describe('sortDirectoryCards', () => {
   const cards = buildDirectoryCards(RECORDS)
 
-  it('sorts by subscribers', () => {
-    expect(sortDirectoryCards(cards, 'subs').map(card => card.name)).toEqual([
-      'hive-200002',
-      'hive-100001',
-      'hive-300003'
-    ])
-  })
-
-  it('sorts by active authors', () => {
-    expect(sortDirectoryCards(cards, 'active').map(card => card.name)).toEqual([
-      'hive-200002',
-      'hive-100001',
-      'hive-300003'
-    ])
-  })
-
-  it('sorts by creation time', () => {
-    expect(sortDirectoryCards(cards, 'new').map(card => card.name)).toEqual([
-      'hive-200002',
-      'hive-100001',
-      'hive-300003'
-    ])
+  it('sorts by subscribers, active authors and creation time', () => {
+    for (const sort of ['subs', 'active', 'new']) {
+      expect(sortDirectoryCards(cards, sort).map(card => card.name)).toEqual([
+        'hive-200002',
+        'hive-100001',
+        'hive-300003'
+      ])
+    }
   })
 
   it('keeps server order for rank and tolerates bad input', () => {

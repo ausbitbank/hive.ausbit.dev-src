@@ -7,24 +7,7 @@ function normalize (config) {
   return timersMixin.methods.normalizeTimers.call({}, config)
 }
 
-describe('timers mixin', () => {  it('exposes the expected mixin options shape', () => {
-    expect(typeof timersMixin.data).toBe('function')
-    expect(timersMixin.data()).toEqual({ timers: {} })
-
-    expect(typeof timersMixin.created).toBe('function')
-    expect(typeof timersMixin.mounted).toBe('function')
-    expect(typeof timersMixin.beforeUnmount).toBe('function')
-
-    expect(timersMixin.methods).toEqual(expect.objectContaining({
-      normalizeTimers: expect.any(Function),
-      resolveTimerCallback: expect.any(Function),
-      startTimer: expect.any(Function),
-      stopTimer: expect.any(Function),
-      pauseTimers: expect.any(Function),
-      resumeTimers: expect.any(Function)
-    }))
-  })
-
+describe('timers mixin', () => {
   it('created() initialises internal timer bookkeeping only', () => {
     const vm = {}
 

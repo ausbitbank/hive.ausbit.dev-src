@@ -406,7 +406,7 @@ describe('vault store', () => {
   })
 })
 
-describe('reader key lifecycle', () => {
+describe('reader key lifecycle', { tags: ['slow'] }, () => {
   it('is idempotent per blog and can be forgotten', async () => {
     const blog = 'readerkeyblog'
     const first = await ensureReaderKey(blog)

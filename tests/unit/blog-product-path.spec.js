@@ -7,20 +7,17 @@ import {
 } from '../../src/services/blogProductPath'
 
 describe('blog product paths', () => {
-  it('keeps owner products on the clean shop URL', () => {
-    expect(blogProductPath('managed-hosting', 'alice', 'alice')).toBe('/shop/managed-hosting')
-    expect(blogProductPath('managed-hosting', '', 'alice')).toBe('/shop/managed-hosting')
-    expect(blogProductPath('managed-hosting', 'Alice', 'alice')).toBe('/shop/managed-hosting')
-  })
-
-  it('names a third-party seller in the path', () => {
-    expect(blogProductPath('managed-hosting', 'bob', 'alice')).toBe('/shop/@bob/managed-hosting')
-  })
-
-  it('falls back to the shop for malformed references', () => {
-    expect(blogProductPath('')).toBe('/shop')
-    expect(blogProductPath('not valid')).toBe('/shop')
-    expect(blogProductPath('managed-hosting', 'not a name', 'alice')).toBe('/shop')
+  it('builds owner, third-party and malformed shop URLs', () => {
+    const cases = [
+      [['managed-hosting', 'alice', 'alice'], '/shop/managed-hosting'],
+      [['managed-hosting', '', 'alice'], '/shop/managed-hosting'],
+      [['managed-hosting', 'Alice', 'alice'], '/shop/managed-hosting'],
+      [['managed-hosting', 'bob', 'alice'], '/shop/@bob/managed-hosting'],
+      [[''], '/shop'],
+      [['not valid'], '/shop'],
+      [['managed-hosting', 'not a name', 'alice'], '/shop']
+    ]
+    for (const [args, expected] of cases) expect(blogProductPath(...args)).toBe(expected)
   })
 
   it('validates product authors and permlinks', () => {
@@ -31,12 +28,9 @@ describe('blog product paths', () => {
     expect(isProductPermlink('managed hosting')).toBe(false)
   })
 
-  it('parses the owner route with the blog account', () => {
+  it('parses owner and explicit author routes', () => {
     expect(parseProductRoute({ permlink: 'managed-hosting' }, 'alice'))
       .toEqual({ author: 'alice', permlink: 'managed-hosting' })
-  })
-
-  it('parses an explicit author route', () => {
     expect(parseProductRoute({ author: 'Bob', permlink: 'managed-hosting' }, 'alice'))
       .toEqual({ author: 'bob', permlink: 'managed-hosting' })
   })

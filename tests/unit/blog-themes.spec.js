@@ -4,20 +4,14 @@ import { validateTheme } from '../../src/themes/schema'
 
 describe('blog themes', () => {
   it('validates every built-in theme, including contrast', () => {
+    expect(BLOG_THEMES.map(theme => theme.id)).toEqual(['paper', 'studio', 'terminal', 'journal', 'gallery'])
+    const opposite = { paper: 'dark', studio: 'light', terminal: 'light', journal: 'dark', gallery: 'light' }
     for (const theme of BLOG_THEMES) {
       const result = validateTheme(theme)
       expect(result.errors, theme.id).toEqual([])
       expect(result.ok).toBe(true)
+      expect(theme.variants[opposite[theme.id]].tokens.text, theme.id).toBeTruthy()
     }
-  })
-
-  it('ships five themes with opposite-mode variants', () => {
-    expect(BLOG_THEMES.map(theme => theme.id)).toEqual(['paper', 'studio', 'terminal', 'journal', 'gallery'])
-    expect(getBlogTheme('paper').variants.dark.tokens.text).toBeTruthy()
-    expect(getBlogTheme('studio').variants.light.tokens.text).toBeTruthy()
-    expect(getBlogTheme('terminal').variants.light.tokens.text).toBeTruthy()
-    expect(getBlogTheme('journal').variants.dark.tokens.text).toBeTruthy()
-    expect(getBlogTheme('gallery').variants.light.tokens.text).toBeTruthy()
   })
 
   it('maps themes to deterministic 1200×630 OG images', () => {

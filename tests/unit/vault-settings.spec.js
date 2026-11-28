@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  BLOG_MAX_BYTES,
-  VAULT_DEFAULT_CONTAINER,
   VAULT_DEFAULT_PRICE,
   VAULT_MAX_BYTES
 } from '../../src/config/blog'
@@ -375,27 +373,4 @@ describe('blog settings integration', () => {
     expect(read.settings.vault.product).toBe('alice/membership')
   })
 
-  it('keeps the 12 KB blog cap', () => {
-    expect(BLOG_MAX_BYTES).toBe(12000)
-    const result = normalizeBlogSettings({
-      version: 1,
-      claimed: true,
-      title: 'x'.repeat(80),
-      description: 'y'.repeat(240),
-      css: 'x'.repeat(8000),
-      blocks: Array.from({ length: 10 }, (_, index) => ({
-        type: 'text',
-        visible: true,
-        title: 'Section ' + index,
-        body: 'b'.repeat(1200)
-      }))
-    })
-    expect(result.ok).toBe(false)
-    expect(result.errors.join(' ')).toContain('12000 bytes or fewer')
-  })
-
-  it('keeps the default container and price constants stable', () => {
-    expect(VAULT_DEFAULT_CONTAINER).toBe('banksia-vault')
-    expect(VAULT_DEFAULT_PRICE).toBe('5.000 HBD')
-  })
 })

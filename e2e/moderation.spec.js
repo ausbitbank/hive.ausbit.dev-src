@@ -57,6 +57,29 @@ const SKIN = {
   }
 }
 
+function skinAccount (reputation = 60) {
+  return {
+    reputation,
+    balance: '0.000 HIVE',
+    hbd_balance: '0.000 HBD',
+    vesting_shares: '0.000000 VESTS',
+    post_count: 0,
+    created: '2020-01-01T00:00:00',
+    posting_json_metadata: JSON.stringify({
+      profile: {
+        name: 'Ausbitbank',
+        about: 'Hive developer',
+        profile_image: 'https://images.hive.blog/u/ausbitbank/avatar'
+      },
+      'hive.ausbit.dev': { theme: SKIN }
+    })
+  }
+}
+
+function blockedSkinAccount () {
+  return skinAccount(-500)
+}
+
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7h8AAAAASUVORK5CYII=',
   'base64'
@@ -207,29 +230,24 @@ async function mockChain (page, {
 
       if (payload.method !== 'condenser_api.get_accounts') return route.continue()
 
-      if (accountOverride) {
-        const names = Array.isArray(params) ? (params[0] || []) : []
-        const result = names.map(name => ({ ...accountOverride, name }))
-        return route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result })
-        })
-      }
-
-      const response = await route.fetch()
-      const json = await response.json()
-      if (Array.isArray(json.result)) {
-        for (const account of json.result) {
-          if (account?.name !== 'ausbitbank') continue
-          account.reputation = reputation
-          let metadata
-          try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
-          metadata['hive.ausbit.dev'] = { theme: SKIN }
-          account.posting_json_metadata = JSON.stringify(metadata)
-        }
-      }
-      await route.fulfill({ response, json })
+      const names = Array.isArray(params) ? (params[0] || []) : []
+      const base = accountOverride || skinAccount(reputation)
+      const result = names.map(name => {
+        const account = { ...base, name }
+        if (name !== 'ausbitbank') return account
+        let metadata
+        try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
+        metadata['hive.ausbit.dev'] = { theme: SKIN }
+        metadata.profile = { ...(metadata.profile || {}), name: metadata.profile?.name || 'Ausbitbank' }
+        account.posting_json_metadata = JSON.stringify(metadata)
+        account.reputation = accountOverride?.reputation ?? reputation
+        return account
+      })
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, result })
+      })
     })
   }
 }
@@ -243,7 +261,7 @@ function policyFor (scope) {
 
 test('skin safety blocks a negative-reputation skin and remembers the override', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
-  await mockChain(page, { reputation: -500 })
+  await mockChain(page, { accountOverride: blockedSkinAccount() })
 
   await page.goto('/@ausbitbank')
   await waitForApp(page)
@@ -307,7 +325,7 @@ test('skin safety lets a followed author keep a skin that is on a subscribed mut
 test('blocked skin notice is axe clean at desktop and mobile widths', async ({ page }) => {
   test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
   test.setTimeout(120000)
-  await mockChain(page, { reputation: -500 })
+  await mockChain(page, { accountOverride: blockedSkinAccount() })
 
   for (const viewport of [{ width: 1440, height: 1100 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport)

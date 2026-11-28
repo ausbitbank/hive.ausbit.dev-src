@@ -77,11 +77,6 @@ describe('built-in themes', () => {
     for (const theme of THEMES) {
       expect(contrast(theme.tokens.text, theme.tokens.surface), theme.id).toBeGreaterThanOrEqual(4.5)
       expect(contrast(theme.tokens.muted, theme.tokens.surface), theme.id).toBeGreaterThanOrEqual(4.5)
-    }
-  })
-
-  it('derives a full token set for every theme', () => {
-    for (const theme of THEMES) {
       const tokens = tokensFor(theme)
       expect(tokens['--c-bg'], theme.id).toBeTruthy()
       expect(tokens['--c-text'], theme.id).toBeTruthy()

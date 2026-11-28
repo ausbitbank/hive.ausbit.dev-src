@@ -1,16 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   MAX_SHORT_BODY_BYTES,
-  SHORT_FORM_FORMATS,
   containerTimeline,
   detectShortForm,
   fetchShortFormFeed,
   fetchShortFormPage,
   fetchShortFormPost,
-  getShortFormat,
   isShortFormContainer,
   isTopLevelShortForm,
-  shortFormatList,
   shortFormPermlink,
   shortFormQueueItem,
   shortFormQueueSummary,
@@ -38,15 +35,6 @@ function post (overrides = {}) {
     ...overrides
   }
 }
-
-describe('short-form formats', () => {
-  it('lists every format once with a stable profile', () => {
-    const list = shortFormatList()
-    expect(list.map(format => format.id)).toEqual(SHORT_FORM_FORMATS)
-    expect(list.every(format => format.label && format.community)).toBe(true)
-    expect(getShortFormat('nope')).toBeNull()
-  })
-})
 
 describe('detectShortForm', () => {
   it('recognises a snap as a comment on a peak.snaps container', () => {

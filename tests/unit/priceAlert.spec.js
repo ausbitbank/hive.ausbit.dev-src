@@ -21,29 +21,25 @@ describe('price alert summary', () => {
     expect(summary.distanceLabel).toBe('US$0.1000')
   })
 
-  it('reports the remaining distance for an above target', () => {
-    const summary = priceAlertSummary({ prices: PRICES, target: 0.75, direction: 'above' })
-    expect(summary.triggered).toBe(false)
-    expect(summary.statusLabel).toBe('US$0.2500 to go')
-    expect(summary.distance).toBeCloseTo(0.25, 6)
-    expect(summary.distancePercent).toBeCloseTo(33.33, 2)
+  it('reports the remaining distance for above and below targets', () => {
+    const above = priceAlertSummary({ prices: PRICES, target: 0.75, direction: 'above' })
+    expect(above.triggered).toBe(false)
+    expect(above.statusLabel).toBe('US$0.2500 to go')
+    expect(above.distance).toBeCloseTo(0.25, 6)
+    expect(above.distancePercent).toBeCloseTo(33.33, 2)
+
+    const reached = priceAlertSummary({ prices: PRICES, target: 0.6, direction: 'below' })
+    expect(reached.direction).toBe('below')
+    expect(reached.triggered).toBe(true)
+    expect(reached.statusLabel).toBe('Target reached')
+
+    const below = priceAlertSummary({ prices: PRICES, target: 0.25, direction: 'below' })
+    expect(below.triggered).toBe(false)
+    expect(below.statusLabel).toBe('US$0.2500 to go')
+    expect(below.distance).toBeCloseTo(0.25, 6)
   })
 
-  it('marks a below target as reached when the price is at or under it', () => {
-    const summary = priceAlertSummary({ prices: PRICES, target: 0.6, direction: 'below' })
-    expect(summary.direction).toBe('below')
-    expect(summary.triggered).toBe(true)
-    expect(summary.statusLabel).toBe('Target reached')
-  })
-
-  it('reports the remaining distance for a below target', () => {
-    const summary = priceAlertSummary({ prices: PRICES, target: 0.25, direction: 'below' })
-    expect(summary.triggered).toBe(false)
-    expect(summary.statusLabel).toBe('US$0.2500 to go')
-    expect(summary.distance).toBeCloseTo(0.25, 6)
-  })
-
-  it('treats a missing target as unset and keeps the current price visible', () => {
+  it('treats missing and negative targets as unset and keeps the current price visible', () => {
     const summary = priceAlertSummary({ prices: PRICES })
     expect(summary.available).toBe(true)
     expect(summary.hasTarget).toBe(false)
@@ -54,14 +50,12 @@ describe('price alert summary', () => {
     expect(summary.triggered).toBe(false)
     expect(summary.statusLabel).toBe('No target set')
     expect(summary.currentLabel).toBe('US$0.5000')
-  })
 
-  it('treats a negative target as unset', () => {
-    const summary = priceAlertSummary({ prices: PRICES, target: -0.25 })
-    expect(summary.hasTarget).toBe(false)
-    expect(summary.target).toBeNull()
-    expect(summary.triggered).toBe(false)
-    expect(summary.statusLabel).toBe('No target set')
+    const negative = priceAlertSummary({ prices: PRICES, target: -0.25 })
+    expect(negative.hasTarget).toBe(false)
+    expect(negative.target).toBeNull()
+    expect(negative.triggered).toBe(false)
+    expect(negative.statusLabel).toBe('No target set')
   })
 
   it('stays unavailable when prices are missing', () => {
@@ -87,7 +81,7 @@ describe('price alert summary', () => {
     expect(summary.statusLabel).toBe('Price unavailable')
   })
 
-  it('triggers on an exact match in both directions', () => {
+  it('triggers on an exact match in both directions and normalises unknown directions', () => {
     const above = priceAlertSummary({ prices: PRICES, target: 0.5, direction: 'above' })
     const below = priceAlertSummary({ prices: PRICES, target: 0.5, direction: 'below' })
     expect(above.triggered).toBe(true)
@@ -95,11 +89,9 @@ describe('price alert summary', () => {
     expect(above.distance).toBe(0)
     expect(above.distancePercent).toBe(0)
     expect(above.statusLabel).toBe('Target reached')
-  })
 
-  it('normalises an unknown direction to above', () => {
-    const summary = priceAlertSummary({ prices: PRICES, target: 0.4, direction: 'sideways' })
-    expect(summary.direction).toBe('above')
-    expect(summary.triggered).toBe(true)
+    const unknown = priceAlertSummary({ prices: PRICES, target: 0.4, direction: 'sideways' })
+    expect(unknown.direction).toBe('above')
+    expect(unknown.triggered).toBe(true)
   })
 })

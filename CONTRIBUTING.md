@@ -36,13 +36,36 @@ bun run e2e:install
 Run the checks that match your change. CI runs lint, unit tests, the production
 build, the full Chromium E2E suite and the performance budgets.
 
+During feature work, keep the loop narrow:
+
+```bash
+bun run test:affected   # changed unit tests only, slow coverage excluded
+bun run test:fast       # all unit tests except slow-tagged coverage
+bun run test:e2e -- e2e/your.spec.js   # one functional Chromium E2E spec
+```
+
+Before opening the pull request, run the full gate:
+
 ```bash
 bun run lint
-bun run test
+bun run test            # full unit suite
 bun run build
-bun run test:e2e        # fast Obscura loop
+bun run test:e2e        # fast functional Chromium suite
 bun run test:e2e:full   # full Chromium suite, required for UI, a11y and PWA work
+# or: bun run test:all  # full unit + build + full Chromium E2E
 ```
+
+## Testing guidelines
+
+- Test observable behavior, business rules and regressions; skip trivial
+  boilerplate, constants and internal implementation details.
+- Reuse existing specs, helpers and fixtures. Use table-driven tests instead of
+  duplicating near-identical cases.
+- Do not mock private helpers or assert internal call counts/log strings.
+- Tag genuinely slow tests with `{ tags: ['slow'] }`; do not delete important
+  security or payment coverage to speed up the fast lane.
+- Run only targeted/affected tests while iterating; run the full suite once the
+  feature is complete.
 
 Also run `bun run perf:check` when you touch a route bundle, shared component or
 startup path.

@@ -2,12 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { EMOJI_CHOICES, EMOJI_GROUPS } from '../../src/utils/emoji'
 
 describe('composer emoji catalogue', () => {
-  it('has unique group ids and labels', () => {
+  it('gives every group and entry a unique accessible identity', () => {
     expect(new Set(EMOJI_GROUPS.map(group => group.id)).size).toBe(EMOJI_GROUPS.length)
     expect(new Set(EMOJI_GROUPS.map(group => group.label)).size).toBe(EMOJI_GROUPS.length)
-  })
-
-  it('gives every entry an accessible label and a unique character', () => {
     const characters = new Set()
     for (const group of EMOJI_GROUPS) {
       expect(group.emoji.length).toBeGreaterThan(0)

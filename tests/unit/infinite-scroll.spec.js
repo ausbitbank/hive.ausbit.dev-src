@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { QIcon, QSpinnerDots, Quasar } from 'quasar'
 import InfiniteScroll from '../../src/components/ui/InfiniteScroll.vue'
@@ -28,17 +28,21 @@ function placeFooter (top, height = 40) {
 
 async function scroll () {
   window.dispatchEvent(new Event('scroll'))
-  await new Promise(resolve => setTimeout(resolve, 200))
+  // The component throttles scroll checks for 120ms; advance fake timers
+  // instead of sleeping for 200ms in every case.
+  await vi.advanceTimersByTimeAsync(150)
   await wrapper.vm.$nextTick()
 }
 
 beforeEach(() => {
+  vi.useFakeTimers()
   window.innerHeight = 800
 })
 
 afterEach(() => {
   wrapper?.unmount()
   wrapper = null
+  vi.useRealTimers()
 })
 
 describe('InfiniteScroll', () => {

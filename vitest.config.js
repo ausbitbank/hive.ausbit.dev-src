@@ -31,6 +31,14 @@ export default defineConfig({
     setupFiles: ['tests/setup.js'],
     globals: true,
     include: ['tests/unit/**/*.spec.js'],
+    // Tag deliberately expensive coverage so `test:fast` can skip it while the
+    // full `test` run still executes every test.
+    tags: [
+      {
+        name: 'slow',
+        description: 'Heavy PBKDF2/KDF work or reconnect backoff; excluded from test:fast'
+      }
+    ],
     // SmartLock's PBKDF2 (310k iterations) legitimately takes seconds under
     // v8 coverage instrumentation. The default 5s timeout makes
     // `bun run test:coverage` fail on tests that pass in the normal run.

@@ -28,7 +28,7 @@ const PASSPHRASE = 'correct horse battery staple'
 
 afterEach(() => lockCreatorVault())
 
-describe('creator vault session', () => {
+describe('creator vault session', { tags: ['slow'] }, () => {
   it('derives the current period key id in UTC', () => {
     expect(currentVaultKid(new Date('2026-11-27T23:00:00Z'))).toBe('2026-11')
     expect(currentVaultKid(new Date('2027-01-01T00:00:00Z'))).toBe('2027-01')

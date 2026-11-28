@@ -1,16 +1,54 @@
 # End-to-end tests
 
-The repository has two Playwright suites that share the same spec files:
+The Playwright specs live in `e2e/` and run against a built production bundle
+served by `scripts/serve-dist.mjs`.
 
 | Command | Browser | Scope |
 | --- | --- | --- |
-| `bun run test:e2e` | Obscura (CDP) | Functional flows (Chromium-only specs skipped) |
-| `bun run test:e2e:full` | Chromium | Every spec |
+| `bun run test:e2e` | Chromium | Fast functional suite (mocked flows) |
+| `bun run test:e2e:full` | Chromium | Complete release gate |
+| `bun run test:e2e:obscura` | Obscura | Optional non-mocked browser checks |
 
-CI runs the full Chromium suite. Use the Obscura suite for the local edit/run
-loop.
+Install Chromium once:
 
-## Fast suite (Obscura)
+```bash
+bunx playwright install chromium
+```
+
+## Fast functional suite
+
+```bash
+bun run test:e2e
+bun run test:e2e -- e2e/core.spec.js   # one spec while iterating
+```
+
+This lane keeps the functional flows and route mocks, skips the heavy
+a11y/layout/perf/PWA/offline/Vault specs, and runs with four fully parallel
+workers. It is the local edit/run loop and typically finishes in about three
+minutes.
+
+`scripts/e2e-run.mjs` starts the static server once before Playwright starts and
+stops only the processes it started. This avoids the mid-run `Connection
+refused` failures that happened when Playwright owned the server lifecycle under
+parallel load. It also starts Obscura when `test:e2e:obscura` is used.
+
+## Full Chromium gate
+
+```bash
+bun run test:e2e:full
+bun run test:e2e:build   # build first
+```
+
+The full suite adds axe WCAG A/AA at desktop and mobile widths, visual/layout
+assertions, LCP/CLS performance, PWA install/offline/update flows, wallet CSV
+export, Lightning state coverage, Vault and resilience/offline signing. It is
+the CI release gate.
+
+A few release checks still read live public Hive APIs. They are slower and can
+hit a transient node error or rate limit, so the full gate retries transient
+failures. Prefer mocked specs for the local loop.
+
+## Optional Obscura lane
 
 Install the binary once:
 
@@ -18,56 +56,49 @@ Install the binary once:
 bun run e2e:install
 ```
 
-This downloads the latest Linux/macOS release into `.tools/obscura/obscura`
-(ignored by git). Point `OBSCURA_BIN` at another binary if you already have one.
+Obscura is a lightweight Rust/V8 headless browser with a CDP server. It is cheap
+to start, but its CDP implementation does not expose request bodies, so specs
+that rewrite JSON-RPC responses cannot work there. Use it only for non-mocked
+browser checks:
 
 ```bash
-bun run test:e2e
-bun run test:e2e:fast:build   # build first
+bun run test:e2e:obscura
 ```
 
-`scripts/e2e-fast.mjs` starts Obscura on port 9222 with
+`scripts/e2e-run.mjs` starts Obscura on port 9222 with
 `--allow-private-network`, then runs Playwright with `OBSCURA_CDP` set.
 `e2e/fixtures.js` connects the browser fixture over CDP when that variable is
-present. The config uses four workers because Obscura is cheap to run.
+present. Point `OBSCURA_BIN` at an existing binary if needed.
 
-The fast suite covers:
+## Why Chromium for the fast lane?
 
-- login/session simulation, HiveAuth login and queue actions
-- comment, proposal and transfer flows
-- compose autosave/restore, queueing, cover/checklist warnings, supported upload flows and post metadata
-- unified search, Lightning search, shared URLs, saved searches and the palette deep link
-- browse filters, layout controls and infinite scroll
-- 404 search, keyboard shortcuts, back-to-top and share actions
-- witness/proposal analytics, delegations, authority risk and community insights
-- dashboard layout editing, connections and profile badges
-- moderation, downvote transparency, list subscriptions, theme wall, theme sharing and skin safety
-- keepsats, POS, market sats quotes, vote directions and retry states
+- **Route mocks need request bodies.** Obscura returns `null` from
+  `request.postDataJSON()` and `request.postData()`, so a spec cannot tell
+  `bridge.list_communities` from `condenser_api.get_accounts`. Chromium exposes
+  the JSON-RPC payload and keeps the mocks deterministic.
+- **Fewer live-network waits.** Mocked Chromium specs complete in seconds;
+  equivalent Obscura specs fall back to live public nodes and can spend
+  minutes in failover/retry paths.
+- **Parallel isolation.** Chromium gives each test its own context, so fully
+  parallel workers do not share local storage, cookies or service workers.
 
-## Why not migrate everything?
+## Why not migrate everything to Obscura?
 
-Lightpanda and Obscura are built for automation, not for reproducing Chromium's
-full rendering surface. This suite relies on Chromium for several checks:
+Obscura is built for automation, not for reproducing Chromium's full rendering
+surface. This suite relies on Chromium for several checks:
 
 - **axe WCAG A/AA and colour contrast** are checked in Chromium. Obscura's
-  independent layout engine reports different computed geometry; two routes
-  differed under axe, so these stay in the full suite.
+  independent layout engine reports different computed geometry.
 - **Visual and layout assertions** (`polish.spec.js`, the 390px overflow check)
-  depend on Chromium-compatible layout. Obscura reported a false horizontal
-  overflow on `/proposals`.
+  depend on Chromium-compatible layout.
 - **Performance** needs `PerformanceObserver` LCP/CLS entries and Chromium
-  network emulation. Obscura returned no LCP/navigation entries.
+  network emulation.
 - **PWA/service worker/offline** flows need real service-worker and offline
   emulation support.
-- **Resilience** uses route interception and offline signing semantics that are
-  already covered by the Chromium path.
+- **Vault** needs real IndexedDB `CryptoKey` storage, axe and deterministic
+  network mocking.
 
-Lightpanda was also evaluated: it does not render (no screenshots/CSS layout),
-which rules it out for the axe, polish and performance checks. Obscura supports
-rendering, screenshots and CDP, so it is the better fit for functional tests,
-but the Chromium-only list above still applies.
-
-Beyond the seven `CHROMIUM_ONLY` specs in `playwright.obscura.config.js`, some
+Beyond the `CHROMIUM_ONLY` specs in `playwright.functional.config.js`, some
 individual tests skip themselves when `OBSCURA_CDP` is set because they need
 file inputs, clipboard permissions, mocked API responses or Chromium layout
 measurement. Those checks remain in the full suite.
@@ -76,10 +107,13 @@ measurement. Those checks remain in the full suite.
 
 - **`Obscura was not found`** — run `bun run e2e:install` or set
   `OBSCURA_BIN=/path/to/obscura`.
-- **Port already in use** — set `OBSCURA_PORT` (default 9222) or stop the
-  existing Obscura server.
-- **A test that needs Chromium** — run `bun run test:e2e:full`. Adding
+- **Port already in use** — set `E2E_PORT` (static server, default 4173) or
+  `OBSCURA_PORT` (default 9222).
+- **Many `Connection refused` failures at `127.0.0.1:4173`** — stop any stale
+  `scripts/serve-dist.mjs` or Obscura process and rerun. The wrapper now keeps
+  the server alive; a stale process from an older run can still occupy the port.
+- **A test that needs Chromium** — run `bun run test:e2e:full`. Add
   `**/your.spec.js` to the `CHROMIUM_ONLY` list in
-  `playwright.obscura.config.js` keeps it out of the fast run.
+  `playwright.functional.config.js` to keep it out of the fast run.
 - **Screenshots on failure** are written to `test-results/`; traces are disabled
-  in the fast suite because tracing is a Chromium-oriented path.
+  in the fast suite and retained on failure in the full suite.

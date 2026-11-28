@@ -48,7 +48,8 @@ export default defineConfig({
     {
       command: 'node scripts/serve-dist.mjs',
       url: BASE_URL,
-      reuseExistingServer: !process.env.CI,
+      // scripts/e2e-run.mjs owns the server lifecycle.
+      reuseExistingServer: true,
       timeout: 20000
     }
   ],

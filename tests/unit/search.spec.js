@@ -2,19 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { parseSearchRoute } from '../../src/services/search'
 
 describe('search route parser', () => {
-  it('parses block numbers and explicit block commands', () => {
+  it('parses blocks, transactions, accounts, tags and proposals', () => {
     expect(parseSearchRoute('12345678')).toMatchObject({ path: '/b/12345678', kind: 'block' })
     expect(parseSearchRoute('block 12345678')).toMatchObject({ path: '/b/12345678' })
     expect(parseSearchRoute('block #12345678')).toMatchObject({ path: '/b/12345678' })
-  })
 
-  it('parses transaction ids and tx commands', () => {
     const id = '7ad5edd0997430be8eaa48ead159b2cfb8f5b606'
     expect(parseSearchRoute(id)).toMatchObject({ path: '/tx/' + id, kind: 'tx' })
     expect(parseSearchRoute('tx ' + id)).toMatchObject({ path: '/tx/' + id })
-  })
 
-  it('parses accounts, posts and account subpages', () => {
     expect(parseSearchRoute('@ausbitbank')).toMatchObject({ path: '/@ausbitbank', kind: 'account' })
     expect(parseSearchRoute('ausbitbank')).toMatchObject({ path: '/@ausbitbank', kind: 'account' })
     expect(parseSearchRoute('@ausbitbank/posts')).toMatchObject({ path: '/@ausbitbank/posts', kind: 'account' })
@@ -26,9 +22,7 @@ describe('search route parser', () => {
       path: '/@ausbitbank/wallet',
       kind: 'wallet'
     })
-  })
 
-  it('parses tags and proposal commands', () => {
     expect(parseSearchRoute('#photography')).toMatchObject({ path: '/trending/photography', kind: 'tag' })
     expect(parseSearchRoute('hive-153850')).toMatchObject({ path: '/trending/hive-153850' })
     expect(parseSearchRoute('proposal 373')).toMatchObject({ path: '/proposals/373', kind: 'proposal' })

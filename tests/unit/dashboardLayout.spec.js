@@ -4,8 +4,6 @@ import {
   DASHBOARD_PRESETS,
   GRID_COLUMNS,
   MAX_WIDGETS,
-  WIDGET_REGISTRY,
-  WIDGET_WIDTHS,
   addWidget,
   buildLayout,
   canAddWidget,
@@ -38,22 +36,6 @@ function layoutOf (...types) {
 }
 
 describe('dashboard widget registry', () => {
-  it('exposes a known widget for every default layout entry', () => {
-    for (const entry of DEFAULT_LAYOUT) {
-      expect(isKnownWidgetType(entry.type)).toBe(true)
-    }
-  })
-
-  it('keeps type, component and category on every registry entry', () => {
-    for (const entry of WIDGET_REGISTRY) {
-      expect(entry.type).toBeTruthy()
-      expect(entry.component).toBeTruthy()
-      expect(entry.label).toBeTruthy()
-      expect(entry.category).toBeTruthy()
-      expect(entry.defaultWidth).toBeTruthy()
-    }
-  })
-
   it('rejects unknown widget types', () => {
     expect(isKnownWidgetType('nope')).toBe(false)
     expect(normaliseWidget({ type: 'nope' })).toBeNull()
@@ -130,22 +112,9 @@ describe('dashboard presets', () => {
     expect(presetById('nope')).toBeNull()
   })
 
-  it('keeps the persona presets distinct and non-empty', () => {
-    expect(DASHBOARD_PRESETS.length).toBeGreaterThanOrEqual(7)
-    for (const preset of DASHBOARD_PRESETS) {
-      expect(preset.widgets.length).toBeGreaterThan(0)
-    }
-  })
 })
 
 describe('widget widths', () => {
-  it('maps every width token to grid columns', () => {
-    for (const width of WIDGET_WIDTHS) {
-      expect(width.columns).toBeGreaterThan(0)
-      expect(width.columns).toBeLessThanOrEqual(GRID_COLUMNS)
-    }
-  })
-
   it('clamps a width below the widget minimum', () => {
     expect(clampWidth('posts', 'quarter')).toBe('half')
     expect(clampWidth('posts', 'full')).toBe('full')

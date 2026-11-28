@@ -11,7 +11,7 @@ import {
 
 const NOW = new Date('2026-11-17T12:00:00.000Z')
 
-describe('SmartLock session timeout', () => {
+describe('SmartLock session timeout', { tags: ['slow'] }, () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(NOW)

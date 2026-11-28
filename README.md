@@ -192,7 +192,7 @@ searches live in your browser.
 | Local security | `sjcl` and `bs58` for SmartLock encrypted local key storage |
 | Utilities | `dayjs`, `linkify-it`, `uqr` and `vue-json-pretty` for dates, links, QR codes and raw JSON |
 | Data | Hive JSON-RPC, Hive bridge/Hivemind, Hive-Engine RPC, Magi GraphQL/API, CoinGecko and v4v.app |
-| Tests | Vitest for unit tests; Playwright + axe-core for E2E and accessibility; Obscura for the fast functional loop and Chromium for the release gate |
+| Tests | Vitest for unit tests; Playwright + axe-core in Chromium for the fast functional loop and the full release gate; optional Obscura lane |
 
 ## Architecture
 
@@ -318,14 +318,17 @@ The dev server opens at <http://localhost:8080>.
 | `bun run build` | Build the SPA into `dist/spa`, apply the Cloudflare compatibility shim, stamp `sw.js`/`version.json`, and generate `feed.xml` and the home snapshot |
 | `bun run lint` | Run ESLint and the theme-token scanner |
 | `bun run lint:fix` | Run ESLint with fixes |
-| `bun run test` | Run Vitest unit tests |
+| `bun run test` | Run the full Vitest unit suite |
+| `bun run test:fast` | Unit tests excluding `slow`-tagged coverage |
+| `bun run test:affected` | Changed unit tests only, slow coverage excluded |
 | `bun run test:watch` | Watch mode for unit tests |
 | `bun run test:coverage` | Unit-test coverage report |
-| `bun run test:e2e` | Fast functional E2E through Obscura (local iteration) |
+| `bun run test:e2e` | Fast functional Chromium E2E (local iteration) |
 | `bun run test:e2e:full` | Full Chromium E2E: axe, PWA, performance and resilience |
 | `bun run test:e2e:build` | Build, then run the full Chromium E2E suite |
-| `bun run test:e2e:fast:build` | Build, then run the fast Obscura suite |
-| `bun run e2e:install` | Download the Obscura binary into `.tools/obscura` |
+| `bun run test:e2e:fast:build` | Build, then run the fast functional Chromium suite |
+| `bun run test:e2e:obscura` | Optional Obscura lane for non-mocked browser checks |
+| `bun run e2e:install` | Download the Obscura binary for the optional lane |
 | `bun run perf` | Measure routes and refresh `docs/performance/` |
 | `bun run perf:check` | Run the measured performance budgets |
 | `bun run prerender` | Write metadata-only crawler snapshots into `dist/spa` |
@@ -344,26 +347,36 @@ against a built production bundle served by `scripts/serve-dist.mjs`. The repo
 currently has more than 2,300 unit tests and over 200 functional E2E checks.
 
 ```bash
-bun run test
-bun run e2e:install     # once per machine
-bun run test:e2e        # fast functional suite
-bun run test:e2e:full   # full Chromium suite
+bun run test:affected   # changed files only, slow coverage excluded
+bun run test:fast       # all unit tests except slow-tagged coverage
+bun run test            # full unit suite
+bunx playwright install chromium   # once per machine
+bun run test:e2e        # fast functional Chromium suite (~3 minutes)
+bun run test:e2e:full   # full Chromium release gate
+bun run test:all        # pre-push: full unit + build + full Chromium E2E
 ```
 
-The **fast suite** connects Playwright to [Obscura](https://github.com/h4ckf0r0day/obscura),
-a lightweight Rust/V8 headless browser with a CDP server. It runs the functional
-tests with four workers: login simulation, queueing, the composer and drafts,
-unified search, transfers, browse filters, infinite scroll, navigation, keyboard
-shortcuts, share actions, governance and community surfaces, moderation and
-downvotes, themes and skins, dashboard layouts, connections, badges, keepsats,
-Lightning search and payments, POS and market sats quotes.
+Use `bunx vitest run tests/unit/<file>.spec.js` for a single unit file and
+`bun run test:e2e -- e2e/<file>.spec.js` for a single E2E spec. Genuinely slow
+unit coverage (PBKDF2/KDF and reconnect backoff) is tagged `slow`; it stays in
+the full suite and is skipped by `test:fast`.
+
+The **fast E2E suite** runs in Chromium with four parallel file workers against
+the mocked functional specs: login simulation, queueing, the composer and
+drafts, unified search, transfers, browse filters, infinite scroll, navigation,
+keyboard shortcuts, share actions, governance and community surfaces,
+moderation and downvotes, themes and skins, dashboard layouts, connections,
+badges, keepsats, Lightning search and payments, POS and market sats quotes.
+`scripts/e2e-run.mjs` starts the static build server once and keeps it alive for
+the whole run.
 
 The **full Chromium suite** remains the release gate: it runs the complete spec
 set, adding axe WCAG A/AA at desktop and mobile widths, visual/layout assertions,
 LCP/CLS performance, PWA install/offline/update flows, wallet CSV export,
-Lightning state coverage, and resilience/offline signing. Chromium is required
-because Obscura has an independent layout engine, no Performance API LCP/CLS
-entries, and no service-worker/offline emulation.
+Lightning state coverage, and resilience/offline signing. A few release checks
+still read live public Hive APIs, so the full gate retries transient network
+failures. The optional Obscura lane remains available with
+`bun run test:e2e:obscura` for non-mocked browser checks.
 
 ```bash
 bunx playwright install chromium
@@ -456,6 +469,42 @@ The build stamps a unique id into `sw.js` and `version.json`
 available" prompt fire for normal deploys rather than only when `sw.js` is
 edited.
 
+### banksia.io cutover
+
+1. Point `banksia.io` and `www.banksia.io` at Cloudflare and add the zone.
+2. Install the vhost, enable it and disable the old symlink so only one server
+   block owns the names:
+   ```bash
+   scp deploy/nginx/banksia.io.conf hurgenburgen:/tmp/
+   ssh hurgenburgen 'sudo cp /tmp/banksia.io.conf /etc/nginx/sites-available/banksia.io'
+   ssh hurgenburgen 'sudo ln -sf /etc/nginx/sites-available/banksia.io /etc/nginx/sites-enabled/banksia.io'
+   ssh hurgenburgen 'sudo rm -f /etc/nginx/sites-enabled/hive.ausbit.dev'
+   ssh hurgenburgen 'sudo nginx -t && sudo systemctl reload nginx'
+   ```
+3. Issue or expand the certificate so the same vhost covers all three names:
+   ```bash
+   ssh hurgenburgen 'sudo certbot --nginx -d banksia.io -d www.banksia.io -d hive.ausbit.dev'
+   ```
+   Keep the certbot-managed `ssl_certificate` lines it writes.
+4. Deploy the SPA with `./scripts/deploy.sh`. The first run seeds
+   `/var/www/banksia.io` from the old build and verifies both hosts.
+5. Deploy the metadata Worker with `npx wrangler@4 deploy`, verify the new routes,
+   then delete the old `hive-metadata` Worker.
+6. Confirm `https://banksia.io` and `https://hive.ausbit.dev` both return the app;
+   canonical, Open Graph and JSON-LD URLs should always be `banksia.io`.
+7. Ask v4v.app to add `https://banksia.io` to its CORS allowlist and to register
+   the `banksia` app name. The legacy `hive.ausbit.dev` origin remains allowlisted,
+   so Lightning keeps working there during the transition.
+
+The origin also trusts Cloudflare's `CF-Connecting-IP` header so access logs
+record real visitor IPs instead of edge IPs. The trusted ranges live in
+`deploy/nginx/cloudflare-realip.conf` and are refreshed from Cloudflare with
+`bun run nginx:ips`. Apply the real-IP and JSON access-log block with
+`bash scripts/apply-nginx-remote.sh hurgenburgen dry-run` first; the same script
+with `apply` backs up the live config, tests it and reloads nginx. See
+[`docs/analytics-review.md`](docs/analytics-review.md) for the traffic analysis
+that prompted it.
+
 ## Data sources
 
 - Public Hive API nodes: accounts, blocks, transactions, global properties,
@@ -480,9 +529,9 @@ Prices and third-party charts can be delayed or temporarily unavailable.
 
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — current open work and next priorities
 - [`docs/HIVE_OPEN_MARKET.md`](docs/HIVE_OPEN_MARKET.md) — HOM protocol reference, honest limitations, non-goal justifications and the shop roadmap
-- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W108 implementation record
+- [`docs/workstreams/README.md`](docs/workstreams/README.md) — index of every W1–W110 implementation record
 - [`docs/SECURITY.md`](docs/SECURITY.md) — response headers and the client-side key model
-- [`docs/e2e.md`](docs/e2e.md) — Obscura/Chromium suite split and troubleshooting
+- [`docs/e2e.md`](docs/e2e.md) — Chromium functional/release suite split, optional Obscura lane and troubleshooting
 - [`docs/performance/`](docs/performance/) — performance dashboard, budgets and bundle analysis
 - [`docs/integrations/v4vapp-lightning.md`](docs/integrations/v4vapp-lightning.md) — Lightning bridge research and integration contract
 - [`deploy/cloudflare/`](deploy/cloudflare/) — metadata Worker, edge-rule plans and verification

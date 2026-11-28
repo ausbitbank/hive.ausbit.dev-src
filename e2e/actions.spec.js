@@ -1,5 +1,8 @@
 import { test, expect } from './fixtures'
-import { loginAs, readDrafts, readQueue, runAxe, seedDrafts, seedQueue, waitForApp } from './helpers'
+import { loginAs, mockCommunityDirectory, readDrafts, readQueue, runAxe, seedDrafts, seedQueue, waitForApp } from './helpers'
+
+// Keep the production service worker from answering mocked reads.
+test.use({ serviceWorkers: 'block' })
 
 const QUEUE_ITEMS = [
   ['ausbitbank', 'active', ['transfer', { from: 'ausbitbank', to: 'alice', amount: '1.000 HIVE', memo: '' }]],
@@ -851,6 +854,7 @@ test.describe('action flows', () => {
 
   test('community rules links open the about tab', async ({ page }) => {
     test.setTimeout(120000)
+    await mockCommunityDirectory(page)
     await page.goto('/c/hive-174578?tab=about')
     await waitForApp(page)
     await expect(page.getByRole('tab', { name: 'About' })).toHaveAttribute('aria-selected', 'true')

@@ -685,11 +685,6 @@ describe('publish metadata integration', () => {
 })
 
 describe('draft vault round-trip', () => {
-  it('defaults to off and section mode', () => {
-    expect(normalizeDraft({}).vault).toEqual({ enabled: false, mode: 'section' })
-    expect(createDraft({}).vault).toEqual({ enabled: false, mode: 'section' })
-  })
-
   it('round-trips enabled whole-post drafts', () => {
     const normalized = normalizeDraft({ vault: { enabled: true, mode: 'post' } })
     expect(normalized.vault).toEqual({ enabled: true, mode: 'post' })

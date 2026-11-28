@@ -148,10 +148,7 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
         return
       }
       if (payload.method !== 'condenser_api.get_accounts') return route.continue()
-      const response = await route.fetch()
-      const json = await response.json()
       const requested = Array.isArray(payload.params?.[0]) ? payload.params[0] : []
-      const result = Array.isArray(json.result) ? json.result.filter(Boolean) : []
       const fake = {
         'badge-069069': badgeAccount('badge-069069', {
           name: 'NFT Showroom Verified Artist',
@@ -161,23 +158,26 @@ test('profile shelf renders status, Circle and issuer badges with mocked APIs', 
         alice: badgeAccount('alice', { name: 'Alice', profile_image: 'https://images.hive.blog/u/alice/avatar' }),
         bob: badgeAccount('bob', { name: 'Bob', profile_image: 'https://images.hive.blog/u/bob/avatar' })
       }
-      for (const account of result) {
-        if (account?.name === 'ausbitbank') {
-          let metadata
-          try { metadata = JSON.parse(account.posting_json_metadata || '{}') } catch { metadata = {} }
-          metadata['banksia.io'] = { ...(metadata['banksia.io'] || {}), theme: SKIN }; delete metadata['hive.ausbit.dev']
-          metadata.profile = { ...(metadata.profile || {}), pinned: POST.permlink }
-          account.posting_json_metadata = JSON.stringify(metadata)
-        }
+      const base = {
+        ...badgeAccount('ausbitbank', { name: 'Ausbitbank', pinned: POST.permlink }),
+        created: '2020-01-01T00:00:00',
+        reputation: 60,
+        post_count: 0,
+        balance: '0.000 HIVE',
+        hbd_balance: '0.000 HBD',
+        vesting_shares: '0.000000 VESTS'
       }
-      for (const name of requested) {
-        if (!fake[name]) continue
-        const existing = result.find(account => account?.name === name)
-        if (existing) Object.assign(existing, fake[name])
-        else result.push(fake[name])
-      }
-      json.result = result
-      await route.fulfill({ response, json })
+      const metadata = JSON.parse(base.posting_json_metadata)
+      metadata['banksia.io'] = { theme: SKIN }
+      base.posting_json_metadata = JSON.stringify(metadata)
+      const result = requested
+        .map(name => name === 'ausbitbank' ? { ...base } : fake[name])
+        .filter(Boolean)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, result })
+      })
     })
   }
 

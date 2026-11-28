@@ -74,7 +74,7 @@ describe('creator vault creation', () => {
   })
 })
 
-describe('vault at-rest encryption', () => {
+describe('vault at-rest encryption', { tags: ['slow'] }, () => {
   it('encrypts and decrypts with PBKDF2-SHA256 and AES-256-GCM', async () => {
     const vault = await vaultFixture()
     const envelope = await encryptVault(vault, PASS)
@@ -125,7 +125,7 @@ describe('vault at-rest encryption', () => {
   })
 })
 
-describe('creator vault storage', () => {
+describe('creator vault storage', { tags: ['slow'] }, () => {
   it('stores only the encrypted envelope', async () => {
     const vault = await vaultFixture()
     const storage = memoryStorage()
@@ -163,7 +163,7 @@ describe('creator vault storage', () => {
   })
 })
 
-describe('creator vault export and import', () => {
+describe('creator vault export and import', { tags: ['slow'] }, () => {
   it('round-trips a downloadable backup', async () => {
     const vault = await vaultFixture()
     const backup = await exportCreatorVault(vault, PASS)
@@ -219,7 +219,7 @@ describe('period rotation', () => {
   })
 })
 
-describe('reader recovery', () => {
+describe('reader recovery', { tags: ['slow'] }, () => {
   async function recoveryFixture () {
     const pair = await generateReaderKeyPair({ extractable: true })
     const privateJwk = await exportReaderPrivateJwk(pair.privateKey)

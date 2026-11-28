@@ -82,7 +82,7 @@ const SESSION = {
   host: HAS_HOST
 }
 
-describe('HiveAuth client', () => {
+describe('HiveAuth client', { tags: ['slow'] }, () => {
   beforeEach(() => {
     vi.stubGlobal('crypto', webcrypto)
     vi.stubGlobal('WebSocket', MockWebSocket)
