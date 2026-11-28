@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_SESSION_TIMEOUT_MS,
+  getPosting,
   isUnlocked,
   lock,
   lockExpired,
@@ -38,6 +39,14 @@ describe('SmartLock session timeout', () => {
     expect(isUnlocked('alice')).toBe(true)
     vi.advanceTimersByTime(2)
     expect(isUnlocked('alice')).toBe(false)
+  })
+
+  it('refuses to hand out the posting key after the timeout without a sweep', () => {
+    save('alice', 'password123', { posting: '5KfakePostingKey' })
+    expect(getPosting('alice', 1000)).toBe('5KfakePostingKey')
+    vi.advanceTimersByTime(1001)
+    expect(getPosting('alice', 1000)).toBeUndefined()
+    expect(isUnlocked('alice', 1000)).toBe(false)
   })
 
   it('extends the session when activity is recorded', () => {

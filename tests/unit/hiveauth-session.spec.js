@@ -34,10 +34,20 @@ describe('HiveAuth session storage', () => {
     vi.useRealTimers()
   })
 
-  it('saves and restores a session', () => {
+  it('saves a session in memory and never persists the signing key', () => {
     saveSession('alice', SESSION)
+    const persisted = JSON.parse(sessionStorage.getItem(SESSION_PREFIX + 'alice'))
+    expect(persisted).toMatchObject({ account: 'alice', token: 'token-1', host: SESSION.host })
+    expect(persisted.key).toBeUndefined()
     expect(loadSession('alice')).toEqual(SESSION)
-    expect(sessionStorage.getItem(SESSION_PREFIX + 'alice')).toBeTruthy()
+  })
+
+  it('requires a fresh wallet approval after a reload', async () => {
+    saveSession('alice', SESSION)
+    vi.resetModules()
+    const fresh = await import('../../src/services/hiveauth/session')
+    expect(fresh.loadSession('alice')).toBeNull()
+    expect(sessionStorage.getItem(SESSION_PREFIX + 'alice')).toBeNull()
   })
 
   it('expires a session at its expiry time', () => {
@@ -50,6 +60,11 @@ describe('HiveAuth session storage', () => {
   it('keeps a token-less protocol-v1 session without an expiry', () => {
     saveSession('alice', { ...SESSION, token: null, expire: null })
     expect(loadSession('alice')).toMatchObject({ token: null, expire: null })
+  })
+
+  it('rejects a token-bearing session with no expiry', () => {
+    saveSession('alice', { ...SESSION, expire: null })
+    expect(loadSession('alice')).toBeNull()
   })
 
   it('ignores malformed or mismatched records', () => {

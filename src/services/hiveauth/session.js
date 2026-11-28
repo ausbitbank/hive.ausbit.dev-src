@@ -49,7 +49,8 @@ function isSession (value, account) {
 }
 
 function isExpired (session) {
-  return session.expire !== null && session.expire <= Date.now()
+  if (session.expire === null) return Boolean(session.token)
+  return session.expire <= Date.now()
 }
 
 function normalizeExpire (value) {
@@ -83,7 +84,16 @@ export function saveSession (account, session) {
   const store = storage()
   if (!store) return record
   try {
-    store.setItem(keyFor(account), JSON.stringify(record))
+    // The AES key can request signatures, so it stays in memory only. Persist
+    // the account/host/token metadata for diagnostics, but a reload cannot
+    // silently resume signing without a fresh wallet approval.
+    const persisted = {
+      account: record.account,
+      token: record.token,
+      expire: record.expire,
+      host: record.host
+    }
+    store.setItem(keyFor(account), JSON.stringify(persisted))
   } catch {
     // The in-memory copy still lets the current tab sign.
   }

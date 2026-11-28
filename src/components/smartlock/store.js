@@ -86,7 +86,11 @@ export function hasMemo (username) {
   return user.memo && user.memo.length
 }
 
-export function getPosting (username) {
+export function getPosting (username, timeoutMs = DEFAULT_SESSION_TIMEOUT_MS) {
+  // The signing boundary is the last line of defence: a throttled tab must not
+  // be able to sign past the configured idle timeout just because the sweeper
+  // has not run yet.
+  if (!isUnlocked(username, timeoutMs)) return undefined
   return unlocked[username]
 }
 

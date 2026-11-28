@@ -765,7 +765,7 @@ import { keychain } from '@hiveio/keychain'
 import settings from 'components/settings.vue'
 import userSearchBox from 'components/userSearchBox.vue'
 import { apiGetMedianHistoryPrice, apiGetRewardFund } from 'src/services/api'
-import { clearPending, clearSession as clearHiveAuthSession, loadPending, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
+import { clearAllSessions as clearAllHiveAuthSessions, clearPending, loadPending, loadSession as loadHiveAuthSession } from 'src/services/hiveauth/session'
 import { estimateVoteValueUsd, formatRecharge, formatVoteValue, vpRechargeSeconds } from 'src/services/voteValue'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 
@@ -819,6 +819,7 @@ export default {
       hiveauthExpiresAt: 0,
       hiveauthClock: Date.now(),
       hiveauthTimer: null,
+      hiveauthExpiryTimer: null,
       hiveauthController: null,
       hiveauthStatus: null,
       hiveauthResuming: false,
@@ -998,6 +999,12 @@ export default {
         this.checkLoginSmartLock(this.username)
       } catch (error) {
         this.$q.notify({ type: 'negative', message: error?.message || 'Could not import the SmartLock account' })
+      } finally {
+        // Do not leave plaintext WIFs or the unlock password in reactive state.
+        this.password = ''
+        this.postkey = ''
+        this.activekey = ''
+        this.memokey = ''
       }
     },
     async refreshSmartlockStatus () {
@@ -1124,7 +1131,7 @@ export default {
         // challenge is kept in the response for future local verification
         // without adding another approval step.
         const challenge = 'banksia.io login for ' + user + ' at ' + new Date().toISOString()
-        await hiveauth.authenticate(user, {
+        const session = await hiveauth.authenticate(user, {
           signal: controller.signal,
           challenge,
           onPayload: payload => this.prepareHiveAuthPayload(payload),
@@ -1132,6 +1139,7 @@ export default {
         })
         this.loggedInUser = user
         this.loginType = 'hiveauth'
+        this.scheduleHiveAuthExpiry(session)
         this.hiveauthDialog = false
         this.$q.notify({
           type: 'positive',
@@ -1218,9 +1226,21 @@ export default {
           signal: controller.signal,
           onStatus: status => this.applyHiveAuthStatus(status)
         })
-        if (!session) return
+        if (!session) {
+          this.hiveauthError = 'The interrupted HiveAuth login expired. Start again.'
+          this.hiveauthDialog = false
+          this.$q.notify({
+            type: 'warning',
+            message: this.hiveauthError,
+            icon: 'schedule',
+            position: 'top',
+            timeout: 6000
+          })
+          return
+        }
         this.loggedInUser = pending.account
         this.loginType = 'hiveauth'
+        this.scheduleHiveAuthExpiry(session)
         this.hiveauthDialog = false
         this.$q.notify({
           type: 'positive',
@@ -1298,9 +1318,28 @@ export default {
     },
     restoreHiveAuthSession () {
       if (this.loginType !== 'hiveauth' || !this.loggedInUser) return
-      if (loadHiveAuthSession(this.loggedInUser)) return
+      const session = loadHiveAuthSession(this.loggedInUser)
+      if (session) {
+        this.scheduleHiveAuthExpiry(session)
+        return
+      }
+      this.expireHiveAuthSession()
+    },
+    scheduleHiveAuthExpiry (session) {
+      if (this.hiveauthExpiryTimer) clearTimeout(this.hiveauthExpiryTimer)
+      this.hiveauthExpiryTimer = null
+      const expire = Number(session?.expire)
+      if (!Number.isFinite(expire) || expire <= 0) return
+      const delay = Math.max(0, expire - Date.now())
+      this.hiveauthExpiryTimer = setTimeout(() => this.expireHiveAuthSession(), Math.min(delay, 2 ** 31 - 1))
+    },
+    expireHiveAuthSession () {
+      if (this.loginType !== 'hiveauth' || !this.loggedInUser) return
+      this.cancelHiveAuth()
+      clearAllHiveAuthSessions()
       this.loggedInUser = ''
       this.loginType = ''
+      this.$hiveStore.clearNotificationsState()
       this.$q.notify({
         type: 'warning',
         message: 'HiveAuth session expired. Sign in again.',
@@ -1333,7 +1372,9 @@ export default {
     logout () {
       const account = this.loggedInUser
       this.cancelHiveAuth()
-      if (account) clearHiveAuthSession(account)
+      if (this.hiveauthExpiryTimer) clearTimeout(this.hiveauthExpiryTimer)
+      this.hiveauthExpiryTimer = null
+      clearAllHiveAuthSessions()
       this.smartLockLockAccount(account)
       this.smartlockUnlocked = false
       this.loggedInUser = ''
@@ -1357,6 +1398,8 @@ export default {
   beforeUnmount () {
     window.removeEventListener('banksia:open-login', this.openLoginMenu)
     this.stopHiveAuthClock()
+    if (this.hiveauthExpiryTimer) clearTimeout(this.hiveauthExpiryTimer)
+    this.hiveauthExpiryTimer = null
     this.hiveauthController?.abort()
     this.hiveauthController = null
   }

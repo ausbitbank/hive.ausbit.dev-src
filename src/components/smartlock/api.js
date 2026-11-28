@@ -46,24 +46,28 @@ const broadcastAsync = async (username, operations, role = 'posting', password) 
   // Strip queue-only markers, split comment options and append an optional
   // self-reblog so the chain receives plain operations in the right order.
   const chainOperations = operations.flatMap(operation => expandQueueOperation(operation, username))
-  if (chainOperations[0][0] === 'transfer' && password) {
-    var memo = chainOperations[0][1].memo
-    if (memo && memo.length > 0 && memo[0] === '#') {
-      try {
-        const receiver = await hive.api.getAccountsAsync([chainOperations[0][1].to])
-        if (!receiver) { throw new Error('Failed to load memo key of receiver') }
-        const receiverMemoKey = receiver[0].memo_key
-        const senderMemoKey = getMemo(username, password)
-        if (!senderMemoKey) { throw new Error('Failed to load own memo key') }
-        var encoded = ''
-        if (senderMemoKey) {
-          encoded = await encodeMemo(senderMemoKey, receiverMemoKey, memo)
-        } else {
-          encoded = await encodeMemo(getPosting(username), receiverMemoKey, memo)
-        }
-        chainOperations[0][1].memo = encoded
-      } catch {
-      }
+  const needsEncryption = operation => operation?.[0] === 'transfer' &&
+    typeof operation[1]?.memo === 'string' &&
+    operation[1].memo.startsWith('#')
+  const unsupportedMemo = chainOperations.find(operation =>
+    operation?.[1]?.memo?.startsWith?.('#') && operation[0] !== 'transfer')
+  if (unsupportedMemo) {
+    throw new Error('Encrypted memos are only supported on direct transfers. Nothing was broadcast.')
+  }
+  for (const operation of chainOperations) {
+    if (!needsEncryption(operation)) continue
+    if (!password) {
+      throw new Error('SmartLock needs the memo password to encrypt this #memo; nothing was broadcast.')
+    }
+    try {
+      const receiver = await hive.api.getAccountsAsync([operation[1].to])
+      if (!receiver?.length) throw new Error('Failed to load memo key of receiver')
+      const receiverMemoKey = receiver[0].memo_key
+      const senderMemoKey = getMemo(username, password)
+      if (!senderMemoKey) throw new Error('Failed to load own memo key')
+      operation[1].memo = await encodeMemo(senderMemoKey, receiverMemoKey, operation[1].memo)
+    } catch (error) {
+      throw new Error('The memo could not be encrypted; nothing was broadcast. ' + (error?.message || ''), { cause: error })
     }
   }
 

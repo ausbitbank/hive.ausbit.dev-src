@@ -189,6 +189,26 @@ describe('HiveAuth client', () => {
     expect(loadSession('alice')).not.toBeNull()
   })
 
+  it('clamps a hostile request deadline and ignores a different uuid', async () => {
+    let payload
+    const promise = authenticate('alice', { onPayload: value => { payload = value } })
+    const socket = await requestSocket()
+    const before = Date.now()
+    socket.emit({ cmd: 'auth_wait', uuid: 'auth-clamp', expire: Date.now() + 365 * 24 * 60 * 60 * 1000 })
+    await waitFor(() => Boolean(payload))
+    const pending = loadPending()
+    expect(pending.uuid).toBe('auth-clamp')
+    expect(pending.expire).toBeLessThanOrEqual(before + 6 * 60 * 1000)
+
+    socket.emit({ cmd: 'auth_wait', uuid: 'auth-other', expire: Date.now() + 60_000 })
+    const encrypted = await encryptPayload(JSON.stringify({
+      token: 'token-clamped',
+      expire: Date.now() + 60_000
+    }), payload.key)
+    socket.emit({ cmd: 'auth_ack', uuid: 'auth-clamp', data: encrypted })
+    await expect(promise).resolves.toMatchObject({ token: 'token-clamped' })
+  })
+
   it('broadcasts the exact operations and returns the transaction id', async () => {
     const operation = ['vote', { voter: 'alice', author: 'bob', permlink: 'x', weight: 10000 }]
     const promise = broadcast('alice', 'posting', [operation])

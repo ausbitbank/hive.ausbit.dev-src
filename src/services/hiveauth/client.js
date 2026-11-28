@@ -28,6 +28,15 @@ export const APP_META = Object.freeze({
 
 const CONNECT_TIMEOUT_MS = 12000
 const DEFAULT_REQUEST_TIMEOUT_MS = 65000
+// A relay cannot keep a login/sign request alive indefinitely. Wallet approval
+// windows are short; cap anything longer than five minutes.
+const MAX_REQUEST_TIMEOUT_MS = 5 * 60 * 1000
+
+function clampDeadline (value, now = Date.now()) {
+  const expire = Number(value)
+  if (!Number.isFinite(expire) || expire <= now) return now + DEFAULT_REQUEST_TIMEOUT_MS
+  return Math.min(expire, now + MAX_REQUEST_TIMEOUT_MS)
+}
 const KEY_TYPES = new Set(['posting', 'active', 'memo'])
 
 let lastNonce = 0
@@ -210,7 +219,7 @@ function runRequest ({
   return new Promise((resolve, reject) => {
     let socket = null
     let uuid = resume?.uuid || null
-    let deadline = resume?.expire || Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
+    let deadline = resume?.expire ? clampDeadline(resume.expire) : Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
     let timer = null
     let reconnectTimer = null
     let reconnectAttempt = 0
@@ -346,6 +355,7 @@ function runRequest ({
           return
         }
         if (message.cmd === 'attach_ack') {
+          if (message.uuid && uuid && message.uuid !== uuid) return
           reconnectAttempt = 0
           emitStatus('resumed')
           return
@@ -364,11 +374,10 @@ function runRequest ({
           if (typeof message.uuid !== 'string' || !message.uuid) {
             throw new HiveAuthError('HiveAuth returned an invalid request id.', { code: 'protocol' })
           }
+          if (uuid && message.uuid !== uuid) return
           uuid = message.uuid
           const expire = Number(message.expire)
-          deadline = Number.isFinite(expire) && expire > Date.now()
-            ? expire
-            : Date.now() + DEFAULT_REQUEST_TIMEOUT_MS
+          deadline = clampDeadline(expire)
           arm(deadline)
           savePending({
             account,
