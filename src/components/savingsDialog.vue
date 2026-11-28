@@ -17,13 +17,15 @@
       </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
-        <q-btn flat :label="buttonLabel" icon="savings" :color="buttonColor" @click="doTheThing()" v-close-popup />
+        <q-btn flat :label="buttonLabel" icon="savings" :color="buttonColor" :disable="!parsedAmount" @click="doTheThing()" v-close-popup />
         <q-btn flat label="Cancel and Close" icon="cancel" color="primary" v-close-popup />
       </div>
     </q-card-section>
   </q-card>
 </template>
 <script>
+import { parseAssetAmount } from 'src/services/signingInputs'
+import { nextRequestId } from 'src/services/signingInputs'
 import { vestToHive } from 'src/services/wallet'
 
 export default {
@@ -85,6 +87,12 @@ export default {
     },
     buttonLabel: function () { if (this.type === 'deposit') { return 'Deposit to savings' } else { return 'Withdraw from savings' } },
     buttonColor: function () { if (this.type === 'deposit') { return 'green' } else { return 'red' } },
+    maxAmount () {
+      return this.type === 'deposit' ? this.availableBalance : this.availableSavings
+    },
+    parsedAmount () {
+      return parseAssetAmount(this.amount, { precision: this.precision, max: this.maxAmount })
+    },
     account: function () { return this.$hiveStore.accounts[this.username] },
     loggedInUser: function () { return this.$hiveStore.user.username },
     globalProps: function () { return this.$hiveStore.globalProps }
@@ -98,11 +106,15 @@ export default {
       return parts.join('.')
     },
     deposit () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_savings', { from: this.username, to: this.to, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_savings', { from: this.username, to: this.to, amount: amount + ' ' + this.tokenName, memo: this.memo }]])
     },
     withdraw () {
-      var requestId = Math.floor((Math.random() * 10000) + 1)
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.to, request_id: requestId, amount: this.amount.toFixed(3) + ' ' + this.tokenName, memo: this.memo }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      var requestId = nextRequestId()
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.to, request_id: requestId, amount: amount + ' ' + this.tokenName, memo: this.memo }]])
     }
   },
   mounted () {

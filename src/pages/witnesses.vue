@@ -1,6 +1,5 @@
 <template>
   <q-page class="net-page">
-    <h1 class="sr-only">Hive witnesses — ranks, votes and health</h1>
     <div class="net-shell">
       <witness-header
         :logged-in="Boolean(loggedInUser)"
@@ -353,6 +352,7 @@ export default {
       return this.loggedInUser ? this.$hiveStore.accounts[this.loggedInUser] : undefined
     },
     votingProxy () {
+      if (!this.loggedInUser) return ''
       if (this.optimisticProxy !== null) return this.optimisticProxy
       return this.account?.proxy || ''
     },
@@ -409,6 +409,15 @@ export default {
     }
   },
   watch: {
+    loggedInUser () {
+      // A login/logout must drop the previous account's optimistic votes and
+      // proxy, then load the new identity's account and proxy rows.
+      this.optimisticVotes = null
+      this.optimisticProxy = null
+      this.loadVotingAccounts()
+        .then(() => this.ensureVotedWitnesses())
+        .catch(() => {})
+    },
     search (value) {
       this.visibleLimit = this.pageSize
       this.syncQuery()

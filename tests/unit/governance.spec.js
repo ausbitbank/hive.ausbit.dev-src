@@ -64,14 +64,15 @@ describe('feedFreshness', () => {
       witness('fresh', 1, { last_hbd_exchange_update: '2026-11-18T09:00:00' }),
       witness('aging', 1, { last_hbd_exchange_update: '2026-11-18T00:00:00' }),
       witness('stale', 1, { last_hbd_exchange_update: '2026-11-15T12:00:00' }),
-      witness('missing', 1, { last_hbd_exchange_update: null })
+      witness('missing', 1, { last_hbd_exchange_update: null }),
+      witness('epoch', 1, { last_hbd_exchange_update: '1969-12-31T23:59:59' })
     ], NOW)
 
     expect(result.fresh).toBe(1)
     expect(result.aging).toBe(1)
     expect(result.stale).toBe(1)
-    expect(result.missing).toBe(1)
-    expect(result.total).toBe(4)
+    expect(result.missing).toBe(2)
+    expect(result.total).toBe(5)
     expect(result.rows[0].bucket).toBe('missing')
   })
 })
@@ -178,6 +179,32 @@ describe('proposalFundingAnalytics', () => {
     expect(result.estimatedPaid).toBeGreaterThan(0)
   })
 
+  it('excludes the return proposal and implausible spam from funding totals', () => {
+    const result = proposalFundingAnalytics([
+      { ...proposals[0], daily_pay: '240000000.000 HBD' },
+      proposals[1],
+      {
+        id: 9,
+        creator: 'spam',
+        receiver: 'spam',
+        subject: 'Spam',
+        total_votes: 5000,
+        daily_pay: '999999999999999.000 HBD',
+        start_date: '2026-11-01T00:00:00',
+        end_date: '2026-12-01T00:00:00',
+        status: 'active'
+      }
+    ], GLOBAL_PROPS, { now: new Date(NOW), months: 12 })
+
+    expect(result.dailyRequested).toBeCloseTo(10)
+    expect(result.dailyCommitted).toBeCloseTo(10)
+    expect(result.fundedCount).toBe(1)
+    expect(result.outlierCount).toBe(1)
+    expect(result.estimatedPaid).toBeLessThan(1_000_000)
+    expect(result.creators.map(row => row.name)).not.toContain('hive.fund')
+    expect(result.creators.map(row => row.name)).not.toContain('spam')
+  })
+
   it('honours an explicit return threshold override', () => {
     const result = proposalFundingAnalytics(proposals.slice(0, 2), GLOBAL_PROPS, {
       now: new Date(NOW),
@@ -239,6 +266,20 @@ describe('governanceVoteExpiry', () => {
   })
 
   it('returns a neutral model when the timestamp is missing', () => {
-    expect(governanceVoteExpiry({}, NOW)).toEqual({ expiresAt: null, daysLeft: null, expiring: false })
+    expect(governanceVoteExpiry({}, NOW)).toEqual({
+      available: false,
+      expiresAt: null,
+      daysLeft: null,
+      expiring: false
+    })
+  })
+
+  it('treats the epoch sentinel as "never voted", not an expired vote', () => {
+    expect(governanceVoteExpiry({ governance_vote_expiration_ts: '1969-12-31T23:59:59' }, NOW)).toEqual({
+      available: false,
+      expiresAt: null,
+      daysLeft: null,
+      expiring: false
+    })
   })
 })

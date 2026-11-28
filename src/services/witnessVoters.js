@@ -77,7 +77,15 @@ export async function fetchWitnessVoters (owner, options = {}) {
       limit: Math.min(pageSize, max - voters.length),
       order: 'by_witness_account'
     }, options)
-    const page = votes
+    // `list_witness_votes` paginates past the requested witness. Keep only
+    // this witness's rows and stop at the boundary instead of attributing the
+    // next witness's voters to this one.
+    const target = String(owner).toLowerCase()
+    const matching = votes.filter(vote => {
+      const witness = String(vote?.witness || '').toLowerCase()
+      return !witness || witness === target
+    })
+    const page = matching
       .map(vote => vote?.account)
       .filter(Boolean)
     if (!page.length) break
@@ -85,8 +93,11 @@ export async function fetchWitnessVoters (owner, options = {}) {
       if (!voters.includes(name)) voters.push(name)
       if (voters.length >= max) break
     }
+    const lastVote = votes[votes.length - 1]
+    const lastWitness = String(lastVote?.witness || '').toLowerCase()
+    if (lastWitness && lastWitness !== target) break
     const next = page[page.length - 1]
-    if (page.length < pageSize || !next || next === start) break
+    if (votes.length < pageSize || !next || next === start) break
     start = next
   }
   return voters

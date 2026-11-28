@@ -14,6 +14,7 @@ import {
 } from './witnesses'
 import moment from '../utils/time'
 import {
+  MAX_PLAUSIBLE_DAILY_HBD,
   dailyPayHbd,
   isFunded,
   paidHbd,
@@ -157,7 +158,9 @@ export function feedFreshness (witnesses, now = Date.now()) {
 
   for (const witness of Array.isArray(witnesses) ? witnesses : []) {
     const updated = timeValue(witness?.last_hbd_exchange_update)
-    const ageHours = updated === null ? null : Math.max(0, (Number(now) - updated) / HOUR_MS)
+    // The chain uses 1969/1970 as "never updated"; that is a missing feed, not
+    // a 56-year-old stale one.
+    const ageHours = updated === null || updated <= 0 ? null : Math.max(0, (Number(now) - updated) / HOUR_MS)
     let bucket = 'missing'
     if (ageHours !== null) {
       if (ageHours <= FEED_FRESH_HOURS) bucket = 'fresh'
@@ -261,7 +264,19 @@ export function proposalFundingAnalytics (proposals, globalProps, options = {}) 
   const returnProposal = list.find(proposal => Number(proposal?.id) === 0)
   const returnVotes = safeNumber(options.returnVotes, safeNumber(returnProposal?.total_votes))
 
-  const funded = active.filter(proposal => Number(proposal?.id) !== 0 && isFunded(proposal, returnVotes))
+  // Proposal #0 is the funding threshold, not a payment request. Spam requests
+  // above the plausible cap are shown as outliers but never summed or ranked.
+  const requestable = []
+  let outlierCount = 0
+  for (const proposal of list) {
+    if (Number(proposal?.id) === 0) continue
+    const daily = dailyPayHbd(proposal)
+    if (daily > MAX_PLAUSIBLE_DAILY_HBD) outlierCount += 1
+    else if (daily > 0) requestable.push(proposal)
+  }
+  const funded = requestable.filter(proposal =>
+    proposalPhase(proposal, now) === 'active' && isFunded(proposal, returnVotes)
+  )
   const expired = list.filter(proposal => proposalPhase(proposal, now) === 'expired')
   const upcoming = list.filter(proposal => proposalPhase(proposal, now) === 'upcoming')
 
@@ -270,16 +285,17 @@ export function proposalFundingAnalytics (proposals, globalProps, options = {}) 
   let estimatedPaid = 0
   let remainingCommitted = 0
 
-  for (const proposal of active) {
+  for (const proposal of requestable) {
+    if (proposalPhase(proposal, now) !== 'active') continue
     const daily = dailyPayHbd(proposal)
     dailyRequested += daily
-    if (Number(proposal?.id) !== 0 && isFunded(proposal, returnVotes)) {
+    if (isFunded(proposal, returnVotes)) {
       dailyCommitted += daily
       remainingCommitted += toPayHbd(proposal, now)
     }
   }
 
-  for (const proposal of list) {
+  for (const proposal of requestable) {
     estimatedPaid += paidHbd(proposal, now)
   }
 
@@ -287,7 +303,7 @@ export function proposalFundingAnalytics (proposals, globalProps, options = {}) 
   const receivers = new Map()
   const topics = new Map()
 
-  for (const proposal of list) {
+  for (const proposal of requestable) {
     const creator = proposal?.creator || 'unknown'
     const receiver = proposal?.receiver || 'unknown'
     const daily = dailyPayHbd(proposal)
@@ -347,6 +363,7 @@ export function proposalFundingAnalytics (proposals, globalProps, options = {}) 
     fundedCount: funded.length,
     expiredCount: expired.length,
     upcomingCount: upcoming.length,
+    outlierCount,
     creatorCount: creators.size,
     receiverCount: receivers.size,
     dailyCommitted,
@@ -442,9 +459,15 @@ export function voterConcentration (votes, accounts = [], globalProps = null, li
 /** Days after which unused governance votes expire (Hive governance refresh). */
 export function governanceVoteExpiry (account, now = Date.now()) {
   const expiresAt = timeValue(account?.governance_vote_expiration_ts)
-  if (expiresAt === null) return { expiresAt: null, daysLeft: null, expiring: false }
+  // An account that never voted carries the epoch (1969/1970) sentinel. It has
+  // no expiry to warn about; treating it as a real timestamp raises a false
+  // "expired" risk warning and dashboard notice.
+  if (expiresAt === null || expiresAt <= 0) {
+    return { available: false, expiresAt: null, daysLeft: null, expiring: false }
+  }
   const daysLeft = (expiresAt - Number(now)) / DAY_MS
   return {
+    available: true,
     expiresAt,
     daysLeft,
     expiring: daysLeft <= GOVERNANCE_VOTE_WARNING_DAYS

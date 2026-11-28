@@ -39,6 +39,18 @@ describe('fetchWitnessVoters', () => {
     expect(await fetchWitnessVoters('gtg')).toEqual([])
   })
 
+  it('excludes rows for another witness and stops at the boundary', async () => {
+    rpcRequest.mockResolvedValueOnce({
+      votes: [
+        { account: 'alice', witness: 'gtg' },
+        { account: 'bob', witness: 'someone-else' }
+      ]
+    })
+    const { fetchWitnessVoters } = await witnessVoters()
+    expect(await fetchWitnessVoters('gtg')).toEqual(['alice'])
+    expect(rpcRequest).toHaveBeenCalledTimes(1)
+  })
+
   it('samples only the requested number of voter accounts', async () => {
     rpcRequest.mockResolvedValueOnce({ votes: [{ account: 'alice' }, { account: 'bob' }, { account: 'carol' }] })
     fetchAccounts.mockImplementation(async names => names.map(name => ({ name })))

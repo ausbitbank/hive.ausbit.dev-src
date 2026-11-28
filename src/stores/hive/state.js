@@ -32,7 +32,9 @@ function readScopedSession (base, username, fallback) {
   try {
     const scoped = SessionStorage.getItem(scopedSessionKey(base, username))
     if (scoped !== null && scoped !== undefined) return scoped
-    const legacy = SessionStorage.getItem(base)
+    // Only a named account may adopt the pre-scoping key; a guest/boot read
+    // must not claim another identity's inbox or subscriptions.
+    const legacy = username ? SessionStorage.getItem(base) : null
     if (legacy !== null && legacy !== undefined) {
       SessionStorage.set(scopedSessionKey(base, username), legacy)
       SessionStorage.remove(base)

@@ -408,6 +408,7 @@ import moment from 'src/utils/time'
 import VueTimers from 'src/mixins/timers.js'
 import { getHivePrices } from 'src/services/prices'
 import { buildPortfolio, tidyNumber } from 'src/services/wallet'
+import { nextRequestId } from 'src/services/signingInputs'
 import { setPageMeta } from 'src/utils/pageMeta'
 import AccountHeader from 'components/accountHeader.vue'
 import WalletPortfolioHeader from 'components/wallet/WalletPortfolioHeader.vue'
@@ -648,19 +649,23 @@ export default {
       }
     },
     async getOpenOrders () {
+      const requestedUser = this.username
       try {
-        const orders = await this.$hive.api.getOpenOrdersAsync(this.username)
+        const orders = await this.$hive.api.getOpenOrdersAsync(requestedUser)
+        if (this.username !== requestedUser) return
         this.hiveInternalMarketOrders = Array.isArray(orders) ? orders : []
       } catch {
-        this.hiveInternalMarketOrders = []
+        if (this.username === requestedUser) this.hiveInternalMarketOrders = []
       }
     },
     async getPendingExtras () {
+      const requestedUser = this.username
       const [withdrawals, conversions, collateralized] = await Promise.allSettled([
-        this.$hive.api.getSavingsWithdrawFromAsync(this.username),
-        this.$hive.api.getConversionRequestsAsync(this.username),
-        this.$hive.api.callAsync('condenser_api.get_collateralized_conversion_requests', [this.username])
+        this.$hive.api.getSavingsWithdrawFromAsync(requestedUser),
+        this.$hive.api.getConversionRequestsAsync(requestedUser),
+        this.$hive.api.callAsync('condenser_api.get_collateralized_conversion_requests', [requestedUser])
       ])
+      if (this.username !== requestedUser) return
       this.savingsWithdrawals = withdrawals.status === 'fulfilled' && Array.isArray(withdrawals.value) ? withdrawals.value : []
       this.conversions = conversions.status === 'fulfilled' && Array.isArray(conversions.value) ? conversions.value : []
       this.collateralizedConversions = collateralized.status === 'fulfilled' && Array.isArray(collateralized.value) ? collateralized.value : []
@@ -774,8 +779,9 @@ export default {
       }
     },
     claimHbdInterest () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: 42069420, amount: '0.001 HBD', memo: 'Claiming HBD interest' }]])
-      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: 42069420 }]])
+      const requestId = nextRequestId()
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_from_savings', { from: this.username, to: this.username, request_id: requestId, amount: '0.001 HBD', memo: 'Claiming HBD interest' }]])
+      this.$hiveStore.addToQueue([this.username, 'active', ['cancel_transfer_from_savings', { from: this.username, request_id: requestId }]])
       this.$q.notify({ message: 'HBD interest claim queued', color: 'green', icon: 'redeem', position: 'top' })
     },
     cancelOrder (order) {

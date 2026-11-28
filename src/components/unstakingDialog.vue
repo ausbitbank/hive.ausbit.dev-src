@@ -8,7 +8,7 @@
       <div>You have <q-badge clickable color="primary" @click="unstakeAmount = stake">{{ stake }}</q-badge> staked {{ tokenName }}.</div>
       <div v-if="unstaking">You are already unstaking {{ unstaking }} {{ tokenName }}</div>
       <q-input v-model.number="unstakeAmount" outline :label="'Unstake how many ' + tokenName + ' ?'" />
-      <q-btn label="Unstake" color="red" icon="lock_open" @click="unstakeHiveEngine()"/>
+      <q-btn label="Unstake" color="red" icon="lock_open" :disable="!parsedUnstakeAmount" @click="unstakeHiveEngine()"/>
     </q-card-section>
     <q-card-section v-if="network === 'hive' & tokenName === 'HIVE'" class="text-center">
       <div>The unstaking process will convert your staked {{ tokenName }} (VESTS) into unstaked liquid {{ tokenName }} in 13 weekly payments.</div>
@@ -43,7 +43,9 @@
 </template>
 <script>
 import moment from 'src/utils/time'
+import { parseAssetAmount } from 'src/services/signingInputs'
 import { vestToHive } from 'src/services/wallet'
+import { hiveEngineOperation } from 'src/services/signingInputs'
 export default {
   name: 'unstakingDialog',
   data () {
@@ -98,6 +100,9 @@ export default {
   },
   components: {},
   computed: {
+    parsedUnstakeAmount () {
+      return parseAssetAmount(this.unstakeAmount, { precision: 3, max: this.availableStake })
+    },
     availableStake: function () {
       if (this.network === 'hive' & this.tokenName === 'HIVE') {
         var vestedShares = parseFloat(this.$hiveStore.accounts[this.username].vesting_shares.split(' ')[0])
@@ -134,17 +139,16 @@ export default {
       var diff = stamp.diff(now, 'minutes')
       return moment.duration(diff, 'minutes').humanize(true)
     },
-    cancelPowerdown () { this.unstakeHive('0.000') },
+    cancelPowerdown () { this.amountVests = 0; this.unstakeHive() },
     unstakeHive () { this.$hiveStore.addToQueue([this.username, 'active', ['withdraw_vesting', { account: this.username, vesting_shares: this.amountVests.toFixed(6) + ' VESTS' }]]) },
     unstakeHiveEngine () {
-      var j = '{ "contractName": "tokens", "contractAction": "unstake", "contractPayload": { "symbol": "' + this.tokenName + '", "quantity": "' + this.unstakeAmount + '" } }'
-      var cj = {
-        required_auths: [this.username],
-        required_posting_auths: [],
-        id: 'ssc-mainnet-hive',
-        json: j
-      }
-      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
+      const amount = this.parsedUnstakeAmount
+      if (!amount) return
+      const operation = hiveEngineOperation(this.username, 'tokens', 'unstake', {
+        symbol: this.tokenName,
+        quantity: amount
+      })
+      this.$hiveStore.addToQueue([this.username, 'active', operation])
     }
   },
   mounted () {

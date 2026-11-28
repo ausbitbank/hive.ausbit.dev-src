@@ -13,6 +13,11 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const RETURN_PROPOSAL_ID = 0
 const STABILIZER_RECEIVER = 'hbdstabilizer'
 
+// A daily request above this is not a plausible DHF grant. Spam proposals can
+// ask for ~1e15 HBD/day; including them would overflow the funding totals and
+// make the real budget unreadable. Keep them visible as outliers, never in sums.
+export const MAX_PLAUSIBLE_DAILY_HBD = 1_000_000
+
 // `database_api.*` returns typed assets (`{ amount, precision }`) while the
 // condenser endpoints used by the store return strings ("12.345 HBD"). Accept
 // both so helpers work with either source.
@@ -80,6 +85,14 @@ export function daysElapsed (proposal, now = new Date()) {
 
 export function daysRemaining (proposal, now = new Date()) {
   return daysTotal(proposal) - daysElapsed(proposal, now)
+}
+
+/** Whole days until an upcoming proposal's start; 0 once it has started. */
+export function daysUntilStart (proposal, now = new Date()) {
+  const start = toTime(proposal?.start_date)
+  const time = toTime(now)
+  if (start === null || time === null || start <= time) return 0
+  return (start - time) / DAY_MS
 }
 
 export function paidHbd (proposal, now = new Date()) {
@@ -324,11 +337,17 @@ export async function listProposalVotes (id, options = {}) {
     order_direction: 'ascending',
     status: 'all'
   })
-  return response?.proposal_votes || []
+  // `list_proposal_votes` paginates past the requested proposal. Keep only the
+  // rows for this proposal instead of attributing the next proposals' voters.
+  return (response?.proposal_votes || []).filter(vote => {
+    const voteId = Number(vote?.proposal?.id ?? vote?.proposal?.proposal_id)
+    return voteId === proposalId
+  })
 }
 
 // Returns a Set of proposal ids the account has voted for (up to 1000, which
-// covers every current proposal).
+// covers every current proposal). The endpoint paginates past the requested
+// voter, so rows for other voters are filtered out.
 export async function getVoterVoteIds (username, options = {}) {
   if (!username) return new Set()
 
@@ -341,9 +360,11 @@ export async function getVoterVoteIds (username, options = {}) {
     status: 'all'
   })
 
+  const target = String(username).trim().replace(/^@/, '').toLowerCase()
   const ids = new Set()
   const votes = response?.proposal_votes || []
   votes.forEach(vote => {
+    if (String(vote?.voter || '').trim().replace(/^@/, '').toLowerCase() !== target) return
     const id = Number(vote?.proposal?.id ?? vote?.proposal?.proposal_id)
     if (Number.isInteger(id)) ids.add(id)
   })

@@ -10,7 +10,9 @@ const POSTING_OPERATIONS = new Set([
   'vote',
   'comment',
   'delete_comment',
-  'comment_options'
+  'comment_options',
+  // Hive requires posting authority for claim_reward_balance.
+  'claim_reward_balance'
 ])
 
 const ACTIVE_OPERATIONS = new Set([
@@ -20,14 +22,11 @@ const ACTIVE_OPERATIONS = new Set([
   'account_witness_proxy',
   'account_witness_vote',
   'cancel_transfer_from_savings',
-  'change_recovery_account',
   'claim_account',
-  'claim_reward_balance',
   'collateralized_convert',
   'convert',
   'create_claimed_account',
   'create_proposal',
-  'decline_voting_rights',
   'delegate_vesting_shares',
   'escrow_approve',
   'escrow_dispute',

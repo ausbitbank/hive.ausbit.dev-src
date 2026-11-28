@@ -51,11 +51,11 @@
             <health-stat-card label="Price feed" :value="feedAge" icon="price_change" :status-label="feedStatus.label" :status-color="feedStatus.color" :hint="feedRateLabel" />
             <health-stat-card
               label="Signing key"
-              :value="signingDisabled ? 'Disabled' : 'Enabled'"
+              :value="witnessSigningDisabled ? 'Disabled' : 'Enabled'"
               icon="key"
-              :status-label="signingDisabled ? 'Cannot sign' : 'Signing'"
-              :status-color="signingDisabled ? 'negative' : 'green'"
-              :hint="signingDisabled ? 'The null signing key is set' : 'A block signing key is configured'"
+              :status-label="witnessSigningDisabled ? 'Cannot sign' : 'Signing'"
+              :status-color="witnessSigningDisabled ? 'negative' : 'green'"
+              :hint="witnessSigningDisabled ? 'The null signing key is set on chain' : (signingDisabled ? 'A disabled signing key is pending in the form' : 'A block signing key is configured')"
             />
             <health-stat-card
               label="Version"
@@ -721,6 +721,7 @@ export default {
       rank: null,
       hardforkVersion: '',
       loading: false,
+      initToken: 0,
       attempted: false,
       confirmDisable: false,
       confirmRegister: false,
@@ -752,8 +753,13 @@ export default {
       return head > 0 && last > 0 ? Math.max(0, head - last).toLocaleString('en-US') : '—'
     },
     missedStatus () {
-      const gap = Number(this.globalProps?.head_block_number || 0) - Number(this.witness?.last_confirmed_block_num || 0)
-      return gap > MISSED_BLOCK_GAP
+      const head = Number(this.globalProps?.head_block_number || 0)
+      const last = Number(this.witness?.last_confirmed_block_num || 0)
+      if (!this.witness || !head || !last) return { label: 'Unknown', color: 'grey' }
+      // Only consensus witnesses are scheduled to sign; a backup witness with
+      // an old confirmation is not a missed slot.
+      if (this.rank && this.rank > 21) return { label: 'Not scheduled', color: 'grey' }
+      return head - last > MISSED_BLOCK_GAP
         ? { label: 'Missed slot', color: 'orange' }
         : { label: 'Signing', color: 'green' }
     },
@@ -774,6 +780,9 @@ export default {
     },
     signingDisabled () {
       return this.form.signingKey === DISABLED_SIGNING_KEY
+    },
+    witnessSigningDisabled () {
+      return this.witness?.signing_key === DISABLED_SIGNING_KEY
     },
     versionMismatch () {
       return this.witness ? !versionMatches(this.witness.running_version, this.hardforkVersion) : false
@@ -802,7 +811,18 @@ export default {
   },
   watch: {
     username (value) {
-      if (value) this.init()
+      this.initToken += 1
+      if (value) {
+        this.init()
+        return
+      }
+      this.witness = null
+      this.rank = null
+      this.hardforkVersion = ''
+      this.form = formFromWitness(null)
+      this.initialForm = formFromWitness(null)
+      this.attempted = false
+      this.loading = false
     }
   },
   mounted () {
@@ -865,20 +885,26 @@ export default {
     },
     async init () {
       if (!this.username) return
+      const token = ++this.initToken
+      const requested = this.username
       this.loading = true
       try {
         if (!this.globalProps || this.globalProps.empty) {
           await this.$hiveStore.getGlobalProps()
         }
-        if (this.$hiveStore.accounts[this.username] === undefined) {
-          await this.$hiveStore.getAccount(this.username)
+        if (this.$hiveStore.accounts[requested] === undefined) {
+          await this.$hiveStore.getAccount(requested)
         }
 
         const [witnessResult, ranked, hardfork] = await Promise.allSettled([
-          fetchWitnessByAccount(this.username),
+          fetchWitnessByAccount(requested),
           fetchWitnessesByVote(200),
           this.$hive.api.callAsync('condenser_api.get_hardfork_version', [])
         ])
+
+        // A login switch while these reads were in flight must not put A's
+        // witness (and signing key/URL) into B's editable form.
+        if (token !== this.initToken || this.username !== requested) return
 
         const witness = witnessResult.status === 'fulfilled' ? witnessResult.value : null
         const list = ranked.status === 'fulfilled' && Array.isArray(ranked.value) ? ranked.value : []
@@ -891,9 +917,10 @@ export default {
         this.initialForm = cloneForm(this.form)
         this.attempted = false
       } catch {
+        if (token !== this.initToken || this.username !== requested) return
         this.$q.notify({ type: 'negative', message: 'Could not load witness data' })
       } finally {
-        this.loading = false
+        if (token === this.initToken) this.loading = false
       }
     },
     reset () {

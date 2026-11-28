@@ -201,7 +201,6 @@ import {
   commentBroadcastMode,
   expandQueueOperation,
   keyRequirement,
-  nextActionableIndex,
   normalizeQueueMeta,
   operationLabel,
   operationSummary,
@@ -259,9 +258,10 @@ export default {
       return queueBadgeCount(this.normalizedMeta)
     },
     canSendAll () {
-      return this.normalizedMeta.some((entry, index) => {
-        return !entry.manualOnly && canBroadcast(entry.status) && this.queue[index]
-      })
+      // "Send all" only walks auto-sendable posting items. With only active
+      // items pending it must be disabled instead of entering a loading state
+      // that never resolves.
+      return this.nextAutoIndex() >= 0
     },
     manualPendingCount () {
       return this.normalizedMeta.filter((entry, index) => {
@@ -417,12 +417,17 @@ export default {
       }
     },
     nextAutoIndex () {
-      // Active-key operations always need a per-item confirmation. Auto-send
-      // only walks posting actions; the manual send button remains available.
-      const skip = this.queue
-        .map((action, index) => (Array.isArray(action) && action[1] === 'active' ? index : -1))
-        .filter(index => index >= 0)
-      return nextActionableIndex(this.normalizedMeta, { auto: true, skip })
+      // Walk in order and stop at the first non-pending/non-posting item, so a
+      // pending active creation blocks a later posting delegation.
+      const meta = this.normalizedMeta
+      for (let i = 0; i < meta.length; i++) {
+        const entry = meta[i]
+        if (entry.status === QUEUE_STATUS.SENT) continue
+        if (entry.status !== QUEUE_STATUS.PENDING || entry.manualOnly) return -1
+        const action = this.queue[i]
+        return Array.isArray(action) && action[1] === 'posting' ? i : -1
+      }
+      return -1
     },
     broadcastNext () {
       const index = this.nextAutoIndex()

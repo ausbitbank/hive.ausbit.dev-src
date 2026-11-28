@@ -85,7 +85,7 @@
 
       <div class="proposals-count" aria-live="polite">
         <template v-if="!loading && !loadError">
-          {{ visibleProposals.length }} of {{ proposals.length }} proposals shown
+          {{ renderedProposalCount }} of {{ visibleProposals.length }} matching proposals shown
           <span v-if="returnProposalVotes > 0 && hpReady"> · Return proposal threshold ≈ {{ formatHp(returnVotesHp) }} HP</span>
         </template>
       </div>
@@ -238,6 +238,7 @@ export default {
       sort: VALID_SORTS.includes(query.sort) ? query.sort : 'votes',
       search: typeof query.search === 'string' ? query.search : '',
       expiredLimit: 24,
+      loadToken: 0,
       sortOptions: [
         { label: 'Most votes', value: 'votes' },
         { label: 'Highest daily pay', value: 'daily' },
@@ -293,12 +294,16 @@ export default {
     },
     fundedProposals () {
       return this.currentProposals.filter(proposal => {
-        return Number(proposal.id) === 0 || Number(proposal.total_votes) >= this.returnProposalVotes
+        if (Number(proposal.id) === 0) return true
+        return proposalPhase(proposal) === 'active' &&
+          Number(proposal.total_votes) >= this.returnProposalVotes
       })
     },
     otherProposals () {
       return this.currentProposals.filter(proposal => {
-        return Number(proposal.id) !== 0 && Number(proposal.total_votes) < this.returnProposalVotes
+        if (Number(proposal.id) === 0) return false
+        return proposalPhase(proposal) !== 'active' ||
+          Number(proposal.total_votes) < this.returnProposalVotes
       })
     },
     expiredProposals () {
@@ -307,6 +312,9 @@ export default {
     expiredVisible () {
       const limit = this.tab === 'expired' ? this.expiredLimit : 12
       return this.expiredProposals.slice(0, limit)
+    },
+    renderedProposalCount () {
+      return this.currentProposals.length + this.expiredVisible.length
     }
   },
   watch: {
@@ -361,6 +369,7 @@ export default {
     formatHbd,
     formatHp,
     async load () {
+      const token = ++this.loadToken
       this.loading = true
       this.loadError = null
       const username = this.loggedInUser
@@ -370,14 +379,18 @@ export default {
           listProposals(),
           username ? getVoterVoteIds(username).catch(() => new Set()) : Promise.resolve(new Set())
         ])
+        // A login change while the reads were pending must not paint the
+        // previous account's vote set (or its loading state) onto the new one.
+        if (token !== this.loadToken || username !== this.loggedInUser) return
         this.proposals = proposals
         this.votedIds = votedIds
         this.voterVotesFor = username || null
       } catch {
+        if (token !== this.loadToken) return
         this.loadError = 'Failed to load proposals. Please try again.'
         this.$q.notify({ type: 'negative', message: 'Failed to load proposals' })
       } finally {
-        this.loading = false
+        if (token === this.loadToken) this.loading = false
       }
     },
     async loadVoterVotes (username) {

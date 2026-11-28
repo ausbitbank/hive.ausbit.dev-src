@@ -180,6 +180,23 @@ describe('wallet actions summary', () => {
     }])
   })
 
+  it('normalises a buy order to HBD per HIVE too', () => {
+    const summary = walletActionsSummary({
+      account: baseAccount(),
+      globalProps: GLOBAL_PROPS,
+      prices: PRICES,
+      openOrders: [{
+        orderid: 43,
+        sell_price: { base: '5.000 HBD', quote: '136.9 HIVE' }
+      }],
+      now: NOW
+    })
+
+    expect(summary.orders[0].sell).toBe('5.000 HBD')
+    expect(summary.orders[0].receive).toBe('136.9 HIVE')
+    expect(summary.orders[0].price).toBeCloseTo(0.03652, 4)
+  })
+
   it('reports pending HBD interest and its next payout', () => {
     const summary = walletActionsSummary({
       account: baseAccount({

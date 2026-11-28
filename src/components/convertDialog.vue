@@ -6,13 +6,13 @@
     </q-card-section>
     <q-card-section v-if="tokenName === 'HIVE'" class="text-center">
       <q-icon name="info" color="primary" size="md" /><br />
-      Conversions from HBD to Hive will take 3.5 days to complete<br />
+      Conversions from Hive to HBD will take 3.5 days to complete<br />
       Half of the selected amount will be converted to HBD immediately.<br />
       A 5% blockchain fee is applied to whatever HIVE is converted and the remaining HIVE will be returned to you after 3.5 days.
     </q-card-section>
     <q-card-section v-if="tokenName === 'HBD'" class="text-center">
       <q-icon name="info" color="primary" size="md" /><br />
-      Conversions from Hive to HBD will take 3 days to complete<br />
+      Conversions from HBD to Hive will take 3 days to complete<br />
       You will receive $1 worth of Hive for each converted HBD
     </q-card-section>
     <q-card-section class="text-center">
@@ -23,13 +23,15 @@
       </div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
-        <q-btn flat :label="buttonLabel" icon="warning" color="red" @click="doTheThing()" v-close-popup />
+        <q-btn flat :label="buttonLabel" icon="warning" color="red" :disable="!parsedAmount" @click="doTheThing()" v-close-popup />
         <q-btn flat label="Cancel and Close" icon="cancel" color="primary" v-close-popup />
       </div>
     </q-card-section>
   </q-card>
 </template>
 <script>
+import { parseAssetAmount } from 'src/services/signingInputs'
+import { nextRequestId } from 'src/services/signingInputs'
 import { vestToHive } from 'src/services/wallet'
 
 export default {
@@ -71,6 +73,9 @@ export default {
       }
     },
     buttonLabel: function () { if (this.tokenName === 'HIVE') { return 'Convert HIVE to HBD' } else { return 'Convert HBD to HIVE' } },
+    parsedAmount () {
+      return parseAssetAmount(this.amount, { precision: 3, max: this.availableBalance })
+    },
     account: function () { return this.$hiveStore.accounts[this.username] },
     loggedInUser: function () { return this.$hiveStore.user.username },
     globalProps: function () { return this.$hiveStore.globalProps }
@@ -84,13 +89,14 @@ export default {
       return parts.join('.')
     },
     convertHiveToHbd () {
-      var requestid = Math.floor((Math.random() * 10000) + 1)
-      this.$hiveStore.addToQueue([this.username, 'active', ['collateralized_convert', { owner: this.username, requestid: requestid, amount: parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['collateralized_convert', { owner: this.username, requestid: nextRequestId(), amount: amount + ' ' + this.tokenName }]])
     },
     convertHbdToHive () {
-      var requestid = Math.floor((Math.random() * 10000) + 1)
-      var a = parseFloat(this.amount).toFixed(3) + ' ' + this.tokenName
-      this.$hiveStore.addToQueue([this.username, 'active', ['convert', { owner: this.username, requestid: requestid, amount: a }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['convert', { owner: this.username, requestid: nextRequestId(), amount: amount + ' ' + this.tokenName }]])
     }
   },
   mounted () {

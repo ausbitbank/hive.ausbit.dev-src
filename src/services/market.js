@@ -58,6 +58,22 @@ export function roundAmount (value, digits = 3) {
   return Number(number.toFixed(digits))
 }
 
+/** Round down for on-chain amounts so a max value cannot exceed a balance. */
+function floorAmount (value, digits = 3) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  const factor = 10 ** digits
+  return Math.floor(number * factor + 1e-9) / factor
+}
+
+let orderIdCounter = 0
+
+function nextOrderId (now = Date.now()) {
+  orderIdCounter = (orderIdCounter + 1) % 1000
+  const base = Math.floor(Number(now) / 1000) % 1_000_000
+  return base * 1000 + orderIdCounter || 1
+}
+
 export function formatAmount (value, digits = 3) {
   if (value === null || value === undefined || value === '') return '—'
   const number = Number(value)
@@ -299,15 +315,19 @@ export function buildLimitOrder ({
   now = Date.now(),
   expiryDays = ORDER_EXPIRY_DAYS
 } = {}) {
-  const amountValue = roundAmount(amount, 3)
-  const totalValue = roundAmount(total ?? Number(price) * Number(amount), 3)
+  // Round amounts down so a "max" sell cannot exceed the balance through
+  // rounding, and give each order a unique id even when two are built in the
+  // same second.
+  const amountValue = floorAmount(amount, 3)
+  const totalValue = floorAmount(total ?? Number(price) * Number(amount), 3)
+  const id = orderid ?? nextOrderId(now)
   const expiration = new Date(
     Math.floor(now / 1000 + 60 * 60 * 24 * expiryDays) * 1000
   ).toISOString().replace(/\.\d{3}Z$/, '')
 
   const payload = side === 'buy'
-    ? { owner, orderid: orderid ?? Math.floor(now / 1000), amount_to_sell: totalValue.toFixed(3) + ' HBD', min_to_receive: amountValue.toFixed(3) + ' HIVE' }
-    : { owner, orderid: orderid ?? Math.floor(now / 1000), amount_to_sell: amountValue.toFixed(3) + ' HIVE', min_to_receive: totalValue.toFixed(3) + ' HBD' }
+    ? { owner, orderid: id, amount_to_sell: totalValue.toFixed(3) + ' HBD', min_to_receive: amountValue.toFixed(3) + ' HIVE' }
+    : { owner, orderid: id, amount_to_sell: amountValue.toFixed(3) + ' HIVE', min_to_receive: totalValue.toFixed(3) + ' HBD' }
 
   return [
     owner,

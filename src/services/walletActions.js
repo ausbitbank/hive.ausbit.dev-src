@@ -122,11 +122,17 @@ function orderRows (openOrders) {
     const quote = order?.sell_price?.quote
     const baseAmount = toNumber(base)
     const quoteAmount = toNumber(quote)
+    // Buy orders quote base HBD / quote HIVE; sell orders quote base HIVE /
+    // quote HBD. Show HBD-per-HIVE for both instead of the inverse for buys.
+    const baseSymbol = String(base || '').trim().split(/\s+/)[1]?.toUpperCase() || ''
+    const price = baseSymbol === 'HIVE'
+      ? (baseAmount > 0 ? quoteAmount / baseAmount : 0)
+      : (quoteAmount > 0 ? baseAmount / quoteAmount : 0)
     return {
       id: String(order?.orderid ?? order?.id ?? index),
       sell: tidyAmount(base),
       receive: tidyAmount(quote),
-      price: baseAmount > 0 ? quoteAmount / baseAmount : 0
+      price
     }
   })
 }

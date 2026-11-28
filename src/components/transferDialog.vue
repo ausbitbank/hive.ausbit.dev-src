@@ -19,7 +19,14 @@
       <div><q-input label="Amount" v-model="amount" style="margin: auto; max-width: 200px" /></div>
       <div class="text-center text-caption" v-if="balance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + balance + ' ' + tokenName" @click="amount = parseFloat(balance)">{{ balance }}</button> {{ tokenName }}</div>
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + availableBalance + ' ' + tokenName" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</button> {{ tokenName }}</div>
-      <q-input label="Memo" autogrow v-model="memo" debounce="400" @update:model-value="checkEncryption()" style="margin: auto; max-width: 200px" clearable /><q-checkbox v-model="encrypted" @update:model-value="toggleEncryption()" label="Encrypt Memo" />
+      <div v-if="amountInvalid" class="text-center text-caption text-negative">
+        Enter a positive amount{{ maxAmount ? ' up to ' + maxAmount + ' ' + tokenName : '' }}. Commas are not accepted.
+      </div>
+      <q-input label="Memo" autogrow v-model="memo" debounce="400" @update:model-value="checkEncryption()" style="margin: auto; max-width: 200px" clearable />
+      <q-checkbox v-model="encrypted" :disable="!canEncryptMemo" :title="canEncryptMemo ? 'Encrypt the memo with the recipient memo key' : 'Memo encryption requires SmartLock on a Hive transfer'" @update:model-value="toggleEncryption()" label="Encrypt Memo" />
+      <div v-if="!canEncryptMemo && memo" class="text-center text-caption q-mt-xs">
+        This memo will be public. Memo encryption is available with SmartLock on a Hive transfer only.
+      </div>
       <div v-if="network === 'hive'">
         <q-toggle v-model="recurrent" label="Recurring Payments" />
         <div v-if="recurrent" class="shadow-5 q-pa-sm">
@@ -58,6 +65,8 @@
 </template>
 <script>
 import userSearchBox from 'components/userSearchBox.vue'
+import { parseAssetAmount } from 'src/services/signingInputs'
+import { hiveEngineOperation } from 'src/services/signingInputs'
 export default {
   name: 'transferDialog',
   data () {
@@ -129,6 +138,16 @@ export default {
   },
   components: { userSearchBox },
   computed: {
+    loginType () {
+      return this.$hiveStore.user.loginType || ''
+    },
+    canEncryptMemo () {
+      // Only SmartLock turns the leading `#` into a real encrypted memo. For
+      // Keychain/HiveAuth (and Hive-Engine or recurrent transfers) the memo is
+      // public, so the checkbox must not promise otherwise.
+      const loginType = this.loginType || this.$hiveStore?.user?.loginType || ''
+      return this.network === 'hive' && !this.recurrent && loginType === 'smartlock'
+    },
     exchanges: function () {
       var e = []
       var x = this.exchangesSupport.filter(exchange => exchange.tokens.includes(this.tokenName))
@@ -144,12 +163,31 @@ export default {
         return null
       }
     },
+    maxAmount () {
+      if (this.balance !== null && this.balance !== undefined) return this.balance
+      if (this.availableBalance !== null && this.availableBalance !== undefined) return this.availableBalance
+      return null
+    },
+    parsedAmount () {
+      return parseAssetAmount(this.amount, { precision: this.precision, max: this.maxAmount })
+    },
+    amountInvalid () {
+      return Boolean(String(this.amount ?? '').trim()) && !this.parsedAmount
+    },
     disableSendButton: function () {
       if (this.toAccount === '' || this.toAccount === null) { return true }
       if (this.recurrent && this.exchanges.includes(this.toAccount)) { return true }
-      if (!this.recurrent && this.amount === 0) { return true }
+      if (!this.parsedAmount) { return true }
       if (this.exchanges.includes(this.toAccount) && this.memo === '') { return true }
       return false
+    }
+  },
+  watch: {
+    canEncryptMemo (value) {
+      if (value || !this.encrypted) return
+      this.encrypted = false
+      // The toggle added this prefix; remove only when it was actually on.
+      if (this.memo.startsWith('#')) this.memo = this.memo.slice(1)
     }
   },
   methods: {
@@ -162,13 +200,17 @@ export default {
     },
     setUsername (u) { this.toAccount = u },
     checkEncryption () {
-      if (this.memo.startsWith('#')) {
+      if (this.canEncryptMemo && this.memo.startsWith('#')) {
         this.encrypted = true
       } else {
         this.encrypted = false
       }
     },
     toggleEncryption () {
+      if (!this.canEncryptMemo) {
+        this.encrypted = false
+        return
+      }
       if (this.memo.startsWith('#')) {
         this.memo = this.memo.slice(1)
       } else {
@@ -176,7 +218,9 @@ export default {
       }
     },
     recurrentTransfer () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes, extensions: [] }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['recurrent_transfer', { to: this.toAccount, from: this.username, amount: amount + ' ' + this.tokenName, memo: this.memo, recurrence: this.recurrentHours, executions: this.recurrentTimes, extensions: [] }]])
     },
     transfer () {
       if (this.network === 'hive') {
@@ -186,17 +230,18 @@ export default {
       }
     },
     transferHive () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName, memo: this.memo }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer', { to: this.toAccount, from: this.username, amount: amount + ' ' + this.tokenName, memo: this.memo }]])
     },
     transferHiveEngine () {
-      var j = '{ "contractName": "tokens", "contractAction": "transfer", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '", "memo": "' + this.memo + '" } }'
-      var cj = {
-        required_auths: [this.username],
-        required_posting_auths: [],
-        id: 'ssc-mainnet-hive',
-        json: j
-      }
-      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
+      const operation = hiveEngineOperation(this.username, 'tokens', 'transfer', {
+        symbol: this.tokenName,
+        to: this.toAccount,
+        quantity: this.parsedAmount || String(this.amount),
+        memo: this.memo
+      })
+      this.$hiveStore.addToQueue([this.username, 'active', operation])
     }
   },
   mounted () {

@@ -31,6 +31,25 @@ describe('queue auto-send selection', () => {
     expect(methods.nextAutoIndex.call(finished)).toBe(-1)
   })
 
+  it('stops at a pending active item instead of skipping a dependent posting action', () => {
+    const dependent = context([
+      ['alice', 'active', ['create_claimed_account', {}]],
+      ['alice', 'posting', ['custom_json', { id: 'rc' }]],
+      ['alice', 'active', ['delegate_vesting_shares', {}]]
+    ])
+    expect(methods.nextAutoIndex.call(dependent)).toBe(-1)
+    dependent.nextAutoIndex = () => methods.nextAutoIndex.call(dependent)
+    expect(Queue.computed.canSendAll.call(dependent)).toBe(false)
+  })
+
+  it('does not leave Send all loading when only active items remain', () => {
+    const ctx = context([['alice', 'active', ['transfer', {}]]])
+    ctx.nextAutoIndex = () => methods.nextAutoIndex.call(ctx)
+    ctx.canSendAll = Queue.computed.canSendAll.call(ctx)
+    methods.sendAll.call(ctx)
+    expect(ctx.bulkSending).toBe(false)
+  })
+
   it('counts active pending items as needing individual review', () => {
     const ctx = context([
       ['alice', 'posting', ['vote', {}]],

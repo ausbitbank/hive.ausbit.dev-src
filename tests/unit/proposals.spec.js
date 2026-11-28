@@ -5,6 +5,7 @@ import {
   daysElapsed,
   daysRemaining,
   daysTotal,
+  daysUntilStart,
   filterProposals,
   formatHbd,
   formatHp,
@@ -64,6 +65,10 @@ describe('proposal helpers', () => {
     expect(daysRemaining(p, new Date('2026-01-04T00:00:00Z'))).toBe(7)
     expect(daysElapsed(p, new Date('2026-02-01T00:00:00Z'))).toBe(10)
     expect(daysRemaining(p, new Date('2026-02-01T00:00:00Z'))).toBe(0)
+    // An upcoming proposal reports time until its start, not its window length.
+    expect(daysUntilStart(p, new Date('2025-12-25T00:00:00Z'))).toBe(7)
+    expect(daysUntilStart(p, new Date('2026-01-04T00:00:00Z'))).toBe(0)
+    expect(daysUntilStart(p, new Date('2026-02-01T00:00:00Z'))).toBe(0)
   })
 
   it('projects paid and remaining payments from the clamped days', () => {

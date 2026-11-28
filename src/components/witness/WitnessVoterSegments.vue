@@ -58,7 +58,8 @@
 
       <div v-else-if="!segments" class="voter-segments__state">
         <q-icon name="insights" size="18px" aria-hidden="true" />
-        <span>Choose a witness and load a bounded sample. No request is made until you ask for it.</span>
+        <span v-if="loaded">No voters were returned for @{{ selected }}.</span>
+        <span v-else>Choose a witness and load a bounded sample. No request is made until you ask for it.</span>
       </div>
 
       <template v-else>
@@ -165,6 +166,8 @@ export default {
       voters: [],
       accounts: [],
       sampledNames: 0,
+      loaded: false,
+      loadToken: 0,
       loading: false,
       error: '',
       sampleSize: 250,
@@ -210,24 +213,30 @@ export default {
     },
     async load () {
       if (!this.selected) return
+      const token = ++this.loadToken
+      const target = this.selected
       this.loading = true
       this.error = ''
       try {
-        const target = this.sampleSize === 'all' ? 5000 : Number(this.sampleSize)
-        const data = await fetchWitnessVoterSample(this.selected, {
+        const sampleSize = this.sampleSize === 'all' ? 5000 : Number(this.sampleSize)
+        const data = await fetchWitnessVoterSample(target, {
           limit: this.sampleCap,
-          accountLimit: target
+          accountLimit: sampleSize
         })
+        if (token !== this.loadToken || target !== this.selected) return
         this.voters = data.voters
         this.accounts = data.accounts
         this.sampledNames = data.sampledNames
+        this.loaded = true
       } catch {
-        this.error = 'Could not load voters for @' + this.selected + '. Please try again.'
+        if (token !== this.loadToken || target !== this.selected) return
+        this.error = 'Could not load voters for @' + target + '. Please try again.'
         this.voters = []
         this.accounts = []
         this.sampledNames = 0
+        this.loaded = true
       } finally {
-        this.loading = false
+        if (token === this.loadToken) this.loading = false
       }
     }
   }

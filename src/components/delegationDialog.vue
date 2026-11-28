@@ -88,7 +88,10 @@ export default {
       }
     },
     delegationButtonDisabled: function () {
-      if (this.to === '' || this.to.length < 3) { return true } else { return false }
+      if (this.to === '' || this.to.length < 3) { return true }
+      // A zero delegation removes the existing delegation on chain. Require an
+      // explicit positive amount instead of letting the default 0 revoke one.
+      return !(Number(this.amountVests) > 0)
     },
     availableStake: function () {
       if (this.network === 'hive' & this.tokenName === 'HIVE') {
@@ -126,7 +129,11 @@ export default {
   },
   methods: {
     setUsername (u) { this.toAccount = u },
-    delegateHive () { this.$hiveStore.addToQueue([this.username, 'active', ['delegate_vesting_shares', { delegator: this.username, delegatee: this.to, vesting_shares: parseFloat(this.amountVests).toFixed(6) + ' VESTS' }]]) },
+    delegateHive () {
+      const vests = Number(this.amountVests)
+      if (!Number.isFinite(vests) || vests <= 0) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['delegate_vesting_shares', { delegator: this.username, delegatee: this.to, vesting_shares: vests.toFixed(6) + ' VESTS' }]])
+    },
     vestToHive (vests) { if (this.globalProps) { return vestToHive(vests, this.globalProps).toFixed(3) } else { return null } },
     tidyNumber (x) {
       var parts = x.toString().split('.')

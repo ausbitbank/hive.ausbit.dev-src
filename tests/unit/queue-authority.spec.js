@@ -7,6 +7,7 @@ describe('requiredAuthority', () => {
     expect(requiredAuthority(['comment', {}])).toBe('posting')
     expect(requiredAuthority(['delete_comment', {}])).toBe('posting')
     expect(requiredAuthority(['comment_options', {}])).toBe('posting')
+    expect(requiredAuthority(['claim_reward_balance', {}])).toBe('posting')
   })
 
   it('maps active operations', () => {
@@ -34,6 +35,9 @@ describe('requiredAuthority', () => {
     expect(requiredAuthority(null)).toBeNull()
     expect(requiredAuthority([])).toBeNull()
     expect(requiredAuthority(['unknown_op', {}])).toBeNull()
+    // Owner-authority operations cannot be represented by the active queue.
+    expect(requiredAuthority(['change_recovery_account', {}])).toBeNull()
+    expect(requiredAuthority(['decline_voting_rights', {}])).toBeNull()
   })
 })
 

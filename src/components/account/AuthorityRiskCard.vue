@@ -89,7 +89,7 @@ export default {
   },
   computed: {
     risk () {
-      return authorityRisk(this.account, { queue: this.$hiveStore.queue })
+      return authorityRisk(this.account, { queue: this.$hiveStore.queue, queueMeta: this.$hiveStore.queueMeta })
     },
     permissions () {
       return PERMISSIONS

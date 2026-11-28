@@ -602,6 +602,7 @@ export default {
   data () {
     return {
       balances: null,
+      balanceRequest: 0,
       tokenInfo: [],
       marketInfo: [],
       history: [],
@@ -659,17 +660,22 @@ export default {
       this.fetchHistory()
     },
     async fetchBalances () {
+      const token = ++this.balanceRequest
+      const requestedUser = this.username
       this.error = null
       this.loading = true
       this.balances = null
       try {
-        const balances = await getHiveEngine().find('tokens', 'balances', { account: this.username }, 1000, 0, [])
+        const balances = await getHiveEngine().find('tokens', 'balances', { account: requestedUser }, 1000, 0, [])
+        if (token !== this.balanceRequest || this.username !== requestedUser) return
         this.balances = Array.isArray(balances) ? balances : []
         await Promise.all([this.fetchTokenInfo(), this.fetchMarketInfo()])
       } catch {
-        this.error = 'Hive-Engine balances are unavailable right now.'
+        if (token === this.balanceRequest && this.username === requestedUser) {
+          this.error = 'Hive-Engine balances are unavailable right now.'
+        }
       } finally {
-        this.loading = false
+        if (token === this.balanceRequest) this.loading = false
       }
     },
     async fetchTokenInfo () {

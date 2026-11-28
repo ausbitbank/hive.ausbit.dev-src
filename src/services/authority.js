@@ -137,7 +137,9 @@ export function authorityRisk (account, options = {}) {
     findings.push(finding(permission + '-account-auth', severity, label, detail, 'group'))
   }
 
-  if (permissions.active.keyCount === 1 && permissions.active.totalWeight >= permissions.active.weight_threshold && permissions.active.weight_threshold > 0) {
+  const activeKeyWeight = permissions.active.keys.reduce((sum, entry) => sum + (Number(entry.weight) || 0), 0)
+  if (permissions.active.keyCount === 1 && permissions.active.accountCount === 0 &&
+      activeKeyWeight >= permissions.active.weight_threshold && permissions.active.weight_threshold > 0) {
     findings.push(finding('single-active-key', 'info', 'One key controls the active permission',
       'This is common, but it means a single leaked active key can move funds. Consider whether a second key or account authority is appropriate.', 'key'))
   }
@@ -179,7 +181,7 @@ export function authorityRisk (account, options = {}) {
     ownerAgeDays,
     lastOwnerUpdate,
     governanceVoteExpiry: expiry,
-    queuedChanges: queuedAuthorityChanges(options.queue, account)
+    queuedChanges: queuedAuthorityChanges(options.queue, account, options.queueMeta)
   }
 }
 
@@ -225,7 +227,7 @@ export function authorityDiff (before, after) {
  * `account_update` omits unchanged authorities (null), so the current account is
  * used as the fallback for each missing permission.
  */
-export function queuedAuthorityChanges (queue, account) {
+export function queuedAuthorityChanges (queue, account, meta = null) {
   const name = String(typeof account === 'string' ? account : account?.name || '').toLowerCase()
   if (!name || !Array.isArray(queue)) return []
 
@@ -233,19 +235,25 @@ export function queuedAuthorityChanges (queue, account) {
   const changes = []
   queue.forEach((item, index) => {
     if (!Array.isArray(item) || String(item[0]).toLowerCase() !== name) return
+    const status = meta?.[index]?.status
+    // Sent/failed items are history, not pending permission changes.
+    if (status && status !== 'pending' && status !== 'broadcasting') return
     const operation = Array.isArray(item[2]) ? item[2] : []
     if (!['account_update', 'account_update2'].includes(operation[0])) return
     const data = operation[1] || {}
+    const diff = current
+      ? authorityDiff(current, {
+          owner: data.owner || current.owner,
+          active: data.active || current.active,
+          posting: data.posting || current.posting
+        })
+      : null
+    // A posting-metadata-only account_update2 has no permission diff.
+    if (diff && !diff.hasChanges) return
     changes.push({
       index,
       operation: operation[0],
-      diff: current
-        ? authorityDiff(current, {
-            owner: data.owner || current.owner,
-            active: data.active || current.active,
-            posting: data.posting || current.posting
-          })
-        : null,
+      diff,
       data
     })
   })

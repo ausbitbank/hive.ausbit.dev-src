@@ -10,12 +10,14 @@
       <div class="text-center text-caption" v-else-if="availableBalance">Available: <button type="button" class="amount-shortcut" :aria-label="'Use available balance ' + availableBalance + ' ' + tokenName" @click="amount = parseFloat(availableBalance)">{{ availableBalance }}</button> {{ tokenName }}</div>
       <div class="text-center q-ma-md">
         <div v-if="log !== ''"><q-icon name="error" color="red" v-if="err" />{{ log }}</div>
-        <q-btn flat label="Stake" icon="account_balance" color="primary" @click="stake()" v-if="!sent" />
+        <q-btn flat label="Stake" icon="account_balance" color="primary" :disable="!parsedAmount" @click="stake()" v-if="!sent" />
       </div>
     </q-card-section>
   </q-card>
 </template>
 <script>
+import { parseAssetAmount } from 'src/services/signingInputs'
+import { hiveEngineOperation } from 'src/services/signingInputs'
 export default {
   name: 'stakingDialog',
   data () {
@@ -60,6 +62,13 @@ export default {
   },
   components: {},
   computed: {
+    maxAmount () {
+      if (this.balance !== null && this.balance !== undefined) return this.balance
+      return this.availableBalance
+    },
+    parsedAmount () {
+      return parseAssetAmount(this.amount, { precision: this.precision, max: this.maxAmount })
+    },
     availableBalance: function () {
       if (this.network === 'hive' && this.tokenName === 'HIVE') {
         return this.$hiveStore.accounts[this.username].balance.split(' ')[0]
@@ -82,17 +91,19 @@ export default {
       }
     },
     stakeHive () {
-      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: parseFloat(this.amount).toFixed(this.precision) + ' ' + this.tokenName }]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      this.$hiveStore.addToQueue([this.username, 'active', ['transfer_to_vesting', { to: this.toAccount, from: this.username, amount: amount + ' ' + this.tokenName }]])
     },
     stakeHiveEngine () {
-      var j = '{ "contractName": "tokens", "contractAction": "stake", "contractPayload": { "symbol": "' + this.tokenName + '", "to": "' + this.toAccount + '", "quantity": "' + this.amount + '" } }'
-      var cj = {
-        required_auths: [this.username],
-        required_posting_auths: [],
-        id: 'ssc-mainnet-hive',
-        json: j
-      }
-      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
+      const amount = this.parsedAmount
+      if (!amount) return
+      const operation = hiveEngineOperation(this.username, 'tokens', 'stake', {
+        symbol: this.tokenName,
+        to: this.toAccount,
+        quantity: amount
+      })
+      this.$hiveStore.addToQueue([this.username, 'active', operation])
     }
   },
   mounted () {

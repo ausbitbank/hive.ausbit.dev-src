@@ -242,6 +242,11 @@ describe('witness forms and queue items', () => {
     expect(validateWitnessForm({ ...validForm, signingKey: 'STMxxx' }).errors.signingKey).toBeTruthy()
     expect(validateWitnessForm({ ...validForm, maximumBlockSize: 10 }).errors.maximumBlockSize).toBeTruthy()
     expect(validateWitnessForm({ ...validForm, hbdInterestPercent: 150 }).errors.hbdInterestPercent).toBeTruthy()
+    // Two-decimal rates must survive binary floating point (0.29 * 100).
+    for (const rate of [0.29, 0.07, 1.15]) {
+      expect(validateWitnessForm({ ...validForm, hbdInterestPercent: rate }).valid, String(rate)).toBe(true)
+    }
+    expect(validateWitnessForm({ ...validForm, hbdInterestPercent: 1.234 }).valid).toBe(false)
   })
 
   it('converts the HBD percent back to chain basis points', () => {

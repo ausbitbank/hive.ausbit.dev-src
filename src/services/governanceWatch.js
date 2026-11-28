@@ -7,6 +7,7 @@
 // proposals page agree on phases, funding and vote weight.
 
 import {
+  MAX_PLAUSIBLE_DAILY_HBD,
   assetAmount,
   dailyPayHbd,
   daysRemaining,
@@ -19,11 +20,6 @@ import { governanceVoteExpiry } from './governance'
 const RETURN_PROPOSAL_ID = 0
 const STABILIZER_RECEIVER = 'hbdstabilizer'
 const EXPIRY_WINDOW_DAYS = 30
-// A daily request above this is not a plausible DHF grant. Two active spam
-// proposals currently ask for ~1e15 HBD/day; summing them would overflow the
-// widget and make the real budget unreadable. Keep them visible as outliers but
-// leave them out of the committed/unfunded totals.
-const MAX_PLAUSIBLE_DAILY_HBD = 1000000
 
 function idSet (ids) {
   if (ids instanceof Set) {

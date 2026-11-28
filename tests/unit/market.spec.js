@@ -224,11 +224,12 @@ describe('market helpers', () => {
     expect(buy[2][0]).toBe('limit_order_create')
     expect(buy[2][1]).toMatchObject({
       owner: 'alice',
-      orderid: Math.floor(now / 1000),
       amount_to_sell: '4.000 HBD',
       min_to_receive: '100.000 HIVE',
       fill_or_kill: false
     })
+    expect(Number.isInteger(buy[2][1].orderid)).toBe(true)
+    expect(buy[2][1].orderid).toBeGreaterThan(0)
     expect(buy[2][1].expiration).toBe('2026-12-15T12:00:00')
 
     const sell = buildLimitOrder({
@@ -251,6 +252,15 @@ describe('market helpers', () => {
       'active',
       ['limit_order_cancel', { owner: 'alice', orderid: 123 }]
     ])
+  })
+
+  it('gives same-second orders distinct ids and rounds amounts down', () => {
+    const now = Date.UTC(2026, 10, 18, 12, 0, 0)
+    const first = buildLimitOrder({ owner: 'alice', side: 'sell', price: 0.04, amount: 1.2349, total: 0.049396, now })
+    const second = buildLimitOrder({ owner: 'alice', side: 'sell', price: 0.04, amount: 1.2349, total: 0.049396, now })
+    expect(first[2][1].orderid).not.toBe(second[2][1].orderid)
+    expect(first[2][1].amount_to_sell).toBe('1.234 HIVE')
+    expect(first[2][1].min_to_receive).toBe('0.049 HBD')
   })
 
   it('reads savings APR and projects interest', () => {

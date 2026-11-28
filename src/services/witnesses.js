@@ -409,7 +409,7 @@ export function validateWitnessForm (form = {}) {
   const interest = Number(form.hbdInterestPercent)
   if (!Number.isFinite(interest) || interest < 0 || interest > 100) {
     errors.hbdInterestPercent = 'HBD interest must be between 0% and 100%.'
-  } else if (Math.round(interest * 100) !== interest * 100) {
+  } else if (Math.abs(interest * 100 - Math.round(interest * 100)) > 1e-6) {
     errors.hbdInterestPercent = 'Use at most two decimal places for the HBD interest rate.'
   }
 

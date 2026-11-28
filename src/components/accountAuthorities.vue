@@ -189,23 +189,44 @@ export default {
     },
     async removeAuth (keyType, authType, accountToModify, toRemove) {
       if (authType === 'account') {
-        const { success, msg } = await keychain(window, 'requestRemoveAccountAuthority', accountToModify, toRemove, keyType)
-        if (success) {
-          this.$emit('authEdited')
-        } else {
-          console.warn(msg)
-        }
+        if (!this.requireKeychain()) return
+        const result = await keychain(window, 'requestRemoveAccountAuthority', accountToModify, toRemove, keyType)
+        this.handleKeychainResult(result, 'remove the account authority')
       }
     },
     async addAuth (keyType, authType, accountToModify, toAdd, weight) {
       if (authType === 'account') {
-        const { success, msg } = await keychain(window, 'requestAddAccountAuthority', accountToModify, toAdd, keyType, weight)
-        if (success) {
-          this.$emit('authEdited')
-        } else {
-          console.warn(msg)
-        }
+        if (!this.requireKeychain()) return
+        const result = await keychain(window, 'requestAddAccountAuthority', accountToModify, toAdd, keyType, weight)
+        this.handleKeychainResult(result, 'add the account authority')
       }
+    },
+    requireKeychain () {
+      const loginType = this.$hiveStore.user.loginType || ''
+      if (loginType === 'keychain') return true
+      this.$q.notify({
+        type: 'negative',
+        message: 'Authority editing needs Hive Keychain.',
+        caption: 'Keychain/HiveAuth sessions are not used for authority edits; sign in with Keychain to change account authorities.',
+        timeout: 6000
+      })
+      return false
+    },
+    handleKeychainResult (result, action) {
+      if (result?.success) {
+        this.$emit('authEdited')
+        return
+      }
+      let message = result?.msg || result?.message || 'Keychain did not approve the change.'
+      if (result?.notInstalled) message = 'Hive Keychain is not installed.'
+      else if (result?.notActive) message = 'Allow Hive Keychain to access this site.'
+      else if (result?.cancel) message = 'Cancelled in Keychain.'
+      this.$q.notify({
+        type: 'negative',
+        message: 'Could not ' + action + '.',
+        caption: message,
+        timeout: 6000
+      })
     }
   }
 }

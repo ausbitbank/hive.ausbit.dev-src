@@ -229,9 +229,9 @@
                   <h2 class="account-card__title account-card__title--small">Witness votes</h2>
                   <q-btn flat dense round icon="edit" color="orange" title="Edit witness votes" aria-label="Edit witness votes" @click="$router.push('/witnesses')" v-if="loggedInUser && username === loggedInUser" />
                 </div>
-                <div class="account-muted account-muted--row" :title="account.governance_vote_expiration_ts" v-if="account.governance_vote_expiration_ts">
+                <div class="account-muted account-muted--row" :title="governanceVoteExpiryTs" v-if="governanceVoteExpiryTs">
                   <q-icon name="schedule" size="14px" aria-hidden="true" />
-                  <span>Expires {{ timeDelta(account.governance_vote_expiration_ts) }}</span>
+                  <span>Expires {{ timeDelta(governanceVoteExpiryTs) }}</span>
                 </div>
                 <ul class="account-witness-votes" v-if="witnessVotes.length" aria-label="Witness votes">
                   <li v-for="w in witnessVotes" :key="w" class="account-witness-votes__item">
@@ -789,6 +789,11 @@ export default {
     }
   },
   computed: {
+    governanceVoteExpiryTs () {
+      const raw = this.account?.governance_vote_expiration_ts
+      const parsed = Date.parse(String(raw || ''))
+      return Number.isFinite(parsed) && parsed > 0 ? raw : null
+    },
     lastPageNumber () {
       const marker = Number(this.accountOperationsMarker)
       const limit = Math.max(1, Number(this.accountOperationsLimit) || 50)

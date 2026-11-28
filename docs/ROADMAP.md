@@ -138,15 +138,28 @@ principles that constrain it. Delivered work and its verification records live i
   live widgets when they scroll off-screen, so pollers stop and the edit
   transition no longer remounts every widget. See
   [`docs/workstreams/W108-dashboard-edit-lifecycle.md`](workstreams/W108-dashboard-edit-lifecycle.md).
+- W109 fixes proposal and funding truth: vote reads are filtered to the
+  requested proposal/voter, funding totals exclude the return proposal and
+  implausible spam, the epoch sentinel is “never voted”, the detail page cannot
+  claim “Funded” without the threshold, and upcoming/count labels are honest.
+  See
+  [`docs/workstreams/W109-proposal-governance-truth.md`](workstreams/W109-proposal-governance-truth.md).
+- W110 hardens wallet, market and witness paths: claim rewards is posting
+  authority, auto-send stops at a pending active item, Hive-Engine JSON is
+  serialised, memo encryption is only offered where it exists, amount/ID/rounding
+  validation is shared, and witness reads are identity-bound and filtered. See
+  [`docs/workstreams/W110-wallet-witness-safety.md`](workstreams/W110-wallet-witness-safety.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,344 tests across 244 files**, `bun run build`
-  and `bun run perf:check` succeeded, and the full Chromium suite passed
-  **209 checks** (one unrelated dashboard-template mount timed out once and
-  passed on the exact isolated rerun). The four Playwright failures listed in
-  the pre-W89 snapshot (badges shelf, login-key guide, header lockup,
-  profile-skin scope) do not reproduce on this tree. The full Chromium suite
-  remains the release gate.
-- The next free workstream number is **W109**. **W90** remains the separate
+  `bun run test` green with **2,347 tests across 248 files**, `bun run build`
+  succeeded, and the full Chromium suite passed **213 checks**. `bun run
+  perf:check` passed in an isolated worktree; the shared worktree's uncommitted
+  Vault changes push the same routes slightly over budget. Four E2E checks hit a
+  missing `dist` while a concurrent session rebuilt the shared worktree and all
+  four passed on isolated rerun. The four Playwright failures listed in the
+  pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
+  scope) do not reproduce on this tree. The full Chromium suite remains the
+  release gate.
+- The next free workstream number is **W111**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

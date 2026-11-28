@@ -65,7 +65,7 @@
             </span>
             <span v-if="phase === 'upcoming'">
               <q-icon name="schedule" size="16px" aria-hidden="true" />
-              Starts in {{ remainingDays }} days
+              Starts in {{ daysToStart }} {{ daysToStart === 1 ? 'day' : 'days' }}
             </span>
             <span v-else-if="phase === 'active'">
               <q-icon name="hourglass_bottom" size="16px" aria-hidden="true" />
@@ -368,6 +368,7 @@ import {
   daysTotal,
   daysElapsed,
   daysRemaining,
+  daysUntilStart,
   paidHbd,
   toPayHbd,
   proposalPhase,
@@ -407,7 +408,7 @@ export default {
     },
     hpReady () {
       const props = this.globalProps
-      return Boolean(props && props.total_vesting_shares && props.total_vesting_fund_hive)
+      return Boolean(props && props.total_vesting_shares && props.total_vesting_fund_hive && this.returnProposal)
     },
     requestedId () {
       return this.$route?.params?.proposalId
@@ -416,7 +417,16 @@ export default {
       return this.proposal ? proposalPhase(this.proposal) : 'expired'
     },
     statusBadge () {
-      return proposalStatus(this.proposal, this.returnProposalVotes)
+      if (!this.proposal) return proposalStatus(this.proposal, 0)
+      if (this.isReturnProposal || this.returnProposal) {
+        return proposalStatus(this.proposal, this.returnProposalVotes)
+      }
+      // The return proposal is the funding threshold. If that read failed, do
+      // not compare the proposal with itself and claim it is funded.
+      const phase = proposalPhase(this.proposal)
+      if (phase === 'expired') return { label: 'Expired', color: 'grey' }
+      if (phase === 'upcoming') return { label: 'Upcoming', color: 'blue' }
+      return { label: 'Funding unknown', color: 'grey' }
     },
     isReturnProposal () {
       return Number(this.proposal?.id) === 0
@@ -433,6 +443,9 @@ export default {
     remainingDays () {
       return daysRemaining(this.proposal)
     },
+    daysToStart () {
+      return Math.ceil(daysUntilStart(this.proposal))
+    },
     paidAmount () {
       return paidHbd(this.proposal)
     },
@@ -443,14 +456,13 @@ export default {
       return voteValueHp(this.proposal, this.globalProps)
     },
     returnProposalVotes () {
-      const target = this.returnProposal || this.proposal
-      return Number(target?.total_votes) || 0
+      return Number(this.returnProposal?.total_votes) || 0
     },
     returnVotesHp () {
       return voteValueHp({ total_votes: this.returnProposalVotes }, this.globalProps)
     },
     supportPercent () {
-      if (!this.returnVotesHp) return 0
+      if (!this.returnVotesHp) return null
       return (this.voteHp / this.returnVotesHp) * 100
     },
     supportProgress () {

@@ -83,7 +83,17 @@
         </ul>
       </section>
 
-      <div v-if="!biggestUpvotes.length && !biggestDownvotes.length" class="votes-dialog__empty">
+      <div v-if="activeLoading" class="votes-dialog__empty" role="status">
+        <q-spinner color="primary" size="20px" />
+        <span>Loading the current votes…</span>
+      </div>
+      <div v-else-if="activeError" class="votes-dialog__empty" role="alert">
+        <q-icon name="cloud_off" size="22px" aria-hidden="true" />
+        <span>{{ activeError }}</span>
+        <q-btn flat dense no-caps color="primary" label="Retry" @click="loadActiveVotes" />
+      </div>
+
+      <div v-if="!activeLoading && !activeError && !biggestUpvotes.length && !biggestDownvotes.length" class="votes-dialog__empty">
         <q-icon name="thumb_up_off_alt" size="22px" aria-hidden="true" />
         <span>No votes have been cast on this post yet.</span>
       </div>

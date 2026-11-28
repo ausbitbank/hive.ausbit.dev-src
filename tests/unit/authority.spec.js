@@ -53,8 +53,23 @@ describe('authorityRisk', () => {
     expect(result.permissions.owner.keyCount).toBe(1)
   })
 
-  it('flags owner and active key reuse as critical', () => {
-    const result = authorityRisk(account({ active: auth('STMowner') }), { now: NOW })
+  it('does not claim one key controls active when an account authority shares the threshold', () => {
+    const active = {
+      weight_threshold: 3,
+      key_auths: [['STMactive', 1]],
+      account_auths: [['bob', 2]]
+    }
+    const result = authorityRisk(account({ active }), { now: NOW })
+    expect(result.findings.some(row => row.id === 'single-active-key')).toBe(false)
+  })
+
+  it('does not mark never-voted governance as expired', () => {
+    const result = authorityRisk(account({ governance_vote_expiration_ts: '1969-12-31T23:59:59' }), { now: NOW })
+    expect(result.findings.some(row => row.id === 'governance-expired')).toBe(false)
+    expect(result.findings.some(row => row.id === 'governance-expiring')).toBe(false)
+  })
+
+  it('flags owner and active key reuse as critical', () => {    const result = authorityRisk(account({ active: auth('STMowner') }), { now: NOW })
     expect(result.level).toBe('high')
     expect(result.findings.some(row => row.id === 'owner-active-reuse' && row.severity === 'critical')).toBe(true)
   })
@@ -132,6 +147,15 @@ describe('queuedAuthorityChanges', () => {
     expect(changes[0].diff.hasChanges).toBe(true)
     expect(changes[0].diff.permissions.posting.keys.added[0].key).toBe('STMnew')
     expect(changes[0].diff.permissions.owner.changed).toBe(0)
+  })
+
+  it('skips metadata-only updates and already-sent authority changes', () => {
+    const queue = [
+      ['alice', 'posting', ['account_update2', { posting_json_metadata: '{}', json_metadata: '' }]],
+      ['alice', 'active', ['account_update', { posting: auth('STMnew') }]]
+    ]
+    const meta = [{ status: 'pending' }, { status: 'sent' }]
+    expect(queuedAuthorityChanges(queue, account(), meta)).toEqual([])
   })
 
   it('tolerates a missing queue', () => {

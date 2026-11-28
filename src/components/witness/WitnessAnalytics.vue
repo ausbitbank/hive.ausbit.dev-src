@@ -149,7 +149,7 @@
           <ul class="gov-list" aria-label="Witness versions">
             <li v-for="group in topVersions" :key="group.version">
               <span class="gov-version">v{{ group.version }}</span>
-              <span class="gov-severity" :class="group.version === drift.consensusVersion.replace(/^v/i, '') ? 'gov-severity--fresh' : 'gov-severity--aging'">
+              <span class="gov-severity" :class="versionMatches(group) ? 'gov-severity--fresh' : 'gov-severity--aging'">
                 {{ group.count }} witness{{ group.count === 1 ? '' : 'es' }}
               </span>
             </li>
@@ -242,7 +242,7 @@ import {
   recordSnapshot,
   witnessMissedTrend
 } from 'src/services/governanceHistory'
-import { formatHp, formatPercent, relativeTime } from 'src/services/witnesses'
+import { formatHp, formatPercent, relativeTime, versionParts } from 'src/services/witnesses'
 import WitnessVoterSegments from 'components/witness/WitnessVoterSegments.vue'
 import moment from 'src/utils/time'
 
@@ -296,6 +296,12 @@ export default {
     formatHp,
     formatPercent,
     relativeTime,
+    versionMatches (group) {
+      const consensus = versionParts(String(this.drift?.consensusVersion || '').replace(/^v/i, ''))
+      const running = versionParts(String(group?.version || ''))
+      if (consensus.length < 2 || running.length < 2) return true
+      return running[0] === consensus[0] && running[1] === consensus[1]
+    },
     formatDate (timestamp) {
       if (!timestamp) return '—'
       return moment.utc(timestamp).format('D MMM YYYY')

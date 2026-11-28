@@ -258,6 +258,7 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { getHiveEngine } from 'src/services/hiveEngine'
+import { hiveEngineOperation } from 'src/services/signingInputs'
 import { getHivePrices } from 'src/services/prices'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 import { setPageMeta } from 'src/utils/pageMeta'
@@ -429,24 +430,19 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     tradeHiveEngine (token, type, quantity, price) {
-      var j = '{ "contractName": "market", "contractAction": "' + type + '", "contractPayload": { "symbol": "' + token + '", "quantity": "' + quantity + '", "price": "' + price + '" } }'
-      var cj = {
-        required_auths: [this.username],
-        required_posting_auths: [],
-        id: 'ssc-mainnet-hive',
-        json: j
-      }
-      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
+      const operation = hiveEngineOperation(this.username, 'market', type, {
+        symbol: String(token),
+        quantity: String(quantity),
+        price: String(price)
+      })
+      this.$hiveStore.addToQueue([this.username, 'active', operation])
     },
     cancelOrder (type, id) {
-      var j = '{ "contractName": "market", "contractAction": "cancel", "contractPayload": { "type": "' + type + '", "id": "' + id + '" } }'
-      var cj = {
-        required_auths: [this.username],
-        required_posting_auths: [],
-        id: 'ssc-mainnet-hive',
-        json: j
-      }
-      this.$hiveStore.addToQueue([this.username, 'active', ['custom_json', cj]])
+      const operation = hiveEngineOperation(this.username, 'market', 'cancel', {
+        type: String(type),
+        id: String(id)
+      })
+      this.$hiveStore.addToQueue([this.username, 'active', operation])
     },
     tidyNumber (x) { if (x) { var parts = x.toString().split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return parts.join('.') } else { return null } },
     init () {

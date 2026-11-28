@@ -25,6 +25,7 @@ vi.mock('quasar', () => ({
 }))
 
 const { readSettingsFor, settingsStorageKey, DEFAULT_SETTINGS } = await import('../../src/stores/hive/state')
+const { default: hiveState } = await import('../../src/stores/hive/state')
 const { updateCommunitySubscriptions, updateLoggedInUser, updateNotifications, updateSettings, updateUnreadNotificationCount } = await import('../../src/stores/hive/mutations')
 
 function context (username = '') {
@@ -67,6 +68,24 @@ describe('account-scoped settings', () => {
     expect(alice.voteWeightPost).toBe(77)
     expect(alice.beneficiary).toEqual([{ account: 'alice', weight: 10000 }])
     expect(storage.local.has('settings')).toBe(false)
+  })
+
+  it('does not let a guest/boot read consume legacy session state', () => {
+    storage.session.set('notifications', [{ id: 7 }])
+    storage.session.set('communitySubscriptions', [['hive-1', ['subscribe']]])
+
+    const guest = hiveState()
+    expect(guest.user.notifications).toEqual([])
+    expect(guest.user.communities).toEqual([])
+    expect(storage.session.has('notifications')).toBe(true)
+    expect(storage.session.has('communitySubscriptions')).toBe(true)
+
+    storage.session.set('loggedInUser', 'alice')
+    const alice = hiveState()
+    expect(alice.user.notifications).toEqual([{ id: 7 }])
+    expect(alice.user.communities).toEqual([['hive-1', ['subscribe']]])
+    expect(storage.session.has('notifications')).toBe(false)
+    expect(storage.session.has('communitySubscriptions')).toBe(false)
   })
 
   it('writes settings under the signed-in account', () => {
