@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W118**. **W90** remains the separate
+The next free workstream number is **W119**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -176,4 +176,5 @@ service.
 | [W115-blog-directory-optout](W115-blog-directory-optout.md) | Re-verify stale directory entries against the on-chain opt-in |
 | [W116-owner-authority](W116-owner-authority.md) | Keychain-only owner-authority add/remove |
 | [W117-authority-key-editing](W117-authority-key-editing.md) | Active/posting public-key add/remove through the queue |
+| [W118-batch-delegation](W118-batch-delegation.md) | Batch creation with HP in the atomic tx and RC after confirmation |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |

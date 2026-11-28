@@ -175,6 +175,10 @@ principles that constrain it. Delivered work and its verification records live i
 - W117 adds active/posting public-key add/remove through the signing queue while
   preserving every other authority field. See
   [`docs/workstreams/W117-authority-key-editing.md`](workstreams/W117-authority-key-editing.md).
+- W118 adds batch-creation delegation: HP follows each create in the atomic
+  active transaction, and RC is a separate posting action after the accounts are
+  confirmed. See
+  [`docs/workstreams/W118-batch-delegation.md`](workstreams/W118-batch-delegation.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,362 tests across 248 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
@@ -186,7 +190,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W118**. **W90** remains the separate
+- The next free workstream number is **W119**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

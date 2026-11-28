@@ -69,8 +69,9 @@ new operations into the creation transaction or weakening the review boundary.
 
 ## Remaining
 
-- `/create/batch` does not yet offer delegation; each batched claim would need
-  its own RC/HP choice or a shared default.
+- `/create/batch` delegation is delivered in
+  [`W118`](W118-batch-delegation.md) as HP in the creation transaction and RC as
+  a separate posting action after confirmation.
 - The RC amount is entered in billions of RC (0.5 steps). A future UI could read
   the sponsor's RC manabar and suggest a fraction of it.
 - The HP conversion is a point-in-time VESTS value; the wallet/drawer shows the

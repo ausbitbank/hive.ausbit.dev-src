@@ -132,6 +132,12 @@
               </q-banner>
 
               <template v-else>
+                <delegation-options v-model="delegation" />
+                <p class="batch-hint">
+                  HP delegation is included in the creation transaction. RC delegation is a separate
+                  posting-key action signed after the accounts exist.
+                </p>
+
                 <q-banner class="batch-banner batch-banner--warning" rounded>
                   <template #avatar><q-icon name="warning" color="warning" aria-hidden="true" /></template>
                   You will become the recovery account for {{ creatableCount }} account{{ creatableCount === 1 ? '' : 's' }}.
@@ -173,6 +179,25 @@
                 <div class="batch-banner__copy">
                   <code>{{ txId }}</code><br />
                   This page is checking the chain and will mark each account as created.
+                </div>
+              </q-banner>
+
+              <q-banner v-if="rcPending" class="batch-banner batch-banner--info" rounded>
+                <template #avatar><q-icon name="bolt" color="primary" aria-hidden="true" /></template>
+                <strong>Delegate Resource Credits to {{ rcCandidates.length }} new account{{ rcCandidates.length === 1 ? '' : 's' }}.</strong>
+                <div class="batch-banner__copy">
+                  The accounts now exist, so this posting-key action can be signed safely.
+                  <q-btn
+                    dense
+                    no-caps
+                    unelevated
+                    color="primary"
+                    class="q-mt-sm"
+                    icon="bolt"
+                    label="Sign RC delegation"
+                    :loading="rcSigning"
+                    @click="signRcDelegation"
+                  />
                 </div>
               </q-banner>
             </template>
@@ -217,9 +242,12 @@ import {
   claimFromLink
 } from 'src/services/accountClaim'
 import { buildAccountCreationMetadata } from 'src/services/accountOnboarding'
+import { buildDelegationOperations } from 'src/services/accountDelegation'
+import { fetchGlobalProps } from 'src/services/chainData'
 import { authoritiesMatchPayload } from 'src/services/accountClaim'
 import { pollWhileVisible } from 'src/services/polling'
 import PageHeader from 'components/ui/PageHeader.vue'
+import DelegationOptions from 'components/onboarding/DelegationOptions.vue'
 
 const MAX_BATCH = 10
 const POLL_INTERVAL_MS = 5000
@@ -227,7 +255,7 @@ const POLL_ATTEMPTS = 36
 
 export default {
   name: 'batchCreatePage',
-  components: { PageHeader },
+  components: { PageHeader, DelegationOptions },
   data () {
     return {
       rawLinks: '',
@@ -235,6 +263,10 @@ export default {
       parseErrors: [],
       checking: false,
       signing: false,
+      delegation: { rcEnabled: false, rcAmount: 5, hpEnabled: false, hpAmount: 5 },
+      batchedNames: [],
+      rcSigning: false,
+      rcSigned: false,
       txId: '',
       keysDialog: false,
       keysClaim: null,
@@ -291,6 +323,14 @@ export default {
     },
     hasEnoughHiveForBatch () {
       return this.liquidHiveBalance >= this.creatableCount * this.accountCreationFeeAmount
+    },
+    rcCandidates () {
+      if (!this.batchedNames.length) return []
+      const wanted = new Set(this.batchedNames)
+      return this.claims.filter(claim => wanted.has(claim.payload.u) && claim.state === 'created')
+    },
+    rcPending () {
+      return this.delegation.rcEnabled && !this.rcSigned && this.rcCandidates.length > 0
     },
     keysRows () {
       if (!this.keysClaim) return []
@@ -413,6 +453,8 @@ export default {
       this.claims = []
       this.parseErrors = []
       this.txId = ''
+      this.batchedNames = []
+      this.rcSigned = false
     },
     initAccount () {
       if (this.loggedInUser) this.$hiveStore.getAccount(this.loggedInUser)
@@ -477,18 +519,43 @@ export default {
       })
       if (!confirmed) return
 
-      const operations = claims.map(claim => {
-        if (mode === 'token') {
-          return ['create_claimed_account', {
-            creator: this.loggedInUser,
-            ...this.baseOperation(claim)
-          }]
+      let hpOperations = new Map()
+      if (this.delegation.hpEnabled) {
+        const globalProps = await fetchGlobalProps().catch(() => null)
+        try {
+          for (const claim of claims) {
+            const operations = buildDelegationOperations({
+              sponsor: this.loggedInUser,
+              account: claim.payload.u,
+              hpAmount: Number(this.delegation.hpAmount || 0),
+              globalProps
+            }).filter(operation => operation[0] === 'delegate_vesting_shares')
+            if (operations.length) hpOperations.set(claim.payload.u, operations[0])
+          }
+        } catch (error) {
+          this.$q.notify({
+            type: 'negative',
+            message: error?.message || 'The HP delegation is invalid.',
+            caption: 'Nothing was broadcast.',
+            timeout: 7000
+          })
+          return
         }
-        return ['account_create', {
-          fee: this.accountCreationFee,
-          creator: this.loggedInUser,
-          ...this.baseOperation(claim)
-        }]
+      }
+
+      const operations = claims.flatMap(claim => {
+        const create = mode === 'token'
+          ? ['create_claimed_account', {
+              creator: this.loggedInUser,
+              ...this.baseOperation(claim)
+            }]
+          : ['account_create', {
+              fee: this.accountCreationFee,
+              creator: this.loggedInUser,
+              ...this.baseOperation(claim)
+            }]
+        const hp = hpOperations.get(claim.payload.u)
+        return hp ? [create, hp] : [create]
       })
 
       this.signing = true
@@ -501,6 +568,8 @@ export default {
           throw new Error(reason)
         }
         this.txId = result.result?.id || result.tx_id || result.txId || ''
+        this.batchedNames = claims.map(claim => claim.payload.u)
+        this.rcSigned = false
         this.$q.notify({
           message: 'Batch transaction sent.',
           color: 'green',
@@ -519,6 +588,59 @@ export default {
         })
       } finally {
         this.signing = false
+      }
+    },
+    async signRcDelegation () {
+      if (this.rcSigning || this.rcSigned) return
+      const rcAmount = Math.round(Number(this.delegation.rcAmount || 0) * 1e9)
+      const operations = []
+      try {
+        for (const claim of this.rcCandidates) {
+          const next = buildDelegationOperations({
+            sponsor: this.loggedInUser,
+            account: claim.payload.u,
+            rcAmount,
+            hpAmount: 0
+          }).filter(operation => operation[0] === 'custom_json')
+          operations.push(...next)
+        }
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error?.message || 'The RC delegation is invalid.',
+          timeout: 7000
+        })
+        return
+      }
+      if (!operations.length) return
+      this.rcSigning = true
+      try {
+        const result = await keychain(window, 'requestBroadcast', this.loggedInUser, operations, 'posting')
+        if (!result?.success) {
+          const reason = result?.cancel
+            ? 'Cancelled in Keychain.'
+            : result?.message || result?.msg || result?.error || 'Keychain did not approve the RC delegation.'
+          throw new Error(reason)
+        }
+        this.rcSigned = true
+        this.$q.notify({
+          message: 'RC delegation sent.',
+          caption: operations.length + ' account' + (operations.length === 1 ? '' : 's') + ' can now transact.',
+          color: 'green',
+          icon: 'bolt',
+          position: 'top',
+          timeout: 5000
+        })
+      } catch (error) {
+        this.$q.notify({
+          message: error?.message || 'Could not sign the RC delegation.',
+          color: 'negative',
+          icon: 'error',
+          position: 'top',
+          timeout: 7000
+        })
+      } finally {
+        this.rcSigning = false
       }
     },
     startPolling () {
