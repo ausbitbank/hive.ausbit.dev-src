@@ -57,7 +57,7 @@ searches live in your browser.
 | **Explore the chain**<br>Blocks, transactions, accounts, authorities, delegations, followers, downvote transparency and a unified search across nine categories, from accounts to Lightning invoices. | **Own your wallet**<br>HIVE, HBD, Hive Power, savings, Hive-Engine tokens, Magi balances, transfers and a tax-friendly CSV export. |
 | **Create and publish**<br>A local-first composer with drafts, history, media uploads, embeds, snippets, templates, checklists and cross-posting. | **Find your people**<br>Public community discovery, per-account community feeds, short-form readers and Lightning tips. |
 | **Trade and earn**<br>The internal Hive market, external charts, HBD peg tools, witness and proposal governance, and sats quotes. | **Sign your way**<br>Keychain, HiveAuth or SmartLock. Posting and active actions stay separated, reviewed and queued. |
-| **Make it yours**<br>Ten built-in themes, draggable dashboard layouts, profile skins, badges and a theme wall. | **Moderate locally**<br>Open, Balanced, Strict, Follow-only or custom moderation policy with explainable decisions, overrides and portable JSON. |
+| **Make it yours**<br>Ten built-in themes, draggable dashboard layouts, profile skins, badges and a theme wall. | **Moderate locally**<br>Open, Balanced, Strict, Follow-only or custom moderation policy with explainable decisions, overrides, ignored-tag feed filters and portable JSON. |
 
 ## Screenshots
 
@@ -106,7 +106,7 @@ searches live in your browser.
 | `/communities` (`/c`) | Public community browser: search all Hive communities by title, description, category or partial `hive-123` id with relevance ranking and paged matches; compare subscribers and active authors; sort by trending/subscribers/activity/newest; browse new, active and largest shelves; hide NSFW communities |
 | `/c/:username` | Community feed with subscriber, activity, top-author, payout and moderation insights |
 | `/@:username/communities` | Community directory for an account: one card per community with description, role and live stats, role/name filters, plus a merged expanded feed across the communities it belongs to |
-| `/browse`, `/trending`, `/created`, `/hot`, `/payout`, `/payout_comments`, `/muted` | Post discovery with cards/list/table layouts and filters; `/created` is the canonical new-posts surface and `/browse` redirects to it |
+| `/browse`, `/trending`, `/created`, `/hot`, `/payout`, `/payout_comments`, `/muted` | Post discovery with cards/list/table layouts and filters, including local ignored-tag filters; `/created` is the canonical new-posts surface and `/browse` redirects to it |
 
 ### Wallet, markets and Lightning
 
@@ -144,7 +144,7 @@ searches live in your browser.
 | `/appearance` | Ten site themes including Hive Dark (default) and Hive Light, system-follow, motion, high-contrast, profile-skin visibility, calm effects, status/extras visibility and adopted palettes |
 | `/themes` | Theme wall with built-in themes and published profile skins from followed accounts, filters for mode/tag/credential and recent/featured views, remixing and local palette adoption |
 | `/settings/skin` | Skin Studio: palette, light/dark variants, status line, Hive Circle, badges, atmosphere, visual language, latest/pinned post, theme codes and publishing with posting authority |
-| `/settings/moderation` | Local-first moderation policy: Open/Balanced/Strict/Follow-only/Custom presets, per-surface rules, distinct mute/blacklist layers, a curated list directory with explicit subscriptions and owner-only export references, overrides and versioned JSON export/import |
+| `/settings/moderation` | Local-first moderation policy: Open/Balanced/Strict/Follow-only/Custom presets, per-surface rules, distinct mute/blacklist layers, ignored-tag feed filters, a curated list directory with explicit subscriptions and owner-only export references, overrides and versioned JSON export/import |
 | `/about` | Product story, the Banksia name and mark, design principles, license and source links |
 
 ### Keyboard and workflow

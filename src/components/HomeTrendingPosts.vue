@@ -87,16 +87,16 @@
       <q-btn flat dense no-caps color="primary" icon="refresh" label="Retry" @click="loadPosts" />
     </q-card-section>
 
-    <q-card-section v-else-if="posts.length === 0" class="home-panel__state">
-      <q-icon name="article" size="24px" aria-hidden="true" />
-      <span>{{ emptyMessage }}</span>
+    <q-card-section v-else-if="visiblePosts.length === 0" class="home-panel__state">
+      <q-icon :name="allPostsFiltered ? 'filter_alt_off' : 'article'" size="24px" aria-hidden="true" />
+      <span>{{ allPostsFiltered ? 'All posts in this feed match your ignored tags.' : emptyMessage }}</span>
       <q-btn flat dense no-caps color="primary" icon="refresh" label="Refresh" @click="loadPosts" />
     </q-card-section>
 
     <q-card-section v-else class="home-panel__body home-post-list">
       <div v-if="view === 'cards'" class="home-post-cards">
         <post-preview
-          v-for="post in posts"
+          v-for="post in visiblePosts"
           :key="post.post_id || (post.author + '/' + post.permlink)"
           :post="post"
           style-type="cards"
@@ -104,7 +104,7 @@
       </div>
       <template v-else>
         <home-post-row
-          v-for="(post, index) in posts"
+          v-for="(post, index) in visiblePosts"
           :key="post.post_id || (post.author + '/' + post.permlink)"
           :post="post"
           :rank="view === 'list' ? index + 1 : 0"
@@ -166,11 +166,13 @@ import HomePostRow from 'components/HomePostRow.vue'
 import PostPreview from 'components/postPreview.vue'
 import DataNotice from 'components/ui/DataNotice.vue'
 import { RANKED_FEED_SORTS, fetchFeedPosts, resolveAccountFeed, resolvePostsFeed } from 'src/services/postFeed'
+import { matchingIgnoredTag } from 'src/services/tagFilters'
 import { ACCOUNT_FEED_SORTS, feedAvatar, feedHeader } from 'src/services/feedReference'
 import { fetchCommunity } from 'src/services/chainData'
 import { pollWhileVisible } from 'src/services/polling'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { getHomeSnapshot, snapshotFeed, whenHomeSnapshot } from 'src/services/homeSnapshot'
+import moderation from 'src/mixins/moderation'
 import moment from 'src/utils/time'
 
 const SNAPSHOT_PREFIX = 'home:posts:feed:'
@@ -186,6 +188,7 @@ const SORT_OPTIONS = RANKED_FEED_SORTS
 
 export default {
   name: 'homeTrendingPosts',
+  mixins: [moderation],
   components: { HomePostRow, PostPreview, DataNotice },
   props: {
     // Initial global sort: trending | created | hot.
@@ -263,6 +266,13 @@ export default {
       return this.feed?.kind === 'communities'
         ? 'No posts from your communities yet. Join a community to fill this feed.'
         : 'No posts found right now.'
+    },
+    visiblePosts () {
+      if (!this.moderationIgnoredTags.length) return this.posts
+      return this.posts.filter(post => !matchingIgnoredTag(post, this.moderationIgnoredTags))
+    },
+    allPostsFiltered () {
+      return this.posts.length > 0 && this.visiblePosts.length === 0
     },
     showAccountSort () {
       return this.isAccountFeed && !String(this.reference || '').trim()

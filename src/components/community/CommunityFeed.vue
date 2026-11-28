@@ -135,10 +135,13 @@
       <q-btn outline no-caps color="primary" icon="refresh" label="Try again" @click="loadFeed({ force: true })" />
     </q-card>
 
-    <q-card v-else-if="!posts.length" flat bordered class="community-feed__state">
-      <q-icon name="forum" size="24px" aria-hidden="true" />
-      <p>{{ emptyMessage }}</p>
-      <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
+    <q-card v-else-if="!visiblePosts.length" flat bordered class="community-feed__state">
+      <q-icon :name="allPostsFiltered ? 'filter_alt_off' : 'forum'" size="24px" aria-hidden="true" />
+      <p>{{ allPostsFiltered ? 'All posts loaded here match your ignored tags.' : emptyMessage }}</p>
+      <div class="row q-gutter-sm justify-center">
+        <q-btn v-if="allPostsFiltered && hasMore" outline no-caps color="primary" icon="expand_more" label="Load more posts" :loading="loadingMore" @click="loadMore" />
+        <q-btn outline no-caps color="primary" icon="explore" label="Browse Hive posts" to="/created" />
+      </div>
     </q-card>
 
     <infinite-scroll
@@ -150,7 +153,7 @@
     >
       <div class="community-feed__grid">
         <post-preview
-          v-for="post in posts"
+          v-for="post in visiblePosts"
           :key="postKey(post)"
           :post="post"
           :style-type="styleType"
@@ -190,7 +193,9 @@ import DataNotice from 'components/ui/DataNotice.vue'
 import InfiniteScroll from 'components/ui/InfiniteScroll.vue'
 import { fetchRankedPosts } from 'src/services/chainData'
 import { communityRoleWeight, mergeCommunityFeeds } from 'src/services/community'
+import { matchingIgnoredTag } from 'src/services/tagFilters'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
+import moderation from 'src/mixins/moderation'
 
 const SORTS = [
   { label: 'Trending', value: 'trending' },
@@ -207,6 +212,7 @@ const MAX_POSTS = 300
 
 export default {
   name: 'CommunityFeed',
+  mixins: [moderation],
   components: {
     PostPreview,
     DataNotice,
@@ -275,6 +281,13 @@ export default {
     hasMore () {
       if (this.merged) return false
       return this.posts.length > 0 && !this.exhausted && this.posts.length < MAX_POSTS
+    },
+    visiblePosts () {
+      if (!this.moderationIgnoredTags.length) return this.posts
+      return this.posts.filter(post => !matchingIgnoredTag(post, this.moderationIgnoredTags))
+    },
+    allPostsFiltered () {
+      return this.posts.length > 0 && this.visiblePosts.length === 0
     },
     sources () {
       if (!this.merged) return []

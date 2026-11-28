@@ -5,10 +5,15 @@
 // the signed-out feed route budget small. Content always fails open, so no
 // item disappears while the policy is loading.
 
+import { ref } from 'vue'
 import { decideContent } from 'src/services/moderationContent'
 import { normalizeName } from 'src/services/moderationPolicy'
 import { loadModerationStore } from 'src/services/moderationStoreLoader'
 import { safetyFloorState } from 'src/services/safetyFloor'
+import {
+  normalizeIgnoredTag,
+  normalizeIgnoredTags
+} from 'src/services/tagFilters'
 
 const GUEST_KEY = 'hive:moderation:v1:guest'
 
@@ -19,6 +24,7 @@ function guestPolicy () {
     listsOverrideFollows: false,
     disclosureSeen: false,
     safetyFloor: { enabled: true },
+    tags: { ignored: [] },
     overrides: { showAuthors: [], hideAuthors: [], showItems: [], hideItems: [], ignoredVoters: [] }
   }
   try {
@@ -28,6 +34,7 @@ function guestPolicy () {
       ...fallback,
       ...parsed,
       safetyFloor: { enabled: parsed?.safetyFloor?.enabled !== false },
+      tags: { ignored: normalizeIgnoredTags(parsed?.tags?.ignored) },
       overrides: { ...fallback.overrides, ...(parsed.overrides || {}) }
     }
   } catch {
@@ -35,16 +42,28 @@ function guestPolicy () {
   }
 }
 
+// One reactive guest policy shared by every card and filter dialog on the page,
+// so an “ignore tag” action updates the whole view immediately without loading
+// the signed-in moderation store chunk.
+const guestPolicyState = ref(guestPolicy())
+
+function refreshGuestPolicy () {
+  guestPolicyState.value = guestPolicy()
+  return guestPolicyState.value
+}
+
 function writeGuestPolicy (policy) {
+  guestPolicyState.value = policy
   try {
     localStorage.setItem(GUEST_KEY, JSON.stringify(policy))
   } catch {
     // In-memory state still applies.
   }
+  return policy
 }
 
 function guestOverride (key, value, action) {
-  const policy = guestPolicy()
+  const policy = guestPolicyState.value
   const overrides = policy.overrides || {}
   const list = Array.isArray(overrides[key]) ? overrides[key] : []
   if (action === 'add' && !list.includes(value)) list.push(value)
@@ -53,21 +72,26 @@ function guestOverride (key, value, action) {
     if (index !== -1) list.splice(index, 1)
   }
   policy.overrides = { ...overrides, [key]: list.slice(-500) }
-  writeGuestPolicy(policy)
-  return policy
+  return writeGuestPolicy(policy)
 }
 
 export default {
   data () {
     return {
       moderationStore: null,
-      moderationError: false,
-      moderationGuestPolicy: guestPolicy()
+      moderationError: false
     }
   },
   computed: {
     moderationViewer () {
       return this.$hiveStore?.user?.username || ''
+    },
+    moderationGuestPolicy () {
+      return guestPolicyState.value
+    },
+    moderationIgnoredTags () {
+      if (this.moderationStore) return this.moderationStore.ignoredTags
+      return this.moderationGuestPolicy?.tags?.ignored || []
     }
   },
   mounted () {
@@ -83,7 +107,7 @@ export default {
       if (!this.moderationViewer) {
         this.moderationStore = null
         this.moderationError = false
-        this.moderationGuestPolicy = guestPolicy()
+        refreshGuestPolicy()
         return
       }
       loadModerationStore()
@@ -143,7 +167,7 @@ export default {
         this.moderationStore.showItem(key)
         return
       }
-      this.moderationGuestPolicy = guestOverride('showItems', key, 'add')
+      guestOverride('showItems', key, 'add')
     },
 
     moderationShowAuthor (decision) {
@@ -155,7 +179,6 @@ export default {
       const policy = guestOverride('showAuthors', decision.author, 'add')
       policy.overrides.hideAuthors = (policy.overrides.hideAuthors || []).filter(item => item !== decision.author)
       writeGuestPolicy(policy)
-      this.moderationGuestPolicy = policy
     },
 
     moderationHideAuthor (decision) {
@@ -167,7 +190,6 @@ export default {
       const policy = guestOverride('hideAuthors', decision.author, 'add')
       policy.overrides.showAuthors = (policy.overrides.showAuthors || []).filter(item => item !== decision.author)
       writeGuestPolicy(policy)
-      this.moderationGuestPolicy = policy
     },
 
     moderationToggleIgnoredVoter (voter) {
@@ -182,7 +204,54 @@ export default {
         else this.moderationStore.ignoreVoter(name)
         return
       }
-      this.moderationGuestPolicy = guestOverride('ignoredVoters', name, ignored ? 'remove' : 'add')
+      guestOverride('ignoredVoters', name, ignored ? 'remove' : 'add')
+    },
+
+    moderationIgnoreTag (tag) {
+      const name = normalizeIgnoredTag(tag)
+      if (!name) return false
+      if (this.moderationStore) return this.moderationStore.ignoreTag(name)
+      const policy = this.moderationGuestPolicy || guestPolicy()
+      const ignored = Array.isArray(policy.tags?.ignored) ? policy.tags.ignored : []
+      writeGuestPolicy({
+        ...policy,
+        tags: { ...(policy.tags || {}), ignored: normalizeIgnoredTags([...ignored, name]) }
+      })
+      return true
+    },
+
+    moderationUnignoreTag (tag) {
+      const name = normalizeIgnoredTag(tag)
+      if (!name) return false
+      if (this.moderationStore) return this.moderationStore.unignoreTag(name)
+      const policy = this.moderationGuestPolicy || guestPolicy()
+      const ignored = Array.isArray(policy.tags?.ignored) ? policy.tags.ignored : []
+      writeGuestPolicy({
+        ...policy,
+        tags: {
+          ...(policy.tags || {}),
+          ignored: normalizeIgnoredTags(ignored.filter(item => normalizeIgnoredTag(item) !== name))
+        }
+      })
+      return true
+    },
+
+    moderationToggleIgnoredTag (tag) {
+      const name = normalizeIgnoredTag(tag)
+      if (!name) return false
+      const ignored = (this.moderationIgnoredTags || []).includes(name)
+      return ignored ? this.moderationUnignoreTag(name) : this.moderationIgnoreTag(name)
+    },
+
+    moderationClearIgnoredTags () {
+      if (this.moderationStore) return this.moderationStore.clearIgnoredTags()
+      const policy = this.moderationGuestPolicy || guestPolicy()
+      if (!Array.isArray(policy.tags?.ignored) || !policy.tags.ignored.length) return false
+      writeGuestPolicy({
+        ...policy,
+        tags: { ...(policy.tags || {}), ignored: [] }
+      })
+      return true
     },
 
     moderationMarkDisclosure () {
@@ -190,9 +259,7 @@ export default {
         this.moderationStore.markDisclosureSeen()
         return
       }
-      const policy = { ...guestPolicy(), disclosureSeen: true }
-      writeGuestPolicy(policy)
-      this.moderationGuestPolicy = policy
+      writeGuestPolicy({ ...guestPolicy(), disclosureSeen: true })
     }
   }
 }

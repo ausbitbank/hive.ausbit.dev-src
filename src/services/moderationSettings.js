@@ -14,8 +14,9 @@ import {
   CONTENT_SIGNALS,
   DEFAULT_CONTENT_CUSTOM
 } from './moderationContent'
+import { normalizeIgnoredTags } from './tagFilters'
 
-export const MODERATION_VERSION = 1
+export const MODERATION_VERSION = 2
 export const MODERATION_STORAGE_PREFIX = 'hive:moderation:v1:'
 export const GUEST_SCOPE = 'guest'
 export const MAX_AUTHOR_OVERRIDES = 200
@@ -36,6 +37,9 @@ export function defaultModerationPolicy () {
       muteOwners: [],
       blacklistOwners: [],
       listsOverrideFollows: false
+    },
+    tags: {
+      ignored: []
     },
     skins: {
       blockMuted: true,
@@ -136,6 +140,9 @@ export function normalizeModerationPolicy (value) {
   const lists = value.lists && typeof value.lists === 'object' && !Array.isArray(value.lists)
     ? value.lists
     : {}
+  const tags = value.tags && typeof value.tags === 'object' && !Array.isArray(value.tags)
+    ? value.tags
+    : {}
   const safetyFloor = value.safetyFloor && typeof value.safetyFloor === 'object' && !Array.isArray(value.safetyFloor)
     ? value.safetyFloor
     : {}
@@ -152,6 +159,9 @@ export function normalizeModerationPolicy (value) {
       muteOwners: normalizeAuthorList(lists.muteOwners),
       blacklistOwners: normalizeAuthorList(lists.blacklistOwners),
       listsOverrideFollows: lists.listsOverrideFollows === true
+    },
+    tags: {
+      ignored: normalizeIgnoredTags(tags.ignored)
     },
     skins: {
       blockMuted: booleanOr(skins.blockMuted, defaults.skins.blockMuted),

@@ -21,6 +21,10 @@ import {
   scopeFor
 } from 'src/services/moderationSettings'
 import { fetchViewerModerationContext } from 'src/services/moderationData'
+import {
+  normalizeIgnoredTag,
+  normalizeIgnoredTags
+} from 'src/services/tagFilters'
 
 export const MODERATION_CONTEXT_KEY_PREFIX = 'hive:moderation:context:v1:'
 export const MODERATION_CONTEXT_TTL_MS = 10 * 60 * 1000
@@ -244,6 +248,9 @@ export const useModerationStore = defineStore('moderation', {
     },
     ignoredVoters (state) {
       return state.policy.overrides?.ignoredVoters || []
+    },
+    ignoredTags (state) {
+      return state.policy.tags?.ignored || []
     },
     contentPreset (state) {
       return state.policy.preset || 'balanced'
@@ -584,6 +591,44 @@ export const useModerationStore = defineStore('moderation', {
       this.policy.overrides = {
         ...this.policy.overrides,
         ignoredVoters: (this.ignoredVoters || []).filter(item => item !== name)
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    ignoreTag (tag) {
+      const name = normalizeIgnoredTag(tag)
+      if (!name) return false
+      const next = this.ignoredTags.includes(name)
+        ? this.ignoredTags
+        : [...this.ignoredTags, name]
+      this.policy = {
+        ...this.policy,
+        tags: { ...(this.policy.tags || {}), ignored: normalizeIgnoredTags(next) }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    unignoreTag (tag) {
+      const name = normalizeIgnoredTag(tag)
+      if (!name) return false
+      this.policy = {
+        ...this.policy,
+        tags: {
+          ...(this.policy.tags || {}),
+          ignored: this.ignoredTags.filter(item => item !== name)
+        }
+      }
+      this.persistPolicy()
+      return true
+    },
+
+    clearIgnoredTags () {
+      if (!this.ignoredTags.length) return false
+      this.policy = {
+        ...this.policy,
+        tags: { ...(this.policy.tags || {}), ignored: [] }
       }
       this.persistPolicy()
       return true

@@ -291,6 +291,36 @@ describe('moderation store content decisions', () => {
   })
 })
 
+describe('moderation store ignored tags', () => {
+  it('adds, normalizes, dedupes and removes ignored tags', () => {
+    const store = freshStore('guest')
+    expect(store.ignoredTags).toEqual([])
+
+    expect(store.ignoreTag('#Hive')).toBe(true)
+    expect(store.ignoreTag(' hive ')).toBe(true)
+    expect(store.ignoreTag('News')).toBe(true)
+    expect(store.ignoredTags).toEqual(['hive', 'news'])
+
+    expect(store.unignoreTag('HIVE')).toBe(true)
+    expect(store.ignoredTags).toEqual(['news'])
+    expect(store.clearIgnoredTags()).toBe(true)
+    expect(store.ignoredTags).toEqual([])
+    expect(store.clearIgnoredTags()).toBe(false)
+  })
+
+  it('persists ignored tags in the policy export and reloads them', () => {
+    const store = freshStore('viewer')
+    store.ignoreTag('hive-dev')
+    store.ignoreTag('noise')
+
+    const exported = JSON.parse(store.exportPolicyText())
+    expect(exported.policy.tags.ignored).toEqual(['hive-dev', 'noise'])
+
+    const reloaded = freshStore('viewer')
+    expect(reloaded.ignoredTags).toEqual(['hive-dev', 'noise'])
+  })
+})
+
 describe('moderation store list subscriptions', () => {
   it('tracks a subscription optimistically and exports owner references only', async () => {
     mocks.fetchViewerModerationContext.mockResolvedValue(context({

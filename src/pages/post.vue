@@ -168,10 +168,20 @@
               </div>
 
               <footer v-if="postTags.length" class="post-tags" aria-label="Post tags">
-                <template v-for="tag in postTags" :key="tag">
+                <span v-for="tag in postTags" :key="tag" class="post-tag-item">
                   <router-link v-if="linkTag(tag)" :to="linkTag(tag)" class="post-tag">#{{ tag }}</router-link>
                   <span v-else class="post-tag" :title="'#' + tag + ' is not a valid Hive tag'">#{{ tag }}</span>
-                </template>
+                  <button
+                    type="button"
+                    class="post-tag-toggle"
+                    :class="{ 'is-active': isTagIgnored(tag) }"
+                    :aria-label="(isTagIgnored(tag) ? 'Stop ignoring' : 'Ignore') + ' #' + tag + ' in feeds'"
+                    :title="(isTagIgnored(tag) ? 'Stop ignoring' : 'Ignore') + ' #' + tag + ' in feeds'"
+                    @click="toggleTag(tag)"
+                  >
+                    <q-icon :name="isTagIgnored(tag) ? 'visibility' : 'visibility_off'" size="12px" aria-hidden="true" />
+                  </button>
+                </span>
               </footer>
             </q-card>
           </article>
@@ -588,18 +598,57 @@
   border-top: 1px solid var(--border-subtle);
 }
 
+.post-tag-item {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+}
+
 .post-tag {
   padding: 0.12rem 0.5rem;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--c-text) 6%, transparent);
   color: var(--c-text-muted) !important;
   font-size: 0.74rem;
   text-decoration: none;
 }
 
-.post-tag:hover {
+.post-tag-item:hover,
+.post-tag-item:focus-within {
   background: color-mix(in srgb, var(--c-link) 16%, transparent);
+}
+
+.post-tag-item:hover .post-tag,
+.post-tag-item:focus-within .post-tag {
   color: var(--c-link-hover) !important;
+}
+
+.post-tag-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-right: 0.15rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.post-tag-toggle:hover,
+.post-tag-toggle:focus-visible,
+.post-tag-toggle.is-active {
+  color: var(--c-warning);
+  opacity: 1;
+}
+
+.post-tag-toggle:focus-visible {
+  outline: 2px solid var(--c-link);
+  outline-offset: 1px;
 }
 
 .post-sidebar {
@@ -1108,6 +1157,7 @@ import { fetchAccount, fetchHiveSenseSimilar, fetchPostContent } from 'src/servi
 import { setPageMeta, stripHtml as stripHtmlForMeta, BASE_URL, SITE_NAME } from 'src/utils/pageMeta'
 import { hiveAvatarUrl } from 'src/utils/avatar'
 import { isValidTag } from 'src/utils/hiveTag'
+import { isTagIgnored as tagIsIgnored } from 'src/services/tagFilters'
 import { vaultPublicBody, vaultSummary } from 'src/services/blogPosts'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import moderation from 'src/mixins/moderation'
@@ -1667,6 +1717,12 @@ export default {
     },
     linkDetect (link) {
       return link.startsWith('hive-') ? this.linkCommunity(link) : this.linkTag(link)
+    },
+    isTagIgnored (tag) {
+      return tagIsIgnored(tag, this.moderationIgnoredTags)
+    },
+    toggleTag (tag) {
+      this.moderationToggleIgnoredTag(tag)
     },
     timeDelta (timestamp) {
       const now = moment.utc()

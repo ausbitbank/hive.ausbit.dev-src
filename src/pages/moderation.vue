@@ -73,6 +73,65 @@
         <p v-if="safetyFloorNote" class="mod-section__hint" role="status">{{ safetyFloorNote }}</p>
       </section>
 
+      <section class="mod-section" aria-labelledby="mod-tags-title">
+        <div class="mod-section__head">
+          <div>
+            <h2 id="mod-tags-title" class="mod-section__title">Ignored tags</h2>
+            <p class="mod-section__hint">
+              Posts carrying any of these tags are removed from browse, community and dashboard feeds.
+              A post you open directly is never hidden. The list is saved on this device and is shared
+              with the browse filter dialog.
+            </p>
+          </div>
+          <span class="mod-section__hint" role="status">
+            {{ moderation.ignoredTags.length }} tag{{ moderation.ignoredTags.length === 1 ? '' : 's' }}
+          </span>
+        </div>
+        <div class="mod-tag-row">
+          <q-input
+            v-model="newIgnoredTag"
+            dense
+            outlined
+            label="Tag to ignore"
+            aria-label="Tag to ignore"
+            @keyup.enter="addIgnoredTag"
+          />
+          <q-btn
+            unelevated
+            no-caps
+            color="primary"
+            icon="add"
+            label="Ignore tag"
+            :disable="!newIgnoredTag.trim()"
+            @click="addIgnoredTag"
+          />
+          <q-btn
+            v-if="moderation.ignoredTags.length"
+            flat
+            dense
+            no-caps
+            color="primary"
+            icon="filter_alt_off"
+            label="Clear all"
+            @click="clearIgnoredTags"
+          />
+        </div>
+        <div v-if="moderation.ignoredTags.length" class="mod-tag-list">
+          <q-chip
+            v-for="tag in moderation.ignoredTags"
+            :key="tag"
+            dense
+            removable
+            color="grey-9"
+            text-color="white"
+            @remove="removeIgnoredTag(tag)"
+          >
+            #{{ tag }}
+          </q-chip>
+        </div>
+        <p v-else class="mod-empty">No ignored tags yet.</p>
+      </section>
+
       <section class="mod-section" aria-labelledby="mod-matrix-title">
         <div class="mod-section__head">
           <div>
@@ -679,6 +738,28 @@
   font-size: 0.72rem;
 }
 
+.mod-tag-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-3);
+}
+
+.mod-tag-row .q-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.mod-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-height: 10rem;
+  margin-top: var(--space-2);
+  overflow-y: auto;
+}
+
 .mod-subtitle {
   margin: 0 0 0.35rem;
   font-size: 0.82rem;
@@ -775,6 +856,7 @@ import {
 } from 'src/services/followLists'
 import { DISCOVERY_GROUP_LABELS, DISCOVERY_LISTS } from 'src/services/moderationLists'
 import { fetchModerationListEntries } from 'src/services/moderationData'
+import { normalizeIgnoredTag } from 'src/services/tagFilters'
 import {
   SAFETY_FLOOR_SOURCE,
   ensureSafetyFloor,
@@ -818,6 +900,7 @@ export default {
       displayOptions: CONTENT_DISPLAY.map(value => ({ label: value, value })),
       importText: '',
       refreshing: false,
+      newIgnoredTag: '',
       newListOwner: '',
       newListType: 'mute',
       discoveryCounts: {},
@@ -976,6 +1059,18 @@ export default {
     },
     selectPreset (preset) {
       this.moderation.setPreset(preset)
+    },
+    addIgnoredTag () {
+      const tag = normalizeIgnoredTag(this.newIgnoredTag)
+      if (!tag) return
+      this.moderation.ignoreTag(tag)
+      this.newIgnoredTag = ''
+    },
+    removeIgnoredTag (tag) {
+      this.moderation.unignoreTag(tag)
+    },
+    clearIgnoredTags () {
+      this.moderation.clearIgnoredTags()
     },
     subscribeList (owner, type, subscribe) {
       const username = this.$hiveStore.user.username

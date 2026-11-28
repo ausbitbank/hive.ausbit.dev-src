@@ -28,6 +28,15 @@
         <div v-if="isGlobal && tag" class="browse-head__tag">
           <q-chip dense square color="primary" text-color="black" icon="tag">#{{ tag }}</q-chip>
           <q-btn flat dense no-caps color="primary" icon="close" label="Clear tag" :to="clearTagLink" />
+          <q-btn
+            flat
+            dense
+            no-caps
+            :color="tagIgnored ? 'positive' : 'primary'"
+            :icon="tagIgnored ? 'visibility' : 'visibility_off'"
+            :label="tagIgnored ? 'Unignore tag' : 'Ignore tag'"
+            @click="toggleTagFilter"
+          />
         </div>
       </header>
 
@@ -151,6 +160,8 @@ import { defineAsyncComponent } from 'vue'
 import browseContainer from 'components/browseContainer.vue'
 import accountHeader from 'components/accountHeader.vue'
 import CommunityInsights from 'components/community/CommunityInsights.vue'
+import moderation from 'src/mixins/moderation'
+import { isTagIgnored } from 'src/services/tagFilters'
 import { setPageMeta } from 'src/utils/pageMeta'
 
 const NoSkin = {
@@ -207,6 +218,7 @@ const SORT_OPTIONS = [
 
 export default {
   name: 'browsePage',
+  mixins: [moderation],
   props: {
     defaultSort: { type: String, default: null }
   },
@@ -266,6 +278,9 @@ export default {
     tag () {
       return this.$route.params.tag || ''
     },
+    tagIgnored () {
+      return isTagIgnored(this.tag, this.moderationIgnoredTags)
+    },
     sortLabel () {
       return SORT_LABELS[this.section] || this.section
     },
@@ -312,6 +327,18 @@ export default {
     }
   },
   methods: {
+    toggleTagFilter () {
+      if (!this.tag) return
+      const ignoring = !this.tagIgnored
+      this.moderationToggleIgnoredTag(this.tag)
+      this.$q.notify({
+        message: ignoring
+          ? 'Posts tagged #' + this.tag + ' will be hidden from feeds.'
+          : 'Posts tagged #' + this.tag + ' are shown in feeds again.',
+        color: 'primary',
+        timeout: 2400
+      })
+    },
     sortLink (option) {
       const path = '/' + option.route + (this.tag ? '/' + this.tag : '')
       const style = this.$route.query.style

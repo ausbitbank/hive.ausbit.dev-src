@@ -110,10 +110,20 @@
       <p v-if="summary && !moderationCollapsed" class="post-card__summary">{{ summary }}</p>
 
       <div v-if="tags.length && !moderationCollapsed" class="post-card__tags">
-        <template v-for="tag in tags" :key="tag">
+        <span v-for="tag in tags" :key="tag" class="post-card__tag-item">
           <router-link v-if="linkTag(tag)" :to="linkTag(tag)" class="post-card__tag">#{{ tag }}</router-link>
           <span v-else class="post-card__tag" :title="'#' + tag + ' is not a valid Hive tag'">#{{ tag }}</span>
-        </template>
+          <button
+            type="button"
+            class="post-card__tag-ignore"
+            :class="{ 'is-active': isTagIgnored(tag) }"
+            :aria-label="(isTagIgnored(tag) ? 'Stop ignoring' : 'Ignore') + ' #' + tag + ' in feeds'"
+            :title="(isTagIgnored(tag) ? 'Stop ignoring' : 'Ignore') + ' #' + tag + ' in feeds'"
+            @click.prevent.stop="toggleTag(tag)"
+          >
+            <q-icon :name="isTagIgnored(tag) ? 'visibility' : 'visibility_off'" size="11px" aria-hidden="true" />
+          </button>
+        </span>
       </div>
 
       <footer class="post-card__footer">
@@ -418,18 +428,57 @@
   gap: 0.3rem;
 }
 
+.post-card__tag-item {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--c-text) 5%, transparent);
+}
+
 .post-card__tag {
   padding: 0.05rem 0.42rem;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--c-text) 5%, transparent);
   color: var(--c-text-subtle) !important;
   font-size: 0.67rem;
   text-decoration: none;
 }
 
-.post-card__tag:hover {
+.post-card__tag-item:hover,
+.post-card__tag-item:focus-within {
   background: color-mix(in srgb, var(--c-link) 12%, transparent);
+}
+
+.post-card__tag-item:hover .post-card__tag,
+.post-card__tag-item:focus-within .post-card__tag {
   color: var(--c-link-hover) !important;
+}
+
+.post-card__tag-ignore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.12rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--c-text-faint);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.post-card__tag-ignore:hover,
+.post-card__tag-ignore:focus-visible,
+.post-card__tag-ignore.is-active {
+  color: var(--c-warning);
+  opacity: 1;
+}
+
+.post-card__tag-ignore:focus-visible {
+  outline: 2px solid var(--c-link);
+  outline-offset: 1px;
 }
 
 .post-card__footer {
@@ -576,6 +625,7 @@
 import moment from 'src/utils/time'
 import { postImage, postIsThreeSpeakVideo, postSummary } from 'src/utils/postPreview'
 import { isValidTag } from 'src/utils/hiveTag'
+import { isTagIgnored as tagIsIgnored } from 'src/services/tagFilters'
 import { stripHtml } from 'src/utils/safeHtml'
 import {
   formatPostReputation,
@@ -787,6 +837,12 @@ export default {
     },
     linkTag (tag) {
       return isValidTag(tag) ? '/trending/' + tag : null
+    },
+    isTagIgnored (tag) {
+      return tagIsIgnored(tag, this.moderationIgnoredTags)
+    },
+    toggleTag (tag) {
+      this.moderationToggleIgnoredTag(tag)
     }
   }
 }

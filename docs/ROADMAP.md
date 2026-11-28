@@ -209,6 +209,11 @@ principles that constrain it. Delivered work and its verification records live i
   [`docs/account-creation-testnet-smoke.md`](account-creation-testnet-smoke.md);
   a live run is blocked on testnet Keychain access. See
   [`docs/workstreams/W124-batch-testnet-checklist.md`](workstreams/W124-batch-testnet-checklist.md).
+- W125 adds local ignored tags: browse, community, tag and dashboard feeds drop
+  matching posts, while a post opened directly is never hidden. The list is
+  managed in `/settings/moderation`, the browse filter dialog and quick tag
+  actions. See
+  [`docs/workstreams/W125-ignored-tags.md`](workstreams/W125-ignored-tags.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
   `bun run test` green with **2,411 tests across 250 files**, `bun run build`
   succeeded, and the full Chromium suite passed **214 checks** (4 passed only
@@ -220,7 +225,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W125**. **W90** remains the separate
+- The next free workstream number is **W126**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

@@ -18,7 +18,11 @@ import {
 vi.mock('../../src/mixins/moderation', () => ({
   default: {
     data: () => ({ moderationStore: null, moderationError: false }),
+    computed: {
+      moderationIgnoredTags: () => []
+    },
     methods: {
+      moderationToggleIgnoredTag: () => true,
       moderationDecision ({ author = '', post = null, itemKey = '' } = {}) {
         return {
           display: 'show',

@@ -44,6 +44,7 @@ describe('moderation settings schema', () => {
     })
     expect(policy.custom.feed.mute).toBe('collapse')
     expect(policy.lists.listsOverrideFollows).toBe(false)
+    expect(policy.tags).toEqual({ ignored: [] })
   })
 
   it('normalizes unknown keys, enums and author lists', () => {
@@ -63,7 +64,8 @@ describe('moderation settings schema', () => {
         showAuthors: ['@Alice', 'alice', '', 'b'.repeat(40)],
         hideAuthors: ['Carol'],
         unknown: ['nope']
-      }
+      },
+      tags: { ignored: ['#Hive', ' hive ', 'news', ''] }
     })
     expect(policy.preset).toBe('strict')
     expect(policy.disclosureSeen).toBe(true)
@@ -78,6 +80,7 @@ describe('moderation settings schema', () => {
     expect(policy.overrides.showAuthors).toEqual(['alice', 'b'.repeat(16)])
     expect(policy.overrides.hideAuthors).toEqual(['carol'])
     expect(policy.overrides.unknown).toBeUndefined()
+    expect(policy.tags.ignored).toEqual(['hive', 'news'])
   })
 
   it('enables the safety floor for policies written before it existed', () => {
@@ -196,6 +199,7 @@ describe('moderation settings export/import', () => {
     policy.overrides.showAuthors = ['alice']
     policy.custom.feed.mute = 'label'
     policy.safetyFloor.enabled = false
+    policy.tags.ignored = ['#news', 'hive']
 
     const text = serializeModerationExport(policy)
     const envelope = JSON.parse(text)
@@ -208,6 +212,7 @@ describe('moderation settings export/import', () => {
     expect(parsed.policy.overrides.showAuthors).toEqual(['alice'])
     expect(parsed.policy.custom.feed.mute).toBe('label')
     expect(parsed.policy.safetyFloor.enabled).toBe(false)
+    expect(parsed.policy.tags.ignored).toEqual(['news', 'hive'])
   })
 
   it('accepts a bare policy object and rejects foreign or future files', () => {

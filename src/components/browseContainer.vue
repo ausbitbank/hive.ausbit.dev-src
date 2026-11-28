@@ -95,6 +95,45 @@
                   />
                 </div>
 
+                <div class="browse-filter-card__tags">
+                  <div class="browse-filter-card__tags-head">
+                    <span>Ignored tags</span>
+                    <span class="browse-filter-card__hint">Saved in Moderation settings.</span>
+                  </div>
+                  <div class="browse-filter-card__tag-add">
+                    <q-input
+                      v-model="newIgnoredTag"
+                      dense
+                      outlined
+                      label="Add a tag to ignore"
+                      aria-label="Tag to ignore"
+                      @keyup.enter="addIgnoredTag"
+                    />
+                    <q-btn
+                      unelevated
+                      no-caps
+                      color="primary"
+                      label="Add"
+                      :disable="!newIgnoredTag.trim()"
+                      @click="addIgnoredTag"
+                    />
+                  </div>
+                  <div v-if="moderationIgnoredTags.length" class="browse-filter-card__tag-list">
+                    <q-chip
+                      v-for="tag in moderationIgnoredTags"
+                      :key="tag"
+                      dense
+                      removable
+                      color="grey-9"
+                      text-color="white"
+                      @remove="removeIgnoredTag(tag)"
+                    >
+                      #{{ tag }}
+                    </q-chip>
+                  </div>
+                  <p v-else class="browse-filter-card__hint">No tags ignored yet.</p>
+                </div>
+
                 <div class="browse-filter-card__actions">
                   <q-btn flat no-caps color="primary" label="Reset filters" @click="resetFilters" />
                   <q-btn unelevated no-caps color="primary" label="Done" v-close-popup />
@@ -280,6 +319,42 @@
   margin-top: 0.5rem;
 }
 
+.browse-filter-card__tags {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.browse-filter-card__tags-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-weight: 600;
+}
+
+.browse-filter-card__tag-add {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: 0.4rem;
+}
+
+.browse-filter-card__tag-add .q-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.browse-filter-card__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  max-height: 8rem;
+  margin-top: 0.4rem;
+  overflow-y: auto;
+}
+
 .browse-filter-card__actions {
   display: flex;
   align-items: center;
@@ -380,6 +455,8 @@ import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { trimPostsForSnapshot } from 'src/services/postSnapshot'
 import { loadFeedState, saveFeedState } from 'src/services/feedState'
 import { isValidTag } from 'src/utils/hiveTag'
+import { matchingIgnoredTag, normalizeIgnoredTag } from 'src/services/tagFilters'
+import moderation from 'src/mixins/moderation'
 import DataNotice from 'components/ui/DataNotice.vue'
 
 const DEFAULT_FILTERS = () => ({
@@ -409,6 +486,7 @@ function normalizeStyle (value) {
 
 export default {
   name: 'browseContainer',
+  mixins: [moderation],
   props: {
     callMethod: String,
     responseLimit: Number,
@@ -447,6 +525,7 @@ export default {
       sort: this.sortMethod || 'created',
       account: this.showAccount || null,
       tag: this.showTag || null,
+      newIgnoredTag: '',
       filter: DEFAULT_FILTERS()
     }
   },
@@ -466,9 +545,10 @@ export default {
     },
     activeFilterCount () {
       const defaults = DEFAULT_FILTERS()
-      return ['hideVoted', 'hideReblogs', 'hidePinned', 'hideHidden', 'hideGray', 'hideRewardsFilter']
+      const toggles = ['hideVoted', 'hideReblogs', 'hidePinned', 'hideHidden', 'hideGray', 'hideRewardsFilter']
         .filter(key => this.filter[key] !== defaults[key])
         .length
+      return toggles + this.moderationIgnoredTags.length
     },
     hasActiveFilters () {
       return this.activeFilterCount > 0
@@ -487,6 +567,9 @@ export default {
     filteredPosts () {
       let list = this.posts
 
+      if (this.moderationIgnoredTags.length) {
+        list = list.filter(post => !matchingIgnoredTag(post, this.moderationIgnoredTags))
+      }
       if (this.filter.hideVoted && this.loggedInUser) {
         list = list.filter(post => postUserVoteDirection(post, this.loggedInUser) === null)
       }
@@ -671,6 +754,16 @@ export default {
     },
     resetFilters () {
       this.filter = DEFAULT_FILTERS()
+      this.moderationClearIgnoredTags()
+    },
+    addIgnoredTag () {
+      const tag = normalizeIgnoredTag(this.newIgnoredTag)
+      if (!tag) return
+      this.moderationIgnoreTag(tag)
+      this.newIgnoredTag = ''
+    },
+    removeIgnoredTag (tag) {
+      this.moderationUnignoreTag(tag)
     },
     syncStyleQuery (value) {
       if (this.$route.query.style === value) return
