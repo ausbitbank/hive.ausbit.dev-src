@@ -5,7 +5,7 @@
     "": {
       "name": "banksia.io",
       "dependencies": {
-        "@ecency/render-helper": "^2.5.58",
+        "@ecency/render-helper": "^2.5.47",
         "@hiveio/keychain": "^1.0.7",
         "@noble/hashes": "^1.8.0",
         "bs58": "^6.0.0",
@@ -62,7 +62,7 @@
 
     "@clack/prompts": ["@clack/prompts@1.9.0", "", { "dependencies": { "@clack/core": "1.6.0", "fast-string-width": "^3.0.2", "fast-wrap-ansi": "^0.2.0", "sisteransi": "^2.0.0" } }, "sha512-tEj8X2No2A1c9NDnZECxiiJ8TP3vmFlN9tLlLeSaMqVW4tUmVG2R4qpv/eP4zymWxnymYLkLcIYVV0VcWj3RCQ=="],
 
-    "@ecency/render-helper": ["@ecency/render-helper@2.5.58", "", { "dependencies": { "@xmldom/xmldom": "0.9.12", "dom-serializer": "^2.0.0", "entities": "^6.0.1", "htmlparser2": "^10.0.0", "lolight": "^1.4.0", "lru-cache": "^11.0.2", "path": "^0.12.7", "querystring": "^0.2.0", "react-native-crypto-js": "^1.0.0", "remarkable": "^2.0.1", "url": "^0.11.0", "xss": "1.0.15" } }, "sha512-1qQMT1Em2ee7BUx+B7ytd3fNxE2sgWJQNuvak5AaBRxnIjyYqnzZlL4VZyNqNKL7o1JQTXsHPUIpEBoGCP63gg=="],
+    "@ecency/render-helper": ["@ecency/render-helper@2.5.47", "", { "dependencies": { "@xmldom/xmldom": "0.9.12", "dom-serializer": "^2.0.0", "entities": "^6.0.1", "htmlparser2": "^10.0.0", "lolight": "^1.4.0", "lru-cache": "^11.0.2", "path": "^0.12.7", "querystring": "^0.2.0", "react-native-crypto-js": "^1.0.0", "remarkable": "^2.0.1", "url": "^0.11.0", "xss": "1.0.15" } }, "sha512-J2uOwTDU/oYeAa6g0jIJcupfT2MPyOgKzkJaakcT++i85T0Q2XJLr+Cc/FfJiLJY3tcTKyih4XSRQsfgglIdhw=="],
 
     "@emnapi/core": ["@emnapi/core@2.0.0-beta.2", "", { "dependencies": { "@emnapi/wasi-threads": "2.2.0", "tslib": "^2.4.0" } }, "sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A=="],
 

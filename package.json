@@ -55,7 +55,7 @@
     "icons:subset": "node scripts/subset-icons.mjs"
   },
   "dependencies": {
-    "@ecency/render-helper": "^2.5.58",
+    "@ecency/render-helper": "^2.5.47",
     "@hiveio/keychain": "^1.0.7",
     "@noble/hashes": "^1.8.0",
     "bs58": "^6.0.0",
