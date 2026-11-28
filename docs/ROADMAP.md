@@ -152,8 +152,12 @@ principles that constrain it. Delivered work and its verification records live i
 - W111 pages proposal voters with a cursor and reserves an active powerdown
   before offering a delegation max. See
   [`docs/workstreams/W111-proposal-paging-delegation.md`](workstreams/W111-proposal-paging-delegation.md).
+- W112 routes account-authority add/remove through the active signing queue,
+  preserving keys, threshold, memo key and metadata, and refuses owner changes
+  the queue cannot sign. See
+  [`docs/workstreams/W112-authority-queue.md`](workstreams/W112-authority-queue.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,351 tests across 248 files**, `bun run build`
+  `bun run test` green with **2,354 tests across 248 files**, `bun run build`
   succeeded, and the full Chromium suite passed **213 checks**. `bun run
   perf:check` passed in an isolated worktree; the shared worktree's uncommitted
   Vault changes push the same routes slightly over budget. Four E2E checks hit a
@@ -162,7 +166,7 @@ principles that constrain it. Delivered work and its verification records live i
   pre-W89 snapshot (badges shelf, login-key guide, header lockup, profile-skin
   scope) do not reproduce on this tree. The full Chromium suite remains the
   release gate.
-- The next free workstream number is **W112**. **W90** remains the separate
+- The next free workstream number is **W113**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

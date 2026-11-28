@@ -261,3 +261,46 @@ export function queuedAuthorityChanges (queue, account, meta = null) {
 }
 
 export { PERMISSIONS }
+
+/**
+ * Build an active-authority `account_update` that adds or removes one account
+ * authority while preserving keys, threshold, memo key and legacy metadata.
+ * Owner changes need owner authority, which the queue cannot express.
+ */
+export function accountAuthorityUpdate (account, permission, { add = true, target, weight = 1 } = {}) {
+  const name = String(account?.name || '').trim().toLowerCase()
+  const perm = String(permission || '').trim().toLowerCase()
+  if (!name) throw new Error('The account is not loaded.')
+  if (perm !== 'active' && perm !== 'posting') {
+    throw new Error('Only active and posting account authorities can be queued here.')
+  }
+  const current = account?.[perm]
+  if (!current || typeof current !== 'object') throw new Error('That permission is not available.')
+  const targetName = String(target || '').trim().replace(/^@/, '').toLowerCase()
+  if (!targetName) throw new Error('Choose an account.')
+  if (targetName === name) throw new Error('An account cannot delegate authority to itself.')
+
+  let weightValue = 1
+  if (add) {
+    weightValue = Number(weight)
+    if (!Number.isInteger(weightValue) || weightValue < 1 || weightValue > 65535) {
+      throw new Error('Authority weight must be a whole number between 1 and 65535.')
+    }
+  }
+
+  const accountAuths = (Array.isArray(current.account_auths) ? current.account_auths : [])
+    .filter(entry => String(entry?.[0] || '').toLowerCase() !== targetName)
+  if (add) accountAuths.push([targetName, weightValue])
+  accountAuths.sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+
+  return ['account_update', {
+    account: name,
+    [perm]: {
+      weight_threshold: Number(current.weight_threshold) || 1,
+      key_auths: Array.isArray(current.key_auths) ? current.key_auths : [],
+      account_auths: accountAuths
+    },
+    memo_key: account.memo_key,
+    json_metadata: typeof account.json_metadata === 'string' ? account.json_metadata : ''
+  }]
+}

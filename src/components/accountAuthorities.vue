@@ -128,7 +128,7 @@
 </div>
 </template>
 <script>
-import { keychain } from '@hiveio/keychain'
+import { accountAuthorityUpdate } from 'src/services/authority'
 
 const PERMISSION_META = {
   owner: {
@@ -188,45 +188,35 @@ export default {
       return key.slice(0, 11) + '…' + key.slice(-6)
     },
     async removeAuth (keyType, authType, accountToModify, toRemove) {
-      if (authType === 'account') {
-        if (!this.requireKeychain()) return
-        const result = await keychain(window, 'requestRemoveAccountAuthority', accountToModify, toRemove, keyType)
-        this.handleKeychainResult(result, 'remove the account authority')
-      }
+      if (authType !== 'account') return
+      this.queueAuthorityChange(keyType, { add: false, target: toRemove })
     },
     async addAuth (keyType, authType, accountToModify, toAdd, weight) {
-      if (authType === 'account') {
-        if (!this.requireKeychain()) return
-        const result = await keychain(window, 'requestAddAccountAuthority', accountToModify, toAdd, keyType, weight)
-        this.handleKeychainResult(result, 'add the account authority')
-      }
+      if (authType !== 'account') return
+      this.queueAuthorityChange(keyType, { add: true, target: toAdd, weight })
     },
-    requireKeychain () {
-      const loginType = this.$hiveStore.user.loginType || ''
-      if (loginType === 'keychain') return true
-      this.$q.notify({
-        type: 'negative',
-        message: 'Authority editing needs Hive Keychain.',
-        caption: 'Keychain/HiveAuth sessions are not used for authority edits; sign in with Keychain to change account authorities.',
-        timeout: 6000
-      })
-      return false
-    },
-    handleKeychainResult (result, action) {
-      if (result?.success) {
-        this.$emit('authEdited')
+    queueAuthorityChange (permission, options) {
+      const username = this.$hiveStore.user.username
+      if (!username || username !== this.account?.name) {
+        this.$q.notify({ type: 'negative', message: 'Sign in as @' + (this.account?.name || 'this account') + ' to edit its authorities.' })
         return
       }
-      let message = result?.msg || result?.message || 'Keychain did not approve the change.'
-      if (result?.notInstalled) message = 'Hive Keychain is not installed.'
-      else if (result?.notActive) message = 'Allow Hive Keychain to access this site.'
-      else if (result?.cancel) message = 'Cancelled in Keychain.'
-      this.$q.notify({
-        type: 'negative',
-        message: 'Could not ' + action + '.',
-        caption: message,
-        timeout: 6000
-      })
+      try {
+        const operation = accountAuthorityUpdate(this.account, permission, options)
+        this.$hiveStore.addToQueue([username, 'active', operation])
+        this.$q.notify({
+          type: 'positive',
+          message: 'Authority change queued.',
+          caption: 'Review it in the signing queue. It needs active authority.',
+          timeout: 6000
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error?.message || 'That authority change is not valid.',
+          timeout: 6000
+        })
+      }
     }
   }
 }

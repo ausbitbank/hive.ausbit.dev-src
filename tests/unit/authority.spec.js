@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  accountAuthorityUpdate,
   authorityDiff,
   authorityRisk,
   normalizeAuthority,
@@ -127,6 +128,48 @@ describe('authorityDiff', () => {
       posting: auth('STMposting')
     }
     expect(authorityDiff(state, state)).toMatchObject({ changed: 0, hasChanges: false })
+  })
+})
+
+describe('accountAuthorityUpdate', () => {
+  it('builds an active-authority account_update that preserves keys and metadata', () => {
+    const current = account({ memo_key: 'STMmemo', json_metadata: '{"profile":{}}' })
+    const operation = accountAuthorityUpdate(current, 'active', { add: true, target: '@Bob', weight: 2 })
+
+    expect(operation[0]).toBe('account_update')
+    expect(operation[1]).toMatchObject({
+      account: 'alice',
+      memo_key: 'STMmemo',
+      json_metadata: '{"profile":{}}'
+    })
+    expect(operation[1].active).toEqual({
+      weight_threshold: 1,
+      key_auths: [['STMactive', 1]],
+      account_auths: [['bob', 2]]
+    })
+    expect(operation[1].owner).toBeUndefined()
+    expect(operation[1].posting).toBeUndefined()
+  })
+
+  it('removes one account authority without dropping the others', () => {
+    const current = account({
+      posting: auth('STMposting', 1, 1, [['bob', 1], ['carol', 2]])
+    })
+    const operation = accountAuthorityUpdate(current, 'posting', { add: false, target: 'bob' })
+    expect(operation[1].posting.account_auths).toEqual([['carol', 2]])
+    expect(operation[1].posting.key_auths).toEqual([['STMposting', 1]])
+  })
+
+  it('rejects owner changes, self grants and invalid weights', () => {
+    const current = account()
+    expect(() => accountAuthorityUpdate(current, 'owner', { target: 'bob', weight: 1 }))
+      .toThrow(/Only active and posting/)
+    expect(() => accountAuthorityUpdate(current, 'active', { target: 'alice', weight: 1 }))
+      .toThrow(/itself/)
+    expect(() => accountAuthorityUpdate(current, 'active', { target: 'bob', weight: 0 }))
+      .toThrow(/weight/)
+    expect(() => accountAuthorityUpdate(current, 'active', { target: 'bob', weight: 1.5 }))
+      .toThrow(/weight/)
   })
 })
 
