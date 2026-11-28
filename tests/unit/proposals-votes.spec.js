@@ -30,6 +30,22 @@ describe('proposal vote reads', () => {
     }))
   })
 
+  it('uses a voter cursor for the next page and still filters the proposal', async () => {
+    hive.api.callAsync.mockResolvedValue({
+      proposal_votes: [
+        { voter: 'dave', proposal: { id: 2 } },
+        { voter: 'erin', proposal: { id: 3 } }
+      ]
+    })
+
+    const votes = await listProposalVotes(2, { startVoter: 'carol', limit: 2 })
+    expect(votes.map(vote => vote.voter)).toEqual(['dave'])
+    expect(hive.api.callAsync).toHaveBeenCalledWith('database_api.list_proposal_votes', expect.objectContaining({
+      start: [2, 'carol'],
+      limit: 2
+    }))
+  })
+
   it('keeps only the requested voter when listing their proposal ids', async () => {
     hive.api.callAsync.mockResolvedValue({
       proposal_votes: [

@@ -339,8 +339,18 @@
                     </q-list>
                   </q-expansion-item>
 
-                  <div v-if="votesCapped" class="proposal-detail-muted">
-                    Showing the first 1,000 votes.
+                  <q-btn
+                    v-if="!votesExhausted"
+                    flat
+                    no-caps
+                    color="primary"
+                    icon="expand_more"
+                    label="Load more voters"
+                    :loading="votesLoadingMore"
+                    @click="loadMoreVotes"
+                  />
+                  <div v-else-if="votes.length > 1000" class="proposal-detail-muted">
+                    All {{ votes.length.toLocaleString('en-US') }} voters loaded.
                   </div>
                 </template>
               </q-card-section>
@@ -392,6 +402,8 @@ export default {
       returnProposal: null,
       post: null,
       votes: [],
+      votesLoadingMore: false,
+      votesExhausted: false,
       voted: false,
       loading: true,
       postLoading: false,
@@ -474,9 +486,6 @@ export default {
     },
     topVoters () {
       return this.votes.slice(0, 24)
-    },
-    votesCapped () {
-      return this.votes.length >= 1000
     },
     postLink () {
       if (!this.proposal) return '/proposals'
@@ -561,6 +570,8 @@ export default {
         this.proposal = proposal
         this.returnProposal = id === 0 ? proposal : returnProposal
         this.votes = votes
+        this.votesExhausted = votes.length < 1000
+        this.votesLoadingMore = false
         this.voted = voteIds
           ? voteIds.has(id)
           : votes.some(vote => vote.voter === username)
@@ -577,6 +588,27 @@ export default {
         this.$q.notify({ type: 'negative', message: 'Failed to load proposal' })
       } finally {
         this.loading = false
+      }
+    },
+    async loadMoreVotes () {
+      if (this.votesLoadingMore || this.votesExhausted || !this.proposal) return
+      const last = this.votes[this.votes.length - 1]?.voter
+      if (!last) {
+        this.votesExhausted = true
+        return
+      }
+      this.votesLoadingMore = true
+      try {
+        const page = await listProposalVotes(this.proposal.id, { startVoter: last, limit: 1000 })
+        const seen = new Set(this.votes.map(vote => vote.voter))
+        const added = page.filter(vote => !seen.has(vote.voter))
+        this.votes = [...this.votes, ...added]
+        // A short page, or a page with only the cursor row, is the end.
+        this.votesExhausted = page.length < 1000 || added.length === 0
+      } catch {
+        this.$q.notify({ type: 'negative', message: 'Could not load more voters.' })
+      } finally {
+        this.votesLoadingMore = false
       }
     },
     setLoadedMeta () {

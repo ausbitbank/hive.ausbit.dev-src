@@ -23,6 +23,20 @@ export function delegationHp (delegation, globalProps) {
   return vestsToHp(delegationVests(delegation), globalProps)
 }
 
+/**
+ * VESTS the account can delegate right now: owned stake minus outgoing
+ * delegations and the part already committed to an active powerdown.
+ */
+export function availableDelegationVests (account) {
+  if (!account) return 0
+  const vesting = numberFrom(account.vesting_shares)
+  const delegatedOut = numberFrom(account.delegated_vesting_shares)
+  const toWithdraw = Number(account.to_withdraw || 0) / 1e6
+  const withdrawn = Number(account.withdrawn || 0) / 1e6
+  const powerdown = Math.max(0, toWithdraw - withdrawn)
+  return Math.max(0, vesting - delegatedOut - powerdown)
+}
+
 function historyEntry (item) {
   if (!Array.isArray(item) || item.length < 2) return null
   const payload = item[1]

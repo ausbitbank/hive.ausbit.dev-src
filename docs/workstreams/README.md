@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W111**. **W90** remains the separate
+The next free workstream number is **W112**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -169,4 +169,5 @@ service.
 | [W108-dashboard-edit-lifecycle](W108-dashboard-edit-lifecycle.md) | Single grid for edit/view and off-screen live-widget recycling |
 | [W109-proposal-governance-truth](W109-proposal-governance-truth.md) | Proposal vote filtering, funding outliers and epoch expiry |
 | [W110-wallet-witness-safety](W110-wallet-witness-safety.md) | Claim authority, HE JSON, memo privacy, amounts, IDs and witness state |
+| [W111-proposal-paging-delegation](W111-proposal-paging-delegation.md) | Cursor-paged proposal voters and powerdown-aware delegation limits |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |

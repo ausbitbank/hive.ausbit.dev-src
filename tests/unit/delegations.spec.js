@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  availableDelegationVests,
   delegationHp,
   delegationVests,
   extractDelegationEvents,
@@ -56,6 +57,19 @@ describe('delegation amounts', () => {
   it('parses vests and converts to HP', () => {
     expect(delegationVests({ vesting_shares: '1500000.000000 VESTS' })).toBe(1500000)
     expect(delegationHp({ vesting_shares: '1500000.000000 VESTS' }, GLOBAL_PROPS)).toBeCloseTo(1500000)
+  })
+
+  it('reserves outgoing delegations and an active powerdown', () => {
+    const account = {
+      vesting_shares: '1000000.000000 VESTS',
+      delegated_vesting_shares: '200000.000000 VESTS',
+      to_withdraw: '150000000000',
+      withdrawn: '30000000000'
+    }
+    // 1,000,000 - 200,000 - ((150,000,000,000 - 30,000,000,000) / 1e6)
+    expect(availableDelegationVests(account)).toBeCloseTo(680000)
+    expect(availableDelegationVests({ vesting_shares: '10.000000 VESTS', delegated_vesting_shares: '20.000000 VESTS' })).toBe(0)
+    expect(availableDelegationVests(null)).toBe(0)
   })
 })
 

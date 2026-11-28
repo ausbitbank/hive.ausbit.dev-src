@@ -22,6 +22,7 @@
 </template>
 <script>
 import moment from 'src/utils/time'
+import { availableDelegationVests } from 'src/services/delegations'
 import { vestToHive } from 'src/services/wallet'
 export default {
   name: 'delegationDialog',
@@ -95,9 +96,7 @@ export default {
     },
     availableStake: function () {
       if (this.network === 'hive' & this.tokenName === 'HIVE') {
-        var vestedShares = parseFloat(this.$hiveStore.accounts[this.username].vesting_shares.split(' ')[0])
-        var vestsDelegatedOut = parseFloat(this.$hiveStore.accounts[this.username].delegated_vesting_shares.split(' ')[0])
-        return vestedShares - vestsDelegatedOut
+        return availableDelegationVests(this.$hiveStore.accounts[this.username])
       } else { return null }
     },
     alreadyDelegatedToUser: function () {

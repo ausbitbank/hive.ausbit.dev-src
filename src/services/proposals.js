@@ -329,9 +329,10 @@ export async function listProposalVotes (id, options = {}) {
   const proposalId = Number(id)
   if (!Number.isInteger(proposalId) || proposalId < 0) return []
 
-  const { limit = 1000 } = options
+  const { limit = 1000, startVoter = '' } = options
+  const start = startVoter ? [proposalId, String(startVoter)] : [proposalId]
   const response = await hive.api.callAsync('database_api.list_proposal_votes', {
-    start: [proposalId],
+    start,
     limit,
     order: 'by_proposal_voter',
     order_direction: 'ascending',
