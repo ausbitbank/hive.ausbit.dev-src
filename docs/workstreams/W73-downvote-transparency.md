@@ -28,7 +28,10 @@ Shipped:
   possible and never used to hide or punish.
 - Per-voter local exclusion: ignored voters are marked/removed from the local
   table view, while the raw summary keeps the full chain impact.
-- “Load older” with a hard page cap.
+- “Load older” reads one more 1,000-operation page on demand and never caps the
+  total; “Load all older” keeps going until the filtered history is exhausted,
+  with a Stop control. The progress line shows operations scanned and downvotes
+  found.
 - Post vote dialog now shows distinct up/down voters, top stake share and net
   direction; if the post payload has no `active_votes`, it fetches
   `condenser_api.get_active_votes`.
@@ -38,13 +41,17 @@ Shipped:
 ## Data
 
 - `condenser_api.get_account_history` with the vote bitmask (`"1"`, `null`),
-  paged backwards at 1,000 rows per page, capped at 5 pages. Raw `vote` rows
+  paged backwards at 1,000 rows per call. The first visit reads three pages;
+  every later page is fetched from the returned index cursor. Raw `vote` rows
   carry `weight` only, so direction comes from the sign of `weight`.
-- Dedupe by history index; sort by time then index; handle the filtered-
-  operation gap by retrying from the node's `sequence` cursor.
+- No total page cap: the page keeps a cursor until the node returns a short
+  page or the oldest index. Duplicate history indices are dropped and each page
+  is sorted newest-first before it is appended.
+- A cursor that does not move backwards stops the loader instead of looping.
 - `condenser_api.get_active_votes` for current per-post rshares/percent.
-- Cached for 5 minutes (`fetchAccountVoteHistory`, `fetchActiveVotes`); the
-  filter bitmask and page cap are enforced in the service.
+- Cached for 5 minutes per history cursor (`fetchAccountVoteHistoryPage`,
+  `fetchActiveVotes`); the filter bitmask and 1,000-row page size are enforced
+  in the service.
 - Malformed responses (OpenAPI schema stubs) reject instead of rendering an
   empty successful result.
 
@@ -68,6 +75,8 @@ is taken from the label.
   exclusion hides rows.
 - Pattern evidence is an advisory card with “not a verdict”.
 - Grouping is a separate aggregate view; the flat table remains for review.
+- The flat table shows 40 matching rows at a time; “Show more rows” expands
+  the loaded page without another chain read.
 - The post vote dialog context is a compact line; existing top-voter/full-data
   tabs are unchanged.
 
@@ -84,12 +93,13 @@ is taken from the label.
 - `tests/unit/downvotes.spec.js` — normalization, received/given split,
   summaries, grouping, coordination evidence positive/negative, post context,
   relationships and ignored-voter filtering.
-- `tests/unit/account-downvotes.spec.js` — pagination, cursor, dedupe,
-  truncated pages, filtered-gap retry, malformed responses, active votes.
+- `tests/unit/account-downvotes.spec.js` — cursor pagination, terminal pages,
+  filtered-gap retry, malformed responses, active votes.
 - `tests/unit/vote-breakdown.spec.js` — existing votes dialog still green.
 - `e2e/moderation.spec.js` — downvotes tab with mocked history: 9 rows, evidence
   card, ignore voter removes rows locally, summary stays at 9, Show ignored
-  restores them.
+  restores them; a second test loads three full pages, expands the table and
+  then loads the final older page without a cap.
 - Axe: `/@ausbitbank/downvotes` at 1440×900 and 390×844.
 
 ## Verification

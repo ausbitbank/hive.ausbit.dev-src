@@ -174,11 +174,27 @@
               </tr>
             </tbody>
           </table>
-          <div v-if="truncated" class="dv-more">
-            <q-btn outline no-caps color="primary" icon="expand_more" label="Load older" :loading="loading" @click="loadOlder" />
-            <span>History is capped for performance.</span>
-          </div>
         </div>
+
+        <div v-if="groupBy === 'none' && filtered.length > visibleCount" class="dv-more">
+          <q-btn flat no-caps color="primary" icon="expand_more" label="Show more rows" @click="showMoreRows" />
+          <span>Showing {{ visibleRowCount }} of {{ filtered.length }} matching rows.</span>
+        </div>
+        <div v-if="hasMore || loadingOlder" class="dv-more">
+          <template v-if="!loadAll">
+            <q-btn outline no-caps color="primary" icon="expand_more" label="Load older" :loading="loadingOlder" :disable="loading" @click="loadMore()" />
+            <q-btn flat no-caps color="primary" label="Load all older" :disable="loading || loadingOlder" @click="loadMore({ all: true })" />
+          </template>
+          <q-btn v-else flat no-caps color="negative" icon="stop" :label="stopLoading ? 'Stopping…' : 'Stop'" :disable="stopLoading" @click="stopLoading = true" />
+          <span v-if="loadingOlder && loadAll">Scanned {{ scannedLabel }} operations · {{ allDownvotes.length }} downvotes…</span>
+          <span v-else-if="loadingOlder">Loading older operations…</span>
+          <span v-else>Scanned {{ scannedLabel }} operations · {{ allDownvotes.length }} downvotes</span>
+        </div>
+        <p v-else-if="scanned" class="dv-more__end">End of the filtered vote history reached · {{ scannedLabel }} operations scanned.</p>
+        <p v-if="olderError" class="dv-more__error" role="alert">
+          <span>{{ olderError }}</span>
+          <q-btn v-if="hasMore" flat dense no-caps color="primary" icon="refresh" label="Retry" @click="loadMore()" />
+        </p>
 
         <section v-if="ignoredVoters.length" class="dv-ignored" aria-labelledby="dv-ignored-title">
           <h3 id="dv-ignored-title" class="dv-subtitle">Ignored voters</h3>
@@ -233,13 +249,16 @@
 .dv-num { text-align: right !important; white-space: nowrap; }
 .dv-row-action { text-align: right !important; }
 .dv-link { border: 0; background: none; color: var(--c-link); font: inherit; cursor: pointer; text-decoration: underline; }
-.dv-more { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-3); color: var(--c-text-muted); font-size: 0.76rem; }
+.dv-more { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); color: var(--c-text-muted); font-size: 0.76rem; }
+.dv-more__end { margin-top: var(--space-3); color: var(--c-text-muted); font-size: 0.76rem; }
+.dv-more__error { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-2); color: var(--c-negative); font-size: 0.76rem; }
 .dv-ignored { margin-top: var(--space-4); padding: var(--space-3); border: 1px solid var(--c-border); border-radius: var(--radius-card); background: var(--c-surface-2); color: var(--c-text-muted); font-size: 0.8rem; }
 .dv-subtitle { margin: 0 0 0.25rem; color: var(--c-text); font-size: 0.9rem; }
 </style>
 
 <script>
 import moment from 'src/utils/time'
+import { markRaw } from 'vue'
 import accountHeader from 'components/accountHeader.vue'
 import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import {
@@ -251,7 +270,7 @@ import {
   summarizeDownvotes,
   withDownvoteValues
 } from 'src/services/downvotes'
-import { fetchAccountVoteHistory } from 'src/services/accountDownvotes'
+import { VOTE_HISTORY_PAGES, fetchAccountVoteHistoryPage } from 'src/services/accountDownvotes'
 import { fetchDownvoteValuation } from 'src/services/downvoteValuation'
 import { setPageMeta } from 'src/utils/pageMeta'
 import { useModerationStore } from 'src/stores/moderation'
@@ -264,10 +283,17 @@ export default {
   data () {
     return {
       rows: [],
-      truncated: false,
-      pages: 3,
+      cursor: -1,
+      hasMore: true,
+      scanned: 0,
       loading: false,
+      loadingOlder: false,
+      loadAll: false,
+      stopLoading: false,
       error: '',
+      olderError: '',
+      historyRequest: 0,
+      rowKeys: markRaw(new Set()),
       direction: 'received',
       range: '30',
       relationshipFilter: 'all',
@@ -344,6 +370,9 @@ export default {
     summary () {
       return summarizeDownvotes(this.valuedDownvotes)
     },
+    scannedLabel () {
+      return Math.max(0, Number(this.scanned) || 0).toLocaleString('en-US')
+    },
     coordination () {
       return coordinationEvidence(this.allDownvotes)
     },
@@ -374,6 +403,9 @@ export default {
     },
     pagedRows () {
       return this.filtered.slice(0, this.visibleCount)
+    },
+    visibleRowCount () {
+      return Math.min(this.visibleCount, this.filtered.length)
     }
   },
   watch: {
@@ -405,24 +437,100 @@ export default {
     if (!this.account) this.$hiveStore.getAccount(this.username)
     this.load()
   },
+  beforeUnmount () {
+    // Stop any in-flight initial/older-history or valuation loop.
+    this.historyRequest += 1
+    this.valuationRequest += 1
+  },
   methods: {
+    resetHistory () {
+      this.rows = []
+      this.rowKeys = markRaw(new Set())
+      this.cursor = -1
+      this.hasMore = true
+      this.scanned = 0
+    },
+    async appendHistoryPage ({ force = false, requestId = this.historyRequest } = {}) {
+      const result = await fetchAccountVoteHistoryPage(this.username, { cursor: this.cursor, force })
+      if (requestId !== this.historyRequest) return null
+      this.applyHistoryPage(result)
+      return result
+    },
+    applyHistoryPage (result) {
+      if (!result) return
+      for (const row of Array.isArray(result.rows) ? result.rows : []) {
+        if (!row || Number(row.weight) >= 0) continue
+        const key = this.rowKey(row)
+        if (this.rowKeys.has(key)) continue
+        this.rowKeys.add(key)
+        this.rows.push(row)
+      }
+      this.scanned += Math.max(0, Number(result.scanned) || 0)
+      const next = result.nextCursor === null || result.nextCursor === undefined
+        ? null
+        : Number(result.nextCursor)
+      if (this.cursor >= 0 && result.hasMore && (next === null || !Number.isFinite(next) || next >= this.cursor)) {
+        this.hasMore = false
+        this.olderError = 'History stopped advancing; older loading was stopped to avoid a loop.'
+        return
+      }
+      this.cursor = Number.isFinite(next) ? next : null
+      this.hasMore = Boolean(result.hasMore && this.cursor !== null)
+    },
     async load ({ force = false } = {}) {
       if (!this.username) return
+      const requestId = ++this.historyRequest
       this.loading = true
       this.error = ''
+      this.olderError = ''
+      this.loadingOlder = false
+      this.loadAll = false
+      this.stopLoading = false
+      this.resetHistory()
       try {
-        const result = await fetchAccountVoteHistory(this.username, { pages: this.pages, force })
-        this.rows = result.rows
-        this.truncated = result.truncated
+        for (let page = 0; page < VOTE_HISTORY_PAGES && this.hasMore; page++) {
+          if (requestId !== this.historyRequest) return
+          await this.appendHistoryPage({ force, requestId })
+        }
       } catch (error) {
-        this.error = error?.message || 'Could not load downvote history.'
+        if (requestId === this.historyRequest) this.error = error?.message || 'Could not load downvote history.'
       } finally {
-        this.loading = false
+        if (requestId === this.historyRequest) this.loading = false
       }
-      this.loadValuation({ force })
+      if (requestId === this.historyRequest) this.loadValuation({ force })
     },
-    async loadValuation ({ force = false } = {}) {
-      const voters = this.direction === 'given'
+    async loadMore ({ all = false } = {}) {
+      if (!this.username || !this.hasMore || this.loading || this.loadingOlder) return
+      const requestId = this.historyRequest
+      this.loadingOlder = true
+      this.loadAll = all
+      this.stopLoading = false
+      this.olderError = ''
+      let loaded = 0
+      try {
+        while (this.hasMore && !this.stopLoading && requestId === this.historyRequest && (all || loaded < 1)) {
+          const before = this.cursor
+          const result = await this.appendHistoryPage({ requestId })
+          if (!result || requestId !== this.historyRequest) break
+          loaded++
+          if (all && this.hasMore && this.cursor === before) break
+          if (all) await this.$nextTick()
+        }
+      } catch (error) {
+        if (requestId === this.historyRequest) this.olderError = error?.message || 'Could not load older downvote history.'
+      } finally {
+        if (requestId === this.historyRequest) {
+          this.loadingOlder = false
+          this.loadAll = false
+          this.stopLoading = false
+        }
+      }
+      if (loaded && requestId === this.historyRequest) this.loadValuation()
+    },
+    showMoreRows () {
+      this.visibleCount += PAGE_ROWS
+    },
+    async loadValuation ({ force = false } = {}) {      const voters = this.direction === 'given'
         ? [this.username]
         : [...new Set(this.allDownvotes.map(row => row.voter).filter(Boolean))]
       const requestId = ++this.valuationRequest
@@ -448,10 +556,6 @@ export default {
       } finally {
         if (requestId === this.valuationRequest) this.valuationLoading = false
       }
-    },
-    loadOlder () {
-      this.pages = Math.min(5, this.pages + 1)
-      this.load({ force: true })
     },
     toggleDirection () {
       this.direction = this.direction === 'received' ? 'given' : 'received'

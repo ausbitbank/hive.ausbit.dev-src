@@ -1,8 +1,9 @@
 // Cached downvote reads.
 //
-// History is paged backwards with the vote bitmask. A page is oldest-to-newest
-// and raw vote rows carry `weight` only; use `get_active_votes` for current
-// rshares/percent. Never block a page on more than a few history pages.
+// History is paged backwards with the vote bitmask. One call reads at most
+// VOTE_HISTORY_LIMIT operations and returns a cursor for the next older page,
+// so the page can keep loading history for as long as the viewer asks. Raw vote
+// rows carry `weight` only; use `get_active_votes` for current rshares/percent.
 
 import { apiGetAccountHistoryFiltered, apiGetActiveVotes } from './api'
 import { loadCached } from './cache'
@@ -10,12 +11,14 @@ import { normalizeHistoryVotes } from './downvotes'
 import { normalizeVotes } from './voteBreakdown'
 
 export const VOTE_HISTORY_TTL_MS = 5 * 60 * 1000
+/** Pages fetched before the viewer asks for more. */
 export const VOTE_HISTORY_PAGES = 3
+/** Maximum operations read per history call (the condenser API cap). */
 export const VOTE_HISTORY_LIMIT = 1000
 export const ACTIVE_VOTES_TTL_MS = 5 * 60 * 1000
 
-function historyCacheKey (account, pages) {
-  return 'moderation:votes:' + String(account || '').toLowerCase() + ':' + pages
+function historyCacheKey (account, cursor) {
+  return 'moderation:votes:' + String(account || '').toLowerCase() + ':cursor:' + cursor
 }
 
 function activeCacheKey (author, permlink) {
@@ -38,43 +41,33 @@ async function readHistoryPage (account, cursor, limit) {
   }
 }
 
+function sortHistoryVotes (rows) {
+  return rows.sort((a, b) => (b.time || 0) - (a.time || 0) || (Number(b.index) || 0) - (Number(a.index) || 0))
+}
+
 /**
- * Paged received+given downvote history. The result is newest-first and
- * deduplicated by history index. `truncated` means the page cap was reached.
+ * One page of vote history. `cursor` is the history index to read backwards
+ * from (-1 starts at the newest operation). The result is newest-first with
+ * `nextCursor` for the next older page; `hasMore` is false when the chain has
+ * no older operations or this page was shorter than the API limit.
  */
-export function fetchAccountVoteHistory (account, {
-  pages = VOTE_HISTORY_PAGES,
-  force = false
-} = {}) {
+export function fetchAccountVoteHistoryPage (account, { cursor = -1, force = false } = {}) {
   const name = String(account || '').trim().toLowerCase()
-  const pageCount = Math.max(1, Math.min(5, Number(pages) || VOTE_HISTORY_PAGES))
-  if (!name) return Promise.resolve({ rows: [], truncated: false })
-  return loadCached(historyCacheKey(name, pageCount), async () => {
-    let cursor = -1
-    let truncated = false
-    const seen = new Set()
-    const rows = []
-
-    for (let page = 0; page < pageCount; page++) {
-      const response = await readHistoryPage(name, cursor, VOTE_HISTORY_LIMIT)
-      if (!Array.isArray(response)) throw new Error('Unexpected vote history response')
-      if (!response.length) break
-      for (const vote of normalizeHistoryVotes(response)) {
-        const key = vote.index !== null ? 'i:' + vote.index : 't:' + vote.trxId + ':' + vote.voter + ':' + vote.target
-        if (seen.has(key)) continue
-        seen.add(key)
-        rows.push(vote)
-      }
-      const firstIndex = Number(Array.isArray(response[0]) ? response[0][0] : NaN)
-      if (!Number.isFinite(firstIndex)) break
-      cursor = firstIndex - 1
-      if (cursor < 0) break
-      if (response.length < VOTE_HISTORY_LIMIT) break
-      if (page === pageCount - 1) truncated = true
+  if (!name) return Promise.resolve({ rows: [], scanned: 0, nextCursor: null, hasMore: false })
+  const start = Number(cursor)
+  const safeCursor = Number.isFinite(start) && start >= 0 ? Math.floor(start) : -1
+  return loadCached(historyCacheKey(name, safeCursor), async () => {
+    const response = await readHistoryPage(name, safeCursor, VOTE_HISTORY_LIMIT)
+    if (!Array.isArray(response)) throw new Error('Unexpected vote history response')
+    const firstIndex = Number(Array.isArray(response[0]) ? response[0][0] : NaN)
+    const next = Number.isFinite(firstIndex) && firstIndex > 0 ? firstIndex - 1 : null
+    const hasMore = response.length >= VOTE_HISTORY_LIMIT && next !== null
+    return {
+      rows: sortHistoryVotes(normalizeHistoryVotes(response)),
+      scanned: response.length,
+      nextCursor: hasMore ? next : null,
+      hasMore
     }
-
-    rows.sort((a, b) => (b.time || 0) - (a.time || 0) || (Number(b.index) || 0) - (Number(a.index) || 0))
-    return { rows, truncated }
   }, {
     ttl: VOTE_HISTORY_TTL_MS,
     force

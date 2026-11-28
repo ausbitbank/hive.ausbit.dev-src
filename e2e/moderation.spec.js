@@ -111,10 +111,11 @@ async function mockChain (page, {
       }
 
       if (payload.method === 'condenser_api.get_account_history' && voteHistory) {
+        const history = typeof voteHistory === 'function' ? voteHistory(params) : voteHistory
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: voteHistory })
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: history })
         })
       }
 
@@ -606,6 +607,53 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
 
   await page.getByLabel('Show locally ignored voters').check()
   await expect(page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()).toBeVisible()
+})
+
+test('downvotes can keep loading older history without a page cap', async ({ page }) => {
+  test.skip(Boolean(process.env.OBSCURA_CDP), 'Obscura does not rewrite mocked API responses')
+  const voteRow = index => [index, {
+    op: ['vote', { voter: 'bob', author: 'ausbitbank', permlink: 'older-post-' + index, weight: -1000 }],
+    timestamp: '2026-11-24T00:00:00',
+    trx_id: 'trx' + index
+  }]
+  const pageRows = start => Array.from({ length: 1000 }, (_, offset) => voteRow(start + offset))
+  const historyFor = params => {
+    const cursor = Number(Array.isArray(params) ? params[1] : -1)
+    if (cursor === -1) return pageRows(2001)
+    if (cursor === 2000) return pageRows(1001)
+    if (cursor === 1000) return pageRows(1)
+    if (cursor === 0) return [voteRow(0)]
+    return []
+  }
+  await mockChain(page, {
+    voteHistory: historyFor,
+    accountOverride: {
+      reputation: 60,
+      posting_json_metadata: '{}',
+      balance: '0.000 HIVE',
+      hbd_balance: '0.000 HBD',
+      vesting_shares: '1000000.000000 VESTS',
+      voting_manabar: { current_mana: 1000000000000, last_update_time: 0 },
+      downvote_manabar: { current_mana: 250000000000, last_update_time: 0 },
+      post_count: 0,
+      created: '2020-01-01T00:00:00'
+    }
+  })
+
+  await page.goto('/@ausbitbank/downvotes')
+  await waitForApp(page)
+  const countCard = page.locator('.dv-stat').filter({ hasText: 'Downvotes received' })
+  await expect(countCard.locator('strong')).toHaveText('3000', { timeout: 20000 })
+  await expect(page.getByRole('button', { name: 'Load older' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Load all older' })).toBeVisible()
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(40)
+  await page.getByRole('button', { name: 'Show more rows' }).click()
+  await expect(page.locator('.dv-table tbody tr')).toHaveCount(80)
+
+  await page.getByRole('button', { name: 'Load older' }).click()
+  await expect(countCard.locator('strong')).toHaveText('3001')
+  await expect(page.getByRole('button', { name: 'Load older' })).toHaveCount(0)
+  await expect(page.locator('.dv-more__end')).toContainText('End of the filtered vote history reached')
 })
 
 
