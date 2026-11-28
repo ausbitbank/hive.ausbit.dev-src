@@ -68,11 +68,16 @@ export default {
   },
   mounted () {
     window.addEventListener('keydown', this.onKeydown)
+    window.addEventListener('hive:open-shortcuts', this.openShortcuts)
   },
   beforeUnmount () {
     window.removeEventListener('keydown', this.onKeydown)
+    window.removeEventListener('hive:open-shortcuts', this.openShortcuts)
   },
   methods: {
+    openShortcuts () {
+      this.open = true
+    },
     isTyping (event) {
       const target = event.target
       return target && (TYPING_TAGS.includes(target.tagName) || target.isContentEditable)

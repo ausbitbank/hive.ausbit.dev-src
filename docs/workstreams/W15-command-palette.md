@@ -51,3 +51,25 @@ Covered by `tests/unit/search.spec.js`.
 - Verified header, mobile and drawer triggers, Ctrl+K, account/block/tag/proposal
   routing, keyboard selection, recent history and mobile layout.
 - Axe WCAG A/AA: zero violations with the palette open.
+
+## 2026-11-28 — full page and function coverage
+
+- The command catalog now covers every user-facing surface: the sorted browse
+  feeds (hot, payout, payout comments, muted), blogs and the blog directory, all
+  five short-post formats, HBD stabilizer, witness settings, orders, cart,
+  checkout, subscriptions, appearance, theme wall, skin studio, moderation,
+  blog settings, the Vault dashboard and About.
+- Results are grouped by category (`You`, `Explore`, `Chain`, `Create`,
+  `Wallet`, `Settings`, `Actions`) and ranked so label matches come before
+  description and keyword matches. Synonym keywords keep pages discoverable
+  (for example `dhf` finds Proposals and `preferences` finds Appearance), and
+  multi-word queries match every word (`join keys`, `toggle theme`). When a
+  query names a page or action, those results lead and account/tag jumps follow
+  underneath.
+- Explicit account jumps now include transfers, feed, replies, comments,
+  following, communities, delegations, downvotes, tip, point of sale and
+  Lightning, alongside profile, wallet, posts, blog and followers.
+- New function commands run in place: open Settings, toggle light/dark theme,
+  copy the current page link, show the keyboard shortcut list, and sign in.
+  Settings opens through `hive:open-settings`; shortcuts through
+  `hive:open-shortcuts`; sign-in reuses `banksia:open-login`.

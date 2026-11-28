@@ -23,7 +23,7 @@
             <span class="command-trigger__label">Search or jump to…</span>
             <kbd class="command-trigger__kbd">Ctrl K</kbd>
           </q-btn>
-          <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Open the full Hive search page" title="Search Hive" @click="openSearch" />
+          <q-btn class="lt-sm site-toolbar__icon" flat dense round icon="search" aria-label="Search or jump to a Hive page" title="Search or jump" @click="openCommandPalette" />
           <q-btn class="site-toolbar__icon site-toolbar__cta" flat dense no-caps icon="edit_note" aria-label="Write a post" title="Write a post" @click="openCompose"><span class="site-toolbar__cta-label gt-xs">Write</span></q-btn>
           <queue v-if="loggedInUser !== null && queue.length > 0" />
           <q-btn
@@ -40,7 +40,7 @@
           </q-btn>
           <notifications v-if="loggedInUser !== null" />
           <user-login />
-          <q-btn class="site-toolbar__icon" dense flat round icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy anchor="bottom right" self="top right" :offset="[0, 8]"><settings /></q-popup-proxy></q-btn>
+          <q-btn class="site-toolbar__icon" dense flat round icon="settings" title="Settings" aria-label="Settings" color="grey"><q-popup-proxy v-model="settingsOpen" anchor="bottom right" self="top right" :offset="[0, 8]"><settings /></q-popup-proxy></q-btn>
         </div>
       </q-toolbar>
     </q-header>
@@ -547,11 +547,13 @@ export default {
   mounted () {
     window.addEventListener('hive:open-command-palette', this.openCommandPalette)
     window.addEventListener('hive:open-search', this.openSearch)
+    window.addEventListener('hive:open-settings', this.openSettings)
     if (this.loggedInUser) this.preloadQueueChunk()
   },
   beforeUnmount () {
     window.removeEventListener('hive:open-command-palette', this.openCommandPalette)
     window.removeEventListener('hive:open-search', this.openSearch)
+    window.removeEventListener('hive:open-settings', this.openSettings)
   },
   methods: {
     openCommandPalette () {
@@ -571,6 +573,10 @@ export default {
     openSearch () {
       this.leftDrawerOpen = false
       this.$router.push('/search').catch(() => {})
+    },
+    openSettings () {
+      this.leftDrawerOpen = false
+      this.settingsOpen = true
     },
     isActiveLink (link) {
       if (!link.to) return false
@@ -619,6 +625,7 @@ export default {
   data () {
     return {
       leftDrawerOpen: false,
+      settingsOpen: false,
       searchSuggestions: null,
       exploreLinks: [
         {

@@ -284,12 +284,24 @@ function accountJumps (user, { subpages = false } = {}) {
     kind: 'account'
   }
   if (!subpages) return [base]
+  const prefix = '/@' + user
   return [
     base,
-    { path: '/@' + user + '/wallet', label: 'Wallet · @' + user, description: 'Balances and transactions', icon: 'account_balance_wallet' },
-    { path: '/@' + user + '/posts', label: 'Posts · @' + user, description: 'Published posts', icon: 'library_books' },
-    { path: '/@' + user + '/blog', label: 'Blog · @' + user, description: 'Posts and reblogs', icon: 'menu_book' },
-    { path: '/@' + user + '/followers', label: 'Followers · @' + user, description: 'Accounts following this user', icon: 'people' }
+    { path: prefix + '/wallet', label: 'Wallet · @' + user, description: 'Balances and transactions', icon: 'account_balance_wallet' },
+    { path: prefix + '/transfers', label: 'Transfers · @' + user, description: 'Incoming and outgoing transfer history', icon: 'swap_horiz' },
+    { path: prefix + '/posts', label: 'Posts · @' + user, description: 'Published posts', icon: 'library_books' },
+    { path: prefix + '/blog', label: 'Blog · @' + user, description: 'Posts and reblogs', icon: 'menu_book' },
+    { path: prefix + '/feed', label: 'Feed · @' + user, description: 'Posts from accounts this user follows', icon: 'rss_feed' },
+    { path: prefix + '/replies', label: 'Replies · @' + user, description: 'Recent replies by this user', icon: 'reply' },
+    { path: prefix + '/comments', label: 'Comments · @' + user, description: 'Recent comments by this user', icon: 'comment' },
+    { path: prefix + '/followers', label: 'Followers · @' + user, description: 'Accounts following this user', icon: 'people' },
+    { path: prefix + '/following', label: 'Following · @' + user, description: 'Accounts this user follows', icon: 'group' },
+    { path: prefix + '/communities', label: 'Communities · @' + user, description: 'Communities this user belongs to', icon: 'forum' },
+    { path: prefix + '/delegations', label: 'Delegations · @' + user, description: 'Incoming and outgoing HP delegations', icon: 'handshake' },
+    { path: prefix + '/downvotes', label: 'Downvotes · @' + user, description: 'Downvote history and transparency', icon: 'thumb_down' },
+    { path: prefix + '/tip', label: 'Tip · @' + user, description: 'Send a Lightning tip', icon: 'bolt' },
+    { path: prefix + '/pos', label: 'Point of sale · @' + user, description: 'Tipping terminal for in-person payments', icon: 'point_of_sale' },
+    { path: prefix + '/lightning', label: 'Lightning · @' + user, description: 'Lightning address and invoices', icon: 'flash_on' }
   ]
 }
 
@@ -340,27 +352,110 @@ export function resolveJumpResults (query, { knownAccounts = {}, accountChecks =
   return results
 }
 
-const COMMANDS = [  { label: 'Home', description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
-  { label: 'Browse posts', description: 'Trending, new and community posts', icon: 'explore', path: '/browse', keywords: 'posts feed content' },
-  { label: 'Communities', description: 'Discover Hive communities by topic and activity', icon: 'forum', path: '/communities', keywords: 'community communities discover browse directory join subscribe' },
-  { label: 'Short posts', description: 'Snaps, Waves, Threads, D.Buzz and Moments', icon: 'bolt', path: '/shorts', keywords: 'microblog snaps waves threads dbuzz moments short' },
-  { label: 'Trending posts', description: 'What Hive is reading now', icon: 'trending_up', path: '/trending', keywords: 'hot popular' },
-  { label: 'Latest blocks', description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer' },  { label: 'Witnesses', description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes' },
-  { label: 'Proposals', description: 'Decentralized Hive Fund', icon: 'account_balance', path: '/proposals', keywords: 'dhf dao governance' },
-  { label: 'Markets', description: 'HIVE and HBD charts', icon: 'show_chart', path: '/markets', keywords: 'prices trading' },
-  { label: 'Lightning', description: 'Receive sats as HIVE/HBD or pay a Lightning invoice', icon: 'bolt', path: '/lightning', keywords: 'lightning sats bitcoin btc v4v bridge zap invoice' },
-  { label: 'Internal market', description: 'Trade HIVE and HBD', icon: 'store', path: '/market', keywords: 'exchange order book' },
-  { label: 'HBD monitor', description: 'Peg, savings and interest', icon: 'attach_money', path: '/hbd', keywords: 'stablecoin savings apr' },
-  { label: 'API nodes', description: 'Latency and node health', icon: 'dns', path: '/nodes', keywords: 'api status layer 2 hive-engine magi' },
-  { label: 'Magi contracts', description: 'Inspect Magi contract state and outputs', icon: 'hub', path: '/magi', keywords: 'magi vsc layer 2 contract state' },
-  { label: 'Search Hive', description: 'Accounts, posts, tags, communities and chain data', icon: 'search', path: '/search', keywords: 'search find lookup explore discovery' },
-  { label: 'Network health', description: 'Chain status and global properties', icon: 'monitor_heart', path: '/health', keywords: 'status chain' },
-  { label: 'Write a post', description: 'Drafts, preview and publishing', icon: 'edit_note', path: '/compose', keywords: 'compose create publish draft blog' },
-  { label: 'Join Hive', description: 'Create a new Hive account', icon: 'person_add', path: '/join', keywords: 'signup sign up register account create' },
-  { label: 'Create for someone', description: 'Gift a Hive account', icon: 'group_add', path: '/create', keywords: 'account token gift invite' },
-  { label: 'Batch claim links', description: 'Create several claimed accounts in one Keychain batch', icon: 'fact_check', path: '/create/batch', keywords: 'batch claim account token sponsor' },
-  { label: 'Buy a Hive account', description: 'Pay Hivedex in crypto and keep your keys', icon: 'paid', path: '/join/hivedex', keywords: 'buy paid crypto hivedex signup account' }
+/**
+ * Every user-facing page worth jumping to. Commands are grouped by category in
+ * the palette and matched against the label, description and keyword aliases.
+ * `featured` entries are what the empty palette shows before a search.
+ */
+export const COMMANDS = [
+  // Explore
+  { label: 'Home', category: 'Explore', featured: true, description: 'Live network dashboard', icon: 'home', path: '/', keywords: 'start dashboard front page' },
+  { label: 'Browse posts', category: 'Explore', featured: true, description: 'Latest posts across Hive', icon: 'explore', path: '/created', keywords: 'browse posts feed content latest new created' },
+  { label: 'Trending posts', category: 'Explore', featured: true, description: 'What Hive is reading now', icon: 'trending_up', path: '/trending', keywords: 'hot popular trending' },
+  { label: 'Hot posts', category: 'Explore', description: 'Posts gaining activity right now', icon: 'local_fire_department', path: '/hot', keywords: 'hot popular rising' },
+  { label: 'Pending payouts', category: 'Explore', description: 'Posts closest to their payout time', icon: 'payments', path: '/payout', keywords: 'payout rewards pending' },
+  { label: 'Payout comments', category: 'Explore', description: 'Comments closest to their payout time', icon: 'forum', path: '/payout_comments', keywords: 'payout comments rewards pending' },
+  { label: 'Muted posts', category: 'Explore', description: 'Posts hidden by your local moderation policy', icon: 'visibility_off', path: '/muted', keywords: 'muted hidden moderation filtered' },
+  { label: 'Communities', category: 'Explore', featured: true, description: 'Discover Hive communities by topic and activity', icon: 'forum', path: '/communities', keywords: 'community communities discover browse directory join subscribe' },
+  { label: 'Blogs', category: 'Explore', featured: true, description: 'Clean reading pages at username.banksia.io', icon: 'rss_feed', path: '/blogs', keywords: 'blogs blog reading pages claim host custom domain' },
+  { label: 'Blog directory', category: 'Explore', description: 'Opt-in directory of Hive blogs on Banksia', icon: 'menu_book', path: '/blogs/directory', keywords: 'blogs directory listing community projects' },
+  { label: 'Short posts', category: 'Explore', featured: true, description: 'Snaps, Waves, Threads, D.Buzz and Moments', icon: 'bolt', path: '/shorts', keywords: 'microblog snaps waves threads dbuzz moments short' },
+  { label: 'Snaps', category: 'Explore', description: 'PeakD image-first short posts', icon: 'bolt', path: '/shorts/snaps', keywords: 'snaps peakd images short' },
+  { label: 'Waves', category: 'Explore', description: 'Ecency short-post timeline', icon: 'waves', path: '/shorts/waves', keywords: 'waves ecency short' },
+  { label: 'Threads', category: 'Explore', description: 'InLeo microblog threads', icon: 'forum', path: '/shorts/threads', keywords: 'threads inleo leo microblog short' },
+  { label: 'D.Buzz', category: 'Explore', description: 'DBuzz short posts', icon: 'chat_bubble', path: '/shorts/dbuzz', keywords: 'dbuzz buzz microblog short' },
+  { label: 'Moments', category: 'Explore', description: 'Liketu photo moments', icon: 'photo_camera', path: '/shorts/moments', keywords: 'moments liketu photos short' },
+  { label: 'Search Hive', category: 'Explore', featured: true, description: 'Accounts, posts, tags, communities and chain data', icon: 'search', path: '/search', keywords: 'search find lookup explore discovery' },
+
+  // Chain
+  { label: 'Latest blocks', category: 'Chain', featured: true, description: 'Live chain activity', icon: 'view_agenda', path: '/blocks', keywords: 'chain explorer block blocks' },
+  { label: 'Witnesses', category: 'Chain', featured: true, description: 'Vote and manage witnesses', icon: 'how_to_vote', path: '/witnesses', keywords: 'governance votes witness validators' },
+  { label: 'Witness settings', category: 'Chain', description: 'Review, update or register a witness', icon: 'tune', path: '/witness', keywords: 'witness settings signing key register update' },
+  { label: 'Proposals', category: 'Chain', featured: true, description: 'Decentralized Hive Fund', icon: 'account_balance', path: '/proposals', keywords: 'dhf dao governance proposals funding' },
+  { label: 'Markets', category: 'Chain', featured: true, description: 'HIVE and HBD charts', icon: 'show_chart', path: '/markets', keywords: 'prices trading charts market' },
+  { label: 'Internal market', category: 'Chain', description: 'Trade HIVE and HBD', icon: 'store', path: '/market', keywords: 'exchange order book trade swap' },
+  { label: 'HBD monitor', category: 'Chain', description: 'Peg, savings and interest', icon: 'attach_money', path: '/hbd', keywords: 'stablecoin savings apr debt peg' },
+  { label: 'HBD stabilizer', category: 'Chain', description: 'DAO peg-support account and orders', icon: 'balance', path: '/hbdstabilizer', keywords: 'hbd stabilizer smooth dao peg orders' },
+  { label: 'Lightning', category: 'Chain', description: 'Receive sats as HIVE/HBD or pay a Lightning invoice', icon: 'bolt', path: '/lightning', keywords: 'lightning sats bitcoin btc v4v bridge zap invoice' },
+  { label: 'API nodes', category: 'Chain', description: 'Latency and node health', icon: 'dns', path: '/nodes', keywords: 'api status layer 2 hive-engine magi nodes' },
+  { label: 'Magi contracts', category: 'Chain', description: 'Inspect Magi contract state and outputs', icon: 'hub', path: '/magi', keywords: 'magi vsc layer 2 contract state' },
+  { label: 'Network health', category: 'Chain', description: 'Chain status and global properties', icon: 'monitor_heart', path: '/health', keywords: 'status chain health global properties' },
+
+  // Create
+  { label: 'Write a post', category: 'Create', featured: true, description: 'Drafts, preview and publishing', icon: 'edit_note', path: '/compose', keywords: 'compose create publish draft blog post' },
+  { label: 'Join Hive', category: 'Create', featured: true, description: 'Create a new Hive account', icon: 'person_add', path: '/join', keywords: 'signup sign up register account create join' },
+  { label: 'Create your keys', category: 'Create', description: 'Generate a password, keys and a claim link', icon: 'key', path: '/join/keys', keywords: 'join keys password claim signup register' },
+  { label: 'Create for someone', category: 'Create', featured: true, description: 'Gift a Hive account', icon: 'group_add', path: '/create', keywords: 'account token gift invite create sponsor' },
+  { label: 'Claim an account', category: 'Create', description: 'Open a claim link and pay for a new account', icon: 'redeem', path: '/create/claim', keywords: 'claim link account token sponsor register' },
+  { label: 'Batch claim links', category: 'Create', description: 'Create several claimed accounts in one Keychain batch', icon: 'fact_check', path: '/create/batch', keywords: 'batch claim account token sponsor' },
+  { label: 'Buy a Hive account', category: 'Create', description: 'Pay Hivedex in crypto and keep your keys', icon: 'paid', path: '/join/hivedex', keywords: 'buy paid crypto hivedex signup account' },
+
+  // Wallet
+  { label: 'Orders', category: 'Wallet', description: 'Purchases, sales and subscriptions', icon: 'history', path: '/orders', keywords: 'orders purchases sales receipts memberships' },
+  { label: 'Cart', category: 'Wallet', description: 'Items waiting to be paid for', icon: 'shopping_cart', path: '/cart', keywords: 'cart basket checkout shopping' },
+  { label: 'Checkout', category: 'Wallet', description: 'Review and pay for your cart', icon: 'point_of_sale', path: '/checkout', keywords: 'checkout pay cart basket' },
+  { label: 'Subscriptions', category: 'Wallet', description: 'Blog memberships and recurring HBD payments', icon: 'autorenew', path: '/subscriptions', keywords: 'subscriptions memberships recurring vault hbd' },
+
+  // Settings
+  { label: 'Appearance', category: 'Settings', description: 'Themes, comfort options and profile skins', icon: 'palette', path: '/appearance', keywords: 'appearance theme dark light night day preferences contrast motion skins' },
+  { label: 'Theme wall', category: 'Settings', description: 'Browse looks published from the Hive', icon: 'collections', path: '/themes', keywords: 'themes wall looks palettes skins' },
+  { label: 'Skin studio', category: 'Settings', description: 'Build and publish a profile skin', icon: 'brush', path: '/settings/skin', keywords: 'skin studio profile customise design' },
+  { label: 'Moderation', category: 'Settings', description: 'Local moderation policy and overrides', icon: 'shield', path: '/settings/moderation', keywords: 'moderation muted blocked policy filters' },
+  { label: 'Blog settings', category: 'Settings', description: 'Claim or customise your username.banksia.io page', icon: 'web', path: '/settings/blog', keywords: 'blog settings claim domain theme reading page' },
+  { label: 'Vault dashboard', category: 'Settings', description: 'Membership payments, grants and reader keys', icon: 'lock', path: '/settings/blog/vault', keywords: 'vault dashboard membership payments grants creator' },
+  { label: 'About Banksia', category: 'Settings', description: 'Name, mark, source and credits', icon: 'help_outline', path: '/about', keywords: 'about info source credits license' }
 ]
+
+const CATEGORY_ORDER = ['You', 'Explore', 'Chain', 'Create', 'Wallet', 'Settings', 'Actions']
+
+function wordsOf (text) {
+  return String(text || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+}
+
+function hasEveryWord (haystack, words) {
+  return words.every(word => haystack.some(candidate => candidate.startsWith(word)))
+}
+
+/**
+ * Match score for a command against the lowercase query. Lower is better and
+ * -1 means no match. Label matches rank above description and keyword matches
+ * so that "blog" offers Blogs and Blog settings before a page that merely
+ * mentions it. Multi-word queries match when every word appears somewhere, so
+ * "join keys" and "toggle theme" still find the right command.
+ */
+export function commandScore (command, query) {
+  const label = String(command.label || '').toLowerCase()
+  const description = String(command.description || '').toLowerCase()
+  const keywords = String(command.keywords || '').toLowerCase()
+  const words = wordsOf(query)
+  if (!words.length) return -1
+  const hayWords = wordsOf(label + ' ' + description + ' ' + keywords)
+  if (!hasEveryWord(hayWords, words)) return -1
+  if (label.startsWith(query)) return 0
+  if (label.includes(query)) return 1
+  if (hasEveryWord(wordsOf(label), words)) return 1
+  if (description.includes(query)) return 2
+  if (hasEveryWord(wordsOf(description), words)) return 2
+  return 3
+}
+
+export function rankCommands (commands, query) {
+  return commands
+    .map(command => ({ command, score: commandScore(command, query) }))
+    .filter(entry => entry.score >= 0)
+    .sort((a, b) => a.score - b.score)
+    .map(entry => entry.command)
+}
 
 export default {
   name: 'commandPalette',
@@ -387,25 +482,55 @@ export default {
     },
     commandResults () {
       const query = this.query.trim().toLowerCase()
-      if (!query) return COMMANDS.slice(0, 12)
-      return COMMANDS
-        .filter(command => (command.label + ' ' + command.description + ' ' + command.keywords).toLowerCase().includes(query))
-        .slice(0, 6)
+      if (!query) return COMMANDS.filter(command => command.featured)
+      return rankCommands(COMMANDS, query)
     },
     personalResults () {
       if (!this.loggedInUser) return []
       const user = this.loggedInUser
       const items = [
-        { path: '/compose', label: 'New post', description: 'Draft locally and publish', icon: 'edit_note' },
-        { path: '/@' + user + '/wallet', label: 'My wallet', description: 'Balances and transactions', icon: 'account_balance_wallet' },
-        { path: '/@' + user, label: 'My profile', description: 'Account overview', icon: 'person' }
-      ]
+        { path: '/compose', label: 'New post', description: 'Draft locally and publish', icon: 'edit_note', keywords: 'write create compose' },
+        { path: '/@' + user, label: 'My profile', description: 'Account overview', icon: 'person', keywords: 'me account profile' },
+        { path: '/@' + user + '/wallet', label: 'My wallet', description: 'Balances and transactions', icon: 'account_balance_wallet', keywords: 'wallet balances transfers' },
+        { path: '/@' + user + '/blog', label: 'My blog', description: 'Posts and reblogs', icon: 'menu_book', keywords: 'blog posts' },
+        { path: '/@' + user + '/feed', label: 'My feed', description: 'Posts from accounts I follow', icon: 'rss_feed', keywords: 'feed following timeline' },
+        { path: '/@' + user + '/replies', label: 'My replies', description: 'Recent replies I published', icon: 'reply', keywords: 'replies comments' },
+        { path: '/settings/blog', label: 'Blog settings', description: 'Claim or customise my reading page', icon: 'web', keywords: 'blog settings claim domain' },
+        { path: '/settings/blog/vault', label: 'Vault dashboard', description: 'Membership payments, grants and reader keys', icon: 'lock', keywords: 'vault memberships payments grants creator' },
+        { path: '/orders', label: 'My orders', description: 'Purchases, sales and subscriptions', icon: 'history', keywords: 'orders purchases sales receipts' },
+        { path: '/subscriptions', label: 'My subscriptions', description: 'Blog memberships and recurring HBD payments', icon: 'autorenew', keywords: 'subscriptions memberships recurring vault' }
+      ].map(item => ({ ...item, category: 'You' }))
       const query = this.query.trim().toLowerCase()
       if (!query) return items
-      return items.filter(item => (item.label + ' ' + item.description).toLowerCase().includes(query))
+      return rankCommands(items, query)
+    },
+    actionResults () {
+      const items = [
+        { id: 'action-settings', label: 'Open settings', description: 'Theme, voting, images, network and SmartLock', icon: 'settings', keywords: 'settings preferences options config', action: 'settings' },
+        { id: 'action-toggle-theme', label: 'Toggle light and dark theme', description: 'Switch the site between light and dark', icon: 'contrast', keywords: 'toggle switch theme dark light mode night day appearance', action: 'toggle-theme' },
+        { id: 'action-copy-link', label: 'Copy link to this page', description: 'Put the current URL on your clipboard', icon: 'link', keywords: 'copy share link url clipboard current page', action: 'copy-link' },
+        { id: 'action-shortcuts', label: 'Keyboard shortcuts', description: 'Show every keyboard shortcut', icon: 'keyboard', keywords: 'keyboard shortcuts keys help', action: 'shortcuts' }
+      ]
+      if (!this.loggedInUser) {
+        items.unshift({ id: 'action-sign-in', label: 'Sign in', description: 'Keychain, HiveAuth or SmartLock', icon: 'login', keywords: 'sign in login keychain hiveauth smartlock account', action: 'sign-in' })
+      }
+      const enriched = items.map(item => ({ ...item, category: 'Actions' }))
+      const query = this.query.trim().toLowerCase()
+      if (!query) return enriched
+      return rankCommands(enriched, query)
     },
     searchQuery () {
       return this.query.trim().length >= 2
+    },
+    /**
+     * When the query clearly names a page, show page results above the
+     * account/tag jumps. Explicit `@account`, `#tag`, block and URL queries
+     * still lead with their direct jump.
+     */
+    commandsFirst () {
+      const query = this.query.trim().toLowerCase()
+      if (!query || /^[@#]|^\d|^https?:\/\/|^(?:proposal|tx|block)\s/.test(query)) return false
+      return this.commandResults.length > 0 || this.actionResults.length > 0
     },
     groups () {
       const used = new Set()
@@ -413,18 +538,46 @@ export default {
       const addGroup = (label, items) => {
         const filtered = []
         for (const item of items) {
-          if (!item || used.has(item.path)) continue
-          used.add(item.path)
+          if (!item) continue
+          const key = item.id || item.path
+          if (!key || used.has(key)) continue
+          used.add(key)
           filtered.push({ ...item, index: index++ })
         }
         return filtered.length ? { label, items: filtered } : null
       }
 
-      return [
-        addGroup('Jump to', this.dynamicResults),
-        addGroup('Recent', this.query.trim() ? [] : this.recent),
-        addGroup('Commands', [...this.personalResults, ...this.commandResults])
-      ].filter(Boolean)
+      const commandGroups = new Map()
+      const commandItems = [...this.personalResults, ...this.commandResults, ...this.actionResults]
+      for (const item of commandItems) {
+        const category = item.category || 'Commands'
+        if (!commandGroups.has(category)) commandGroups.set(category, [])
+        commandGroups.get(category).push(item)
+      }
+      const query = this.query.trim().toLowerCase()
+      let orderedCategories
+      if (this.commandsFirst) {
+        for (const items of commandGroups.values()) {
+          items.sort((a, b) => commandScore(a, query) - commandScore(b, query))
+        }
+        orderedCategories = [...commandGroups.keys()].sort((a, b) =>
+          commandScore(commandGroups.get(a)[0], query) - commandScore(commandGroups.get(b)[0], query)
+        )
+      } else {
+        orderedCategories = [
+          ...CATEGORY_ORDER.filter(category => commandGroups.has(category)),
+          ...[...commandGroups.keys()].filter(category => !CATEGORY_ORDER.includes(category))
+        ]
+      }
+      const pageGroups = orderedCategories
+        .map(category => addGroup(category, commandGroups.get(category)))
+        .filter(Boolean)
+      const jumpGroup = addGroup('Jump to', this.dynamicResults)
+      const recentGroup = addGroup('Recent', this.query.trim() ? [] : this.recent)
+
+      return this.commandsFirst
+        ? [...pageGroups, jumpGroup, recentGroup].filter(Boolean)
+        : [jumpGroup, recentGroup, ...pageGroups].filter(Boolean)
     },
     flatResults () {
       return this.groups.flatMap(group => group.items)
@@ -526,9 +679,38 @@ export default {
     },
     select (result) {
       this.open = false
-      this.saveRecent(result)
       this.query = ''
+      if (result.action) {
+        this.runAction(result.action)
+        return
+      }
+      this.saveRecent(result)
       this.$router.push(result.path).catch(() => {})
+    },
+    runAction (action) {
+      if (action === 'toggle-theme') {
+        this.$appearance.setTheme(this.$appearance.isDark ? 'hive-light' : 'hive-dark')
+        return
+      }
+      if (action === 'settings') {
+        window.dispatchEvent(new CustomEvent('hive:open-settings'))
+        return
+      }
+      if (action === 'shortcuts') {
+        window.dispatchEvent(new CustomEvent('hive:open-shortcuts'))
+        return
+      }
+      if (action === 'copy-link') {
+        const url = window.location.href
+        const done = () => this.$q.notify({ type: 'positive', message: 'Page link copied', position: 'top' })
+        const fail = () => this.$q.notify({ type: 'negative', message: 'Could not copy the link', position: 'top' })
+        if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, fail)
+        else fail()
+        return
+      }
+      if (action === 'sign-in') {
+        window.dispatchEvent(new CustomEvent('banksia:open-login'))
+      }
     },
     openFullSearch () {
       const text = this.query.trim()
