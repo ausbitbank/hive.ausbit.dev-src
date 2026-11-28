@@ -22,7 +22,8 @@ Shipped:
   priced with the post reward fund and median feed; the exact signed weight stays visible.
   Vote history stores only the weight, so historical stake/mana cannot be replayed exactly
   and the estimate is labelled as current-stake, not a historical promise.
-- Filters for time range and relationship; grouping by voter, target or day.
+- Filters for time range, relationship, voter, target, impact state and local
+  notes; grouping by voter, target or day.
 - Conservative “Possible coordinated downvotes” evidence: voter count, shared
   targets, time window and pairwise target overlap. Always qualified as
   possible and never used to hide or punish.
@@ -32,6 +33,25 @@ Shipped:
   total; “Load all older” keeps going until the filtered history is exhausted,
   with a Stop control. The progress line shows operations scanned and downvotes
   found.
+- **Exact financial impact** where the target post is readable: `get_content`
+  provides the voter's `active_votes.rshares`, `net_rshares`, the post's own HBD
+  payout and cashout time. The downvote's share of the payout is
+  `|rshares| / net_rshares`; votes cast after cashout are labelled as signals
+  with no payout impact. Rows without a target post fall back to the
+  current-stake estimate and say so.
+- Finalized vs pending loss, the approximate author/curator split, post-payout
+  signal counts, exact-row coverage and a same-period author-reward comparison.
+- **Timing**: daily count/impact bars, cumulative loss line, post-age-at-vote
+  buckets, UTC-hour histogram and same-target/same-voter burst detection.
+- **Patterns**: repeat targeting, vote changes, weight escalation, new accounts
+  and after-payout signal votes, in addition to the conservative coordination
+  card.
+- **Context drawer**: comments by the downvoter in the target discussion, the
+  author's replies, and comments the voter left on the author's other posts near
+  the vote. Excerpts show before/after timing and keyword hits; comments are
+  labelled as context, not proof.
+- **Private notes and tags** per row, stored on this device, plus CSV and
+  Markdown report exports.
 - Post vote dialog now shows distinct up/down voters, top stake share and net
   direction; if the post payload has no `active_votes`, it fetches
   `condenser_api.get_active_votes`.
@@ -48,6 +68,15 @@ Shipped:
   page or the oldest index. Duplicate history indices are dropped and each page
   is sorted newest-first before it is appended.
 - A cursor that does not move backwards stops the loader instead of looping.
+- `condenser_api.get_content` for target posts, cached per author/permlink.
+  Target hydration is bounded (four concurrent reads, 500 posts per pass) and
+  the page reports exact coverage and failures. The visible page is hydrated
+  automatically; larger filtered sets use “Calculate exact impact”.
+- `bridge.get_discussion` and `bridge.get_account_posts` (comments) are lazy
+  reads used only when the context drawer opens. Both are cached for five
+  minutes.
+- `fetchAccountRewardHistory` supplies the same-period author/curation reward
+  comparison, labelled as a sample when the page budget is reached.
 - `condenser_api.get_active_votes` for current per-post rshares/percent.
 - Cached for 5 minutes per history cursor (`fetchAccountVoteHistoryPage`,
   `fetchActiveVotes`); the filter bitmask and 1,000-row page size are enforced
@@ -69,14 +98,21 @@ is taken from the label.
 
 ## UI
 
-- Semantic table with a caption; real buttons for ignore/unignore; all actions
-  keyboard-operable.
+- Semantic table with a caption; real buttons for ignore/unignore and Context;
+  all actions keyboard-operable.
 - Empty, loading and error states; raw summary stays visible when local
   exclusion hides rows.
+- Financial impact, timing, patterns and top voters/targets panels above the
+  filter bar; each panel respects the active filters.
 - Pattern evidence is an advisory card with “not a verdict”.
 - Grouping is a separate aggregate view; the flat table remains for review.
 - The flat table shows 40 matching rows at a time; “Show more rows” expands
   the loaded page without another chain read.
+- The context drawer shows comment excerpts, before/after timing, keyword hits,
+  the voter's recent downvote targeting share on demand, and a private note
+  editor. Notes are local-only and included in exports.
+- Markdown reports copy to the clipboard; CSV exports the filtered rows with
+  impact provenance, notes and tags.
 - The post vote dialog context is a compact line; existing top-voter/full-data
   tabs are unchanged.
 
@@ -95,12 +131,26 @@ is taken from the label.
   relationships and ignored-voter filtering.
 - `tests/unit/account-downvotes.spec.js` — cursor pagination, terminal pages,
   filtered-gap retry, malformed responses, active votes.
+- `tests/unit/downvote-impact.spec.js` — exact payout share, paid/pending
+  states, post-payout signals, superseded/offset/inactive votes, timeline, post
+  age, hour buckets, bursts, repeat targeting, vote changes, weight escalation,
+  new accounts and the reward comparison.
+- `tests/unit/downvote-context.spec.js` — markdown excerpts, keyword hits,
+  target-thread comments, author replies, voter comments on other posts and
+  de-duplicated merged context.
+- `tests/unit/downvote-sources.spec.js` — bounded target hydration, failures,
+  malformed discussions, voter comment feeds and recent-vote aggregation.
+- `tests/unit/downvote-notes.spec.js` — local save/read/remove, scope isolation,
+  note/tag caps.
+- `tests/unit/downvote-report.spec.js` — CSV provenance/notes, Markdown case
+  file and filename.
 - `tests/unit/vote-breakdown.spec.js` — existing votes dialog still green.
-- `e2e/moderation.spec.js` — downvotes tab with mocked history: 9 rows, evidence
-  card, ignore voter removes rows locally, summary stays at 9, Show ignored
-  restores them; a second test loads three full pages, expands the table and
-  then loads the final older page without a cap.
-- Axe: `/@ausbitbank/downvotes` at 1440×900 and 390×844.
+- `e2e/moderation.spec.js` — downvotes tab with mocked posts and discussion:
+  exact $9.00 impact, 100% exact badge, context drawer, local note, evidence
+  card and ignore-voter local exclusion; a second test loads three full pages,
+  expands the table and then loads the final older page without a cap.
+- Axe: `/@ausbitbank/downvotes` at 1440×900 and 390×844, plus the open context
+  drawer.
 
 ## Verification
 
@@ -113,6 +163,17 @@ is taken from the label.
 | `e2e/moderation.spec.js` | 9/9 green |
 | axe `/settings/moderation`, `/@ausbitbank/downvotes` | green at both widths |
 | vote E2E | 3/3 green |
+
+### Deep-dive follow-up (2026-11-29)
+
+| Check | Result |
+| --- | --- |
+| `bun run lint` | clean |
+| `bun run test` | 258 files, 2450 tests, all green |
+| `bun run build` | green |
+| `e2e/moderation.spec.js` downvotes | 2/2 green |
+| Axe `/@ausbitbank/downvotes` and the open context drawer | clean |
+| Live smoke `@hive3/downvotes` | exact hydration, reward comparison and context drawer rendered with no page errors |
 
 ## Deployment
 

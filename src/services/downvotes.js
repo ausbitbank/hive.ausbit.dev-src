@@ -143,14 +143,19 @@ export function groupDownvotes (rows, by = 'voter') {
         ? String(row.timestamp || '').slice(0, 10)
         : row.voter
     if (!map.has(key)) {
-      map.set(key, { key, rows: [], voters: new Set(), targets: new Set(), totalWeight: 0, totalValueUsd: 0, totalRshares: 0, latest: 0 })
+      map.set(key, { key, rows: [], voters: new Set(), targets: new Set(), totalWeight: 0, totalValueUsd: 0, totalRshares: 0, exactCount: 0, effectiveCount: 0, latest: 0 })
     }
     const group = map.get(key)
     group.rows.push(row)
     group.voters.add(row.voter)
     group.targets.add(row.target || row.author + '/' + row.permlink)
     group.totalWeight += Math.abs(Number(row.weight) || 0)
-    group.totalValueUsd += Math.abs(Number(row.valueUsd) || 0)
+    const value = row.effective === false ? 0 : Math.abs(Number(row.impactUsd ?? row.valueUsd) || 0)
+    group.totalValueUsd += value
+    if (row.effective !== false) {
+      group.effectiveCount += 1
+      if (row.impactConfidence === 'exact') group.exactCount += 1
+    }
     group.totalRshares += Math.abs(Number(row.valueRshares) || 0)
     group.latest = Math.max(group.latest, Number(row.time) || timestamp(row.timestamp))
   }
@@ -163,6 +168,8 @@ export function groupDownvotes (rows, by = 'voter') {
       totalWeight: group.totalWeight,
       totalValueUsd: group.totalValueUsd,
       totalRshares: group.totalRshares,
+      exactCount: group.exactCount,
+      effectiveCount: group.effectiveCount,
       latest: group.latest,
       rows: group.rows
     }))

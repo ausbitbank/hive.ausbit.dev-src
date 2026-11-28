@@ -93,6 +93,9 @@ async function mockChain (page, {
   following = [],
   rankedPosts = null,
   voteHistory = null,
+  downvotePosts = null,
+  downvoteDiscussion = null,
+  voterComments = null,
   accountOverride = null,
   listCounts = null,
   safetyFloorNames = null,
@@ -163,6 +166,32 @@ async function mockChain (page, {
             id: 1,
             result: { base: '0.500 HBD', quote: '1.000 HIVE' }
           })
+        })
+      }
+
+      if (payload.method === 'condenser_api.get_content' && voteHistory) {
+        const [author, permlink] = Array.isArray(params) ? params : []
+        const post = downvotePosts?.[String(author) + '/' + String(permlink)] || null
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: post })
+        })
+      }
+
+      if (payload.method === 'bridge.get_discussion' && voteHistory) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: downvoteDiscussion || {} })
+        })
+      }
+
+      if (payload.method === 'bridge.get_account_posts' && voteHistory) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, result: voterComments || [] })
         })
       }
 
@@ -603,8 +632,48 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
       }
     ])
   )
+  const targetPost = permlink => ({
+    author: 'ausbitbank',
+    permlink,
+    created: '2026-11-27T00:00:00',
+    cashout_time: '2026-12-04T00:00:00',
+    pending_payout_value: '10.000 HBD',
+    total_payout_value: '0.000 HBD',
+    curator_payout_value: '0.000 HBD',
+    net_rshares: 1000,
+    beneficiaries: [],
+    active_votes: [
+      { voter: 'bob', rshares: -100 },
+      { voter: 'carol', rshares: -100 },
+      { voter: 'dave', rshares: -100 }
+    ]
+  })
+  const downvotePosts = Object.fromEntries(
+    ['one', 'two', 'three'].map(permlink => ['ausbitbank/' + permlink, targetPost(permlink)])
+  )
+  const downvoteDiscussion = {
+    'ausbitbank/one': {
+      author: 'ausbitbank',
+      permlink: 'one',
+      depth: 0,
+      replies: ['bob/reason']
+    },
+    'bob/reason': {
+      author: 'bob',
+      permlink: 'reason',
+      parent_author: 'ausbitbank',
+      parent_permlink: 'one',
+      depth: 1,
+      created: now,
+      body: 'I downvoted because this looks like spam.',
+      replies: []
+    }
+  }
   await mockChain(page, {
     voteHistory: rows,
+    downvotePosts,
+    downvoteDiscussion,
+    voterComments: [],
     accountOverride: {
       reputation: 60,
       posting_json_metadata: '{}',
@@ -622,10 +691,24 @@ test('downvotes tab shows voter evidence and local voter exclusion', async ({ pa
   await waitForApp(page)
   await expect(page.getByRole('heading', { level: 1, name: '@ausbitbank downvotes' })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('.dv-summary')).toContainText('9')
-  await expect(page.locator('.dv-summary')).toContainText('≈ $0.45')
+  await expect(page.locator('.dv-summary')).toContainText('$9.00')
+  await expect(page.locator('.dv-summary')).toContainText('9 exact of 9')
+  await expect(page.getByText('100% exact')).toBeVisible()
   await expect(page.locator('.dv-evidence')).toContainText('Possible coordinated downvotes')
   await expect(page.locator('.dv-table tbody tr')).toHaveCount(9)
-  await expect(page.getByRole('columnheader', { name: 'Value' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Impact' })).toBeVisible()
+  await expect(page.locator('.dv-impact--exact').first()).toContainText('$1.00')
+
+  const contextRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).filter({ hasText: 'ausbitbank/one' }).first()
+  await contextRow.getByRole('button', { name: 'Context' }).click()
+  const contextDialog = page.locator('.dv-context')
+  await expect(contextDialog).toContainText('Voter comments on this post')
+  await expect(contextDialog).toContainText('because this looks like spam')
+  expect(await runAxe(page)).toEqual([])
+  await contextDialog.locator('textarea').fill('No answer yet')
+  await contextDialog.getByRole('button', { name: 'Save note' }).click()
+  await contextDialog.getByRole('button', { name: 'Close vote context' }).click()
+  await expect(contextRow.locator('.dv-note-dot')).toBeVisible()
 
   const firstRow = page.locator('.dv-table tbody tr').filter({ hasText: '@bob' }).first()
   await firstRow.getByRole('button', { name: 'Ignore voter' }).click()
