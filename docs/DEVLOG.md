@@ -283,7 +283,7 @@ explicit and pushes both the commit and the tag.
 Raw images resolve from:
 
 ```
-https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/master/docs/screenshots/devlog/<slug>/
+https://raw.githubusercontent.com/ausbitbank/banksia.io/master/docs/screenshots/devlog/<slug>/
 ```
 
 They will 404 until the screenshot commit is pushed. If the frontend blocks

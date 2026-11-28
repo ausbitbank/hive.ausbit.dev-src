@@ -3,7 +3,7 @@
 Date: 2026-11-24
 Status: implemented, deployed and live-smoked.
 
-Issue: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/82>. Follows
+Issue: <https://github.com/ausbitbank/banksia.io/issues/82>. Follows
 [`W70-composer-editor-polish.md`](W70-composer-editor-polish.md), which deferred
 the autosave toggle until an unsaved-changes flow existed.
 

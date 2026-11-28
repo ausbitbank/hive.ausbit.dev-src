@@ -26,11 +26,11 @@ export const BRAND = Object.freeze({
   legacyThemeNamespace: 'hive.ausbit.dev',
   themeSchema: 'banksia.io/theme@1',
   legacyThemeSchema: 'hive.ausbit.dev/theme@1',
-  repo: 'ausbitbank/hive.ausbit.dev-src',
-  repoUrl: 'https://github.com/ausbitbank/hive.ausbit.dev-src',
-  sourceUrl: 'https://github.com/ausbitbank/hive.ausbit.dev-src',
-  issueUrl: 'https://github.com/ausbitbank/hive.ausbit.dev-src/issues',
-  securityUrl: 'https://github.com/ausbitbank/hive.ausbit.dev-src/security/advisories/new'
+  repo: 'ausbitbank/banksia.io',
+  repoUrl: 'https://github.com/ausbitbank/banksia.io',
+  sourceUrl: 'https://github.com/ausbitbank/banksia.io',
+  issueUrl: 'https://github.com/ausbitbank/banksia.io/issues',
+  securityUrl: 'https://github.com/ausbitbank/banksia.io/security/advisories/new'
 })
 
 export const SITE_NAME = BRAND.name

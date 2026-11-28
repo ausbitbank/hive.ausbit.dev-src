@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for the report. Please remove account names, keys and other
         private data from screenshots and logs. Security issues belong in the
-        private process described in [SECURITY.md](https://github.com/ausbitbank/hive.ausbit.dev-src/blob/master/SECURITY.md), not here.
+        private process described in [SECURITY.md](https://github.com/ausbitbank/banksia.io/blob/master/SECURITY.md), not here.
   - type: textarea
     id: summary
     attributes:

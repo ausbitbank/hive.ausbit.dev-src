@@ -10,7 +10,7 @@ The `master` branch is the supported version. Production deploys from it to
 **Do not open a public issue for a security problem.**
 
 Report it privately through GitHub's
-[security advisory form](https://github.com/ausbitbank/hive.ausbit.dev-src/security/advisories/new)
+[security advisory form](https://github.com/ausbitbank/banksia.io/security/advisories/new)
 or email **ausbitbank@gmail.com** with:
 
 - A description of the issue and its impact.

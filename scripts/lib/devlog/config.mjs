@@ -1,4 +1,4 @@
-export const REPO = 'ausbitbank/hive.ausbit.dev-src'
+export const REPO = 'ausbitbank/banksia.io'
 export const BRANCH = 'master'
 export const OWNER = 'ausbitbank'
 export const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/${BRANCH}`

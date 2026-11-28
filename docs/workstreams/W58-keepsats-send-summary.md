@@ -2,7 +2,7 @@
 
 Date: 2026-11-22
 Status: complete — built and unit/E2E verified
-Issue: [#87](https://github.com/ausbitbank/hive.ausbit.dev-src/issues/87)
+Issue: [#87](https://github.com/ausbitbank/banksia.io/issues/87)
 
 ## Scope
 

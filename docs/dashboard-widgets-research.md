@@ -820,7 +820,7 @@ Quality bar:
   - Hive blog, Resource Credits overview:
     <https://hive.blog/wiki/@propolis.eng/resource-credits>
   - GitHub issue #86 (KE ratio investigation):
-    <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/86>
+    <https://github.com/ausbitbank/banksia.io/issues/86>
   - @cryptoreforma comment requesting the KE ratio:
     <https://peakd.com/hive-139531/@cryptoreforma/re-ausbitbank-tossno>
   - @techcoderx, "Thoughts on krampus ratio, stake shaming and accountability":

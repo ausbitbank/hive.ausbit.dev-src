@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://banksia.io"><img alt="Live site" src="https://img.shields.io/badge/live-banksia.io-E31337?style=flat-square"></a>
-  <a href="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/ausbitbank/hive.ausbit.dev-src/actions/workflows/ci.yml/badge.svg?branch=master"></a>
+  <a href="https://github.com/ausbitbank/banksia.io/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/ausbitbank/banksia.io/actions/workflows/ci.yml/badge.svg?branch=master"></a>
   <a href="LICENSE"><img alt="License: Unlicense" src="https://img.shields.io/badge/license-Unlicense-blue?style=flat-square"></a>
   <a href="https://hive.io"><img alt="Hive" src="https://img.shields.io/badge/chain-Hive-E31349?style=flat-square"></a>
   <a href="https://vuejs.org"><img alt="Vue 3" src="https://img.shields.io/badge/Vue-3-42B883?style=flat-square"></a>

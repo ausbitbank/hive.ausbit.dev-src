@@ -2,7 +2,7 @@
 
 Date: 2026-11-24
 Status: complete — all Phase 0–3 items implemented, deployed and live-smoked
-Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
+Epic: <https://github.com/ausbitbank/banksia.io/issues/93>
 Research: [`docs/dashboard-widgets-research.md`](../dashboard-widgets-research.md)
 
 ## Goal

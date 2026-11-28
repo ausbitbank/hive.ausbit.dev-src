@@ -168,7 +168,7 @@
         <div class="site-footer__meta">
           <a href="https://hive.io" target="_blank" rel="noopener noreferrer">Powered by Hive</a>
           <span aria-hidden="true">·</span>
-          <a href="https://github.com/ausbitbank/hive.ausbit.dev-src" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+          <a href="https://github.com/ausbitbank/banksia.io" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
         </div>
       </footer>
     </q-page-container>
@@ -772,9 +772,9 @@ export default {
         },
         {
           title: 'Site Source',
-          caption: 'github.com/ausbitbank/hive.ausbit.dev-src',
+          caption: 'github.com/ausbitbank/banksia.io',
           icon: 'code',
-          link: 'https://github.com/ausbitbank/hive.ausbit.dev-src'
+          link: 'https://github.com/ausbitbank/banksia.io'
         },
         {
           title: 'Hive Discord',

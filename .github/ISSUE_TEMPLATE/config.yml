@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
-    url: https://github.com/ausbitbank/hive.ausbit.dev-src/security/advisories/new
+    url: https://github.com/ausbitbank/banksia.io/security/advisories/new
     about: Report security issues privately. Do not open a public issue.
   - name: Questions and general discussion
-    url: https://github.com/ausbitbank/hive.ausbit.dev-src/discussions
+    url: https://github.com/ausbitbank/banksia.io/discussions
     about: Ask questions, share feedback or discuss ideas with the community.
   - name: Live site
     url: https://banksia.io

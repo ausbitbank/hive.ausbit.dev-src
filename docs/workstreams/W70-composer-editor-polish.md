@@ -2,7 +2,7 @@
 
 Date: 2026-11-23
 Status: deployed and live-smoked
-Issue: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/82>
+Issue: <https://github.com/ausbitbank/banksia.io/issues/82>
 
 ## Scope
 

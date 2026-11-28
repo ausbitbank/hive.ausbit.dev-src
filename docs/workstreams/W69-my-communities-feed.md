@@ -2,7 +2,7 @@
 
 Date: 2026-11-23
 Status: deployed and live-smoked
-Epic: <https://github.com/ausbitbank/hive.ausbit.dev-src/issues/93>
+Epic: <https://github.com/ausbitbank/banksia.io/issues/93>
 Builds on: W65 dashboard widget expansion, W62 public community browser
 
 ## Goal

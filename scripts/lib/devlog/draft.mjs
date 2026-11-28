@@ -184,7 +184,7 @@ export function draft (args) {
   lines.push('')
   lines.push('<!-- DEVLOG: List 3–4 concrete next steps. Do not promise dates. -->')
   lines.push('')
-  lines.push('The code is open source at [github.com/ausbitbank/hive.ausbit.dev-src](https://github.com/ausbitbank/hive.ausbit.dev-src). If something looks wrong or a feature would make the site more useful, open an issue or reply here.')
+  lines.push('The code is open source at [github.com/ausbitbank/banksia.io](https://github.com/ausbitbank/banksia.io). If something looks wrong or a feature would make the site more useful, open an issue or reply here.')
   lines.push('')
   writeText(out, lines.join('\n'))
 

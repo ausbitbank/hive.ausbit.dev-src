@@ -97,7 +97,7 @@ describe('proxied image URLs', () => {
   })
 
   it('loads GitHub raw sources directly because the Hive host cannot fetch them', () => {
-    const source = 'https://raw.githubusercontent.com/ausbitbank/hive.ausbit.dev-src/master/docs/screenshots/devlog/2026-11-27-devlog/01-about-mark.png'
+    const source = 'https://raw.githubusercontent.com/ausbitbank/banksia.io/master/docs/screenshots/devlog/2026-11-27-devlog/01-about-mark.png'
     expect(rewriteProxiedImageUrl(proxied(source), 'hive')).toBe(source)
     expect(rewriteProxiedImageUrl(proxied(source), 'ecency')).toContain('https://i.ecency.com/p/')
   })

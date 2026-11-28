@@ -8,10 +8,10 @@
   "homepage": "https://banksia.io",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ausbitbank/hive.ausbit.dev-src.git"
+    "url": "git+https://github.com/ausbitbank/banksia.io.git"
   },
   "bugs": {
-    "url": "https://github.com/ausbitbank/hive.ausbit.dev-src/issues"
+    "url": "https://github.com/ausbitbank/banksia.io/issues"
   },
   "keywords": [
     "hive",
