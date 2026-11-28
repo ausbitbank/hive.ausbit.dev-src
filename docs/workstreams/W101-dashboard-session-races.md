@@ -88,6 +88,10 @@ signing-session footguns.
 - `bun run test` — **235 files / 2,277 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright for search, dashboard, core login and action flows.
+- Full Chromium suite: **205/207**. The wallet-transfer timeout passed on an
+  isolated rerun (live-data timing), and the blocked-skin axe failure was the
+  amber v4vapp operation badge fixed in W97 and reverified axe-clean at
+  1440×900 and 390×844.
 
 ## Remaining
 
