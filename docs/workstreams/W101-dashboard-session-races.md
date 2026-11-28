@@ -85,7 +85,7 @@ signing-session footguns.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **234 files / 2,275 tests** passing.
+- `bun run test` — **235 files / 2,277 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright for search, dashboard, core login and action flows.
 

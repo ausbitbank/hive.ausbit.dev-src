@@ -351,6 +351,7 @@ export default {
     },
     includeHiveEngine (value) {
       if (value && this.accountName) this.loadHiveEngine(this.accountName)
+      else if (!value) this.heLoading = false
     },
     includeMagi (value) {
       if (value && this.accountName) {
@@ -361,6 +362,7 @@ export default {
         this.magiTokenPrices = {}
         this.magiTokensError = ''
         this.magiPricesError = ''
+        this.magiLoading = false
       }
     }
   },
@@ -422,7 +424,7 @@ export default {
           fetchMagiTokens(name),
           fetchMagiTokenPrices()
         ])
-        if (this.targetAccount !== account) return
+        if (this.targetAccount !== account || !this.includeMagi) return
 
         if (accountResult.status === 'fulfilled') {
           this.magi = accountResult.value?.balances || null
@@ -463,7 +465,7 @@ export default {
       this.heError = ''
       try {
         const result = await fetchHiveEnginePortfolio(name)
-        if (this.targetAccount !== account) return
+        if (this.targetAccount !== account || !this.includeHiveEngine) return
         this.heTokens = result.tokens
         this.heTotalHive = result.totalHive
         const hive = price(this.prices, 'hive')

@@ -1285,6 +1285,7 @@ export default {
     totalCount () {
       const result = this.result
       if (!result) return 0
+      if (this.filters.type !== 'all') return result[this.filters.type]?.items?.length || 0
       return ['accounts', 'posts', 'tags', 'communities', 'blocks', 'transactions', 'proposals', 'witnesses']
         .reduce((total, key) => total + (result[key]?.items?.length || 0), 0)
     },

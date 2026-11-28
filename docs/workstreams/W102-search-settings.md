@@ -52,7 +52,7 @@ the URL. Settings also accepted arbitrary API-node strings.
 ## Verification
 
 - `bun run lint` — clean.
-- `bun run test` — **234 files / 2,275 tests** passing.
+- `bun run test` — **235 files / 2,277 tests** passing.
 - `bun run build` — succeeded.
 - Targeted Playwright `e2e/search.spec.js` plus the dashboard/core/action smoke.
 
