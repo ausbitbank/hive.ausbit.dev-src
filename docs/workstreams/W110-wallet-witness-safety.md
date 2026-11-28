@@ -90,6 +90,12 @@ follow-ups.
 22. **Queued authority previews are real changes only.** Metadata-only
     `account_update2` items and sent/failed items no longer appear as pending
     permission changes.
+23. **Hive-Engine orders are balance-checked.** Buy/sell buttons require a
+    positive price/quantity, a funded buy total and a sell quantity within the
+    token balance; a 1.5 s guard prevents a double-click queueing two identical
+    orders.
+24. **Reward claims cannot double-queue.** The claim button is disabled while
+    its posting-key item is being queued, then re-enables for a later claim.
 
 ## Components
 
@@ -123,8 +129,9 @@ follow-ups.
 - Full Chromium suite: **213 passed**; four checks hit a missing `dist` while a
   concurrent session rebuilt the shared worktree and all four passed on isolated
   rerun.
-- `bun run perf:check` passed in an isolated worktree (the shared worktree's
-  uncommitted Vault changes push the same routes slightly over budget).
+- `bun run perf:check` passed in an isolated worktree after raising the Home
+  JS budget by 1 KB (334 → 335) for the shared amount/request/HE validation
+  helpers; every other route budget is unchanged.
 - Axe clean for `/witnesses`, `/proposals` and `/@ausbitbank` at 1440×900 and
   390×844.
 
@@ -136,8 +143,6 @@ follow-ups.
   but removed to stay inside the Home JS budget.
 - The delegation slider still uses `vesting_shares - delegated_vesting_shares`;
   it does not subtract an active powerdown or cap by voting mana.
-- Hive-Engine order forms still have no client-side balance cap or submit guard;
-  the chain rejects unfunded/duplicate orders.
 - The HBD interest claim still queues the deposit and cancel as two separate
   active items; both are confirmed but not atomic.
 - Authority add/remove still uses Keychain's dedicated requests rather than the

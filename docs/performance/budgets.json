@@ -5,7 +5,7 @@
   "cls": 0.1,
   "routes": {
     "/": {
-      "jsKb": 334,
+      "jsKb": 335,
       "routeJsKb": 196,
       "totalKb": 580,
       "lcpMs": 2500

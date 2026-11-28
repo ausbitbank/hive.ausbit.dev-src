@@ -50,3 +50,19 @@ export function hiveEngineOperation (account, contractName, contractAction, cont
     json: hiveEngineJson(contractName, contractAction, contractPayload)
   }]
 }
+
+/** A sell quantity must be positive and no larger than the token balance. */
+export function isValidOrderQuantity (quantity, balance) {
+  const qty = Number(quantity)
+  const max = Number(balance)
+  return Number.isFinite(qty) && qty > 0 && Number.isFinite(max) && qty <= max + 1e-9
+}
+
+/** A buy total (`price × quantity`) must be positive and funded. */
+export function isValidOrderTotal (price, quantity, balance) {
+  const unit = Number(price)
+  const qty = Number(quantity)
+  const max = Number(balance)
+  if (!Number.isFinite(unit) || unit <= 0 || !Number.isFinite(qty) || qty <= 0) return false
+  return Number.isFinite(max) && unit * qty <= max + 1e-9
+}

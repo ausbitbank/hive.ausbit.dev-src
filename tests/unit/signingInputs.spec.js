@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   hiveEngineJson,
   hiveEngineOperation,
+  isValidOrderQuantity,
+  isValidOrderTotal,
   nextRequestId,
   parseAssetAmount
 } from '../../src/services/signingInputs'
@@ -39,6 +41,18 @@ describe('signing request ids', () => {
       expect(id).toBeLessThan(2 ** 32)
     }
     expect(new Set(ids).size).toBe(3)
+  })
+})
+
+describe('Hive-Engine order guards', () => {
+  it('caps sell quantity and buy total at the available balance', () => {
+    expect(isValidOrderQuantity(5, 5)).toBe(true)
+    expect(isValidOrderQuantity(5.001, 5)).toBe(false)
+    expect(isValidOrderQuantity(0, 5)).toBe(false)
+    expect(isValidOrderTotal(0.5, 10, 5)).toBe(true)
+    expect(isValidOrderTotal(0.5, 10.1, 5)).toBe(false)
+    expect(isValidOrderTotal(0, 10, 5)).toBe(false)
+    expect(isValidOrderTotal(0.5, 10, null)).toBe(false)
   })
 })
 

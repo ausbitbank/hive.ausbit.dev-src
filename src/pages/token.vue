@@ -129,13 +129,13 @@
             <q-input label="Price" v-model.number="tradeForm.buy.price" type="number"/>
             <q-input label="Quantity" v-model.number="tradeForm.buy.quantity" type="number"/>
             <q-input label="Total" readonly v-model="buyTotal" />
-            <q-btn flat color="green" icon="trending_up" @click="tradeHiveEngine(token, 'buy', tradeForm.buy.quantity, tradeForm.buy.price)" :disable="swapHiveBalance === null || parseFloat(buyTotal) === 0">Buy {{ token }}</q-btn>
+            <q-btn flat color="green" icon="trending_up" @click="tradeHiveEngine(token, 'buy', tradeForm.buy.quantity, tradeForm.buy.price)" :disable="!buyValid">Buy {{ token }}</q-btn>
           </q-tab-panel>
           <q-tab-panel name="sell">
             <q-input label="Price" v-model.number="tradeForm.sell.price" type="number"/>
             <q-input label="Quantity" v-model.number="tradeForm.sell.quantity" type="number"/>
             <q-input label="Total" readonly v-model="sellTotal" />
-            <q-btn flat color="red" icon="trending_down" @click="tradeHiveEngine(token, 'sell', tradeForm.sell.quantity, tradeForm.sell.price)" :disable="tokenBalance === null || parseFloat(sellTotal) === 0">Sell {{ token }}</q-btn>
+            <q-btn flat color="red" icon="trending_down" @click="tradeHiveEngine(token, 'sell', tradeForm.sell.quantity, tradeForm.sell.price)" :disable="!sellValid">Sell {{ token }}</q-btn>
           </q-tab-panel>
         </q-tab-panels>
         <div class="text-center">
@@ -258,7 +258,7 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { getHiveEngine } from 'src/services/hiveEngine'
-import { hiveEngineOperation } from 'src/services/signingInputs'
+import { hiveEngineOperation, isValidOrderQuantity, isValidOrderTotal } from 'src/services/signingInputs'
 import { getHivePrices } from 'src/services/prices'
 import { safeExternalUrl } from 'src/utils/safeUrl'
 import { setPageMeta } from 'src/utils/pageMeta'
@@ -281,6 +281,7 @@ export default {
       sellBookLimit: 100,
       error: false,
       tradeTab: 'buy',
+      tradeQueued: false,
       tradeForm: {
         buy: {
           price: 0,
@@ -336,6 +337,19 @@ export default {
     myTrades: function () { return this.th.filter() },
     buyTotal: function () { return (this.tradeForm.buy.price * this.tradeForm.buy.quantity).toFixed(5) },
     sellTotal: function () { return (this.tradeForm.sell.price * this.tradeForm.sell.quantity).toFixed(5) },
+    buyValid: function () {
+      return !this.tradeQueued && isValidOrderTotal(
+        this.tradeForm.buy.price,
+        this.tradeForm.buy.quantity,
+        this.swapHiveBalance?.balance
+      )
+    },
+    sellValid: function () {
+      return !this.tradeQueued && isValidOrderQuantity(
+        this.tradeForm.sell.quantity,
+        this.tokenBalance?.balance
+      )
+    },
     sparkline: function () {
       if (this.th) {
         var sl = []; this.th.forEach(t => { sl.push(t.price) }); return sl.reverse()
@@ -430,6 +444,14 @@ export default {
       return moment.duration(diff, 'minutes').humanize(true)
     },
     tradeHiveEngine (token, type, quantity, price) {
+      if (this.tradeQueued) return
+      const balance = type === 'buy' ? this.swapHiveBalance?.balance : this.tokenBalance?.balance
+      const valid = type === 'buy'
+        ? isValidOrderTotal(price, quantity, balance)
+        : isValidOrderQuantity(quantity, balance)
+      if (!valid) return
+      this.tradeQueued = true
+      setTimeout(() => { this.tradeQueued = false }, 1500)
       const operation = hiveEngineOperation(this.username, 'market', type, {
         symbol: String(token),
         quantity: String(quantity),
