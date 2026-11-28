@@ -55,6 +55,20 @@ describe('account-scoped settings', () => {
     expect(storage.local.get(settingsStorageKey('alice'))).toEqual(alice)
   })
 
+  it('does not let a guest/boot read consume the legacy key', () => {
+    const legacy = { ...DEFAULT_SETTINGS, voteWeightPost: 77, beneficiary: [{ account: 'alice', weight: 10000 }] }
+    storage.local.set('settings', legacy)
+
+    expect(readSettingsFor('')).toEqual(DEFAULT_SETTINGS)
+    expect(storage.local.has('settings')).toBe(true)
+    expect(storage.local.has(settingsStorageKey('guest'))).toBe(false)
+
+    const alice = readSettingsFor('alice')
+    expect(alice.voteWeightPost).toBe(77)
+    expect(alice.beneficiary).toEqual([{ account: 'alice', weight: 10000 }])
+    expect(storage.local.has('settings')).toBe(false)
+  })
+
   it('writes settings under the signed-in account', () => {
     const ctx = context('alice')
     const settings = { ...DEFAULT_SETTINGS, voteWeightPost: 42 }

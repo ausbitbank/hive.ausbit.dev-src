@@ -85,13 +85,12 @@
             <span v-else>No notifications match this filter.</span>
           </div>
 
-          <q-list v-else separator role="menu" aria-label="Notifications">
+          <q-list v-else separator aria-label="Notifications">
             <q-item
               v-for="notification in filteredNotifications"
               :key="notification.id"
               clickable
               v-close-popup
-              role="menuitem"
               class="notification-row"
               @click="openNotification(notification)"
             >

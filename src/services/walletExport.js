@@ -14,6 +14,7 @@ import {
   walletTransactionDirection,
   walletTransactionOperation
 } from './wallet'
+import { csvCell } from '../utils/csv'
 
 export const WALLET_CSV_COLUMNS = [
   'timestamp',
@@ -32,8 +33,7 @@ export const WALLET_CSV_COLUMNS = [
 ]
 
 function escapeCell (value) {
-  const text = value === null || value === undefined ? '' : String(value)
-  return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text
+  return csvCell(value, { quote: false })
 }
 
 function transferCells (entry, username) {

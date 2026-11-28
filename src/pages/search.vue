@@ -35,6 +35,7 @@
         @keyup.enter="submit"
         @keydown.down.prevent="onInputArrow(1)"
         @keydown.up.prevent="onInputArrow(-1)"
+        @keydown.esc.prevent="onEscape"
       >
         <template #prepend>
           <q-icon name="search" aria-hidden="true" />
@@ -86,11 +87,13 @@
           </div>
         </section>
 
-        <section v-if="submittedQuery" class="search-status" aria-live="polite">
-          <template v-if="loading">Searching…</template>
-          <template v-else-if="totalCount">{{ totalCount }} {{ totalCount === 1 ? 'result' : 'results' }} for “{{ submittedQuery }}”</template>
-          <template v-else-if="hasErrors">Some results could not be loaded. Retry or narrow the query.</template>
-          <template v-else>No results for “{{ submittedQuery }}”. Try a shorter or differently spelled query.</template>
+        <section class="search-status" aria-live="polite" role="status">
+          <template v-if="submittedQuery">
+            <template v-if="loading">Searching…</template>
+            <template v-else-if="totalCount">{{ totalCount }} {{ totalCount === 1 ? 'result' : 'results' }} for “{{ submittedQuery }}”</template>
+            <template v-else-if="hasErrors">Some results could not be loaded. Retry or narrow the query.</template>
+            <template v-else>No results for “{{ submittedQuery }}”. Try a shorter or differently spelled query.</template>
+          </template>
         </section>
 
         <section v-if="lightningRoute" class="search-lightning home-card home-panel" aria-labelledby="search-lightning-title">
@@ -1047,6 +1050,7 @@ import {
 } from 'src/services/unifiedSearch'
 import {
   SAVED_SEARCH_LIMIT,
+  SAVED_SEARCH_STORAGE_KEY,
   addSavedSearch,
   defaultSavedSearches,
   importSavedSearches,
@@ -1106,14 +1110,14 @@ export default {
       return value.length > 78 ? value.slice(0, 54) + '…' + value.slice(-18) : value
     },
     canSave () {
-      return Boolean(String(this.query || '').trim() && this.$route.query.q)
+      return Boolean(String(this.submittedQuery || '').trim())
     },
     isSaved () {
       const url = this.currentUrl
       return this.savedSearches.some(item => item.url === url)
     },
     currentUrl () {
-      return this.buildUrl(this.query, this.filters)
+      return this.buildUrl(this.submittedQuery, this.filters)
     },
     hasFilters () {
       return hasActiveFilters(this.filters)
@@ -1327,15 +1331,22 @@ export default {
   },  mounted () {
     this.setMeta()
     window.addEventListener('hive:open-search', this.focusSearch)
+    window.addEventListener('storage', this.onStorage)
     if (!this.query.trim() && !this.$route.query.q) {
       this.$nextTick(() => this.$refs.qInput?.focus())
     }
   },
   beforeUnmount () {
     window.removeEventListener('hive:open-search', this.focusSearch)
+    window.removeEventListener('storage', this.onStorage)
   },
   methods: {
     formatHbd,
+    onStorage (event) {
+      if (!event || event.key === null || event.key === SAVED_SEARCH_STORAGE_KEY) {
+        this.savedSearches = readSavedSearches(window.localStorage)
+      }
+    },
     setMeta () {
       const text = this.submittedQuery
       setPageMeta({
@@ -1365,16 +1376,26 @@ export default {
       if (this.query.trim()) {
         this.submit({ fromRoute: true })
       } else {
+        // Clearing the box or navigating back to /search must also invalidate
+        // an in-flight read; otherwise its result repopulates the start page.
+        this.searchToken += 1
+        this.loading = false
         this.result = null
         this.submittedQuery = ''
+        this.activeKey = ''
+        this.updateTypeCounts()
         this.setMeta()
       }
     },
     async submit ({ fromRoute = false } = {}) {
       const text = this.query.trim()
       const expected = this.buildUrl(text, this.filters)
-      if (!fromRoute && expected !== this.$route.fullPath) {
-        this.$router.push(expected).catch(() => {})
+      // Compare resolved locations, not raw strings: URLSearchParams form-encodes
+      // commas, apostrophes and slashes differently from vue-router.
+      const target = this.$router.resolve(expected)
+      if (!fromRoute && target.fullPath !== this.$route.fullPath) {
+        this.searchToken += 1
+        this.$router.push(target.fullPath).catch(() => {})
         return
       }
       const token = ++this.searchToken
@@ -1496,8 +1517,28 @@ export default {
     },
     clearSearch () {
       this.query = ''
+      // Reset now rather than waiting for the route watcher: an in-flight read
+      // must not repaint the cleared page, and the empty route may equal the
+      // current one (so no watcher would fire).
+      this.searchToken += 1
+      this.loading = false
+      this.result = null
+      this.submittedQuery = ''
+      this.activeKey = ''
+      this.updateTypeCounts()
       const target = this.buildUrl('', this.filters)
       if (target !== this.$route.fullPath) this.$router.push(target).catch(() => {})
+    },
+    onEscape () {
+      if (this.activeKey) {
+        this.activeKey = ''
+        return
+      }
+      if (String(this.query || '').trim()) {
+        this.clearSearch()
+        return
+      }
+      this.$refs.qInput?.blur()
     },
     onInputArrow (step) {
       const rows = this.flatRows
@@ -1507,6 +1548,12 @@ export default {
       this.focusActive()
     },
     onGroupsKeydown (event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        this.activeKey = ''
+        this.$refs.qInput?.blur()
+        return
+      }
       if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
       const rows = this.flatRows
       if (!rows.length) return
@@ -1554,18 +1601,18 @@ export default {
         this.removeSavedSearch(url)
         return
       }
-      const label = (this.filters.type !== 'all' ? SEARCH_TYPE_LABELS[this.filters.type] + ': ' : '') + '“' + this.query.trim() + '”'
+      const label = (this.filters.type !== 'all' ? SEARCH_TYPE_LABELS[this.filters.type] + ': ' : '') + '“' + this.submittedQuery.trim() + '”'
       const description = [
         this.filters.tags.length ? this.filters.tags.map(tag => '#' + tag).join(' ') : '',
         this.filters.communities.join(', '),
         this.filters.authors.map(author => '@' + author).join(', '),
         this.filters.sort !== 'relevance' ? this.filters.sort : ''
       ].filter(Boolean).join(' · ') || 'Search on this device'
-      this.setSavedSearches(addSavedSearch(this.savedSearches, savedSearchRecord({ label, url, description })))
+      this.setSavedSearches(addSavedSearch(readSavedSearches(window.localStorage), savedSearchRecord({ label, url, description })))
       this.$q.notify({ type: 'positive', message: 'Search saved', caption: 'Available in Saved searches on this device.' })
     },
     removeSavedSearch (url) {
-      this.setSavedSearches(removeSavedSearch(this.savedSearches, url))
+      this.setSavedSearches(removeSavedSearch(readSavedSearches(window.localStorage), url))
       this.$q.notify({ message: 'Saved search removed' })
     },
     setSavedSearches (list) {
@@ -1597,7 +1644,7 @@ export default {
           this.$q.notify({ type: 'negative', message: 'Import failed', caption: parsed.error })
           return
         }
-        const merged = defaultSavedSearches([...this.savedSearches, ...parsed.searches])
+        const merged = defaultSavedSearches([...readSavedSearches(window.localStorage), ...parsed.searches])
         this.setSavedSearches(merged)
         this.$q.notify({ type: 'positive', message: 'Saved searches imported', caption: parsed.searches.length + ' added (limit ' + SAVED_SEARCH_LIMIT + ').' })
       } catch (error) {

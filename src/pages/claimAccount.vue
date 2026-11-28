@@ -355,6 +355,7 @@ export default {
       this.payloadError = ''
       this.checkError = ''
       this.checkToken += 1
+      const token = this.checkToken
       this.existingAccount = null
       this.accountExists = false
       this.keysMatch = false
@@ -362,7 +363,12 @@ export default {
       this.queued = false
       this.tokenQueued = false
       this.stopPolling()
-      this.fingerprint = await claimFingerprint(payload)
+      this.fingerprint = ''
+      const fingerprint = await claimFingerprint(payload)
+      // A second claim link can arrive while the digest is computing. Keep the
+      // fingerprint bound to the payload that is actually displayed.
+      if (token !== this.checkToken || payload !== this.payload) return
+      this.fingerprint = fingerprint
       this.checkExistingAccount()
       this.initAccount()
     },

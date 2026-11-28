@@ -95,4 +95,17 @@ describe('wallet CSV export', () => {
     expect(walletCsvName('alice', new Date('2026-11-21T12:00:00Z')))
       .toBe('hive-wallet-alice-2026-11-21.csv')
   })
+
+  it('neutralises a formula-shaped value taken from a transfer memo', () => {
+    const csv = buildWalletCsv([
+      entry('transfer', {
+        from: 'v4vapp',
+        to: 'alice',
+        amount: '1.000 HIVE',
+        memo: 'thanks | sats § =HYPERLINK'
+      })
+    ], { username: 'alice' })
+    expect(csv).toContain("'=HYPERLINK")
+    expect(csv).not.toContain(',=HYPERLINK')
+  })
 })

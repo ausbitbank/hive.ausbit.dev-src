@@ -172,6 +172,22 @@ describe('runUnifiedSearch', () => {
     expect(result.recommendedAuthors).toEqual([{ name: 'bob' }])
   })
 
+  it('keeps the exact account when the name-prefix read settles last', async () => {
+    const { runUnifiedSearch } = await load()
+    let resolveNames
+    state.nameSearch = new Promise(resolve => { resolveNames = resolve })
+    state.accounts = [{ name: 'alice' }]
+
+    const pending = runUnifiedSearch('alice')
+    await Promise.resolve()
+    resolveNames([{ name: 'alice-alt' }])
+    const result = await pending
+
+    const names = result.accounts.items.map(account => account.name)
+    expect(names).toContain('alice')
+    expect(names[0]).toBe('alice')
+  })
+
   it('passes force through to every read', async () => {
     const { runUnifiedSearch } = await load()
     const chain = await import('../../src/services/chainData')

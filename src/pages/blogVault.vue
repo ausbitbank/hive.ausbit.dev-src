@@ -845,6 +845,7 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
+import { csvCell } from 'src/utils/csv'
 import { fetchAccount, fetchAccountHistoryFiltered, fetchAccountPosts, fetchPostContent } from 'src/services/chainData'
 import { hive } from 'src/services/hive'
 import { readBlogSettings, updateBlog } from 'src/services/blogSettings'
@@ -905,10 +906,6 @@ function download (filename, text, type = 'application/json') {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-function csvCell (value) {
-  const text = value === null || value === undefined ? '' : String(value)
-  return '"' + text.replaceAll('"', '""') + '"'
-}
 
 export default {
   name: 'BlogVaultDashboard',

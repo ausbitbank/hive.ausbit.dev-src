@@ -126,12 +126,11 @@
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
 import { exportFile } from 'quasar'
+import { csvCell } from 'src/utils/csv'
 
 function wrapCsvValue (val, formatFn) {
-  let formatted = formatFn !== undefined ? formatFn(val) : val
-  formatted = formatted === undefined || formatted === null ? '' : String(formatted)
-  formatted = formatted.split('"').join('""')
-  return `"${formatted}"`
+  const formatted = formatFn !== undefined ? formatFn(val) : val
+  return csvCell(formatted)
 }
 
 const DEFAULT_VISIBLE_COLUMNS = ['author', 'title', 'pending_payout_value', 'children', 'created']

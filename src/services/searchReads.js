@@ -113,23 +113,30 @@ export async function runUnifiedSearch (query, state = {}, { force = false } = {
   const tasks = []
 
   if (include('accounts') && plan.kind !== 'post' && plan.kind !== 'block' && plan.kind !== 'transaction') {
+    // Name-prefix results and the exact-account read run in parallel. They share
+    // one merge point: two independent writers to `result.accounts.items` made
+    // the exact account appear or vanish depending on which RPC settled first.
+    let byName = Promise.resolve([])
     if (plan.accounts) {
-      tasks.push(
-        fetchAccountNameSearch(plan.accounts.slice(0, 12), RESULT_LIMITS.accounts, { force })
-          .then(accounts => {
-            result.accounts.items = rankAccounts(accounts, plan.accounts).slice(0, RESULT_LIMITS.accounts)
-          })
-          .catch(() => { result.accounts.error = 'Accounts could not be loaded.' })
-      )
+      byName = fetchAccountNameSearch(plan.accounts.slice(0, 12), RESULT_LIMITS.accounts, { force })
+        .then(accounts => rankAccounts(accounts, plan.accounts).slice(0, RESULT_LIMITS.accounts))
+        .catch(() => {
+          result.accounts.error = 'Accounts could not be loaded.'
+          return []
+        })
+      if (plan.kind !== 'keyword') {
+        tasks.push(byName.then(accounts => { result.accounts.items = accounts }))
+      }
     }
     if (plan.kind === 'keyword') {
+      const exact = fetchAccounts([plan.query.toLowerCase()], { force })
+        .then(accounts => (Array.isArray(accounts) ? accounts : []))
+        .catch(() => [])
       tasks.push(
-        fetchAccounts([plan.query.toLowerCase()], { force })
-          .then(exact => {
-            const merged = [...(Array.isArray(exact) ? exact : []), ...result.accounts.items]
-            result.accounts.items = rankAccounts(merged, plan.query).slice(0, RESULT_LIMITS.accounts)
-          })
-          .catch(() => {})
+        Promise.all([byName, exact]).then(([named, exactAccounts]) => {
+          result.accounts.items = rankAccounts([...exactAccounts, ...named], plan.query)
+            .slice(0, RESULT_LIMITS.accounts)
+        })
       )
     }
   }

@@ -24,11 +24,15 @@ export function currentUsername () {
 /** Stored settings for an account, or null when none exist yet. */
 export function readStoredSettings (username = currentUsername()) {
   try {
-    const scoped = LocalStorage.getItem(settingsStorageKey(username))
+    const name = String(username || '').trim().toLowerCase()
+    const scoped = LocalStorage.getItem(settingsStorageKey(name))
     if (scoped) return scoped
-    const legacy = LocalStorage.getItem('settings')
+    // Only an account-scoped read may adopt the legacy key. A guest/boot read
+    // must not claim another identity's beneficiaries, vote weight or nodes and
+    // delete the source before the real owner can migrate it.
+    const legacy = name ? LocalStorage.getItem('settings') : null
     if (legacy) {
-      LocalStorage.set(settingsStorageKey(username), legacy)
+      LocalStorage.set(settingsStorageKey(name), legacy)
       LocalStorage.remove('settings')
       return legacy
     }

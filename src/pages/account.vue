@@ -758,6 +758,7 @@ export default {
       autorefresh: false,
       autorefreshMinutes: 2,
       autorefreshTimer: null,
+      historyRetryTimer: null,
       rewardFundPost: null,
       medianPrice: null,
       profileReputation: null
@@ -1079,6 +1080,8 @@ export default {
       }
     },
     async getAccountHistoryFiltered () {
+      clearTimeout(this.historyRetryTimer)
+      this.historyRetryTimer = null
       this.accountOperations = []
       this.filteredEmpty = false
       if (this.operationsBitmask === null) {
@@ -1114,7 +1117,7 @@ export default {
               this.failCount++
               this.accountOperationsMarker = sequence
               if (this.failCount <= this.failCountMax) {
-                setTimeout(() => this.getAccountHistoryFiltered(), 5000)
+                this.historyRetryTimer = setTimeout(() => this.getAccountHistoryFiltered(), 5000)
               }
             }
           })
@@ -1321,7 +1324,10 @@ export default {
       await this.loadAccount()
       if (!this.error) this.getAccountHistoryMarker()
       this.applyEditQuery()
-      if (this.autorefresh === true) { setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000) }
+      if (this.autorefresh === true) {
+        clearTimeout(this.autorefreshTimer)
+        this.autorefreshTimer = setTimeout(this.autoRefreshTrigger, this.autorefreshMinutes * 60 * 1000)
+      }
     }
   },
   created () {
@@ -1329,6 +1335,7 @@ export default {
   },
   beforeUnmount () {
     clearTimeout(this.autorefreshTimer)
+    clearTimeout(this.historyRetryTimer)
   }
 }
 </script>

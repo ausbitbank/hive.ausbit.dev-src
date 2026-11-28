@@ -16,7 +16,7 @@ test('browse filters and layout controls work', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(page.locator('.browse-filter-card')).toBeHidden()
 
-  const tableToggle = page.getByRole('button', { name: 'Table' })
+  const tableToggle = page.getByRole('button', { name: 'Table', exact: true })
   if (await tableToggle.count()) {
     await tableToggle.click()
     await expect.poll(() => new URL(page.url()).searchParams.get('style')).toBe('table')
