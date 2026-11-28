@@ -640,7 +640,8 @@ export default {
     isHttpNodeUrl (value) {
       try {
         const url = new URL(String(value || ''))
-        return (url.protocol === 'https:' || url.protocol === 'http:') && Boolean(url.hostname)
+        if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+        return /^(?:[a-z0-9.-]+|\[[0-9a-f:.]+\])$/i.test(url.hostname)
       } catch {
         return false
       }
