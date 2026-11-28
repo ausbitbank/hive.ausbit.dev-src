@@ -1873,6 +1873,7 @@ export default {
           ringKid: this.vault.ringKid,
           ringKey: this.vault.ringKey,
           period: this.vault.ringKid,
+          ringId: await this.vaultRingId(),
           passphrase: this.relayPassphrase
         })
         download('banksia-relay-' + this.accountName + '-' + this.vault.ringKid + '.json', JSON.stringify(bundle, null, 2))
