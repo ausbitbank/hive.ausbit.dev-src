@@ -114,13 +114,28 @@ principles that constrain it. Delivered work and its verification records live i
   detection, claim authority matching, safe Hivedex payment links and the
   create/claim form state. See
   [`docs/workstreams/W104-media-account-hardening.md`](workstreams/W104-media-account-hardening.md).
+- W105 protects search state and returning-user settings: a cleared query
+  invalidates its in-flight read, account results merge once, re-submit and saved
+  searches use resolved/submitted state, `Esc` works, the search status is a
+  persistent live region, notifications drop the unused menu role, a guest boot
+  read can no longer consume legacy settings, and every CSV export neutralises
+  spreadsheet formulas. See
+  [`docs/workstreams/W105-search-data-integrity.md`](workstreams/W105-search-data-integrity.md).
+- W106 hardens the blog tenant and dashboard: contributor posts wait for tenant
+  settings, pinned posts resolve contributors and stay post-filtered, dashboard
+  fallback saves to the account scope, an identity switch closes the editor,
+  widget reads are invalidated on unmount and account switch, explicit refresh
+  bypasses the read cache, witness/wallet/operations state reports missing data
+  honestly, polling skips overlapping async ticks, and social cards measure with
+  the font they draw. See
+  [`docs/workstreams/W106-dashboard-blog-reliability.md`](workstreams/W106-dashboard-blog-reliability.md).
 - Local verification on 2026-11-28: `bun run lint` clean,
-  `bun run test` green with **2,307 tests across 238 files**, `bun run build`
+  `bun run test` green with **2,328 tests across 241 files**, `bun run build`
   and `bun run perf:check` succeeded, and the full Chromium suite passed
   **207/207**. The four Playwright failures listed in the pre-W89 snapshot
   (badges shelf, login-key guide, header lockup, profile-skin scope) do not
   reproduce on this tree. The full Chromium suite remains the release gate.
-- The next free workstream number is **W105**. **W90** remains the separate
+- The next free workstream number is **W107**. **W90** remains the separate
   self-hosted relay implementation; its client-side companion is documented in
   [`docs/integrations/vault-relay.md`](integrations/vault-relay.md) and ships
   under W89.

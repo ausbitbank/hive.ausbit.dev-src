@@ -38,7 +38,7 @@ delivered independently. The filename disambiguates them:
 - **W73** — the moderation policy phases, downvote transparency, lists and the
   data spike.
 
-The next free workstream number is **W105**. **W90** remains the separate
+The next free workstream number is **W107**. **W90** remains the separate
 self-hosted relay implementation; its client-side companion is documented in
 [`docs/integrations/vault-relay.md`](../integrations/vault-relay.md) and ships
 under W89. The prompt in `docs/prompts/` is the starting point for that separate
@@ -163,4 +163,6 @@ service.
 | [W102-search-settings](W102-search-settings.md) | Account search, facets, page state and node validation |
 | [W103-state-cache-scoping](W103-state-cache-scoping.md) | Account-scoped queue/settings/inbox and cache safety |
 | [W104-media-account-hardening](W104-media-account-hardening.md) | Uploads, image proxy, claims and Hivedex safety |
+| [W105-search-data-integrity](W105-search-data-integrity.md) | Search races, settings migration, saved searches and CSV safety |
+| [W106-dashboard-blog-reliability](W106-dashboard-blog-reliability.md) | Blog tenant, dashboard scope, widget races and state honesty |
 | [W100-lightning-amount-links](W100-lightning-amount-links.md) | HIVE/HBD amount payment links with live sats conversion |
