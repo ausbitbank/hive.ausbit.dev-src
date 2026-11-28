@@ -13,6 +13,7 @@ function seed () {
   apiCache.set('openOrders:alice', [])
   apiCache.set('community:hive-123', { name: 'hive-123' })
   apiCache.set('followCount:alice', { account: 'alice' })
+  apiCache.set('following:alice', ['bob'])
   apiCache.set('ticker', { latest: 1 })
   apiCache.set('medianHistory', { base: 1 })
   apiCache.set('globalProps', { head_block_number: 1 })
@@ -80,6 +81,32 @@ describe('write cache invalidation', () => {
     expect(apiCache.get('community:hive-123')).toBeNull()
     expect(apiCache.get('followCount:alice')).toBeNull()
     expect(apiCache.get('posts:bridge.get_ranked_posts:{}')).toBeNull()
+  })
+
+  it('clears the following list after a follow custom JSON', () => {
+    invalidateOperationCaches([
+      'alice',
+      'posting',
+      ['custom_json', {
+        required_posting_auths: ['alice'],
+        id: 'follow',
+        json: '["follow",{"follower":"alice","following":"carol"}]'
+      }]
+    ])
+    expect(apiCache.get('following:alice')).toBeNull()
+  })
+
+  it('keeps the following list for an unrelated custom JSON', () => {
+    invalidateOperationCaches([
+      'alice',
+      'posting',
+      ['custom_json', {
+        required_posting_auths: ['alice'],
+        id: 'notify',
+        json: '["setLastRead",{"date":"2026-01-01T00:00:00"}]'
+      }]
+    ])
+    expect(apiCache.get('following:alice')).not.toBeNull()
   })
 
   it('clears account metadata after an account update', () => {

@@ -49,10 +49,13 @@ export default defineBoot(({ app }) => {
         : null
     ])
 
-    const next = { ...settings }
+    // Re-read settings after the probes: the user may have saved changes while
+    // the network calls were in flight. Merge only the node choices.
+    const current = store.user?.settings || settings
+    const next = { ...current }
     if (heFastest?.url && heFastest.url !== heConfigured) next.heApiNode = heFastest.url
     if (magiFastest?.url && magiFastest.url !== magiConfigured) next.magiApiNode = magiFastest.url
-    if (next.heApiNode !== settings.heApiNode || next.magiApiNode !== settings.magiApiNode) {
+    if (next.heApiNode !== current.heApiNode || next.magiApiNode !== current.magiApiNode) {
       store.updateSettings(next)
     }
   }

@@ -58,7 +58,7 @@ describe('hive store mutations', () => {
 
       expect(state.user.settings).toBe(settings)
       expect(localStorageSet).toHaveBeenCalledTimes(1)
-      expect(localStorageSet).toHaveBeenCalledWith('settings', settings)
+      expect(localStorageSet).toHaveBeenCalledWith('settings:guest', settings)
     })
   })
 
@@ -178,7 +178,7 @@ describe('hive store mutations', () => {
 
       expect(state.user.unreadNotificationCount).toBe(0)
       expect(typeof state.user.notificationsLastRead).toBe('string')
-      expect(sessionStorageSet).toHaveBeenCalledWith('unreadNotificationCount', 0)
+      expect(sessionStorageSet).toHaveBeenCalledWith('unreadNotificationCount:guest', 0)
     })
 
     it('stores and clears the last-read timestamp', () => {

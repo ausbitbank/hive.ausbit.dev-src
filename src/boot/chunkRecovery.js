@@ -32,6 +32,8 @@ export default defineBoot(({ router }) => {
       ok: { label: 'Reload now', color: 'primary', unelevated: true, noCaps: true },
       cancel: { label: 'Later', color: 'grey', flat: true, noCaps: true }
     }).onOk(reload)
+      .onCancel(() => { recovering = false })
+      .onDismiss(() => { recovering = false })
   }
 
   const recover = () => {

@@ -1,5 +1,5 @@
-import { LocalStorage } from 'quasar'
 import { DEFAULT_HIVE_ENGINE_NODE, HIVE_ENGINE_NODES } from './hiveNodes'
+import { readStoredSettings } from './userSettings'
 import { pickFastestHealthy } from './network'
 
 let client = null
@@ -186,7 +186,7 @@ export async function selectHiveEngineNode (configuredUrl, timeoutMs = HIVE_ENGI
 }
 
 export function getHiveEngine () {
-  const url = LocalStorage.getItem('settings')?.heApiNode || DEFAULT_HIVE_ENGINE_NODE
+  const url = readStoredSettings()?.heApiNode || DEFAULT_HIVE_ENGINE_NODE
   if (!client || clientUrl !== url) {
     client = createClient(url)
     clientUrl = url

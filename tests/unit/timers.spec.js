@@ -7,8 +7,7 @@ function normalize (config) {
   return timersMixin.methods.normalizeTimers.call({}, config)
 }
 
-describe('timers mixin', () => {
-  it('exposes the expected mixin options shape', () => {
+describe('timers mixin', () => {  it('exposes the expected mixin options shape', () => {
     expect(typeof timersMixin.data).toBe('function')
     expect(timersMixin.data()).toEqual({ timers: {} })
 
@@ -129,6 +128,31 @@ describe('timers mixin', () => {
     expect(refresh).toHaveBeenCalledTimes(2)
 
     vm.stopTimer('refresh')
+    vi.useRealTimers()
+  })
+
+  it('fires one-shot timers once and never restarts them on resume', () => {
+    vi.useFakeTimers()
+    const once = vi.fn()
+    const vm = {
+      _timerHandles: {},
+      _timerOptions: { once: { name: 'once', time: 500, repeat: false, immediate: false } },
+      _pausedTimerNames: [],
+      timers: { once: { isRunning: false } },
+      once
+    }
+    Object.assign(vm, timersMixin.methods)
+
+    vm.startTimer('once')
+    vi.advanceTimersByTime(500)
+    expect(once).toHaveBeenCalledTimes(1)
+    expect(vm.timers.once.isRunning).toBe(false)
+
+    vm.pauseTimers()
+    vm.resumeTimers()
+    vi.advanceTimersByTime(2000)
+    expect(once).toHaveBeenCalledTimes(1)
+
     vi.useRealTimers()
   })
 })

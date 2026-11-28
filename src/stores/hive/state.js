@@ -3,6 +3,9 @@ import { normalizeQueueAction, normalizeQueueMeta, normalizeQueueMetaEntry, QUEU
 import { DEFAULT_HIVE_ENGINE_NODE, DEFAULT_MAGI_NODE } from '../../services/hiveNodes'
 import { DEFAULT_IMAGE_PROXY } from '../../services/imageProxy'
 import dashboardState from './dashboard'
+import { readStoredSettings, settingsStorageKey } from '../../services/userSettings'
+
+export { settingsStorageKey }
 
 export const DEFAULT_SETTINGS = {
   voteWeightPost: 100,
@@ -17,6 +20,27 @@ export const DEFAULT_SETTINGS = {
 
 export const QUEUE_STORAGE_KEY = 'queuedActions'
 export const QUEUE_TTL_MS = 24 * 60 * 60 * 1000
+export function readSettingsFor (username) {
+  return readStoredSettings(username) || { ...DEFAULT_SETTINGS }
+}
+
+export function scopedSessionKey (base, username) {
+  return String(base) + ':' + (String(username || '').trim().toLowerCase() || 'guest')
+}
+
+function readScopedSession (base, username, fallback) {
+  try {
+    const scoped = SessionStorage.getItem(scopedSessionKey(base, username))
+    if (scoped !== null && scoped !== undefined) return scoped
+    const legacy = SessionStorage.getItem(base)
+    if (legacy !== null && legacy !== undefined) {
+      SessionStorage.set(scopedSessionKey(base, username), legacy)
+      SessionStorage.remove(base)
+      return legacy
+    }
+  } catch {}
+  return fallback
+}
 
 function isValidQueueItem (item) {
   return Array.isArray(item) &&
@@ -87,7 +111,7 @@ export function restoreQueue (currentUsername) {
   return restoreQueueState(currentUsername).queue
 }
 
-export function persistQueue (queue, meta) {
+export function persistQueue (queue, meta, owner = '') {
   try {
     if (!Array.isArray(queue) || queue.length === 0) {
       LocalStorage.remove(QUEUE_STORAGE_KEY)
@@ -95,7 +119,7 @@ export function persistQueue (queue, meta) {
     }
     const payload = {
       savedAt: Date.now(),
-      owner: typeof queue[0]?.[0] === 'string' ? queue[0][0] : null,
+      owner: String(owner || queue[0]?.[0] || '') || null,
       items: queue
     }
     if (Array.isArray(meta)) {
@@ -118,12 +142,12 @@ export default function () {
       lastUpdateTime: null,
       following: [],
       followers: [],
-      communities: SessionStorage.getItem('communitySubscriptions') || [],
+      communities: readScopedSession('communitySubscriptions', username, []),
       state: {},
-      notifications: SessionStorage.getItem('notifications') || [],
-      unreadNotificationCount: 0,
-      notificationsLastRead: SessionStorage.getItem('notificationsLastRead') || null,
-      settings: LocalStorage.getItem('settings') || { ...DEFAULT_SETTINGS }
+      notifications: readScopedSession('notifications', username, []),
+      unreadNotificationCount: Number(readScopedSession('unreadNotificationCount', username, 0)) || 0,
+      notificationsLastRead: readScopedSession('notificationsLastRead', username, null),
+      settings: readSettingsFor(username)
     },
     queue: restored.queue,
     queueMeta: restored.meta,

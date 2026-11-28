@@ -1,9 +1,13 @@
 import { LocalStorage, SessionStorage } from 'quasar'
-import { persistQueue } from './state'
+import { persistQueue, readSettingsFor, scopedSessionKey, settingsStorageKey } from './state'
 import { createQueueMeta, normalizeQueueAction, normalizeQueueMeta, QUEUE_STATUS } from '../../services/queue'
 import { queueAuthorityError } from '../../services/queueAuthority'
 import { isOnline, notifyOfflineSigningBlocked } from '../../services/connectivity'
 import { setImageProxyMode } from '../../services/imageProxy'
+
+function sessionKeyFor (state, base) {
+  return scopedSessionKey(base, state.user?.username || '')
+}
 
 function ensureQueueMeta (state) {
   if (!Array.isArray(state.queueMeta)) state.queueMeta = []
@@ -14,6 +18,22 @@ export function updateLoggedInUser (username) {
   const previous = this.user.username
   this.user.username = username
   SessionStorage.set('loggedInUser', username)
+  if (previous !== username) this.user.settings = readSettingsFor(username)
+  if (previous !== username && previous) {
+    // Do not carry one account's queue or community list into another account.
+    // The queue is scoped to a single owner and may request active keys.
+    this.queue = []
+    this.queueMeta = []
+    persistQueue([], [], username || '')
+    this.user.communities = []
+    SessionStorage.remove('communitySubscriptions')
+    this.user.notifications = []
+    this.user.unreadNotificationCount = 0
+    this.user.notificationsLastRead = null
+    SessionStorage.remove('notifications')
+    SessionStorage.remove('unreadNotificationCount')
+    SessionStorage.remove('notificationsLastRead')
+  }
   // Each account has its own dashboard; reload when the identity changes so
   // signing in shows the account layout and signing out returns to the guest's.
   if (previous !== username && typeof this.loadDashboard === 'function') {
@@ -28,24 +48,24 @@ export function updateLoginType (type) {
 
 export function updateNotifications (notifications) {
   this.user.notifications = notifications
-  SessionStorage.set('notifications', notifications)
+  SessionStorage.set(sessionKeyFor(this, 'notifications'), notifications)
 }
 
 export function updateUnreadNotificationCount (count) {
   this.user.unreadNotificationCount = count
-  SessionStorage.set('unreadNotificationCount', count)
+  SessionStorage.set(sessionKeyFor(this, 'unreadNotificationCount'), count)
 }
 
 export function updateNotificationsLastRead (value) {
   this.user.notificationsLastRead = value || null
-  if (value) SessionStorage.set('notificationsLastRead', value)
-  else SessionStorage.remove('notificationsLastRead')
+  if (value) SessionStorage.set(sessionKeyFor(this, 'notificationsLastRead'), value)
+  else SessionStorage.remove(sessionKeyFor(this, 'notificationsLastRead'))
 }
 
 /** Apply a successful `notify` setLastRead broadcast without another API call. */
 export function markNotificationsReadLocally () {
   this.user.unreadNotificationCount = 0
-  SessionStorage.set('unreadNotificationCount', 0)
+  SessionStorage.set(sessionKeyFor(this, 'unreadNotificationCount'), 0)
   const now = new Date().toISOString()
   updateNotificationsLastRead.call(this, now)
 }
@@ -54,9 +74,9 @@ export function clearNotificationsState () {
   this.user.notifications = []
   this.user.unreadNotificationCount = 0
   this.user.notificationsLastRead = null
-  SessionStorage.remove('notifications')
-  SessionStorage.remove('unreadNotificationCount')
-  SessionStorage.remove('notificationsLastRead')
+  SessionStorage.remove(sessionKeyFor(this, 'notifications'))
+  SessionStorage.remove(sessionKeyFor(this, 'unreadNotificationCount'))
+  SessionStorage.remove(sessionKeyFor(this, 'notificationsLastRead'))
 }
 
 export function updateAccountData (accountData) {
@@ -73,12 +93,12 @@ export function updateCommunityInfo (communityInfo) {
 
 export function updateCommunitySubscriptions (communitySubscriptions) {
   this.user.communities = communitySubscriptions
-  SessionStorage.set('communitySubscriptions', communitySubscriptions)
+  SessionStorage.set(sessionKeyFor(this, 'communitySubscriptions'), communitySubscriptions)
 }
 
 export function updateSettings (settings) {
   this.user.settings = settings
-  LocalStorage.set('settings', settings)
+  LocalStorage.set(settingsStorageKey(this.user.username), settings)
   setImageProxyMode(settings?.imageProxy)
 }
 
@@ -102,7 +122,7 @@ export function addToQueue (newItem, options = {}) {
   }
   this.queue.push(normalized)
   ensureQueueMeta(this).push(meta)
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
   return normalized
 }
 
@@ -111,14 +131,14 @@ export function removeFromQueue (itemToRemove) {
   if (index === -1) return
   this.queue.splice(index, 1)
   ensureQueueMeta(this).splice(index, 1)
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function removeQueueItemAt (index) {
   if (index < 0 || index >= this.queue.length) return
   this.queue.splice(index, 1)
   ensureQueueMeta(this).splice(index, 1)
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function setQueueStatus (index, status, error = '') {
@@ -132,7 +152,7 @@ export function setQueueStatus (index, status, error = '') {
     updatedAt: Date.now()
   }
   meta.splice(0, meta.length, ...normalizeQueueMeta(this.queue, meta))
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function setQueueTxId (index, txId) {
@@ -140,7 +160,7 @@ export function setQueueTxId (index, txId) {
   const meta = ensureQueueMeta(this)
   const current = normalizeQueueMeta(this.queue, meta)[index]
   meta[index] = { ...current, txId: txId || '', updatedAt: Date.now() }
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function resetFailedQueueStatuses () {
@@ -159,7 +179,7 @@ export function resetFailedQueueStatuses () {
     }
   })
   meta.splice(0, meta.length, ...normalized)
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function clearCompletedQueue () {
@@ -175,13 +195,13 @@ export function clearCompletedQueue () {
   })
   this.queue = keep
   this.queueMeta = keepMeta
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function clearQueue () {
   this.queue = []
   this.queueMeta = []
-  persistQueue(this.queue, this.queueMeta)
+  persistQueue(this.queue, this.queueMeta, this.user?.username || '')
 }
 
 export function acknowledgeQueueRestored () {

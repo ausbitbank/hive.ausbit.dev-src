@@ -47,20 +47,25 @@ export function createTtlCache ({ maxEntries = 300, now = () => Date.now() } = {
 
 export const apiCache = createTtlCache({ maxEntries: 400 })
 const inflight = new Map()
+const keyEpochs = new Map()
 let invalidationEpoch = 0
 
 function revalidate (key, fetcher, ttl, cache) {
   if (inflight.has(key)) return inflight.get(key)
-  const epoch = invalidationEpoch
+  const epoch = keyEpochs.get(key) || 0
   const promise = Promise.resolve()
     .then(fetcher)
     .then(value => {
-      // A write invalidated the cache while this read was in flight. Return the
+      // A write invalidated this key while the read was in flight. Return the
       // value to the caller but do not repopulate the old cache entry.
-      if (epoch === invalidationEpoch) cache.set(key, value, { ttl })
+      if ((keyEpochs.get(key) || 0) === epoch) cache.set(key, value, { ttl })
       return value
     })
-    .finally(() => inflight.delete(key))
+    .finally(() => {
+      // Only remove the entry this promise created; a newer read may have
+      // replaced it after an unrelated invalidation.
+      if (inflight.get(key) === promise) inflight.delete(key)
+    })
   inflight.set(key, promise)
   return promise
 }
@@ -105,13 +110,16 @@ export function invalidateCache (prefix, cache = apiCache) {
     }
   }
   for (const key of inflight.keys()) {
-    if (!prefix || key.startsWith(prefix)) inflight.delete(key)
+    if (prefix && !key.startsWith(prefix)) continue
+    keyEpochs.set(key, (keyEpochs.get(key) || 0) + 1)
+    inflight.delete(key)
   }
   return removed
 }
 
 export function clearCache (cache = apiCache) {
   invalidationEpoch += 1
+  for (const key of inflight.keys()) keyEpochs.set(key, (keyEpochs.get(key) || 0) + 1)
   cache.clear()
   inflight.clear()
 }

@@ -103,4 +103,41 @@ describe('TTL cache', () => {
     await expect(pending).resolves.toEqual({ name: 'alice' })
     expect(cache.get('account:alice')).toBeNull()
   })
+
+  it('keeps an unrelated in-flight read cacheable', async () => {
+    const cache = createTtlCache()
+    let resolveFetch
+    const fetcher = vi.fn(() => new Promise(resolve => { resolveFetch = resolve }))
+
+    const pending = loadCached('account:alice', fetcher, { cache })
+    await Promise.resolve()
+    invalidateCache('witness:', cache)
+    resolveFetch({ name: 'alice' })
+
+    await expect(pending).resolves.toEqual({ name: 'alice' })
+    expect(cache.get('account:alice').value).toEqual({ name: 'alice' })
+  })
+
+  it('does not let a superseded promise remove the replacement de-dupe entry', async () => {
+    const cache = createTtlCache()
+    let resolveFirst
+    let resolveSecond
+    const first = vi.fn(() => new Promise(resolve => { resolveFirst = resolve }))
+    const second = vi.fn(() => new Promise(resolve => { resolveSecond = resolve }))
+
+    const pendingFirst = loadCached('account:alice', first, { cache })
+    await Promise.resolve()
+    invalidateCache('account:', cache)
+    const pendingSecond = loadCached('account:alice', second, { cache })
+
+    resolveFirst({ name: 'first' })
+    await pendingFirst
+
+    const pendingThird = loadCached('account:alice', second, { cache })
+    resolveSecond({ name: 'second' })
+    await Promise.all([pendingSecond, pendingThird])
+
+    expect(second).toHaveBeenCalledTimes(1)
+    expect(cache.get('account:alice').value).toEqual({ name: 'second' })
+  })
 })

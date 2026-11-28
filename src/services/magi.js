@@ -3,7 +3,7 @@
 // Magi exposes a public GraphQL API. Hive accounts map to the `hive:<name>`
 // namespace, and ledger amounts are integers with three decimals.
 
-import { LocalStorage } from 'quasar'
+import { readStoredSettings } from './userSettings'
 import { loadCached } from './cache'
 import { MAGI_NODES } from './hiveNodes'
 
@@ -380,7 +380,7 @@ export function magiTokenPrices (registry, liquidity, overview) {
 
 function preferredMagiNode () {
   try {
-    return LocalStorage.getItem('settings')?.magiApiNode || ''
+    return readStoredSettings()?.magiApiNode || ''
   } catch {
     return ''
   }

@@ -8,6 +8,7 @@ import {
   invalidateAccountCache,
   invalidateCommunityCache,
   invalidateFollowCountCache,
+  invalidateFollowingCache,
   invalidateGlobalPropsCache,
   invalidateMedianCache,
   invalidateOpenOrderCache,
@@ -150,6 +151,10 @@ export function invalidateOperationCaches (operation, { signer = '' } = {}) {
     snapshotsRemoved += removeSnapshotsByPrefix('home:posts:')
     const community = customJsonCommunity(data)
     if (community) communitiesRemoved += invalidateCommunityCache(community)
+    if (data?.id === 'follow') {
+      const actor = data.required_posting_auths?.[0] || signer
+      if (actor) invalidateFollowingCache(actor)
+    }
   }
 
   if (WITNESS_OPERATIONS.has(name)) {

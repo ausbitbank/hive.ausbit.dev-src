@@ -76,7 +76,11 @@ export default {
       if (options.repeat) {
         this._timerHandles[name] = setInterval(run, options.time)
       } else {
-        this._timerHandles[name] = setTimeout(run, options.time)
+        this._timerHandles[name] = setTimeout(() => {
+          delete this._timerHandles[name]
+          if (this.timers[name]) this.timers[name].isRunning = false
+          run()
+        }, options.time)
       }
       this.timers[name].isRunning = true
     },
@@ -93,17 +97,22 @@ export default {
 
     pauseTimers () {
       if (!this._pausedTimerNames) this._pausedTimerNames = []
+      const paused = new Set(this._pausedTimerNames)
       for (const name of Object.keys(this._timerHandles || {})) {
-        this._pausedTimerNames.push(name)
+        // One-shot timers are not restarted on visibility changes; a delayed
+        // action should fire at most once.
+        if (!this._timerOptions[name]?.repeat) continue
+        paused.add(name)
         this.stopTimer(name)
       }
+      this._pausedTimerNames = [...paused]
     },
 
     resumeTimers () {
-      const names = this._pausedTimerNames || []
+      const names = [...new Set(this._pausedTimerNames || [])]
       this._pausedTimerNames = []
       for (const name of names) {
-        if (this._timerOptions[name]) this.startTimer(name)
+        if (this._timerOptions[name]?.repeat) this.startTimer(name)
       }
     }
   }
