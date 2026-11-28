@@ -197,7 +197,7 @@ export async function mockCommunityDirectory (page) {
   }
 }
 
-function rankedPost (index) {
+function rankedPost (index, overrides = {}) {
   return {
     author: 'author' + index,
     permlink: 'post-' + index,
@@ -211,13 +211,14 @@ function rankedPost (index) {
     net_votes: 0,
     pending_payout_value: '0.000 HBD',
     active_votes: [],
-    stats: { gray: false, hide: false, is_pinned: false }
+    stats: { gray: false, hide: false, is_pinned: false },
+    ...overrides
   }
 }
 
 /** Deterministic ranked feed for browse, quick-look and vote specs. */
-export async function mockRankedPosts (page, { count = 36 } = {}) {
-  const posts = Array.from({ length: count }, (_, index) => rankedPost(index))
+export async function mockRankedPosts (page, { count = 36, post = {} } = {}) {
+  const posts = Array.from({ length: count }, (_, index) => rankedPost(index, post))
 
   for (const host of HIVE_API_HOSTS) {
     const pattern = new RegExp('^' + host.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/.*)?$')

@@ -25,123 +25,15 @@
       <div class="browse-toolbar__actions">
         <q-btn flat dense round icon="refresh" aria-label="Refresh posts" title="Refresh posts" :loading="loading" @click="refresh" />
 
-        <q-btn
-          flat
-          dense
-          no-caps
-          icon="filter_alt"
-          :label="$q.screen.gt.xs ? 'Filters' : ''"
-          aria-label="Filter posts"
-          :class="{ 'browse-filter--active': hasActiveFilters }"
-        >
-          <q-badge v-if="hasActiveFilters" color="primary" floating>{{ activeFilterCount }}</q-badge>
-          <q-popup-proxy>
-            <q-card class="browse-filter-card">
-              <q-card-section>
-                <div class="browse-filter-card__head">
-                  <div>
-                    <div class="browse-filter-card__title">Filter posts</div>
-                    <div class="browse-filter-card__hint">Applies to the posts loaded so far.</div>
-                  </div>
-                  <q-btn flat dense round icon="close" aria-label="Close filters" v-close-popup />
-                </div>
-
-                <q-list dense class="browse-filter-list">
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label>Hide voted posts</q-item-label>
-                      <q-item-label v-if="!loggedInUser" caption>Log in to filter voted posts</q-item-label>
-                    </q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideVoted" dense color="primary" aria-label="Hide voted posts" :disable="!loggedInUser" /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section><q-item-label>Hide reblogs</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideReblogs" dense color="primary" aria-label="Hide reblogs" /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section><q-item-label>Hide pinned posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hidePinned" dense color="primary" aria-label="Hide pinned posts" /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section><q-item-label>Hide muted posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideHidden" dense color="primary" aria-label="Hide muted posts" /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section><q-item-label>Hide moderated posts</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideGray" dense color="primary" aria-label="Hide moderated posts" /></q-item-section>
-                  </q-item>
-                  <q-item>
-                    <q-item-section><q-item-label>Hide rewards outside range</q-item-label></q-item-section>
-                    <q-item-section side><q-toggle v-model="filter.hideRewardsFilter" dense color="primary" aria-label="Hide rewards outside range" /></q-item-section>
-                  </q-item>
-                </q-list>
-
-                <div class="browse-filter-card__range">
-                  <q-input
-                    v-model.number="filter.hideRewardsBelow"
-                    type="number"
-                    dense
-                    outlined
-                    label="Min HBD"
-                    :disable="!filter.hideRewardsFilter"
-                  />
-                  <q-input
-                    v-model.number="filter.hideRewardsAbove"
-                    type="number"
-                    dense
-                    outlined
-                    label="Max HBD"
-                    :disable="!filter.hideRewardsFilter"
-                  />
-                </div>
-
-                <div class="browse-filter-card__tags">
-                  <div class="browse-filter-card__tags-head">
-                    <span>Ignored tags</span>
-                    <span class="browse-filter-card__hint">Saved in Moderation settings.</span>
-                  </div>
-                  <div class="browse-filter-card__tag-add">
-                    <q-input
-                      v-model="newIgnoredTag"
-                      dense
-                      outlined
-                      label="Add a tag to ignore"
-                      aria-label="Tag to ignore"
-                      @keyup.enter="addIgnoredTag"
-                    />
-                    <q-btn
-                      unelevated
-                      no-caps
-                      color="primary"
-                      label="Add"
-                      :disable="!newIgnoredTag.trim()"
-                      @click="addIgnoredTag"
-                    />
-                  </div>
-                  <div v-if="moderationIgnoredTags.length" class="browse-filter-card__tag-list">
-                    <q-chip
-                      v-for="tag in moderationIgnoredTags"
-                      :key="tag"
-                      dense
-                      removable
-                      color="grey-9"
-                      text-color="white"
-                      @remove="removeIgnoredTag(tag)"
-                    >
-                      #{{ tag }}
-                    </q-chip>
-                  </div>
-                  <p v-else class="browse-filter-card__hint">No tags ignored yet.</p>
-                </div>
-
-                <div class="browse-filter-card__actions">
-                  <q-btn flat no-caps color="primary" label="Reset filters" @click="resetFilters" />
-                  <q-btn unelevated no-caps color="primary" label="Done" v-close-popup />
-                </div>
-              </q-card-section>
-            </q-card>
-          </q-popup-proxy>
-        </q-btn>
+        <feed-filters
+          :filter="filter"
+          :ignored-tags="moderationIgnoredTags"
+          :logged-in-user="loggedInUser || ''"
+          @update:filter="filter = $event"
+          @add-tag="addIgnoredTag"
+          @remove-tag="removeIgnoredTag"
+          @reset="resetFilters"
+        />
 
         <q-select
           v-if="$q.screen.lt.sm"
@@ -283,86 +175,6 @@
   flex-wrap: wrap;
 }
 
-.browse-filter--active {
-  color: var(--c-link-hover);
-}
-
-.browse-filter-card {
-  width: min(360px, 92vw);
-}
-
-.browse-filter-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-bottom: 0.35rem;
-}
-
-.browse-filter-card__title {
-  font-weight: 600;
-}
-
-.browse-filter-card__hint {
-  color: var(--c-text-subtle);
-  font-size: 0.72rem;
-}
-
-.browse-filter-list {
-  margin: 0 -0.5rem;
-}
-
-.browse-filter-card__range {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.browse-filter-card__tags {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.browse-filter-card__tags-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  font-weight: 600;
-}
-
-.browse-filter-card__tag-add {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin-top: 0.4rem;
-}
-
-.browse-filter-card__tag-add .q-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.browse-filter-card__tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  max-height: 8rem;
-  margin-top: 0.4rem;
-  overflow-y: auto;
-}
-
-.browse-filter-card__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
 .browse-layout-select {
   min-width: 126px;
 }
@@ -449,26 +261,16 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import moment from 'src/utils/time'
-import { postPayoutValue, postUserVoteDirection } from 'src/services/posts'
 import { fetchAccountPosts, fetchRankedPosts } from 'src/services/chainData'
+import { defaultFeedFilters, activeFeedFilterCount, applyFeedFilters } from 'src/services/feedFilters'
 import { loadSnapshot, saveSnapshot } from 'src/services/snapshots'
 import { trimPostsForSnapshot } from 'src/services/postSnapshot'
 import { loadFeedState, saveFeedState } from 'src/services/feedState'
 import { isValidTag } from 'src/utils/hiveTag'
-import { matchingIgnoredTag, normalizeIgnoredTag } from 'src/services/tagFilters'
+import { normalizeIgnoredTag } from 'src/services/tagFilters'
 import moderation from 'src/mixins/moderation'
 import DataNotice from 'components/ui/DataNotice.vue'
-
-const DEFAULT_FILTERS = () => ({
-  hideVoted: false,
-  hideReblogs: false,
-  hidePinned: false,
-  hideHidden: true,
-  hideGray: true,
-  hideRewardsFilter: false,
-  hideRewardsAbove: 50,
-  hideRewardsBelow: 0
-})
+import FeedFilters from 'components/feed/FeedFilters.vue'
 
 const STYLE_ALIASES = {
   preview: 'cards',
@@ -500,6 +302,7 @@ export default {
     moderationSurface: { type: String, default: 'feed' }
   },
   components: {
+    FeedFilters,
     postPreview: defineAsyncComponent(() => import('components/postPreview.vue')),
     browseTable: defineAsyncComponent(() => import('components/browseTable.vue')),
     infiniteScroll: defineAsyncComponent(() => import('components/ui/InfiniteScroll.vue')),
@@ -525,8 +328,7 @@ export default {
       sort: this.sortMethod || 'created',
       account: this.showAccount || null,
       tag: this.showTag || null,
-      newIgnoredTag: '',
-      filter: DEFAULT_FILTERS()
+      filter: defaultFeedFilters()
     }
   },
   computed: {
@@ -544,11 +346,7 @@ export default {
       ].join(':')
     },
     activeFilterCount () {
-      const defaults = DEFAULT_FILTERS()
-      const toggles = ['hideVoted', 'hideReblogs', 'hidePinned', 'hideHidden', 'hideGray', 'hideRewardsFilter']
-        .filter(key => this.filter[key] !== defaults[key])
-        .length
-      return toggles + this.moderationIgnoredTags.length
+      return activeFeedFilterCount(this.filter, this.moderationIgnoredTags)
     },
     hasActiveFilters () {
       return this.activeFilterCount > 0
@@ -565,38 +363,11 @@ export default {
       return oldestLabel === newestLabel ? oldestLabel : oldestLabel + ' – ' + newestLabel
     },
     filteredPosts () {
-      let list = this.posts
-
-      if (this.moderationIgnoredTags.length) {
-        list = list.filter(post => !matchingIgnoredTag(post, this.moderationIgnoredTags))
-      }
-      if (this.filter.hideVoted && this.loggedInUser) {
-        list = list.filter(post => postUserVoteDirection(post, this.loggedInUser) === null)
-      }
-      if (this.filter.hideReblogs) {
-        list = list.filter(post => !(post.reblogged_by && post.reblogged_by.length))
-      }
-      if (this.filter.hidePinned) {
-        list = list.filter(post => !(post.stats && post.stats.is_pinned))
-      }
-      if (this.filter.hideHidden) {
-        list = list.filter(post => !(post.stats && (post.stats.hidden || post.stats.hide)))
-      }
-      if (this.filter.hideGray) {
-        list = list.filter(post => !(post.stats && post.stats.gray))
-      }
-      if (this.filter.hideRewardsFilter) {
-        const min = Number(this.filter.hideRewardsBelow)
-        const max = Number(this.filter.hideRewardsAbove)
-        if (Number.isFinite(min) && min > 0) {
-          list = list.filter(post => postPayoutValue(post) >= min)
-        }
-        if (Number.isFinite(max) && max > 0) {
-          list = list.filter(post => postPayoutValue(post) <= max)
-        }
-      }
-
-      return list
+      return applyFeedFilters(this.posts, {
+        filter: this.filter,
+        viewer: this.loggedInUser || '',
+        ignoredTags: this.moderationIgnoredTags
+      })
     }
   },
   watch: {
@@ -753,14 +524,13 @@ export default {
       this.getPosts(true)
     },
     resetFilters () {
-      this.filter = DEFAULT_FILTERS()
+      this.filter = defaultFeedFilters()
       this.moderationClearIgnoredTags()
     },
-    addIgnoredTag () {
-      const tag = normalizeIgnoredTag(this.newIgnoredTag)
+    addIgnoredTag (value) {
+      const tag = normalizeIgnoredTag(value)
       if (!tag) return
       this.moderationIgnoreTag(tag)
-      this.newIgnoredTag = ''
     },
     removeIgnoredTag (tag) {
       this.moderationUnignoreTag(tag)

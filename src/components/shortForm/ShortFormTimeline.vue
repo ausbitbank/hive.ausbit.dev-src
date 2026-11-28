@@ -20,6 +20,15 @@
           aria-label="Sort the timeline"
           @update:model-value="reload()"
         />
+        <feed-filters
+          :filter="filter"
+          :ignored-tags="moderationIgnoredTags"
+          :logged-in-user="loggedInUser || ''"
+          @update:filter="filter = $event"
+          @add-tag="addIgnoredTag"
+          @remove-tag="removeIgnoredTag"
+          @reset="resetFilters"
+        />
         <q-btn flat dense no-caps icon="refresh" label="Refresh" :loading="loading" @click="reload()" />
       </div>
     </header>
@@ -40,6 +49,16 @@
 
     <div class="sf-grid">
       <div class="sf-main">
+        <div class="sf-toolbar">
+          <span v-if="loading && !items.length">Loading posts…</span>
+          <span v-else>
+            Showing <strong>{{ filteredItems.length }}</strong> {{ filteredItems.length === 1 ? 'post' : 'posts' }}
+          </span>
+          <span v-if="filteredItems.length !== items.length" class="sf-toolbar__filtered">
+            · {{ items.length - filteredItems.length }} hidden by filters
+          </span>
+        </div>
+
         <data-notice
           v-if="error"
           variant="error"
@@ -102,14 +121,14 @@
 
         <template v-else>
           <infinite-scroll
-            v-if="items.length"
+            v-if="filteredItems.length"
             :can-load="!done"
             :loading="loadingMore"
             :disabled="loading"
             @load="loadMore()"
           >
             <ol class="sf-list">
-              <li v-for="item in items" :key="item.author + '/' + item.permlink" class="sf-list__item">
+              <li v-for="item in filteredItems" :key="item.author + '/' + item.permlink" class="sf-list__item">
                 <short-form-card
                   :post="item"
                   :format="format"
@@ -125,8 +144,16 @@
             </template>
           </infinite-scroll>
           <div v-else-if="!error" class="sf-empty">
-            <q-icon name="forum" size="28px" aria-hidden="true" />
-            <p>No {{ format.label }} posts found right now.</p>
+            <q-icon :name="hasActiveFilters ? 'filter_alt_off' : 'forum'" size="28px" aria-hidden="true" />
+            <p>
+              {{ items.length && hasActiveFilters
+                ? 'No ' + format.label + ' posts match the current filters.'
+                : 'No ' + format.label + ' posts found right now.' }}
+            </p>
+            <div v-if="hasActiveFilters" class="sf-empty__actions">
+              <q-btn v-if="!done" outline no-caps color="primary" icon="expand_more" label="Load more posts" :loading="loadingMore" @click="loadMore()" />
+              <q-btn flat no-caps color="primary" icon="filter_alt_off" label="Reset filters" @click="resetFilters" />
+            </div>
           </div>
         </template>
       </div>
@@ -171,10 +198,14 @@ import {
   shortFormQueueSummary,
   shortFormatList
 } from 'src/services/shortForm'
+import { activeFeedFilterCount, applyFeedFilters, defaultFeedFilters } from 'src/services/feedFilters'
+import { normalizeIgnoredTag } from 'src/services/tagFilters'
 import DataNotice from 'components/ui/DataNotice.vue'
+import FeedFilters from 'components/feed/FeedFilters.vue'
 import InfiniteScroll from 'components/ui/InfiniteScroll.vue'
 import ImageUploadButton from 'components/ImageUploadButton.vue'
 import { imageFilesFromTransfer, insertImageMarkdown } from 'src/utils/media'
+import moderation from 'src/mixins/moderation'
 
 const ShortFormCard = defineAsyncComponent(() => import('components/shortForm/ShortFormCard.vue'))
 const MAX_CHARS = 1000
@@ -182,7 +213,8 @@ const PAGE_SIZE = 20
 
 export default {
   name: 'ShortFormTimeline',
-  components: { DataNotice, InfiniteScroll, ShortFormCard, ImageUploadButton },
+  mixins: [moderation],
+  components: { DataNotice, FeedFilters, InfiniteScroll, ShortFormCard, ImageUploadButton },
   props: {
     formatId: { type: String, required: true }
   },
@@ -199,12 +231,26 @@ export default {
       posting: false,
       error: null,
       body: '',
-      savedSelection: null
+      savedSelection: null,
+      filter: defaultFeedFilters()
     }
   },
   computed: {
     format () {
       return getShortFormat(this.formatId)
+    },
+    filteredItems () {
+      return applyFeedFilters(this.items, {
+        filter: this.filter,
+        viewer: this.loggedInUser || '',
+        ignoredTags: this.moderationIgnoredTags
+      })
+    },
+    activeFilterCount () {
+      return activeFeedFilterCount(this.filter, this.moderationIgnoredTags)
+    },
+    hasActiveFilters () {
+      return this.activeFilterCount > 0
     },
     sortOptions () {
       return [
@@ -321,6 +367,18 @@ export default {
       const list = Array.isArray(post.reblogged_by) ? post.reblogged_by.slice() : []
       if (!list.some(name => String(name).toLowerCase() === String(this.loggedInUser).toLowerCase())) list.push(this.loggedInUser)
       post.reblogged_by = list
+    },
+    addIgnoredTag (value) {
+      const tag = normalizeIgnoredTag(value)
+      if (!tag) return
+      this.moderationIgnoreTag(tag)
+    },
+    removeIgnoredTag (tag) {
+      this.moderationUnignoreTag(tag)
+    },
+    resetFilters () {
+      this.filter = defaultFeedFilters()
+      this.moderationClearIgnoredTags()
     },
     captureSelection () {
       const textarea = this.$refs.body
@@ -468,6 +526,23 @@ export default {
   min-width: 0;
 }
 
+.sf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  color: var(--c-text-subtle);
+  font-size: 0.8rem;
+}
+
+.sf-toolbar strong {
+  color: var(--c-text);
+}
+
+.sf-toolbar__filtered {
+  color: var(--c-link-hover);
+}
+
 .sf-composer {
   display: flex;
   flex-direction: column;
@@ -589,6 +664,18 @@ export default {
   border-radius: var(--radius-card);
   color: var(--c-text-faint);
   text-align: center;
+}
+
+.sf-empty p {
+  margin: 0;
+}
+
+.sf-empty__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 /* The shared panel header expects an inner padding wrapper (q-card-section in
