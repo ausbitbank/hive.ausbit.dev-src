@@ -1,5 +1,6 @@
 <template>
   <q-page class="communities-page">
+    <profile-skin :account="account" :author="username" context="profile">
     <account-header :globalProps="globalProps" :account="account" :showBalances="false" />
 
     <div v-if="error && !loading" class="communities-shell">
@@ -174,11 +175,13 @@
         </div>
       </template>
     </div>
+    </profile-skin>
   </q-page>
 </template>
 
 <script>
 import accountHeader from 'components/accountHeader.vue'
+import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import CommunityCard from 'components/community/CommunityCard.vue'
 import CommunityFeed from 'components/community/CommunityFeed.vue'
 import HomeRecentPosts from 'components/HomeRecentPosts.vue'
@@ -209,6 +212,7 @@ export default {
   name: 'AccountCommunitiesPage',
   components: {
     accountHeader,
+    ProfileSkin,
     CommunityCard,
     CommunityFeed,
     HomeRecentPosts

@@ -1,5 +1,6 @@
 <template>
   <q-page class="dv-page">
+    <profile-skin :account="account" :author="username" context="profile">
     <account-header
       v-if="account !== undefined && globalProps !== null"
       :globalProps="globalProps"
@@ -188,6 +189,7 @@
         </section>
       </template>
     </div>
+    </profile-skin>
   </q-page>
 </template>
 
@@ -239,6 +241,7 @@
 <script>
 import moment from 'src/utils/time'
 import accountHeader from 'components/accountHeader.vue'
+import ProfileSkin from 'components/theme/ProfileSkin.vue'
 import {
   coordinationEvidence,
   downvotesFor,
@@ -257,7 +260,7 @@ const PAGE_ROWS = 40
 
 export default {
   name: 'DownvotesPage',
-  components: { accountHeader },
+  components: { accountHeader, ProfileSkin },
   data () {
     return {
       rows: [],

@@ -174,7 +174,7 @@ searches live in your browser.
   override where the app is allowed to. Reputation-gated features can be
   reviewed instead of silently hidden.
 - **Scoped skins.** Profile skins never rearrange content, are bounded to the
-  author's profile, wallet, communities, downvotes, blog and post pages, carry
+  author's profile, communities, downvotes, blog and post pages, carry
   a visible “Skin by” badge, and can be hidden at any time.
 - **Resilient by default.** Every network path has a timeout, a fallback and a
   stale/error state. A dead API node must not become a dead page.

@@ -121,6 +121,16 @@ test('a published profile skin is scoped and can be hidden', async ({ page }) =>
   await expect(skin.locator('.skin-banner')).toHaveCount(0)
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'hive-dark')
 
+  // Account subpages keep the same skin scope as the profile.
+  for (const subpage of ['communities', 'downvotes']) {
+    await page.goto('/@ausbitbank/' + subpage)
+    await waitForApp(page)
+    await expect(page.locator('.skin-scope')).toBeVisible()
+  }
+  await page.goto('/@ausbitbank')
+  await waitForApp(page)
+  await expect(page.locator('.skin-scope')).toBeVisible()
+
   await page.getByRole('button', { name: 'Ignore this skin' }).click()
   await expect(page.locator('.skin-scope')).toHaveCount(0)
   const ignored = await page.evaluate(() => JSON.parse(localStorage.getItem('ausbit:appearance') || '{}').ignoredSkinAuthors)
