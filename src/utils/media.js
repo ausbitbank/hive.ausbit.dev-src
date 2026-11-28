@@ -6,7 +6,12 @@
 import { safeExternalUrl } from './safeUrl'
 
 const IMAGE_EXTENSION = /\.(?:tiff?|jpe?g|gif|png|svg|webp|avif|apng|bmp)(?:[?#][^\s)"'<>]*)?/i
-const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(\s*(<[^>]+>|[^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/g
+// Hive upload filenames often contain balanced parentheses (`photo(2).png`).
+// The destination may also be wrapped in angle brackets, and old posts may
+// carry a title after it. Parse all of those forms so a `)` inside the URL is
+// not mistaken for the end of the image.
+const MARKDOWN_IMAGE = /!\[([^\]]*)\]\(\s*(<[^>\n]+>|(?:[^()\s\\]|\\.|\([^()\s]*\))+)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g
+const MARKDOWN_LINK = /\[([^\]]+)\]\(\s*(<[^>\n]+>|(?:[^()\s\\]|\\.|\([^()\s]*\))+)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g
 const HTML_IMAGE = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi
 const MENTION = /(^|[^a-z0-9._%+-])@([a-z][a-z0-9.-]{2,15})\b/gi
 const CODE_BLOCK = /```[\s\S]*?```/g
@@ -39,6 +44,44 @@ export function isImageUrl (value) {
 }
 
 /**
+ * Markdown images declared in a body, in document order.
+ *
+ * Fenced and inline code are ignored so example syntax in a code sample is not
+ * treated as post media.
+ */
+export function extractMarkdownImages (body, { limit = 40 } = {}) {
+  const text = String(body || '')
+    .replace(CODE_BLOCK, ' ')
+    .replace(INLINE_CODE, ' ')
+  const found = []
+  const seen = new Set()
+  let match
+  MARKDOWN_IMAGE.lastIndex = 0
+  while ((match = MARKDOWN_IMAGE.exec(text)) && found.length < limit) {
+    const url = normalizeImageUrl(match[2])
+    if (!url || seen.has(url)) continue
+    seen.add(url)
+    found.push({ url, alt: String(match[1] || '').trim() })
+  }
+  return found
+}
+
+/** The first safe Markdown image URL in a body, or ''. */
+export function firstMarkdownImageUrl (body) {
+  return extractMarkdownImages(body, { limit: 1 })[0]?.url || ''
+}
+
+/** Remove Markdown image syntax, including URLs with balanced parentheses. */
+export function stripMarkdownImages (value) {
+  return String(value || '').replace(MARKDOWN_IMAGE, ' ')
+}
+
+/** Replace Markdown links with their label, including URLs with parentheses. */
+export function stripMarkdownLinks (value) {
+  return String(value || '').replace(MARKDOWN_LINK, '$1')
+}
+
+/**
  * Images declared in a post body, in document order. Markdown wins over HTML
  * when the same URL appears twice.
  */
@@ -46,23 +89,18 @@ export function extractBodyImages (body, { limit = 40 } = {}) {
   const text = String(body || '')
     .replace(CODE_BLOCK, ' ')
     .replace(INLINE_CODE, ' ')
-  const found = []
-  const seen = new Set()
+  const found = extractMarkdownImages(text, { limit })
+  const seen = new Set(found.map(image => image.url))
 
   const push = (url, alt = '') => {
     const safe = normalizeImageUrl(url)
-    if (!safe || seen.has(safe)) return
+    if (!safe || seen.has(safe) || found.length >= limit) return
     seen.add(safe)
     found.push({ url: safe, alt: String(alt || '').trim() })
   }
 
-  let match
-  MARKDOWN_IMAGE.lastIndex = 0
-  while ((match = MARKDOWN_IMAGE.exec(text)) && found.length < limit) {
-    push(match[2], match[1])
-  }
-
   HTML_IMAGE.lastIndex = 0
+  let match
   while ((match = HTML_IMAGE.exec(text)) && found.length < limit) {
     const tag = match[0]
     const alt = tag.match(/\balt=["']([^"']*)["']/i)
@@ -141,11 +179,9 @@ export function altFromFileName (name) {
 
 /** Plain-text excerpt for cards, link previews and `json_metadata.description`. */
 export function deriveDescription (body, max = 120) {
-  let text = String(body || '')
+  let text = stripMarkdownLinks(stripMarkdownImages(String(body || '')
     .replace(CODE_BLOCK, ' ')
-    .replace(INLINE_CODE, ' ')
-    .replace(MARKDOWN_IMAGE, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(INLINE_CODE, ' ')))
     .replace(/<[^>]+>/g, ' ')
     .replace(/(?:https?|ftp):\/\/[^\s]+/g, ' ')
     .replace(/^[ \t]*#{1,6}[ \t]*/gm, '')

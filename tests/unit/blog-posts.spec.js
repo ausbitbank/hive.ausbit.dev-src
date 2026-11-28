@@ -61,6 +61,15 @@ describe('blog post helpers', () => {
     expect(blogPostImage(post({ body: '<p><img src="https://cdn.example/b.png" alt="b"></p>' }))).toBe('https://cdn.example/b.png')
   })
 
+  it('keeps parentheses in image filenames out of excerpts', () => {
+    const row = post({
+      body: '![cover](https://cdn.example/image_cleanup(2).png)\n\nBuild update.'
+    })
+    expect(blogPostExcerpt(row)).toBe('Build update.')
+    expect(blogPostImage(row)).toBe('https://cdn.example/image_cleanup(2).png')
+    expect(blogPostHasBodyImage(row)).toBe(true)
+  })
+
   it('detects whether the body already has a visual', () => {
     expect(blogPostHasBodyImage(post({ body: 'Intro ![a](https://cdn.example/a.png)' }))).toBe(true)
     expect(blogPostHasBodyImage(post({ body: '<p><img src="https://cdn.example/a.png"></p>' }))).toBe(true)

@@ -4,6 +4,7 @@
 // frequent meaningful words, then the rest of the title. The composer adds
 // recent tags and community suggestions on top.
 
+import { stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import { normalizeTag } from './drafts'
 
 const STOPWORDS = new Set([
@@ -23,11 +24,9 @@ const STOPWORDS = new Set([
 const WORD_RE = /[a-z][a-z0-9-]{3,40}/gi
 
 function cleanText (value) {
-  return String(value || '')
+  return stripMarkdownLinks(stripMarkdownImages(String(value || '')
     .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`[^`]*`/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/`[^`]*`/g, ' ')))
     .replace(/<[^>]+>/g, ' ')
     .replace(/https?:\/\/[^\s)"'<>]+/gi, ' ')
     .replace(/[#*_~>|]/g, ' ')

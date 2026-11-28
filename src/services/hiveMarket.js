@@ -9,6 +9,7 @@
 // Reads are paginated with an opaque cursor and never throw on a malformed
 // post: bad products are skipped so one bad row cannot break a shop page.
 
+import { stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import { blogPostImage } from './blogPosts'
 import { fetchAccountPosts, fetchPostContent, fetchRankedPosts } from './chainData'
 import { postMetadata } from './posts'
@@ -187,9 +188,7 @@ export function productJsonLd (product, url) {
   const images = product.images && product.images.length
     ? product.images
     : (product.image ? [product.image] : [])
-  const description = String(product.body || '')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+  const description = stripMarkdownLinks(stripMarkdownImages(String(product.body || '')))
     .replace(/<[^>]+>/g, ' ')
     .replace(/[#*_>`]/g, '')
     .replace(/\s+/g, ' ')

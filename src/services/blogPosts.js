@@ -5,6 +5,7 @@
 // ordering without changing browse cards.
 
 import { stripHtml } from '../utils/safeHtml'
+import { firstMarkdownImageUrl, stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import { blogPostPathFor as hostBlogPostPathFor } from './blogHost'
 import { isVaultContainer } from './vaultProduct'
 import {
@@ -62,8 +63,8 @@ export function blogPostImage (post) {
   // json_metadata. Use the first inline image as a card cover so the archive
   // stays visual without a second API call.
   const body = typeof post.body === 'string' ? post.body : ''
-  const markdown = body.match(/!\[[^\]]*\]\((https:\/\/[^)\s]+)\)/i)
-  if (markdown) return markdown[1].replaceAll('&amp;', '&')
+  const markdown = firstMarkdownImageUrl(body)
+  if (markdown && /^https:\/\//i.test(markdown)) return markdown
   const html = body.match(/<img\b[^>]*src=["'](https:\/\/[^"']+)["']/i)
   if (html) return html[1].replaceAll('&amp;', '&')
   return ''
@@ -75,10 +76,8 @@ export function blogPostTitle (post) {
 
 /** Remove common Markdown syntax so card excerpts read as prose, not source. */
 function stripMarkdown (value) {
-  return String(value || '')
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+  return stripMarkdownLinks(stripMarkdownImages(String(value || '')
+    .replace(/```[\s\S]*?```/g, ' ')))
     .replace(/`([^`]+)`/g, '$1')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^>\s?/gm, '')
@@ -109,7 +108,7 @@ export function blogPostReadingMinutes (post) {
 export function blogPostHasBodyImage (post) {
   const body = String((post && post.body) || '')
   if (!body) return false
-  if (/!\[[^\]]*\]\([^)]*\)/.test(body)) return true
+  if (firstMarkdownImageUrl(body)) return true
   if (/<img\b[^>]*src=/i.test(body)) return true
   if (/https?:\/\/[^\s"'<>]+\.(?:png|jpe?g|gif|webp|avif)(?:\?[^\s"'<>]*)?/i.test(body)) return true
   return false

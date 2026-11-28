@@ -4,6 +4,8 @@
 // the next text and selection. Keeping this logic out of components makes the
 // toolbar, keyboard shortcuts and tests share one implementation.
 
+import { stripMarkdownImages, stripMarkdownLinks } from './media'
+
 function clamp (value, min, max) {
   const number = Number(value)
   if (!Number.isFinite(number)) return min
@@ -143,11 +145,9 @@ export function insertTable (text, start, end, options = {}) {
 
 /** Count words without treating markdown punctuation as words. */
 export function wordCount (text) {
-  const cleaned = String(text ?? '')
+  const cleaned = stripMarkdownLinks(stripMarkdownImages(String(text ?? '')
     .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`[^`]*`/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/`[^`]*`/g, ' ')))
     .replace(/[#>*_~|-]/g, ' ')
     .trim()
   return cleaned ? cleaned.split(/\s+/).filter(Boolean).length : 0

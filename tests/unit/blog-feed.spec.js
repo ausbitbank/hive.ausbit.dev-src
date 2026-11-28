@@ -45,6 +45,7 @@ describe('RSS helpers', () => {
 
   it('strips markup without a DOM', () => {
     expect(feedText('<p>One</p><p>Two</p>')).toBe('One Two')
+    expect(feedText('![cover](https://cdn.example/photo(2).png) Build update')).toBe('Build update')
     expect(feedText('x'.repeat(20), 10)).toBe('xxxxxxxxxx…')
   })
 

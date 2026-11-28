@@ -17,6 +17,7 @@
 // the tests.
 
 import { byteLength } from '../utils/markdownEditor'
+import { extractMarkdownImages, stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import { postMetadata } from './posts'
 import { reblogOperation } from './queue'
 
@@ -254,10 +255,8 @@ const VIDEO_EXTENSION = /\.(?:mp4|webm|ogv|mov)(?:[?#]|$)/i
  * the upload URL on its own line instead of using markdown image syntax.
  */
 export function shortPreview (body, max = 220) {
-  const text = asString(body)
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+  const text = stripMarkdownLinks(stripMarkdownImages(asString(body)))
     .replace(/<[^>]+>/g, ' ')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(BARE_MEDIA_URL, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -306,7 +305,7 @@ export function shortMedia (post, { limit = 4 } = {}) {
 
   const declared = Array.isArray(metadata.image) ? metadata.image : []
   declared.forEach(add)
-  for (const match of body.matchAll(/!\[[^\]]*\]\(([^)\s]+)/g)) add(match[1])
+  for (const image of extractMarkdownImages(body)) add(image.url)
   for (const match of body.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)) add(match[1])
   // Clients that paste the upload URL as plain text (common on InLeo) still
   // get an inline image instead of a line of raw URL.

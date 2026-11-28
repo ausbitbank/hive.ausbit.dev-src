@@ -85,6 +85,7 @@ describe('markdown editing helpers', () => {
 
   it('counts words, reading time and UTF-8 bytes', () => {
     expect(wordCount('Hello **Hive** and [friends](https://hive.io)')).toBe(4)
+    expect(wordCount('Hello ![shot](https://cdn.example/photo(2).png) world')).toBe(2)
     expect(wordCount('```\ncode block\n```')).toBe(0)
     expect(readingMinutes(Array.from({ length: 221 }, () => 'word').join(' '))).toBe(2)
     expect(byteLength('é')).toBe(2)

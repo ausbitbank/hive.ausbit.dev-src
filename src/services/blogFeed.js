@@ -4,6 +4,7 @@
 // Worker. Keep it free of browser APIs so the edge can build a feed without a
 // separate implementation.
 
+import { stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import { blogPostPathFor } from './blogHost'
 
 const BLOCK_TAG_RE = /<\/?(?:p|div|br|li|ul|ol|h[1-6]|blockquote|pre|tr|td|th|section|article|hr)[^>]*>/gi
@@ -30,7 +31,7 @@ function parseMetadata (post) {
 export function feedText (value, max = MAX_DESCRIPTION) {
   if (typeof value !== 'string') return ''
   const text = decodeEntities(
-    value
+    stripMarkdownLinks(stripMarkdownImages(value))
       .replace(BLOCK_TAG_RE, ' ')
       .replace(/<[^>]*>/g, ' ')
   )

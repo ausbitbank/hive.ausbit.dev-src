@@ -60,6 +60,12 @@ describe('postImage', () => {
     expect(postImage({ body: 'Look https://cdn.example/bare.gif here' })).toBe('https://images.hive.blog/480x0/https://cdn.example/bare.gif')
   })
 
+  it('keeps parentheses in image filenames', () => {
+    const body = '![cover](https://cdn.example/image_cleanup(2).png)\n\nBuild update.'
+    expect(postImage({ body })).toBe('https://images.hive.blog/480x0/https://cdn.example/image_cleanup(2).png')
+    expect(postSummary({ body }, 200)).toBe('Build update.')
+  })
+
   it('returns an empty string when no image exists', () => {
     expect(postImage(null)).toBe('')
     expect(postImage({ body: 'Plain text only.' })).toBe('')

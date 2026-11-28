@@ -122,6 +122,13 @@ describe('preview, images and urls', () => {
     expect(shortPreview(body)).toBe('Morning walk')
   })
 
+  it('handles markdown media with parentheses in the filename', () => {
+    const body = '![shot](https://cdn.example/image_cleanup(2).png) Morning walk'
+    expect(shortPreview(body)).toBe('Morning walk')
+    expect(shortMedia(post({ body })).map(item => item.url))
+      .toEqual(['https://cdn.example/image_cleanup(2).png'])
+  })
+
   it('truncates long previews with an ellipsis', () => {
     const preview = shortPreview('a'.repeat(300), 20)
     expect(preview).toHaveLength(20)

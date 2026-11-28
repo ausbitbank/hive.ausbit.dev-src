@@ -65,6 +65,11 @@ describe('threeSpeakEmbedUrl', () => {
     )).toEqual(['https://images.example/a.png', 'https://images.example/b.png'])
   })
 
+  it('keeps parentheses in image filenames', () => {
+    expect(bodyImageUrls('![a](https://images.example/photo(2).png)'))
+      .toEqual(['https://images.example/photo(2).png'])
+  })
+
   it('ignores non-http image URLs', () => {
     expect(bodyImageUrls('![a](javascript:alert(1)) <img src="data:image/png;base64,x">')).toEqual([])
   })

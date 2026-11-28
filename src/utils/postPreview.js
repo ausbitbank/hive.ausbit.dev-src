@@ -6,6 +6,7 @@
 // home, browse and account surfaces.
 
 import { safeJsonParse } from './safeHtml'
+import { firstMarkdownImageUrl, stripMarkdownImages, stripMarkdownLinks } from './media'
 import { resizeImageUrl } from '../services/imageProxy'
 
 const IMAGE_EXTENSION = /\.(?:tiff?|jpe?g|gif|png|svg|ico|heic|webp|arw)(?:[?#][^\s)"'<>]*)?/i
@@ -107,8 +108,8 @@ export function previewImageUrl (url, width = 480) {
 
 function firstBodyImage (body) {
   if (typeof body !== 'string' || !body) return ''
-  const markdown = body.match(/!\[[^\]]*\]\(\s*([^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/)
-  if (markdown && SAFE_IMAGE_URL.test(markdown[1])) return markdown[1]
+  const markdown = firstMarkdownImageUrl(body)
+  if (markdown && SAFE_IMAGE_URL.test(markdown)) return markdown
   const html = body.match(/<img[^>]+src=["']([^"']+)["']/i)
   if (html && SAFE_IMAGE_URL.test(html[1])) return html[1]
   const bare = body.match(/https?:\/\/[^\s)"'<>]+/g) || []
@@ -137,11 +138,9 @@ export function postImage (post) {
 export function postSummary (post, length = 200) {
   const body = typeof post === 'string' ? post : post?.body
   if (typeof body !== 'string' || !body.trim()) return ''
-  let text = body
+  let text = stripMarkdownLinks(stripMarkdownImages(body
     .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`[^`]*`/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/`[^`]*`/g, ' ')))
     .replace(/<[^>]+>/g, ' ')
     .replace(/(?:https?|ftp):\/\/[^\s]+/g, ' ')
     .replace(/^[ \t]*[#>*+-]+\s*/gm, '')

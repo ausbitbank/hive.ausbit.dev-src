@@ -51,6 +51,20 @@ describe('body image extraction', () => {
     expect(normalizeImageUrl('javascript:alert(1)')).toBe('')
   })
 
+  it('keeps balanced parentheses in image and link destinations', () => {
+    const body = [
+      '![first](https://images.hive.blog/photo_cleanup(2).png)',
+      '![second](<https://images.hive.blog/second(1).png>)',
+      '[a post](https://banksia.io/@alice/post(2))'
+    ].join('\n\n')
+
+    expect(extractBodyImages(body)).toEqual([
+      { url: 'https://images.hive.blog/photo_cleanup(2).png', alt: 'first' },
+      { url: 'https://images.hive.blog/second(1).png', alt: 'second' }
+    ])
+    expect(deriveDescription(body, 120)).toBe('a post')
+  })
+
   it('builds safe markdown image links', () => {
     expect(markdownImage({ alt: 'A [bracket]', url: 'https://images.hive.blog/x.jpg' }))
       .toBe('![A bracket](https://images.hive.blog/x.jpg)')

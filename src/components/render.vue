@@ -10,6 +10,7 @@
 <script>
 import DOMPurify from 'dompurify'
 import { EMBED_HOSTS } from 'src/utils/embedHosts'
+import { extractBodyImages } from 'src/utils/media'
 import {
   getImageProxyMode,
   IMAGE_PROXY_DIRECT,
@@ -57,19 +58,8 @@ export function bodyImageUrls (source, limit = 4) {
     urls.push(decoded)
   }
 
-  const markdown = /!\[[^\]]*\]\(\s*([^)\s]+)(?:\s+["'][^"']*["'])?\s*\)/g
-  let match = markdown.exec(text)
-  while (match && urls.length < limit) {
-    add(match[1])
-    match = markdown.exec(text)
-  }
-
-  const html = /<img\b[^>]*\bsrc=["']([^"']+)["']/gi
-  match = html.exec(text)
-  while (match && urls.length < limit) {
-    add(match[1])
-    match = html.exec(text)
-  }
+  const markdown = extractBodyImages(text, { limit })
+  for (const image of markdown) add(image.url)
 
   if (urls.length < limit) {
     const bare = text.match(/https?:\/\/[^\s)"'<>]+/g) || []

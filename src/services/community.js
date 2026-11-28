@@ -6,6 +6,7 @@
 // nodes and a missing payout field should degrade to zero, not NaN.
 
 import { bridgeRequest } from './api'
+import { stripMarkdownImages, stripMarkdownLinks } from '../utils/media'
 import moment from '../utils/time'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -155,9 +156,7 @@ export function communityRoleWeight (role) {
 
 export function cleanCommunityText (value) {
   if (typeof value !== 'string') return ''
-  return value
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+  return stripMarkdownLinks(stripMarkdownImages(value))
     .replace(/<[^>]+>/g, ' ')
     .replace(/[#*_>`]/g, '')
     .replace(/\s+/g, ' ')

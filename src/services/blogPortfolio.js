@@ -4,6 +4,7 @@
 // shows every https image it can find: the metadata image, Markdown images and
 // inline HTML images. Duplicates are removed and the list is capped.
 
+import { extractMarkdownImages } from '../utils/media'
 import { postMetadata } from './posts'
 
 const MAX_IMAGES = 12
@@ -31,8 +32,8 @@ export function portfolioImages (post) {
   for (const value of metadataImages) add(value)
 
   const body = String(post.body || '')
-  for (const match of body.matchAll(/!\[([^\]]*)\]\((https:\/\/[^)\s]+)\)/gi)) {
-    add(match[2], match[1])
+  for (const image of extractMarkdownImages(body)) {
+    add(image.url, image.alt)
   }
 
   for (const match of body.matchAll(/<img\b[^>]*>/gi)) {

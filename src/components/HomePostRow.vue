@@ -185,6 +185,7 @@
 
 <script>
 import moment from 'src/utils/time'
+import { stripMarkdownImages, stripMarkdownLinks } from 'src/utils/media'
 import { postImage } from 'src/utils/postPreview'
 import {
   postCommentCount,
@@ -206,9 +207,7 @@ export default {
   computed: {
     bodyExcerpt () {
       if (!this.showBody) return ''
-      const raw = String(this.post.body || '')
-        .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      const raw = stripMarkdownLinks(stripMarkdownImages(String(this.post.body || '')))
         .replace(/<[^>]+>/g, ' ')
         .replace(/[#*_>`]/g, '')
         .replace(/\s+/g, ' ')
