@@ -412,7 +412,7 @@ export function latestDelegatedBulletin (replies, { blog, relayAccount = '' } = 
     const bulletin = isPlainObject(metadata) && isPlainObject(metadata.banksia_vault_bulletin)
       ? metadata.banksia_vault_bulletin
       : null
-    if (!bulletin || bulletin.v !== 1 || normalizeAccount(bulletin.blog) !== owner) continue
+    if (!bulletin || (bulletin.v !== 1 && bulletin.v !== 2) || normalizeAccount(bulletin.blog) !== owner) continue
     if (!isPlainObject(bulletin.delegation)) continue
     if (!best || String(bulletin.period) > String(best.period) ||
       (bulletin.period === best.period && Number(bulletin.seq) > Number(best.seq))) {

@@ -5,8 +5,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import {
   clearVaultBulletinCache,
   findGrantEntry,
+  loadBulletinEntries,
   loadBulletinParts,
   mayAutoUnlock,
+  requiresApex,
   resolveBulletin,
   unlockWithGrant,
   verifyBulletin
@@ -29,14 +31,20 @@ import { chunkVaultPayload } from '../../src/services/vaultPayload'
 import {
   clearReaderKeyMemory,
   ensureReaderKey,
+  exportReaderKeyRecovery,
   forgetReaderKey,
-  getReaderKey
+  getReaderKey,
+  importReaderKeyRecovery
 } from '../../src/services/vaultReaderKey'
 import { isBlogPost, isVaultHiddenPost } from '../../src/services/blogPosts'
 import { useVaultStore } from '../../src/stores/vault'
 import VaultLockedSection from '../../src/components/blog/VaultLockedSection.vue'
 import VaultPaywall from '../../src/components/blog/VaultPaywall.vue'
-import { buildVaultBulletinBundle } from '../../src/services/vaultBulletin'
+import {
+  buildVaultBulletinBundle,
+  buildVaultShardedBulletin,
+  planShardUpdates
+} from '../../src/services/vaultBulletin'
 
 const BLOG = 'alice'
 const PERIOD = '2026-11'
@@ -114,6 +122,8 @@ async function makeRoundTripFixture ({ expires = '2026-12-27T12:00:00Z' } = {}) 
     rkt,
     entry,
     bulletin,
+    keyring: { [kid]: contentKey },
+    ringKey,
     contentKey,
     metadata: { ...payload, kid, mode },
     plaintext,
@@ -225,6 +235,31 @@ describe('verifyBulletin', () => {
     const foreignSigner = { ...bulletin, signer: 'mallory' }
     await expect(verifyBulletin({ bulletin: foreignSigner, fetchAccount, verify }))
       .resolves.toMatchObject({ ok: false, reason: 'signer' })
+  })
+
+  it('accepts a v2 sharded manifest through the v2 signing domain', async () => {
+    const keyring = { [PERIOD]: await randomKey() }
+    const ringKey = await randomKey()
+    const bulletin = await buildVaultShardedBulletin({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 1,
+      keyring,
+      ringKey,
+      shardCount: 8,
+      shards: [[0, 1, 'A'.repeat(43)]],
+      signer: BLOG,
+      issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => sha256Hex(text) }
+    })
+    const verify = async ({ payload, signature }) => signature === await sha256Hex(payload)
+    const fetchAccount = vi.fn(async () => account)
+    await expect(verifyBulletin({ bulletin, fetchAccount, verify }))
+      .resolves.toEqual({ ok: true, reason: '' })
+
+    const tampered = { ...bulletin, shards: [[0, 1, 'B'.repeat(43)]] }
+    await expect(verifyBulletin({ bulletin: tampered, fetchAccount, verify }))
+      .resolves.toMatchObject({ ok: false, reason: 'signature' })
   })
 })
 
@@ -420,16 +455,34 @@ describe('reader key lifecycle', { tags: ['slow'] }, () => {
     expect(await getReaderKey(blog)).toBeNull()
   })
 
-  it('records the subscribing account and rebinds the origin key', async () => {
+  it('keeps a separate key per Hive account on the same origin', async () => {
     const blog = 'readerkeyaccount'
     const first = await ensureReaderKey(blog, { account: 'bob' })
     expect(first.account).toBe('bob')
-    expect((await getReaderKey(blog)).account).toBe('bob')
+    expect((await getReaderKey(blog, 'bob')).account).toBe('bob')
 
-    const rebound = await ensureReaderKey(blog, { account: 'carol' })
-    expect(rebound.publicKeyB64).toBe(first.publicKeyB64)
-    expect(rebound.account).toBe('carol')
-    expect((await getReaderKey(blog)).account).toBe('carol')
+    const second = await ensureReaderKey(blog, { account: 'carol' })
+    expect(second.publicKeyB64).not.toBe(first.publicKeyB64)
+    expect(second.account).toBe('carol')
+    expect((await getReaderKey(blog, 'carol')).publicKeyB64).toBe(second.publicKeyB64)
+    expect((await getReaderKey(blog, 'bob')).publicKeyB64).toBe(first.publicKeyB64)
+    expect(await getReaderKey(blog, 'dave')).toBeNull()
+  })
+
+  it('imports a recovery file on a new device using the blog inside the file', async () => {
+    const blog = 'recoveryblog'
+    const account = 'bob'
+    const first = await ensureReaderKey(blog, { account })
+    const file = await exportReaderKeyRecovery(blog, 'correct horse battery staple', { account })
+
+    await forgetReaderKey(blog, account)
+    expect(await getReaderKey(blog, account)).toBeNull()
+
+    const imported = await importReaderKeyRecovery('', file, 'correct horse battery staple')
+    expect(imported.blog).toBe(blog)
+    expect(imported.account).toBe(account)
+    expect(imported.publicKeyB64).toBe(first.publicKeyB64)
+    expect((await getReaderKey(blog, account)).publicKeyB64).toBe(first.publicKeyB64)
   })
 })
 
@@ -439,6 +492,24 @@ describe('auto-unlock policy', () => {
     expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: 'bob' })).toBe(true)
     expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: 'carol' })).toBe(false)
     expect(mayAutoUnlock({ readerAccount: 'bob', keyAccount: '' })).toBe(true)
+  })
+})
+
+describe('apex requirement', () => {
+  it('keeps the apex and its aliases read-write', () => {
+    expect(requiresApex('banksia.io')).toBe(false)
+    expect(requiresApex('www.banksia.io')).toBe(false)
+    expect(requiresApex('hive.ausbit.dev')).toBe(false)
+    expect(requiresApex('localhost')).toBe(false)
+    expect(requiresApex('127.0.0.1')).toBe(false)
+    expect(requiresApex('')).toBe(false)
+  })
+
+  it('sends blog hosts and custom domains to the apex', () => {
+    expect(requiresApex('alice.banksia.io')).toBe(true)
+    expect(requiresApex('hive--fund.banksia.io')).toBe(true)
+    expect(requiresApex('alice.localhost')).toBe(true)
+    expect(requiresApex('blog.example.com')).toBe(true)
   })
 })
 
@@ -590,6 +661,26 @@ describe('VaultPaywall', () => {
     expect(labels.some(label => label.includes('Subscribe'))).toBe(true)
     expect(labels.some(label => label.includes('Restore access'))).toBe(true)
   })
+
+  it('replaces local actions with an apex link on a read-only blog host', () => {
+    const wrapper = mount(VaultPaywall, {
+      props: {
+        plan: { author: 'alice', permlink: 'membership', priceLabel: '5.000 HBD' },
+        metadata: { paywall: { title: 'Members-only', body: 'A subscriber essay.' } },
+        blog: 'alice',
+        readerAccount: 'bob',
+        apexUrl: 'https://banksia.io/@alice/members-post'
+      }
+    })
+
+    const link = wrapper.get('a.banksia-locked__button--primary')
+    expect(link.text()).toBe('Read on Banksia')
+    expect(link.attributes('href')).toBe('https://banksia.io/@alice/members-post')
+    expect(wrapper.text()).toContain('read-only')
+    expect(wrapper.findAll('button')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('Use my membership on this device')
+    expect(wrapper.text()).not.toContain('Restore access')
+  })
 })
 
 describe('multi-part bulletins', () => {
@@ -625,5 +716,72 @@ describe('multi-part bulletins', () => {
       json_metadata: JSON.stringify({ banksia_vault_bulletin_part: tampered.get(permlink) })
     })
     expect(await loadBulletinParts({ bulletin: bundle.bulletin, fetchPost: badFetch })).toBeNull()
+  })
+})
+
+describe('sharded bulletins', () => {
+  it('fetches the reader shard, verifies its hash, unlocks and rejects tampering', async () => {
+    const fixture = await makeRoundTripFixture({ expires: '2026-12-27T12:00:00.000Z' })
+    const plan = await planShardUpdates({
+      blog: fixture.blog,
+      period: PERIOD,
+      shardCount: 8,
+      entries: [fixture.entry],
+      existingShards: []
+    })
+    const manifest = await buildVaultShardedBulletin({
+      blog: fixture.blog,
+      period: PERIOD,
+      seq: 1,
+      keyring: fixture.keyring,
+      ringKey: fixture.ringKey,
+      shardCount: 8,
+      shards: plan.descriptors,
+      signer: fixture.blog,
+      issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    expect(manifest.v).toBe(2)
+    expect(manifest.entries).toBeUndefined()
+
+    const byPermlink = new Map(plan.shards.map(shard => [shard.permlink, shard.object]))
+    const fetchPost = async (author, permlink) => ({
+      author,
+      permlink,
+      json_metadata: JSON.stringify({ banksia_vault_shard: byPermlink.get(permlink) })
+    })
+    const loaded = await loadBulletinEntries({ bulletin: manifest, readerRkt: fixture.rkt, fetchPost })
+    expect(loaded.entries).toHaveLength(1)
+    expect(loaded.shards).toHaveLength(1)
+    const entry = await findGrantEntry({ bulletin: loaded, readerPublicKey: fixture.reader.publicKeyB64 })
+    expect(entry).toBeTruthy()
+    const result = await unlockWithGrant({
+      bulletin: loaded,
+      entry,
+      readerKey: {
+        privateKey: fixture.reader.privateKey,
+        publicKeyB64: fixture.reader.publicKeyB64
+      },
+      metadata: fixture.metadata,
+      blog: fixture.blog,
+      permlink: fixture.permlink,
+      now: NOW
+    })
+    expect(result.ok).toBe(true)
+    expect(result.plaintext).toBe(fixture.plaintext)
+
+    const [permlink, shard] = [...byPermlink.entries()][0]
+    const tampered = {
+      ...shard,
+      entries: shard.entries.map(tuple => [
+        tuple[0], tuple[1], tuple[2], (tuple[3][0] === 'A' ? 'B' : 'A') + tuple[3].slice(1), tuple[4]
+      ])
+    }
+    const badFetch = async (author, target) => ({
+      author,
+      permlink: target,
+      json_metadata: JSON.stringify({ banksia_vault_shard: target === permlink ? tampered : byPermlink.get(target) })
+    })
+    expect(await loadBulletinEntries({ bulletin: manifest, readerRkt: fixture.rkt, fetchPost: badFetch })).toBeNull()
   })
 })

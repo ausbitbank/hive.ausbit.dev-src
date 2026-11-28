@@ -8,7 +8,7 @@
 // Nothing in this module persists plaintext or keys. The Pinia store keeps the
 // result in memory for the life of the page.
 
-import { BLOG_DOMAIN, normalizeHostname } from './blogHost'
+import { normalizeHostname, resolveBlogHost } from './blogHost'
 import { fetchAccount as defaultFetchAccount, fetchPostContent } from './chainData'
 import {
   VaultCryptoError,
@@ -27,6 +27,13 @@ import {
   parseBulletin
 } from './vaultGrant'
 import { decryptVaultParts } from './vaultPayload'
+import {
+  expandShardEntry,
+  parseShard,
+  shardHash,
+  shardIndexForRkt,
+  shardPermlink
+} from './vaultBulletin'
 import { hive } from './hive'
 import { postingPublicKeys, verifyVaultPayloadForAccount } from './vaultSigning'
 import { relayCertificateFromAccount, verifyDelegatedBulletin } from './vaultRelay'
@@ -57,6 +64,21 @@ function normalizeBlog (value) {
 
 function cacheKey (blog) {
   return normalizeBlog(blog) || String(blog || '')
+}
+
+async function mapLimit (items, limit, run) {
+  const list = Array.isArray(items) ? items : []
+  const results = new Array(list.length)
+  let cursor = 0
+  async function worker () {
+    while (cursor < list.length) {
+      const index = cursor
+      cursor += 1
+      results[index] = await run(list[index], index)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(Math.max(1, limit), list.length) }, worker))
+  return results
 }
 
 /** Drop the 5-minute bulletin cache for one blog, or for every blog. */
@@ -235,7 +257,8 @@ export async function verifyBulletin ({
   if (!PERIOD_RE.test(String(bulletin.period || ''))) return { ok: false, reason: 'bulletin' }
   if (!isPlainObject(bulletin.keyring)) return { ok: false, reason: 'bulletin' }
   const hasParts = Array.isArray(bulletin.parts) && bulletin.parts.length > 0
-  if ((!Array.isArray(bulletin.entries) || bulletin.entries.length === 0) && !hasParts) {
+  const hasShards = bulletin.v === 2 && Array.isArray(bulletin.shards) && bulletin.shards.length > 0
+  if ((!Array.isArray(bulletin.entries) || bulletin.entries.length === 0) && !hasParts && !hasShards) {
     return { ok: false, reason: 'bulletin' }
   }
   if (typeof bulletin.sig !== 'string' || !bulletin.sig.trim()) {
@@ -528,6 +551,74 @@ export async function loadBulletinParts ({
   return { ...bulletin, entries }
 }
 
+/**
+ * Load the grant entries for a v1 part bulletin or a v2 sharded bulletin.
+ *
+ * With a reader thumbprint and `all: false`, a v2 bulletin fetches only the
+ * shard that can contain that reader. The creator dashboard passes `all: true`
+ * to merge every shard for display and comparison.
+ *
+ * Every shard is content-hashed by the signed manifest before any entry is
+ * used. Returns null on a missing, wrong-author or tampered shard.
+ */
+export async function loadBulletinEntries ({
+  bulletin,
+  readerRkt = '',
+  readerRkts = [],
+  all = false,
+  fetchPost = fetchPostContent
+} = {}) {
+  if (!isPlainObject(bulletin)) return null
+  if (bulletin.v !== 2) {
+    const merged = await loadBulletinParts({ bulletin, fetchPost })
+    if (!merged) return null
+    return { ...merged, entries: Array.isArray(merged.entries) ? merged.entries : [], shards: [] }
+  }
+
+  const blog = normalizeBlog(bulletin.blog)
+  const shardAuthor = normalizeBlog(bulletin.signer || blog)
+  const period = String(bulletin.period || '')
+  const count = Number(bulletin.shardCount)
+  if (!blog || !shardAuthor || !PERIOD_RE.test(period) || !Number.isInteger(count) || count < 1) return null
+  if (!Array.isArray(bulletin.shards)) return null
+
+  const rkts = Array.isArray(readerRkts) && readerRkts.length
+    ? readerRkts
+    : (readerRkt ? [readerRkt] : [])
+  const indexes = new Set(
+    rkts.map(rkt => shardIndexForRkt(rkt, count)).filter(index => index >= 0)
+  )
+  const wanted = all
+    ? bulletin.shards
+    : bulletin.shards.filter(descriptor => indexes.has(descriptor[0]))
+  const fetched = await mapLimit(wanted, 6, async descriptor => {
+    const index = Number(descriptor[0])
+    const rev = Number(descriptor[1])
+    const hash = descriptor[2]
+    const permlink = shardPermlink(period, index, rev)
+    if (!permlink) return null
+    let post
+    try {
+      post = await fetchPost(shardAuthor, permlink)
+    } catch {
+      return null
+    }
+    if (!post) return null
+    if (String(post.author || '').toLowerCase() !== shardAuthor) return null
+    const shard = parseShard(post.json_metadata)
+    if (!shard) return null
+    if (shard.blog !== blog || shard.period !== period || shard.shard !== index || shard.rev !== rev) return null
+    if (await shardHash(shard) !== hash) return null
+    const expanded = shard.entries.map(expandShardEntry)
+    if (expanded.some(entry => !entry)) return null
+    return { index, rev, hash, permlink, entries: shard.entries, expanded }
+  })
+  if (fetched.some(item => !item)) return null
+  const shards = fetched
+  const entries = fetched.flatMap(shard => shard.expanded)
+  return { ...bulletin, entries, shards }
+}
+
 /** Visible watermark for unlocked content: `Licensed to @reader · YYYY-MM`. */export function watermarkLabel (account, period) {
   const name = normalizeAccount(account)
   const label = name ? 'Licensed to @' + name : 'Licensed to member'
@@ -560,6 +651,8 @@ export function vaultStatusMessage (code) {
     case 'payment-pending':
     case 'no-entry':
       return 'Payment received — unlocking…'
+    case 'device-pending':
+      return 'Waiting for the creator to grant this device.'
     case 'expired':
       return 'Your membership ended. Renew to keep reading.'
     case 'bulletin':
@@ -585,10 +678,12 @@ export function vaultStatusMessage (code) {
 }
 
 /**
- * True when the current host is a custom domain.
+ * True when the current host is read-only for Vault and must deep-link to the
+ * apex.
  *
- * Premium reads happen on the apex: a custom domain is read-only and must not
- * hold a reader key or decrypt content.
+ * Blog hosts (`<account>.banksia.io`, `<account>.localhost`) and custom domains
+ * never hold a reader key or sign a device registration. Decryption belongs to
+ * the apex, where the reader's key and Hive session already live.
  */
 export function requiresApex (blogHost = null) {
   const raw = blogHost !== null && blogHost !== undefined
@@ -596,19 +691,17 @@ export function requiresApex (blogHost = null) {
     : (typeof window !== 'undefined' && window.location ? window.location.hostname : '')
   const host = normalizeHostname(raw)
   if (!host) return false
-  if (host === 'localhost' || host.endsWith('.localhost')) return false
-  if (host === '127.0.0.1' || host === '[::1]' || host === '::1') return false
-  if (host === BLOG_DOMAIN || host === 'www.' + BLOG_DOMAIN) return false
-  if (host === 'hive.ausbit.dev' || host === 'www.hive.ausbit.dev') return false
-  if (host.endsWith('.' + BLOG_DOMAIN)) return false
-  return true
+  const resolved = resolveBlogHost(host)
+  if (resolved.mode === 'blog' || resolved.mode === 'unsupported') return true
+  // Unknown hosts are custom domains; only the known apex aliases are read-write.
+  return resolved.reason === 'unknown-host'
 }
 
 /**
  * Whether a stored reader key may auto-unlock a post for this visitor.
  *
- * The key lives per origin, not per Hive account. On a shared browser that
- * would keep a member's content open after they log out. Auto-unlock therefore
+ * Keys are scoped per origin and Hive account, but a shared browser must still
+ * not keep a member's content open after they log out. Auto-unlock therefore
  * requires a signed-in reader account, and if the key records its owner the
  * accounts must match. A logged-out reader can still use the explicit
  * "Restore access" action, which is a deliberate local request.

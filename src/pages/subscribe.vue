@@ -103,7 +103,7 @@
                 :disable="!canSubscribe || queued"
                 @click="pay"
               />
-              <q-btn flat no-caps label="Read the product post" :to="postPath" />
+              <q-btn flat no-caps label="Read the product post" :to="productPath" />
             </div>
 
             <p v-if="operationError" class="subscribe-error" role="alert">{{ operationError }}</p>
@@ -136,7 +136,7 @@
                 no-caps
                 color="primary"
                 label="Back to the blog post"
-                :to="postPath"
+                :to="returnPath"
               />
               <q-btn v-else flat no-caps label="Check again" :loading="checking" @click="checkBulletin" />
             </div>
@@ -358,6 +358,7 @@ import { hive } from 'src/services/hive'
 const POLL_INTERVAL_MS = 8000
 const POLL_WINDOW_MS = 2 * 60 * 1000
 const PERMLINK_RE = /^[a-z0-9][a-z0-9._-]{0,255}$/
+const RETURN_BASE = 'https://banksia.invalid'
 
 // The reader-key module is owned by the reader agent. `import.meta.glob` keeps
 // this page buildable before that file lands, and loads it automatically once
@@ -375,6 +376,23 @@ function normalizeAccount (value) {
 }
 
 /**
+ * Only allow a same-origin path back to the post the reader came from. Absolute
+ * URLs, protocol-relative URLs and the subscribe page itself are rejected.
+ */
+export function safeReturnPath (value) {
+  const text = typeof value === 'string' ? value.trim() : ''
+  if (!text || !text.startsWith('/') || text.startsWith('//')) return ''
+  try {
+    const url = new URL(text, RETURN_BASE)
+    if (url.origin !== RETURN_BASE) return ''
+    if (url.pathname === '/subscribe' || url.pathname.startsWith('/subscribe/')) return ''
+    return url.pathname + url.search + url.hash
+  } catch {
+    return ''
+  }
+}
+
+/**
  * Validate `/subscribe` query parameters.
  *
  * The blog account is the payment recipient. A product reference must belong to
@@ -383,12 +401,14 @@ function normalizeAccount (value) {
  */
 export function parseSubscribeQuery (query = {}) {
   const blog = normalizeAccount(query && query.blog)
+  const returnTo = safeReturnPath(query && query.redirect)
   if (!isValidHiveAccountName(blog)) {
     return {
       ok: false,
       blog: '',
       product: null,
       label: '',
+      returnTo,
       error: 'The blog account in the link is missing or invalid.'
     }
   }
@@ -402,6 +422,7 @@ export function parseSubscribeQuery (query = {}) {
       blog,
       product: null,
       label: '',
+      returnTo,
       error: 'The product reference in the link is invalid.'
     }
   }
@@ -411,6 +432,7 @@ export function parseSubscribeQuery (query = {}) {
       blog,
       product: null,
       label: '',
+      returnTo,
       error: 'The product does not belong to @' + blog + '.'
     }
   }
@@ -419,6 +441,7 @@ export function parseSubscribeQuery (query = {}) {
     blog,
     product: ref,
     label: ref.author + '/' + ref.permlink,
+    returnTo,
     error: ''
   }
 }
@@ -495,6 +518,7 @@ export default {
       error: '',
       blog: '',
       productRef: '',
+      returnTo: '',
       plan: null,
       readerKey: null,
       keyError: '',
@@ -545,15 +569,24 @@ export default {
         'Text-only content in this release; encrypted media is not promised'
       ]
     },
-    postPath () {
+    productPath () {
       if (!this.plan) return this.blog ? '/@' + this.blog : '/blogs'
       return '/@' + this.plan.author + '/' + this.plan.permlink
+    },
+    returnPath () {
+      return this.returnTo || this.productPath
     },
     canSubscribe () {
       return Boolean(this.loggedInUser && this.plan && this.readerKey && this.accepted && !this.queued)
     },
     memoPreview () {
       return this.operation ? this.operation[1].memo : 'Created when you queue the payment.'
+    }
+  },
+  watch: {
+    loggedInUser (value, previous) {
+      if (value === previous || !this.plan) return
+      this.ensureKey()
     }
   },
   created () {
@@ -569,6 +602,7 @@ export default {
       this.error = ''
       const parsed = parseSubscribeQuery(this.$route.query)
       this.blog = parsed.blog
+      this.returnTo = parsed.returnTo || ''
       if (!parsed.ok) {
         this.error = parsed.error
         this.loading = false
@@ -610,11 +644,12 @@ export default {
     },
     syncQuery (parsed) {
       const current = this.$route.query || {}
-      if (current.blog === parsed.blog && current.product === parsed.label) return
-      this.$router.replace({
-        path: '/subscribe',
-        query: { blog: parsed.blog, product: parsed.label }
-      }).catch(() => {})
+      const redirect = parsed.returnTo || ''
+      if (current.blog === parsed.blog && current.product === parsed.label &&
+        (current.redirect || '') === redirect) return
+      const query = { blog: parsed.blog, product: parsed.label }
+      if (redirect) query.redirect = redirect
+      this.$router.replace({ path: '/subscribe', query }).catch(() => {})
     },
     pay () {
       this.operationError = ''

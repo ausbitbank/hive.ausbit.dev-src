@@ -74,7 +74,7 @@ vi.mock('../../src/services/vaultBulletin', () => ({
 vi.mock('../../src/services/vaultUnlock', () => ({
   resolveBulletin: vi.fn(async () => state.resolved),
   verifyBulletin: vi.fn(async () => state.verified),
-  loadBulletinParts: vi.fn(async () => state.merged)
+  loadBulletinEntries: vi.fn(async () => state.merged)
 }))
 
 vi.mock('../../src/services/vaultCrypto', () => ({

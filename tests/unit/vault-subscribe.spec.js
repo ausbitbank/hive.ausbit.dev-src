@@ -3,6 +3,7 @@ import {
   buildSubscribeOperation,
   newSubscriptionId,
   parseSubscribeQuery,
+  safeReturnPath,
   subscribePlanFromPost
 } from '../../src/pages/subscribe.vue'
 import { readerPlans } from '../../src/pages/subscriptions.vue'
@@ -63,6 +64,20 @@ describe('subscribe query validation', () => {
     expect(parseSubscribeQuery({ blog: 'alice', product: 'not-a-product' }).ok).toBe(false)
     expect(parseSubscribeQuery({ blog: 'not a name' }).ok).toBe(false)
     expect(parseSubscribeQuery({}).ok).toBe(false)
+  })
+
+  it('keeps a safe post redirect and rejects off-site or self redirects', () => {
+    expect(parseSubscribeQuery({
+      blog: 'alice',
+      product: 'alice/membership',
+      redirect: '/@alice/members-post?comment=1'
+    }).returnTo).toBe('/@alice/members-post?comment=1')
+    expect(safeReturnPath('/@alice/members-post')).toBe('/@alice/members-post')
+    expect(safeReturnPath('//evil.example/@alice/post')).toBe('')
+    expect(safeReturnPath('https://evil.example/@alice/post')).toBe('')
+    expect(safeReturnPath('/subscribe?blog=alice')).toBe('')
+    expect(safeReturnPath('javascript:alert(1)')).toBe('')
+    expect(safeReturnPath('')).toBe('')
   })
 
   it('ignores price, recipient and recurrence parameters from the URL', () => {

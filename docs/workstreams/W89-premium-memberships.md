@@ -43,8 +43,9 @@ Shipped in this workstream:
   device reader keys with passphrase-wrapped recovery export/import.
 - **Creator dashboard.** `/settings/blog/vault` shows members, renewals,
   payments, grants, bulletins, keys, premium content and a revenue CSV.
-- **Blog host rules.** Blog hosts and custom domains remain read-only; a custom
-  domain deep-links premium reads to the apex and never holds a reader key.
+- **Blog host rules.** Blog hosts and custom domains remain read-only; a blog
+  host or custom domain deep-links premium reads to the apex and never holds a
+  reader key.
 
 Not in this workstream: relay/delegation, encrypted media, multi-tier, trials,
 gifts/claim codes, annual/lifetime, metered paywall, Lightning/fiat checkout,
@@ -241,14 +242,15 @@ when the user has enabled auto-send.
 ## Crypto and security model
 
 - **Keys:** random AES-256-GCM `K_kid` per period; a keyring `{kid: K_kid}`; a
-  random `K_ring` per period; a P-256 ECDH reader key per origin; a separate
+  random `K_ring` per period; a P-256 ECDH reader key per origin and Hive
+  account; a separate
   vault passphrase. None is derived from a Hive key.
 - **Creator vault at rest:** PBKDF2-SHA256 310,000 iterations + AES-256-GCM in
   `localStorage`, AAD `banksia.vault.store.v1|<account>`. Plaintext lives in
   memory only while unlocked. Export is passphrase-encrypted and never includes
   the passphrase.
-- **Reader key:** an extractable P-256 `CryptoKey` in IndexedDB (memory
-  fallback) so recovery export is possible. No key material in
+- **Reader key:** an extractable P-256 `CryptoKey` per blog and Hive account in
+  IndexedDB (memory fallback) so recovery export is possible. No key material in
   `localStorage`/`sessionStorage`, the service worker, logs or analytics.
   Extractability is a deliberate XSS trade-off, documented in
   `docs/SECURITY.md`.
@@ -268,7 +270,8 @@ when the user has enabled auto-send.
   are checked after decryption. DOMPurify via `Render`; no raw `v-html`.
 - **Payments:** recipient/amount/currency/recurrence come from the HOM product
   post; the product must belong to the blog account; `@account` is shown in the
-  review. Txids are deduplicated, and one subscriber row per reader key wins.
+  review. Txids are deduplicated, and one subscriber row per reader key and
+  payer account wins.
 - **Blog hosts:** read-only. Custom domains never read or store a reader key and
   deep-link premium reads to the apex.
 - **CSP:** unchanged. `connect-src https:` already covers Hive nodes; no new
@@ -352,11 +355,13 @@ items remain.
 - **No encrypted media.** Image/video URLs inside a premium payload are public
   once known; the composer warns and the product does not promise otherwise.
 - **No multi-tier, trials, gifts, claim codes, annual or lifetime plans.**
-- **No bulletin splitting.** The schema reserves part permlinks; the dashboard
-  enforces a 300-entry / ~60 KB single bulletin.
-- **Reader key registry is post-MVP.** The `banksia.vault.reader_key` schema and
-  builder exist, but no UI publishes it and the creator wraps one key per
-  reader.
+- **Bulletin splitting is implemented.** A signed manifest references
+  `vault-<period>-<seq>-<part>` comments when the entry list exceeds 300 or
+  ~60 KB; readers verify every part hash before merging.
+- **Device authorization is implemented.** A signed-in reader registers a new
+  device's public key in account metadata and the creator wraps every key for an
+  active subscription. The `banksia.vault.reader_key` `custom_json` shape remains
+  reserved for indexers. See `docs/integrations/vault-device-authorization.md`.
 - **Custom domains are read-only.** Premium reads happen on the apex; a custom
   domain does not hold a reader key.
 - **HF28 cancel matching was verified live** on 2026-11-27 (zero-amount

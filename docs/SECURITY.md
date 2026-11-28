@@ -249,8 +249,10 @@ Creator-side grant issuance verifies the payment against the HOM product post
 before wrapping: recipient is the blog account, amount and currency match the
 product, the memo is a valid Banksia memo, the product reference matches, the
 txid has not already been used, and the payment is not future-dated or outside
-the one-time window. The dashboard derives one subscriber row per reader key
-from the newest valid payment and skips the creator's own payments.
+the one-time window. The dashboard derives one subscriber row per reader key and
+payer account from the newest valid payment and skips the creator's own payments.
+Reader keys are scoped per blog and Hive account so a second account on the same
+browser cannot inherit the first account's grant.
 
 **Signer binding.** `verifyBulletin` requires the self-signed `signer` to equal
 `bulletin.blog` and rejects a non-null `delegation` unless delegation is
@@ -282,9 +284,9 @@ sequence.
 ### Blog hosts, custom domains and phishing
 
 - Blog hosts (`*.banksia.io`) and custom domains stay read-only. They never
-  load the signing queue, wallet or key UI. Custom domains do not read or store
-  a reader key: `requiresApex()` makes the paywall deep-link premium reads to
-  the apex. The same rule applies to `hive.ausbit.dev`.
+  load the signing queue, wallet or key UI. Blog hosts and custom domains do not
+  read or store a reader key: `requiresApex()` makes the paywall deep-link
+  premium reads to the apex. The same rule applies to `hive.ausbit.dev`.
 - The subscribe flow derives the recipient, amount, currency, recurrence and
   product from a freshly fetched HOM product post. Query parameters select only
   `blog` and `product`, and the product must belong to the blog account. Neither
@@ -304,10 +306,14 @@ sequence.
 - Text only. An image/video URL inside a premium payload is hidden until
   decryption but is public once known; the composer warns and the product does
   not promise encrypted media.
-- Multi-device is recovery-only. Each origin has its own reader key; the Hive
-  reader-key registry schema exists in the code but the registry UI and
-  creator-side multi-key wrapping are post-MVP. A second device imports the
-  passphrase-wrapped recovery file or asks the creator to re-issue.
+- Multi-device has two paths. A signed-in reader can register a new device's
+  public key in `posting_json_metadata["banksia.io"].reader.devices`; the creator
+  wraps the ring key to every registered key for the active subscription, so no
+  private key moves and no second payment is needed. The creator reads active
+  subscriber accounts in bulk with `get_accounts`. The fallback is the
+  passphrase-wrapped recovery file (the file names its blog; log in as the
+  account recorded in the file) or subscribing again so the creator can issue a
+  grant for the new device key.
 - **Self-sovereign gap:** the creator must be online to issue a grant. A reader
   can pay while the creator is offline and will wait; the subscribe dialog says
   so, the page polls for two minutes, and cancellation is available. The base
@@ -344,7 +350,7 @@ premium media.
 | Reader key stolen by XSS or malware | Content leak for that reader and blog | CSP, DOMPurify, no raw `v-html`, extractable key kept in IndexedDB/memory only, forget/rotate on the device | Extractable for recovery, so same-origin script can export it while the page is open. CSP is the main control |
 | Creator vault stolen | Full archive leak | PBKDF2-SHA256 310k + AES-256-GCM, account-bound AAD, passphrase not stored, encrypted export only | Offline passphrase guessing; weak passphrases are the weak point |
 | Forged grant | Free access or a lockout | Posting-key signature, canonical JSON, keyring hash, AAD-bound wrap, expiry check; `signer === blog` enforced and delegated bulletins rejected | Delegation is post-MVP |
-| Replayed payment | Duplicate grant | Recipient/amount/memo/product checks, txid uniqueness, one subscriber row per reader key, newest-payment wins | No persistent replay ledger beyond the 1,000-row history scan |
+| Replayed payment | Duplicate grant | Recipient/amount/memo/product checks, txid uniqueness, one subscriber row per reader key and payer account, newest-payment wins | No persistent replay ledger beyond the 1,000-row history scan |
 | Tampered ciphertext or keyring | Wrong plaintext or a crash | AES-GCM tag, SHA-256 plaintext hash, keyring AAD, no partial plaintext | None known; failure is a locked state |
 | Wrong key or wrong period | No decrypt | `kid` selection, `rkt` match, typed `VAULT_TAG`/`VAULT_BAD_KEY` errors | User must use the subscribing device or restore |
 | Malicious API node | Fake metadata, bulletin or payment history | Verify the bulletin signature locally, re-fetch the product post for money, multi-node read fallback, chain consensus for history | A node can withhold data or serve stale data; the reader fails closed |

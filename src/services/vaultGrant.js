@@ -15,6 +15,7 @@
 
 import {
   BULLETIN_SIG_PREFIX,
+  BULLETIN_SIG_PREFIX_V2,
   DELEGATION_SIG_PREFIX,
   GRANT_SIG_PREFIX,
   VaultCryptoError,
@@ -28,6 +29,7 @@ const HIVE_ACCOUNT_RE = /^[a-z][a-z0-9.-]{2,15}$/
 const PERIOD_RE = /^\d{4}-(?:0[1-9]|1[0-2])$/
 const THUMBPRINT_RE = /^[0-9a-f]{16}$/
 const BULLETIN_PERMLINK_RE = /^vault-(\d{4}-\d{2})-(\d+)(?:-\d+)?$/
+const SHARD_COUNTS = new Set([8, 16, 32, 64, 128, 256, 512, 1024])
 
 function isPlainObject (value) {
   if (!value || typeof value !== 'object') return false
@@ -128,7 +130,8 @@ export async function bulletinPayloadObject (bulletin) {
 
 /** The exact UTF-8 string a bulletin signature covers. */
 export async function buildBulletinSigningPayload (bulletin) {
-  return `${BULLETIN_SIG_PREFIX}|${canonicalJson(await bulletinPayloadObject(bulletin))}`
+  const prefix = isPlainObject(bulletin) && bulletin.v === 2 ? BULLETIN_SIG_PREFIX_V2 : BULLETIN_SIG_PREFIX
+  return `${prefix}|${canonicalJson(await bulletinPayloadObject(bulletin))}`
 }
 
 /** The exact UTF-8 string a standalone grant signature covers. */
@@ -301,7 +304,7 @@ export function parseBulletin (jsonMetadata) {
 
     const raw = isPlainObject(root.banksia_vault_bulletin) ? root.banksia_vault_bulletin : root
     if (!isPlainObject(raw)) return null
-    if (raw.v !== 1) return null
+    if (raw.v !== 1 && raw.v !== 2) return null
     if (typeof raw.blog !== 'string' || !HIVE_ACCOUNT_RE.test(raw.blog)) return null
     if (typeof raw.period !== 'string' || !PERIOD_RE.test(raw.period)) return null
 
@@ -310,6 +313,30 @@ export function parseBulletin (jsonMetadata) {
 
     const keyring = normalizeKeyring(raw.keyring)
     if (!keyring) return null
+    if (raw.ringId !== undefined && (typeof raw.ringId !== 'string' || !raw.ringId)) return null
+
+    if (raw.v === 2) {
+      const shardCount = Number(raw.shardCount)
+      if (!Number.isInteger(shardCount) || !SHARD_COUNTS.has(shardCount)) return null
+      if (!Array.isArray(raw.shards) || raw.shards.length === 0) return null
+      for (const descriptor of raw.shards) {
+        if (!Array.isArray(descriptor) || descriptor.length < 3) return null
+        if (!Number.isInteger(descriptor[0]) || descriptor[0] < 0 || descriptor[0] >= shardCount) return null
+        if (!Number.isInteger(descriptor[1]) || descriptor[1] < 1) return null
+        if (typeof descriptor[2] !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(descriptor[2])) return null
+      }
+      return {
+        ...raw,
+        v: 2,
+        blog: raw.blog,
+        period: raw.period,
+        seq,
+        keyring,
+        shardCount,
+        shards: raw.shards.map(descriptor => [...descriptor])
+      }
+    }
+
     if (!Array.isArray(raw.entries)) return null
 
     const entries = raw.entries.map(normalizeEntry).filter(Boolean)

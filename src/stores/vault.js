@@ -11,7 +11,7 @@
 import { defineStore } from 'pinia'
 import {
   findGrantEntry,
-  loadBulletinParts,
+  loadBulletinEntries,
   loadVaultParts,
   resolveBulletin,
   unlockWithGrant,
@@ -37,6 +37,14 @@ const polls = new Map()
 
 function normalizeBlog (value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase()
+}
+
+function normalizeAccount (value) {
+  return String(value || '').trim().replace(/^@/, '').toLowerCase()
+}
+
+function readerKeyId (blog, account) {
+  return normalizeBlog(blog) + '\u0000' + normalizeAccount(account)
 }
 
 function postKey (blog, permlink) {
@@ -100,41 +108,46 @@ export const useVaultStore = defineStore('vault', {
     async ensureReaderKey (blog, options = {}) {
       const name = normalizeBlog(blog)
       if (!name) throw new Error('A blog account is required for a reader key.')
-      const existing = this.readerKeys[name] || await getReaderKey(name)
+      const account = normalizeAccount(options && options.account)
+      const id = readerKeyId(name, account)
+      const existing = this.readerKeys[id] || await getReaderKey(name, account)
       if (existing) {
-        this.readerKeys[name] = existing
+        this.readerKeys[id] = existing
         return existing
       }
       const record = await ensureStoredReaderKey(name, options)
-      this.readerKeys[name] = record
+      this.readerKeys[readerKeyId(record.blog, record.account)] = record
       return record
     },
 
-    async readerKey (blog) {
+    async readerKey (blog, account = '') {
       const name = normalizeBlog(blog)
       if (!name) return null
-      if (this.readerKeys[name]) return this.readerKeys[name]
-      const record = await getReaderKey(name)
-      if (record) this.readerKeys[name] = record
+      const id = readerKeyId(name, account)
+      if (this.readerKeys[id]) return this.readerKeys[id]
+      const record = await getReaderKey(name, account)
+      if (record) this.readerKeys[readerKeyId(record.blog, record.account)] = record
       return record
     },
 
     async listReaderKeys () {
       const records = await listReaderKeys()
-      for (const record of records) this.readerKeys[record.blog] = record
+      for (const record of records) {
+        this.readerKeys[readerKeyId(record.blog, record.account)] = record
+      }
       return records
     },
 
-    async forgetReaderKey (blog) {
+    async forgetReaderKey (blog, account = '') {
       const name = normalizeBlog(blog)
-      delete this.readerKeys[name]
-      return forgetStoredReaderKey(name)
+      delete this.readerKeys[readerKeyId(name, account)]
+      return forgetStoredReaderKey(name, account)
     },
 
-    async rotateReaderKey (blog) {
+    async rotateReaderKey (blog, account = '') {
       const name = normalizeBlog(blog)
-      const record = await rotateStoredReaderKey(name)
-      this.readerKeys[name] = record
+      const record = await rotateStoredReaderKey(name, account)
+      this.readerKeys[readerKeyId(record.blog, record.account)] = record
       return record
     },
 
@@ -145,7 +158,7 @@ export const useVaultStore = defineStore('vault', {
     async importRecovery (blog, text, passphrase) {
       const name = normalizeBlog(blog)
       const record = await importReaderKeyRecovery(name, text, passphrase)
-      this.readerKeys[name] = record
+      this.readerKeys[readerKeyId(record.blog, record.account)] = record
       return record
     },
 
@@ -175,6 +188,7 @@ export const useVaultStore = defineStore('vault', {
       force = false,
       poll = true,
       readerAccount = '',
+      device = false,
       timeoutMs = DEFAULT_POLL_TIMEOUT_MS,
       intervalMs = DEFAULT_POLL_INTERVAL_MS
     } = {}) {
@@ -202,7 +216,7 @@ export const useVaultStore = defineStore('vault', {
         })
 
         try {
-          const record = await getReaderKey(name)
+          const record = await getReaderKey(name, readerAccount)
           if (!record) {
             const state = this.setPostState(key, {
               status: 'no-key',
@@ -211,7 +225,7 @@ export const useVaultStore = defineStore('vault', {
             })
             return { ok: false, ...state }
           }
-          this.readerKeys[name] = record
+          this.readerKeys[readerKeyId(record.blog, record.account)] = record
 
           const resolved = await resolveBulletin({ blog: name, settings, force, allowRelay: true })
           if (!resolved || !resolved.bulletin) {
@@ -225,13 +239,14 @@ export const useVaultStore = defineStore('vault', {
               })
               return { ok: false, ...state }
             }
+            const code = device ? 'device-pending' : 'payment-pending'
             const state = this.setPostState(key, {
-              status: 'payment-pending',
-              code: 'bulletin',
-              message: vaultStatusMessage('payment-pending'),
+              status: code,
+              code,
+              message: vaultStatusMessage(code),
               bulletinAt: 0
             })
-            if (poll) this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, timeoutMs, intervalMs })
+            if (poll) this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, device, timeoutMs, intervalMs })
             return { ok: false, ...state }
           }
 
@@ -252,7 +267,10 @@ export const useVaultStore = defineStore('vault', {
             return { ok: false, ...state }
           }
 
-          const mergedBulletin = await loadBulletinParts({ bulletin: resolved.bulletin })
+          const mergedBulletin = await loadBulletinEntries({
+            bulletin: resolved.bulletin,
+            readerRkt: record.rkt
+          })
           if (!mergedBulletin) {
             const state = this.setPostState(key, {
               status: 'error',
@@ -268,13 +286,14 @@ export const useVaultStore = defineStore('vault', {
             readerPublicKey: record.publicKeyB64
           })
           if (!entry) {
+            const code = device ? 'device-pending' : 'payment-pending'
             const state = this.setPostState(key, {
-              status: 'payment-pending',
-              code: 'payment-pending',
-              message: vaultStatusMessage('payment-pending'),
+              status: code,
+              code,
+              message: vaultStatusMessage(code),
               bulletinAt: Date.now()
             })
-            if (poll) this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, timeoutMs, intervalMs })
+            if (poll) this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, device, timeoutMs, intervalMs })
             return { ok: false, ...state }
           }
 
@@ -313,11 +332,12 @@ export const useVaultStore = defineStore('vault', {
           })
 
           if (!result.ok) {
+            const pending = device ? 'device-pending' : 'payment-pending'
             const status = result.code === 'expired'
               ? 'expired'
               : (result.code === 'wrong-key' || result.code === 'tampered' || result.code === 'unsupported')
                   ? 'error'
-                  : 'payment-pending'
+                  : pending
             const state = this.setPostState(key, {
               status,
               code: result.code,
@@ -325,8 +345,8 @@ export const useVaultStore = defineStore('vault', {
               error: result.code,
               bulletinAt: Date.now()
             })
-            if (status === 'payment-pending' && poll) {
-              this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, timeoutMs, intervalMs })
+            if (status === pending && poll) {
+              this.startPoll({ blog: name, author, permlink, metadata, settings, readerAccount, device, timeoutMs, intervalMs })
             }
             return { ok: false, ...state }
           }
@@ -372,7 +392,7 @@ export const useVaultStore = defineStore('vault', {
       return this.unlockPost({ ...options, force: true })
     },
 
-    startPoll ({ blog, author, permlink, metadata, settings, readerAccount, timeoutMs, intervalMs }) {
+    startPoll ({ blog, author, permlink, metadata, settings, readerAccount, device = false, timeoutMs, intervalMs }) {
       const key = postKey(blog, permlink)
       stopPoll(key)
       const handle = { cancelled: false, timer: null }
@@ -401,7 +421,8 @@ export const useVaultStore = defineStore('vault', {
           settings,
           force: true,
           poll: false,
-          readerAccount
+          readerAccount,
+          device
         }).catch(() => {})
         if (handle.cancelled) return
         const next = this.posts[key]

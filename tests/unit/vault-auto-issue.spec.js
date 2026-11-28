@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   AUTO_ISSUE_INTERVAL_MS,
   hasQueuedVaultBulletin,
+  readAutoIssueBatch,
   readAutoIssuePreference,
   shouldAutoIssue,
+  writeAutoIssueBatch,
   writeAutoIssuePreference
 } from '../../src/services/vaultAutoIssue'
 
@@ -36,6 +38,16 @@ describe('Vault auto-issue preference', () => {
     expect(readAutoIssuePreference('alice', store)).toBe(false)
     expect(readAutoIssuePreference('bob', store)).toBe(true)
     expect(readAutoIssuePreference('', store)).toBe(true)
+  })
+
+  it('defaults the batch window to 30 seconds and persists valid choices', () => {
+    const store = storage()
+    expect(readAutoIssueBatch('alice', store)).toBe(30)
+    writeAutoIssueBatch('alice', 120, store)
+    expect(readAutoIssueBatch('alice', store)).toBe(120)
+    writeAutoIssueBatch('alice', 999, store)
+    expect(readAutoIssueBatch('alice', store)).toBe(120)
+    expect(readAutoIssueBatch('bob', store)).toBe(30)
   })
 })
 

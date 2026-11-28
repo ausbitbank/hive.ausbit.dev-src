@@ -24,39 +24,57 @@
     <p v-if="message" class="banksia-locked__status" role="status" aria-live="polite">{{ message }}</p>
 
     <div class="banksia-locked__actions">
-      <button
-        type="button"
+      <a
+        v-if="apexUrl"
+        :href="apexUrl"
         class="banksia-locked__button banksia-locked__button--primary"
-        :disabled="busy || !plan"
-        @click="$emit('subscribe')"
       >
-        {{ primaryLabel }}
-      </button>
-      <button
-        type="button"
-        class="banksia-locked__button"
-        :disabled="busy"
-        @click="$emit('restore')"
-      >
-        Already a member? Restore access
-      </button>
-      <button
-        v-if="showRetry"
-        type="button"
-        class="banksia-locked__button banksia-locked__button--quiet"
-        :disabled="busy"
-        @click="$emit('retry')"
-      >
-        Check again
-      </button>
+        Read on Banksia
+      </a>
+      <template v-else>
+        <button
+          type="button"
+          class="banksia-locked__button banksia-locked__button--primary"
+          :disabled="busy || !plan"
+          @click="$emit('subscribe')"
+        >
+          {{ primaryLabel }}
+        </button>
+        <button
+          v-if="readerAccount"
+          type="button"
+          class="banksia-locked__button"
+          :disabled="busy || !plan"
+          @click="$emit('use-device')"
+        >
+          Use my membership on this device
+        </button>
+        <button
+          type="button"
+          class="banksia-locked__button"
+          :disabled="busy"
+          @click="$emit('restore')"
+        >
+          Already a member? Restore access
+        </button>
+        <button
+          v-if="showRetry"
+          type="button"
+          class="banksia-locked__button banksia-locked__button--quiet"
+          :disabled="busy"
+          @click="$emit('retry')"
+        >
+          Check again
+        </button>
+      </template>
     </div>
 
-    <p v-if="!plan && status === 'error'" class="banksia-locked__notice">
+    <p v-if="!plan && status === 'error' && !apexUrl" class="banksia-locked__notice">
       The membership plan could not be loaded. Refresh to try again.
     </p>
 
     <p v-if="apexUrl" class="banksia-locked__notice">
-      This blog is read-only. <a :href="apexUrl">Read on Banksia</a> to unlock with your membership.
+      This blog is read-only. Your membership unlocks this post on Banksia.
     </p>
 
     <p class="banksia-locked__micro">
@@ -84,7 +102,7 @@ export default {
     readerAccount: { type: String, default: '' },
     apexUrl: { type: String, default: '' }
   },
-  emits: ['subscribe', 'restore', 'retry'],
+  emits: ['subscribe', 'use-device', 'restore', 'retry'],
   computed: {
     paywall () {
       return this.metadata && this.metadata.paywall ? this.metadata.paywall : null
@@ -122,10 +140,12 @@ export default {
       return this.status === 'checking' || this.status === 'unlocking'
     },
     showRetry () {
-      return this.status === 'payment-pending' || this.status === 'error' || this.status === 'expired'
+      return this.status === 'payment-pending' || this.status === 'device-pending' ||
+        this.status === 'error' || this.status === 'expired'
     },
     primaryLabel () {
       if (this.status === 'expired') return 'Renew membership'
+      if (this.status === 'device-pending') return 'Subscribe instead'
       if (this.busy) return 'Unlocking…'
       return 'Subscribe'
     }
@@ -235,6 +255,9 @@ export default {
 }
 
 .banksia-locked__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
   padding: 0.6rem 1rem;
   border: 1px solid var(--c-border-strong);
@@ -244,6 +267,8 @@ export default {
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
 }
 

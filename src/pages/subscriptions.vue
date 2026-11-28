@@ -99,6 +99,15 @@
                       label="Cancel"
                       @click="confirmCancel(plan)"
                     />
+                    <q-btn
+                      v-if="plan.status === 'active' && !readonly && !hasLocalDeviceKey(plan)"
+                      outline
+                      no-caps
+                      color="primary"
+                      label="Use this device"
+                      :loading="busy === 'device'"
+                      @click="useDevice(plan)"
+                    />
                     <p v-if="plan.status === 'active' && !plan.hasOpenTransfer" class="subs-muted">
                       No active recurring transfer to cancel. Access continues until
                       {{ plan.accessUntil ? shortDate(plan.accessUntil) : 'the paid period ends' }}.
@@ -153,7 +162,8 @@
           <q-card flat bordered class="subs-card">
             <q-card-section>
               <p class="subs-muted">
-                Each device holds a P-256 reader key for a blog. The private key
+                Each Hive account on a device holds its own P-256 reader key for a
+                blog, so subscriptions and grants stay separate. The private key
                 never leaves this browser and is never displayed here. Export an
                 encrypted recovery file before changing devices.
               </p>
@@ -165,19 +175,32 @@
                   <thead>
                     <tr>
                       <th scope="col">Blog</th>
+                      <th scope="col">Account</th>
                       <th scope="col">Thumbprint</th>
                       <th scope="col">Created</th>
                       <th scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="key in readerKeys" :key="key.blog + key.rkt">
+                    <tr v-for="key in readerKeys" :key="(key.blog || subject) + ':' + (key.account || '') + ':' + key.rkt">
                       <td>@{{ key.blog || subject }}</td>
+                      <td>{{ key.account ? '@' + key.account : '—' }}</td>
                       <td><code>{{ shortKey(key.rkt) }}</code></td>
                       <td>{{ key.created ? shortDate(key.created) : '—' }}</td>
                       <td>
                         <div class="subs-row-actions">
                           <q-btn flat dense no-caps size="sm" label="Export recovery" :disable="readonly" @click="exportRecovery(key)" />
+                          <q-btn
+                            v-if="key.own"
+                            flat
+                            dense
+                            no-caps
+                            size="sm"
+                            color="warning"
+                            label="Remove account key"
+                            :disable="readonly"
+                            @click="confirmRemoveAccountKey(key)"
+                          />
                           <q-btn flat dense no-caps size="sm" color="warning" label="Forget this device key" :disable="readonly" @click="confirmForget(key)" />
                         </div>
                       </td>
@@ -492,7 +515,7 @@
 
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
-import { fetchAccountHistoryFiltered } from 'src/services/chainData'
+import { fetchAccount, fetchAccountHistoryFiltered } from 'src/services/chainData'
 import { collectAccountHistory, VAULT_HISTORY_FILTER, vaultHistorySince } from 'src/services/accountHistory'
 import { hive } from 'src/services/hive'
 import { isValidHiveAccountName } from 'src/services/blogHost'
@@ -823,15 +846,62 @@ export default {
         const list = await module.listReaderKeys()
         this.readerKeys = (Array.isArray(list) ? list : [])
           .filter(item => item && typeof item === 'object')
-          .map(item => ({
-            blog: normalizeAccount(item.blog || item.blogAccount),
-            rkt: typeof item.rkt === 'string' ? item.rkt : '',
-            created: typeof item.created === 'string' ? item.created : (item.createdAt || ''),
-            label: typeof item.label === 'string' ? item.label : ''
-          }))
+          .map(item => {
+            const account = normalizeAccount(item.account || '')
+            return {
+              blog: normalizeAccount(item.blog || item.blogAccount),
+              account,
+              own: Boolean(account) && account === normalizeAccount(this.subject),
+              rkt: typeof item.rkt === 'string' ? item.rkt : '',
+              created: typeof item.created === 'string' ? item.created : (item.createdAt || ''),
+              label: typeof item.label === 'string' ? item.label : ''
+            }
+          })
           .filter(item => item.blog || item.rkt)
       } catch {
         this.readerKeyError = 'Reader keys could not be listed on this device.'
+      }
+    },
+    hasLocalDeviceKey (plan) {
+      const blog = normalizeAccount(plan && plan.author)
+      if (!blog) return false
+      return this.readerKeys.some(key =>
+        normalizeAccount(key.blog) === blog &&
+        (!key.account || normalizeAccount(key.account) === normalizeAccount(this.subject))
+      )
+    },
+    async useDevice (plan) {
+      this.actionError = ''
+      this.notice = ''
+      if (this.readonly || !plan || !this.subject) return
+      const module = this.readerKeyModule
+      if (!module || typeof module.ensureReaderKey !== 'function') {
+        this.actionError = 'Reader key management is not available in this build.'
+        return
+      }
+      this.busy = 'device'
+      try {
+        const key = await module.ensureReaderKey(plan.author, { account: this.subject })
+        if (!key || !key.publicKeyB64) throw new Error('A reader key could not be created on this device.')
+        const { requestReaderDevice } = await import('src/services/vaultDevices')
+        const result = await requestReaderDevice({
+          account: this.subject,
+          blog: plan.author,
+          readerKey: key.publicKeyB64,
+          fetchAccount
+        })
+        if (!result.ok) throw new Error(result.error)
+        if (result.changed && result.operation) {
+          this.$hiveStore.addToQueue([this.subject, 'posting', result.operation])
+          this.notice = 'Device request queued for @' + plan.author + '. Approve it in your signing queue; the creator will then grant this device.'
+        } else {
+          this.notice = 'This device is already registered for @' + plan.author + '. Open the post; it will unlock once the creator has issued the grant.'
+        }
+        await this.loadReaderKeys()
+      } catch (error) {
+        this.actionError = error && error.message ? error.message : 'This device could not be added.'
+      } finally {
+        this.busy = ''
       }
     },
     promptPassphrase (title, message) {
@@ -858,7 +928,7 @@ export default {
       this.busy = 'export'
       try {
         const blog = key.blog || this.subject
-        const data = await fn(blog, passphrase, { account: this.subject })
+        const data = await fn(blog, passphrase, { account: key.account || this.subject })
         download('banksia-vault-recovery-' + blog + '.json', JSON.stringify(data, null, 2))
         this.notice = 'Encrypted reader recovery downloaded.'
       } catch (error) {
@@ -885,10 +955,12 @@ export default {
       this.busy = 'import'
       try {
         const text = await this.recoveryFile.text()
-        const blog = this.subject
-        await fn(blog, text, passphrase)
+        // A new device may not know which blog the file belongs to yet; the
+        // encrypted payload names it. Importing with an empty blog also means a
+        // recovery file is never filed under the reader's own account name.
+        const record = await fn('', text, passphrase)
         this.recoveryFile = null
-        this.notice = 'Reader recovery imported.'
+        this.notice = 'Reader recovery imported for @' + ((record && record.blog) || this.subject) + '.'
         await this.loadReaderKeys()
       } catch (error) {
         this.actionError = error && error.message ? error.message : 'The recovery file could not be imported.'
@@ -900,8 +972,9 @@ export default {
       if (this.readonly) return
       this.$q.dialog({
         title: 'Forget this device key?',
-        message: 'The private key for @' + (key.blog || this.subject) + ' will be removed from this browser. ' +
-          'Restore it from a recovery file or ask the creator to re-issue a grant.',
+        message: 'The private key for ' +
+          (key.account ? '@' + key.account + ' on @' + (key.blog || this.subject) : '@' + (key.blog || this.subject)) +
+          ' will be removed from this browser. Restore it from a recovery file or ask the creator to re-issue a grant.',
         cancel: true,
         persistent: true,
         ok: { label: 'Forget key', color: 'warning', unelevated: true, noCaps: true }
@@ -916,11 +989,57 @@ export default {
         return
       }
       try {
-        await fn(key.blog || this.subject)
+        await fn(key.blog || this.subject, key.account || '')
         this.notice = 'Reader key removed from this device.'
         await this.loadReaderKeys()
       } catch (error) {
         this.actionError = error && error.message ? error.message : 'The device key could not be removed.'
+      }
+    },
+    confirmRemoveAccountKey (key) {
+      if (this.readonly || !key.own) return
+      this.$q.dialog({
+        title: 'Remove this key from your account?',
+        message: 'The creator will stop wrapping new grants to this key for @' + (key.blog || this.subject) +
+          '. Access continues until the current grant expires. The private key stays on this device until you also forget it.',
+        cancel: true,
+        persistent: true,
+        ok: { label: 'Remove account key', color: 'warning', unelevated: true, noCaps: true }
+      }).onOk(() => this.removeAccountKey(key))
+    },
+    async removeAccountKey (key) {
+      this.actionError = ''
+      this.notice = ''
+      const module = this.readerKeyModule
+      const getKey = module && module.getReaderKey
+      if (typeof getKey !== 'function') {
+        this.actionError = 'Reader key management is not available in this build.'
+        return
+      }
+      this.busy = 'device'
+      try {
+        const record = await getKey(key.blog, key.account)
+        if (!record || !record.publicKeyB64) throw new Error('The reader key could not be read on this device.')
+        const account = await fetchAccount(this.subject, { force: true })
+        if (!account) throw new Error('The reader account could not be loaded.')
+        const { removeReaderDevice } = await import('src/services/vaultDevices')
+        const result = removeReaderDevice({
+          account: this.subject,
+          metadata: account.posting_json_metadata,
+          blog: key.blog,
+          readerKey: record.publicKeyB64
+        })
+        if (!result.ok) throw new Error(result.error)
+        if (result.changed && result.operation) {
+          this.$hiveStore.addToQueue([this.subject, 'posting', result.operation])
+          this.notice = 'Device removal queued for @' + key.blog + '. Approve it in your signing queue; the creator will stop wrapping this key after the current grant expires.'
+        } else {
+          this.notice = 'That key was not registered in the account metadata.'
+        }
+      } catch (error) {
+        this.actionError = error && error.message ? error.message : 'The account key could not be removed.'
+      } finally {
+        this.busy = ''
       }
     },
     shortKey (value) {

@@ -24,6 +24,7 @@
     :reader-account="readerAccount"
     :apex-url="apexUrl"
     @subscribe="$emit('subscribe')"
+    @use-device="$emit('use-device')"
     @restore="$emit('restore')"
     @retry="$emit('retry')"
   />
@@ -49,7 +50,7 @@ export default {
     readerAccount: { type: String, default: '' },
     apexUrl: { type: String, default: '' }
   },
-  emits: ['subscribe', 'restore', 'retry'],
+  emits: ['subscribe', 'use-device', 'restore', 'retry'],
   computed: {
     isUnlocked () {
       return Boolean(this.state && this.state.status === 'unlocked' && this.plaintext)

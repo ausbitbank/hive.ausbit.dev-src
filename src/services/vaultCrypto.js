@@ -16,6 +16,7 @@ export const VAULT_WRAP_INFO_PREFIX = 'banksia.vault.wrap.v1'
 export const CONTENT_AAD_PREFIX = 'banksia.vault.content.v1'
 export const KEYRING_AAD_PREFIX = 'banksia.vault.keyring.v1'
 export const BULLETIN_SIG_PREFIX = 'banksia.vault.bulletin.v1'
+export const BULLETIN_SIG_PREFIX_V2 = 'banksia.vault.bulletin.v2'
 export const GRANT_SIG_PREFIX = 'banksia.vault.grant.v1'
 export const DELEGATION_SIG_PREFIX = 'banksia.vault.delegation.v1'
 

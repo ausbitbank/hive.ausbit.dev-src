@@ -11,7 +11,7 @@ import { readVaultSettings, vaultIsConfigured } from './vaultSettings'
 import { deriveVaultPlan, parseVaultProduct } from './vaultProduct'
 import { parseProductRef } from './shopOrders'
 import { subscriberRows } from './vaultBulletin'
-import { loadBulletinParts, resolveBulletin, verifyBulletin } from './vaultUnlock'
+import { loadBulletinEntries, resolveBulletin, verifyBulletin } from './vaultUnlock'
 import { readerKeyThumbprint } from './vaultCrypto'
 
 const CACHE_MS = 60 * 1000
@@ -70,12 +70,20 @@ export async function getPendingGrantCount (account, { force = false, now = Date
       cache.set(name, { at: now, count: 0 })
       return 0
     }
+    const rkts = []
+    for (const row of rows) {
+      try {
+        rkts.push(await readerKeyThumbprint(row.readerKey))
+      } catch {
+        // A malformed key is counted as pending by the loop below.
+      }
+    }
 
     const resolved = await resolveBulletin({ blog: name, settings: vault.settings, force: true })
     if (!resolved) return 0
     const verified = await verifyBulletin({ bulletin: resolved.bulletin })
     if (!verified.ok) return 0
-    const merged = await loadBulletinParts({ bulletin: resolved.bulletin })
+    const merged = await loadBulletinEntries({ bulletin: resolved.bulletin, readerRkts: rkts })
     if (!merged) return 0
     const entries = Array.isArray(merged.entries) ? merged.entries : []
 

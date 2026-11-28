@@ -553,7 +553,8 @@ function subscriberFrom (payment, plan, now) {
 }
 
 /**
- * Collect verified payments and one subscriber per reader key from history.
+ * Collect verified payments and one subscriber per reader key and payer from
+ * history.
  *
  * History rows are sorted newest first, deduplicated by txid, and split into
  * payments, subscribers (gifts excluded), gifts, duplicates and invalid rows.
@@ -588,10 +589,14 @@ export function collectVaultPayments (history, plan, { now = Date.now(), limit =
     if (result.giftFor) gifts.push(result)
   }
 
+  // A device can hold more than one reader key (one per Hive account), and a
+  // legacy device key may have been shared by two accounts. Keep the newest
+  // payment per key *and* payer so every paying account stays visible.
   const latestByReader = new Map()
   for (const payment of payments) {
     if (payment.giftFor) continue
-    if (!latestByReader.has(payment.readerKey)) latestByReader.set(payment.readerKey, payment)
+    const identity = payment.readerKey + '|' + normalizeAccount(payment.from)
+    if (!latestByReader.has(identity)) latestByReader.set(identity, payment)
   }
   const subscribers = []
   for (const payment of latestByReader.values()) {

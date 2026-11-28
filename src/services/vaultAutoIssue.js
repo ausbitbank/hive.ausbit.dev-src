@@ -9,7 +9,9 @@
 // these helpers only decide whether a tick should run and persist the opt-in.
 
 export const AUTO_ISSUE_INTERVAL_MS = 30 * 1000
+export const AUTO_ISSUE_BATCH_OPTIONS = [30, 60, 120]
 const STORAGE_PREFIX = 'banksia_vault_auto_issue:'
+const BATCH_PREFIX = 'banksia_vault_auto_issue_batch:'
 
 function normalizeAccount (value) {
   return String(value || '').trim().replace(/^@/, '').toLowerCase()
@@ -43,6 +45,29 @@ export function writeAutoIssuePreference (account, enabled, storage = defaultSto
   } catch {
     // Local storage can be unavailable in private mode; the in-memory toggle
     // still works for this session.
+  }
+}
+
+/** Batch window in seconds; defaults to the original 30 seconds. */
+export function readAutoIssueBatch (account, storage = defaultStorage()) {
+  const name = normalizeAccount(account)
+  if (!name || !storage) return 30
+  try {
+    const value = Number(storage.getItem(BATCH_PREFIX + name))
+    return AUTO_ISSUE_BATCH_OPTIONS.includes(value) ? value : 30
+  } catch {
+    return 30
+  }
+}
+
+export function writeAutoIssueBatch (account, seconds, storage = defaultStorage()) {
+  const name = normalizeAccount(account)
+  const value = Number(seconds)
+  if (!name || !storage || !AUTO_ISSUE_BATCH_OPTIONS.includes(value)) return
+  try {
+    storage.setItem(BATCH_PREFIX + name, String(value))
+  } catch {
+    // The in-memory value still applies for this session.
   }
 }
 

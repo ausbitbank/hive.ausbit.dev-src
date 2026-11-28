@@ -14,6 +14,7 @@ import {
   buildGrantHeader
 } from '../src/services/vaultGrant.js'
 import { buildVaultProductMetadata } from '../src/services/vaultProduct.js'
+import { buildVaultShardedBulletin, planShardUpdates } from '../src/services/vaultBulletin.js'
 
 // The production build registers a service worker on loopback. Its navigation
 // fallback can answer the same-origin requests before Playwright's route mock,
@@ -215,6 +216,64 @@ async function buildSignedBulletin (fixture, readers, { expires = EXPIRES } = {}
   return { bulletin, post }
 }
 
+async function buildSignedShardedBulletin (fixture, readers, { expires = EXPIRES } = {}) {
+  const canonicalExpires = new Date(expires).toISOString()
+  const entries = []
+  for (const reader of readers) {
+    const readerKey = reader.readerKey || reader.publicKeyB64
+    const header = buildGrantHeader(
+      { rkt: reader.rkt, tier: 'member', expires: canonicalExpires },
+      { blog: BLOG, period: PERIOD, tier: 'member' }
+    )
+    const wrapped = await wrapRingKey(fixture.ringKey, readerKey, header)
+    entries.push({ rkt: reader.rkt, ...wrapped, expires: canonicalExpires })
+  }
+  const plan = await planShardUpdates({
+    blog: BLOG,
+    period: PERIOD,
+    shardCount: 8,
+    entries,
+    existingShards: []
+  })
+  const bulletin = await buildVaultShardedBulletin({
+    blog: BLOG,
+    period: PERIOD,
+    seq: 1,
+    keyring: fixture.keyring,
+    ringKey: fixture.ringKey,
+    shardCount: 8,
+    shards: plan.descriptors,
+    signer: BLOG,
+    issued: '2026-11-27T09:00:00.000Z',
+    signAdapter: {
+      sign: async text => fixture.utils.signMessage(text, fixture.privateKey)
+    }
+  })
+  const post = {
+    author: BLOG,
+    permlink: BULLETIN_PERMLINK,
+    parent_author: BLOG,
+    parent_permlink: CONTAINER,
+    depth: 1,
+    title: '',
+    body: 'Vault grant shards.',
+    created: '2026-11-27T09:00:00',
+    json_metadata: JSON.stringify({ app: 'banksia.io', banksia_vault_bulletin: bulletin })
+  }
+  const shardPosts = plan.shards.map(shard => ({
+    author: BLOG,
+    permlink: shard.permlink,
+    parent_author: BLOG,
+    parent_permlink: CONTAINER,
+    depth: 1,
+    title: '',
+    body: '',
+    created: '2026-11-27T09:00:00',
+    json_metadata: JSON.stringify({ app: 'banksia.io', banksia_vault_shard: shard.object })
+  }))
+  return { bulletin, post, shardPosts }
+}
+
 function readerKeyWithThumbprint () {
   return makeReaderKey().then(async ({ pair, readerKey }) => ({
     pair,
@@ -318,6 +377,7 @@ async function seedReaderKey (page) {
       .replace(/=+$/, '')
     const publicKeyB64 = 'p256:' + b64
     const record = {
+      id: 'alice\u0000bob',
       blog: 'alice',
       publicKeyB64,
       privateKey: pair.privateKey,
@@ -326,19 +386,22 @@ async function seedReaderKey (page) {
       account: 'bob'
     }
     const database = await new Promise((resolve, reject) => {
-      const request = indexedDB.open('banksia-vault', 1)
+      const request = indexedDB.open('banksia-vault', 2)
       request.onupgradeneeded = () => {
         const db = request.result
         if (!db.objectStoreNames.contains('reader-keys')) {
           db.createObjectStore('reader-keys', { keyPath: 'blog' })
+        }
+        if (!db.objectStoreNames.contains('reader-keys-by-account')) {
+          db.createObjectStore('reader-keys-by-account', { keyPath: 'id' })
         }
       }
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
     await new Promise((resolve, reject) => {
-      const transaction = database.transaction('reader-keys', 'readwrite')
-      transaction.objectStore('reader-keys').put(record)
+      const transaction = database.transaction('reader-keys-by-account', 'readwrite')
+      transaction.objectStore('reader-keys-by-account').put(record)
       transaction.oncomplete = () => {
         database.close()
         resolve()
@@ -407,6 +470,60 @@ test('locked premium post shows a paywall and never renders plaintext', async ({
   })
 
   await axeAtBothWidths(page, 'locked premium post')
+})
+
+test('a subdomain blog is read-only and sends members to the apex', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  await mockHive(page, state)
+
+  await page.goto('http://alice.localhost:4173/members-post', { waitUntil: 'domcontentloaded' })
+
+  await expect(page.locator('.banksia-locked')).toBeVisible()
+  await expect(page.getByText(TEASER)).toBeVisible()
+  expect(await page.content()).not.toContain(PREMIUM_TOKEN)
+  expect(await page.locator('body').innerText()).not.toContain(PREMIUM_TOKEN)
+
+  const apexLink = page.locator('.banksia-locked a.banksia-locked__button--primary')
+  await expect(apexLink).toHaveText('Read on Banksia')
+  await expect(apexLink).toHaveAttribute('href', 'https://banksia.io/@alice/members-post')
+  await expect(page.getByText(/read-only/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: /Subscribe/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Use my membership on this device' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Already a member? Restore access' })).toHaveCount(0)
+
+  await axeAtBothWidths(page, 'read-only blog premium post')
+})
+
+test('a signed-in member can authorize this device with a public key only', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  loginAs(page, 'bob', 'keychain')
+  await mockHive(page, state)
+
+  await page.goto('/@alice/members-post', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.banksia-locked')).toBeVisible()
+  const useDevice = page.getByRole('button', { name: 'Use my membership on this device' })
+  await expect(useDevice).toBeVisible()
+  await expect(useDevice).toBeEnabled()
+  await useDevice.click()
+  await expect(page.getByText(/Device request queued/)).toBeVisible()
+
+  const queue = await readQueue(page)
+  const item = (queue && Array.isArray(queue.items) ? queue.items : [])
+    .find(entry => entry[2] && entry[2][0] === 'account_update2')
+  expect(item).toBeTruthy()
+  expect(item[0]).toBe('bob')
+  expect(item[1]).toBe('posting')
+  const [name, operation] = item[2]
+  expect(name).toBe('account_update2')
+  expect(operation.account).toBe('bob')
+  expect(operation.json_metadata).toBe('')
+  const metadata = JSON.parse(operation.posting_json_metadata)
+  const keys = metadata['banksia.io'].reader.devices.alice
+  expect(keys).toHaveLength(1)
+  expect(keys[0]).toMatch(/^p256:[A-Za-z0-9_-]{40,120}$/)
+  expect(operation.posting_json_metadata).not.toMatch(/private|secret|passphrase/i)
 })
 
 test('a valid grant unlocks once, persists across reloads and leaks nothing to storage', async ({ page }) => {
@@ -493,7 +610,7 @@ test('subscribe queues exactly one active recurrent transfer with the public rea
   loginAs(page, 'bob', 'keychain')
   await mockHive(page, state)
 
-  await page.goto('/subscribe?blog=alice&product=alice%2Fmembership', { waitUntil: 'domcontentloaded' })
+  await page.goto('/subscribe?blog=alice&product=alice%2Fmembership&redirect=%2F%40alice%2Fmembers-post', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('.subscribe-title')).toHaveText('The Orchid Letter')
   await expect(page.locator('.subscribe-head')).toContainText('Weekly orchid field notes and the full archive.')
   await expect(page.locator('.subscribe-benefits')).toContainText('Weekly orchid notes')
@@ -526,6 +643,17 @@ test('subscribe queues exactly one active recurrent transfer with the public rea
   expect(memo.banksia.reader_key).toMatch(/^p256:[A-Za-z0-9_-]{40,120}$/)
   expect(operation[1].memo).not.toMatch(/private|secret|passphrase|mnemonic/i)
   expect(operation[1].memo).not.toMatch(/\b5[HJK][1-9A-HJ-NP-Za-km-z]{49}\b/)
+
+  // After the creator issues this reader's grant, "Back to the blog post" must
+  // return to the post the reader started from, not the membership product.
+  const readerKey = memo.banksia.reader_key
+  const grantReader = { readerKey, rkt: await readerKeyThumbprint(readerKey) }
+  const { post: grantPost } = await buildSignedBulletin(fixture, [grantReader])
+  state.posts[BULLETIN_PERMLINK] = grantPost
+  state.replies[CONTAINER] = [grantPost]
+  const back = page.getByRole('link', { name: 'Back to the blog post' })
+  await expect(back).toBeVisible({ timeout: 20000 })
+  await expect(back).toHaveAttribute('href', '/@alice/members-post')
 })
 
 test('creator dashboard derives subscribers, revenue and masked keys', async ({ page }) => {
@@ -577,6 +705,74 @@ test('creator dashboard derives subscribers, revenue and masked keys', async ({ 
   expect(html).not.toContain('BEGIN PRIVATE KEY')
 
   await axeAtBothWidths(page, 'vault dashboard')
+})
+
+test('creator dashboard merges registered device keys into the subscriber row', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  const reader = await readerKeyWithThumbprint()
+  const device = await makeReaderKey()
+  state.accounts.bob = {
+    ...BOB_ACCOUNT,
+    posting_json_metadata: JSON.stringify({
+      'banksia.io': {
+        reader: { v: 1, devices: { [BLOG]: [device.readerKey] } }
+      }
+    })
+  }
+  const { post } = await buildSignedBulletin(fixture, [{ readerKey: reader.readerKey, rkt: reader.rkt }])
+  state.posts[BULLETIN_PERMLINK] = post
+  state.replies[CONTAINER] = [post]
+  state.histories[BLOG] = [
+    vaultHistoryRow({
+      index: 1,
+      trxId: 'pay-device',
+      readerKey: reader.readerKey,
+      sub: 'devicereader00001',
+      type: 'transfer',
+      timestamp: '2026-11-25T10:00:00'
+    })
+  ]
+  loginAs(page, 'alice', 'keychain')
+  await mockHive(page, state)
+
+  await page.goto('/settings/blog/vault', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: 'Subscribers' })).toBeVisible()
+  const table = page.locator('.vault-table').first()
+  await expect(table.locator('tbody tr')).toHaveCount(1)
+  await expect(table.locator('tbody tr').first()).toContainText('+1 device')
+  await expect(table.locator('tbody tr').first()).toContainText('not granted')
+})
+
+test('creator dashboard reads a v2 sharded bulletin without fetching every shard', async ({ page }) => {
+  const fixture = await makeVaultFixture()
+  const state = makeState(fixture)
+  const reader = await readerKeyWithThumbprint()
+  const { post, shardPosts } = await buildSignedShardedBulletin(fixture, [{
+    readerKey: reader.readerKey,
+    rkt: reader.rkt
+  }])
+  state.posts[BULLETIN_PERMLINK] = post
+  for (const shard of shardPosts) state.posts[shard.permlink] = shard
+  state.replies[CONTAINER] = [post, ...shardPosts]
+  state.histories[BLOG] = [
+    vaultHistoryRow({
+      index: 1,
+      trxId: 'pay-sharded',
+      readerKey: reader.readerKey,
+      sub: 'shardedreader0001',
+      type: 'transfer',
+      timestamp: '2026-11-25T10:00:00'
+    })
+  ]
+  loginAs(page, 'alice', 'keychain')
+  await mockHive(page, state)
+
+  await page.goto('/settings/blog/vault', { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { name: 'Bulletins' })).toBeVisible()
+  await expect(page.getByText('sharded (v2)')).toBeVisible()
+  await expect(page.locator('.vault-table').first().locator('tbody tr')).toHaveCount(1)
+  await expect(page.locator('.vault-table').first().locator('tbody tr').first()).toContainText('expires')
 })
 
 test('reader subscriptions show the plan, next payment and an open-transfer cancel', async ({ page }) => {

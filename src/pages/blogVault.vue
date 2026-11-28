@@ -58,8 +58,8 @@
                 <h2 class="vault-section-title vault-section-title--flush">Auto-issue grants</h2>
                 <p class="vault-muted">
                   While this dashboard tab is open, check the public payment
-                  history every 30–60 seconds and queue a bulletin when a
-                  subscriber needs a grant. Your vault must stay unlocked.
+                  history every {{ autoIssueBatch }} seconds and queue a bulletin
+                  when a subscriber needs a grant. Your vault must stay unlocked.
                   Background tabs may be throttled by the browser.
                 </p>
               </div>
@@ -69,6 +69,17 @@
                 label="Auto-issue while this tab is open"
               />
             </div>
+            <q-select
+              v-if="autoIssue"
+              v-model="autoIssueBatch"
+              :options="autoIssueBatchOptions"
+              emit-value
+              map-options
+              dense
+              outlined
+              label="Batch window"
+              class="vault-auto__batch"
+            />
             <p v-if="!vault" class="vault-muted vault-muted--small">
               Unlock the vault below to start auto-issuing.
             </p>
@@ -187,7 +198,7 @@
               <div class="vault-toolbar">
                 <div>
                   <p class="vault-muted vault-muted--flush">
-                    {{ rows.length }} reader {{ rows.length === 1 ? 'key' : 'keys' }} · {{ selected.length }} selected
+                    {{ rows.length }} subscriber{{ rows.length === 1 ? '' : 's' }} · {{ selected.length }} selected
                   </p>
                   <p v-if="historyTruncated" class="vault-error" role="alert">
                     Scanned {{ historyScanned }} history rows and hit the page cap. Older payments may be missing; use a HAF index for very high-volume accounts.
@@ -219,7 +230,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="row in rows" :key="row.readerKey">
+                    <tr v-for="row in rows" :key="row.readerKey + ':' + row.account">
                       <td>
                         <q-checkbox
                           v-model="selected"
@@ -229,7 +240,12 @@
                         />
                       </td>
                       <td>@{{ row.account }}</td>
-                      <td><code>{{ shortKey(row.rkt) }}</code></td>
+                      <td>
+                        <code>{{ shortKey(row.rkt) }}</code>
+                        <span v-if="row.devices && row.devices.length > 1" class="vault-muted">
+                          +{{ row.devices.length - 1 }} device{{ row.devices.length > 2 ? 's' : '' }}
+                        </span>
+                      </td>
                       <td>{{ row.plan }}</td>
                       <td>{{ shortDate(row.lastPayment) }}</td>
                       <td>{{ row.nextPayment ? shortDate(row.nextPayment) : 'one-off' }}</td>
@@ -266,14 +282,17 @@
                 <div><dt>Current sequence</dt><dd>{{ currentSequence }}</dd></div>
                 <div><dt>Next sequence</dt><dd>{{ nextSequence }}</dd></div>
                 <div><dt>Entries</dt><dd>{{ bulletinEntries.length }}</dd></div>
+                <div><dt>Strategy</dt><dd>{{ bulletinStrategy }}</dd></div>
+                <div v-if="bulletinShardCount"><dt>Shards</dt><dd>{{ bulletinShardCount }}</dd></div>
+                <div><dt>Est. per change</dt><dd>{{ estimatedIssueLabel }}</dd></div>
                 <div><dt>Size</dt><dd>{{ bulletinBytes }} bytes</dd></div>
                 <div><dt>Pending grants</dt><dd>{{ pendingCount }}</dd></div>
                 <div><dt>Signer</dt><dd>@{{ accountName }}</dd></div>
               </dl>
               <p v-if="bulletinWarning" class="vault-error" role="alert">{{ bulletinWarning }}</p>
-              <p v-if="grantTargetCount > 250" class="vault-error" role="alert">
-                This issue targets {{ grantTargetCount }} entries. Above 250 entries, plan a
-                split into parts; a single bulletin is capped at 300 and about 60 KB.
+              <p v-if="!bulletinShardCount && grantTargetCount > 250" class="vault-error" role="alert">
+                This issue targets {{ grantTargetCount }} entries. A single bulletin is capped at
+                300 entries and about 60 KB; larger issuances switch to signed shards automatically.
               </p>
               <p v-if="bulletinTooLarge" class="vault-error" role="alert">This bulletin is too large for one comment. Split it into parts before publishing.</p>
               <p v-if="!vault" class="vault-muted">Unlock the vault to wrap the ring key and issue grants.</p>
@@ -624,6 +643,11 @@
   color: var(--c-positive);
 }
 
+.vault-auto__batch {
+  max-width: 220px;
+  margin-top: 0.8rem;
+}
+
 .vault-section-title {
   margin: 1.6rem 0 0.6rem;
   font-size: 1.1rem;
@@ -846,7 +870,7 @@
 <script>
 import { setPageMeta } from 'src/utils/pageMeta'
 import { csvCell } from 'src/utils/csv'
-import { fetchAccount, fetchAccountHistoryFiltered, fetchAccountPosts, fetchPostContent } from 'src/services/chainData'
+import { fetchAccount, fetchAccountHistoryFiltered, fetchAccountPosts, fetchAccounts, fetchPostContent } from 'src/services/chainData'
 import { hive } from 'src/services/hive'
 import { readBlogSettings, updateBlog } from 'src/services/blogSettings'
 import { readVaultSettings, vaultIsConfigured } from 'src/services/vaultSettings'
@@ -856,24 +880,34 @@ import { deriveVaultPlan, parseVaultProduct } from 'src/services/vaultProduct'
 import { collectVaultPayments, periodFor, summarizeSubscribers, vaultRecurrencePhrase } from 'src/services/vaultPayments'
 import { collectAccountHistory, VAULT_HISTORY_FILTER, vaultHistorySince } from 'src/services/accountHistory'
 import {
-  AUTO_ISSUE_INTERVAL_MS,
+  AUTO_ISSUE_BATCH_OPTIONS,
   hasQueuedVaultBulletin,
+  readAutoIssueBatch,
   readAutoIssuePreference,
   shouldAutoIssue,
+  writeAutoIssueBatch,
   writeAutoIssuePreference
 } from 'src/services/vaultAutoIssue'
 import {
+  BULLETIN_MAX_BYTES,
+  BULLETIN_MAX_ENTRIES,
   buildBulletinEntries,
   buildVaultBulletinBundle,
   buildVaultBulletinOperation,
   buildVaultBulletinPartOperation,
+  buildVaultShardedBulletin,
+  buildVaultShardOperation,
   bulletinFromReplies,
   isBulletinTooLarge,
   nextSeq,
+  planShardUpdates,
+  shardCountForEntries,
   subscriberRows
 } from 'src/services/vaultBulletin'
 import { buildBulletinSigningPayload, bulletinPermlink, parseBulletin } from 'src/services/vaultGrant'
-import { readerKeyThumbprint } from 'src/services/vaultCrypto'
+import { readerKeyThumbprint, sha256Hex } from 'src/services/vaultCrypto'
+import { readReaderDevices } from 'src/services/vaultDevices'
+import { loadBulletinEntries, verifyBulletin } from 'src/services/vaultUnlock'
 import { postingPublicKeys, signVaultPayload, verifyVaultPayloadForAccount } from 'src/services/vaultSigning'
 import { getCreatorVault, setCreatorVaultSession, unlockCreatorVault } from 'src/services/vaultSession'
 import { exportCreatorVault, importCreatorVault, rotatePeriod, saveCreatorVault } from 'src/services/vaultKeys'
@@ -930,6 +964,8 @@ export default {
       nextSequence: 1,
       latestBulletin: null,
       currentBulletin: null,
+      currentShards: [],
+      currentBulletinRingId: '',
       bulletinError: '',
       premiumPosts: [],
       contentLoading: false,
@@ -944,9 +980,12 @@ export default {
       keyError: '',
       selected: [],
       busy: '',
+      refreshingDevices: false,
+      deviceRefreshAt: 0,
       actionNotice: '',
       actionError: '',
       autoIssue: true,
+      autoIssueBatch: 30,
       autoIssueTimer: null,
       autoIssueLastAt: 0,
       autoIssueNotice: '',
@@ -987,20 +1026,60 @@ export default {
       const bulletin = this.currentBulletin || this.latestBulletin
       return bulletin ? bulletin.seq : 'none'
     },
+    autoIssueBatchOptions () {
+      return AUTO_ISSUE_BATCH_OPTIONS.map(seconds => ({
+        label: seconds + ' seconds',
+        value: seconds
+      }))
+    },
+    bulletinStrategy () {
+      const bulletin = this.currentBulletin || this.latestBulletin
+      if (!bulletin) return 'none'
+      if (bulletin.v === 2) return 'sharded (v2)'
+      if (Array.isArray(bulletin.parts) && bulletin.parts.length) return 'split parts (v1)'
+      return 'single comment (v1)'
+    },
+    bulletinShardCount () {
+      const bulletin = this.currentBulletin || this.latestBulletin
+      return bulletin && bulletin.v === 2 ? Number(bulletin.shardCount) || 0 : 0
+    },
+    estimatedIssueBytes () {
+      const count = this.grantTargetCount
+      if (!count) return 0
+      const bulletin = this.currentBulletin
+      const willShard = (bulletin && bulletin.v === 2) || count > BULLETIN_MAX_ENTRIES
+      if (willShard) {
+        const shards = bulletin && bulletin.v === 2
+          ? Number(bulletin.shardCount) || shardCountForEntries(count)
+          : shardCountForEntries(count)
+        const perShard = Math.ceil(count / shards)
+        return perShard * 220 + shards * 50
+      }
+      return count * 240 + 300
+    },
+    estimatedIssueLabel () {
+      const bytes = this.estimatedIssueBytes
+      if (!bytes) return '—'
+      return '~' + (bytes / 1024).toFixed(1) + ' KB'
+    },
     bulletinBytes () {
       const bulletin = this.currentBulletin || this.latestBulletin
       if (!bulletin) return 0
-      return new TextEncoder().encode(JSON.stringify({ app: 'banksia.io', banksia_vault_bulletin: bulletin })).length
+      const raw = bulletin.v === 2 && this.latestBulletin ? this.latestBulletin : bulletin
+      return new TextEncoder().encode(JSON.stringify({ app: 'banksia.io', banksia_vault_bulletin: raw })).length
     },
     bulletinTooLarge () {
       const bulletin = this.currentBulletin || this.latestBulletin
-      if (bulletin && Array.isArray(bulletin.parts) && bulletin.parts.length) return false
-      return bulletin ? isBulletinTooLarge(bulletin).tooLarge : false
+      if (!bulletin) return false
+      const raw = bulletin.v === 2 && this.latestBulletin ? this.latestBulletin : bulletin
+      if (raw && Array.isArray(raw.parts) && raw.parts.length) return false
+      return isBulletinTooLarge(raw).tooLarge
     },
     bulletinWarning () {
       const bulletin = this.currentBulletin || this.latestBulletin
       if (!bulletin) return ''
-      return isBulletinTooLarge(bulletin).reason
+      const raw = bulletin.v === 2 && this.latestBulletin ? this.latestBulletin : bulletin
+      return isBulletinTooLarge(raw).reason
     },
     pendingCount () {
       return this.rows.filter(row => row.pending).length
@@ -1009,7 +1088,26 @@ export default {
       return this.plan ? vaultRecurrencePhrase(this.plan.recurrence) : 'each period'
     },
     grantTargetCount () {
-      return this.selected.length || this.rows.filter(row => row.active).length
+      const selected = new Set(this.selected)
+      const rows = new Map()
+      for (const row of this.rows.filter(row => row.active)) {
+        const account = normalizeAccount(row.account)
+        if (!rows.has(account)) rows.set(account, row)
+      }
+      for (const row of this.rows.filter(row => selected.has(row.readerKey))) {
+        rows.set(normalizeAccount(row.account), row)
+      }
+      const keys = new Set()
+      for (const row of rows.values()) {
+        const devices = Array.isArray(row.devices) && row.devices.length
+          ? row.devices
+          : [{ readerKey: row.readerKey }]
+        for (const device of devices) {
+          const readerKey = typeof device === 'string' ? device : device.readerKey
+          if (readerKey) keys.add(readerKey)
+        }
+      }
+      return keys.size
     },
     newThisPeriod () {
       if (!this.period) return 0
@@ -1038,6 +1136,7 @@ export default {
   created () {
     this.accountName = this.resolveAccount()
     this.autoIssue = readAutoIssuePreference(this.accountName)
+    this.autoIssueBatch = readAutoIssueBatch(this.accountName)
     this.updateMeta()
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.onVaultVisibility)
     if (!this.loggedInUser) {
@@ -1058,6 +1157,10 @@ export default {
         this.stopAutoIssue()
         this.autoIssueNotice = ''
       }
+    },
+    autoIssueBatch (value) {
+      writeAutoIssueBatch(this.accountName, value)
+      this.startAutoIssue()
     },
     vault () {
       this.startAutoIssue()
@@ -1154,9 +1257,25 @@ export default {
         const parsed = list
           .map(reply => parseBulletin(reply && reply.json_metadata))
           .filter(Boolean)
-        this.currentBulletin = parsed
+        let current = parsed
           .filter(bulletin => bulletin.period === this.period)
           .sort((a, b) => b.seq - a.seq)[0] || null
+        if (current && (current.v === 2 || (Array.isArray(current.parts) && current.parts.length))) {
+          // The manifest carries the signed part/shard hashes; merge them so the
+          // dashboard sees every grant rather than treating a split bulletin as
+          // empty.
+          const verified = await verifyBulletin({ bulletin: current, allowDelegation: true })
+          if (verified.ok) {
+            const merged = await loadBulletinEntries({ bulletin: current, all: true })
+            if (merged) current = merged
+            else this.bulletinError = 'The bulletin parts or shards could not be verified.'
+          } else {
+            this.bulletinError = 'The current bulletin could not be verified.'
+          }
+        }
+        this.currentShards = Array.isArray(current && current.shards) ? current.shards : []
+        this.currentBulletinRingId = current && typeof current.ringId === 'string' ? current.ringId : ''
+        this.currentBulletin = current
         const certificate = relayCertificateFromAccount(this.account)
         this.relayCertificate = certificate
         this.relayAccount = certificate ? certificate.delegate_account : (this.vaultSettings.relay ? this.vaultSettings.relay.delegate_account : '')
@@ -1188,7 +1307,8 @@ export default {
         this.historyTruncated = collected.truncated
         const now = Date.now()
         const rows = subscriberRows(history, this.plan, { now })
-        this.rows = await this.enrichRows(rows, now)
+        const withDevices = await this.attachDeviceKeys(rows)
+        this.rows = await this.enrichRows(withDevices, now)
         this.summary = summarizeSubscribers(this.rows, { now })
         const payments = collectVaultPayments(history, this.plan, { now })
         this.payments = payments.payments
@@ -1196,26 +1316,88 @@ export default {
         this.actionError = 'Subscriber history could not be loaded.'
       }
     },
+    async attachDeviceKeys (rows) {
+      const list = Array.isArray(rows) ? rows : []
+      const names = [...new Set(list.map(row => normalizeAccount(row.account)).filter(Boolean))]
+      const accounts = new Map()
+      for (let index = 0; index < names.length; index += 1000) {
+        try {
+          const batch = await fetchAccounts(names.slice(index, index + 1000), { force: true })
+          for (const account of Array.isArray(batch) ? batch : []) {
+            if (account && account.name) accounts.set(normalizeAccount(account.name), account)
+          }
+        } catch {
+          // Fall back to the payment key when account metadata is unavailable.
+        }
+      }
+      return list.map(row => {
+        const account = accounts.get(normalizeAccount(row.account))
+        const registered = readReaderDevices(account && account.posting_json_metadata, this.accountName)
+        const keys = []
+        const seen = new Set()
+        for (const key of [row.readerKey, ...registered]) {
+          if (typeof key !== 'string' || !key || seen.has(key)) continue
+          seen.add(key)
+          keys.push(key)
+        }
+        return { ...row, devices: keys.length ? keys : [row.readerKey].filter(Boolean) }
+      })
+    },
+    async refreshDeviceKeys () {
+      if (this.refreshingDevices || !this.rows.length) return
+      const now = Date.now()
+      // Metadata reads are bulk, but still a network cost. Refresh at most once
+      // a minute; a manual dashboard refresh bypasses this path.
+      if (this.deviceRefreshAt && now - this.deviceRefreshAt < 60000) return
+      this.refreshingDevices = true
+      this.deviceRefreshAt = now
+      try {
+        const withDevices = await this.attachDeviceKeys(this.rows)
+        this.rows = await this.enrichRows(withDevices, now)
+      } finally {
+        this.refreshingDevices = false
+      }
+    },
     async enrichRows (rows, now) {
       const entries = this.bulletinEntries
       return Promise.all(rows.map(async row => {
-        let rkt = ''
-        try {
-          rkt = await readerKeyThumbprint(row.readerKey)
-        } catch {
-          rkt = ''
+        const keys = Array.isArray(row.devices) && row.devices.length
+          ? row.devices
+          : [row.readerKey].filter(Boolean)
+        const devices = []
+        for (const readerKey of keys) {
+          let rkt = ''
+          try {
+            rkt = await readerKeyThumbprint(readerKey)
+          } catch {
+            rkt = ''
+          }
+          const entry = rkt ? entries.find(item => item.rkt === rkt) : null
+          const expires = entry ? entry.expires : ''
+          const expiryMs = Date.parse(expires)
+          let grantStatus = 'missing'
+          if (entry) grantStatus = Number.isFinite(expiryMs) && expiryMs > now ? 'valid' : 'expired'
+          devices.push({
+            readerKey,
+            rkt,
+            grantExpires: expires,
+            grantStatus,
+            pending: !entry || !Number.isFinite(expiryMs) || expiryMs <= now + PENDING_WINDOW_MS
+          })
         }
-        const entry = entries.find(item => item.rkt === rkt)
-        const expires = entry ? entry.expires : ''
-        const expiryMs = Date.parse(expires)
-        let grantStatus = 'missing'
-        if (entry) grantStatus = Number.isFinite(expiryMs) && expiryMs > now ? 'valid' : 'expired'
+        const primary = devices.find(device => device.readerKey === row.readerKey) || devices[0] || {}
+        const grantStatus = devices.some(device => device.grantStatus === 'missing')
+          ? 'missing'
+          : devices.some(device => device.grantStatus === 'expired')
+              ? 'expired'
+              : 'valid'
         return {
           ...row,
-          rkt,
-          grantExpires: expires,
+          devices,
+          rkt: primary.rkt || '',
+          grantExpires: primary.grantExpires || '',
           grantStatus,
-          pending: !entry || !Number.isFinite(expiryMs) || expiryMs <= now + PENDING_WINDOW_MS
+          pending: devices.some(device => device.pending)
         }
       }))
     },
@@ -1262,9 +1444,10 @@ export default {
     autoIssueInterval () {
       // Background tabs are usually throttled by the browser; poll less often
       // but keep issuing while the tab is left open.
+      const base = Math.max(1, Number(this.autoIssueBatch) || 30) * 1000
       return typeof document !== 'undefined' && document.visibilityState === 'hidden'
-        ? AUTO_ISSUE_INTERVAL_MS * 2
-        : AUTO_ISSUE_INTERVAL_MS
+        ? base * 2
+        : base
     },
     onVaultVisibility () {
       this.startAutoIssue()
@@ -1283,6 +1466,11 @@ export default {
       this.autoIssueTimer = null
     },
     async autoIssueTick () {
+      if (!this.autoIssue || !this.isOwner || !this.vault || !this.plan) return
+      // Device requests live in reader account metadata, not the creator's
+      // payment history. Refresh those keys each tick so a phone that just
+      // authorized itself does not wait for a full dashboard reload.
+      if (!this.busy) await this.refreshDeviceKeys()
       const queuedBulletin = hasQueuedVaultBulletin(
         this.$hiveStore.queue,
         this.$hiveStore.queueMeta,
@@ -1297,7 +1485,8 @@ export default {
         busy: Boolean(this.busy),
         pendingCount: this.pendingCount,
         queuedBulletin,
-        lastAttemptAt: this.autoIssueLastAt
+        lastAttemptAt: this.autoIssueLastAt,
+        intervalMs: this.autoIssueInterval()
       })) return
       this.autoIssueLastAt = Date.now()
       this.autoIssueError = ''
@@ -1326,6 +1515,71 @@ export default {
         this.actionNotice = 'Copy failed; select the value and copy it manually.'
       }
     },
+    async vaultRingId () {
+      if (!this.vault) return ''
+      if (typeof this.vault.ringId === 'string' && this.vault.ringId) return this.vault.ringId
+      // Older vaults have no stored id. A hash of the 256-bit random ring key is
+      // a safe, stable identifier and rotates with the key.
+      return sha256Hex(this.vault.ringKey)
+    },
+    async buildShardedBulletin ({ entries, shardCount, seq } = {}) {
+      const existingCount = this.currentBulletin && this.currentBulletin.v === 2
+        ? Number(this.currentBulletin.shardCount)
+        : 0
+      const ringId = await this.vaultRingId()
+      const canReuse = existingCount === Number(shardCount) &&
+        Boolean(this.currentBulletinRingId) &&
+        this.currentBulletinRingId === ringId
+      const plan = await planShardUpdates({
+        blog: this.accountName,
+        period: this.period,
+        shardCount,
+        entries,
+        existingShards: canReuse ? this.currentShards : []
+      })
+      const operations = []
+      for (const shard of plan.shards) {
+        if (!shard.changed) continue
+        const wrapper = { app: 'banksia.io', banksia_vault_shard: shard.object }
+        const bytes = new TextEncoder().encode(JSON.stringify(wrapper)).length
+        if (bytes > BULLETIN_MAX_BYTES) {
+          throw new Error('Shard ' + shard.index + ' is ' + bytes + ' bytes; the limit is ' + BULLETIN_MAX_BYTES + '.')
+        }
+        const operation = buildVaultShardOperation({
+          shard: shard.object,
+          author: this.accountName,
+          containerAuthor: this.accountName,
+          containerPermlink: this.vaultSettings.container
+        })
+        if (!operation) throw new Error('A shard operation could not be built.')
+        operations.push(operation)
+      }
+      const signAdapter = {
+        sign: payload => signVaultPayload({
+          username: this.accountName,
+          loginType: this.$hiveStore.user.loginType,
+          payload,
+          smartlockSessionMs: this.$hiveStore.user.settings && this.$hiveStore.user.settings.smartlockSessionMinutes
+            ? this.$hiveStore.user.settings.smartlockSessionMinutes * 60 * 1000
+            : undefined,
+          promptPassword: this.promptSmartlockPassword
+        })
+      }
+      const bulletin = await buildVaultShardedBulletin({
+        blog: this.accountName,
+        period: this.period,
+        seq,
+        keyring: this.vault.keyring,
+        ringKey: this.vault.ringKey,
+        shardCount,
+        shards: plan.descriptors,
+        signer: this.accountName,
+        issued: new Date().toISOString(),
+        ringId,
+        signAdapter
+      })
+      return { bulletin, operations, shards: plan.shards }
+    },
     async issueGrants ({ auto = false } = {}) {
       this.actionError = ''
       this.actionNotice = ''
@@ -1342,46 +1596,96 @@ export default {
         return false
       }
       const selected = new Set(this.selected)
-      const targets = selected.size
+      const chosen = selected.size
         ? this.rows.filter(row => selected.has(row.readerKey))
-        : this.rows.filter(row => row.active)
+        : []
+      // A bulletin is cumulative: readers look up this period's newest manifest.
+      // Always include every active subscriber key, plus any explicitly selected
+      // rows, so issuing for a new device cannot drop an existing member.
+      const targetsByAccount = new Map()
+      for (const row of this.rows.filter(row => row.active)) {
+        const account = normalizeAccount(row.account)
+        if (!targetsByAccount.has(account)) targetsByAccount.set(account, row)
+      }
+      for (const row of chosen) targetsByAccount.set(normalizeAccount(row.account), row)
+      const targets = [...targetsByAccount.values()]
       if (!targets.length) {
         this.actionError = 'No active subscribers or selected readers to grant.'
         return false
       }
+      const readers = []
+      const seenReaders = new Set()
+      for (const row of targets) {
+        const devices = Array.isArray(row.devices) && row.devices.length
+          ? row.devices
+          : [{ readerKey: row.readerKey }]
+        for (const device of devices) {
+          const readerKey = typeof device === 'string' ? device : device.readerKey
+          if (!readerKey || seenReaders.has(readerKey)) continue
+          seenReaders.add(readerKey)
+          readers.push({ readerKey, expires: row.expires })
+        }
+      }
 
       this.busy = 'issue'
       try {
+        const currentIsV2 = Boolean(this.currentBulletin && this.currentBulletin.v === 2)
+        const useShards = currentIsV2 || readers.length > BULLETIN_MAX_ENTRIES
+        const ringId = await this.vaultRingId()
+        const sameRing = Boolean(this.currentBulletinRingId) && this.currentBulletinRingId === ringId
+        const canReuseEntries = sameRing && (
+          currentIsV2 ||
+          (!useShards && this.currentBulletin && this.currentBulletin.period === this.period)
+        )
         const entries = await buildBulletinEntries({
           blog: this.accountName,
           period: this.period,
           ringKey: this.vault.ringKey,
-          readers: targets.map(row => ({ readerKey: row.readerKey, expires: row.expires })),
-          now: Date.now()
+          readers,
+          now: Date.now(),
+          compact: true,
+          // Reuse wrapped keys only for the same ring key. A v1 -> v2 migration
+          // re-wraps once so every tuple has the canonical expiry string.
+          existingEntries: canReuseEntries ? this.bulletinEntries : []
         })
         const seq = this.nextSequence
-        const bundle = await buildVaultBulletinBundle({
-          blog: this.accountName,
-          period: this.period,
-          seq,
-          keyring: this.vault.keyring,
-          ringKey: this.vault.ringKey,
-          entries,
-          signer: this.accountName,
-          issued: new Date().toISOString(),
-          signAdapter: {
-            sign: payload => signVaultPayload({
-              username: this.accountName,
-              loginType: this.$hiveStore.user.loginType,
-              payload,
-              smartlockSessionMs: this.$hiveStore.user.settings && this.$hiveStore.user.settings.smartlockSessionMinutes
-                ? this.$hiveStore.user.settings.smartlockSessionMinutes * 60 * 1000
-                : undefined,
-              promptPassword: this.promptSmartlockPassword
-            })
-          }
-        })
-        const bulletin = bundle.bulletin
+        let bulletin
+        let partOperations = []
+        let shardOperations = []
+        let currentShards = []
+        if (useShards) {
+          const shardCount = shardCountForEntries(entries.length)
+          const sharded = await this.buildShardedBulletin({ entries, shardCount, seq })
+          bulletin = sharded.bulletin
+          shardOperations = sharded.operations
+          currentShards = sharded.shards
+        } else {
+          const bundle = await buildVaultBulletinBundle({
+            blog: this.accountName,
+            period: this.period,
+            seq,
+            keyring: this.vault.keyring,
+            ringKey: this.vault.ringKey,
+            entries,
+            signer: this.accountName,
+            issued: new Date().toISOString(),
+            compact: true,
+            ringId,
+            signAdapter: {
+              sign: payload => signVaultPayload({
+                username: this.accountName,
+                loginType: this.$hiveStore.user.loginType,
+                payload,
+                smartlockSessionMs: this.$hiveStore.user.settings && this.$hiveStore.user.settings.smartlockSessionMinutes
+                  ? this.$hiveStore.user.settings.smartlockSessionMinutes * 60 * 1000
+                  : undefined,
+                promptPassword: this.promptSmartlockPassword
+              })
+            }
+          })
+          bulletin = bundle.bulletin
+          partOperations = bundle.parts
+        }
         const payload = await buildBulletinSigningPayload(bulletin)
         const verified = await verifyVaultPayloadForAccount({
           payload,
@@ -1390,17 +1694,12 @@ export default {
         })
         if (!verified) throw new Error('The bulletin signature could not be verified against the posting key.')
 
-        const size = bulletin.parts && bulletin.parts.length ? { tooLarge: false } : isBulletinTooLarge(bulletin)
+        const size = isBulletinTooLarge(bulletin)
         if (size.tooLarge) throw new Error(size.reason)
 
-        const operation = buildVaultBulletinOperation({
-          bulletin,
-          containerAuthor: this.accountName,
-          containerPermlink: this.vaultSettings.container
-        })
-        if (!operation) throw new Error('The bulletin operation could not be built.')
-        this.$hiveStore.addToQueue([this.accountName, 'posting', operation])
-        for (const part of bundle.parts) {
+        // Publish the shards/parts before the manifest. A reader must never see
+        // a signed manifest that points at a comment which is not on chain yet.
+        for (const part of partOperations) {
           const partOperation = buildVaultBulletinPartOperation({
             part: part.part,
             author: this.accountName,
@@ -1410,6 +1709,16 @@ export default {
           if (!partOperation) throw new Error('A bulletin part operation could not be built.')
           this.$hiveStore.addToQueue([this.accountName, 'posting', partOperation])
         }
+        for (const shardOperation of shardOperations) {
+          this.$hiveStore.addToQueue([this.accountName, 'posting', shardOperation])
+        }
+        const operation = buildVaultBulletinOperation({
+          bulletin,
+          containerAuthor: this.accountName,
+          containerPermlink: this.vaultSettings.container
+        })
+        if (!operation) throw new Error('The bulletin operation could not be built.')
+        this.$hiveStore.addToQueue([this.accountName, 'posting', operation])
 
         const permlink = bulletinPermlink(this.period, seq)
         const update = updateBlog(this.account, {
@@ -1426,13 +1735,18 @@ export default {
         }
 
         this.nextSequence = seq + 1
+        this.currentShards = currentShards
+        this.currentBulletinRingId = ringId
         this.currentBulletin = { ...bulletin, entries }
         this.latestBulletin = bulletin
         this.selected = []
         this.rows = await this.enrichRows(this.rows, Date.now())
+        const shardNote = useShards
+          ? ' across ' + currentShards.length + ' shard' + (currentShards.length === 1 ? '' : 's') +
+            ' (' + shardOperations.length + ' updated)'
+          : (partOperations.length ? ' across ' + partOperations.length + ' parts' : '')
         this.actionNotice = 'Bulletin ' + permlink + ' queued with ' + entries.length + ' grant' +
-          (entries.length === 1 ? '' : 's') +
-          (bundle.parts.length ? ' across ' + bundle.parts.length + ' parts' : '') +
+          (entries.length === 1 ? '' : 's') + shardNote +
           '. Approve all posting operations in your signing queue.'
         return true
       } catch (error) {

@@ -8,13 +8,16 @@ import {
   buildVaultBulletinBundle,
   buildVaultBulletinOperation,
   buildVaultBulletinPartOperation,
+  buildVaultShardedBulletin,
   bulletinFromReplies,
   bulletinSize,
   grantExpiry,
   isBulletinTooLarge,
   nextSeq,
   pendingGrants,
+  planShardUpdates,
   readerRegistryOperation,
+  shardCountForEntries,
   subscriberRows
 } from '../../src/services/vaultBulletin'
 import {
@@ -27,6 +30,7 @@ import {
 import {
   buildBulletinSigningPayload,
   buildGrantHeader,
+  parseBulletin,
   verifyGrant
 } from '../../src/services/vaultGrant'
 import { buildVaultMemo } from '../../src/services/vaultPayments'
@@ -118,7 +122,7 @@ describe('vault bulletin expiry and subscribers', () => {
     expect(grantExpiry({ type: 'transfer', timestamp: '' }, { recurrence: 730 })).toBe('')
   })
 
-  it('builds one row per reader key, newest payment wins, self and gifts excluded', async () => {
+  it('builds one row per reader key and payer, newest payment wins, self and gifts excluded', async () => {
     const first = await generateReaderKeyPair()
     const second = await generateReaderKeyPair()
     const third = await generateReaderKeyPair()
@@ -160,6 +164,19 @@ describe('vault bulletin expiry and subscribers', () => {
     expect(giftRows).toHaveLength(2)
     expect(giftRows.some(row => row.txid === 'gift')).toBe(false)
   })
+
+  it('keeps both payer accounts when a legacy device key is shared', async () => {
+    const shared = await generateReaderKeyPair()
+    const history = [
+      recurringRow({ from: 'bob', readerKey: shared.publicKeyB64, timestamp: '2026-11-20T00:00:00', txid: 'bob-pay' }),
+      recurringRow({ from: 'carol', readerKey: shared.publicKeyB64, timestamp: '2026-11-19T00:00:00', txid: 'carol-pay' })
+    ]
+
+    const rows = subscriberRows(history, plan(), { now: NOW })
+    expect(rows).toHaveLength(2)
+    expect(rows.map(row => row.account).sort()).toEqual(['bob', 'carol'])
+    expect(rows.every(row => row.readerKey === shared.publicKeyB64)).toBe(true)
+  })
 })
 
 describe('vault bulletin construction', () => {
@@ -184,13 +201,13 @@ describe('vault bulletin construction', () => {
     expect(entryA).toBeTruthy()
     expect(entryA.alg).toBe('P256-HKDF-SHA256-A256GCM')
     expect(entryA.tier).toBe('member')
-    expect(entryA.expires).toBe(expires)
+    expect(entryA.expires).toBe(new Date(expires).toISOString())
     expect(entryA.rkt).toMatch(/^[0-9a-f]{16}$/)
     expect(entryA.epk.length).toBeGreaterThan(0)
     expect(entryA.iv.length).toBeGreaterThan(0)
     expect(entryA.ct.length).toBeGreaterThan(0)
 
-    const header = buildGrantHeader({ rkt: rktA, tier: 'member', expires }, { blog: BLOG, period: PERIOD })
+    const header = buildGrantHeader({ rkt: rktA, tier: 'member', expires: entryA.expires }, { blog: BLOG, period: PERIOD })
     const unwrapped = await unwrapRingKey(entryA, readerA, header)
     expect(unwrapped).toBe(ringKey)
 
@@ -201,6 +218,173 @@ describe('vault bulletin construction', () => {
       readers: Array.from({ length: BULLETIN_MAX_ENTRIES + 1 }, () => ({ readerKey: readerA.publicKeyB64, expires }))
     })
     expect(splitEntries).toHaveLength(1)
+  })
+
+  it('writes compact entries and a compact bulletin that readers still open', async () => {
+    const reader = await generateReaderKeyPair()
+    const ringKey = await randomKey()
+    const keyring = { [PERIOD]: await randomKey() }
+    const expires = '2026-12-21T00:00:00Z'
+    const entries = await buildBulletinEntries({
+      blog: BLOG,
+      period: PERIOD,
+      ringKey,
+      readers: [{ readerKey: reader.publicKeyB64, expires }],
+      compact: true
+    })
+
+    expect(entries[0].alg).toBeUndefined()
+    expect(entries[0].tier).toBeUndefined()
+    const header = buildGrantHeader({ rkt: entries[0].rkt, tier: 'member', expires: entries[0].expires }, { blog: BLOG, period: PERIOD })
+    expect(await unwrapRingKey(entries[0], reader, header)).toBe(ringKey)
+
+    const bundle = await buildVaultBulletinBundle({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 1,
+      keyring,
+      ringKey,
+      entries,
+      signer: BLOG,
+      issued: '2026-11-27T12:00:00Z',
+      compact: true,
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+
+    expect(bundle.parts).toHaveLength(0)
+    expect(bundle.bulletin.keyring.alg).toBeUndefined()
+    expect(bundle.bulletin.claims).toBeUndefined()
+    expect(bundle.bulletin.delegation).toBeUndefined()
+    expect(await openKeyring(bundle.bulletin.keyring, ringKey, { blog: BLOG, period: PERIOD })).toEqual(keyring)
+    const expected = await buildBulletinSigningPayload(bundle.bulletin)
+    expect(await verifyGrant(bundle.bulletin, {
+      verify: async (text, sig) => text === expected && sig === bundle.bulletin.sig
+    })).toBe(true)
+
+    const split = await buildVaultBulletinBundle({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 2,
+      keyring,
+      ringKey,
+      entries: [...entries, ...entries],
+      signer: BLOG,
+      compact: true,
+      maxEntries: 1,
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    expect(split.parts).toHaveLength(2)
+    expect(split.bulletin.parts[0]).toMatchObject({ permlink: expect.any(String), hash: expect.any(String) })
+    expect(split.bulletin.parts[0].entries).toBeUndefined()
+  })
+
+  it('reuses unchanged v2 shards and moves only affected readers', async () => {
+    const readers = []
+    const usedShards = new Set()
+    while (readers.length < 3) {
+      const pair = await generateReaderKeyPair()
+      const rkt = await readerKeyThumbprint(pair.publicKeyB64)
+      const shard = parseInt(rkt.slice(0, 2), 16) % 8
+      if (usedShards.has(shard)) continue
+      usedShards.add(shard)
+      readers.push(pair)
+    }
+    const [readerA, readerB, readerC] = readers
+    const ringKey = await randomKey()
+    const expires = '2026-12-21T00:00:00Z'
+    const entriesAB = await buildBulletinEntries({
+      blog: BLOG,
+      period: PERIOD,
+      ringKey,
+      readers: [
+        { readerKey: readerA.publicKeyB64, expires },
+        { readerKey: readerB.publicKeyB64, expires }
+      ],
+      compact: true
+    })
+    const shardCount = 8
+    const first = await planShardUpdates({
+      blog: BLOG,
+      period: PERIOD,
+      shardCount,
+      entries: entriesAB,
+      existingShards: []
+    })
+    expect(first.shards.every(shard => shard.changed)).toBe(true)
+    expect(first.shards.every(shard => shard.permlink && shard.hash)).toBe(true)
+
+    const same = await planShardUpdates({
+      blog: BLOG,
+      period: PERIOD,
+      shardCount,
+      entries: entriesAB,
+      existingShards: first.shards
+    })
+    expect(same.shards.every(shard => shard.changed === false)).toBe(true)
+    expect(same.descriptors).toEqual(first.descriptors)
+
+    const entriesAC = await buildBulletinEntries({
+      blog: BLOG,
+      period: PERIOD,
+      ringKey,
+      readers: [
+        { readerKey: readerA.publicKeyB64, expires },
+        { readerKey: readerC.publicKeyB64, expires }
+      ],
+      compact: true,
+      existingEntries: entriesAB
+    })
+    const moved = await planShardUpdates({
+      blog: BLOG,
+      period: PERIOD,
+      shardCount,
+      entries: entriesAC,
+      existingShards: first.shards
+    })
+    expect(moved.shards.some(shard => shard.changed === false)).toBe(true)
+    expect(moved.shards.filter(shard => shard.changed).length).toBeGreaterThan(0)
+  })
+
+  it('signs and parses a v2 sharded manifest', async () => {
+    const reader = await generateReaderKeyPair()
+    const ringKey = await randomKey()
+    const keyring = { [PERIOD]: await randomKey() }
+    const expires = '2026-12-21T00:00:00Z'
+    const entries = await buildBulletinEntries({
+      blog: BLOG,
+      period: PERIOD,
+      ringKey,
+      readers: [{ readerKey: reader.publicKeyB64, expires }],
+      compact: true
+    })
+    expect(shardCountForEntries(10_000)).toBeGreaterThan(shardCountForEntries(10))
+    const plan = await planShardUpdates({
+      blog: BLOG,
+      period: PERIOD,
+      shardCount: 8,
+      entries,
+      existingShards: []
+    })
+    const manifest = await buildVaultShardedBulletin({
+      blog: BLOG,
+      period: PERIOD,
+      seq: 2,
+      keyring,
+      ringKey,
+      shardCount: 8,
+      shards: plan.descriptors,
+      signer: BLOG,
+      issued: '2026-11-27T12:00:00Z',
+      signAdapter: { sign: async text => 'sig:' + text }
+    })
+    const parsed = parseBulletin({ banksia_vault_bulletin: manifest })
+    expect(parsed).toMatchObject({ v: 2, shardCount: 8 })
+    expect(parsed.entries).toBeUndefined()
+    expect(parseBulletin({ banksia_vault_bulletin: { ...manifest, shardCount: 12 } })).toBeNull()
+    const expected = await buildBulletinSigningPayload(manifest)
+    expect(await verifyGrant(manifest, {
+      verify: async (text, sig) => text === expected && sig === manifest.sig
+    })).toBe(true)
   })
 
   it('seals the keyring and signs the exact bulletin payload', async () => {

@@ -1,7 +1,8 @@
 # Banksia Vault protocol (`banksia.vault@1`)
 
-**Status: final v1 specification, 2026-11-28.** The protocol is implemented,
-unit-tested, browser-tested and live-smoked in this repository. Relay/delegation
+**Status: final v1 specification with the v2 sharded-bulletin extension,
+2026-11-28.** The protocol is implemented, unit-tested, browser-tested and
+live-smoked in this repository. Relay/delegation
 is an optional companion extension (`banksia.vault.relay@1`, see
 [`vault-relay.md`](vault-relay.md)) and is not required by the base reader.
 Encrypted media, multi-tier and claim codes remain reserved; see §15. A
@@ -99,11 +100,14 @@ server-side key custody.
 ## 2. Versioning and compatibility
 
 - Protocol identifier: `banksia.vault@1`.
-- Every on-chain object that carries a version uses `"v": 1`: blog `vault`,
-  post `banksia_vault`, the payment memo's `banksia` object, the bulletin,
-  the reader registry and the delegation certificate.
-- Readers MUST ignore unknown **sibling** fields they do not need, but MUST
-  reject an object whose `v` is not `1`. Unknown fields never grant access.
+- Most on-chain objects use `"v": 1`: blog `vault`, post `banksia_vault`, the
+  payment memo's `banksia` object, the v1 bulletin, the reader registry and the
+  delegation certificate.
+- The **v2 sharded bulletin** uses `"v": 2` with a `banksia.vault.bulletin.v2`
+  signature domain. A v2 reader accepts v1 and v2 bulletins; a v1 reader MUST
+  reject a v2 manifest and fail closed.
+- Readers MUST ignore unknown **sibling** fields they do not need, and MUST
+  reject an unknown `v`. Unknown fields never grant access.
 - `alg` values are exact, case-sensitive strings:
   - `A256GCM` — AES-256-GCM for payloads and the sealed keyring.
   - `P256-HKDF-SHA256-A256GCM` — the complete P-256 ECDH + HKDF-SHA256 +
@@ -140,7 +144,7 @@ server-side key custody.
 | Subscribe (recurring) | Reader | **Active** | `recurrent_transfer` |
 | Subscribe (one month / gift) | Reader | **Active** | `transfer` |
 | Cancel | Reader | **Active** | `recurrent_transfer` with amount `0.000 HBD` for the matching plan |
-| Register another reader key | Reader | **Posting** | `custom_json` `banksia.vault.reader_key` |
+| Register another reader key | Reader | **Posting** | `account_update2` device directory (or `custom_json` `banksia.vault.reader_key` for indexers) |
 | Read / unlock | Nobody | **None** | Local decryption |
 | Re-issue a grant | Creator / relay | **Posting** | New bulletin comment |
 
@@ -175,10 +179,12 @@ Rules:
   public key.
 - Every period has a fresh `K_kid` and a fresh `K_ring`. Old keyring entries are
   retained so members can read the archive.
-- A reader key is per origin/device and may be recorded against the Hive account
-  that created it. The Banksia beta auto-unlocks only when a signed-in reader
-  matches that account; otherwise the reader must use the explicit Restore
-  action. This is a local privacy policy, not an on-chain entitlement check.
+- A reader key is scoped to an origin/device and, in the Banksia beta, to the
+  Hive account that created it, so two accounts on one browser are separate
+  subscribers with separate grants. The key may also be registered without an
+  account. The Banksia beta auto-unlocks only when a signed-in reader matches
+  the key's account; otherwise the reader must use the explicit Restore action.
+  Account scoping is a local privacy policy, not an on-chain entitlement check.
 - The creator's product copy (`productTitle`, `productDescription`, `benefits`)
   is public advertising metadata. It never contains keys or entitlement.
 
@@ -198,6 +204,11 @@ All signed and hashed objects use canonical JSON:
    functions, symbols, `BigInt`, non-plain objects and cyclic structures are
    rejected.
 6. `null`, booleans, strings, arrays and plain objects only.
+
+Array order is part of the signed bytes. v2 shard writers MUST sort entry tuples
+lexicographically by `rktB64u` before hashing or comparing a shard, so a
+semantically unchanged shard keeps the same hash. Readers verify the shard in
+the received order and MUST NOT reorder it before hashing.
 
 Examples:
 
@@ -397,12 +408,15 @@ Standard HOM memo plus a namespaced extension:
 - The recipient, amount and recurrence are derived from the on-chain product and
   blog account, never from URL parameters.
 - `gift_for` is part of the v1 memo schema but gift issuance is not implemented
-  in the beta; the creator dashboard excludes gift payments from subscriber
+  in the beta. A non-null value is reserved: v1 issuers MUST NOT create a
+  subscriber grant or subscriber row for it, and v1 readers MUST NOT treat it as
+  entitlement. The creator dashboard excludes gift payments from subscriber
   rows.
 - Grant issuance MUST reject a transaction id that has already been used for a
   grant (`duplicate`). The beta scans the creator's account history, keeps a
-  `Set` of txids and builds one subscriber row per reader key from the newest
-  payment; it has no separate server-side replay ledger.
+  `Set` of txids and builds one subscriber row per reader key and payer account
+  from the newest payment (a legacy device key shared by two accounts stays
+  visible for both); it has no separate server-side replay ledger.
 - One-time `transfer` payments must be within the 40-day acceptance window, and
   a `fill_recurrent_transfer` must carry a non-negative
   `remaining_executions`.
@@ -457,13 +471,17 @@ A comment under the hidden container. Deterministic permlink:
 
 Validation:
 
-- `v === 1`.
+- `v` is `1` or `2`. A v1 reader MUST reject `v: 2`; a v2 reader accepts both.
 - `blog` is a valid Hive account name.
 - `period` matches `/^\d{4}-(?:0[1-9]|1[0-2])$/`.
 - `seq` is an integer `>= 1`.
 - `keyring` is an object with `iv` and `ct` strings; `alg` defaults to `A256GCM`.
 - `entries` is an array. Malformed entries are dropped; `rkt` is 16 lowercase hex
   characters in the canonical form.
+- `ringId` is an optional opaque, non-secret identifier for the ring key
+  (random 256-bit base64url, or a SHA-256 of the random 256-bit ring key).
+  Issuers use it to decide whether previously wrapped entries can be reused
+  after a key rotation; readers ignore it.
 - `claims` defaults to `[]`.
 - `signer` is the creator account or the relay's `p256:` public key.
 - `delegation` is the delegation certificate hash/object when the signer is a
@@ -483,6 +501,7 @@ Signature payload (UTF-8):
 
 ```text
 banksia.vault.bulletin.v1|<canonicalJson(bulletinPayloadObject)>
+banksia.vault.bulletin.v2|<canonicalJson(bulletinPayloadObject)>   (v: 2)
 ```
 
 `bulletinPayloadObject` is the bulletin **without `sig`**, with
@@ -493,9 +512,9 @@ keyring is present. `entries` are included verbatim. Verifiers MUST recompute
 keyring and entries are covered directly, swapping either invalidates the
 signature.
 
-A new subscriber creates a new `seq` with the full entry list (idempotent, easy
-to audit). The dashboard splits the list into parts when it exceeds 300 entries
-or the ~60 KB part budget. The **manifest** keeps the base permlink
+A v1 new subscriber creates a new `seq` with the full entry list (idempotent,
+easy to audit). The dashboard splits the list into parts when it exceeds 300
+entries or the ~60 KB part budget; v2 uses the sharded manifest below. The **manifest** keeps the base permlink
 `vault-<period>-<seq>` and contains the sealed keyring, an empty `entries` array,
 and:
 
@@ -530,23 +549,133 @@ part fails closed. The number of parts is limited only by Hive comment/RC limits
 and the creator's patience; a practical bulletin is a few hundred readers per
 part.
 
-### 7.5 Reader key registry — `custom_json` id `banksia.vault.reader_key`
+#### 7.4.1 v2 sharded bulletins
 
-Optional, post-MVP. Signed by the reader's posting key.
+Above 300 active reader keys (or once a blog has adopted v2) the issuer uses a
+signed, incremental shard manifest. The manifest keeps the pointer permlink
+`vault-<period>-<seq>` and changes `v` to `2`:
 
 ```json
 {
-  "v": 1,
-  "blog": "alice",
-  "keys": [
-    { "key": "p256:...", "label": "Laptop", "created": "2026-11-01T00:00:00Z" }
-  ],
-  "revoked": []
+  "banksia_vault_bulletin": {
+    "v": 2,
+    "blog": "alice",
+    "period": "2026-11",
+    "seq": 4,
+    "issued": "2026-11-28T00:00:00Z",
+    "keyring": { "iv": "base64url-12-bytes", "ct": "base64url-ciphertext" },
+    "ringId": "base64url-32-byte-random-id",
+    "shardCount": 64,
+    "shards": [
+      [0, 3, "base64url-32-byte-sha256"],
+      [17, 1, "base64url-32-byte-sha256"]
+    ],
+    "signer": "alice",
+    "sig": "hex-signature"
+  }
 }
 ```
 
-The creator's dashboard reads the latest registry and wraps to every active key.
-Standard `custom_json` limits apply (8,192 bytes).
+- `shards` is `[index, revision, sha256Base64Url(canonicalJson(shard))]`.
+- Only non-empty shards are listed; `shardCount` is the modulo width.
+- The manifest has no `entries`. Readers MUST NOT require it in v2.
+- The signature prefix is `banksia.vault.bulletin.v2|`. The keyring hash and all
+  shard descriptors are covered.
+- The issuer chooses a power-of-two `shardCount` near `ceil(entries / 200)`,
+  from 8 to 1024. At 1,000 readers that is 8 shards; at 10,000 it is 64; at
+  100,000 it is 512.
+
+Each shard is a comment under the container with `json_metadata.banksia_vault_shard`
+and permlink `vault-<period>-s<index>-r<revision>`:
+
+```json
+{
+  "banksia_vault_shard": {
+    "v": 2,
+    "blog": "alice",
+    "period": "2026-11",
+    "shard": 17,
+    "rev": 1,
+    "entries": [
+      ["base64url-8-byte-rkt", "base64url-epk", "base64url-iv", "base64url-ct", 1798761600]
+    ]
+  }
+}
+```
+
+- The tuple is `[rkt, epk, iv, ct, expiresEpochSeconds]`. `rkt` is the 8-byte
+  reader thumbprint encoded as 11-character base64url (`rktB64u`); `expires` is
+  epoch seconds. `alg` defaults to `P256-HKDF-SHA256-A256GCM` and `tier` to
+  `member`, so both are omitted.
+- Writers MUST sort tuples within a shard lexicographically by `rktB64u` before
+  computing the shard hash or deciding whether the shard changed. Canonical JSON
+  preserves array order, so an unsorted rewrite would cause needless revisions.
+- Writers MUST wrap ring keys with the canonical `expires` string
+  `new Date(value).toISOString()` (milliseconds), because the reader reconstructs
+  the grant header from the expanded tuple.
+- A reader derives `index = firstRktByte % shardCount`, finds that descriptor in
+  the signed manifest, fetches only that shard, verifies the content hash, then
+  expands the tuple and unwraps `K_ring`. Other shards are not fetched.
+- The creator dashboard passes `all: true` to merge every shard for display and
+  incremental planning; it fetches shards with bounded concurrency.
+- A relay-authored v2 manifest uses `signer` as the shard author. Readers MUST
+  verify the delegation certificate before fetching any shard from the relay.
+
+Incremental issuance:
+
+1. The issuer reuses the already-wrapped entry only when the signed `ringId`,
+   reader key and expiry instant are unchanged.
+2. It groups entries by shard. A shard whose canonical entry list is unchanged
+   keeps its revision, content hash and permlink.
+3. A changed/new shard gets `rev + 1` and a new permlink/hash. A removed key is
+   simply omitted from the new shard list; the old comment and unexpired grant
+   remain on chain.
+4. The new manifest is signed with a new `seq` and lists every non-empty shard.
+5. Shard comments are published before the manifest so a reader never sees a
+   signed pointer to a missing shard.
+
+A v1 reader rejects a v2 manifest (unknown `v`) and stays locked. A v2 reader
+continues to accept v1 single and part bulletins. Deploy v2 only when the client
+population supports it; the base reader supports both.
+
+### 7.5 Reader key registry
+
+Signed by the reader's posting key. The Banksia beta writes the registry into the
+reader's account metadata, because the creator can then fetch active subscribers
+in bulk with `get_accounts` instead of scanning every reader's history:
+
+```json
+{
+  "banksia.io": {
+    "reader": {
+      "v": 1,
+      "devices": {
+        "alice": ["p256:base64url-uncompressed-point"]
+      }
+    }
+  }
+}
+```
+
+- Only public reader keys appear. The private key never leaves the device.
+- The writer merges into the latest `posting_json_metadata`, preserving
+  `profile`, `banksia.io.blog` and unknown fields. The write is one
+  `account_update2` with posting authority and no payment.
+- Keys are deduplicated and capped at eight per creator. Removing a key is a
+  revoke request: the creator stops wrapping it on the next bulletin, while an
+  already-issued grant remains valid until its signed expiry.
+- The creator dashboard reads all active subscriber accounts with batched
+  `get_accounts` calls and wraps every registered key for the current
+  subscription period.
+- Discovery is O(subscribers / 1,000) RPCs. There is deliberately no per-reader
+  history scan.
+
+The reserved `custom_json` shape remains available for indexers, relays and other
+frontends. Its id is `banksia.vault.reader_key`, it is signed by the reader's
+posting key, and it uses the same `{ v, blog, keys:[{ key, label, created }],
+revoked }` shape. The base Banksia dashboard does not need a global custom_json
+index because it uses the account-metadata directory above. See
+[`vault-device-authorization.md`](vault-device-authorization.md).
 
 ### 7.6 Delegation certificate
 
@@ -663,7 +792,8 @@ Plaintext:
   "kid": "2026-11",
   "keyring": { "2026-11": "base64url-32-byte-content-key" },
   "ringKey": "base64url-32-byte-ring-key",
-  "ringKid": "2026-11"
+  "ringKid": "2026-11",
+  "ringId": "base64url-32-byte-random-id"
 }
 ```
 
@@ -713,13 +843,19 @@ AES-256-GCM, PBKDF2-SHA256, SHA-256). No other library is required.
 
 ```text
 keypair         = ECDH P-256
+digest          = SHA-256(0x04 || x || y)[0..8]        // 8 bytes, 64 bits
+rktHex          = lowercase_hex(digest)               // 16 characters
+rktB64u         = base64url(digest)                   // 11 characters
 publicKeyB64    = "p256:" || base64url(0x04 || x || y)
-rkt             = lowercase_hex(SHA-256(0x04 || x || y))[0..16]
 ```
 
-`rkt` is 16 hex characters (64 bits). It is a stable, non-secret identifier for
-a reader key inside a bulletin. It is not anonymity: the payment memo carries the
-same public key beside the payer account.
+Both `rkt` forms identify the same 8-byte thumbprint. v1 bulletins and payment
+memos use `rktHex` (16 lowercase hex). v2 shard tuples use `rktB64u` (11
+base64url characters) to save five bytes per entry. A reader MUST compare the
+decoded bytes, not the string, and MUST NOT match a hex `rkt` against a
+base64url tuple without converting. It is a stable, non-secret identifier; it is
+not anonymity: the payment memo carries the same public key beside the payer
+account.
 
 ### 9.2 Ring key wrap
 
@@ -867,8 +1003,12 @@ posting public key for verification.
 | Paywall benefits | ≤ 6, each ≤ 80 chars | display only |
 | Product title / description | 80 / 600 chars | plain text, no HTML |
 | Product benefits | ≤ 6, each ≤ 80 chars | plain text, no HTML |
-| Bulletin entries | 300 per part, 250 warning | `BULLETIN_MAX_ENTRIES`; larger lists split |
+| Bulletin entries | 300 per part, 250 warning | v1 only; larger lists use v2 shards |
 | Bulletin part | ~60,000 bytes | `BULLETIN_MAX_BYTES` per part |
+| v2 shard entries | target ~200, hard cap by 60,000 bytes | dynamic `shardCount` |
+| v2 shard count | 8–1,024 | power of two near `entries / 200` |
+| v2 shard | ~60,000 bytes | one comment per changed shard |
+| v2 manifest | ~60,000 bytes | shard descriptors `[index, rev, hash]` |
 
 `estimateCiphertextLength(30000)` is exactly `40000`; 30,001 plaintext bytes
 therefore choose the companion-comment transport.
@@ -919,22 +1059,28 @@ account or server detail beyond what the reader already knows.
 
 1. Parse `json_metadata.banksia_vault`; reject unknown `v`/`alg` or a malformed
    `kid`/mode/hash/ciphertext.
-2. Load the reader key for this blog/origin. A reader MAY auto-unlock only when
-   the visitor is signed in as the key's recorded owner; otherwise require an
-   explicit Restore action.
+2. Load the reader key for this blog/origin/account. A reader MAY auto-unlock
+   only when the visitor is signed in as the key's recorded owner; otherwise
+   require an explicit Restore action. A different account on the same origin
+   gets its own key and must be granted separately. A new device with no key can
+   register its public key in the reader's account metadata and wait for the
+   creator to wrap the next bulletin to it.
 3. Fetch the newest bulletin for `blog` + `period` (pointer first, then replies
    authored by the blog account and matching `vault-<period>-<seq>`).
-4. Verify the bulletin signature (creator posting key). For v1, `signer` MUST
-   equal `blog` and `delegation` MUST be null; a future relay needs a verified
-   certificate.
-5. Check `blog`, `period`, `rkt`, `expires` against the reader and the current
+4. Verify the bulletin signature (creator posting key) with the v1 or v2 prefix.
+   For self-signed bulletins, `signer` MUST equal `blog` and `delegation` MUST be
+   null; a relay needs a verified certificate.
+5. For a v2 manifest, compute the reader shard from its `rkt`, fetch only that
+   shard, verify the signed content hash, and expand its tuples. For v1, fetch
+   the signed parts and merge them.
+6. Check `blog`, `period`, `rkt`, `expires` against the reader and the current
    time. Expiry is checked **before** decrypting.
-6. Find the entry whose `rkt` matches the reader key thumbprint; unwrap
+7. Find the entry whose `rkt` matches the reader key thumbprint; unwrap
    `K_ring`.
-7. Open the keyring; select `K_kid` for the post's `kid`.
-8. Decrypt the payload (or parts), verify every part hash/order, the post-level
+8. Open the keyring; select `K_kid` for the post's `kid`.
+9. Decrypt the payload (or parts), verify every part hash/order, the post-level
    `bytes` and hash, sanitise the HTML with DOMPurify via the normal renderer.
-9. Never cache plaintext or keys in localStorage, the service worker, analytics
+10. Never cache plaintext or keys in localStorage, the service worker, analytics
    or logs. Keep them in memory only. Clear decrypted state on logout/account
    change.
 
@@ -1108,11 +1254,24 @@ keyring or any entry invalidates the bulletin signature.
   private `CryptoKey` in IndexedDB so recovery export is possible. Unwrapping
   requires the reader's public key alongside the private key. Any XSS on the
   origin can export the key while the page is open; see `docs/SECURITY.md`.
+- **Sharded read.** A v2 reader computes `firstRktByte % shardCount`, fetches
+  only that shard and verifies its hash against the signed manifest. It MUST NOT
+  trust a shard that is not listed, wrong-author, wrong-period or hash-mismatched.
+  A v1 reader fetches every part and fails closed on a missing or extra part.
+- **Multi-device.** A reader MAY register an additional public key in the
+  account-metadata directory described in §7.5. The creator wraps the ring key
+  to every registered key for an active subscription. This does not transfer the
+  private key and does not need a second payment. Recovery import remains the
+  fallback for a device that cannot sign a posting operation or for an anonymous
+  reader.
 - **Cross-origin.** `alice.banksia.io`, `banksia.io` and a custom domain are
   separate origins. Custom-domain blogs stay read-only and deep-link premium
   reads to the apex. Never place the private key in a URL, fragment or referrer.
-  A reader key on one origin cannot be seen by another; recovery import is the
-  beta's only cross-origin path.
+  A reader key on one origin cannot be seen by another, and a second device is a
+  separate key even on the same origin; recovery import is the beta's only
+  cross-device path for an existing grant. The recovery file names its blog and
+  reader account, so a new device can import it without knowing the blog in
+  advance.
 - **Relay.** A relay posts from its own Hive account under the creator's
   container, with a certificate signed by the creator's posting key. It needs
   neither the creator's posting key nor funds. Relay/delegation is **not
@@ -1172,11 +1331,13 @@ keyring or any entry invalidates the bulletin signature.
    `banksia.vault.relay@1` and then accepts a bulletin authored and signed by the
    certified relay account. A third party cannot publish a signed,
    higher-sequence bulletin to shadow the creator's grants.
-7. **Account-bound auto-unlock (client policy).** Banksia records the Hive
-   account that created a reader key and only auto-unlocks when that account is
-   signed in. The wire format does not carry this binding; another frontend MAY
-   choose a different local policy, but should avoid exposing a member's content
-   after logout on a shared browser.
+7. **Account-bound reader keys and auto-unlock (client policy).** Banksia keeps
+   one reader key per blog and Hive account on an origin, and only auto-unlocks
+   when that account is signed in. A second account on the same browser gets a
+   fresh key and needs its own verified grant. The wire format does not carry the
+   account binding; another frontend MAY choose a different local policy, but
+   should avoid exposing a member's content after logout on a shared browser or
+   letting a second account inherit the first account's grant.
 8. **Auto-issue (client policy).** The self-sovereign dashboard can poll and
    issue while its tab is open. This is not a protocol operation; a relay uses the
    same bulletin format when it exists.
@@ -1187,7 +1348,9 @@ keyring or any entry invalidates the bulletin signature.
 10. **Bulletin splitting.** A signed manifest plus `vault-<period>-<seq>-<part>`
     comments is implemented when the entry list exceeds 300 or ~60 KB. The
     manifest carries the sealed keyring and signed part hashes; readers merge the
-    parts after verification.
+    parts after verification. v2 sharded manifests (`v: 2`, `shardCount`,
+    `shards`) are used above the same threshold and keep unchanged shard
+    comments, so a new reader publishes one changed shard plus the manifest.
 11. **Media.** Text-only. URLs inside encrypted payloads remain public; do not
    promise encrypted media in v1.
 12. **Delegation payload prefix.** Delegation certificates use the dedicated
@@ -1201,6 +1364,17 @@ keyring or any entry invalidates the bulletin signature.
     1,000 matching rows (a 400-day window by default) and warn if the cap is hit.
     Votes/comments no longer push payments out of the window. Very high-volume
     transfer accounts still need deeper pagination or a HAF index.
+14. **Device registry location.** The beta writes reader device keys to
+    `posting_json_metadata["banksia.io"].reader.devices` for bulk `get_accounts`
+    discovery. The `custom_json` registry remains reserved for indexers and other
+    frontends. The account-metadata write is heavier than `custom_json` but makes
+    creator discovery O(subscribers / 1,000) instead of a per-reader history scan.
+15. **Compact bulletin fields.** New dashboard bulletins omit `entry.alg` and
+    `entry.tier` when they are the v1 defaults, omit empty `claims` and
+    `delegation: null`, omit `keyring.alg`, and omit the informational
+    `parts[].entries` count. Readers default those fields, so the signed object
+    stays verifiable and old bulletins remain readable. Other writers MAY emit
+    the long form.
 
 ---
 
@@ -1314,12 +1488,22 @@ remains normative for payment.
         "plan": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{0,31}$" },
         "reader_key": { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" },
         "sub": { "type": "string", "minLength": 16, "maxLength": 64 },
-        "gift_for": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9.-]{2,15}$" }
+        "gift_for": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" }
+          ]
+        }
       }
     }
   }
 }
 ```
+
+`gift_for: null` and an omitted `gift_for` are equivalent. A non-null value is
+reserved for a future gift flow: v1 issuers MUST NOT create a subscriber grant
+or subscriber row for such a payment, and v1 readers derive entitlement only
+from bulletin entries for their own `rkt`, never from the memo.
 
 ### 16.4 Bulletin
 
@@ -1336,6 +1520,7 @@ remains normative for payment.
     "period": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
     "seq": { "type": "integer", "minimum": 1 },
     "issued": { "type": "string", "format": "date-time" },
+    "ringId": { "type": "string" },
     "keyring": {
       "type": "object", "additionalProperties": false,
       "required": ["iv", "ct"],
@@ -1349,7 +1534,7 @@ remains normative for payment.
       "type": "array", "maxItems": 300,
       "items": {
         "type": "object", "additionalProperties": false,
-        "required": ["rkt", "alg", "epk", "iv", "ct", "tier", "expires"],
+        "required": ["rkt", "epk", "iv", "ct", "expires"],
         "properties": {
           "rkt": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
           "alg": { "const": "P256-HKDF-SHA256-A256GCM" },
@@ -1429,7 +1614,7 @@ remains normative for payment.
   "$defs": {
     "entry": {
       "type": "object", "additionalProperties": false,
-      "required": ["rkt", "alg", "epk", "iv", "ct", "tier", "expires"],
+      "required": ["rkt", "epk", "iv", "ct", "expires"],
       "properties": {
         "rkt": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
         "alg": { "const": "P256-HKDF-SHA256-A256GCM" },
@@ -1438,6 +1623,85 @@ remains normative for payment.
         "expires": { "type": "string", "format": "date-time" }
       }
     }
+  }
+}
+```
+
+### 16.6.1 v2 shard
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/shard@2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "blog", "period", "shard", "rev", "entries"],
+  "properties": {
+    "v": { "const": 2 },
+    "blog": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "period": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
+    "shard": { "type": "integer", "minimum": 0 },
+    "rev": { "type": "integer", "minimum": 1 },
+    "entries": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "array", "minItems": 5, "maxItems": 5,
+        "prefixItems": [
+          { "type": "string", "pattern": "^[A-Za-z0-9_-]{11}$" },
+          { "type": "string" }, { "type": "string" }, { "type": "string" },
+          { "type": "integer", "minimum": 1 }
+        ]
+      }
+    }
+  }
+}
+```
+
+### 16.6.2 v2 sharded manifest
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://banksia.io/schemas/vault/bulletin@2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "blog", "period", "seq", "issued", "keyring", "shardCount", "shards", "signer", "sig"],
+  "properties": {
+    "v": { "const": 2 },
+    "blog": { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+    "period": { "type": "string", "pattern": "^\\d{4}-(?:0[1-9]|1[0-2])$" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "issued": { "type": "string", "format": "date-time" },
+    "ringId": { "type": "string", "minLength": 1 },
+    "keyring": {
+      "type": "object", "additionalProperties": false,
+      "required": ["iv", "ct"],
+      "properties": {
+        "alg": { "const": "A256GCM" },
+        "iv": { "type": "string", "minLength": 1 },
+        "ct": { "type": "string", "minLength": 1 }
+      }
+    },
+    "shardCount": { "enum": [8, 16, 32, 64, 128, 256, 512, 1024] },
+    "shards": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "array", "minItems": 3, "maxItems": 3,
+        "prefixItems": [
+          { "type": "integer", "minimum": 0, "maximum": 1023 },
+          { "type": "integer", "minimum": 1 },
+          { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+        ]
+      }
+    },
+    "signer": {
+      "oneOf": [
+        { "type": "string", "pattern": "^[a-z][a-z0-9.-]{2,15}$" },
+        { "type": "string", "pattern": "^p256:[A-Za-z0-9_-]{87}$" }
+      ]
+    },
+    "delegation": { "type": ["object", "null"] },
+    "sig": { "type": "string", "minLength": 1 }
   }
 }
 ```
@@ -1467,7 +1731,7 @@ document and the on-chain objects.
       `banksia.vault.content.v1|blog|permlink|kid|mode`; changing any field fails.
 - [ ] Keyring AAD is exactly `banksia.vault.keyring.v1|blog|period`.
 - [ ] Wrap salt is `epk || readerPub || "banksia.vault.wrap.v1"`; HKDF info and
-      AAD are the canonical six-key grant header.
+      AAD are the canonical five-key grant header.
 - [ ] A wrapped key moved to another blog/period/tier/expiry fails to unwrap.
 - [ ] A ciphertext moved to another post/kid/mode fails the tag.
 - [ ] Plaintext hash and byte length are verified after decrypt; a one-bit flip

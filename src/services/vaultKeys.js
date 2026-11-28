@@ -92,6 +92,9 @@ function assertVaultShape (vault) {
     throw new VaultCryptoError('VAULT_BAD_INPUT', 'The vault ringKid must be YYYY-MM.')
   }
   if (!isRawKey(vault.ringKey)) throw new VaultCryptoError('VAULT_BAD_KEY', 'The vault ring key must be a 32-byte base64url string.')
+  if (vault.ringId !== undefined && (typeof vault.ringId !== 'string' || !vault.ringId)) {
+    throw new VaultCryptoError('VAULT_BAD_INPUT', 'The vault ring id must be a non-empty string.')
+  }
   if (!isPlainObject(vault.keyring)) throw new VaultCryptoError('VAULT_BAD_INPUT', 'The vault keyring must be an object.')
   for (const [kid, key] of Object.entries(vault.keyring)) {
     if (!PERIOD_RE.test(kid) || !isRawKey(key)) {
@@ -232,7 +235,8 @@ export async function createCreatorVault ({ account, passphrase, now = new Date(
     kid,
     keyring: { [kid]: contentKey },
     ringKey: randomKey(),
-    ringKid: kid
+    ringKid: kid,
+    ringId: randomKey()
   }
 }
 
@@ -376,7 +380,8 @@ export function rotatePeriod (vault, { kid, now } = {}) {
     kid: nextKid,
     keyring: { ...vault.keyring, [nextKid]: contentKey },
     ringKey: randomKey(),
-    ringKid: nextKid
+    ringKid: nextKid,
+    ringId: randomKey()
   }
 }
 

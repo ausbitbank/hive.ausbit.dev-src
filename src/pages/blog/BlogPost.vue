@@ -36,6 +36,7 @@
         :reader-account="readerAccount"
         :apex-url="vaultApexUrl"
         @subscribe="onVaultSubscribe"
+        @use-device="onVaultUseDevice"
         @restore="onVaultRestore"
         @retry="onVaultRetry"
       />
@@ -456,10 +457,14 @@ export default {
     '$route.params.permlink': 'load',
     '$route.params.author': 'load',
     readerAccount (value, previous) {
-      if (previous && value !== previous && this.vaultStoreRef) {
+      if (value === previous) return
+      if (this.vaultStoreRef) {
         this.vaultStoreRef.lockAll()
         this.vaultStateData = { status: 'locked', message: '' }
       }
+      // Signing in or switching accounts should reconsider that account's own
+      // reader key and grant instead of keeping the previous account's state.
+      if (value && this.post && this.vaultMetadata) this.prepareVault(this.post)
     }
   },
   created () {
@@ -564,7 +569,7 @@ export default {
 
       const store = useVaultStore()
       this.vaultStoreRef = store
-      const existing = await store.readerKey(this.blogAccountName)
+      const existing = await store.readerKey(this.blogAccountName, this.readerAccount)
       if (!existing) return
       if (!mayAutoUnlock({ readerAccount: this.readerAccount, keyAccount: existing.account })) return
       if (requestId !== this.requestId) return
@@ -600,8 +605,47 @@ export default {
       if (!product) return
       this.$router.push({
         path: '/subscribe',
-        query: { blog: this.blogAccountName, product }
+        query: { blog: this.blogAccountName, product, redirect: this.$route.fullPath }
       })
+    },
+    async onVaultUseDevice () {
+      if (!this.vaultPlan || !this.readerAccount || this.vaultApexRequired) return
+      const args = this.vaultUnlockArguments()
+      if (!args) return
+      try {
+        const [{ useVaultStore }, { requestReaderDevice }, { fetchAccount }] = await Promise.all([
+          import('src/stores/vault'),
+          import('src/services/vaultDevices'),
+          import('src/services/chainData')
+        ])
+        const store = useVaultStore()
+        this.vaultStoreRef = store
+        const reader = await store.ensureReaderKey(this.blogAccountName, { account: this.readerAccount })
+        if (!reader || !reader.publicKeyB64) throw new Error('A reader key could not be created on this device.')
+        const result = await requestReaderDevice({
+          account: this.readerAccount,
+          blog: this.blogAccountName,
+          readerKey: reader.publicKeyB64,
+          fetchAccount
+        })
+        if (!result.ok) throw new Error(result.error)
+        if (result.changed && result.operation) {
+          this.$hiveStore.addToQueue([this.readerAccount, 'posting', result.operation])
+          this.$q.notify({
+            type: 'info',
+            message: 'Device request queued. Approve it in your signing queue; @' + this.blogAccountName + ' will then grant access.'
+          })
+        } else {
+          this.$q.notify({ type: 'info', message: 'This device is already registered. Checking for the grant…' })
+        }
+        await store.unlockPost({ ...args, force: true, poll: true, device: true })
+        this.vaultStateData = store.postState(this.blogAccountName, this.post.permlink)
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error && error.message ? error.message : 'This device could not be added.'
+        })
+      }
     },
     async onVaultRestore () {
       const args = this.vaultUnlockArguments()
